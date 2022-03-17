@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
-	[TestFixture(ConfigType.Remoteconfig)]
+    [TestFixture(ConfigType.Remoteconfig, "UNET")]
 	[TestFixture(ConfigType.Resourcefile, "UNET")]
     [TestFixture(ConfigType.Resourcefile, "UTP")]
     public class RemoteConfigTests
@@ -18,19 +18,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private string m_Transport;
         private Scene m_OriginalScene;
         private static Scene s_InitScene;
+        private Task<HttpResponseMessage> m_SetupTask;
+        private Task m_WrapperTask;
 
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
-            var x = SceneManager.CreateScene("FakeName");
-            Debug.Log($"{x.name} isValid:{x.IsValid()} isLoaded:{x.isLoaded} {x.isSubScene}");
+            Debug.Log($"SceneManager current active scene name {SceneManager.GetActiveScene().name}");
         }
 
         [UnitySetUp]
         public IEnumerator UnitySetup()
         {
+            Debug.Log("UnitySetup - Start");
+            yield return new WaitUntil(() => RemoteDataLoader1.PostMessageStatus == PostMessageStatus.Complete);
             var startupScene = SceneManager.GetActiveScene();
-            Debug.Log("UnitySetup - ");
+            
             if (startupScene == null)
             {
                 Debug.Log("Start up - Scene is null");
@@ -51,22 +54,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             
             SceneManager.sceneLoaded += RemoteConfigTestsOnSceneLoaded;
-            SceneManager.LoadScene("RemoteConfigScene", LoadSceneMode.Single);
+            SceneManager.LoadScene("RemoteConfigScene", LoadSceneMode.Additive);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
         }
 
         [SetUp]
         public void Setup()
         {
-            Debug.Log("Setup - ");
+            Debug.Log("Setup - Start");
+            
             //SceneManager.sceneLoaded -= RemoteConfigTestsOnSceneLoaded;
         }
 
         public void RemoteConfigTestsOnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             Debug.Log($"RemoteConfigTestsOnSceneLoaded - Switched to scene: {scene.name}");
-            m_HasSceneLoaded = true;
-            m_OriginalScene = scene;
+            
+            if (scene.name.Equals("RemoteConfigScene"))
+            {
+                SceneManager.SetActiveScene(scene);
+                m_HasSceneLoaded = true;
+                m_OriginalScene = scene;
+            }
+            
         }
 
         public RemoteConfigTests()
@@ -102,6 +112,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 var mpConfig = new MultiprocessConfig();
                 mpConfig.MultiplayerMode = MultiplayerMode.Host;
                 mpConfig.SceneName = "MultiprocessTestScene";
+                remoteConfig.CreatedBy = "Zain";
+                remoteConfig.UpdatedBy = "Zain";
                 remoteConfig.HostIp = "0.0.0.0";
                 remoteConfig.GitHash = localGitHash;
                 remoteConfig.PlatformId = (int)Application.platform;
@@ -109,10 +121,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 remoteConfig.TransportName = transport;
                 remoteConfig.AdditionalJsonConfig = JsonUtility.ToJson(mpConfig);
                 string s = JsonUtility.ToJson(remoteConfig);
-                Debug.Log(s);
-                Task<HttpResponseMessage> t = RemoteConfigUtils.PostBasicAsync(s);
-                t.Wait();
-                t.Result.EnsureSuccessStatusCode();
+
+                Debug.Log($"Calling RemoteConfigUtils.PostBasicAsync\n{s}");
+                m_WrapperTask = Task.Factory.StartNew(() =>
+                {
+                    Debug.Log($"Calling RemoteConfigUtils.PostBasicAsync\n{s}");
+                    RemoteConfigUtils.PostBasicAsync(s);
+                    
+                });
+                m_WrapperTask.Wait();
+                Debug.Log($"m_WrapperTask.Status {m_WrapperTask.Status}");
 
             }
             else if (configType == ConfigType.Resourcefile)
@@ -191,7 +209,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             Debug.Log($"UnityTearDown - isValid: {m_OriginalScene.name} {m_OriginalScene.IsValid()} {SceneManager.GetActiveScene().name}");
             NetworkManager.Singleton.Shutdown(true);
 
-            bool isok = SceneManager.SetActiveScene(m_OriginalScene);
+            bool isok = SceneManager.SetActiveScene(s_InitScene);
             if (isok)
             {
                 // Releasing these references should end the network manager

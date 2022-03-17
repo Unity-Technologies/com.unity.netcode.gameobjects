@@ -23,11 +23,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private bool m_PlatformSupportsLocalFiles;
         private List<Task> m_ListOfAsyncTasks;
         private bool m_MatchingConfigFound;
+        private bool m_SceneLoadPending;
         private string m_LocalGitHash;
         private Task m_RemoteConfigTask;
+        private Task m_CheckForMatchingRemoteConfigTask;
         private TextAsset m_TextConfig;
         public Scene NewScene;
         public static RemoteDataLoader1 Instance;
+        public static PostMessageStatus PostMessageStatus;
 
         public void Awake()
         {
@@ -48,6 +51,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             DontDestroyOnLoad(gameObject);
 
             m_MatchingConfigFound = false;
+            m_SceneLoadPending = false;
             m_ListOfAsyncTasks = new List<Task>();
 
             Application.targetFrameRate = 5;
@@ -84,9 +88,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var githash = Resources.Load<TextAsset>("Text/githash");
             if (githash == null && m_PlatformSupportsLocalFiles)
             {
-                Debug.Log("Resource file didn't have githash");
+                Debug.Log("Resource file didn't have githash, computing");
                 // If the githash file has not been generated try to compute it
                 ComputeLocalGitHash();
+                Debug.Log("Done call to ComputeLocalGitHash");
             }
             else if (githash != null && githash.text != null)
             {
@@ -104,22 +109,28 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     Debug.Log($"What condition is this? githash.text: {githash.text == null}");
                 }
             }
+
+            // Create a task to poll for a matching config
+            Debug.Log("Calling PollForMatchingConfig");
+            PollForMatchingConfig();
         }
 
         // Update is called once per frame
         public void Update()
         {
             m_UpdateCounter++;
-            if (m_LocalGitHash != null)
-            {
-                if (m_RemoteConfigTask == null || m_RemoteConfigTask.IsCompleted)
-                {
-                    m_RemoteConfigTask = CheckForMatchingRemoteConfig();
-                }
-            }
 
+            if (!SceneManager.GetActiveScene().name.Equals("RemoteConfigScene") || m_SceneLoadPending)
+            {
+                Debug.Log(SceneManager.GetActiveScene().name);
+                return;
+            }
+            
             if (m_MatchingConfigFound)
             {
+                // Claim the config
+                // RemoteConfigUtils.PostBasicAsync(JsonUtility.ToJson(RemoteConfig), "/claim");
+                
                 var networkConfig = new NetworkConfig();
                 NetworkManagerObject.NetworkConfig = networkConfig;
 
@@ -150,23 +161,28 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     NetworkManagerObject.StartClient();
                 }
-                SceneManager.sceneLoaded += OnSceneLoaded;               
-                SceneManager.LoadScene(MultiprocessConfig.SceneName, LoadSceneMode.Single);
-                enabled = false;
+                SceneManager.sceneLoaded += OnSceneLoaded;
+                SceneManager.LoadScene(MultiprocessConfig.SceneName, LoadSceneMode.Additive);
+                m_SceneLoadPending = true;
             }
             else
             {
                 string status = "";
                 foreach (var task in m_ListOfAsyncTasks)
                 {
-                    status += " " + task.IsCompleted;
+                    status += " status:" + task.Status;
+                    if (task.Status == TaskStatus.Faulted)
+                    {
+                        Debug.Log(task.Exception.Message);
+                        Debug.Log(task.Exception.StackTrace);
+                    }
                 }
 
                 UnityEngine.UI.Text textObject = FindObjectOfType<UnityEngine.UI.Text>();
 
                 textObject.text = $"{m_UpdateCounter}\n" +
                     $"Async tasks {m_ListOfAsyncTasks.Count} {status}\n" +
-                    $"Local githash: {m_LocalGitHash} remote githash: {PlayerPrefs.GetString("GitHash")}\n" +
+                    $"Local githash: {m_LocalGitHash} \n" +
                     $"{PlayerPrefs.GetString("HostIp")}\n" +
                     $"{PlayerPrefs.GetString("JobId")}";
             }
@@ -183,8 +199,44 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return workerProcess;
         }
 
+        private Task PollForMatchingConfig()
+        {
+            Debug.Log("PollForMatchingConfig - Start");
+            Debug.Log($"m_MatchingConfigFound {m_MatchingConfigFound} and Time.realtimeSinceStartup {Time.realtimeSinceStartup}");
+            Task t = Task.Factory.StartNew(() =>
+            {
+                Debug.Log("Starting while loop");
+                while (!m_MatchingConfigFound)
+                {
+                    RemoteConfig remoteConfig = null;
+                    if (m_LocalGitHash != null)
+                    {
+                        remoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1, m_LocalGitHash, m_TextConfig);
+                    }
+                    if (remoteConfig == null)
+                    {
+                        Debug.Log($"{DateTime.Now:f} remoteConfig was null, so no match was found, localGitHash was {m_LocalGitHash}");
+                    }
+                    else
+                    {
+
+                        RemoteConfig = remoteConfig;
+                        m_MatchingConfigFound = true;
+                    }
+                    
+                    Thread.Sleep(1234);
+                }
+                Debug.Log("ending while loop");
+
+            });
+            Debug.Log($"Adding task to list to keep it alive, currently it is {t.Status}");
+            m_ListOfAsyncTasks.Add(t);
+            return t;
+        }
+
         private Task ComputeLocalGitHash()
         {
+            Debug.Log("ComputeLocalGitHash");
             Task t = Task.Factory.StartNew(() =>
             {
                 var workerProcess = CallGitToGetHash();
@@ -193,48 +245,73 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Task<string> outputTask = workerProcess.StandardOutput.ReadToEndAsync();
                 outputTask.Wait();
                 m_LocalGitHash = outputTask.Result.Trim();
-                Debug.Log(m_LocalGitHash);
+                Debug.Log($"ComputeLocalGitHash - {m_LocalGitHash}");
             });
             m_ListOfAsyncTasks.Add(t);
             return t;
         }
 
-        private Task CheckForMatchingRemoteConfig()
+        private async void CheckForMatchingRemoteConfig()
         {
             if (m_LocalGitHash == null)
             {
                 Debug.LogWarning("local githash was null so there's nothing to match to, hence returning");
-                return null;
             }
 
-            var t = Task.Factory.StartNew(() =>
+            else if (m_CheckForMatchingRemoteConfigTask == null ||
+                m_CheckForMatchingRemoteConfigTask.Status == TaskStatus.Canceled  ||
+                m_CheckForMatchingRemoteConfigTask.Status == TaskStatus.RanToCompletion ||
+                m_CheckForMatchingRemoteConfigTask.Status == TaskStatus.Faulted)
             {
-                Debug.Log("Task to Get Remote Config");
-                RemoteConfig = RemoteConfigUtils.GetRemoteConfig(Version.v1, m_LocalGitHash, m_TextConfig);
-                Debug.Log($"Remote GitHash was {RemoteConfig.GitHash} and local {m_LocalGitHash}");
-                if (RemoteConfig.GitHash.Equals(m_LocalGitHash))
+                Debug.Log("---> Creating Task to Check for Matching Remote Config");
+                m_CheckForMatchingRemoteConfigTask = Task.Factory.StartNew(() =>
                 {
-                    m_MatchingConfigFound = true;
-                    PlayerPrefs.SetInt("JobId", RemoteConfig.JobId);
-                    PlayerPrefs.SetString("HostIp", RemoteConfig.HostIp);
-                }
-                else
-                {
-                    Debug.Log("Non matching config");
-                }
-            });
-            m_ListOfAsyncTasks.Add(t);
-            return t;
+                    RemoteConfigUtils.GetRemoteConfig(Version.v1, m_LocalGitHash, m_TextConfig);
+                    
+                    Debug.Log($"Remote GitHash was {RemoteConfig.GitHash} and local {m_LocalGitHash}");
+                    if (RemoteConfig.GitHash.Equals(m_LocalGitHash))
+                    {
+                        m_MatchingConfigFound = true;
+                    }
+                    else
+                    {
+                        Debug.Log("Non matching config");
+                    }
+                });
+                m_ListOfAsyncTasks.Add(m_CheckForMatchingRemoteConfigTask);
+                m_RemoteConfigTask = m_CheckForMatchingRemoteConfigTask;
+            }
+
+            await m_CheckForMatchingRemoteConfigTask;
         }
 
         public void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             NewScene = scene;
+            // Once we load the new scene the RemoteDataLoader scene no longer needs to run
+            if (scene.name.Equals(MultiprocessConfig.SceneName))
+            {
+                // m_SceneLoadPending = false;
+                SceneManager.SetActiveScene(scene);
+                // TODO: Determine if the following line somehow causes this process to fail
+                SceneManager.sceneLoaded -= OnSceneLoaded;
+            }
         }
     }
 
     public class RemoteConfigUtils
     {
+        public static string GetWebConfigResult;
+        public static List<Task> WebTaskList;
+        public static Task GetRemoteConfigTask;
+        public static Task<string> GetStringTask;
+
+        static RemoteConfigUtils()
+        {
+            WebTaskList = new List<Task>();
+        }
+
+        
         public static RemoteConfig GetRemoteConfig(Version version, string localGitHash, TextAsset textAsset)
         {
             Debug.Log("GetRemoteConfig");
@@ -262,25 +339,41 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else if (File.Exists(Path.Combine(Application.streamingAssetsPath, "server_config")))
             {
+                Debug.Log($"server_config file is found at {Path.Combine(Application.streamingAssetsPath, "server_config")}");
                 string s = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "server_config"));
                 Debug.Log(s);
                 var config = JsonUtility.FromJson<RemoteConfig>(s);
                 var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(config.AdditionalJsonConfig);
                 return config;
             }
+            else if (GetRemoteConfigTask != null)
+            {
+                Debug.Log("Not starting new task because " + GetRemoteConfigTask.Status + " with result " + GetWebConfigResult);
+                if (GetStringTask != null)
+                {
+                    Debug.Log($"GetStringTask status {GetStringTask.Status}");
+                    if (GetStringTask.Status == TaskStatus.WaitingForActivation)
+                    {
+                        
+                    }
+                }
+            }
             else
             {
-                Debug.Log("There was no command line and no config file");
-                // Try to get config from web resource
-                configData = GetWebConfig();
+                Debug.Log("-----> Before GetWebConfig_v2");
+                configData = GetWebConfig_v2();
+                Debug.Log("-----> After GetWebConfig_v2");
+
                 var remoteConfigList = new RemoteConfigList();
                 JsonUtility.FromJsonOverwrite(configData, remoteConfigList);
-
+                
                 foreach (var config in remoteConfigList.JobQueueItems)
                 {
+                    
                     if (config.GitHash != null && config.GitHash.Equals(localGitHash)
                         && (RuntimePlatform)config.PlatformId == Application.platform)
                     {
+                        Debug.Log("Found a match");
                         if (config.AdditionalJsonConfig != null)
                         {
                             var mpConfig = JsonUtility.FromJson<MultiprocessConfig>(config.AdditionalJsonConfig);
@@ -292,6 +385,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                     else
                     {
+                        Debug.Log("No match found");
                         Debug.Log($"config.PlatformId = {config.PlatformId}, Application.platform = {Application.platform}");
                         Debug.Log($"config.GitHash {config.GitHash} localGitHash {localGitHash}");
                     }
@@ -300,31 +394,75 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return null;
         }
 
-        public static string GetWebConfig()
+        public static string GetWebConfig_v2()
         {
             using var client = new HttpClient();
-
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
+            var responseTask = client.GetAsync("https://multiprocess-log-event-manager.test.cds.internal.unity3d.com/api/JobWithFile",
                 HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
-
-            responseTask.Wait();
+            try
+            {
+                Debug.Log("-----> Before Wait");
+                responseTask.Wait();
+                Debug.Log("-----> After Wait");
+            }
+            catch (Exception e)
+            {
+                Debug.Log("-----> After Wait in exception catch block");
+                Debug.Log(e.Message + e.StackTrace);
+            }
             var response = responseTask.Result;
             var contentTask = response.Content.ReadAsStringAsync();
             contentTask.Wait();
-
+            Debug.Log(contentTask.Result.Length);
             return contentTask.Result;
         }
 
-        public static Task<HttpResponseMessage> PostBasicAsync(string content)
+        public static async Task<object> GetWebConfig()
         {
+            try
+            {
+                Debug.Log("GetWebConfig - Start");
+                using var client = new HttpClient();
+
+                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                Debug.Log("GetWebConfig - Before await");
+                var responseTask = await client.GetAsync("https://multiprocess-log-event-manager.test.cds.unity3d.com/api/JobWithFile",
+                    HttpCompletionOption.ResponseContentRead, cancelAfterDelay.Token);
+                Debug.Log("GetWebConfig - after await");
+
+                var response = responseTask;
+                var contentTask = response.Content.ReadAsStringAsync();
+                contentTask.Wait();
+                Debug.Log("GetWebConfig - End");
+                GetWebConfigResult = contentTask.Result;
+                return GetWebConfigResult;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.Message + e.StackTrace);
+            }
+            return null;
+        }
+
+        public static async void PostBasicAsync(string content, string path = "")
+        {
+            RemoteDataLoader1.PostMessageStatus = PostMessageStatus.Creating;
             using var client = new HttpClient();
-            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile");
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"https://multiprocess-log-event-manager.test.cds.internal.unity3d.com/api/JobWithFile{path}");
             using var stringContent = new StringContent(content, Encoding.UTF8, "application/json");
             request.Content = stringContent;
-            Task<HttpResponseMessage> t = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
-            return t;
+            RemoteDataLoader1.PostMessageStatus = PostMessageStatus.Invoking;
+            var response = await client.SendAsync(request,
+                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+            Debug.Log("PostBasicAsync - after await");
+            RemoteDataLoader1.PostMessageStatus = PostMessageStatus.GettingOutput;
+            var contentTask = response.Content.ReadAsStringAsync();
+            contentTask.Wait();
+            Debug.Log(contentTask.Result);
+            RemoteDataLoader1.PostMessageStatus = PostMessageStatus.Complete;
+            // return contentTask.Result;
         }
     }
 
@@ -338,6 +476,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class RemoteConfig
     {
         public int Id;
+        public string CreatedBy;
+        public string UpdatedBy;
+        public DateTime UpdatedDate;
         public string GitHash;
         public int PlatformId;
         public int JobId;
@@ -398,5 +539,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class RemoteHttpUtils
     {
 
+    }
+
+    public enum PostMessageStatus
+    {
+        Creating,
+        Invoking,
+        GettingOutput,
+        Complete
     }
 }
