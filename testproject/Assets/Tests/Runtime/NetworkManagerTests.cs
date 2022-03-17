@@ -35,7 +35,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            switch(m_NetworkManagerTestType)
+            switch (m_NetworkManagerTestType)
             {
                 case NetworkManagerTestType.ObjectsNotDestroyedOnShutdown:
                     {
