@@ -67,7 +67,7 @@ namespace Unity.Netcode
         }
 
         public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
-        public const int FRAGMENTED_MESSAGE_MAX_SIZE = int.MaxValue;
+        public const int FRAGMENTED_MESSAGE_MAX_SIZE = BytePacker.BitPackedIntMax;
 
         internal struct MessageWithHandler
         {

@@ -56,7 +56,7 @@ namespace Unity.Netcode
                 {
                     if (!shouldWrite)
                     {
-                        writer.WriteValueSafe((ushort)0);
+                        BytePacker.WriteValueBitPacked(writer, 0);
                     }
                 }
                 else
@@ -68,15 +68,15 @@ namespace Unity.Netcode
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, short.MaxValue);
+                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                         NetworkBehaviour.NetworkVariableFields[k].WriteDelta(tmpWriter);
+                        BytePacker.WriteValueBitPacked(writer, tmpWriter.Length);
 
-                        if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<ushort>() + tmpWriter.Length))
+                        if (!writer.TryBeginWrite(tmpWriter.Length))
                         {
                             throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
                         }
 
-                        writer.WriteValue((ushort)tmpWriter.Length);
                         tmpWriter.CopyTo(writer);
                     }
                     else
@@ -134,11 +134,11 @@ namespace Unity.Netcode
                 {
                     for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                     {
-                        ushort varSize = 0;
+                        int varSize = 0;
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            m_ReceivedNetworkVariableData.ReadValueSafe(out varSize);
+                            ByteUnpacker.ReadValueBitPacked(m_ReceivedNetworkVariableData, out varSize);
 
                             if (varSize == 0)
                             {
