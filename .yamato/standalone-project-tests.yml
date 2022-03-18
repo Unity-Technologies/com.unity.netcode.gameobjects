@@ -11,7 +11,6 @@ standalone_tests_{{ project.name }}_{{ backend }}_{{ editor }}_{{ platform.name 
     type: {{ platform.type }}{% if platform.name == "ubuntu" %}::GPU{% endif %}
 {% if platform.name == "ubuntu" %}    model: rtx2080{% endif %}
     image: {% if platform.name == 'win' and backend == 'il2cpp' %}{{ win_il2cpp_test_image }} {% else %} {{ platform.image }} {% endif %}
-    image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
