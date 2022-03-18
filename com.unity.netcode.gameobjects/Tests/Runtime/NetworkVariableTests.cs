@@ -19,6 +19,8 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixtureSource(nameof(TestDataSource))]
     public class NetworkVariablePermissionTests : NetcodeIntegrationTest
     {
+        protected WritableAreEqualOnAllConditional m_WritableAreEqualOnAllConditional;
+
         public static IEnumerable<TestFixtureData> TestDataSource()
         {
             foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
@@ -46,42 +48,66 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnServerAndClientsConnected()
         {
             m_TestObjId = SpawnObject(m_TestObjPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>().NetworkObjectId;
-            yield return null;
+            m_WritableAreEqualOnAllConditional = new WritableAreEqualOnAllConditional(m_TestObjId, m_ServerNetworkManager, m_ClientNetworkManagers);
+            yield return base.OnServerAndClientsConnected();
         }
 
-        private void AssertOwnerWritableAreEqualOnAll()
+        //private void AssertOwnerWritableAreEqualOnAll()
+        //{
+        //    var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+        //    var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+        //    foreach (var clientNetworkManager in m_ClientNetworkManagers)
+        //    {
+        //        var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+        //        var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+        //        Assert.AreEqual(testObjServer.OwnerClientId, testObjClient.OwnerClientId);
+        //        Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, testCompClient.OwnerWritable_Position.Value);
+        //        Assert.AreEqual(testCompServer.OwnerWritable_Position.ReadPerm, testCompClient.OwnerWritable_Position.ReadPerm);
+        //        Assert.AreEqual(testCompServer.OwnerWritable_Position.WritePerm, testCompClient.OwnerWritable_Position.WritePerm);
+        //    }
+        //}
+
+        //private void AssertServerWritableAreEqualOnAll()
+        //{
+        //    var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+        //    var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+        //    foreach (var clientNetworkManager in m_ClientNetworkManagers)
+        //    {
+        //        var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+        //        var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+        //        Assert.AreEqual(testCompServer.ServerWritable_Position.Value, testCompClient.ServerWritable_Position.Value);
+        //        Assert.AreEqual(testCompServer.ServerWritable_Position.ReadPerm, testCompClient.ServerWritable_Position.ReadPerm);
+        //        Assert.AreEqual(testCompServer.ServerWritable_Position.WritePerm, testCompClient.ServerWritable_Position.WritePerm);
+        //    }
+        //}
+
+        private IEnumerator WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes conditionalModes)
+        {
+            m_WritableAreEqualOnAllConditional.SetMode(conditionalModes);
+            yield return WaitForConditionOrTimeOut(m_WritableAreEqualOnAllConditional);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, m_WritableAreEqualOnAllConditional.GetConditionalStates());
+        }
+
+        protected IEnumerator WaitForOwnerPositionToMatch(Vector3 newValue)
         {
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
-                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
-                Assert.AreEqual(testObjServer.OwnerClientId, testObjClient.OwnerClientId);
-                Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, testCompClient.OwnerWritable_Position.Value);
-                Assert.AreEqual(testCompServer.OwnerWritable_Position.ReadPerm, testCompClient.OwnerWritable_Position.ReadPerm);
-                Assert.AreEqual(testCompServer.OwnerWritable_Position.WritePerm, testCompClient.OwnerWritable_Position.WritePerm);
-            }
+            yield return WaitForConditionOrTimeOut(() => newValue == testCompServer.OwnerWritable_Position.Value);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for OwnerWritable_Position [{testCompServer.OwnerWritable_Position.Value}] to equal [{newValue}] ");
         }
 
-        private void AssertServerWritableAreEqualOnAll()
+        protected IEnumerator WaitForServerPositionToMatch(Vector3 newValue)
         {
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
-                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
-                Assert.AreEqual(testCompServer.ServerWritable_Position.Value, testCompClient.ServerWritable_Position.Value);
-                Assert.AreEqual(testCompServer.ServerWritable_Position.ReadPerm, testCompClient.ServerWritable_Position.ReadPerm);
-                Assert.AreEqual(testCompServer.ServerWritable_Position.WritePerm, testCompClient.ServerWritable_Position.WritePerm);
-            }
+            yield return WaitForConditionOrTimeOut(() => newValue == testCompServer.ServerWritable_Position.Value);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for ServerWritable_Position [{testCompServer.ServerWritable_Position.Value}] to equal [{newValue}] ");
         }
 
         [UnityTest]
         public IEnumerator ServerChangesOwnerWritableNetVar()
         {
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
@@ -90,16 +116,15 @@ namespace Unity.Netcode.RuntimeTests
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
             testCompServer.OwnerWritable_Position.Value = newValue;
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
-            Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, newValue);
+            yield return WaitForOwnerPositionToMatch(newValue);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
         }
 
         [UnityTest]
         public IEnumerator ServerChangesServerWritableNetVar()
         {
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
 
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
@@ -108,25 +133,23 @@ namespace Unity.Netcode.RuntimeTests
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
             testCompServer.ServerWritable_Position.Value = newValue;
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
-            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, newValue);
+            yield return WaitForServerPositionToMatch(newValue);
 
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
         }
 
         [UnityTest]
         public IEnumerator ClientChangesOwnerWritableNetVar()
         {
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
 
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
@@ -135,16 +158,15 @@ namespace Unity.Netcode.RuntimeTests
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
             testCompClient.OwnerWritable_Position.Value = newValue;
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
-            Assert.AreEqual(testCompClient.OwnerWritable_Position.Value, newValue);
+            yield return WaitForOwnerPositionToMatch(newValue);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
         }
 
         [UnityTest]
         public IEnumerator ClientCannotChangeServerWritableNetVar()
         {
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
 
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
@@ -152,9 +174,8 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
 
             var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
@@ -163,22 +184,20 @@ namespace Unity.Netcode.RuntimeTests
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
             Assert.That(() => testCompClient.ServerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
-            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, oldValue);
+            yield return WaitForServerPositionToMatch(oldValue);
 
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
 
             testCompServer.ServerWritable_Position.Value = newValue;
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
-            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, newValue);
+            yield return WaitForServerPositionToMatch(newValue);
 
-            AssertServerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.ServerWritable);
         }
 
         [UnityTest]
         public IEnumerator ServerCannotChangeOwnerWritableNetVar()
         {
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
@@ -186,29 +205,115 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var oldValue = testCompServer.OwnerWritable_Position.Value;
             var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
 
             Assert.That(() => testCompServer.OwnerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
-            Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, oldValue);
+            yield return WaitForOwnerPositionToMatch(oldValue);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
 
             var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
             var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
 
             testCompClient.OwnerWritable_Position.Value = newValue;
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
-            Assert.AreEqual(testCompClient.OwnerWritable_Position.Value, newValue);
+            yield return WaitForOwnerPositionToMatch(newValue);
 
-            AssertOwnerWritableAreEqualOnAll();
+            yield return WaitforWritableEqualOnAll(WritableAreEqualOnAllConditional.ConditionalModes.OwnerWritable);
         }
     }
+
+    public class WritableAreEqualOnAllConditional : ConditionalPredicateBase
+    {
+        private NetworkManager m_ServerNetworkManager;
+        private List<NetworkManager> m_ClientNetworkManagers;
+
+        protected ulong m_TestObjId;
+
+        public enum ConditionalModes
+        {
+            ServerWritable,
+            OwnerWritable
+        }
+
+        protected ConditionalModes m_ConditionalModes;
+        public void SetMode(ConditionalModes conditionalModes)
+        {
+            m_ConditionalModes = conditionalModes;
+        }
+
+        // Used to return the states in the event of a failure this is called to display the final states.
+        public string GetConditionalStates()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            var states = $"Conditional Mode {m_ConditionalModes}:\n";
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+                if (m_ConditionalModes == ConditionalModes.ServerWritable)
+                {
+                    states += $"[Server] Writable Position: {testCompServer.ServerWritable_Position.Value} vs [Client-{clientNetworkManager.LocalClientId}] Writable Position: {testCompClient.ServerWritable_Position.Value}";
+                    states += $"[Server] Writable ReadPerm: {testCompServer.ServerWritable_Position.ReadPerm} vs [Client-{clientNetworkManager.LocalClientId}] Writable ReadPerm: {testCompClient.ServerWritable_Position.ReadPerm}";
+                    states += $"[Server] Writable WritePerm: {testCompServer.ServerWritable_Position.WritePerm} vs [Client-{clientNetworkManager.LocalClientId}] Writable WritePerm: {testCompClient.ServerWritable_Position.WritePerm}";
+                }
+                else
+                {
+                    states += $"[Server] OwnerClientId: {testObjServer.OwnerClientId} vs [Client-{clientNetworkManager.LocalClientId}] {testObjClient.OwnerClientId}";
+                    states += $"[Server] Owner Writable Position: {testCompServer.OwnerWritable_Position.Value} vs [Client-{clientNetworkManager.LocalClientId}] Owner Writable Position: {testCompClient.OwnerWritable_Position.Value}";
+                    states += $"[Owner] Writable ReadPerm: {testCompServer.OwnerWritable_Position.ReadPerm} vs [Client-{clientNetworkManager.LocalClientId}] Owner Writable ReadPerm: {testCompClient.OwnerWritable_Position.ReadPerm}";
+                    states += $"[Owner] Writable WritePerm: {testCompServer.OwnerWritable_Position.WritePerm} vs [Client-{clientNetworkManager.LocalClientId}] Owner Writable WritePerm: {testCompClient.OwnerWritable_Position.WritePerm}";
+                }
+            }
+            return states;
+        }
+
+        protected override bool OnHasConditionBeenReached()
+        {
+            var conditionReached = true;
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                if (m_ConditionalModes == ConditionalModes.ServerWritable)
+                {
+                    conditionReached = testCompServer.ServerWritable_Position.Value == testCompClient.ServerWritable_Position.Value &&
+                        testCompServer.ServerWritable_Position.ReadPerm == testCompClient.ServerWritable_Position.ReadPerm &&
+                        testCompServer.ServerWritable_Position.WritePerm == testCompClient.ServerWritable_Position.WritePerm;
+                }
+                else
+                {
+                    conditionReached = testObjServer.OwnerClientId == testObjClient.OwnerClientId &&
+                        testCompServer.OwnerWritable_Position.Value == testCompClient.OwnerWritable_Position.Value &&
+                        testCompServer.OwnerWritable_Position.ReadPerm == testCompClient.OwnerWritable_Position.ReadPerm &&
+                        testCompServer.OwnerWritable_Position.WritePerm == testCompClient.OwnerWritable_Position.WritePerm;
+                }
+                if (!conditionReached)
+                {
+                    break;
+                }
+            }
+
+            return conditionReached;
+        }
+
+        public WritableAreEqualOnAllConditional(ulong testObjectId, NetworkManager serverNetworkManager, NetworkManager[] clientNetworkManagers)
+        {
+            m_TestObjId = testObjectId;
+            m_ClientNetworkManagers = new List<NetworkManager>(clientNetworkManagers);
+            m_ServerNetworkManager = serverNetworkManager;
+        }
+    }
+
+
+
 
     public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
