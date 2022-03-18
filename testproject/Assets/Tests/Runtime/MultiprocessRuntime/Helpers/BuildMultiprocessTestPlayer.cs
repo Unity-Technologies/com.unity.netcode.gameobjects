@@ -97,6 +97,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.Development;
                 buildOptions |= BuildOptions.AllowDebugging;
             }
+#if UNITY_2021_1
+            buildOptions |= BuildOptions.EnableHeadlessMode;
+#endif
 
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
