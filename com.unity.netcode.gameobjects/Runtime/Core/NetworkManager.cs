@@ -1436,17 +1436,30 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    clientId = TransportIdToClientId(clientId);
-
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
-                    m_TransportIdToClientIdMap.Remove(transportId);
-                    m_ClientIdToTransportIdMap.Remove(clientId);
-
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
+
+                    if (!IsServer && !m_TransportIdToClientIdMap.ContainsKey(clientId))
+                    {
+                        // We just use the transport ID assigned if we never connected
+                        OnClientDisconnectCallback?.Invoke(clientId);
+                        Shutdown();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        s_TransportDisconnect.End();
+#endif
+                        break;
+                    }
+
+                    clientId = TransportIdToClientId(clientId);
+
+                    m_TransportIdToClientIdMap.Remove(transportId);
+                    m_ClientIdToTransportIdMap.Remove(clientId);
+
+
+                    OnClientDisconnectCallback?.Invoke(clientId);
+
 
                     if (IsServer)
                     {
