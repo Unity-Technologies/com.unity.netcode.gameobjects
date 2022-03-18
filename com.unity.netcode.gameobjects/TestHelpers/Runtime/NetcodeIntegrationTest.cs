@@ -172,7 +172,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         private int m_OriginalFrameRate = -1;
-        protected int GetTargetFrameRate() => 60;
+        protected virtual int GetTargetFrameRate() => 60;
 
         /// <summary>
         /// Called before creating and starting the server and clients
