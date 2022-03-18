@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_PHYSICS
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -78,3 +79,4 @@ namespace Unity.Netcode.Components
         }
     }
 }
+#endif // COM_UNITY_MODULES_PHYSICS

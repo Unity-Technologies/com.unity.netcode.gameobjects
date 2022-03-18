@@ -70,8 +70,8 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.5",
-        "com.unity.transport": "1.0.0-pre.13"
+        "com.unity.netcode.gameobjects": "1.0.0-pre.6",
+        "com.unity.transport": "1.0.0-pre.15"
       }
     },
     "com.unity.netcode.gameobjects": {
@@ -79,9 +79,6 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1",
         "com.unity.collections": "1.1.0"
       }
@@ -188,7 +185,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.13",
+      "version": "1.0.0-pre.15",
       "depth": 1,
       "source": "registry",
       "dependencies": {
