@@ -171,6 +171,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Exiting {nameof(OneTimeSetup)}");
         }
 
+        private int m_OriginalFrameRate = -1;
+        protected int GetTargetFrameRate() => 60;
+
         /// <summary>
         /// Called before creating and starting the server and clients
         /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
@@ -188,6 +191,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public IEnumerator SetUp()
         {
             VerboseDebug($"Entering {nameof(SetUp)}");
+
+            m_OriginalFrameRate = Application.targetFrameRate;
+            Application.targetFrameRate = GetTargetFrameRate();
 
             yield return OnSetup();
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
@@ -493,6 +499,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 ShutdownAndCleanUp();
             }
+
+            Application.targetFrameRate = m_OriginalFrameRate;
 
             VerboseDebug($"Exiting {nameof(TearDown)}");
         }
