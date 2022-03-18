@@ -57,3 +57,6 @@ projects:
 scripting_backends: 
   - mono
   - il2cpp
+
+# Images with special build-tools installed required for Standalone Tests
+win_il2cpp_test_image: dots-player/windows10:v3.0.0-no-defender-967671

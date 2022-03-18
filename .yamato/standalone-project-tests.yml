@@ -10,6 +10,7 @@ standalone_tests_{{ project.name }}_{{ backend }}_{{ editor }}_{{ platform.name 
   agent:
     type: {{ platform.type }}{% if platform.name == "ubuntu" %}::GPU{% endif %}
 {% if platform.name == "ubuntu" %}    model: rtx2080{% endif %}
+    image: {% if platform.name == 'win' and backend == 'il2cpp' %}{{ win_il2cpp_test_image }} {% else %} {{ platform.image }} {% endif %}
     image: {{ platform.image }}
     flavor: {{ platform.flavor}}
   commands:
