@@ -462,15 +462,15 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackRttToServer(int rtt)
+        public void TrackRttToServer(int rttMilliseconds)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
             {
                 return;
             }
-
-            m_RttToServerGauge.Set(rtt);
+            var rttSeconds = rttMilliseconds * 1e-3;
+            m_RttToServerGauge.Set(rttSeconds);
 #endif
         }
 
