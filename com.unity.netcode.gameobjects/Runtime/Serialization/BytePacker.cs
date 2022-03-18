@@ -10,7 +10,7 @@ namespace Unity.Netcode
     public static class BytePacker
     {
 #if UNITY_NETCODE_DEBUG_NO_PACKING
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValuePacked<T>(FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
@@ -277,10 +277,21 @@ namespace Unity.Netcode
 
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueBitPacked<T>(FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
+
+        public const ushort BitPackedUshortMax = (1 << 15) - 1;
+        public const short BitPackedShortMax = (1 << 14) - 1;
+        public const short BitPackedShortMin = -(1 << 14);
+        public const uint BitPackedUintMax = (1 << 30) - 1;
+        public const int BitPackedIntMax = (1 << 29) - 1;
+        public const int BitPackedIntMin = -(1 << 29);
+        public const ulong BitPackedULongMax = (1L << 61) - 1;
+        public const long BitPackedLongMax = (1L << 60) - 1;
+        public const long BitPackedLongMin = -(1L << 60);
+
         /// <summary>
         /// Writes a 14-bit signed short to the buffer in a bit-encoded packed format.
         /// The first bit indicates whether the value is 1 byte or 2.
@@ -307,7 +318,7 @@ namespace Unity.Netcode
         public static void WriteValueBitPacked(FastBufferWriter writer, ushort value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value >= 0b1000_0000_0000_0000)
+            if (value >= BitPackedUshortMax)
             {
                 throw new ArgumentException("BitPacked ushorts must be <= 15 bits");
             }
@@ -356,7 +367,7 @@ namespace Unity.Netcode
         public static void WriteValueBitPacked(FastBufferWriter writer, uint value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value >= 0b0100_0000_0000_0000_0000_0000_0000_0000)
+            if (value > BitPackedUintMax)
             {
                 throw new ArgumentException("BitPacked uints must be <= 30 bits");
             }
@@ -396,7 +407,7 @@ namespace Unity.Netcode
         public static void WriteValueBitPacked(FastBufferWriter writer, ulong value)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value >= 0b0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000)
+            if (value > BitPackedULongMax)
             {
                 throw new ArgumentException("BitPacked ulongs must be <= 61 bits");
             }
