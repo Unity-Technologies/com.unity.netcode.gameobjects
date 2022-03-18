@@ -6,9 +6,210 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using Random = UnityEngine.Random;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetVarPermTestComp : NetworkBehaviour
+    {
+        public NetworkVariable<Vector3> OwnerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Owner);
+        public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
+    }
+
+    [TestFixtureSource(nameof(TestDataSource))]
+    public class NetworkVariablePermissionTests : NetcodeIntegrationTest
+    {
+        public static IEnumerable<TestFixtureData> TestDataSource()
+        {
+            foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
+            {
+                yield return new TestFixtureData(hostOrServer);
+            }
+        }
+
+        protected override int NumberOfClients => 3;
+
+        public NetworkVariablePermissionTests(HostOrServer hostOrServer)
+            : base(hostOrServer)
+        {
+        }
+
+        private GameObject m_TestObjPrefab;
+        private ulong m_TestObjId = 0;
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestObjPrefab = CreateNetworkObjectPrefab($"[{nameof(NetworkVariablePermissionTests)}.{nameof(m_TestObjPrefab)}]");
+            var testComp = m_TestObjPrefab.AddComponent<NetVarPermTestComp>();
+        }
+
+        protected override IEnumerator OnServerAndClientsConnected()
+        {
+            m_TestObjId = SpawnObject(m_TestObjPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>().NetworkObjectId;
+            yield return null;
+        }
+
+        private void AssertOwnerWritableAreEqualOnAll()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                Assert.AreEqual(testObjServer.OwnerClientId, testObjClient.OwnerClientId);
+                Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, testCompClient.OwnerWritable_Position.Value);
+                Assert.AreEqual(testCompServer.OwnerWritable_Position.ReadPerm, testCompClient.OwnerWritable_Position.ReadPerm);
+                Assert.AreEqual(testCompServer.OwnerWritable_Position.WritePerm, testCompClient.OwnerWritable_Position.WritePerm);
+            }
+        }
+
+        private void AssertServerWritableAreEqualOnAll()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                Assert.AreEqual(testCompServer.ServerWritable_Position.Value, testCompClient.ServerWritable_Position.Value);
+                Assert.AreEqual(testCompServer.ServerWritable_Position.ReadPerm, testCompClient.ServerWritable_Position.ReadPerm);
+                Assert.AreEqual(testCompServer.ServerWritable_Position.WritePerm, testCompClient.ServerWritable_Position.WritePerm);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator ServerChangesOwnerWritableNetVar()
+        {
+            AssertOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompServer.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompServer.OwnerWritable_Position.Value = newValue;
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, newValue);
+
+            AssertOwnerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ServerChangesServerWritableNetVar()
+        {
+            AssertServerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompServer.ServerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompServer.ServerWritable_Position.Value = newValue;
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, newValue);
+
+            AssertServerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ClientChangesOwnerWritableNetVar()
+        {
+            AssertOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            AssertOwnerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompClient.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompClient.OwnerWritable_Position.Value = newValue;
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
+            Assert.AreEqual(testCompClient.OwnerWritable_Position.Value, newValue);
+
+            AssertOwnerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ClientCannotChangeServerWritableNetVar()
+        {
+            AssertServerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            AssertServerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompClient.ServerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            Assert.That(() => testCompClient.ServerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
+            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, oldValue);
+
+            AssertServerWritableAreEqualOnAll();
+
+            testCompServer.ServerWritable_Position.Value = newValue;
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.ServerWritable_Position.Value, newValue);
+
+            AssertServerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ServerCannotChangeOwnerWritableNetVar()
+        {
+            AssertOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            AssertOwnerWritableAreEqualOnAll();
+
+            var oldValue = testCompServer.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            Assert.That(() => testCompServer.OwnerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            Assert.AreEqual(testCompServer.OwnerWritable_Position.Value, oldValue);
+
+            AssertOwnerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            testCompClient.OwnerWritable_Position.Value = newValue;
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[clientManagerIndex], 4);
+            Assert.AreEqual(testCompClient.OwnerWritable_Position.Value, newValue);
+
+            AssertOwnerWritableAreEqualOnAll();
+        }
+    }
+
     public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
         public uint SomeInt;
@@ -95,8 +296,6 @@ namespace Unity.Netcode.RuntimeTests
         private const int k_TestVal2 = 222;
         private const int k_TestVal3 = 333;
 
-        private const int k_TestKey1 = 0x0f0f;
-
         private static List<NetworkVariableTest> s_ClientNetworkVariableTestInstances = new List<NetworkVariableTest>();
         public static void ClientNetworkVariableTestSpawned(NetworkVariableTest networkVariableTest)
         {
@@ -111,7 +310,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkListTestPredicate m_NetworkListPredicateHandler;
 
-        private bool m_EnsureLengthSafety;
+        private readonly bool m_EnsureLengthSafety;
 
         public NetworkVariableTests(bool ensureLengthSafety)
         {

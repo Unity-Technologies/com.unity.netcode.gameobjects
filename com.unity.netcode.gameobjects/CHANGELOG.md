@@ -10,9 +10,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
+
 ### Changed
 
+### Removed
+
+- Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
+
 ### Fixed
+
 - Fixed user never being notified in the editor that a NetworkBehaviour requires a NetworkObject to function properly. (#1808)
 - Fixed PlayerObjects and dynamically spawned NetworkObjects not being added to the NetworkClient's OwnedObjects (#1801)
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)

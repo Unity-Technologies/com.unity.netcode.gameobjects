@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_ANIMATION
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -427,3 +428,4 @@ namespace Unity.Netcode.Components
         }
     }
 }
+#endif // COM_UNITY_MODULES_ANIMATION

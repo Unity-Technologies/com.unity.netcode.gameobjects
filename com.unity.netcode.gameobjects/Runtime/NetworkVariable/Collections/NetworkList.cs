@@ -24,34 +24,16 @@ namespace Unity.Netcode
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
 
-        /// <summary>
-        /// Creates a NetworkList with the default value and settings
-        /// </summary>
         public NetworkList() { }
 
-        /// <summary>
-        /// Creates a NetworkList with the default value and custom settings
-        /// </summary>
-        /// <param name="readPerm">The read permission to use for the NetworkList</param>
-        /// <param name="values">The initial value to use for the NetworkList</param>
-        public NetworkList(NetworkVariableReadPermission readPerm, IEnumerable<T> values) : base(readPerm)
+        public NetworkList(IEnumerable<T> values = default,
+            NetworkVariableReadPermission readPerm = DefaultReadPerm,
+            NetworkVariableWritePermission writePerm = DefaultWritePerm)
+            : base(readPerm, writePerm)
         {
             foreach (var value in values)
             {
                 m_List.Add(value);
-            }
-        }
-
-        /// <summary>
-        /// Creates a NetworkList with a custom value and the default settings
-        /// </summary>
-        /// <param name="values">The initial value to use for the NetworkList</param>
-        public NetworkList(IEnumerable<T> values)
-        {
-            foreach (var value in values)
-            {
-                m_List.Add(value);
-
             }
         }
 
