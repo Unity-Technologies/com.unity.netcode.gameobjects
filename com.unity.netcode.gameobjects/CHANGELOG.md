@@ -14,6 +14,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+### Removed
+
+- Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
+
 ### Fixed
 
 - Fixed user never being notified in the editor that a NetworkBehaviour requires a NetworkObject to function properly. (#1808)
