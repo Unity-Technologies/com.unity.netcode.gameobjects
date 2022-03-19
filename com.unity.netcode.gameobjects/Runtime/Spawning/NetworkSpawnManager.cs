@@ -740,7 +740,7 @@ namespace Unity.Netcode
 
                         OnDespawnObject(networkObjects[i], shouldDestroy);
                     }
-                    else
+                    else if (networkObjects[i].IsSceneObject != null && !networkObjects[i].IsSceneObject.Value)
                     {
                         UnityEngine.Object.Destroy(networkObjects[i].gameObject);
                     }
