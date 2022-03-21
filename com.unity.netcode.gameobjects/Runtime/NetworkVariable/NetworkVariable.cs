@@ -88,7 +88,8 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
-                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                // Compare bitwise
+                if (ValueEquals(m_InternalValue, value))
                 {
                     return;
                 }
@@ -101,6 +102,33 @@ namespace Unity.Netcode
                 Set(value);
             }
         }
+
+        // Compares two values of the same unmanaged type bitwise
+        // Ignoring any overriden value checks
+        // Size is fixed
+        private static unsafe bool ValueEquals(in T a, in T b)
+        {
+            // get native type pointer
+            fixed (T* pa = &a)
+            fixed (T* pb = &b)
+            {
+                // convert to byte pointer type
+                var aptr = (byte*)pa;
+                var bptr = (byte*)pb;
+
+                // compare
+                for (var i = 0; i < sizeof(T); i++)
+                {
+                    if (aptr[i] != bptr[i])
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
 
         private protected void Set(T value)
         {
