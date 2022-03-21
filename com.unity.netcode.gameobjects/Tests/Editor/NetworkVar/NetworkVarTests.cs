@@ -7,7 +7,7 @@ namespace Unity.Netcode.EditorTests.NetworkVar
         [Test]
         public void TestAssignmentUnchanged()
         {
-            NetworkVariable<int> intVar = new NetworkVariable<int>();
+            var intVar = new NetworkVariable<int>();
 
             intVar.Value = 314159265;
 
@@ -22,11 +22,11 @@ namespace Unity.Netcode.EditorTests.NetworkVar
         [Test]
         public void TestAssignmentChanged()
         {
-            NetworkVariable<int> intVar = new NetworkVariable<int>();
+            var intVar = new NetworkVariable<int>();
 
             intVar.Value = 314159265;
 
-            bool changed = false;
+            var changed = false;
 
             intVar.OnValueChanged += (value, newValue) =>
             {
