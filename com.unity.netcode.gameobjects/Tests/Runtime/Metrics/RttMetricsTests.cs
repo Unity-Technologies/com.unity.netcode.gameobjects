@@ -92,7 +92,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             foreach (var clientGaugeMetricValue in clientGaugeMetricValues)
             {
                 var rttValue = clientGaugeMetricValue.AssertMetricValueHaveBeenFound();
-                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
+                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1e-3f));
             }
         }
     }
