@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace Unity.Netcode
 {
@@ -87,6 +88,11 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
+                if (EqualityComparer<T>.Default.Equals(m_InternalValue, value))
+                {
+                    return;
+                }
+
                 if (m_NetworkBehaviour && !CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException("Client is not allowed to write to this NetworkVariable");
