@@ -1471,11 +1471,11 @@ namespace Unity.Netcode
             // This check is for clients that attempted to connect but failed.
             // When this happens, the client will not have an entry within the
             // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
-            // tables so we exit early and just use the transport clientId
-            // for the disconnect event.
+            // tables so we exit early and just return 0 to be used for the
+            // disconnect event.
             if (!IsServer && !m_TransportIdToClientIdMap.ContainsKey(clientId))
             {
-                return clientId;
+                return 0;
             }
 
             clientId = TransportIdToClientId(clientId);
