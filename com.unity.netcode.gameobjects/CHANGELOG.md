@@ -19,13 +19,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
+- Fixed client throws a key not found exception when it times out using UNet or UTP. (#1821)
+- Fixed network variable updates are no longer limited to 32,768 bytes when NetworkConfig.EnsureNetworkVariableLengthSafety is enabled. The limits are now determined by what the transport can send in a message. (#1811)
 - Fixed in-scene NetworkObjects get destroyed if a client fails to connect and shuts down the NetworkManager. (#1809)
 - Fixed user never being notified in the editor that a NetworkBehaviour requires a NetworkObject to function properly. (#1808)
 - Fixed PlayerObjects and dynamically spawned NetworkObjects not being added to the NetworkClient's OwnedObjects (#1801)
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
-- Network variable updates are no longer limited to 32,768 bytes when NetworkConfig.EnsureNetworkVariableLengthSafety is enabled. The limits are now determined by what the transport can send in a message. (#1811)
 
 ## [1.0.0-pre.6] - 2022-03-02
 
