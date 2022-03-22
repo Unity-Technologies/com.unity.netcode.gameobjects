@@ -12,6 +12,7 @@ using Unity.Multiplayer.Tools;
 #endif
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
+using System.Runtime.CompilerServices;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
@@ -1436,17 +1437,14 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    clientId = TransportIdToClientId(clientId);
-
-                    OnClientDisconnectCallback?.Invoke(clientId);
-
-                    m_TransportIdToClientIdMap.Remove(transportId);
-                    m_ClientIdToTransportIdMap.Remove(clientId);
+                    clientId = TransportIdCleanUp(clientId, transportId);
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
+
+                    OnClientDisconnectCallback?.Invoke(clientId);
 
                     if (IsServer)
                     {
@@ -1461,6 +1459,31 @@ namespace Unity.Netcode
 #endif
                     break;
             }
+        }
+
+        /// <summary>
+        /// Handles cleaning up the transport id/client id tables after
+        /// receiving a disconnect event from transport
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ulong TransportIdCleanUp(ulong clientId, ulong transportId)
+        {
+            // This check is for clients that attempted to connect but failed.
+            // When this happens, the client will not have an entry within the
+            // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
+            // tables so we exit early and just return 0 to be used for the
+            // disconnect event.
+            if (!IsServer && !m_TransportIdToClientIdMap.ContainsKey(clientId))
+            {
+                return 0;
+            }
+
+            clientId = TransportIdToClientId(clientId);
+
+            m_TransportIdToClientIdMap.Remove(transportId);
+            m_ClientIdToTransportIdMap.Remove(clientId);
+
+            return clientId;
         }
 
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
