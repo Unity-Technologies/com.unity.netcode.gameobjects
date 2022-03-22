@@ -294,6 +294,7 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
+            // Wait for the client before we disconnect the client
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             var data = new ArraySegment<byte>(new byte[] { 42 });
