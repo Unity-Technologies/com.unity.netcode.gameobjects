@@ -294,7 +294,8 @@ namespace Unity.Netcode.UTP.RuntimeTests
             m_Server.StartServer();
             m_Clients[0].StartClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ServerEvents);
+            // Wait for the client to connect before we disconnect the client
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_ClientsEvents[0]);
 
             var data = new ArraySegment<byte>(new byte[] { 42 });
             m_Server.Send(m_ServerEvents[0].ClientID, data, NetworkDelivery.Unreliable);
