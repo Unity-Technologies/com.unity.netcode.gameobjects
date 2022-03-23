@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
@@ -106,6 +107,7 @@ namespace Unity.Netcode
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overriden value checks
         // Size is fixed
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe bool ValueEquals(ref T a, ref T b)
         {
             // get unmanaged pointers
