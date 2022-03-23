@@ -12,12 +12,12 @@
 
 ## Testing and Documentation
 
-* No tests have been added.
-* Includes unit tests.
-* Includes integration tests.
-* No documentation changes or additions were necessary.
-* Includes documentation for previously-undocumented public API entry points.
-* Includes edits to existing public API documentation.
+- No tests have been added.
+- Includes unit tests.
+- Includes integration tests.
+- No documentation changes or additions were necessary.
+- Includes documentation for previously-undocumented public API entry points.
+- Includes edits to existing public API documentation.
 
 <!--  Uncomment and mark items off with a * if this PR deprecates any API:
 ### Deprecated API
