@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 
 namespace Unity.Netcode.Editor
@@ -25,7 +27,6 @@ namespace Unity.Netcode.Editor
         {
             Singleton = new NetworkManagerHelper();
             NetworkManager.NetworkManagerHelper = Singleton;
-
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
 
@@ -40,8 +41,31 @@ namespace Unity.Netcode.Editor
                 case PlayModeStateChange.ExitingEditMode:
                     {
                         s_LastKnownNetworkManagerParents.Clear();
+                        ScenesInBuildActiveSceneCheck();
                         break;
                     }
+            }
+        }
+
+        private static void ScenesInBuildActiveSceneCheck()
+        {
+            var scenesList = EditorBuildSettings.scenes.ToList();
+            var activeScene = SceneManager.GetActiveScene();
+            var isSceneInBuildSettings = scenesList.Where((c) => c.path == activeScene.path).Count() == 1;
+            var networkManager = Object.FindObjectOfType<NetworkManager>();
+            if (!isSceneInBuildSettings && networkManager != null)
+            {
+                if (networkManager.NetworkConfig != null && networkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    if (EditorUtility.DisplayDialog("Add Scene to Scenes in Build", $"The current scene was not found in the scenes" +
+                        $" in build and a {nameof(NetworkManager)} instance was found with scene management enabled! Clients will not be able " +
+                        $"to synchronize to this scene unless it is added to the scenes in build list.\n\nWould you like to add it now?",
+                        "Yes", "No - Continue"))
+                    {
+                        scenesList.Add(new EditorBuildSettingsScene(activeScene.path, true));
+                        EditorBuildSettings.scenes = scenesList.ToArray();
+                    }
+                }
             }
         }
 
