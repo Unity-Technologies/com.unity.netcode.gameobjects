@@ -4,7 +4,7 @@ using Unity.Netcode.Components;
 
 namespace Unity.Netcode.Editor
 {
-    [CustomEditor(typeof(NetworkTransform))]
+    [CustomEditor(typeof(NetworkTransform), true)]
     public class NetworkTransformEditor : UnityEditor.Editor
     {
         private SerializedProperty m_SyncPositionXProperty;
