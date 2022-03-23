@@ -10,13 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 
 ### Changed
 
 ### Removed
 
-- Removed `com.unity.netcode.adapter.utp` package dependency, now we depend on `com.unity.transport` package directly (#1823)
+- Removed `Unity.Netcode.Adapter.UTP` (aka UTP Adapter) dependencies (#1823)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
