@@ -18,7 +18,7 @@
     },
     "com.unity.collections": {
       "version": "1.1.0",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
@@ -71,6 +71,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
+        "com.unity.collections": "1.1.0",
         "com.unity.transport": "1.0.0-pre.15"
       }
     },

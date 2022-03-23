@@ -11,7 +11,7 @@
     },
     "com.unity.collections": {
       "version": "1.1.0",
-      "depth": 2,
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
@@ -21,7 +21,7 @@
     },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
-      "depth": 4,
+      "depth": 3,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -39,6 +39,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
+        "com.unity.collections": "1.1.0",
         "com.unity.transport": "1.0.0-pre.15"
       }
     },
@@ -51,7 +52,7 @@
     },
     "com.unity.test-framework": {
       "version": "1.1.29",
-      "depth": 3,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.ext.nunit": "1.0.6",
@@ -73,13 +74,13 @@
     },
     "com.unity.modules.imgui": {
       "version": "1.0.0",
-      "depth": 4,
+      "depth": 3,
       "source": "builtin",
       "dependencies": {}
     },
     "com.unity.modules.jsonserialize": {
       "version": "1.0.0",
-      "depth": 4,
+      "depth": 3,
       "source": "builtin",
       "dependencies": {}
     }
