@@ -40,7 +40,6 @@ This repository is broken into multiple components, each one implemented as a Un
 ```
     .
     ├── com.unity.netcode.gameobjects           # The core netcode SDK unity package (source + tests)
-    ├── com.unity.netcode.adapter.utp           # Transport wrapper for com.unity.transport
     └── testproject                             # A Unity project with various test implementations & scenes which exercise the features in the above packages.
 ```
 

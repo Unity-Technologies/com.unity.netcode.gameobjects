@@ -46,11 +46,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         /// </summary>
         protected override void OnOneTimeSetup()
         {
-#if UTP_ADAPTER
             m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-#else
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
-#endif
         }
 
         [UnityTest]
