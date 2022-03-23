@@ -664,7 +664,10 @@ namespace Unity.Netcode.Transports.UTP
                 }
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                ExtractNetworkMetrics();
+                if (NetworkManager)
+                {
+                    ExtractNetworkMetrics();
+                }
 #endif
             }
         }
