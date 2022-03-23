@@ -18,7 +18,7 @@
     },
     "com.unity.collections": {
       "version": "1.1.0",
-      "depth": 1,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
@@ -65,22 +65,13 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.netcode.adapter.utp": {
-      "version": "file:../../com.unity.netcode.adapter.utp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.6",
-        "com.unity.transport": "1.0.0-pre.15"
-      }
-    },
     "com.unity.netcode.gameobjects": {
       "version": "file:../../com.unity.netcode.gameobjects",
       "depth": 0,
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0"
+        "com.unity.transport": "1.0.0-pre.15"
       }
     },
     "com.unity.nuget.mono-cecil": {

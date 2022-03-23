@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.5.4",
+      "version": "1.6.4",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -11,7 +11,7 @@
     },
     "com.unity.collections": {
       "version": "1.1.0",
-      "depth": 1,
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.5.4",
@@ -21,14 +21,14 @@
     },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
-      "depth": 3,
+      "depth": 4,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.1",
-      "depth": 3,
+      "version": "1.2.5",
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -39,7 +39,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0"
+        "com.unity.transport": "1.0.0-pre.15"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -51,7 +51,7 @@
     },
     "com.unity.test-framework": {
       "version": "1.1.29",
-      "depth": 2,
+      "depth": 3,
       "source": "registry",
       "dependencies": {
         "com.unity.ext.nunit": "1.0.6",
@@ -60,15 +60,26 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.unity.transport": {
+      "version": "1.0.0-pre.15",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.collections": "1.1.0",
+        "com.unity.burst": "1.6.4",
+        "com.unity.mathematics": "1.2.5"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.modules.imgui": {
       "version": "1.0.0",
-      "depth": 3,
+      "depth": 4,
       "source": "builtin",
       "dependencies": {}
     },
     "com.unity.modules.jsonserialize": {
       "version": "1.0.0",
-      "depth": 3,
+      "depth": 4,
       "source": "builtin",
       "dependencies": {}
     }

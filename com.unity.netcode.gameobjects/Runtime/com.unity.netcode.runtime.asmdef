@@ -10,6 +10,7 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Multiplayer.Tools.NetStatsReporting",
         "Unity.Multiplayer.Tools.NetworkSolutionInterface",
+        "Unity.Networking.Transport",
         "Unity.Collections"
     ],
     "allowUnsafeCode": true,

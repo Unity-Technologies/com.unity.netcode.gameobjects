@@ -4,7 +4,6 @@
 Profiling/ @Unity-Technologies/multiplayer-tools
 Metrics/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-server
-/com.unity.netcode.adapter.utp/ @Unity-Technologies/multiplayer-server
 *.asmdef @mfatihmar
 package.json @mfatihmar
 AssemblyInfo.cs @mfatihmar

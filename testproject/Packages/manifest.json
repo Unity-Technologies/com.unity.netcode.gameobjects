@@ -5,7 +5,6 @@
         "com.unity.ide.visualstudio": "2.0.11",
         "com.unity.ide.vscode": "1.2.3",
         "com.unity.mathematics": "1.2.1",
-        "com.unity.netcode.adapter.utp": "file:../../com.unity.netcode.adapter.utp",
         "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects",
         "com.unity.package-validation-suite": "0.21.0-preview",
         "com.unity.services.authentication": "1.0.0-pre.4",
@@ -50,7 +49,6 @@
         "com.unity.modules.xr": "1.0.0"
     },
     "testables": [
-        "com.unity.netcode.gameobjects",
-        "com.unity.netcode.adapter.utp"
+        "com.unity.netcode.gameobjects"
     ]
 }

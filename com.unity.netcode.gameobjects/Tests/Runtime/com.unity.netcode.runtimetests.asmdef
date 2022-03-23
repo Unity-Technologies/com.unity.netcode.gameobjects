@@ -9,7 +9,7 @@
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
         "Unity.Multiplayer.Tools.NetStats",
-        "Unity.Netcode.Adapter.UTP",
+        "Unity.Networking.Transport",
         "ClientNetworkTransform",
         "Unity.Netcode.TestHelpers.Runtime"
     ],
@@ -26,11 +26,6 @@
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
-        },
-        {
-            "name": "com.unity.netcode.adapter.utp",
-            "expression": "",
-            "define": "UTP_ADAPTER"
         },
         {
             "name": "com.unity.multiplayer.tools",

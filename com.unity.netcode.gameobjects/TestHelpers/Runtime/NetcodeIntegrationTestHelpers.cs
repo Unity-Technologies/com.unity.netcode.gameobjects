@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -109,9 +110,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public enum InstanceTransport
         {
             SIP,
-#if UTP_ADAPTER
             UTP
-#endif
         }
 
         internal static IntegrationTestSceneHandler ClientSceneHandler = null;
@@ -172,12 +171,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             switch (instanceTransport)
             {
                 case InstanceTransport.SIP:
-                default:
                     return go.AddComponent<SIPTransport>();
-#if UTP_ADAPTER
+                default:
                 case InstanceTransport.UTP:
                     return go.AddComponent<UnityTransport>();
-#endif
             }
         }
 
