@@ -1,5 +1,7 @@
 using UnityEngine;
 using System;
+using System.Runtime.CompilerServices;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -87,6 +89,12 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
+                // Compare bitwise
+                if (ValueEquals(ref m_InternalValue, ref value))
+                {
+                    return;
+                }
+
                 if (m_NetworkBehaviour && !CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
                 {
                     throw new InvalidOperationException("Client is not allowed to write to this NetworkVariable");
@@ -95,6 +103,21 @@ namespace Unity.Netcode
                 Set(value);
             }
         }
+
+        // Compares two values of the same unmanaged type by underlying memory
+        // Ignoring any overriden value checks
+        // Size is fixed
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe bool ValueEquals(ref T a, ref T b)
+        {
+            // get unmanaged pointers
+            var aptr = UnsafeUtility.AddressOf(ref a);
+            var bptr = UnsafeUtility.AddressOf(ref b);
+
+            // compare addresses
+            return UnsafeUtility.MemCmp(aptr, bptr, sizeof(T)) == 0;
+        }
+
 
         private protected void Set(T value)
         {
