@@ -1,6 +1,6 @@
 <!-- Replace this block with what this PR does and why. Describe what you'd like reviewers to know, how you applied the engineering principles, and any interesting tradeoffs made. Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
 
-<!-- Add JIRA link here. Short version (e.g. MTT-123) also works and gets auto-linked. -->
+<!-- Add short version of the JIRA ticket to the PR title (e.g. "feat: new shiny feature [MTT-123]") -->
 
 <!-- Add RFC link here if applicable. -->
 
