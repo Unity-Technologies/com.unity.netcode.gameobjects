@@ -17,7 +17,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed `Unity.Netcode.Adapter.UTP` (aka UTP Adapter) dependencies (#1823)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
