@@ -32,8 +32,7 @@ namespace Unity.Netcode.Transports.UTP
         private const string k_NetworkVersionMismatch = "NetworkVersion is invalid, likely caused by stale connection {0}.";
         private const string k_NetworkStateMismatch = "Sending data while connecting on connection {0} is not allowed.";
         private const string k_NetworkPacketOverflow = "Unable to allocate packet due to buffer overflow.";
-        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many in-flight " +
-            " packets. This could be because the send queue size ('Max Send Queue Size') is too small.";
+        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many in-flight packets. This could be because the send queue size ('Max Send Queue Size') is too small.";
         private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
         private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
         private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
@@ -88,58 +87,62 @@ namespace Unity.Netcode.Transports.UTP
         public const int InitialMaxPayloadSize = 6 * 1024;
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
-        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData()
-        { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
+        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
-        public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor != null ? s_DriverConstructor : this;
+        public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor ?? this;
 
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
-        [SerializeField] private ProtocolType m_ProtocolType;
+        [SerializeField]
+        private ProtocolType m_ProtocolType;
 
 #pragma warning disable CS0414 // Assigned-but-not-used (only an issue in WebGL builds)
-        [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. " +
-            "Basically this is how many packets can be sent/received in a single update/frame.")]
-        [SerializeField] private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
+        [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. Basically this is how many packets can be sent/received in a single update/frame.")]
+        [SerializeField]
+        private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
 #pragma warning restore CS0414
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
         [FormerlySerializedAs("m_SendQueueBatchSize")]
-        [SerializeField] private int m_MaxPayloadSize = InitialMaxPayloadSize;
+        [SerializeField]
+        private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
-        [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for " +
-            "batching and stores messages when other internal send queues are full. If you routinely observe an " +
-            "error about too many in-flight packets, try increasing this.")]
-        [SerializeField] private int m_MaxSendQueueSize = InitialMaxSendQueueSize;
+        [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for batching and stores messages when other internal send queues are full. If you routinely observe an error about too many in-flight packets, try increasing this.")]
+        [SerializeField]
+        private int m_MaxSendQueueSize = InitialMaxSendQueueSize;
 
         [Tooltip("A timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
-        [SerializeField] private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
+        [SerializeField]
+        private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
 
         [Tooltip("A timeout in milliseconds indicating how long we will wait until we send a new connection attempt.")]
-        [SerializeField] private int m_ConnectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS;
+        [SerializeField]
+        private int m_ConnectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS;
 
         [Tooltip("The maximum amount of connection attempts we will try before disconnecting.")]
-        [SerializeField] private int m_MaxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts;
+        [SerializeField]
+        private int m_MaxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts;
 
-        [Tooltip("A timeout in milliseconds indicating how long we will wait for a connection event, before we " +
-            "disconnect it. The connection needs to receive data from the connected endpoint within this timeout. " +
-            "Note that with heartbeats enabled, simply not sending any data will not be enough to trigger this " +
-            "timeout (since heartbeats count as connection events).")]
-        [SerializeField] private int m_DisconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS;
+        [Tooltip("A timeout in milliseconds indicating how long we will wait for a connection event, before we disconnect it. The connection needs to receive data from the connected endpoint within this timeout. Note that with heartbeats enabled, simply not sending any data will not be enough to trigger this timeout (since heartbeats count as connection events).")]
+        [SerializeField]
+        private int m_DisconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS;
 
         [Serializable]
         public struct ConnectionAddressData
         {
             [Tooltip("IP address of the server (address to which clients will connect to).")]
-            [SerializeField] public string Address;
+            [SerializeField]
+            public string Address;
 
             [Tooltip("UDP port of the server.")]
-            [SerializeField] public ushort Port;
+            [SerializeField]
+            public ushort Port;
 
             [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
-            [SerializeField] public string ServerListenAddress;
+            [SerializeField]
+            public string ServerListenAddress;
 
             private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
             {
@@ -154,16 +157,13 @@ namespace Unity.Netcode.Transports.UTP
 
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
-            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint(
-                (ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
 
             [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
-            public static implicit operator NetworkEndPoint(ConnectionAddressData d) =>
-                ParseNetworkEndpoint(d.Address, d.Port);
+            public static implicit operator NetworkEndPoint(ConnectionAddressData d) => ParseNetworkEndpoint(d.Address, d.Port);
 
             [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
-            public static implicit operator ConnectionAddressData(NetworkEndPoint d) =>
-                new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = string.Empty };
+            public static implicit operator ConnectionAddressData(NetworkEndPoint d) => new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = string.Empty };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -171,17 +171,17 @@ namespace Unity.Netcode.Transports.UTP
         [Serializable]
         public struct SimulatorParameters
         {
-            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor " +
-                "and in development builds. The value is ignored in production builds.")]
-            [SerializeField] public int PacketDelayMS;
+            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketDelayMS;
 
-            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only " +
-                "applies in the editor and in development builds. The value is ignored in production builds.")]
-            [SerializeField] public int PacketJitterMS;
+            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketJitterMS;
 
-            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor " +
-                "and in developments builds.")]
-            [SerializeField] public int PacketDropRate;
+            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
+            [SerializeField]
+            public int PacketDropRate;
         }
 
         public SimulatorParameters DebugSimulator = new SimulatorParameters
@@ -391,8 +391,7 @@ namespace Unity.Netcode.Transports.UTP
             m_ProtocolType = inProtocol;
         }
 
-        public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes,
-            byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
+        public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
             RelayConnectionData hostConnectionData;
 
@@ -419,8 +418,7 @@ namespace Unity.Netcode.Transports.UTP
                 hostConnectionData = connectionData;
             }
 
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData,
-                ref hostConnectionData, ref key, isSecure);
+            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
             m_RelayServerData.ComputeNewNonce();
 
             SetProtocol(ProtocolType.RelayUnityTransport);
@@ -433,8 +431,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="key">Allocation key as a byte array.</param>
         /// <param name="connectionData">Connection data as a byte array.</param>
         /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
-        public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
-            byte[] connectionData, bool isSecure = false)
+        public void SetHostRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key, byte[] connectionData, bool isSecure = false)
         {
             SetRelayServerData(ipAddress, port, allocationId, key, connectionData, null, isSecure);
         }
@@ -447,8 +444,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="connectionData">Connection data as a byte array.</param>
         /// <param name="hostConnectionData">Host's connection data as a byte array.</param>
         /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
-        public void SetClientRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key,
-            byte[] connectionData, byte[] hostConnectionData, bool isSecure = false)
+        public void SetClientRelayData(string ipAddress, ushort port, byte[] allocationId, byte[] key, byte[] connectionData, byte[] hostConnectionData, bool isSecure = false)
         {
             SetRelayServerData(ipAddress, port, allocationId, key, connectionData, hostConnectionData, isSecure);
         }
@@ -547,8 +543,7 @@ namespace Unity.Netcode.Transports.UTP
                 // in the stream (the send queue does that automatically) we are sure they'll be
                 // reassembled properly at the other end. This allows us to lift the limit of ~44KB
                 // on reliable payloads (because of the reliable window size).
-                var written = pipeline == m_ReliableSequencedPipeline
-                    ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
+                var written = pipeline == m_ReliableSequencedPipeline ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
 
                 result = m_Driver.EndSend(writer);
                 if (result == written)
@@ -565,8 +560,7 @@ namespace Unity.Netcode.Transports.UTP
                     // just get the same error again).
                     if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
                     {
-                        Debug.LogError("Error sending the message: " +
-                            ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
+                        Debug.LogError("Error sending the message: " + ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
                         queue.Consume(written);
                     }
 
@@ -579,7 +573,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             var connection = m_Driver.Accept();
 
-            if (connection == default(NetworkConnection))
+            if (connection == default)
             {
                 return false;
             }
@@ -637,7 +631,7 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                             clientId,
-                            default(ArraySegment<byte>),
+                            default,
                             Time.realtimeSinceStartup);
 
                         m_State = State.Connected;
@@ -665,7 +659,7 @@ namespace Unity.Netcode.Transports.UTP
 
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             clientId,
-                            default(ArraySegment<byte>),
+                            default,
                             Time.realtimeSinceStartup);
 
                         return true;
@@ -838,7 +832,7 @@ namespace Unity.Netcode.Transports.UTP
                     // should be also noted on the client this will call shutdown on the NetworkManager and the Transport
                     InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                         m_ServerClientId,
-                        default(ArraySegment<byte>),
+                        default,
                         Time.realtimeSinceStartup);
                 }
             }
@@ -884,8 +878,7 @@ namespace Unity.Netcode.Transports.UTP
 
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(),
-                "Netcode connection id size does not match UTP connection id size");
+            Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
 
             NetworkManager = networkManager;
 
