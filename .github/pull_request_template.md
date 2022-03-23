@@ -1,6 +1,6 @@
 <!-- Replace this line with what this PR does and why.  Describe what you'd like reviewers to know, how you applied the Engineering principles, and any interesting tradeoffs made.  Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
 
-<!-- Add JIRA link here. Short version (e.g. MTT-123) also works and gets auto-linked. -->
+<!-- Add JIRA link to PR title. Short version (e.g. MTT-123) works and gets auto-linked. -->
 
 <!-- Add RFC link here if applicable. -->
 
