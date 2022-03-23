@@ -103,7 +103,7 @@ namespace Unity.Netcode
             }
         }
 
-        // Compares two values of the same unmanaged type bitwise
+        // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overriden value checks
         // Size is fixed
         private static unsafe bool ValueEquals(ref T a, ref T b)
