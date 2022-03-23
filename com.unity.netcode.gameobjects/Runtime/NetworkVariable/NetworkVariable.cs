@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -88,7 +89,7 @@ namespace Unity.Netcode
             set
             {
                 // Compare bitwise
-                if (ValueEquals(m_InternalValue, value))
+                if (ValueEquals(ref m_InternalValue, ref value))
                 {
                     return;
                 }
@@ -105,27 +106,14 @@ namespace Unity.Netcode
         // Compares two values of the same unmanaged type bitwise
         // Ignoring any overriden value checks
         // Size is fixed
-        private static unsafe bool ValueEquals(in T a, in T b)
+        private static unsafe bool ValueEquals(ref T a, ref T b)
         {
-            // get native type pointer
-            fixed (T* pa = &a)
-            fixed (T* pb = &b)
-            {
-                // convert to byte pointer type
-                var aptr = (byte*)pa;
-                var bptr = (byte*)pb;
+            // get unmanaged pointers
+            var aptr = UnsafeUtility.AddressOf(ref a);
+            var bptr = UnsafeUtility.AddressOf(ref b);
 
-                // compare
-                for (var i = 0; i < sizeof(T); i++)
-                {
-                    if (aptr[i] != bptr[i])
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            // compare addresses
+            return UnsafeUtility.MemCmp(aptr, bptr, sizeof(T)) == 0;
         }
 
 
