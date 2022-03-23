@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
@@ -105,7 +104,6 @@ namespace Unity.Netcode.Transports.UTP
 #pragma warning restore CS0414
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
-        [FormerlySerializedAs("m_SendQueueBatchSize")]
         [SerializeField]
         private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
@@ -158,12 +156,6 @@ namespace Unity.Netcode.Transports.UTP
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
             public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
-
-            [Obsolete("Use ServerEndPoint or ListenEndPoint properties instead.")]
-            public static implicit operator NetworkEndPoint(ConnectionAddressData d) => ParseNetworkEndpoint(d.Address, d.Port);
-
-            [Obsolete("Construct manually from NetworkEndPoint.Address and NetworkEndPoint.Port instead.")]
-            public static implicit operator ConnectionAddressData(NetworkEndPoint d) => new ConnectionAddressData() { Address = d.Address.Split(':')[0], Port = d.Port, ServerListenAddress = string.Empty };
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -190,30 +182,6 @@ namespace Unity.Netcode.Transports.UTP
             PacketJitterMS = 0,
             PacketDropRate = 0
         };
-
-        // Only for backward compatibility with how we used to handle simulator parameters.
-#if DEVELOPMENT_BUILD
-        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
-        public int ClientPacketDelayMs
-        {
-            get => DebugSimulator.PacketDelayMS;
-            set => DebugSimulator.PacketDelayMS = value;
-        }
-
-        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
-        public int ClientPacketJitterMs
-        {
-            get => DebugSimulator.PacketJitterMS;
-            set => DebugSimulator.PacketJitterMS = value;
-        }
-
-        [Obsolete("Use SetDebugSimulatorParameters() instead.")]
-        public int ClientPacketDropRate
-        {
-            get => DebugSimulator.PacketDropRate;
-            set => DebugSimulator.PacketDropRate = value;
-        }
-#endif
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
