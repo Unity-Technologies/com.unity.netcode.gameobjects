@@ -1,4 +1,4 @@
-<!-- Replace this line with what this PR does and why.  Describe what you'd like reviewers to know, how you applied the Engineering principles, and any interesting tradeoffs made.  Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
+<!-- Replace this block with what this PR does and why. Describe what you'd like reviewers to know, how you applied the engineering principles, and any interesting tradeoffs made. Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
 
 <!-- Add JIRA link here. Short version (e.g. MTT-123) also works and gets auto-linked. -->
 
@@ -6,7 +6,6 @@
 
 ## Changelog
 
-### com.unity.netcode.gameobjects
 - Added: The package whose Changelog should be added to should be in the header. Delete the changelog section entirely if it's not needed.
 - Fixed: If you update multiple packages, create a new section with a new header for the other package. 
 - Removed/Deprecated/Changed: Each bullet should be prefixed with Added, Fixed, Removed, Deprecated, or Changed to indicate where the entry should go.
