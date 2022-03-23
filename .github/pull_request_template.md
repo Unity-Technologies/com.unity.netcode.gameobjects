@@ -1,6 +1,6 @@
 <!-- Replace this line with what this PR does and why.  Describe what you'd like reviewers to know, how you applied the Engineering principles, and any interesting tradeoffs made.  Delete bullet points below that don't apply, and update the changelog section as appropriate. -->
 
-<!-- Add JIRA link to PR title. Short version (e.g. MTT-123) works and gets auto-linked. -->
+<!-- Add short version of the JIRA ticket to the PR title (e.g. "feat: new shiny feature [MTT-123]") -->
 
 <!-- Add RFC link here if applicable. -->
 
