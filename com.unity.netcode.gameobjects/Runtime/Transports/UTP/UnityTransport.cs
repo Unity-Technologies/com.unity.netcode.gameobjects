@@ -781,7 +781,7 @@ namespace Unity.Netcode.Transports.UTP
 
                 var packetReceived = (float)sharedContext->stats.PacketsReceived;
                 var packetDropped = (float)sharedContext->stats.PacketsDropped;
-                var packetLoss = packetReceived > 0 ? packetDropped/packetReceived*100 : 0;
+                var packetLoss = packetReceived > 0 ? packetDropped/packetReceived : 0;
 
                 return packetLoss;
             }

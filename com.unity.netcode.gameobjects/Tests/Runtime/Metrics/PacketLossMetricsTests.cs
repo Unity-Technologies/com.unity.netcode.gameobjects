@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketLossAsClient()
         {
-            const double packetLossRate = 25d;
+            const double packetLossRate = 0.25;
             var clientNetworkManager = m_ClientNetworkManagers[0];
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
                 NetworkMetricTypes.PacketLoss,
