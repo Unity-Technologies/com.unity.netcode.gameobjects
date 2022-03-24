@@ -6,6 +6,7 @@
     "unity": "2020.3",
     "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0"
+        "com.unity.collections": "1.1.0",
+        "com.unity.transport": "1.0.0-pre.15"
     }
 }

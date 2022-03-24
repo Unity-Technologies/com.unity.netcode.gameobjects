@@ -53,27 +53,16 @@
         "com.unity.collections": "1.1.0",
         "com.unity.modules.uielements": "1.0.0"
       },
-      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
-    },
-    "com.unity.netcode.adapter.utp": {
-      "version": "file:../../com.unity.netcode.adapter.utp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.5",
-        "com.unity.transport": "1.0.0-pre.13"
-      }
+      "hash": "cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f"
     },
     "com.unity.netcode.gameobjects": {
       "version": "file:../../com.unity.netcode.gameobjects",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0"
+        "com.unity.collections": "1.1.0",
+        "com.unity.transport": "1.0.0-pre.15"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -119,7 +108,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.13",
+      "version": "1.0.0-pre.15",
       "depth": 1,
       "source": "registry",
       "dependencies": {

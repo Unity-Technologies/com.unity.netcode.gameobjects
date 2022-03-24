@@ -3,7 +3,6 @@
     "rootNamespace": "Unity.Netcode.TestHelpers.Runtime",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Adapter.UTP",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
@@ -17,11 +16,6 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
-        },
-        {
-            "name": "com.unity.netcode.adapter.utp",
-            "expression": "",
-            "define": "UTP_ADAPTER"
         },
         {
             "name": "com.unity.multiplayer.tools",
