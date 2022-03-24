@@ -795,29 +795,12 @@ namespace Unity.Netcode
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo("StartServer()");
+                NetworkLog.LogInfo(nameof(StartServer));
             }
 
-            if (IsServer || IsClient)
+            if (!CanStart(StartType.Server))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Cannot start server while an instance is already running");
-                }
-
                 return false;
-            }
-
-            if (NetworkConfig.ConnectionApproval)
-            {
-                if (ConnectionApprovalCallback == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning(
-                            "No ConnectionApproval callback defined. Connection approval will timeout");
-                    }
-                }
             }
 
             Initialize(true);
@@ -853,13 +836,8 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(StartClient));
             }
 
-            if (IsServer || IsClient)
+            if (!CanStart(StartType.Client))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Cannot start client while an instance is already running");
-                }
-
                 return false;
             }
 
@@ -890,26 +868,9 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(StartHost));
             }
 
-            if (IsServer || IsClient)
+            if (!CanStart(StartType.Host))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    NetworkLog.LogWarning("Cannot start host while an instance is already running");
-                }
-
                 return false;
-            }
-
-            if (NetworkConfig.ConnectionApproval)
-            {
-                if (ConnectionApprovalCallback == null)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning(
-                            "No ConnectionApproval callback defined. Connection approval will timeout");
-                    }
-                }
             }
 
             Initialize(true);
@@ -956,6 +917,52 @@ namespace Unity.Netcode
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             OnServerStarted?.Invoke();
+
+            return true;
+        }
+
+        private enum StartType
+        {
+            Server,
+            Host,
+            Client
+        }
+
+        private bool CanStart(StartType type)
+        {
+            if (IsListening)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Cannot start " + type + " while an instance is already running");
+                }
+
+                return false;
+            }
+
+            if (NetworkConfig.ConnectionApproval)
+            {
+                if (ConnectionApprovalCallback == null)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning(
+                            "No ConnectionApproval callback defined. Connection approval will timeout");
+                    }
+                }
+            }
+
+            if (ConnectionApprovalCallback != null)
+            {
+                if (!NetworkConfig.ConnectionApproval)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning(
+                            "A ConnectionApproval callback is defined but ConnectionApproval is disabled. In order to use ConnectionApproval it has to be explicitly enabled ");
+                    }
+                }
+            }
 
             return true;
         }
