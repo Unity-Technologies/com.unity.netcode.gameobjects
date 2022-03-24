@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
+[assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]
+
 #endif
 [assembly: InternalsVisibleTo("TestProject.ToolsIntegration.RuntimeTests")]
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]

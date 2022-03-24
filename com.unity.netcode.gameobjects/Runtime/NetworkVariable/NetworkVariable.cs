@@ -11,26 +11,64 @@ namespace Unity.Netcode
     {
         // Functions that know how to serialize INetworkSerializable
         internal static void WriteNetworkSerializable<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : INetworkSerializable, new()
+            where TForMethod : unmanaged, INetworkSerializable
         {
             writer.WriteNetworkSerializable(value);
         }
         internal static void ReadNetworkSerializable<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : INetworkSerializable, new()
+            where TForMethod : unmanaged, INetworkSerializable
         {
             reader.ReadNetworkSerializable(out value);
         }
 
-        // Functions that serialize other types
-        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value) where TForMethod : unmanaged
+        // Functions that serialize structs
+        internal static void WriteStruct<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged, ISerializeByMemcpy
         {
             writer.WriteValueSafe(value);
+        }
+        internal static void ReadStruct<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged, ISerializeByMemcpy
+        {
+            reader.ReadValueSafe(out value);
+        }
+
+        // Functions that serialize enums
+        internal static void WriteEnum<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged, Enum
+        {
+            writer.WriteValueSafe(value);
+        }
+        internal static void ReadEnum<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged, Enum
+        {
+            reader.ReadValueSafe(out value);
+        }
+
+        // Functions that serialize other types
+        internal static void WritePrimitive<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
+        {
+            writer.WriteValueSafe(value);
+        }
+
+        internal static void ReadPrimitive<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
+        {
+            reader.ReadValueSafe(out value);
+        }
+
+        // Functions that serialize other types
+        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged
+        {
+            throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
         }
 
         private static void ReadValue<TForMethod>(FastBufferReader reader, out TForMethod value)
             where TForMethod : unmanaged
         {
-            reader.ReadValueSafe(out value);
+            throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
         }
 
         internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, in TForMethod value);

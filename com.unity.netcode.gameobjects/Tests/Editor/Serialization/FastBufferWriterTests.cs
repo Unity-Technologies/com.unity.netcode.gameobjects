@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
@@ -10,6 +12,7 @@ namespace Unity.Netcode.EditorTests
     {
 
         #region Common Checks
+
         private void WriteCheckBytes(FastBufferWriter writer, int writeSize, string failMessage = "")
         {
             Assert.IsTrue(writer.TryBeginWrite(2), "Writer denied write permission");
@@ -63,9 +66,94 @@ namespace Unity.Netcode.EditorTests
 
             VerifyTypedEquality(valueToTest, writer.GetUnsafePtr());
         }
+
         #endregion
 
         #region Generic Checks
+
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T value) where T: unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T).MakeByRefType() });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (candidateMethod.GetParameters()[0].ParameterType.IsArray)
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T[] value) where T: unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T[]) });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.IsArray)
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
+
         protected override unsafe void RunTypeTest<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -82,7 +170,7 @@ namespace Unity.Netcode.EditorTests
 
                 var failMessage = $"RunTypeTest failed with type {typeof(T)} and value {valueToTest}";
 
-                writer.WriteValue(valueToTest);
+                RunMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
 
                 CommonChecks(writer, valueToTest, writeSize, failMessage);
             }
@@ -98,7 +186,7 @@ namespace Unity.Netcode.EditorTests
 
                 var failMessage = $"RunTypeTest failed with type {typeof(T)} and value {valueToTest}";
 
-                writer.WriteValueSafe(valueToTest);
+                RunMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
 
                 CommonChecks(writer, valueToTest, writeSize, failMessage);
             }
@@ -129,7 +217,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
                 Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
 
-                writer.WriteValue(valueToTest);
+                RunMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
                 VerifyPositionAndLength(writer, writeSize);
 
                 WriteCheckBytes(writer, writeSize);
@@ -150,7 +238,7 @@ namespace Unity.Netcode.EditorTests
 
                 Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
 
-                writer.WriteValueSafe(valueToTest);
+                RunMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
                 VerifyPositionAndLength(writer, writeSize);
 
                 WriteCheckBytes(writer, writeSize);

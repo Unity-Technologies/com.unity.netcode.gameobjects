@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal struct TimeSyncMessage : INetworkMessage
+    internal struct TimeSyncMessage : INetworkMessage, ISerializeByMemcpy
     {
         public int Tick;
 

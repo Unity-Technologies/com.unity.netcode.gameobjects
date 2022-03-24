@@ -1,3 +1,6 @@
+using System;
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     public class NetworkVariableHelper
@@ -13,10 +16,46 @@ namespace Unity.Netcode
         // side, but it gets the best achievable user experience and performance.
         //
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static void InitializeDelegates<T>() where T : unmanaged, INetworkSerializable
+        internal static void InitializeDelegatesNetworkSerializable<T>() where T : unmanaged, INetworkSerializable
         {
             NetworkVariable<T>.Write = NetworkVariable<T>.WriteNetworkSerializable;
             NetworkVariable<T>.Read = NetworkVariable<T>.ReadNetworkSerializable;
+        }
+        internal static void InitializeDelegatesStruct<T>() where T : unmanaged, ISerializeByMemcpy
+        {
+            NetworkVariable<T>.Write = NetworkVariable<T>.WriteStruct;
+            NetworkVariable<T>.Read = NetworkVariable<T>.ReadStruct;
+        }
+        internal static void InitializeDelegatesEnum<T>() where T : unmanaged, Enum
+        {
+            NetworkVariable<T>.Write = NetworkVariable<T>.WriteEnum;
+            NetworkVariable<T>.Read = NetworkVariable<T>.ReadEnum;
+        }
+        internal static void InitializeDelegatesPrimitive<T>() where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>
+        {
+            NetworkVariable<T>.Write = NetworkVariable<T>.WritePrimitive;
+            NetworkVariable<T>.Read = NetworkVariable<T>.ReadPrimitive;
+        }
+
+        internal static void InitializeAllBaseDelegates()
+        {
+            InitializeDelegatesPrimitive<bool>();
+            InitializeDelegatesPrimitive<byte>();
+            InitializeDelegatesPrimitive<sbyte>();
+            InitializeDelegatesPrimitive<char>();
+            InitializeDelegatesPrimitive<decimal>();
+            InitializeDelegatesPrimitive<float>();
+            InitializeDelegatesPrimitive<double>();
+            InitializeDelegatesPrimitive<short>();
+            InitializeDelegatesPrimitive<ushort>();
+            InitializeDelegatesPrimitive<int>();
+            InitializeDelegatesPrimitive<uint>();
+            InitializeDelegatesPrimitive<long>();
+            InitializeDelegatesPrimitive<ulong>();
+
+            InitializeDelegatesEnum<HashSize>();
+            InitializeDelegatesStruct<NetworkObject.SceneObject.HeaderData>();
+            InitializeDelegatesNetworkSerializable<NetworkObjectReference>();
         }
     }
 }

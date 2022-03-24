@@ -987,6 +987,7 @@ namespace Unity.Netcode
         private void Awake()
         {
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+            NetworkVariableHelper.InitializeAllBaseDelegates();
         }
 
         /// <summary>

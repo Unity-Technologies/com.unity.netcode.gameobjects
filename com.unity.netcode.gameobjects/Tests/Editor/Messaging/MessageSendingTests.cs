@@ -8,7 +8,7 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageSendingTests
     {
-        private struct TestMessage : INetworkMessage
+        private struct TestMessage : INetworkMessage, ISerializeByMemcpy
         {
             public int A;
             public int B;

@@ -15,7 +15,7 @@ namespace Unity.Netcode
         public byte[] SendMainBuffer;
         public NativeArray<byte> ReceiveMainBuffer;
 
-        public struct AckData
+        public struct AckData : ISerializeByMemcpy
         {
             public ushort LastReceivedSequence;
             public ushort ReceivedSequenceMask;

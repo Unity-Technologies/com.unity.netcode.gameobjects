@@ -944,6 +944,11 @@ namespace TestProject.RuntimeTests
         }
     }
 
+    public struct foo<T> : ISerializeByMemcpy
+    {
+        public T I;
+    }
+
     public class MyObject
     {
         public int I;

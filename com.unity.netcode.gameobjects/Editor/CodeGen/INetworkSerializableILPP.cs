@@ -31,7 +31,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 return null;
             }
 
-
             m_Diagnostics.Clear();
 
             // read
@@ -50,16 +49,22 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     if (ImportReferences(mainModule))
                     {
-                        var types = mainModule.GetTypes()
+                        var networkSerializableTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializable_FullName) && !t.Resolve().IsAbstract && t.Resolve().IsValueType)
                             .ToList();
+                        var structTypes = mainModule.GetTypes()
+                            .Where(t => t.Resolve().HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName) && !t.Resolve().IsAbstract && t.Resolve().IsValueType)
+                            .ToList();
+                        var enumTypes = mainModule.GetTypes()
+                            .Where(t => t.Resolve().IsEnum && !t.Resolve().IsAbstract && t.Resolve().IsValueType)
+                            .ToList();
                         // process `INetworkMessage` types
-                        if (types.Count == 0)
+                        if (networkSerializableTypes.Count + structTypes.Count + enumTypes.Count == 0)
                         {
                             return null;
                         }
 
-                        CreateModuleInitializer(assemblyDefinition, types);
+                        CreateModuleInitializer(assemblyDefinition, networkSerializableTypes, structTypes, enumTypes);
                     }
                     else
                     {
@@ -94,9 +99,13 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private MethodReference m_InitializeDelegates_MethodRef;
+        private MethodReference m_InitializeDelegatesNetworkSerializable_MethodRef;
+        private MethodReference m_InitializeDelegatesStruct_MethodRef;
+        private MethodReference m_InitializeDelegatesEnum_MethodRef;
 
-        private const string k_InitializeMethodName = nameof(NetworkVariableHelper.InitializeDelegates);
+        private const string k_InitializeNetworkSerializableMethodName = nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable);
+        private const string k_InitializeStructMethodName = nameof(NetworkVariableHelper.InitializeDelegatesStruct);
+        private const string k_InitializeEnumMethodName = nameof(NetworkVariableHelper.InitializeDelegatesEnum);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
@@ -106,8 +115,14 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case k_InitializeMethodName:
-                        m_InitializeDelegates_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case k_InitializeNetworkSerializableMethodName:
+                        m_InitializeDelegatesNetworkSerializable_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        break;
+                    case k_InitializeStructMethodName:
+                        m_InitializeDelegatesStruct_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        break;
+                    case k_InitializeEnumMethodName:
+                        m_InitializeDelegatesEnum_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
             }
@@ -139,7 +154,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // C# (that attribute doesn't exist in Unity, but the static module constructor still works)
         // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.moduleinitializerattribute?view=net-5.0
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
-        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkSerializableTypes)
+        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkSerializableTypes, List<TypeDefinition> structTypes, List<TypeDefinition> EnumTypes)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {
@@ -151,9 +166,28 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     var instructions = new List<Instruction>();
 
+                    foreach (var type in structTypes)
+                    {
+                        var method = new GenericInstanceMethod(m_InitializeDelegatesStruct_MethodRef);
+                        method.GenericArguments.Add(type);
+                        instructions.Add(processor.Create(OpCodes.Call, method));
+                    }
+
                     foreach (var type in networkSerializableTypes)
                     {
-                        var method = new GenericInstanceMethod(m_InitializeDelegates_MethodRef);
+                        if (type.Resolve().HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName))
+                        {
+                            m_Diagnostics.AddError($"{type.FullName}: {nameof(ISerializeByMemcpy)} cannot be applied to {nameof(INetworkSerializable)} types.");
+                            continue;
+                        }
+                        var method = new GenericInstanceMethod(m_InitializeDelegatesNetworkSerializable_MethodRef);
+                        method.GenericArguments.Add(type);
+                        instructions.Add(processor.Create(OpCodes.Call, method));
+                    }
+
+                    foreach (var type in EnumTypes)
+                    {
+                        var method = new GenericInstanceMethod(m_InitializeDelegatesEnum_MethodRef);
                         method.GenericArguments.Add(type);
                         instructions.Add(processor.Create(OpCodes.Call, method));
                     }
