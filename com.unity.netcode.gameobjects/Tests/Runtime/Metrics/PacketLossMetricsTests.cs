@@ -1,0 +1,83 @@
+using System;
+using System.Collections;
+using NUnit.Framework;
+using Unity.Collections;
+using Unity.Multiplayer.Tools.MetricTypes;
+using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
+using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using UnityEngine.TestTools;
+
+namespace Unity.Netcode.RuntimeTests.Metrics
+{
+    public class PacketLossMetricsTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 1;
+
+        private int m_DropInterval = 5;
+
+        public PacketLossMetricsTests()
+            : base(HostOrServer.Server)
+        {}
+
+        protected override void OnOneTimeSetup()
+        {
+            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
+            clientTransport.SetDebugSimulatorParameters(0, 0, 25);
+
+            base.OnServerAndClientsCreated();
+        }
+
+        [UnityTest]
+        public IEnumerator TrackPacketLossAsServer()
+        {
+            var waitForPacketLossMetric = new WaitForGaugeMetricValues((m_ServerNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
+                NetworkMetricTypes.PacketLoss,
+                metric => metric == 0.0d);
+
+            for (int i = 0; i < 1000; ++i)
+            {
+                using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
+                {
+                    writer.WriteByteSafe(42);
+                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
+                }
+            }
+
+            yield return waitForPacketLossMetric.WaitForMetricsReceived();
+
+            var packetLossValue = waitForPacketLossMetric.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(0d, packetLossValue);
+        }
+
+        [UnityTest]
+        public IEnumerator TrackPacketLossAsClient()
+        {
+            const double packetLossRate = 25d;
+            var clientNetworkManager = m_ClientNetworkManagers[0];
+            var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
+                NetworkMetricTypes.PacketLoss,
+                metric => Math.Abs(metric - packetLossRate) < Double.Epsilon);
+
+            for (int i = 0; i < 1000; ++i)
+            {
+                using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
+                {
+                    writer.WriteByteSafe(42);
+                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
+                }
+            }
+
+            yield return waitForPacketLossMetric.WaitForMetricsReceived();
+
+            var packetLossValue = waitForPacketLossMetric.AssertMetricValueHaveBeenFound();
+            Assert.AreEqual(packetLossRate, packetLossValue);
+        }
+    }
+}
