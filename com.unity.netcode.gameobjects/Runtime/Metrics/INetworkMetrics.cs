@@ -93,7 +93,7 @@ namespace Unity.Netcode
 
         void UpdateConnectionsCount(int count);
 
-        void UpdatePacketLoss(float count);
+        void UpdatePacketLoss(float packetLoss);
 
         void DispatchFrame();
     }

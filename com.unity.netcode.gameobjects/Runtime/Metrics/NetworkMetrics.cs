@@ -500,7 +500,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void UpdatePacketLoss(float count)
+        public void UpdatePacketLoss(float packetLoss)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
@@ -508,7 +508,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            m_PacketLossGauge.Set(count);
+            m_PacketLossGauge.Set(packetLoss);
 #endif
         }
 

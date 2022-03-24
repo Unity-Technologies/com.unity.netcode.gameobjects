@@ -157,7 +157,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void UpdatePacketLoss(float count)
+        public void UpdatePacketLoss(float packetLoss)
         {
         }
 
