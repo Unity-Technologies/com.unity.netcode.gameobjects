@@ -9,7 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
-
+- Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 
