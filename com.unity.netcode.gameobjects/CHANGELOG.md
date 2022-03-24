@@ -20,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
+- Fixed clarity for NetworkSceneManager client side notification when it receives a scene hash value that does not exist in its local hash table. (#1828)
 - Fixed client throws a key not found exception when it times out using UNet or UTP. (#1821)
 - Fixed network variable updates are no longer limited to 32,768 bytes when NetworkConfig.EnsureNetworkVariableLengthSafety is enabled. The limits are now determined by what the transport can send in a message. (#1811)
 - Fixed in-scene NetworkObjects get destroyed if a client fails to connect and shuts down the NetworkManager. (#1809)
