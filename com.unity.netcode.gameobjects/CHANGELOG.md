@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 
 ### Changed
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0-pre.16.
 
 ### Removed
 
