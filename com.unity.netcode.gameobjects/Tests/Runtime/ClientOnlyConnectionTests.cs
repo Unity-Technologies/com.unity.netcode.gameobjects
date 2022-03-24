@@ -5,6 +5,8 @@ using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
+#else
+using Unity.Netcode.Transports.UTP;
 #endif
 
 namespace Unity.Netcode.RuntimeTests
@@ -39,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ClientFailsToConnect()
         {
             // Wait for the disconnected event
-            m_ClientNetworkManager.OnClientDisconnectCallback += M_ClientNetworkManager_OnClientDisconnectCallback;
+            m_ClientNetworkManager.OnClientDisconnectCallback += ClientNetworkManager_OnClientDisconnectCallback;
 
             // Only start the client (so it will timeout)
             m_ClientNetworkManager.StartClient();
@@ -58,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return m_DefaultWaitForTick;
         }
 
-        private void M_ClientNetworkManager_OnClientDisconnectCallback(ulong obj)
+        private void ClientNetworkManager_OnClientDisconnectCallback(ulong clientId)
         {
             m_WasDisconnected = true;
         }
