@@ -3,6 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Transports.UTP;
 #if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
 #endif
