@@ -47,6 +47,19 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        /// <summary>
+        /// Detects if a user is trying to enter into play mode when both conditions are true:
+        /// - the currently active and open scene is not added to the scenes in build list
+        /// - an instance of a NetworkManager with scene management enabled can be found
+        /// If both conditions are met then the user is presented with a dialog box that
+        /// provides the user with the option to add the scene to the scenes in build list
+        /// before entering into play mode or the user can continue under those conditions.
+        ///
+        /// ** When scene management is enabled the user should treat all scenes that need to
+        /// be synchronized using network scene management as if they were preparing for a build.
+        /// Any scene that needs to be loaded at run time has to be included in the scenes in
+        /// build list. **
+        /// </summary>
         private static void ScenesInBuildActiveSceneCheck()
         {
             var scenesList = EditorBuildSettings.scenes.ToList();
