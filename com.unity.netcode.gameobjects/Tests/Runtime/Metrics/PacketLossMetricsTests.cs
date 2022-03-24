@@ -17,7 +17,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     public class PacketLossMetricsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-
+        private readonly int m_PacketLossRate = 25;
         private int m_DropInterval = 5;
 
         public PacketLossMetricsTests()
@@ -32,7 +32,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
-            clientTransport.SetDebugSimulatorParameters(0, 0, 25);
+            clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
 
             base.OnServerAndClientsCreated();
         }
@@ -62,7 +62,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketLossAsClient()
         {
-            const double packetLossRate = 0.25;
+            double packetLossRate = m_PacketLossRate/100d;
             var clientNetworkManager = m_ClientNetworkManagers[0];
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
                 NetworkMetricTypes.PacketLoss,
