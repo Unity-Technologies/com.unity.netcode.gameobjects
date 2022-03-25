@@ -905,7 +905,6 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-#if NGO_TRANSFORM_DEBUG
                     if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
                     {
                         // TODO: This should be a component gizmo - not some debug draw based on log level
@@ -920,15 +919,14 @@ namespace Unity.Netcode.Components
                         // there are several bugs in this code, as we the message is dumped out under odd circumstances
                         //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
                         //  object vs. explicitly rotating it
-                        if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
+                        if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)))
                         {
-                            // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
-                            // from an unauthorized transform change or euler to quaternion conversion artifacts.
+                            // ignoring rotation dirty since quaternions will mess with Euler angles, making this impossible to determine if the change to a single axis comes
+                            // from an unauthorized transform change or Euler to quaternion conversion artifacts.
                             var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                             Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                         }
                     }
-#endif
 
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
