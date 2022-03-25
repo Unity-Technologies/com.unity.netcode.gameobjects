@@ -188,7 +188,27 @@ namespace Unity.Netcode
             else
             {
                 shouldSendToHost = IsHost;
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ConnectedClientsIds);
+                var observerAllocateCount = NetworkObject.Observers.Count();
+
+                if (shouldSendToHost && NetworkObject.Observers.Contains(NetworkManager.LocalClientId))
+                {
+                    observerAllocateCount--;
+                }
+
+                var observerClientIds = new NativeArray<ulong>(observerAllocateCount, Allocator.Temp);
+                var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                var observerCount = 0;
+                while (observerEnumerator.MoveNext())
+                {
+                    if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                    {
+                        shouldSendToHost = true;
+                        continue;
+                    }
+                    observerClientIds[observerCount++] = observerEnumerator.Current;
+                }
+                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, observerClientIds);
+                observerClientIds.Dispose();
             }
 
             // If we are a server/host then we just no op and send to ourself
