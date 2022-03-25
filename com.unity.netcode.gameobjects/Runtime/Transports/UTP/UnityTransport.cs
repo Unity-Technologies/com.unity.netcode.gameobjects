@@ -710,7 +710,10 @@ namespace Unity.Netcode.Transports.UTP
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
 
             var rttValue = NetworkManager.IsServer ? 0 : ExtractRtt(networkConnection);
-            NetworkMetrics.TrackRttToServer(rttValue);
+            NetworkMetrics.UpdateRttToServer(rttValue);
+
+            var packetLoss = NetworkManager.IsServer ? 0 : ExtractPacketLoss(networkConnection);
+            NetworkMetrics.UpdatePacketLoss(packetLoss);
         }
 
         private void ExtractNetworkMetricsFromPipeline(NetworkPipeline pipeline, NetworkConnection networkConnection)
@@ -755,6 +758,32 @@ namespace Unity.Netcode.Transports.UTP
                 var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
                 return sharedContext->RttInfo.LastRtt;
+            }
+        }
+
+        private float ExtractPacketLoss(NetworkConnection networkConnection)
+        {
+            if (m_Driver.GetConnectionState(networkConnection) != NetworkConnection.State.Connected)
+            {
+                return 0f;
+            }
+
+            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+                networkConnection,
+                out _,
+                out _,
+                out var sharedBuffer);
+
+            unsafe
+            {
+                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+
+                var packetReceived = (float)sharedContext->stats.PacketsReceived;
+                var packetDropped = (float)sharedContext->stats.PacketsDropped;
+                var packetLoss = packetReceived > 0 ? packetDropped / packetReceived : 0;
+
+                return packetLoss;
             }
         }
 

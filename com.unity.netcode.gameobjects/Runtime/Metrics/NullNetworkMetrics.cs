@@ -145,7 +145,7 @@ namespace Unity.Netcode
         {
         }
 
-        public void TrackRttToServer(int rtt)
+        public void UpdateRttToServer(int rtt)
         {
         }
 
@@ -154,6 +154,10 @@ namespace Unity.Netcode
         }
 
         public void UpdateConnectionsCount(int count)
+        {
+        }
+
+        public void UpdatePacketLoss(float packetLoss)
         {
         }
 
