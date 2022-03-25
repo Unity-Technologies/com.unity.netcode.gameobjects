@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using System.Reflection;
 using Unity.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
@@ -172,7 +173,7 @@ namespace Unity.Netcode
                     // Check to make sure we are sending to only observers, if not log an error.
                     if (!NetworkObject.Observers.Contains(targetClientId))
                     {
-                        Debug.LogError($"Sending ClientRpc to non-observer! {nameof(ClientRpcParams.Send.TargetClientIds)} contains clientId {targetClientId} that is not an observer!");
+                        Debug.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -191,7 +192,7 @@ namespace Unity.Netcode
                     // Check to make sure we are sending to only observers, if not log an error.
                     if (!NetworkObject.Observers.Contains(targetClientId))
                     {
-                        Debug.LogError($"Sending ClientRpc to non-observer!  {nameof(ClientRpcParams.Send.TargetClientIdsNativeArray)} contains clientId {targetClientId} that is not an observer!");
+                        Debug.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -260,6 +261,13 @@ namespace Unity.Netcode
                 }
             }
 #endif
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal string GenerateObserverErrorMessage(ClientRpcParams clientRpcParams, ulong targetClientId)
+        {
+            var containerNameHoldingId = clientRpcParams.Send.TargetClientIds != null ? nameof(ClientRpcParams.Send.TargetClientIds) : nameof(ClientRpcParams.Send.TargetClientIdsNativeArray);
+            return $"Sending ClientRpc to non-observer! {containerNameHoldingId} contains clientId {targetClientId} that is not an observer!";
         }
 
         /// <summary>
