@@ -268,7 +268,6 @@ namespace Unity.Netcode
 #endif
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal string GenerateObserverErrorMessage(ClientRpcParams clientRpcParams, ulong targetClientId)
         {
             var containerNameHoldingId = clientRpcParams.Send.TargetClientIds != null ? nameof(ClientRpcParams.Send.TargetClientIds) : nameof(ClientRpcParams.Send.TargetClientIdsNativeArray);
