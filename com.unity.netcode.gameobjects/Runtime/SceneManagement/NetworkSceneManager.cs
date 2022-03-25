@@ -530,7 +530,8 @@ namespace Unity.Netcode
             }
             else
             {
-                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!");
+                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!  Verify that all scenes requiring" +
+                    $" server to client synchronization are in the scenes in build list.");
             }
         }
 
