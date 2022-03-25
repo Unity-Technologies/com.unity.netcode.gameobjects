@@ -96,6 +96,26 @@ namespace TestProject.RuntimeTests
             LogAssert.Expect(LogType.Error, m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
             m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
             yield return s_DefaultWaitForTick;
+
+            // Validate we can still just send to the host-client when no clients are connected
+            if (m_UseHost)
+            {
+                m_ServerRpcObserverObject.ResetTest();
+
+                foreach (var clientId in nonObservers)
+                {
+                    m_ServerNetworkManager.DisconnectClient(clientId);
+                }
+
+                yield return s_DefaultWaitForTick;
+
+                m_ServerRpcObserverObject.ObserverMessageClientRpc();
+
+                yield return s_DefaultWaitForTick;
+
+                Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, "Host failed to receive the ClientRpc when no clients were connected!");
+                Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
+            }
         }
 
         /// <summary>
@@ -112,8 +132,13 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(m_ServerRpcObserverObject.AllObserversReceivedRPC);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive message!\n" +
                 $"Clients that received the message:{m_ServerRpcObserverObject.GetClientIdsAsString()}");
-
             Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
+
+            // Always verify the host received the RPC
+            if (m_UseHost)
+            {
+                Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, "Host failed to receive the ClientRpc when no clients were connected!");
+            }
         }
 
         protected override IEnumerator OnTearDown()
@@ -138,6 +163,7 @@ namespace TestProject.RuntimeTests
         public static readonly List<ulong> ClientInstancesSpawned = new List<ulong>();
 
         protected bool m_NotifyClientReceivedMessage;
+        public bool HostReceivedMessage { get; internal set; }
 
         public string GetClientIdsAsString(List<ulong> clientIds = null)
         {
@@ -225,6 +251,7 @@ namespace TestProject.RuntimeTests
         public void ResetTest()
         {
             ObserversThatReceivedRPC.Clear();
+            HostReceivedMessage = false;
         }
 
         /// <summary>
@@ -233,7 +260,14 @@ namespace TestProject.RuntimeTests
         [ClientRpc]
         public void ObserverMessageClientRpc(ClientRpcParams clientRpcParams = default)
         {
-            m_NotifyClientReceivedMessage = true;
+            if (IsHost)
+            {
+                HostReceivedMessage = true;
+            }
+            else
+            {
+                m_NotifyClientReceivedMessage = true;
+            }
         }
 
         /// <summary>

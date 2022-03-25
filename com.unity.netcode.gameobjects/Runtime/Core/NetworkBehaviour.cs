@@ -207,23 +207,28 @@ namespace Unity.Netcode
                 {
                     observerAllocateCount--;
                 }
-                // Allocate native array large enough to hold the remaining observers' clientIds.
-                var observerClientIds = new NativeArray<ulong>(observerAllocateCount, Allocator.Temp);
-                var observerEnumerator = NetworkObject.Observers.GetEnumerator();
-                var observerCount = 0;
-                while (observerEnumerator.MoveNext())
-                {
-                    // Skip over the host
-                    if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
-                    {
-                        shouldSendToHost = true;
-                        continue;
-                    }
-                    observerClientIds[observerCount++] = observerEnumerator.Current;
-                }
 
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, observerClientIds);
-                observerClientIds.Dispose();
+                // Only if at least 1 connected client or more to send to
+                if (observerAllocateCount > 0)
+                {
+                    // Allocate native array large enough to hold the remaining observers' clientIds.
+                    var observerClientIds = new NativeArray<ulong>(observerAllocateCount, Allocator.Temp);
+                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                    var observerCount = 0;
+                    while (observerEnumerator.MoveNext())
+                    {
+                        // Skip over the host
+                        if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                        {
+                            shouldSendToHost = true;
+                            continue;
+                        }
+                        observerClientIds[observerCount++] = observerEnumerator.Current;
+                    }
+
+                    rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, observerClientIds);
+                    observerClientIds.Dispose();
+                }
             }
 
             // If we are a server/host then we just no op and send to ourself
