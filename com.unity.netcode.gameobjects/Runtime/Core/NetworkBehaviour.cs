@@ -4,7 +4,6 @@ using System.Linq;
 using UnityEngine;
 using System.Reflection;
 using Unity.Collections;
-using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
