@@ -1,13 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode;
+using Unity.Collections;
 
 namespace TestProject.RuntimeTests
 {
+    /// <summary>
+    /// Integration test to validate ClientRpcs will only
+    /// send to observers of the NetworkObject
+    /// </summary>
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
     public class RpcObserverTests : NetcodeIntegrationTest
@@ -18,6 +24,9 @@ namespace TestProject.RuntimeTests
 
         private GameObject m_ServerPrefabInstance;
         private RpcObserverObject m_ServerRpcObserverObject;
+
+        private NativeArray<ulong> m_NonObserverArrayError;
+        private bool m_ArrayAllocated;
 
         public RpcObserverTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
@@ -67,6 +76,26 @@ namespace TestProject.RuntimeTests
                 // Run the test
                 yield return RunRpcObserverTest(nonObservers);
             }
+
+            // ****** Verify that sending to non-observer(s) generates error ******
+            var clientRpcParams = new ClientRpcParams();
+            // Verify that we get an error message when we try to send to a non-observer using TargetClientIds
+            clientRpcParams.Send.TargetClientIds = new List<ulong>() { nonObservers[0] };
+            LogAssert.Expect(LogType.Error, m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
+            m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
+            yield return s_DefaultWaitForTick;
+
+            m_NonObserverArrayError = new NativeArray<ulong>(clientRpcParams.Send.TargetClientIds.ToArray(), Allocator.Persistent);
+            m_ArrayAllocated = true;
+
+            // Now clean the TargetClientIds to prepare for the next TargetClientIdsNativeArray error check
+            clientRpcParams.Send.TargetClientIds = null;
+
+            // Now verify that we get an error message when we try to send to a non-observer using TargetClientIdsNativeArray
+            clientRpcParams.Send.TargetClientIdsNativeArray = m_NonObserverArrayError;
+            LogAssert.Expect(LogType.Error, m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
+            m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
@@ -84,16 +113,29 @@ namespace TestProject.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive message!\n" +
                 $"Clients that received the message:{m_ServerRpcObserverObject.GetClientIdsAsString()}");
 
-            Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers),$"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
+            Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
         }
 
+        protected override IEnumerator OnTearDown()
+        {
+            // Make sure to dispose of the native array
+            if (m_ArrayAllocated)
+            {
+                m_ArrayAllocated = false;
+                m_NonObserverArrayError.Dispose();
+            }
+            return base.OnTearDown();
+        }
     }
 
+    /// <summary>
+    /// Test prefab component used with RpcObserverTests
+    /// </summary>
     public class RpcObserverObject : NetworkBehaviour
     {
         public readonly List<ulong> ObserversThatReceivedRPC = new List<ulong>();
 
-        public static readonly List<ulong>  ClientInstancesSpawned = new List<ulong>();
+        public static readonly List<ulong> ClientInstancesSpawned = new List<ulong>();
 
         protected bool m_NotifyClientReceivedMessage;
 
@@ -121,7 +163,7 @@ namespace TestProject.RuntimeTests
                 return false;
             }
 
-            foreach(var clientId in NetworkManager.ConnectedClientsIds)
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
             {
                 if (clientId == NetworkManager.LocalClientId)
                 {
@@ -189,7 +231,7 @@ namespace TestProject.RuntimeTests
         /// Called from server-host once per test run
         /// </summary>
         [ClientRpc]
-        public void ObserverMessageClientRpc()
+        public void ObserverMessageClientRpc(ClientRpcParams clientRpcParams = default)
         {
             m_NotifyClientReceivedMessage = true;
         }
@@ -234,5 +276,4 @@ namespace TestProject.RuntimeTests
             }
         }
     }
-
 }
