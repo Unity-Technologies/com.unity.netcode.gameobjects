@@ -241,15 +241,17 @@ namespace Unity.Netcode.Editor
         /// </summary>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
-            var rootTransform = GetRootParentTransform(gameObject.transform);
             // If there are no NetworkBehaviours or no gameObject, then exit early
-            if (gameObject == null || rootTransform.GetComponent<NetworkBehaviour>() == null && rootTransform.GetComponentInChildren<NetworkBehaviour>() == null)
+            if (gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
             {
                 return;
             }
 
-            // Otherwise, check to see if there is a NetworkObject and if not notify the user that NetworkBehaviours
-            // require that the relative GameObject has a NetworkObject component.
+            // Now get the root parent transform to the current GameObject (or itself)
+            var rootTransform = GetRootParentTransform(gameObject.transform);
+
+            // Otherwise, check to see if there is any NetworkObject from the root GameObject down to all children.
+            // If not, notify the user that NetworkBehaviours require that the relative GameObject has a NetworkObject component.
             var networkObject = rootTransform.GetComponent<NetworkObject>();
             if (networkObject == null)
             {
