@@ -61,6 +61,7 @@ namespace TestProject.RuntimeTests
             yield return RunRpcObserverTest(nonObservers);
 
             // This hides the test prefab from one client and then runs the test
+            // and repeats until all clients are no longer observers
             foreach (var clientId in m_ServerNetworkManager.ConnectedClientsIds)
             {
                 if (clientId == m_ServerNetworkManager.LocalClientId)
@@ -137,7 +138,7 @@ namespace TestProject.RuntimeTests
             // Always verify the host received the RPC
             if (m_UseHost)
             {
-                Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, "Host failed to receive the ClientRpc when no clients were connected!");
+                Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, $"Host failed to receive the ClientRpc with the following observers: {m_ServerRpcObserverObject.GetClientIdsAsString()}!");
             }
         }
 
