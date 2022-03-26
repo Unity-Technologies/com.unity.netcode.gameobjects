@@ -131,36 +131,39 @@ namespace TestProject.ManualTests
         /// </summary>
         private void FixedUpdate()
         {
-            if (IsSpawned)
+            // Don't do anything until spawned
+            if (!IsSpawned)
             {
-                if (IsServer)
+                return;
+            }
+
+            if (IsServer)
+            {
+                m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
+
+                if (m_Rotate && m_NetworkTransform != null && (m_NetworkTransform.SyncRotAngleX || m_NetworkTransform.SyncRotAngleY || m_NetworkTransform.SyncRotAngleZ))
                 {
-                    m_RigidBody.MovePosition(transform.position + m_Direction * (m_Velocity * Time.fixedDeltaTime));
-
-                    if (m_Rotate && m_NetworkTransform != null && (m_NetworkTransform.SyncRotAngleX || m_NetworkTransform.SyncRotAngleY || m_NetworkTransform.SyncRotAngleZ))
-                    {
-                        transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles + m_RotationAmount);
-                    }
-
-                    if (m_MoveRandomly && Random.Range(0.0f, 1.0f) < 0.01f)
-                    {
-                        var dir = Random.insideUnitCircle;
-                        m_Direction.x = dir.x;
-                        m_Direction.z = dir.y;
-                    }
+                    transform.rotation = Quaternion.Euler(transform.rotation.eulerAngles + m_RotationAmount);
                 }
-                else
-                {
-                    if (m_TestClientSideNotifcation)
-                    {
-                        // When LogLevel is Developer this should generate a warning message on the client side
-                        m_RigidBody.MovePosition(transform.position + Vector3.one * (2.0f * Time.fixedDeltaTime));
-                    }
 
-                    if (NetworkObject != null && !NetworkObject.isActiveAndEnabled)
-                    {
-                        Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
-                    }
+                if (m_MoveRandomly && Random.Range(0.0f, 1.0f) < 0.01f)
+                {
+                    var dir = Random.insideUnitCircle;
+                    m_Direction.x = dir.x;
+                    m_Direction.z = dir.y;
+                }
+            }
+            else
+            {
+                if (m_TestClientSideNotifcation)
+                {
+                    // When LogLevel is Developer this should generate a warning message on the client side
+                    m_RigidBody.MovePosition(transform.position + Vector3.one * (2.0f * Time.fixedDeltaTime));
+                }
+
+                if (NetworkObject != null && !NetworkObject.isActiveAndEnabled)
+                {
+                    Debug.LogWarning($"{nameof(GenericNetworkObjectBehaviour)} id {NetworkObject.NetworkObjectId} is not active and enabled but game object is still active!");
                 }
             }
         }
