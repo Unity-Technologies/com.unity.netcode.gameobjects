@@ -207,10 +207,7 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.That(previousClientComponent.OnLostOwnershipFired);
                     Assert.That(previousClientComponent.OwnerClientId, Is.EqualTo(clientId));
                 }
-                if (previousNetworkManager.SpawnManager.OwnershipToObjectsTable[previousNetworkManager.LocalClientId].ContainsKey(serverObject.NetworkObjectId))
-                {
-                    Debug.Log("Bad things happen!");
-                }
+
                 // Assure the previous owner is no longer in the local table of the previous owner.
                 Assert.That(!previousNetworkManager.SpawnManager.OwnershipToObjectsTable[previousNetworkManager.LocalClientId].ContainsKey(serverObject.NetworkObjectId));
 
