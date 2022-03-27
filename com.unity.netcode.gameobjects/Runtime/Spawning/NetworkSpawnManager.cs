@@ -113,6 +113,10 @@ namespace Unity.Netcode
                     networkObject.InvokeBehaviourOnGainedOwnership();
                 }
             }
+            else if (isRemoving)
+            {
+                OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
+            }
             else if (NetworkManager.LogLevel == LogLevel.Developer)
             {
                 NetworkLog.LogWarning($"Setting ownership twice? Client-ID {previousOwner} already owns NetworkObject ID {networkObject.NetworkObjectId}!");
