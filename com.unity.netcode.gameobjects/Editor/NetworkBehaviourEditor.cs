@@ -225,6 +225,15 @@ namespace Unity.Netcode.Editor
 
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
 
+        public static Transform GetRootParentTransform(Transform transform)
+        {
+            if (transform.parent == null || transform.parent == transform)
+            {
+                return transform;
+            }
+            return GetRootParentTransform(transform.parent);
+        }
+
         /// <summary>
         /// Used to determine if a GameObject has one or more NetworkBehaviours but
         /// does not already have a NetworkObject component.  If not it will notify
@@ -233,17 +242,20 @@ namespace Unity.Netcode.Editor
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
             // If there are no NetworkBehaviours or no gameObject, then exit early
-            if (gameObject == null || gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null)
+            if (gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
             {
                 return;
             }
 
-            // Otherwise, check to see if there is a NetworkObject and if not notify the user that NetworkBehaviours
-            // require that the relative GameObject has a NetworkObject component.
-            var networkObject = gameObject.GetComponent<NetworkObject>();
+            // Now get the root parent transform to the current GameObject (or itself)
+            var rootTransform = GetRootParentTransform(gameObject.transform);
+
+            // Otherwise, check to see if there is any NetworkObject from the root GameObject down to all children.
+            // If not, notify the user that NetworkBehaviours require that the relative GameObject has a NetworkObject component.
+            var networkObject = rootTransform.GetComponent<NetworkObject>();
             if (networkObject == null)
             {
-                networkObject = gameObject.GetComponentInChildren<NetworkObject>();
+                networkObject = rootTransform.GetComponentInChildren<NetworkObject>();
 
                 if (networkObject == null)
                 {
