@@ -45,7 +45,7 @@ namespace TestProject.ManualTests
         private Vector3 m_Direction;
         private float m_Velocity;
 
-        public void SetRotation(Vector3 rotationPerUpdate )
+        public void SetRotation(Vector3 rotationPerUpdate)
         {
             m_Rotate = rotationPerUpdate.magnitude > 0.0f;
             m_RotationAmount = rotationPerUpdate;
