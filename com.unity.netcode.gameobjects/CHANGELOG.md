@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
+- Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
 - Fixed issue where entries were not being removed from the NetworkSpawnManager.OwnershipToObjectsTable. (#1838)
 - Fixed clarity for NetworkSceneManager client side notification when it receives a scene hash value that does not exist in its local hash table. (#1828)
@@ -32,7 +33,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
-- `UnityTransport` send queues are now flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 
 ## [1.0.0-pre.6] - 2022-03-02
 
