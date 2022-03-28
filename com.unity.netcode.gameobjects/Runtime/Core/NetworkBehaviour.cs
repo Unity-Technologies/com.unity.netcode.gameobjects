@@ -158,7 +158,6 @@ namespace Unity.Netcode
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
-            var logLevel = NetworkManager.LogLevel;
             if (clientRpcParams.Send.TargetClientIds != null)
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
@@ -170,7 +169,7 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel >= LogLevel.Error)
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
@@ -189,7 +188,7 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel >= LogLevel.Error)
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
