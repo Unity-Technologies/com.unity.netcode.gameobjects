@@ -82,7 +82,8 @@ namespace TestProject.RuntimeTests
             var clientRpcParams = new ClientRpcParams();
             // Verify that we get an error message when we try to send to a non-observer using TargetClientIds
             clientRpcParams.Send.TargetClientIds = new List<ulong>() { nonObservers[0] };
-            LogAssert.Expect(LogType.Error, m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
+            m_ServerNetworkManager.LogLevel = LogLevel.Error;
+            LogAssert.Expect(LogType.Error, "[Netcode] " + m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
             m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
             yield return s_DefaultWaitForTick;
 
@@ -94,7 +95,7 @@ namespace TestProject.RuntimeTests
 
             // Now verify that we get an error message when we try to send to a non-observer using TargetClientIdsNativeArray
             clientRpcParams.Send.TargetClientIdsNativeArray = m_NonObserverArrayError;
-            LogAssert.Expect(LogType.Error, m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
+            LogAssert.Expect(LogType.Error, "[Netcode] " + m_ServerRpcObserverObject.GenerateObserverErrorMessage(clientRpcParams, nonObservers[0]));
             m_ServerRpcObserverObject.ObserverMessageClientRpc(clientRpcParams);
             yield return s_DefaultWaitForTick;
 
@@ -117,6 +118,8 @@ namespace TestProject.RuntimeTests
                 Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, "Host failed to receive the ClientRpc when no clients were connected!");
                 Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
             }
+
+            m_ServerNetworkManager.LogLevel = LogLevel.Normal;
         }
 
         /// <summary>
