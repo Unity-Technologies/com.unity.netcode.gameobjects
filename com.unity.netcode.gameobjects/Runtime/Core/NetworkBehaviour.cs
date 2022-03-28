@@ -158,7 +158,7 @@ namespace Unity.Netcode
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
-
+            var logLevel = NetworkManager.LogLevel;
             if (clientRpcParams.Send.TargetClientIds != null)
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
@@ -170,9 +170,9 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId))
+                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel == LogLevel.Developer)
                     {
-                        Debug.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -189,9 +189,9 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId))
+                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel == LogLevel.Developer)
                     {
-                        Debug.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -202,7 +202,7 @@ namespace Unity.Netcode
                 shouldSendToHost = IsHost;
                 var observerAllocateCount = NetworkObject.Observers.Count();
                 // Exclude accounting for the host client id as the message is handled locally
-                if (shouldSendToHost && NetworkObject.Observers.Contains(NetworkManager.LocalClientId))
+                if (shouldSendToHost && NetworkObject.Observers.Contains(NetworkManager.ServerClientId))
                 {
                     observerAllocateCount--;
                 }
@@ -212,21 +212,30 @@ namespace Unity.Netcode
                 {
                     // Allocate native array large enough to hold the remaining observers' clientIds.
                     var observerClientIds = new NativeArray<ulong>(observerAllocateCount, Allocator.Temp);
-                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
-                    var observerCount = 0;
-                    while (observerEnumerator.MoveNext())
+                    // Since we are modifying the array and arrays within a using statement cannot be modified
+                    // placing a try and finally around this section to assure we don't leak memory if anything
+                    // throws an exception before disposing the array
+                    try
                     {
-                        // Skip over the host
-                        if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                        var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                        var observerCount = 0;
+                        while (observerEnumerator.MoveNext())
                         {
-                            shouldSendToHost = true;
-                            continue;
+                            // Skip over the host
+                            if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                            {
+                                shouldSendToHost = true;
+                                continue;
+                            }
+                            observerClientIds[observerCount++] = observerEnumerator.Current;
                         }
-                        observerClientIds[observerCount++] = observerEnumerator.Current;
-                    }
 
-                    rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, observerClientIds);
-                    observerClientIds.Dispose();
+                        rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, observerClientIds);
+                    }
+                    finally
+                    {
+                        observerClientIds.Dispose();
+                    }
                 }
             }
 
