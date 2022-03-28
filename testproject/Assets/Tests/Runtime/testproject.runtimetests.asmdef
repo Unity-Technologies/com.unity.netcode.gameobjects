@@ -4,6 +4,7 @@
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.RuntimeTests",
+        "Unity.Netcode.Components",
         "TestProject.ManualTests",
         "TestProject",
         "Unity.Netcode.TestHelpers.Runtime"
