@@ -515,8 +515,8 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnLostOwnership()
         {
-            // Server already handles this earlier, hosts should ignore
-            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            // Server already handles this earlier, hosts should ignore, all clients should update
+            if (!NetworkManager.IsServer)
             {
                 NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
             }
@@ -529,7 +529,7 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
-            // Server already handles this earlier, hosts should ignore
+            // Server already handles this earlier, hosts should ignore and only client owners should update
             if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
             {
                 NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);

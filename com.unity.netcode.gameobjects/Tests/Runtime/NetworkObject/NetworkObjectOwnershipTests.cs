@@ -192,18 +192,25 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(clientId));
                 serverObject.ChangeOwnership(clientId);
                 yield return s_DefaultWaitForTick;
-
                 Assert.That(serverComponent.OnLostOwnershipFired);
                 Assert.That(serverComponent.OwnerClientId, Is.EqualTo(clientId));
                 // Wait for all clients to receive the CreateObjectMessage
                 yield return WaitForConditionOrTimeOut(ownershipMessageHooks);
                 Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive the {nameof(ChangeOwnershipMessage)} message.");
 
+                var previousNetworkManager = m_ServerNetworkManager;
                 if (previousClientComponent != null)
                 {
+                    // Once we have a previousClientComponent, we want to verify the server is keeping track for the removal of ownership in the OwnershipToObjectsTable
+                    Assert.That(!m_ServerNetworkManager.SpawnManager.OwnershipToObjectsTable[m_ServerNetworkManager.LocalClientId].ContainsKey(serverObject.NetworkObjectId));
+                    previousNetworkManager = previousClientComponent.NetworkManager;
                     Assert.That(previousClientComponent.OnLostOwnershipFired);
                     Assert.That(previousClientComponent.OwnerClientId, Is.EqualTo(clientId));
                 }
+
+                // Assure the previous owner is no longer in the local table of the previous owner.
+                Assert.That(!previousNetworkManager.SpawnManager.OwnershipToObjectsTable[previousNetworkManager.LocalClientId].ContainsKey(serverObject.NetworkObjectId));
+
                 var currentClientComponent = clientObjects[clientIndex].GetComponent<NetworkObjectOwnershipComponent>();
                 Assert.That(currentClientComponent.OnGainedOwnershipFired);
 
