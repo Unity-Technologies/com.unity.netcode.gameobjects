@@ -32,6 +32,11 @@ namespace TestProject.RuntimeTests
             genericNetworkObjectBehaviour.SetRotation(new Vector3(0.0f, 3.33333f, 0.0f));
         }
 
+        /// <summary>
+        /// This verifies that a warning message is generated on the client side
+        /// if a client tries to modify the transform of a NetworkObject with a
+        /// NetworkTransform component.
+        /// </summary>
         [UnityTest]
         public IEnumerator VerifyAuthorityWarningOnClient()
         {
@@ -42,22 +47,26 @@ namespace TestProject.RuntimeTests
             float ang = Random.Range(0.0f, 2 * Mathf.PI);
             m_ServerNetworkObjectBehaviour.SetDirectionAndVelocity(new Vector3(Mathf.Cos(ang), 0, Mathf.Sin(ang)), 5.0f);
 
+            // Wait for the client side to have spawned and registered the NetworkObject
             var clientId = m_ClientNetworkManagers[0].LocalClientId;
             yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(clientId));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to be registered with {nameof(s_GlobalNetworkObjects)} table");
             yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects[clientId].ContainsKey(m_TestPrefabInstance_Server.NetworkObjectId));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to spawn and register {m_TestPrefabInstance_Server.name}");
 
+            // The message requires LogLevel.Developer
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
             m_ClientNetworkObjectBehaviour = s_GlobalNetworkObjects[clientId][m_TestPrefabInstance_Server.NetworkObjectId].GetComponent<GenericNetworkObjectBehaviour>();
 
+            // Modify the client-side instance's transform position to generate the warning
             m_ClientNetworkObjectBehaviour.transform.position += Vector3.one;
             LogAssert.Expect(LogType.Warning, $"A local change to position without authority detected, reverting back to latest interpolated network state!");
+
             // Wait a tick while the message is generated
             yield return s_DefaultWaitForTick;
 
+            // Clean up
             m_TestPrefabInstance_Server.Despawn(true);
-
             Object.Destroy(m_TestPrefab);
         }
     }
