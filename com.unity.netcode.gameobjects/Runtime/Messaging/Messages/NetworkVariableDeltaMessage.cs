@@ -48,6 +48,7 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                var startingSize = writer.Length;
                 var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
@@ -96,7 +97,7 @@ namespace Unity.Netcode
                         NetworkBehaviour.NetworkObject,
                         networkVariable.Name,
                         NetworkBehaviour.__getTypeName(),
-                        writer.Length);
+                        writer.Length - startingSize);
                 }
             }
         }
