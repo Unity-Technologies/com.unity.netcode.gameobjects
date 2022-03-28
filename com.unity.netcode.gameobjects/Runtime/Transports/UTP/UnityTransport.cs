@@ -816,10 +816,23 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        private void FlushSendQueuesForClientId(ulong clientId)
+        {
+            foreach (var kvp in m_SendQueue)
+            {
+                if (kvp.Key.ClientId == clientId)
+                {
+                    SendBatchedMessages(kvp.Key, kvp.Value);
+                }
+            }
+        }
+
         public override void DisconnectLocalClient()
         {
             if (m_State == State.Connected)
             {
+                FlushSendQueuesForClientId(m_ServerClientId);
+
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
                 {
                     m_State = State.Disconnected;
@@ -844,15 +857,16 @@ namespace Unity.Netcode.Transports.UTP
 
             if (m_State == State.Listening)
             {
-                var connection = ParseClientId(clientId);
+                FlushSendQueuesForClientId(clientId);
 
+                m_ReliableReceiveQueues.Remove(clientId);
+                ClearSendQueuesForClientId(clientId);
+
+                var connection = ParseClientId(clientId);
                 if (m_Driver.GetConnectionState(connection) != NetworkConnection.State.Disconnected)
                 {
                     m_Driver.Disconnect(connection);
                 }
-
-                m_ReliableReceiveQueues.Remove(clientId);
-                ClearSendQueuesForClientId(clientId);
             }
         }
 
