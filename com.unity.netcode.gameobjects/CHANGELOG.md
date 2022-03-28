@@ -32,7 +32,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
-- `UnityTransport` send queues are now flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`.
+- `UnityTransport` send queues are now flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 
 ## [1.0.0-pre.6] - 2022-03-02
 
