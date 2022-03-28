@@ -170,7 +170,7 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel == LogLevel.Error)
+                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel >= LogLevel.Error)
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
@@ -189,7 +189,7 @@ namespace Unity.Netcode
                     }
 
                     // Check to make sure we are sending to only observers, if not log an error.
-                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel == LogLevel.Error)
+                    if (!NetworkObject.Observers.Contains(targetClientId) && logLevel >= LogLevel.Error)
                     {
                         NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
