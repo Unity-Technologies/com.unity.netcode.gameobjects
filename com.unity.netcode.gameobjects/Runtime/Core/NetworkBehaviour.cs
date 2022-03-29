@@ -158,7 +158,6 @@ namespace Unity.Netcode
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
-
             if (clientRpcParams.Send.TargetClientIds != null)
             {
                 foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
@@ -167,6 +166,12 @@ namespace Unity.Netcode
                     {
                         shouldSendToHost = true;
                         break;
+                    }
+
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -181,14 +186,29 @@ namespace Unity.Netcode
                         shouldSendToHost = true;
                         break;
                     }
+
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
+                    }
                 }
 
                 rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
-                shouldSendToHost = IsHost;
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ConnectedClientsIds);
+                var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                while (observerEnumerator.MoveNext())
+                {
+                    // Skip over the host
+                    if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                    {
+                        shouldSendToHost = true;
+                        continue;
+                    }
+                    rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
+                }
             }
 
             // If we are a server/host then we just no op and send to ourself
@@ -226,6 +246,12 @@ namespace Unity.Netcode
                 }
             }
 #endif
+        }
+
+        internal string GenerateObserverErrorMessage(ClientRpcParams clientRpcParams, ulong targetClientId)
+        {
+            var containerNameHoldingId = clientRpcParams.Send.TargetClientIds != null ? nameof(ClientRpcParams.Send.TargetClientIds) : nameof(ClientRpcParams.Send.TargetClientIdsNativeArray);
+            return $"Sending ClientRpc to non-observer! {containerNameHoldingId} contains clientId {targetClientId} that is not an observer!";
         }
 
         /// <summary>
