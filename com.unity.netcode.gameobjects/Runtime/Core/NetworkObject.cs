@@ -802,7 +802,7 @@ namespace Unity.Netcode
                 }
                 catch (Exception e)
                 {
-                    NetworkLog.LogError(e.ToString());
+                    Debug.LogException(e);
                 }
             }
         }
@@ -818,7 +818,7 @@ namespace Unity.Netcode
                 }
                 catch (Exception e)
                 {
-                    NetworkLog.LogError(e.ToString());
+                    Debug.LogException(e);
                 }
             }
         }
