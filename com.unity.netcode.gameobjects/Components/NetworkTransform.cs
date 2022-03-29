@@ -917,8 +917,8 @@ namespace Unity.Netcode.Components
                         var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
 
                         // there are several bugs in this code, as we the message is dumped out under odd circumstances
-                        //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
-                        //  object vs. explicitly rotating it
+                        // it would trigger when an object's rotation was perturbed by colliding with another
+                        // object vs. explicitly rotating it
                         if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || oldStateDirtyInfo.isRotationDirty)
                         {
                             // ignoring rotation dirty since quaternions will mess with Euler angles, making this impossible to determine if the change to a single axis comes
