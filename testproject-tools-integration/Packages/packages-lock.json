@@ -10,12 +10,12 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.collections": {
-      "version": "1.1.0",
-      "depth": 1,
+      "version": "1.2.3",
+      "depth": 2,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.5.4",
-        "com.unity.test-framework": "1.1.29"
+        "com.unity.burst": "1.6.4",
+        "com.unity.test-framework": "1.1.31"
       },
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
@@ -43,9 +43,9 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.multiplayer.tools": {
-      "version": "1.0.0-pre.5",
+      "version": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f",
       "depth": 0,
-      "source": "registry",
+      "source": "git",
       "dependencies": {
         "com.unity.profiling.core": "1.0.0-pre.1",
         "com.unity.nuget.newtonsoft-json": "2.0.0",
@@ -53,27 +53,16 @@
         "com.unity.collections": "1.1.0",
         "com.unity.modules.uielements": "1.0.0"
       },
-      "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
-    },
-    "com.unity.netcode.adapter.utp": {
-      "version": "file:../../com.unity.netcode.adapter.utp",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.netcode.gameobjects": "1.0.0-pre.5",
-        "com.unity.transport": "1.0.0-pre.13"
-      }
+      "hash": "cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f"
     },
     "com.unity.netcode.gameobjects": {
       "version": "file:../../com.unity.netcode.gameobjects",
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.unity.modules.animation": "1.0.0",
-        "com.unity.modules.physics": "1.0.0",
-        "com.unity.modules.physics2d": "1.0.0",
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0"
+        "com.unity.collections": "1.1.0",
+        "com.unity.transport": "1.0.0-pre.16"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -119,11 +108,11 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.13",
+      "version": "1.0.0-pre.16",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.collections": "1.1.0",
+        "com.unity.collections": "1.2.3",
         "com.unity.burst": "1.6.4",
         "com.unity.mathematics": "1.2.5"
       },

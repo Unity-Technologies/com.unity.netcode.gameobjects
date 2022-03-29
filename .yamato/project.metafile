@@ -38,12 +38,17 @@ projects:
     packages:
       - name: com.unity.netcode.gameobjects
         path: com.unity.netcode.gameobjects
-      - name: com.unity.netcode.adapter.utp
-        path: com.unity.netcode.adapter.utp
     test_editors:
       - 2021.2
       - 2020.3
       - trunk
+  - name: minimalproject
+    path: minimalproject
+    packages:
+      - name: com.unity.netcode.gameobjects
+        path: com.unity.netcode.gameobjects
+    test_editors:
+      - 2020.3
   - name: testproject-tools-integration
     path: testproject-tools-integration
     validate: false

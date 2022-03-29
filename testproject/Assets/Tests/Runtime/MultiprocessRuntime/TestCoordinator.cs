@@ -123,7 +123,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void OnClientDisconnectCallback(ulong clientId)
     {
-        if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
+        if (clientId == NetworkManager.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
             MultiprocessLogger.Log($"received disconnect from {clientId}, quitting");

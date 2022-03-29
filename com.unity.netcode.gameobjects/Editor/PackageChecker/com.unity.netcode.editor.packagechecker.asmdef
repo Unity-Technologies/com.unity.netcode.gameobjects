@@ -1,0 +1,14 @@
+{
+    "name": "Unity.Netcode.Editor.PackageChecker",
+    "rootNamespace": "Unity.Netcode.Editor.PackageChecker",
+    "includePlatforms": [
+        "Editor"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.netcode.adapter.utp",
+            "expression": "",
+            "define": "COM_UNITY_NETCODE_ADAPTER_UTP"
+        }
+    ]
+}

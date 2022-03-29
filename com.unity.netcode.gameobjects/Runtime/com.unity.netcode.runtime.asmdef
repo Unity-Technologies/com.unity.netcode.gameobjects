@@ -10,7 +10,9 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Multiplayer.Tools.NetStatsReporting",
         "Unity.Multiplayer.Tools.NetworkSolutionInterface",
-        "Unity.Collections"
+        "Unity.Networking.Transport",
+        "Unity.Collections",
+        "Unity.Burst"
     ],
     "allowUnsafeCode": true,
     "versionDefines": [
@@ -26,8 +28,8 @@
         },
         {
             "name": "com.unity.multiplayer.tools",
-            "expression": "1.0.0-pre.4",
-            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_4"
+            "expression": "1.0.0-pre.7",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
         }
     ]
 }
