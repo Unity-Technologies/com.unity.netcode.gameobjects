@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Text.RegularExpressions;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
 using UnityEngine;
@@ -48,7 +49,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenOnNetworkSpawnThrowsException_FutureOnNetworkSpawnsAreNotPrevented()
         {
-            LogAssert.ignoreFailingMessages = true;
             //Spawning was done during setup
             Assert.AreEqual(5, OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns);
             yield return null;
@@ -57,7 +57,10 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenOnNetworkDespawnThrowsException_FutureOnNetworkDespawnsAreNotPrevented()
         {
-            LogAssert.ignoreFailingMessages = true;
+            for (var i = 0; i < 3; ++i)
+            {
+                LogAssert.Expect(LogType.Exception, new Regex("I'm misbehaving"));
+            }
             //Spawning was done during setup. Now we despawn.
             for (var i = 0; i < 5; ++i)
             {
@@ -73,9 +76,12 @@ namespace TestProject.RuntimeTests
 
         public override IEnumerator Setup()
         {
+            for (var i = 0; i < 3; ++i)
+            {
+                LogAssert.Expect(LogType.Exception, new Regex("I'm misbehaving"));
+            }
             OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns = 0;
             OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns = 0;
-            LogAssert.ignoreFailingMessages = true;
             yield return StartSomeClientsAndServerWithPlayers(false, NbClients, _ =>
             {
                 m_Prefab = new GameObject();
