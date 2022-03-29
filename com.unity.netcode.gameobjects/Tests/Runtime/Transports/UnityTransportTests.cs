@@ -283,7 +283,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Server.Shutdown();
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024) + 1;
+            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024);
 
             for (int i = 0; i < numSends; i++)
             {
