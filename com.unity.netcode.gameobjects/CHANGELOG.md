@@ -19,7 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed `SnapshotSystem` (#?)
+- Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
