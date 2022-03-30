@@ -12,10 +12,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         private long m_UpdateCounter;
         private bool m_HasFired;
         private string m_TransportString;
+        public static bool IsPerformanceTest = false;
 
         public void Awake()
         {
-            if (MultiprocessOrchestration.IsPerformanceTest)
+            if (IsPerformanceTest)
             {
                 gameObject.SetActive(false);
             }

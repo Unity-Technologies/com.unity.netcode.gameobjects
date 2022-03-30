@@ -72,6 +72,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             
             if (IsPerformanceTest)
             {
+                // We don't want the UI updating as part of the performance test measurement.
+                ThreeDText.IsPerformanceTest = IsPerformanceTest;
                 // Assert.Ignore("Performance tests unable to run at this time, see: https://unity-ci.cds.internal.unity3d.com/job/11651103/results");
             }
 
