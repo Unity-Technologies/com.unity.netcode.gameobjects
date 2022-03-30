@@ -29,12 +29,17 @@ namespace TestProject.RuntimeTests
             // are spawned upon the server starting
             for (int i = 0; i < k_NumberOfInstances; i++)
             {
+                // Create one that simulates when an in-scene placed NetworkObject is first instantiated when
+                // the scene is loaded (i.e. IsSceneObject is null)
                 var inScenePrefab = CreateNetworkObjectPrefab($"NewSceneObject-{i}");
                 var networkObject = inScenePrefab.GetComponent<NetworkObject>();
                 networkObject.IsSceneObject = null;
                 networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                 m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
 
+                // Create one that simulates when an in-scene placed NetworkObject has already been instantiated
+                // (i.e. IsSceneObject is true) which can happen if a client disconnects and then reconnects without
+                // unloading/reloading any scenes.
                 inScenePrefab = CreateNetworkObjectPrefab($"SetInSceneObject-{i}");
                 networkObject = inScenePrefab.GetComponent<NetworkObject>();
                 networkObject.IsSceneObject = true;
@@ -52,11 +57,13 @@ namespace TestProject.RuntimeTests
             var scenePlacedNetworkObjects = m_ServerNetworkManager.SceneManager.ScenePlacedObjects;
             foreach (var entry in m_InSceneObjectList)
             {
-                Assert.IsTrue(scenePlacedNetworkObjects.ContainsKey(entry.Key), $"Failed to find {nameof(NetworkObject.GlobalObjectIdHash)}({entry.Key}) for " +
-                    $"{entry.Value.name} in the {nameof(NetworkSceneManager.ScenePlacedObjects)}!");
+                // Verify the GlobalObjectIdHash for this object has an entry
+                Assert.IsTrue(scenePlacedNetworkObjects.ContainsKey(entry.Key), $"Failed to find {nameof(NetworkObject.GlobalObjectIdHash)}({entry.Key}) for {entry.Value.name} in the {nameof(NetworkSceneManager.ScenePlacedObjects)}!");
 
-                Assert.IsTrue(scenePlacedNetworkObjects[entry.Key].ContainsKey(activeScene.handle), $"Failed to find the scene handle {activeScene.handle} ({activeScene.name}) entry for " +
-                    $"{entry.Value.name} in the {nameof(NetworkSceneManager.ScenePlacedObjects)}!");
+                // Verify the active scene for this object has an entry
+                Assert.IsTrue(scenePlacedNetworkObjects[entry.Key].ContainsKey(activeScene.handle), $"Failed to find the scene handle {activeScene.handle} ({activeScene.name}) entry for {entry.Value.name} in the {nameof(NetworkSceneManager.ScenePlacedObjects)}!");
+
+                // Verify the GameObject is the same one
                 var inSceneGameObject = scenePlacedNetworkObjects[entry.Key][activeScene.handle].gameObject;
                 Assert.IsTrue(inSceneGameObject == entry.Value, $"{nameof(GameObject)} {entry.Value.name} is not the same as {inSceneGameObject.name}!");
             }
@@ -66,7 +73,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            foreach(var spawnedInstance in m_InSceneObjectList)
+            foreach (var spawnedInstance in m_InSceneObjectList)
             {
                 Object.Destroy(spawnedInstance.Value);
             }
