@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
+- `UnityTransport` settings can now be set programmatically. (#1845)
 
 ### Changed
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0-pre.16. (#1834)
@@ -21,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
+- Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
 - Fixed issue where entries were not being removed from the NetworkSpawnManager.OwnershipToObjectsTable. (#1838)
 - Fixed ClientRpcs would always send to all connected clients by default as opposed to only sending to the NetworkObject's Observers list by default. (#1836)
