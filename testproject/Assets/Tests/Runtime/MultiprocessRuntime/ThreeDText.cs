@@ -76,6 +76,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 IsTestCoordinatorActiveAndEnabled = testCoordinator.isActiveAndEnabled;
                 t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n" +
                     $"Transport: {transportString}\n" +
+                    $"Remote Address: {TestCoordinator.Instance.GetConnectionAddress()}\n" +
                     $"{CommandLineArguments}\n" +
                     $"{m_UpdateCounter}\n";
             }

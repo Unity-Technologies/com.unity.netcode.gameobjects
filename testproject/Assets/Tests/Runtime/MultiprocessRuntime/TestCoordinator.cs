@@ -28,6 +28,8 @@ public class TestCoordinator : NetworkBehaviour
     public const float MaxWaitTimeoutSec = 56;
     private const char k_MethodFullNameSplitChar = '@';
 
+    public ConfigurationType ConfigurationType;
+
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
     private float m_TimeSinceLastKeepAlive;
@@ -42,6 +44,7 @@ public class TestCoordinator : NetworkBehaviour
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
     public static List<ulong> NetworkManagerClientConnectedCallbackReceived = new List<ulong>();
     public static List<ulong> NetworkManagerClientDisconnectedCallbackReceived = new List<ulong>();
+
     private string m_ConnectAddress = "127.0.0.1";
     private string m_Port = "3076";
 
@@ -75,6 +78,28 @@ public class TestCoordinator : NetworkBehaviour
         catch (Exception e)
         {
             MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
+        }
+
+        try
+        {
+            var remoteConfig = Resources.Load<TextAsset>("Text/remoteConfig").ToString();
+            if (!string.IsNullOrEmpty(remoteConfig))
+            {
+                MultiprocessLogger.Log(remoteConfig);
+                RemoteConfiguration rc = JsonUtility.FromJson<RemoteConfiguration>(remoteConfig);
+                MultiprocessLogger.Log("Checking remoteconfig object");
+                MultiprocessLogger.Log(rc.IpAddressOfHost);
+                this.m_ConnectAddress = rc.IpAddressOfHost;
+                ConfigurationType = ConfigurationType.ResourceFile;
+                if (rc.OperationMode.Equals("client"))
+                {
+                    m_IsClient = true;
+                }
+            }
+        }
+        catch (Exception remoteConfigReadException)
+        {
+            MultiprocessLogger.Log($"Exception reading remoteConfig {remoteConfigReadException.Message}");
         }
 
         MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {rawgithash}");
@@ -112,35 +137,42 @@ public class TestCoordinator : NetworkBehaviour
         m_NumberOfCallsToFixedUpdate = 0;
         m_FixedUpdateDeltaTime = new List<float>();
         m_UpdateDeltaTime = new List<float>();
-        m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
-        string[] args = Environment.GetCommandLineArgs();
-        for (int i = 0; i < args.Length; ++i)
+        if (ConfigurationType == ConfigurationType.ResourceFile)
         {
-            string arg = args[i];
-            if (arg.Equals("-ip"))
-            {
-                m_ConnectAddress = args[i + 1];
-            }
 
-            if (arg.Equals("-p"))
+        }
+        else
+        {
+            m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; ++i)
             {
-                m_Port = args[i + 1];
-            }
-
-            if (arg.Equals("-jobid"))
-            {
-                string sJobId = args[i + 1];
-                long jobId;
-                if (!long.TryParse(sJobId, out jobId))
+                string arg = args[i];
+                if (arg.Equals("-ip"))
                 {
-                    jobId = -2;
+                    m_ConnectAddress = args[i + 1];
                 }
-                MultiprocessLogHandler.JobId = jobId;
-            }
-            if (arg.Equals("-testname"))
-            {
-                string testname = args[i + 1];
-                MultiprocessLogHandler.TestName = testname;
+
+                if (arg.Equals("-p"))
+                {
+                    m_Port = args[i + 1];
+                }
+
+                if (arg.Equals("-jobid"))
+                {
+                    string sJobId = args[i + 1];
+                    long jobId;
+                    if (!long.TryParse(sJobId, out jobId))
+                    {
+                        jobId = -2;
+                    }
+                    MultiprocessLogHandler.JobId = jobId;
+                }
+                if (arg.Equals("-testname"))
+                {
+                    string testname = args[i + 1];
+                    MultiprocessLogHandler.TestName = testname;
+                }
             }
         }
         MultiprocessLogger.Log($"{m_Port}");
@@ -314,6 +346,11 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         base.OnDestroy();
+    }
+
+    public string GetConnectionAddress()
+    {
+        return m_ConnectAddress;
     }
 
     private static void NetworkManager_OnClientDisconnectCallback(ulong clientId)
