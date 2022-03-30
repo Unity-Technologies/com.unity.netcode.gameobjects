@@ -97,35 +97,95 @@ namespace Unity.Netcode.Transports.UTP
         [SerializeField]
         private ProtocolType m_ProtocolType;
 
-#pragma warning disable CS0414 // Assigned-but-not-used (only an issue in WebGL builds)
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField]
         private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
-#pragma warning restore CS0414
+
+        /// <summary>The maximum amount of packets that can be in the internal send/receive queues.</summary>
+        /// <remarks>Basically this is how many packets can be sent/received in a single update/frame.</remarks>
+        public int MaxPacketQueueSize
+        {
+            get => m_MaxPacketQueueSize;
+            set => m_MaxPacketQueueSize = value;
+        }
 
         [Tooltip("The maximum size of a payload that can be handled by the transport.")]
         [SerializeField]
         private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
+        /// <summary>The maximum size of a payload that can be handled by the transport.</summary>
+        public int MaxPayloadSize
+        {
+            get => m_MaxPayloadSize;
+            set => m_MaxPayloadSize = value;
+        }
+
         [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for batching and stores messages when other internal send queues are full. If you routinely observe an error about too many in-flight packets, try increasing this.")]
         [SerializeField]
         private int m_MaxSendQueueSize = InitialMaxSendQueueSize;
 
-        [Tooltip("A timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
+        /// <summary>The maximum size in bytes of the transport send queue.</summary>
+        /// <remarks>
+        /// The send queue accumulates messages for batching and stores messages when other internal
+        /// send queues are full. If you routinely observe an error about too many in-flight packets,
+        /// try increasing this.
+        /// </remarks>
+        public int MaxSendQueueSize
+        {
+            get => m_MaxSendQueueSize;
+            set => m_MaxSendQueueSize = value;
+        }
+
+        [Tooltip("Timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
         [SerializeField]
         private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
 
-        [Tooltip("A timeout in milliseconds indicating how long we will wait until we send a new connection attempt.")]
+        /// <summary>Timeout in milliseconds after which a heartbeat is sent if there is no activity.</summary>
+        public int HeartbeatTimeoutMS
+        {
+            get => m_HeartbeatTimeoutMS;
+            set => m_HeartbeatTimeoutMS = value;
+        }
+
+        [Tooltip("Timeout in milliseconds indicating how long we will wait until we send a new connection attempt.")]
         [SerializeField]
         private int m_ConnectTimeoutMS = NetworkParameterConstants.ConnectTimeoutMS;
+
+        /// <summary>
+        /// Timeout in milliseconds indicating how long we will wait until we send a new connection attempt.
+        /// </summary>
+        public int ConnectTimeoutMS
+        {
+            get => m_ConnectTimeoutMS;
+            set => m_ConnectTimeoutMS = value;
+        }
 
         [Tooltip("The maximum amount of connection attempts we will try before disconnecting.")]
         [SerializeField]
         private int m_MaxConnectAttempts = NetworkParameterConstants.MaxConnectAttempts;
 
-        [Tooltip("A timeout in milliseconds indicating how long we will wait for a connection event, before we disconnect it. The connection needs to receive data from the connected endpoint within this timeout. Note that with heartbeats enabled, simply not sending any data will not be enough to trigger this timeout (since heartbeats count as connection events).")]
+        /// <summary>The maximum amount of connection attempts we will try before disconnecting.</summary>
+        public int MaxConnectAttempts
+        {
+            get => m_MaxConnectAttempts;
+            set => m_MaxConnectAttempts = value;
+        }
+
+        [Tooltip("Inactivity timeout after which a connection will be disconnected. The connection needs to receive data from the connected endpoint within this timeout. Note that with heartbeats enabled, simply not sending any data will not be enough to trigger this timeout (since heartbeats count as connection events).")]
         [SerializeField]
         private int m_DisconnectTimeoutMS = NetworkParameterConstants.DisconnectTimeoutMS;
+
+        /// <summary>Inactivity timeout after which a connection will be disconnected.</summary>
+        /// <remarks>
+        /// The connection needs to receive data from the connected endpoint within this timeout.
+        /// Note that with heartbeats enabled, simply not sending any data will not be enough to
+        /// trigger this timeout (since heartbeats count as connection events).
+        /// </remarks>
+        public int DisconnectTimeoutMS
+        {
+            get => m_DisconnectTimeoutMS;
+            set => m_DisconnectTimeoutMS = value;
+        }
 
         [Serializable]
         public struct ConnectionAddressData
