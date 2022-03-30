@@ -303,7 +303,16 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ClientsEvents[0]);
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ClientsEvents[0]);
+
+            if (m_ClientsEvents[0].Count >= 3)
+            {
+                Assert.AreEqual(NetworkEvent.Disconnect, m_ClientsEvents[0][2].Type);
+            }
+            else
+            {
+                yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ClientsEvents[0]);
+            }
         }
 
         // Check client disconnection with data in send queue.
@@ -323,7 +332,16 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Clients[0].DisconnectLocalClient();
 
-            yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            if (m_ServerEvents.Count >= 3)
+            {
+                Assert.AreEqual(NetworkEvent.Disconnect, m_ServerEvents[2].Type);
+            }
+            else
+            {
+                yield return WaitForNetworkEvent(NetworkEvent.Disconnect, m_ServerEvents);
+            }
         }
 
         // Check that a server can disconnect a client after another client has disconnected.

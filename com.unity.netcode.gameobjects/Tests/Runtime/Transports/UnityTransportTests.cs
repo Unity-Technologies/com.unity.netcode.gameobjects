@@ -283,7 +283,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Server.Shutdown();
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024) + 1;
+            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024);
 
             for (int i = 0; i < numSends; i++)
             {
@@ -412,6 +412,48 @@ namespace Unity.Netcode.RuntimeTests
             m_Client1.Shutdown();
 
             yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SendQueuesFlushedOnLocalClientDisconnect([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[] { 42 });
+            m_Client1.Send(m_Client1.ServerClientId, data, delivery);
+
+            m_Client1.DisconnectLocalClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_ServerEvents);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SendQueuesFlushedOnRemoteClientDisconnect([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var data = new ArraySegment<byte>(new byte[] { 42 });
+            m_Server.Send(m_Client1.ServerClientId, data, delivery);
+
+            m_Server.DisconnectRemoteClient(m_ServerEvents[0].ClientID);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
 
             yield return null;
         }
