@@ -67,7 +67,7 @@ namespace Unity.Netcode.Transports.UTP
         }
     }
 
-    public class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
+    public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         public enum ProtocolType
         {
