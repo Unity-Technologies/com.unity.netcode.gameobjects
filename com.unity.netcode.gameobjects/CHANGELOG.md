@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 
 ### Fixed
+- Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
 - Fixed issue where entries were not being removed from the NetworkSpawnManager.OwnershipToObjectsTable. (#1838)
 - Fixed ClientRpcs would always send to all connected clients by default as opposed to only sending to the NetworkObject's Observers list by default. (#1836)
