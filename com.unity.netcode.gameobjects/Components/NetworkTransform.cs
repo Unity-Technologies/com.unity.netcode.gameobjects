@@ -691,7 +691,6 @@ namespace Unity.Netcode.Components
         {
             if (!NetworkObject.IsSpawned)
             {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 

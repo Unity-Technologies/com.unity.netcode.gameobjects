@@ -604,56 +604,45 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotDelta)
+            for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
             {
+                var shouldSend = false;
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
-                }
-            }
-
-            if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
-            {
-                for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
-                {
-                    var shouldSend = false;
-                    for (int k = 0; k < NetworkVariableFields.Count; k++)
+                    var networkVariable = NetworkVariableFields[k];
+                    if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                     {
-                        var networkVariable = NetworkVariableFields[k];
-                        if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
+                        shouldSend = true;
+                        break;
+                    }
+                }
+
+                if (shouldSend)
+                {
+                    var message = new NetworkVariableDeltaMessage
+                    {
+                        NetworkObjectId = NetworkObjectId,
+                        NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
+                        NetworkBehaviour = this,
+                        TargetClientId = targetClientId,
+                        DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
+                    };
+                    // TODO: Serialization is where the IsDirty flag gets changed.
+                    // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
+                    // we still have to actually serialize the message even though we're not sending it, otherwise
+                    // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
+                    // so we don't have to do this serialization work if we're not going to use the result.
+                    if (IsServer && targetClientId == NetworkManager.ServerClientId)
+                    {
+                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
+                        using (tmpWriter)
                         {
-                            shouldSend = true;
-                            break;
+                            message.Serialize(tmpWriter);
                         }
                     }
-
-                    if (shouldSend)
+                    else
                     {
-                        var message = new NetworkVariableDeltaMessage
-                        {
-                            NetworkObjectId = NetworkObjectId,
-                            NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
-                            NetworkBehaviour = this,
-                            TargetClientId = targetClientId,
-                            DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
-                        };
-                        // TODO: Serialization is where the IsDirty flag gets changed.
-                        // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
-                        // we still have to actually serialize the message even though we're not sending it, otherwise
-                        // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
-                        // so we don't have to do this serialization work if we're not going to use the result.
-                        if (IsServer && targetClientId == NetworkManager.ServerClientId)
-                        {
-                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
-                            using (tmpWriter)
-                            {
-                                message.Serialize(tmpWriter);
-                            }
-                        }
-                        else
-                        {
-                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
-                        }
+                        NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
                     }
                 }
             }

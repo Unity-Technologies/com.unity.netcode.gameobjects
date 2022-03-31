@@ -132,7 +132,7 @@ namespace Unity.Netcode
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
         internal const int InvalidSceneNameOrPath = -1;
 
-        // Used to be able to turn re-synchronization off for future snapshot development purposes.
+        // Used to be able to turn re-synchronization off
         internal static bool DisableReSynchronization;
 
         /// <summary>
@@ -1198,7 +1198,6 @@ namespace Unity.Netcode
             // When it is set: Just before starting the asynchronous loading call
             // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
             // not destroy temporary scene are moved into the active scene
-            // TODO: When Snapshot scene spawning is enabled this needs to be removed.
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -1747,8 +1746,6 @@ namespace Unity.Netcode
                         // NetworkObjects
                         m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
-                        // TODO: This check and associated code can be removed once we determine all
-                        // snapshot destroy messages are being updated until the server receives ACKs
                         if (sceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
                         {
                             sceneEventData.SceneEventType = SceneEventType.ReSynchronize;
