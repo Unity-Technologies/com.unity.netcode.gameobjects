@@ -205,6 +205,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public void Launch()
         {
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
+            MultiprocessLogger.Log($"Launch command - {Name} {Type} {Image}");
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
             MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
             if (!ProcessList.Contains(p))
