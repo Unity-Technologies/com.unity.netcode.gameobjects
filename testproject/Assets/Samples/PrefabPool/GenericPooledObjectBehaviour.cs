@@ -58,8 +58,6 @@ public class GenericPooledObjectBehaviour : NetworkBehaviour
 
     /// <summary>
     /// Handles setting a delay before the newly spawned object is visible
-    /// Note: this might get removed once the snapshot system is synchronizing
-    /// NetworkObjects' spawn and despawn.
     /// </summary>
     public override void OnNetworkSpawn()
     {
