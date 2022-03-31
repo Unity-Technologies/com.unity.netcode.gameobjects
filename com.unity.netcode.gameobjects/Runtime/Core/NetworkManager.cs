@@ -1284,6 +1284,8 @@ namespace Unity.Netcode
                 NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
                 NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
                 NetworkMetrics.DispatchFrame();
+
+                NetworkObject.VerifyParentingStatus();
             }
             SpawnManager.CleanupStaleTriggers();
 
