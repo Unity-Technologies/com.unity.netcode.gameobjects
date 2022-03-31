@@ -206,11 +206,6 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn(clientId);
-            }
-
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
@@ -288,20 +283,13 @@ namespace Unity.Netcode
 
             Observers.Remove(clientId);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            var message = new DestroyObjectMessage
             {
-                SnapshotDespawn(clientId);
-            }
-            else
-            {
-                var message = new DestroyObjectMessage
-                {
-                    NetworkObjectId = NetworkObjectId
-                };
-                // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
-            }
+                NetworkObjectId = NetworkObjectId
+            };
+            // Send destroy call
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+            NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
         }
 
         /// <summary>
@@ -368,67 +356,6 @@ namespace Unity.Netcode
             }
         }
 
-        private SnapshotDespawnCommand GetDespawnCommand()
-        {
-            return new SnapshotDespawnCommand { NetworkObjectId = NetworkObjectId };
-        }
-
-        private SnapshotSpawnCommand GetSpawnCommand()
-        {
-            var command = new SnapshotSpawnCommand
-            {
-                NetworkObjectId = NetworkObjectId,
-                OwnerClientId = OwnerClientId,
-                IsPlayerObject = IsPlayerObject,
-                IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value
-            };
-
-            ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
-            if (parent != null)
-            {
-                command.ParentNetworkId = parent.Value;
-            }
-            else
-            {
-                // write own network id, when no parents. todo: optimize this.
-                command.ParentNetworkId = command.NetworkObjectId;
-            }
-
-            command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
-            // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
-            command.ObjectPosition = transform.position;
-            command.ObjectRotation = transform.rotation;
-            command.ObjectScale = transform.localScale;
-
-            return command;
-        }
-
-        private void SnapshotSpawn()
-        {
-            var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command);
-        }
-
-        private void SnapshotSpawn(ulong clientId)
-        {
-            var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong> { clientId };
-            NetworkManager.SnapshotSystem.Spawn(command);
-        }
-
-        internal void SnapshotDespawn()
-        {
-            var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command);
-        }
-
-        internal void SnapshotDespawn(ulong clientId)
-        {
-            var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong> { clientId };
-            NetworkManager.SnapshotSystem.Despawn(command);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
@@ -443,11 +370,6 @@ namespace Unity.Netcode
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
-
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn();
-            }
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
