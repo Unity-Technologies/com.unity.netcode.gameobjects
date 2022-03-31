@@ -736,13 +736,7 @@ namespace Unity.Netcode
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                if (OrphanChildren.Add(this))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} ({name}) cannot find its parent, added to {nameof(OrphanChildren)} set");
-                    }
-                }
+                OrphanChildren.Add(this);
                 return false;
             }
 
@@ -835,6 +829,28 @@ namespace Unity.Netcode
             }
         }
 
+        // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
+        //  Children may arrive before their parents; when they do they are stored in OrphanedChildren and then
+        //  resolved when their parents arrived.  Because we don't send a partial list of spawns (yet), something
+        //  has gone wrong if by the end of an update we still have unresolved orphans
+        //
+
+        // if and when we have different systems for where it is expected that orphans survive across ticks,
+        //   then this warning will remind us that we need to revamp the system because then we can no longer simply
+        //   spawn the orphan without its parent (at least, not when its transform is set to local coords mode)
+        //   - because then you’ll have children popping at the wrong location not having their parent’s
+        //      global position to root them
+        //   - and then they’ll pop to the correct location after they get the parent, and that would be not good
+        internal static void VerifyParentingStatus()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            {
+                if (OrphanChildren.Count > 0)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by end of frame");
+                }
+            }
+        }
         internal void SetNetworkVariableData(FastBufferReader reader)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
