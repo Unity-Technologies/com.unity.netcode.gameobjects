@@ -103,6 +103,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return defaultLinux;
         }
 
+        public static BokkenMachine GetDefaultAndroid(string name)
+        {
+            var defaultAndroid = new BokkenResource();
+            defaultAndroid.Type = "Unity::mobile::shield";
+            defaultAndroid.Image = "multiplayer/android-execution-r19-dotnet:latest";
+            defaultAndroid.Flavor = "b1.large";
+            defaultAndroid.Name = name;
+            return defaultAndroid;
+        }
+
         public static BokkenMachine Parse(string shortcut)
         {
             BokkenMachine bokkenMachine = null;
@@ -120,6 +130,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else if (type.Equals("default-linux"))
             {
                 bokkenMachine = GetDefaultLinux(name);
+            }
+            else if (type.Equals("default-android"))
+            {
+                bokkenMachine = GetDefaultAndroid(name);
             }
 
             return bokkenMachine;
