@@ -247,12 +247,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Need to make sure the host doesn't shutdown while setting up the clients
             TestCoordinator.Instance.KeepAliveOnServer();
 
+            var numProcessesToCreate = GetWorkerCount();
+
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (m_ConnectedClientsList.Count < GetWorkerCount() && NetworkManager.Singleton.ConnectedClients.Count < GetWorkerCount() + 1)
+            if (m_ConnectedClientsList.Count < numProcessesToCreate && NetworkManager.Singleton.ConnectedClients.Count < numProcessesToCreate + 1)
             {
-                var numProcessesToCreate = GetWorkerCount();
                 if (!m_LaunchRemotely)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
@@ -283,7 +284,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                         task.Wait();
                     }
 
-                    MultiprocessLogger.Log($"We are trying to get to {GetWorkerCount()} from {m_ConnectedClientsList.Count}"
+                    MultiprocessLogger.Log($"We are trying to get to {numProcessesToCreate} from {m_ConnectedClientsList.Count}"
                         + $" by launching {machines.Count} new instances");
 
                     int initialCount = m_ConnectedClientsList.Count;
@@ -444,6 +445,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else
             {
                 MultiprocessLogger.Log("Not running UnityTearDown");
+                foreach (var p in BokkenMachine.ProcessList)
+                {
+                    // There must be someway to safely figure out if there are errors in the spawned processes
+                }
             }
         }
 

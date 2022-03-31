@@ -332,7 +332,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (Name.Contains("android"))
             {
                 LogPath = "-";
-                string s = @"c:\Users\bokken\android-sdk_auto\platform-tools\adb.exe shell am start -n com.UnityTechnologies.testproject/com.unity3d.player.UnityPlayerActivity";
+                string s = $" --command exec " +
+                    $"--input-path {PathToJson} " +
+                    "--remote-command " +
+                    "\"c:\\Users\\bokken\\android-sdk_auto\\platform-tools\\adb.exe shell am start -n com.UnityTechnologies.testproject/com.unity3d.player.UnityPlayerActivity\"";
                 return s;
             }
             else if (Image.Contains("win10"))
