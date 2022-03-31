@@ -105,7 +105,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static BokkenMachine GetDefaultAndroid(string name)
         {
-            var defaultAndroid = new BokkenResource();
+            var defaultAndroid = new BokkenMachine();
             defaultAndroid.Type = "Unity::mobile::shield";
             defaultAndroid.Image = "multiplayer/android-execution-r19-dotnet:latest";
             defaultAndroid.Flavor = "b1.large";
