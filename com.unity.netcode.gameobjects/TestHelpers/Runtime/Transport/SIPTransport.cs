@@ -85,7 +85,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 });
 
                 // Remove the local connection on remote
-                m_Peers[clientId].Transport.m_LocalConnection = null;
+                m_Peers[clientId].Transport.m_Peers.Remove(m_LocalConnection.ConnectionId);
 
                 // Remove connection on server
                 m_Peers.Remove(clientId);
