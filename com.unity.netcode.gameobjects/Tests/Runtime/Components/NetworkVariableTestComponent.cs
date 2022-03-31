@@ -153,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (EnableTesting)
             {
-                //Added timeout functionality for near future changes to NetworkVariables and the Snapshot system
+                //Added timeout functionality for near future changes to NetworkVariables
                 if (!m_FinishedTests && m_ChangesAppliedToNetworkVariables)
                 {
                     //We finish testing if all NetworkVariables changed their value or we timed out waiting for
