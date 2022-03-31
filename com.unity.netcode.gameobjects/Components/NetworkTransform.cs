@@ -15,11 +15,41 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float PositionThresholdDefault = .001f;
-        public const float RotAngleThresholdDefault = .01f;
-        public const float ScaleThresholdDefault = .01f;
+        // Minimum threshold value for position, rotation, and scale
+        public const float ThresholdMinimum = 0.001f;
+        public const float PositionThresholdDefault = 0.001f;
+        public const float RotAngleThresholdDefault = 0.01f;
+        public const float ScaleThresholdDefault = 0.01f;
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
+
+        protected const string k_PrecisionStringFormat = "0.0000000000";
+#if UNITY_EDITOR
+        // Make sure the rotation threshold is within the accepted range
+        // to "auto-correct"
+        private void OnValidate()
+        {
+            // Make sure all thresholds are greater than
+            // or equal to the ThresholdMinimum
+            if (PositionThreshold < ThresholdMinimum)
+            {
+                PositionThreshold = ThresholdMinimum;
+            }
+            if (RotAngleThreshold < ThresholdMinimum)
+            {
+                RotAngleThreshold = ThresholdMinimum;
+            }
+            if (ScaleThreshold < ThresholdMinimum)
+            {
+                ScaleThreshold = ThresholdMinimum;
+            }
+        }
+#endif
+
+        public virtual bool IsServerAuthoritative()
+        {
+            return true;
+        }
 
         internal struct NetworkTransformState : INetworkSerializable
         {
@@ -248,8 +278,13 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
+        [Min(ThresholdMinimum)]
         public float PositionThreshold = PositionThresholdDefault;
+
+        [Range(ThresholdMinimum, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
+
+        [Min(ThresholdMinimum)]
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -299,6 +334,17 @@ namespace Unity.Netcode.Components
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
+
+        /// <summary>
+        /// Only used when NetworkManager.LogLevel == LogLevel.Developer
+        /// This is used to delay authority checking when:
+        /// - The NetworkObject first spawns
+        /// - The parent changes
+        /// Both of these conditions can potentially yield false positive
+        /// deltas in position and rotation that should be ignored.
+        /// <see cref="SetAuthorityCheckDelay"/>
+        /// </summary>
+        private float m_AuthorityCheckDelay;
 
         /// <summary>
         /// Tries updating the server authoritative transform, only if allowed.
@@ -450,7 +496,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleX &&
-                Mathf.Abs(networkState.RotAngleX - rotAngles.x) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
@@ -458,7 +504,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                Mathf.Abs(networkState.RotAngleY - rotAngles.y) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -466,7 +512,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
@@ -739,8 +785,25 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Applies a 1 NetworkTick delay to doing authority checks when:
+        /// - The NetworkObject first spawns
+        /// - The parent changes
+        /// Both of these conditions can potentially yield false positive
+        /// deltas in position and rotation that should be ignored.
+        /// </summary>
+        private void SetAuthorityCheckDelay()
+        {
+            // Only set this when LogLevel.Developer
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                m_AuthorityCheckDelay = Time.realtimeSinceStartup + (1.0f / NetworkManager.NetworkConfig.TickRate);
+            }
+        }
+
         public override void OnNetworkSpawn()
         {
+            SetAuthorityCheckDelay();
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
@@ -854,6 +917,18 @@ namespace Unity.Netcode.Components
         }
         #endregion
 
+        /// <summary>
+        /// If the parent changes and the <see cref="NetworkManager.LogLevel"/> is set to <see cref="LogLevel.Developer"/>,
+        /// then we want to delay authority checks for 1 NetworkTick as this has a high chance of generating a false positive
+        /// change on the client-side to position and/or rotation.
+        /// </summary>
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // When the parent changes we want to delay for 1 tick before checking
+            SetAuthorityCheckDelay();
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
+        }
+
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
@@ -905,7 +980,7 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
+                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer && m_AuthorityCheckDelay < Time.realtimeSinceStartup)
                     {
                         // TODO: This should be a component gizmo - not some debug draw based on log level
                         var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
@@ -919,7 +994,7 @@ namespace Unity.Netcode.Components
                         // there are several bugs in this code, as we the message is dumped out under odd circumstances
                         // it would trigger when an object's rotation was perturbed by colliding with another
                         // object vs. explicitly rotating it
-                        if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || oldStateDirtyInfo.isRotationDirty)
+                        if ((oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || oldStateDirtyInfo.isRotationDirty))
                         {
                             // ignoring rotation dirty since quaternions will mess with Euler angles, making this impossible to determine if the change to a single axis comes
                             // from an unauthorized transform change or Euler to quaternion conversion artifacts.
@@ -927,12 +1002,10 @@ namespace Unity.Netcode.Components
                             Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                         }
                     }
-
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
-
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
