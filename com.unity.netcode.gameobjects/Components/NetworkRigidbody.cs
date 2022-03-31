@@ -80,7 +80,6 @@ namespace Unity.Netcode.Components
         {
             if (m_IsAuthority == false)
             {
-                //m_OriginalKinematic = m_Rigidbody.isKinematic;
                 m_Rigidbody.isKinematic = true;
 
                 m_OriginalInterpolation = m_Rigidbody.interpolation;
