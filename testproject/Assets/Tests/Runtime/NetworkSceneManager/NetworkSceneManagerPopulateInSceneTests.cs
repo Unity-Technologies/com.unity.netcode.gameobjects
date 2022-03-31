@@ -13,7 +13,7 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerPopulateInSceneTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 0;
-        protected const int k_NumberOfInstances = 5;
+
 
         protected Dictionary<uint, GameObject> m_InSceneObjectList = new Dictionary<uint, GameObject>();
 
@@ -25,27 +25,22 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            // Create several prefabs to simulate scene-placed NetworkObjects which
-            // are spawned upon the server starting
-            for (int i = 0; i < k_NumberOfInstances; i++)
-            {
-                // Create one that simulates when an in-scene placed NetworkObject is first instantiated when
-                // the scene is loaded (i.e. IsSceneObject is null)
-                var inScenePrefab = CreateNetworkObjectPrefab($"NewSceneObject-{i}");
-                var networkObject = inScenePrefab.GetComponent<NetworkObject>();
-                networkObject.IsSceneObject = null;
-                networkObject.NetworkManagerOwner = m_ServerNetworkManager;
-                m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
+            // Create one that simulates when an in-scene placed NetworkObject is first instantiated when
+            // the scene is loaded (i.e. IsSceneObject is null)
+            var inScenePrefab = CreateNetworkObjectPrefab("NewSceneObject");
+            var networkObject = inScenePrefab.GetComponent<NetworkObject>();
+            networkObject.IsSceneObject = null;
+            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
 
-                // Create one that simulates when an in-scene placed NetworkObject has already been instantiated
-                // (i.e. IsSceneObject is true) which can happen if a client disconnects and then reconnects without
-                // unloading/reloading any scenes.
-                inScenePrefab = CreateNetworkObjectPrefab($"SetInSceneObject-{i}");
-                networkObject = inScenePrefab.GetComponent<NetworkObject>();
-                networkObject.IsSceneObject = true;
-                networkObject.NetworkManagerOwner = m_ServerNetworkManager;
-                m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
-            }
+            // Create one that simulates when an in-scene placed NetworkObject has already been instantiated
+            // (i.e. IsSceneObject is true) which can happen if a client disconnects and then reconnects without
+            // unloading/reloading any scenes.
+            inScenePrefab = CreateNetworkObjectPrefab("SetInSceneObject");
+            networkObject = inScenePrefab.GetComponent<NetworkObject>();
+            networkObject.IsSceneObject = true;
+            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
         }
 
         [UnityTest]
