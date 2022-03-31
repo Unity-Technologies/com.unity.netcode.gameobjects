@@ -329,7 +329,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string testName = TestContext.CurrentContext.Test.Name;
             testName = testName.Replace('(', '_').Replace(')', '_');
 
-            if (Image.Contains("win10"))
+            if (Name.Contains("android"))
+            {
+                LogPath = "-";
+                string s = @"c:\Users\bokken\android-sdk_auto\platform-tools\adb.exe shell am start -n com.UnityTechnologies.testproject/com.unity3d.player.UnityPlayerActivity";
+                return s;
+            }
+            else if (Image.Contains("win10"))
             {
                 //TODO It is currently not possible to use environment variables in bokken commands and so explicit paths must be used for now
                 // Open request to bokken team to enhance this
