@@ -846,7 +846,7 @@ namespace Unity.Netcode
             {
                 if (OrphanChildren.Count > 0)
                 {
-                    NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by end of frame");
+                    NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by the end of frame");
                 }
             }
         }
