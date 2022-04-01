@@ -33,14 +33,17 @@ namespace Unity.Netcode.Components
             // or equal to the ThresholdMinimum
             if (PositionThreshold < ThresholdMinimum)
             {
+                Debug.LogWarning($"{nameof(PositionThreshold)} ({PositionThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
                 PositionThreshold = ThresholdMinimum;
             }
             if (RotAngleThreshold < ThresholdMinimum)
             {
+                Debug.LogWarning($"{nameof(RotAngleThreshold)} ({RotAngleThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
                 RotAngleThreshold = ThresholdMinimum;
             }
             if (ScaleThreshold < ThresholdMinimum)
             {
+                Debug.LogWarning($"{nameof(ScaleThreshold)} ({ScaleThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
                 ScaleThreshold = ThresholdMinimum;
             }
         }
