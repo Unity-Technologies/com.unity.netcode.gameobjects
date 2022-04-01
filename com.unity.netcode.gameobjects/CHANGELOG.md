@@ -9,18 +9,21 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
 - Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 - `UnityTransport` settings can now be set programmatically. (#1845)
 
 ### Changed
-- Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0-pre.16. (#1834)
+
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
 
 ### Removed
 
 - Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
+- Removed `com.unity.collections` dependency from the package (#1849)
 
 ### Fixed
 - Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
