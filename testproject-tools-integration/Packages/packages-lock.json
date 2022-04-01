@@ -43,7 +43,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.multiplayer.tools": {
-      "version": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f",
+      "version": "https://github.com/Unity-Technologies/com.unity.multiplayer.tools.git#f935904741c349dc41ba24fda6639041128e8f19",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -53,7 +53,7 @@
         "com.unity.collections": "1.1.0",
         "com.unity.modules.uielements": "1.0.0"
       },
-      "hash": "cfb8fd305c3e46bb1251b40ec5f6cb621a267e7f"
+      "hash": "f935904741c349dc41ba24fda6639041128e8f19"
     },
     "com.unity.netcode.gameobjects": {
       "version": "file:../../com.unity.netcode.gameobjects",
@@ -61,8 +61,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.collections": "1.1.0",
-        "com.unity.transport": "1.0.0-pre.16"
+        "com.unity.transport": "1.0.0"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -108,7 +107,7 @@
       "url": "https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-candidates"
     },
     "com.unity.transport": {
-      "version": "1.0.0-pre.16",
+      "version": "1.0.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
