@@ -778,25 +778,8 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <summary>
-        /// Applies a 1 NetworkTick delay to doing authority checks when:
-        /// - The NetworkObject first spawns
-        /// - The parent changes
-        /// Both of these conditions can potentially yield false positive
-        /// deltas in position and rotation that should be ignored.
-        /// </summary>
-        private void SetAuthorityCheckDelay()
-        {
-            // Only set this when LogLevel.Developer
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                m_AuthorityCheckDelay = Time.realtimeSinceStartup + (1.0f / NetworkManager.NetworkConfig.TickRate);
-            }
-        }
-
         public override void OnNetworkSpawn()
         {
-            SetAuthorityCheckDelay();
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
@@ -917,8 +900,12 @@ namespace Unity.Netcode.Components
         /// </summary>
         public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
-            // When the parent changes we want to delay for 1 tick before checking
-            SetAuthorityCheckDelay();
+            // When the parent changes we want to delay for 1 tick before checking as
+            // this can cause false-positive warnings.
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                m_AuthorityCheckDelay = Time.realtimeSinceStartup + (1.0f / NetworkManager.NetworkConfig.TickRate);
+            }
             base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
 

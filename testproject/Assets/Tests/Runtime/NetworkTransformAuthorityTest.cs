@@ -16,8 +16,6 @@ namespace TestProject.RuntimeTests
         private GameObject m_TestPrefab;
         private NetworkObject m_TestPrefabInstance_Server;
         private GenericNetworkObjectBehaviour m_ServerNetworkObjectBehaviour;
-        private GenericNetworkObjectBehaviour m_ClientNetworkObjectBehaviour;
-
 
         protected override void OnServerAndClientsCreated()
         {
@@ -38,7 +36,7 @@ namespace TestProject.RuntimeTests
         /// NetworkTransform component.
         /// </summary>
         [UnityTest]
-        public IEnumerator VerifyAuthorityWarningOnClient()
+        public IEnumerator VerifyNoAuthorityWarning()
         {
             // Spawn the test prefab
             var serverInstance = SpawnObject(m_TestPrefab, m_ServerNetworkManager);
@@ -56,13 +54,54 @@ namespace TestProject.RuntimeTests
 
             // The message requires LogLevel.Developer
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
-            m_ClientNetworkObjectBehaviour = s_GlobalNetworkObjects[clientId][m_TestPrefabInstance_Server.NetworkObjectId].GetComponent<GenericNetworkObjectBehaviour>();
+            var clientNetworkObjectBehaviour = s_GlobalNetworkObjects[clientId][m_TestPrefabInstance_Server.NetworkObjectId].GetComponent<GenericNetworkObjectBehaviour>();
+            var clientNetworkTransform = s_GlobalNetworkObjects[clientId][m_TestPrefabInstance_Server.NetworkObjectId].GetComponent<NetworkTransform>();
 
-            // Modify the client-side instance's transform position to generate the warning
-            m_ClientNetworkObjectBehaviour.transform.position += Vector3.one;
+            // Verify Position
+            // Modify the client-side instance's transform position just below the threshold to not generate the warning
+            clientNetworkObjectBehaviour.transform.position += Vector3.one * (clientNetworkTransform.PositionThreshold / 2.0f);
+            LogAssert.NoUnexpectedReceived();
+            // Wait a tick to wait for any message to be generated
+            yield return s_DefaultWaitForTick;
+
+            // Modify the client-side instance's transform position just enough to generate the warning
+            clientNetworkObjectBehaviour.transform.position += Vector3.one * (clientNetworkTransform.PositionThreshold + 0.01f);
             LogAssert.Expect(LogType.Warning, $"A local change to position without authority detected, reverting back to latest interpolated network state!");
 
+            // Wait a tick while the warning message is generated
+            yield return s_DefaultWaitForTick;
+
+            // Verify Scale
+            // Modify the client-side instance's transform position just below the threshold to not generate the warning
+            clientNetworkObjectBehaviour.transform.localScale += Vector3.one * (clientNetworkTransform.ScaleThreshold / 2.0f);
+            LogAssert.NoUnexpectedReceived();
+
+            // Wait a tick to wait for any message to be generated
+            yield return s_DefaultWaitForTick;
+
+            // Modify the client-side instance's transform position just enough to generate the warning
+            clientNetworkObjectBehaviour.transform.localScale += Vector3.one * (clientNetworkTransform.ScaleThreshold + 0.01f);
+            LogAssert.Expect(LogType.Warning, $"A local change to scale without authority detected, reverting back to latest interpolated network state!");
+
             // Wait a tick while the message is generated
+            yield return s_DefaultWaitForTick;
+
+            // Verify Rotation
+            var rotation = clientNetworkObjectBehaviour.transform.rotation.eulerAngles;
+            // Modify the client-side instance's transform rotation to a value below the rotation threshold (i.e. it will remain)
+            var newRotation = Quaternion.Euler(rotation + (clientNetworkObjectBehaviour.transform.right * (360 - (clientNetworkTransform.RotAngleThreshold / 2.0f))));
+            clientNetworkObjectBehaviour.transform.rotation = newRotation;
+            LogAssert.NoUnexpectedReceived();
+            // Wait a tick to wait for any message is generated
+            yield return s_DefaultWaitForTick;
+
+            newRotation = Quaternion.Euler(rotation + (clientNetworkObjectBehaviour.transform.right * (360 - (clientNetworkTransform.RotAngleThreshold * 1.01f))));
+            // Finally, modify the client-side instance's transform rotation to a value slightly above the threshold
+            clientNetworkObjectBehaviour.transform.rotation = newRotation;
+
+            // We should expect a warning
+            LogAssert.Expect(LogType.Warning, $"A local change to rotation without authority detected, reverting back to latest interpolated network state!");
+            // Wait a tick to wait for any message is generated
             yield return s_DefaultWaitForTick;
 
             // Clean up

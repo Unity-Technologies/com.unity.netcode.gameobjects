@@ -23,8 +23,8 @@ namespace Unity.Netcode.Components
         private bool m_OriginalKinematic;
         private RigidbodyInterpolation m_OriginalInterpolation;
 
-        // Used to cache the authority state of this RigidBody during the last frame
-        protected bool m_IsAuthority;
+        // Used to cache the authority state of this Rigidbody during the last frame
+        private bool m_IsAuthority;
 
         private void Awake()
         {
@@ -75,7 +75,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        // Puts the RigidBody in a kinematic non-interpolated mode on everyone but the server.
+        // Puts the Rigidbody in a kinematic non-interpolated mode on everyone but the server.
         private void UpdateRigidbodyKinematicMode()
         {
             if (m_IsAuthority == false)
@@ -88,7 +88,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Resets the RigidBody back to it's non replication only state. Happens on shutdown and when authority is lost
+                // Resets the Rigidbody back to it's non replication only state. Happens on shutdown and when authority is lost
                 m_Rigidbody.isKinematic = m_OriginalKinematic;
                 m_Rigidbody.interpolation = m_OriginalInterpolation;
             }

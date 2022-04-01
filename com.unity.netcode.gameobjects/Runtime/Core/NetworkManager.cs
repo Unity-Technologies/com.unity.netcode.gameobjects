@@ -1415,11 +1415,6 @@ namespace Unity.Netcode
                     break;
                 case NetworkEvent.Data:
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                        }
-
                         clientId = TransportIdToClientId(clientId);
 
                         HandleIncomingData(clientId, payload, receiveTime);
