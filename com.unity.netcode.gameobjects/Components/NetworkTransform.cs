@@ -336,12 +336,6 @@ namespace Unity.Netcode.Components
         private NetworkTransformState m_LastSentState;
 
         /// <summary>
-        /// Only used when NetworkManager.LogLevel == LogLevel.Developer
-        /// This is used to delay authority checking when:
-        /// - The NetworkObject first spawns
-        /// - The parent changes
-        /// Both of these conditions can potentially yield false positive
-        /// deltas in position and rotation that should be ignored.
         /// <see cref="SetAuthorityCheckDelay"/>
         /// </summary>
         private float m_AuthorityCheckDelay;
@@ -990,13 +984,8 @@ namespace Unity.Netcode.Components
                         // we apply the latest ReplNetworkState again to revert our changes
                         var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
 
-                        // there are several bugs in this code, as we the message is dumped out under odd circumstances
-                        // it would trigger when an object's rotation was perturbed by colliding with another
-                        // object vs. explicitly rotating it
                         if ((oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || oldStateDirtyInfo.isRotationDirty))
                         {
-                            // ignoring rotation dirty since quaternions will mess with Euler angles, making this impossible to determine if the change to a single axis comes
-                            // from an unauthorized transform change or Euler to quaternion conversion artifacts.
                             var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
                             Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
                         }
