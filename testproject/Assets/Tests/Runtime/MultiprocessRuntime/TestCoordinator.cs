@@ -89,7 +89,7 @@ public class TestCoordinator : NetworkBehaviour
                 RemoteConfiguration rc = JsonUtility.FromJson<RemoteConfiguration>(remoteConfig);
                 MultiprocessLogger.Log("Checking remoteconfig object");
                 MultiprocessLogger.Log(rc.IpAddressOfHost);
-                this.m_ConnectAddress = rc.IpAddressOfHost;
+                m_ConnectAddress = rc.IpAddressOfHost;
                 ConfigurationType = ConfigurationType.ResourceFile;
                 if (rc.OperationMode.Equals("client"))
                 {

@@ -56,7 +56,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
         }
 
-        private static BuildReport BuildPlayerUtility(BuildTarget buildTarget = BuildTarget.NoTarget, string buildPathExtension = null, bool buildDebug = false)
+        public static BuildReport BuildPlayerUtility(BuildTarget buildTarget = BuildTarget.NoTarget, string buildPathExtension = null, bool buildDebug = false)
         {
             SaveBuildInfo(new BuildInfo() { BuildPath = BuildPath });
 
@@ -155,6 +155,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 throw new Exception($"Build failed! {report.summary.totalErrors} errors");
             }
         }
+
+
 #endif
 
         [Serializable]
