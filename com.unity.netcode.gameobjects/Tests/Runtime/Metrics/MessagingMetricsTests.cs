@@ -39,7 +39,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var networkMessageSentMetricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
 
-            // We should have 1 NamedMessage and some potential SnapshotMessage
+            // We should have 1 NamedMessage
             Assert.That(networkMessageSentMetricValues, Has.Exactly(1).Matches<NetworkMessageEvent>(x => x.Name == nameof(NamedMessage)));
         }
 
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForMetricValues.WaitForMetricsReceived();
 
             var networkMessageReceivedValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
-            // We should have 1 NamedMessage and some potential SnapshotMessage
+            // We should have 1 NamedMessage
             Assert.That(networkMessageReceivedValues, Has.Exactly(1).Matches<NetworkMessageEvent>(x => x.Name == nameof(NamedMessage)));
         }
 

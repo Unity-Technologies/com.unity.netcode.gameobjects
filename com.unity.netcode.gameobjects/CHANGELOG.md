@@ -21,10 +21,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
+- Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 - Removed `com.unity.collections` dependency from the package (#1849)
 
 ### Fixed
+- Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
 - Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
 - Fixed issue where entries were not being removed from the NetworkSpawnManager.OwnershipToObjectsTable. (#1838)
@@ -38,6 +40,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
 - Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
 - Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
+- Fixed parenting warning printing for false positives (#1855)
 
 ## [1.0.0-pre.6] - 2022-03-02
 
