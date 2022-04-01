@@ -88,7 +88,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Resets the Rigidbody back to it's non replication only state. Happens on shutdown and when authority is lost
+                // Resets the Rigidbody back to its non-replication only state. Happens on shutdown and when authority is lost
                 m_Rigidbody.isKinematic = m_OriginalKinematic;
                 m_Rigidbody.interpolation = m_OriginalInterpolation;
             }
