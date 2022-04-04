@@ -1,7 +1,3 @@
-**For bug reports, please follow the standard [Unity Bug Reporting](https://unity3d.com/unity/qa/bug-reporting) process. We no longer accept bug reports via GitHub Issues.**
-
----
-
 # Netcode for GameObjects
 
 [![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/) [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
