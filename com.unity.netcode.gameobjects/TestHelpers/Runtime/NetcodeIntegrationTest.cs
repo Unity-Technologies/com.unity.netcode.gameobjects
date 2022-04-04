@@ -108,8 +108,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_UseHost = true;
         protected int m_TargetFrameRate = 60;
 
-        protected NetcodeIntegrationTestHelpers.InstanceTransport m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
-
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
         private bool m_EnableVerboseDebug;
@@ -252,7 +250,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreatePlayerPrefab();
 
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_NetworkTransport))
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");

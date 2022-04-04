@@ -107,12 +107,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
-        public enum InstanceTransport
-        {
-            SIP,
-            UTP
-        }
-
         internal static IntegrationTestSceneHandler ClientSceneHandler = null;
 
         /// <summary>
@@ -163,32 +157,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Create the correct NetworkTransport, attach it to the game object and return it.
-        /// Default value is SIPTransport.
-        /// </summary>
-        internal static NetworkTransport CreateInstanceTransport(InstanceTransport instanceTransport, GameObject go)
-        {
-            switch (instanceTransport)
-            {
-                case InstanceTransport.SIP:
-                    return go.AddComponent<SIPTransport>();
-                default:
-                case InstanceTransport.UTP:
-                    return go.AddComponent<UnityTransport>();
-            }
-        }
-
-        /// <summary>
         /// Creates NetworkingManagers and configures them for use in a multi instance setting.
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, InstanceTransport instanceTransport = InstanceTransport.SIP)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-            CreateNewClients(clientCount, out clients, instanceTransport);
+            CreateNewClients(clientCount, out clients);
 
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
@@ -197,11 +175,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             server = go.AddComponent<NetworkManager>();
             NetworkManagerInstances.Insert(0, server);
 
+            // Create transport
+            var unityTransport = go.AddComponent<UnityTransport>();
+
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
             {
                 // Set transport
-                NetworkTransport = CreateInstanceTransport(instanceTransport, go)
+                NetworkTransport = unityTransport
             };
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -215,7 +196,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, InstanceTransport instanceTransport = InstanceTransport.SIP)
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
             var activeSceneName = SceneManager.GetActiveScene().name;
@@ -226,11 +207,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Create networkManager component
                 clients[i] = go.AddComponent<NetworkManager>();
 
+                // Create transport
+                var unityTransport = go.AddComponent<UnityTransport>();
+
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
                     // Set transport
-                    NetworkTransport = CreateInstanceTransport(instanceTransport, go)
+                    NetworkTransport = unityTransport
                 };
             }
 
