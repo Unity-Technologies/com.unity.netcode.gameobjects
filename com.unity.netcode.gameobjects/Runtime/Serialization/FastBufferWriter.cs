@@ -22,7 +22,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal readonly unsafe WriterHandle* Handle;
+        internal unsafe WriterHandle* Handle;
 
         private static byte[] s_ByteArrayCache = new byte[65535];
 
@@ -61,6 +61,11 @@ namespace Unity.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Handle->Position > Handle->Length ? Handle->Position : Handle->Length;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the writer has been initialized and a handle allocated.
+        /// </summary>
+        public unsafe bool IsInitialized => Handle != null;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,6 +116,7 @@ namespace Unity.Netcode
                 UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);
             }
             UnsafeUtility.Free(Handle, Handle->Allocator);
+            Handle = null;
         }
 
         /// <summary>
@@ -207,7 +213,7 @@ namespace Unity.Netcode
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
         /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
@@ -253,7 +259,7 @@ namespace Unity.Netcode
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
         /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following

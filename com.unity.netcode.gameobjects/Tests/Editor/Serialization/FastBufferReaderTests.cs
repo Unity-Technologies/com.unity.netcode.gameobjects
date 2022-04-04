@@ -394,6 +394,34 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenCreatingNewFastBufferReader_IsInitializedIsTrue()
+        {
+            var array = new NativeArray<byte>(100, Allocator.Temp);
+            var reader = new FastBufferReader(array, Allocator.Temp);
+            Assert.AreEqual(true, reader.IsInitialized);
+            reader.Dispose();
+            array.Dispose();
+        }
+
+        [Test]
+        public void WhenDisposingFastBufferWriter_IsInitializedIsFalse()
+        {
+            var array = new NativeArray<byte>(100, Allocator.Temp);
+            var reader = new FastBufferReader(array, Allocator.Temp);
+            reader.Dispose();
+            Assert.AreEqual(false, reader.IsInitialized);
+            array.Dispose();
+            Assert.AreEqual(false, reader.IsInitialized);
+        }
+
+        [Test]
+        public void WhenUsingDefaultFastBufferReader_IsInitializedIsFalse()
+        {
+            FastBufferReader writer = default;
+            Assert.AreEqual(false, writer.IsInitialized);
+        }
+
+        [Test]
         public void WhenCallingReadByteWithoutCallingTryBeingReadFirst_OverflowExceptionIsThrown()
         {
             var nativeArray = new NativeArray<byte>(100, Allocator.Temp);
