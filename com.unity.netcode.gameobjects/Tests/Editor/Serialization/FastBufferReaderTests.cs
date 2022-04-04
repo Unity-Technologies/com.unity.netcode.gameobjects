@@ -404,7 +404,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenDisposingFastBufferWriter_IsInitializedIsFalse()
+        public void WhenDisposingFastBufferReader_IsInitializedIsFalse()
         {
             var array = new NativeArray<byte>(100, Allocator.Temp);
             var reader = new FastBufferReader(array, Allocator.Temp);
