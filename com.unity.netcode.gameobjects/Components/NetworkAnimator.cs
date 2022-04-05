@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_ANIMATION
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -5,7 +6,7 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A prototype component for syncing animations
+    /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
     [RequireComponent(typeof(Animator))]
@@ -380,9 +381,7 @@ namespace Unity.Netcode.Components
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
-        /// <summary>
-        /// Sets the trigger for the associated animation.  See note for SetTrigger(string)
-        /// </summary>
+        /// <inheritdoc cref="SetTrigger(string)" />
         /// <param name="hash">The hash for the trigger to activate</param>
         /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool reset = false)
@@ -413,7 +412,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
+        /// Resets the trigger for the associated animation.  See <see cref="SetTrigger(string)">SetTrigger</see> for more on how triggers are special
         /// </summary>
         /// <param name="triggerName">The string name of the trigger to reset</param>
         public void ResetTrigger(string triggerName)
@@ -421,13 +420,12 @@ namespace Unity.Netcode.Components
             ResetTrigger(Animator.StringToHash(triggerName));
         }
 
-        /// <summary>
-        /// Resets the trigger for the associated animation.  See note for SetTrigger(string)
-        /// </summary>
-        /// <param name="hash">The hash for the trigger to reset</param>
+        /// <inheritdoc cref="ResetTrigger(string)" path="summary" />
+        /// <param name="hash">The hash for the trigger to activate</param>
         public void ResetTrigger(int hash)
         {
             SetTrigger(hash, true);
         }
     }
 }
+#endif // COM_UNITY_MODULES_ANIMATION

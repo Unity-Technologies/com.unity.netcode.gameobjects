@@ -1,5 +1,5 @@
 #if MULTIPLAYER_TOOLS
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 
 using System.Collections;
 using System.Collections.Generic;
@@ -46,11 +46,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         /// </summary>
         protected override void OnOneTimeSetup()
         {
-#if UTP_ADAPTER
             m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-#else
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
-#endif
         }
 
         [UnityTest]
@@ -92,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             foreach (var clientGaugeMetricValue in clientGaugeMetricValues)
             {
                 var rttValue = clientGaugeMetricValue.AssertMetricValueHaveBeenFound();
-                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
+                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1e-3f));
             }
         }
     }

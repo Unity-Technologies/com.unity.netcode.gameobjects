@@ -20,6 +20,17 @@ namespace Unity.Netcode
         /// <summary>
         /// The NetworkObject's owned by this Client
         /// </summary>
-        public readonly List<NetworkObject> OwnedObjects = new List<NetworkObject>();
+        public List<NetworkObject> OwnedObjects
+        {
+            get
+            {
+                if (PlayerObject != null && PlayerObject.NetworkManager != null && PlayerObject.NetworkManager.IsListening)
+                {
+                    return PlayerObject.NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
+                }
+
+                return new List<NetworkObject>();
+            }
+        }
     }
 }

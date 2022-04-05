@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_PHYSICS
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -75,3 +76,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif // COM_UNITY_MODULES_PHYSICS

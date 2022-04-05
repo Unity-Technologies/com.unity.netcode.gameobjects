@@ -892,6 +892,29 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        public void WhenCreatingNewFastBufferWriter_IsInitializedIsTrue()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            Assert.AreEqual(true, writer.IsInitialized);
+            writer.Dispose();
+        }
+
+        [Test]
+        public void WhenDisposingFastBufferWriter_IsInitializedIsFalse()
+        {
+            var writer = new FastBufferWriter(100, Allocator.Temp);
+            writer.Dispose();
+            Assert.AreEqual(false, writer.IsInitialized);
+        }
+
+        [Test]
+        public void WhenUsingDefaultFastBufferWriter_IsInitializedIsFalse()
+        {
+            FastBufferWriter writer = default;
+            Assert.AreEqual(false, writer.IsInitialized);
+        }
+
+        [Test]
         public void WhenRequestingWritePastBoundsForNonGrowingWriter_TryBeginWriteReturnsFalse()
         {
             var writer = new FastBufferWriter(150, Allocator.Temp);

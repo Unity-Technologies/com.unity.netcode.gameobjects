@@ -86,7 +86,6 @@ namespace TestProject.RuntimeTests.Support
         private void RunTest()
         {
             Debug.Log("Running test...");
-            GetComponent<NetworkObject>().Spawn();
             IncrementUpdateCount();
             Destroy(gameObject);
             m_Active = false;

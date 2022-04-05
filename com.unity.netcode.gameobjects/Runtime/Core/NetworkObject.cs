@@ -54,8 +54,6 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkManager NetworkManagerOwner;
 
-        private ulong m_NetworkObjectId;
-
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
         /// </summary>
@@ -64,33 +62,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the ClientId of the owner of this NetworkObject
         /// </summary>
-        public ulong OwnerClientId
-        {
-            get
-            {
-                if (OwnerClientIdInternal == null)
-                {
-                    return NetworkManager != null ? NetworkManager.ServerClientId : 0;
-                }
-                else
-                {
-                    return OwnerClientIdInternal.Value;
-                }
-            }
-            internal set
-            {
-                if (NetworkManager != null && value == NetworkManager.ServerClientId)
-                {
-                    OwnerClientIdInternal = null;
-                }
-                else
-                {
-                    OwnerClientIdInternal = value;
-                }
-            }
-        }
-
-        internal ulong? OwnerClientIdInternal = null;
+        public ulong OwnerClientId { get; internal set; }
 
         /// <summary>
         /// If true, the object will always be replicated as root on clients and the parent will be ignored.
@@ -234,11 +206,6 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn(clientId);
-            }
-
             Observers.Add(clientId);
 
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
@@ -314,23 +281,15 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-
             Observers.Remove(clientId);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
+            var message = new DestroyObjectMessage
             {
-                SnapshotDespawn(clientId);
-            }
-            else
-            {
-                var message = new DestroyObjectMessage
-                {
-                    NetworkObjectId = NetworkObjectId
-                };
-                // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
-                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
-            }
+                NetworkObjectId = NetworkObjectId
+            };
+            // Send destroy call
+            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+            NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
         }
 
         /// <summary>
@@ -345,14 +304,14 @@ namespace Unity.Netcode
                 throw new ArgumentNullException("At least one " + nameof(NetworkObject) + " has to be provided");
             }
 
-            NetworkManager networkManager = networkObjects[0].NetworkManager;
+            var networkManager = networkObjects[0].NetworkManager;
 
             if (!networkManager.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (clientId == networkManager.ServerClientId)
+            if (clientId == NetworkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
@@ -384,84 +343,21 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned
-                && (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
+            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
+                (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
 
-            if (NetworkManager != null && NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (NetworkManager != null && NetworkManager.SpawnManager != null &&
+                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
             }
         }
 
-        private SnapshotDespawnCommand GetDespawnCommand()
-        {
-            var command = new SnapshotDespawnCommand();
-            command.NetworkObjectId = NetworkObjectId;
-
-            return command;
-        }
-
-        private SnapshotSpawnCommand GetSpawnCommand()
-        {
-            var command = new SnapshotSpawnCommand();
-            command.NetworkObjectId = NetworkObjectId;
-            command.OwnerClientId = OwnerClientId;
-            command.IsPlayerObject = IsPlayerObject;
-            command.IsSceneObject = (IsSceneObject == null) || IsSceneObject.Value;
-
-            ulong? parent = NetworkManager.SpawnManager.GetSpawnParentId(this);
-            if (parent != null)
-            {
-                command.ParentNetworkId = parent.Value;
-            }
-            else
-            {
-                // write own network id, when no parents. todo: optimize this.
-                command.ParentNetworkId = command.NetworkObjectId;
-            }
-
-            command.GlobalObjectIdHash = HostCheckForGlobalObjectIdHashOverride();
-            // todo: check if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(clientId)) for any clientId
-            command.ObjectPosition = transform.position;
-            command.ObjectRotation = transform.rotation;
-            command.ObjectScale = transform.localScale;
-
-            return command;
-        }
-
-        private void SnapshotSpawn()
-        {
-            var command = GetSpawnCommand();
-            NetworkManager.SnapshotSystem.Spawn(command);
-        }
-
-        private void SnapshotSpawn(ulong clientId)
-        {
-            var command = GetSpawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Spawn(command);
-        }
-
-        internal void SnapshotDespawn()
-        {
-            var command = GetDespawnCommand();
-            NetworkManager.SnapshotSystem.Despawn(command);
-        }
-
-        internal void SnapshotDespawn(ulong clientId)
-        {
-            var command = GetDespawnCommand();
-            command.TargetClientIds = new List<ulong>();
-            command.TargetClientIds.Add(clientId);
-            NetworkManager.SnapshotSystem.Despawn(command);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void SpawnInternal(bool destroyWithScene, ulong? ownerClientId, bool playerObject)
+        private void SpawnInternal(bool destroyWithScene, ulong ownerClientId, bool playerObject)
         {
             if (!NetworkManager.IsListening)
             {
@@ -475,12 +371,6 @@ namespace Unity.Netcode
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
 
-            if (NetworkManager.NetworkConfig.UseSnapshotSpawn)
-            {
-                SnapshotSpawn();
-            }
-
-            ulong ownerId = ownerClientId != null ? ownerClientId.Value : NetworkManager.ServerClientId;
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
                 if (Observers.Contains(NetworkManager.ConnectedClientsList[i].ClientId))
@@ -496,7 +386,7 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
-            SpawnInternal(destroyWithScene, null, false);
+            SpawnInternal(destroyWithScene, NetworkManager.ServerClientId, false);
         }
 
         /// <summary>
@@ -547,17 +437,29 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourOnLostOwnership()
         {
+            // Server already handles this earlier, hosts should ignore, all clients should update
+            if (!NetworkManager.IsServer)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnLostOwnership();
+                ChildNetworkBehaviours[i].InternalOnLostOwnership();
             }
         }
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
+            // Server already handles this earlier, hosts should ignore and only client owners should update
+            if (!NetworkManager.IsServer && NetworkManager.LocalClientId == OwnerClientId)
+            {
+                NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+            }
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].OnGainedOwnership();
+                ChildNetworkBehaviours[i].InternalOnGainedOwnership();
             }
         }
 
@@ -756,13 +658,7 @@ namespace Unity.Netcode
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                if (OrphanChildren.Add(this))
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"{nameof(NetworkObject)} ({name}) cannot find its parent, added to {nameof(OrphanChildren)} set");
-                    }
-                }
+                OrphanChildren.Add(this);
                 return false;
             }
 
@@ -793,19 +689,21 @@ namespace Unity.Netcode
 
         internal void InvokeBehaviourNetworkSpawn()
         {
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId);
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
-                ChildNetworkBehaviours[i].OnNetworkSpawn();
             }
         }
 
         internal void InvokeBehaviourNetworkDespawn()
         {
+            NetworkManager.SpawnManager.UpdateOwnershipTable(this, OwnerClientId, true);
+
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 ChildNetworkBehaviours[i].InternalOnNetworkDespawn();
-                ChildNetworkBehaviours[i].OnNetworkDespawn();
             }
         }
 
@@ -834,13 +732,13 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
                 behavior.InitializeVariables();
-                behavior.WriteNetworkVariableData(writer, clientId);
+                behavior.WriteNetworkVariableData(writer, targetClientId);
             }
         }
 
@@ -853,6 +751,27 @@ namespace Unity.Netcode
             }
         }
 
+        // NGO currently guarantees that the client will receive spawn data for all objects in one network tick.
+        //  Children may arrive before their parents; when they do they are stored in OrphanedChildren and then
+        //  resolved when their parents arrived.  Because we don't send a partial list of spawns (yet), something
+        //  has gone wrong if by the end of an update we still have unresolved orphans
+        //
+
+        // if and when we have different systems for where it is expected that orphans survive across ticks,
+        //   then this warning will remind us that we need to revamp the system because then we can no longer simply
+        //   spawn the orphan without its parent (at least, not when its transform is set to local coords mode)
+        //   - because then you’ll have children popping at the wrong location not having their parent’s global position to root them
+        //   - and then they’ll pop to the correct location after they get the parent, and that would be not good
+        internal static void VerifyParentingStatus()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            {
+                if (OrphanChildren.Count > 0)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkObject)} ({OrphanChildren.Count}) children not resolved to parents by the end of frame");
+                }
+            }
+        }
         internal void SetNetworkVariableData(FastBufferReader reader)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
@@ -918,7 +837,6 @@ namespace Unity.Netcode
                 public bool IsSceneObject;
                 public bool HasTransform;
                 public bool IsReparented;
-                public bool HasNetworkVariables;
             }
 
             public HeaderData Header;
@@ -979,10 +897,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                if (Header.HasNetworkVariables)
-                {
-                    OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
-                }
+                OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
             public unsafe void Deserialize(FastBufferReader reader)
@@ -1022,7 +937,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal SceneObject GetMessageSceneObject(ulong targetClientId, bool includeNetworkVariableData = true)
+        internal SceneObject GetMessageSceneObject(ulong targetClientId)
         {
             var obj = new SceneObject
             {
@@ -1033,7 +948,6 @@ namespace Unity.Netcode
                     OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
                     Hash = HostCheckForGlobalObjectIdHashOverride(),
-                    HasNetworkVariables = includeNetworkVariableData
                 },
                 OwnerObject = this,
                 TargetClientId = targetClientId

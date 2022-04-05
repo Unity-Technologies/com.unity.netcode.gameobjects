@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return s_DefaultWaitForTick;
 
             // The object is owned by server
-            Assert.False(m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
+            Assert.False(m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId).Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
 
             // Change the ownership
             serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
@@ -51,8 +51,8 @@ namespace Unity.Netcode.RuntimeTests
             yield return s_DefaultWaitForTick;
 
             // Ensure it's now added to the list
-            Assert.True(m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].OwnedObjects.Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
-
+            Assert.True(m_ClientNetworkManagers[0].SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId).Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
+            Assert.True(m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId).Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
         }
     }
 }

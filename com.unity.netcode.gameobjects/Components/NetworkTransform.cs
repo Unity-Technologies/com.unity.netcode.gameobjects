@@ -272,7 +272,7 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        public bool CanCommitToTransform;
+        public bool CanCommitToTransform { get; protected set; }
         protected bool m_CachedIsServer;
         protected NetworkManager m_CachedNetworkManager;
 
@@ -691,7 +691,6 @@ namespace Unity.Netcode.Components
         {
             if (!NetworkObject.IsSpawned)
             {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 
@@ -785,7 +784,7 @@ namespace Unity.Netcode.Components
             {
                 m_ReplicatedNetworkState.SetDirty(true);
             }
-            else
+            else if (m_Transform != null)
             {
                 ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
