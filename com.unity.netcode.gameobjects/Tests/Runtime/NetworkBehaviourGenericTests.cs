@@ -56,6 +56,8 @@ namespace Unity.Netcode.RuntimeTests
 
             networkObjectToTest.Despawn();
             Object.Destroy(networkObjectToTest);
+
+            
         }
     }
 }
