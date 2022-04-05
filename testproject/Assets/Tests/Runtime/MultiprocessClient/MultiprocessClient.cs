@@ -9,6 +9,7 @@ public class MultiprocessClient
 {
     private const string k_SceneToLoad = "MultiprocessTestScene";
     private Scene m_SceneLoaded;
+    private Scene m_OriginalActiveScene;
     private TestCoordinator m_TestCoordinator;
     private bool m_MultiprocessTestFinished;
 
@@ -18,6 +19,7 @@ public class MultiprocessClient
     [UnitySetUp]
     public IEnumerator OnSetUp()
     {
+        m_OriginalActiveScene = SceneManager.GetActiveScene();
         SceneManager.sceneLoaded += SceneManager_sceneLoaded;
         SceneManager.LoadSceneAsync(k_SceneToLoad, LoadSceneMode.Additive);
         yield return new WaitUntil(IsSceneLoaded);
@@ -27,9 +29,8 @@ public class MultiprocessClient
         m_MultiprocessTestFinished = false;
         if (k_DebugLocally)
         {
-            m_LocalDebugTimeToRun = Time.realtimeSinceStartup + 20.0f;
+            m_LocalDebugTimeToRun = Time.realtimeSinceStartup + 10.0f;
         }
-
     }
 
     private void MultiprocessTestFinished()
@@ -58,12 +59,16 @@ public class MultiprocessClient
         yield return WaitforTestToComplete();
     }
 
+    /// <summary>
+    /// Determines if the scene is finished loading
+    /// </summary>
     private bool IsSceneLoaded()
     {
-        if(m_SceneLoaded.IsValid() && m_SceneLoaded.isLoaded)
+        if (m_SceneLoaded.IsValid() && m_SceneLoaded.isLoaded)
         {
             if (SceneManager.GetActiveScene().handle != m_SceneLoaded.handle)
             {
+
                 SceneManager.SetActiveScene(m_SceneLoaded);
             }
             return true;
@@ -76,6 +81,23 @@ public class MultiprocessClient
         if (scene.name == k_SceneToLoad && mode == LoadSceneMode.Additive)
         {
             m_SceneLoaded = scene;
+        }
+    }
+
+    [UnityTearDown]
+    private IEnumerator OnTearDown()
+    {
+        // Set our original active scene back to being the active scene
+        if (m_OriginalActiveScene.IsValid() && SceneManager.GetActiveScene().handle != m_OriginalActiveScene.handle)
+        {
+            SceneManager.SetActiveScene(m_OriginalActiveScene);
+        }
+
+        // Unload the multiprocess scene
+        if (m_SceneLoaded.IsValid() && m_SceneLoaded.isLoaded)
+        {
+            SceneManager.UnloadSceneAsync(m_SceneLoaded);
+            yield return new WaitWhile(() => m_SceneLoaded.isLoaded);
         }
     }
 }
