@@ -103,15 +103,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 buildOptions |= BuildOptions.AllowDebugging;
             }
 
-            if (buildTarget == BuildTarget.GameCoreXboxOne)
-            {
-                PlayerSettings.SetScriptingBackend(BuildTargetGroup.GameCoreXboxOne, ScriptingImplementation.IL2CPP);
-            }
-
-#if UNITY_2021_1
-            buildOptions |= BuildOptions.EnableHeadlessMode;
-#endif
-
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
             

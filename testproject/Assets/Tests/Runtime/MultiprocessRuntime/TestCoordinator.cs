@@ -9,6 +9,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.MultiprocessRuntimeTests;
+using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// TestCoordinator
@@ -357,7 +358,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         MultiprocessLogger.Log($"NetworkManager_OnClientDisconnectCallback triggered - {clientId}");
         NetworkManagerClientDisconnectedCallbackReceived.Add(clientId);
-        if (clientId == NetworkManager.Singleton.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
+        if (clientId == NetworkManager.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
             QuitApplication($"received disconnect from {clientId}, quitting pid {s_ProcessId}");
@@ -366,7 +367,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Not quitting application on client dissconnect received because " +
                 $" {clientId} does not equal {NetworkManager.Singleton.LocalClientId} && " +
-                $" {clientId} does not equal {NetworkManager.Singleton.ServerClientId}");
+                $" {clientId} does not equal {NetworkManager.ServerClientId}");
         }
     }
 

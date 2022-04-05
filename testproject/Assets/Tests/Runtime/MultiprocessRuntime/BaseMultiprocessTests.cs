@@ -10,6 +10,7 @@ using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 using Unity.Netcode.Transports.UNET;
 using UnityEngine.Networking.PlayerConnection;
+using Unity.Netcode.Transports.UTP;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
