@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -20,6 +21,7 @@ namespace Unity.Netcode
         public NetworkBehaviour NetworkBehaviour;
 
         private FastBufferReader m_ReceivedNetworkVariableData;
+        private static int LastId = 0;
 
         public void Serialize(FastBufferWriter writer)
         {
@@ -28,8 +30,11 @@ namespace Unity.Netcode
                 throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
             }
 
+            // here
             writer.WriteValue(NetworkObjectId);
             writer.WriteValue(NetworkBehaviourIndex);
+            writer.WriteValue(LastId);
+            LastId++;
 
             for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
@@ -102,6 +107,8 @@ namespace Unity.Netcode
             }
         }
 
+        static int LastReadId = 0;
+
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
             if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(NetworkObjectId) + FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
@@ -109,8 +116,20 @@ namespace Unity.Netcode
                 throw new OverflowException($"Not enough data in the buffer to read {nameof(NetworkVariableDeltaMessage)}");
             }
 
+            // here
             reader.ReadValue(out NetworkObjectId);
             reader.ReadValue(out NetworkBehaviourIndex);
+            int id;
+            reader.ReadValue(out id);
+
+            if (id < LastReadId)
+            {
+                Debug.Log($"Received out of order NetworkVariable {id} after {LastReadId}");
+            }
+            else
+            {
+                LastReadId = id;
+            }
 
             m_ReceivedNetworkVariableData = reader;
 
