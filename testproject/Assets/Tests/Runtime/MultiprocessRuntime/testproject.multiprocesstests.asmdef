@@ -11,15 +11,15 @@
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
-    "includePlatforms": [
-        "Android",
-        "Editor",
-        "LinuxStandalone64",
-        "macOSStandalone",
-        "WindowsStandalone32",
-        "WindowsStandalone64"
+    "includePlatforms": [],
+    "excludePlatforms": [
+        "CloudRendering",
+        "Lumin",
+        "Stadia",
+        "tvOS",
+        "WSA",
+        "WebGL"
     ],
-    "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
