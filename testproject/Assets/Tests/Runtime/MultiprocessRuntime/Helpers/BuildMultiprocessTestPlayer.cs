@@ -95,20 +95,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
 
+            var buildOptions = BuildOptions.None;
+            buildOptions |= BuildOptions.Development;
+            buildOptions |= BuildOptions.DetailedBuildReport;
+            buildOptions |= BuildOptions.StrictMode;
+            buildOptions |= BuildOptions.IncludeTestAssemblies;
+
             var buildPlayerOptions = new BuildPlayerOptions();
             buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
             buildPlayerOptions.locationPathName = buildPathToUse;
             buildPlayerOptions.target = buildTarget;
-            var buildOptions = BuildOptions.None;
-            if (buildDebug || buildTarget == BuildTarget.Android)
-            {
-                buildOptions |= BuildOptions.Development;
-                buildOptions |= BuildOptions.AllowDebugging;
-            }
-
-            buildOptions |= BuildOptions.StrictMode;
-            buildOptions |= BuildOptions.IncludeTestAssemblies;
-            
             buildPlayerOptions.options = buildOptions;
 
             BuildReport report = BuildPipeline.BuildPlayer(buildPlayerOptions);

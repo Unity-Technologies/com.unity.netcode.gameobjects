@@ -5,27 +5,19 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
-        "Unity.Netcode.Adapter.UTP",
         "ScriptsForAutomatedTesting",
         "Unity.PerformanceTesting",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
-    "excludePlatforms": [
-        "CloudRendering",
-        "Lumin",
-        "Stadia",
-        "tvOS",
-        "WSA",
-        "WebGL"
-    ],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
     "precompiledReferences": [
         "nunit.framework.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
