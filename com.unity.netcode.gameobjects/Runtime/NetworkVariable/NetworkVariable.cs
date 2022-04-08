@@ -58,17 +58,52 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out value);
         }
 
-        // Functions that serialize other types
+        // Should never be reachable at runtime. All calls to this should be replaced with the correct
+        // call above by ILPP.
         private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value)
             where TForMethod : unmanaged
         {
-            throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
+            if (value is INetworkSerializable)
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else if (value is ISerializeByMemcpy)
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesStruct)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else if (value is Enum)
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesEnum)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else
+            {
+                throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
+
+            }
+            NetworkVariable<TForMethod>.Write(writer, value);
         }
 
         private static void ReadValue<TForMethod>(FastBufferReader reader, out TForMethod value)
             where TForMethod : unmanaged
         {
-            throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(TForMethod)))
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else if (typeof(ISerializeByMemcpy).IsAssignableFrom(typeof(TForMethod)))
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesStruct)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else if (typeof(Enum).IsAssignableFrom(typeof(TForMethod)))
+            {
+                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesEnum)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+            }
+            else
+            {
+                throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
+
+            }
+            NetworkVariable<TForMethod>.Read(reader, out value);
         }
 
         internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, in TForMethod value);

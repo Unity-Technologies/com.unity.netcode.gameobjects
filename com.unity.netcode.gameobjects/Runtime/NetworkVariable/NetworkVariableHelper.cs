@@ -39,6 +39,7 @@ namespace Unity.Netcode
 
         internal static void InitializeAllBaseDelegates()
         {
+            // Built-in C# types, serialized through a generic method
             InitializeDelegatesPrimitive<bool>();
             InitializeDelegatesPrimitive<byte>();
             InitializeDelegatesPrimitive<sbyte>();
@@ -53,9 +54,24 @@ namespace Unity.Netcode
             InitializeDelegatesPrimitive<long>();
             InitializeDelegatesPrimitive<ulong>();
 
-            InitializeDelegatesEnum<HashSize>();
-            InitializeDelegatesStruct<NetworkObject.SceneObject.HeaderData>();
-            InitializeDelegatesNetworkSerializable<NetworkObjectReference>();
+            // Built-in Unity types, serialized with specific overloads because they're structs without ISerializeByMemcpy attached
+            NetworkVariable<Vector2>.Write = (FastBufferWriter writer, in Vector2 value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Vector3>.Write = (FastBufferWriter writer, in Vector3 value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Vector4>.Write = (FastBufferWriter writer, in Vector4 value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Quaternion>.Write = (FastBufferWriter writer, in Quaternion value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Color>.Write = (FastBufferWriter writer, in Color value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Color32>.Write = (FastBufferWriter writer, in Color32 value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Ray>.Write = (FastBufferWriter writer, in Ray value) => { writer.WriteValueSafe(value); };
+            NetworkVariable<Ray2D>.Write = (FastBufferWriter writer, in Ray2D value) => { writer.WriteValueSafe(value); };
+
+            NetworkVariable<Vector2>.Read = (FastBufferReader reader, out Vector2 value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Vector3>.Read = (FastBufferReader reader, out Vector3 value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Vector4>.Read = (FastBufferReader reader, out Vector4 value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Quaternion>.Read = (FastBufferReader reader, out Quaternion value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Color>.Read = (FastBufferReader reader, out Color value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Color32>.Read = (FastBufferReader reader, out Color32 value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Ray>.Read = (FastBufferReader reader, out Ray value) => { reader.ReadValueSafe(out value); };
+            NetworkVariable<Ray2D>.Read = (FastBufferReader reader, out Ray2D value) => { reader.ReadValueSafe(out value); };
         }
     }
 }

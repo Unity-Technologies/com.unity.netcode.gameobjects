@@ -579,7 +579,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
 
                     if ((parameters[0].ParameterType.Resolve() == checkType ||
-                        (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
+                         (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
+                    {
+                        return method;
+                    }
+
+                    if ((parameters[0].ParameterType == paramType ||
+                         (parameters[0].ParameterType == paramType.MakeByReferenceType() && parameters[0].IsIn)))
                     {
                         return method;
                     }
@@ -607,7 +613,14 @@ namespace Unity.Netcode.Editor.CodeGen
                             if (meetsConstraints)
                             {
                                 var instanceMethod = new GenericInstanceMethod(method);
-                                instanceMethod.GenericArguments.Add(checkType);
+                                if (paramType.IsArray)
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType.GetElementType());
+                                }
+                                else
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType);
+                                }
                                 return instanceMethod;
                             }
                         }
@@ -702,6 +715,12 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         return method;
                     }
+
+                    if (methodParam.Resolve() == paramType || methodParam.Resolve() == paramType.MakeByReferenceType())
+                    {
+                        return method;
+                    }
+
                     if (method.HasGenericParameters && method.GenericParameters.Count == 1)
                     {
                         if (method.GenericParameters[0].HasConstraints)
@@ -725,7 +744,14 @@ namespace Unity.Netcode.Editor.CodeGen
                             if (meetsConstraints)
                             {
                                 var instanceMethod = new GenericInstanceMethod(method);
-                                instanceMethod.GenericArguments.Add(checkType);
+                                if (paramType.IsArray)
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType.GetElementType());
+                                }
+                                else
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType);
+                                }
                                 return instanceMethod;
                             }
                         }
