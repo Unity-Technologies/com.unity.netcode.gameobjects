@@ -362,11 +362,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log($" 1/20 TearDown - BaseMultiProcessTests - start teardown");
             TestContext t1 = TestContext.CurrentContext;
-            MultiprocessLogger.Log($" 2/20 TearDown t1.Result.Outcome {t1.Result.Outcome} {t1.Result.Message} {t1.Result.StackTrace}");
+            
             var t2 = TestContext.CurrentTestExecutionContext;
             TimeSpan duration = DateTime.UtcNow.Subtract(t2.StartTime);
+            MultiprocessLogger.Log($" 2/20 TearDown t1.Result.Outcome {t1.Result.Outcome} {t2.CurrentResult.FullName}");
+            if (!t1.Result.Outcome.ToString().Equals("Passed"))
+            {
+                MultiprocessLogger.Log($"2.1/20 {t1.Result.Message} {t1.Result.StackTrace}");
+            }
             MultiprocessLogger.Log($" 3/30 TearDown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
                 $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime.ToLongTimeString()} end: {DateTime.UtcNow.ToLongTimeString()} duration: {duration.TotalSeconds}");
+
             /*
             DisconnectClients(1);
             MultiprocessOrchestration.ClearProcesslist();
