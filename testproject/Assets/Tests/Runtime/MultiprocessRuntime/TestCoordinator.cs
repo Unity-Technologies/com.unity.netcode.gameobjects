@@ -58,7 +58,9 @@ public class TestCoordinator : NetworkBehaviour
 
     private void Awake()
     {
+        MultiprocessLogger.Log("TestCoordinator - Awake");
         s_ProcessId = Process.GetCurrentProcess().Id;
+        MultiprocessLogger.Log($"Awake - {s_ProcessId}");
         string[] cliargList = Environment.GetCommandLineArgs();
         string cliargs = "";
         for (int i = 0; i < cliargList.Length; i++)
