@@ -79,6 +79,18 @@ namespace Unity.Netcode
             return readerHandle;
         }
 
+        public unsafe void UpdateBuffer(byte* buffer, int length, int offset = 0)
+        {
+            Handle->BufferPointer = buffer;
+            Handle->Position = offset;
+
+            Handle->Length = length;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            Handle->AllowedReadMark = 0;
+            Handle->InBitwiseContext = false;
+#endif
+        }
+
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
