@@ -89,9 +89,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
 
-            PlayerSettings.SetScriptingBackend(BuildTargetGroup.Standalone, ScriptingImplementation.IL2CPP);
-            PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
-
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
 
