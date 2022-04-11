@@ -18,15 +18,10 @@ namespace Unity.Netcode.Samples
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
 
-        public override void OnNetworkSpawn()
-        {
-            base.OnNetworkSpawn();
-            CanCommitToTransform = IsOwner;
-        }
+        public override bool CanCommitToTransform => IsOwner;
 
         protected override void Update()
         {
-            CanCommitToTransform = IsOwner;
             base.Update();
             if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
             {

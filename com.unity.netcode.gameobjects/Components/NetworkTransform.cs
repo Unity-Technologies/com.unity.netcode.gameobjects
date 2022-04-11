@@ -21,7 +21,7 @@ namespace Unity.Netcode.Components
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
-        internal struct NetworkTransformState : INetworkSerializable
+        public struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
             private const int k_PositionXBit = 1;
@@ -271,12 +271,14 @@ namespace Unity.Netcode.Components
         /// in the package samples for how to implement a NetworkTransform with client write support.
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
+
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        public bool CanCommitToTransform { get; protected set; }
-        protected bool m_CachedIsServer;
+        public virtual bool CanCommitToTransform => IsServer;
+        // protected bool m_CachedIsServer;
         protected NetworkManager m_CachedNetworkManager;
 
-        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        private NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateVar = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        protected virtual NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState => m_ReplicatedNetworkStateVar;
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
@@ -285,7 +287,6 @@ namespace Unity.Netcode.Components
         private const int k_DebugDrawLineTime = 10;
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
-
 
         private BufferedLinearInterpolator<float> m_PositionXInterpolator; // = new BufferedLinearInterpolatorFloat();
         private BufferedLinearInterpolator<float> m_PositionYInterpolator; // = new BufferedLinearInterpolatorFloat();
@@ -324,7 +325,7 @@ namespace Unity.Netcode.Components
         {
             void Send(NetworkTransformState stateToSend)
             {
-                if (m_CachedIsServer)
+                if (CanCommitToTransform)
                 {
                     // server RPC takes a few frames to execute server side, we want this to execute immediately
                     CommitLocallyAndReplicate(stateToSend);
@@ -746,8 +747,7 @@ namespace Unity.Netcode.Components
             m_Transform = transform;
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
 
-            CanCommitToTransform = IsServer;
-            m_CachedIsServer = IsServer;
+            // m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
             if (CanCommitToTransform)
@@ -823,7 +823,7 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                if (!m_CachedIsServer)
+                // if (!m_CachedIsServer)
                 {
                     SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
                 }
@@ -875,7 +875,7 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                if (m_CachedIsServer)
+                // if (CanCommitToTransform)
                 {
                     TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }

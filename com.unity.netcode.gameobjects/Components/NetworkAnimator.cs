@@ -1,4 +1,5 @@
 #if COM_UNITY_MODULES_ANIMATION
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -99,16 +100,41 @@ namespace Unity.Netcode.Components
             m_ParameterWriter.Dispose();
         }
 
+        public override void OnGainedOwnership()
+        {
+            base.OnGainedOwnership();
+            m_SendMessagesAllowed = true;
+            int layers = m_Animator.layerCount;
+
+            m_TransitionHash = new int[layers];
+            m_AnimationHash = new int[layers];
+            m_LayerWeights = new float[layers];
+            RefreshAllClientsButOwner();
+        }
+
+        public override void OnLostOwnership()
+        {
+            base.OnLostOwnership();
+            m_SendMessagesAllowed = false;
+            RefreshAllClientsButOwner();
+        }
+
+        void OnClientRefresh(ulong _)
+        {
+            RefreshAllClientsButOwner();
+        }
+
         public override void OnNetworkSpawn()
         {
+            if (IsOwner)
+            {
+                OnGainedOwnership();
+            }
             if (IsServer)
             {
-                m_SendMessagesAllowed = true;
-                int layers = m_Animator.layerCount;
-
-                m_TransitionHash = new int[layers];
-                m_AnimationHash = new int[layers];
-                m_LayerWeights = new float[layers];
+                RefreshAllClientsButOwner();
+                NetworkManager.OnClientConnectedCallback += OnClientRefresh;
+                NetworkManager.OnClientDisconnectCallback += OnClientRefresh;
             }
 
             var parameters = m_Animator.parameters;
@@ -161,6 +187,8 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             m_SendMessagesAllowed = false;
+            NetworkManager.OnClientConnectedCallback -= OnClientRefresh;
+            NetworkManager.OnClientDisconnectCallback -= OnClientRefresh;
         }
 
         private void FixedUpdate()
@@ -278,7 +306,6 @@ namespace Unity.Netcode.Components
                     var valueFloat = m_Animator.GetFloat(hash);
                     fixed (void* value = cacheValue.Value)
                     {
-
                         UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
                         writer.WriteValueSafe(valueFloat);
                     }
@@ -323,6 +350,25 @@ namespace Unity.Netcode.Components
             }
         }
 
+        void RefreshAllClientsButOwner()
+        {
+            if (IsServer)
+            {
+                var tmpList = new List<ulong>(NetworkManager.ConnectedClientsIds.Count - 1);
+                foreach (var clientID in NetworkManager.ConnectedClientsIds)
+                {
+                    if (clientID != OwnerClientId)
+                    {
+                        tmpList.Add(clientID);
+                    }
+                }
+
+                m_AllClientsButOwner = tmpList.AsReadOnly();
+            }
+        }
+
+        private IReadOnlyList<ulong> m_AllClientsButOwner;
+
         /// <summary>
         /// Internally-called RPC client receiving function to update some animation parameters on a client when
         ///   the server wants to update them
@@ -330,12 +376,25 @@ namespace Unity.Netcode.Components
         /// <param name="animSnapshot">the payload containing the parameters to apply</param>
         /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
-        private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        private void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        {
+            PlayAnimStateLocally(animSnapshot);
+        }
+
+        [ServerRpc]
+        void SendAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
+        {
+            PlayAnimStateLocally(animSnapshot);
+            SendAnimStateClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwner } });
+        }
+
+        unsafe void PlayAnimStateLocally(AnimationMessage animSnapshot)
         {
             if (animSnapshot.StateHash != 0)
             {
                 m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
+
             m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
@@ -356,7 +415,22 @@ namespace Unity.Netcode.Components
         /// <param name="animSnapshot">the payload containing the trigger data to apply</param>
         /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
-        private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        void SendAnimTriggerAllClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        {
+            PlayAnimLocally(animSnapshot);
+        }
+
+        [ServerRpc]
+        void BroadcastToNonOwnerAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
+        {
+            // play locally
+            PlayAnimLocally(animSnapshot);
+
+            // send to all clients except owner
+            SendAnimTriggerAllClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwner } });
+        }
+
+        void PlayAnimLocally(AnimationTriggerMessage animSnapshot)
         {
             if (animSnapshot.Reset)
             {
@@ -390,7 +464,7 @@ namespace Unity.Netcode.Components
             animMsg.Hash = hash;
             animMsg.Reset = reset;
 
-            if (IsServer)
+            if (IsOwner)
             {
                 //  trigger the animation locally on the server...
                 if (reset)
@@ -403,7 +477,14 @@ namespace Unity.Netcode.Components
                 }
 
                 // ...then tell all the clients to do the same
-                SendAnimTriggerClientRpc(animMsg);
+                if (IsServer)
+                {
+                    SendAnimTriggerAllClientRpc(animMsg);
+                }
+                else
+                {
+                    BroadcastToNonOwnerAnimTriggerServerRpc(animMsg);
+                }
             }
             else
             {
