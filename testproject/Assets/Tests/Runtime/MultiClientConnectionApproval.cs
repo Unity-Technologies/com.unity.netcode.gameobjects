@@ -227,7 +227,12 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Check to make sure all clients are connected
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
+
             Assert.AreEqual(3, m_ClientConnectedInvocations);
+            var timeoutHelper = new TimeoutHelper(2);
+
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ServerClientConnectedInvocations == 4, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for server client connections to reach a count of 4 but only has {m_ServerClientConnectedInvocations}!");
             Assert.AreEqual(4, m_ServerClientConnectedInvocations);
         }
 
