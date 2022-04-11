@@ -257,7 +257,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.DestroyImmediate(networkManager.gameObject);
+                if (networkManager.gameObject != null)
+                {
+                    Object.Destroy(networkManager.gameObject);
+                }
             }
 
             NetworkManagerInstances.Clear();
