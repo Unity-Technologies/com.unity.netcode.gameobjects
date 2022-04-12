@@ -277,8 +277,7 @@ namespace Unity.Netcode.Components
 
         protected NetworkManager m_CachedNetworkManager;
 
-        private NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateVar = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
-        protected virtual NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState => m_ReplicatedNetworkStateVar;
+        protected virtual NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState { get; } = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
@@ -874,10 +873,7 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // if (CanCommitToTransform)
-                {
-                    TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
-                }
+                TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
 
                 m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }

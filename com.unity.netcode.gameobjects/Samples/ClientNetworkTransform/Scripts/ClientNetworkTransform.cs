@@ -10,26 +10,16 @@ namespace Unity.Netcode.Samples
     [DisallowMultipleComponent]
     public class ClientNetworkTransform : NetworkTransform
     {
+        protected override NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState { get; } = new(
+            new NetworkTransformState(),
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Owner);
+
         /// <summary>
         /// Used to determine who can write to this transform. Owner client only.
-        /// Changing this value alone will not allow you to create a NetworkTransform which can be written to by clients.
-        /// We're using RPCs to send updated values from client to server. Netcode doesn't support client side network variable writing.
         /// This imposes state to the server. This is putting trust on your clients. Make sure no security-sensitive features use this transform.
+        // This is public to make sure that users don't depend on IsOwner check in their code. If this logic changes in the future, we can make it invisible here
         /// </summary>
-        // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-
         public override bool CanCommitToTransform => IsOwner;
-
-        protected override void Update()
-        {
-            base.Update();
-            if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
-            {
-                if (CanCommitToTransform)
-                {
-                    TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
-                }
-            }
-        }
     }
 }

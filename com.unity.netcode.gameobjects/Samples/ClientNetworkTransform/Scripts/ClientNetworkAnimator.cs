@@ -4,7 +4,7 @@ using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
 
-public class OwnerNetworkAnimator : NetworkAnimator
+public class ClientNetworkAnimator : NetworkAnimator
 {
     IReadOnlyList<ulong> m_AllClientsButOwnerCache;
     protected override bool m_SendMessagesAllowed => IsOwner;
