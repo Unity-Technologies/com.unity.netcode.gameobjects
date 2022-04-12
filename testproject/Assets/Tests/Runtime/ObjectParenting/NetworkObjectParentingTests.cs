@@ -201,7 +201,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentDirect()
         {
-            var waitForNetworkTick = new WaitForSeconds(1.0f/m_ServerNetworkManager.NetworkConfig.TickRate);
+            var waitForNetworkTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             // Server: Set/Cube -> Set/Pickup/Back/Cube
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
