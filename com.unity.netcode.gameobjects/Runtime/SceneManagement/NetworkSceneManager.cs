@@ -1449,7 +1449,7 @@ namespace Unity.Netcode
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
             {
-                EndSceneEvent(sceneEventId);
+                ClientLoadedSynchronization(sceneEventId);
                 return;
             }
 

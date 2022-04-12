@@ -114,6 +114,9 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
+
+            yield return WaitForConditionOrTimeOut(() => clientComponent.OnLostOwnershipFired);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to lose ownership!");
             Assert.That(clientComponent.OnLostOwnershipFired);
             Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
         }
