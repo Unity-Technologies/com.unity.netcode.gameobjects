@@ -274,7 +274,7 @@ namespace Unity.Netcode.Components
 
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
         public virtual bool CanCommitToTransform => IsServer;
-        // protected bool m_CachedIsServer;
+
         protected NetworkManager m_CachedNetworkManager;
 
         private NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateVar = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
@@ -747,7 +747,6 @@ namespace Unity.Netcode.Components
             m_Transform = transform;
             m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
 
-            // m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
             if (CanCommitToTransform)
@@ -823,7 +822,7 @@ namespace Unity.Netcode.Components
 
             if (!CanCommitToTransform)
             {
-                // if (!m_CachedIsServer)
+                if (!IsServer)
                 {
                     SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
                 }
