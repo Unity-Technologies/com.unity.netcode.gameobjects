@@ -82,7 +82,6 @@ public class OwnerNetworkAnimator : NetworkAnimator
     [ServerRpc]
     void BroadcastToNonOwnerAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
     {
-        Debug.Log($"broadcasting anim state to {m_AllClientsButOwnerCache.Count} targets");
         PlayAnimStateLocally(animSnapshot);
         SendAnimStateClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwnerCache } });
     }
@@ -105,7 +104,6 @@ public class OwnerNetworkAnimator : NetworkAnimator
     [ServerRpc]
     void BroadcastToNonOwnerAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
     {
-        Debug.Log("server rpc broadcast");
         // play locally
         PlayAnimLocally(animSnapshot);
 

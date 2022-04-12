@@ -9,7 +9,7 @@ public class OwnerNetworkTransform : NetworkTransform
     private NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateInternal = new(
         new NetworkTransformState(),
         NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Owner); // THIS HERE
+        NetworkVariableWritePermission.Owner);
     protected override NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState => m_ReplicatedNetworkStateInternal;
     public override bool CanCommitToTransform => IsOwner;
 }

@@ -341,7 +341,6 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         protected void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            Debug.Log("send anim state client side");
             PlayAnimStateLocally(animSnapshot);
         }
 
@@ -352,7 +351,6 @@ namespace Unity.Netcode.Components
                 m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
 
-            Debug.Log($"setting layer {animSnapshot.Layer} with weight {animSnapshot.Weight}");
             m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
