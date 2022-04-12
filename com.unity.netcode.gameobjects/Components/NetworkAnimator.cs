@@ -13,7 +13,7 @@ namespace Unity.Netcode.Components
     [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour
     {
-        internal struct AnimationMessage : INetworkSerializable
+        protected struct AnimationMessage : INetworkSerializable
         {
             // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
             public int StateHash;
@@ -32,7 +32,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal struct AnimationTriggerMessage : INetworkSerializable
+        protected struct AnimationTriggerMessage : INetworkSerializable
         {
             public int Hash;
             public bool Reset;
@@ -55,7 +55,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private bool m_SendMessagesAllowed = false;
+        protected virtual bool m_SendMessagesAllowed => IsServer;
 
         // Animators only support up to 32 params
         public static int K_MaxAnimationParams = 32;
@@ -100,41 +100,20 @@ namespace Unity.Netcode.Components
             m_ParameterWriter.Dispose();
         }
 
-        public override void OnGainedOwnership()
+        protected void SetupAuthority()
         {
-            base.OnGainedOwnership();
-            m_SendMessagesAllowed = true;
             int layers = m_Animator.layerCount;
 
             m_TransitionHash = new int[layers];
             m_AnimationHash = new int[layers];
             m_LayerWeights = new float[layers];
-            RefreshAllClientsButOwner();
-        }
-
-        public override void OnLostOwnership()
-        {
-            base.OnLostOwnership();
-            m_SendMessagesAllowed = false;
-            RefreshAllClientsButOwner();
-        }
-
-        void OnClientRefresh(ulong _)
-        {
-            RefreshAllClientsButOwner();
         }
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner)
+            if (m_SendMessagesAllowed)
             {
-                OnGainedOwnership();
-            }
-            if (IsServer)
-            {
-                RefreshAllClientsButOwner();
-                NetworkManager.OnClientConnectedCallback += OnClientRefresh;
-                NetworkManager.OnClientDisconnectCallback += OnClientRefresh;
+                SetupAuthority();
             }
 
             var parameters = m_Animator.parameters;
@@ -184,12 +163,11 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public override void OnNetworkDespawn()
-        {
-            m_SendMessagesAllowed = false;
-            NetworkManager.OnClientConnectedCallback -= OnClientRefresh;
-            NetworkManager.OnClientDisconnectCallback -= OnClientRefresh;
-        }
+        // todo still needed?
+        // public override void OnNetworkDespawn()
+        // {
+        //     m_SendMessagesAllowed = false;
+        // }
 
         private void FixedUpdate()
         {
@@ -220,9 +198,13 @@ namespace Unity.Netcode.Components
 
                 WriteParameters(m_ParameterWriter);
                 animMsg.Parameters = m_ParameterWriter.ToArray();
-
-                SendAnimStateClientRpc(animMsg);
+                DoSendAnimState(animMsg);
             }
+        }
+
+        protected virtual void DoSendAnimState(AnimationMessage animMsg)
+        {
+            SendAnimStateClientRpc(animMsg);
         }
 
         private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
@@ -350,25 +332,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        void RefreshAllClientsButOwner()
-        {
-            if (IsServer)
-            {
-                var tmpList = new List<ulong>(NetworkManager.ConnectedClientsIds.Count - 1);
-                foreach (var clientID in NetworkManager.ConnectedClientsIds)
-                {
-                    if (clientID != OwnerClientId)
-                    {
-                        tmpList.Add(clientID);
-                    }
-                }
-
-                m_AllClientsButOwner = tmpList.AsReadOnly();
-            }
-        }
-
-        private IReadOnlyList<ulong> m_AllClientsButOwner;
-
         /// <summary>
         /// Internally-called RPC client receiving function to update some animation parameters on a client when
         ///   the server wants to update them
@@ -376,25 +339,20 @@ namespace Unity.Netcode.Components
         /// <param name="animSnapshot">the payload containing the parameters to apply</param>
         /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
-        private void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        protected void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
+            Debug.Log("send anim state client side");
             PlayAnimStateLocally(animSnapshot);
         }
 
-        [ServerRpc]
-        void SendAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
-        {
-            PlayAnimStateLocally(animSnapshot);
-            SendAnimStateClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwner } });
-        }
-
-        unsafe void PlayAnimStateLocally(AnimationMessage animSnapshot)
+        protected unsafe void PlayAnimStateLocally(AnimationMessage animSnapshot)
         {
             if (animSnapshot.StateHash != 0)
             {
                 m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
 
+            Debug.Log($"setting layer {animSnapshot.Layer} with weight {animSnapshot.Weight}");
             m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
@@ -415,22 +373,12 @@ namespace Unity.Netcode.Components
         /// <param name="animSnapshot">the payload containing the trigger data to apply</param>
         /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
-        void SendAnimTriggerAllClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        protected void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             PlayAnimLocally(animSnapshot);
         }
 
-        [ServerRpc]
-        void BroadcastToNonOwnerAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
-        {
-            // play locally
-            PlayAnimLocally(animSnapshot);
-
-            // send to all clients except owner
-            SendAnimTriggerAllClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwner } });
-        }
-
-        void PlayAnimLocally(AnimationTriggerMessage animSnapshot)
+        protected void PlayAnimLocally(AnimationTriggerMessage animSnapshot)
         {
             if (animSnapshot.Reset)
             {
@@ -464,7 +412,7 @@ namespace Unity.Netcode.Components
             animMsg.Hash = hash;
             animMsg.Reset = reset;
 
-            if (IsOwner)
+            if (m_SendMessagesAllowed)
             {
                 //  trigger the animation locally on the server...
                 if (reset)
@@ -477,19 +425,17 @@ namespace Unity.Netcode.Components
                 }
 
                 // ...then tell all the clients to do the same
-                if (IsServer)
-                {
-                    SendAnimTriggerAllClientRpc(animMsg);
-                }
-                else
-                {
-                    BroadcastToNonOwnerAnimTriggerServerRpc(animMsg);
-                }
+                DoSendTrigger(animMsg);
             }
             else
             {
                 Debug.LogWarning("Trying to call NetworkAnimator.SetTrigger on a client...ignoring");
             }
+        }
+
+        protected virtual void DoSendTrigger(AnimationTriggerMessage animMsg)
+        {
+            SendAnimTriggerClientRpc(animMsg);
         }
 
         /// <summary>

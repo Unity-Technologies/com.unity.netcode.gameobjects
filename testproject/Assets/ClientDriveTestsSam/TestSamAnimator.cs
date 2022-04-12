@@ -20,9 +20,19 @@ public class TestSamAnimator : NetworkBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyUp(KeyCode.T) && IsOwner)
+        if (Input.GetKeyDown(KeyCode.T) && IsOwner)
         {
+            // m_NA.Animator.SetTrigger("Rotate");
+            // m_NA.Animator.SetTrigger("Pulse");
+            m_NA.SetTrigger("Rotate");
             m_NA.SetTrigger("Pulse");
+        }
+
+        if (Input.GetKey(KeyCode.T) && IsOwner)
+        {
+            var cur = m_NA.Animator.GetLayerWeight(1);
+            cur += Time.deltaTime;
+            m_NA.Animator.SetLayerWeight(1, cur);
         }
 
         if (Input.GetKey(KeyCode.W) && IsOwner)
