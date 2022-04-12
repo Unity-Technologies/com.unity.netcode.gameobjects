@@ -3,11 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#else
 using Unity.Netcode.Transports.UTP;
-#endif
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -26,15 +22,13 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkManagerGameObject = new GameObject();
             m_ClientNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
             m_ClientNetworkManager.NetworkConfig = new NetworkConfig();
-#if UNITY_UNET_PRESENT
-            m_TimeoutHelper = new TimeoutHelper(30);
-            m_ClientNetworkManager.NetworkConfig.NetworkTransport = m_NetworkManagerGameObject.AddComponent<UNetTransport>();
-#else
             // Default is 1000ms per connection attempt and 60 connection attempts (60s)
             // Currently there is no easy way to set these values other than in-editor
-            m_TimeoutHelper = new TimeoutHelper(70);
-            m_ClientNetworkManager.NetworkConfig.NetworkTransport = m_NetworkManagerGameObject.AddComponent<UnityTransport>();
-#endif
+            var unityTransport = m_NetworkManagerGameObject.AddComponent<UnityTransport>();
+            unityTransport.ConnectTimeoutMS = 1000;
+            unityTransport.MaxConnectAttempts = 1;
+            m_TimeoutHelper = new TimeoutHelper(2);
+            m_ClientNetworkManager.NetworkConfig.NetworkTransport = unityTransport;
         }
 
         [UnityTest]
@@ -46,10 +40,9 @@ namespace Unity.Netcode.RuntimeTests
             // Only start the client (so it will timeout)
             m_ClientNetworkManager.StartClient();
 
-#if !UNITY_UNET_PRESENT
             // Unity Transport throws an error when it times out
             LogAssert.Expect(LogType.Error, "Failed to connect to server.");
-#endif
+
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_WasDisconnected, m_TimeoutHelper);
             Assert.False(m_TimeoutHelper.TimedOut, "Timed out waiting for client to timeout waiting to connect!");
 
