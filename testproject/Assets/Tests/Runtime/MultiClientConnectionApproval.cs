@@ -257,7 +257,7 @@ namespace TestProject.RuntimeTests
         }
 
 
-        private int m_ServerClientDisconnectedInvocations;
+        private int m_ClientDisconnectedInvocations;
 
         /// <summary>
         /// Tests that clients are disconnected when their ConnectionApproval setting is mismatched with the host-server
@@ -267,32 +267,34 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ConnectionApprovalMismatchTest([Values(true, false)] bool enableSceneManagement, [Values(true, false)] bool connectionApproval)
         {
-            m_ServerClientDisconnectedInvocations = 0;
+            m_ClientDisconnectedInvocations = 0;
 
             // Create Host and (numClients) clients
             Assert.True(NetcodeIntegrationTestHelpers.Create(3, out NetworkManager server, out NetworkManager[] clients));
 
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
-            server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
             server.NetworkConfig.ConnectionApproval = connectionApproval;
             foreach (var client in clients)
             {
                 client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
                 client.NetworkConfig.ConnectionApproval = !connectionApproval;
+                client.OnClientDisconnectCallback += Client_OnClientDisconnectedCallback; //Server notifies client (not vice versa)
             }
             // Start the instances
             if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
-            var nextFrameNumber = Time.frameCount + 5;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
+
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnectedInvocations == 3);
+            Assert.False(timeoutHelper.TimedOut, "Timed out waiting for clients to be disconnected!");
+            Assert.AreEqual(3, m_ClientDisconnectedInvocations);
         }
 
-        private void Server_OnClientDisconnectedCallback(ulong clientId)
+        private void Client_OnClientDisconnectedCallback(ulong clientId)
         {
-            m_ServerClientDisconnectedInvocations++;
+            m_ClientDisconnectedInvocations++;
         }
 
 
