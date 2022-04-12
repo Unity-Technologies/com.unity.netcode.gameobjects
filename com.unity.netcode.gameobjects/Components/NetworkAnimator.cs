@@ -1,5 +1,4 @@
 #if COM_UNITY_MODULES_ANIMATION
-using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -55,7 +54,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        protected virtual bool m_SendMessagesAllowed => IsServer;
+        protected virtual bool SendMessagesAllowed => IsServer;
 
         // Animators only support up to 32 params
         public static int K_MaxAnimationParams = 32;
@@ -111,7 +110,7 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
-            if (m_SendMessagesAllowed)
+            if (SendMessagesAllowed)
             {
                 SetupAuthority();
             }
@@ -163,15 +162,9 @@ namespace Unity.Netcode.Components
             }
         }
 
-        // todo still needed?
-        // public override void OnNetworkDespawn()
-        // {
-        //     m_SendMessagesAllowed = false;
-        // }
-
         private void FixedUpdate()
         {
-            if (!m_SendMessagesAllowed || !m_Animator || !m_Animator.enabled)
+            if (!SendMessagesAllowed || !m_Animator || !m_Animator.enabled)
             {
                 return;
             }
@@ -410,7 +403,7 @@ namespace Unity.Netcode.Components
             animMsg.Hash = hash;
             animMsg.Reset = reset;
 
-            if (m_SendMessagesAllowed)
+            if (SendMessagesAllowed)
             {
                 //  trigger the animation locally on the server...
                 if (reset)

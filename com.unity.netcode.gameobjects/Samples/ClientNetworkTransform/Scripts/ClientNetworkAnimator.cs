@@ -7,7 +7,7 @@ using UnityEngine;
 public class ClientNetworkAnimator : NetworkAnimator
 {
     IReadOnlyList<ulong> m_AllClientsButOwnerCache;
-    protected override bool m_SendMessagesAllowed => IsOwner;
+    protected override bool SendMessagesAllowed => IsOwner;
 
     public override void OnGainedOwnership()
     {
