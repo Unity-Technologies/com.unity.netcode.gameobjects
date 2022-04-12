@@ -166,8 +166,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-            CreateNewClients(clientCount, out clients);
-
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
 
@@ -177,6 +175,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Create transport
             var unityTransport = go.AddComponent<UnityTransport>();
+            unityTransport.MaxPayloadSize = 256000;
+            unityTransport.MaxSendQueueSize = 1024 * 1024;
 
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
@@ -184,6 +184,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Set transport
                 NetworkTransport = unityTransport
             };
+
+            CreateNewClients(clientCount, out clients);
+
+
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
