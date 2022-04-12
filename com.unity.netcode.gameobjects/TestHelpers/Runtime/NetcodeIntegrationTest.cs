@@ -666,6 +666,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var gameObject = new GameObject();
             gameObject.name = baseName;
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);

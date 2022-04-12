@@ -930,7 +930,9 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (NetworkConfig.ConnectionApproval)
+            // Only if it is starting as a server or host do we need to check this
+            // Clients don't invoke the ConnectionApprovalCallback
+            if (NetworkConfig.ConnectionApproval && type != StartType.Client)
             {
                 if (ConnectionApprovalCallback == null)
                 {

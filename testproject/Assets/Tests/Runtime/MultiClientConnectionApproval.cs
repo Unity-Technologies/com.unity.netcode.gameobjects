@@ -66,6 +66,10 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             var networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
+            // Prefabs should always be owned by the server
+            // This assures that if a client is shutdown it will not destroy the prefab
+            networkObject.NetworkManagerOwner = server;
+
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
@@ -75,6 +79,9 @@ namespace TestProject.RuntimeTests
                 // Create a default player GameObject to use
                 m_PlayerPrefabOverride = new GameObject("PlayerPrefabOverride");
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
+                // Prefabs should always be owned by the server
+                // This assures that if a client is shutdown it will not destroy the prefab
+                networkObjectOverride.NetworkManagerOwner = server;
                 NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
 
@@ -115,7 +122,6 @@ namespace TestProject.RuntimeTests
                     client.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
                     clientsAdjustedList.Add(client);
                 }
-
             }
 
             // Start the instances
@@ -148,7 +154,11 @@ namespace TestProject.RuntimeTests
 
             foreach (var client in clients)
             {
-                client.Shutdown();
+                // If a client failed, then it will already be shutdown
+                if (client.IsListening)
+                {
+                    client.Shutdown();
+                }
             }
 
             server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
@@ -265,22 +275,18 @@ namespace TestProject.RuntimeTests
             server.NetworkConfig.EnableSceneManagement = enableSceneManagement;
             server.OnClientDisconnectCallback += Server_OnClientDisconnectedCallback;
             server.NetworkConfig.ConnectionApproval = connectionApproval;
-
             foreach (var client in clients)
             {
                 client.NetworkConfig.EnableSceneManagement = enableSceneManagement;
                 client.NetworkConfig.ConnectionApproval = !connectionApproval;
             }
-
             // Start the instances
             if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
             }
-
             var nextFrameNumber = Time.frameCount + 5;
             yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
             Assert.AreEqual(3, m_ServerClientDisconnectedInvocations);
         }
 
