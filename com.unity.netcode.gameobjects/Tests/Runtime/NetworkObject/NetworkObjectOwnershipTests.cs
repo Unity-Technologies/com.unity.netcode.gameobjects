@@ -95,11 +95,14 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(m_ServerNetworkManager.ConnectedClients.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
 
-            serverObject.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            serverObject.ChangeOwnership(clientComponent.NetworkManager.LocalClientId);
+            yield return s_DefaultWaitForTick;
 
             Assert.That(serverComponent.OnLostOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
+
+            yield return WaitForConditionOrTimeOut(() => clientComponent.OnGainedOwnershipFired);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to gain ownership!");
             Assert.That(clientComponent.OnGainedOwnershipFired);
             Assert.That(clientComponent.OwnerClientId, Is.EqualTo(m_ClientNetworkManagers[0].LocalClientId));
 
@@ -107,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             clientComponent.ResetFlags();
 
             serverObject.ChangeOwnership(NetworkManager.ServerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            yield return s_DefaultWaitForTick;
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
@@ -151,10 +154,21 @@ namespace Unity.Netcode.RuntimeTests
             var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
             Assert.That(ownershipNetworkObjectId, Is.GreaterThan(0));
             Assert.That(m_ServerNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+
+            bool WaitForClientsToSpawnNetworkObject()
             {
-                Assert.That(clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId));
+                foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                {
+                    if (!clientNetworkManager.SpawnManager.SpawnedObjects.ContainsKey(ownershipNetworkObjectId))
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
+
+            yield return WaitForConditionOrTimeOut(WaitForClientsToSpawnNetworkObject);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for all clients to change ownership!");
 
             // Verifies that removing the ownership when the default (server) is already set does not cause a Key Not Found Exception
             m_ServerNetworkManager.SpawnManager.RemoveOwnership(m_OwnershipNetworkObject);
@@ -237,7 +251,10 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
             Assert.That(serverComponent.OwnerClientId, Is.EqualTo(m_ServerNetworkManager.LocalClientId));
-            Assert.That(previousClientComponent.OnLostOwnershipFired);
+
+            yield return WaitForConditionOrTimeOut(() => previousClientComponent.OnLostOwnershipFired);
+
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {previousClientComponent.name} to lose ownership!");
 
             // Make sure all client-side versions of the object is once again owned by the server
             for (int i = 0; i < NumberOfClients; i++)
