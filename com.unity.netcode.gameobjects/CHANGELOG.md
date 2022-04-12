@@ -17,7 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `FastBufferWriter` and Reader IsInitialized property. (#1859)
 
 ### Changed
-- Updated NetcodeIntegrationTest to use UnityTransport.
+- Changed NetcodeIntegrationTestHelpers to use UnityTransport.
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
 
 ### Removed
