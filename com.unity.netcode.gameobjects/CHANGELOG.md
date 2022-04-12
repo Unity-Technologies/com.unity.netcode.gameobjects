@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [1.0.0-pre.7] - 2022-04-01
+## [1.0.0-pre.7] - 2022-04-06
 
 ### Added
 
@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 - `UnityTransport` settings can now be set programmatically. (#1845)
+- `FastBufferWriter` and Reader IsInitialized property. (#1859)
 
 ### Changed
 

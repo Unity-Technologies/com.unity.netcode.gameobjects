@@ -135,9 +135,13 @@ namespace Unity.Netcode.Editor
             m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
             m_NetworkPrefabsList.elementHeightCallback = index =>
             {
-                var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-                var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
-                var networkOverrideInt = networkOverrideProp.enumValueIndex;
+                var networkOverrideInt = 0;
+                if (m_NetworkPrefabsList.count > 0)
+                {
+                    var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
+                    var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
+                    networkOverrideInt = networkOverrideProp.enumValueIndex;
+                }
 
                 return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
             };
