@@ -17,11 +17,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `FastBufferWriter` and Reader IsInitialized property. (#1859)
 
 ### Changed
-- Changed NetcodeIntegrationTestHelpers to use UnityTransport.
+- Changed NetcodeIntegrationTestHelpers to use UnityTransport. (#1870)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
 
 ### Removed
-- Removed SIPTransport from integration tests.
+- Removed SIPTransport from integration tests. (#1870)
 - Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 - Removed `com.unity.collections` dependency from the package (#1849)
