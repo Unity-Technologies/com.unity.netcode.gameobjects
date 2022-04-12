@@ -156,27 +156,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        /// <summary>
-        /// Creates NetworkingManagers and configures them for use in a multi instance setting.
-        /// </summary>
-        /// <param name="clientCount">The amount of clients</param>
-        /// <param name="server">The server NetworkManager</param>
-        /// <param name="clients">The clients NetworkManagers</param>
-        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60)
+        public static NetworkManager CreateServer()
         {
-            s_NetworkManagerInstances = new List<NetworkManager>();
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
 
             // Create networkManager component
-            server = go.AddComponent<NetworkManager>();
+            var server = go.AddComponent<NetworkManager>();
             NetworkManagerInstances.Insert(0, server);
 
             // Create transport
             var unityTransport = go.AddComponent<UnityTransport>();
+            // We need to increase this buffer size for tests that spawn a bunch of things
             unityTransport.MaxPayloadSize = 256000;
             unityTransport.MaxSendQueueSize = 1024 * 1024;
+
+            // Allow 4 connection attempts that each will time out after 500ms
+            unityTransport.MaxConnectAttempts = 4;
+            unityTransport.ConnectTimeoutMS = 500;
 
             // Set the NetworkConfig
             server.NetworkConfig = new NetworkConfig()
@@ -184,10 +181,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Set transport
                 NetworkTransport = unityTransport
             };
+            return server;
+        }
+
+        /// <summary>
+        /// Creates NetworkingManagers and configures them for use in a multi instance setting.
+        /// </summary>
+        /// <param name="clientCount">The amount of clients</param>
+        /// <param name="server">The server NetworkManager</param>
+        /// <param name="clients">The clients NetworkManagers</param>
+        /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
+        /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true)
+        {
+            s_NetworkManagerInstances = new List<NetworkManager>();
+            server = null;
+            if (serverFirst)
+            {
+                server = CreateServer();
+            }
 
             CreateNewClients(clientCount, out clients);
 
-
+            if (!serverFirst)
+            {
+                server = CreateServer();
+            }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
