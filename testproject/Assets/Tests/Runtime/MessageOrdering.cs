@@ -110,7 +110,7 @@ namespace TestProject.RuntimeTests
             var frameCountStart = Time.frameCount;
             // Must be 1 for this test.
             const int numClients = 1;
-            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out m_ServerNetworkManager,out m_ClientNetworkManagers));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out m_ServerNetworkManager, out m_ClientNetworkManagers));
             m_Prefab = new GameObject("Object");
             m_Prefab.AddComponent<SpawnRpcDespawn>();
             Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
@@ -169,7 +169,7 @@ namespace TestProject.RuntimeTests
             while (!(allHandlersSpawned && clientCountReached && allHandlersDestroyed))
             {
                 clientCountReached = (Support.SpawnRpcDespawn.ClientUpdateCount == expectedCount);
-                foreach(var clientHandler in clientHandlers)
+                foreach (var clientHandler in clientHandlers)
                 {
                     allHandlersSpawned = clientHandler.WasSpawned;
                     allHandlersDestroyed = clientHandler.WasDestroyed;
