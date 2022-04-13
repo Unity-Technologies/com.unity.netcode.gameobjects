@@ -1469,6 +1469,10 @@ namespace Unity.Netcode
             if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
             {
                 ClientLoadedSynchronization(sceneEventId);
+                if (m_NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"Client declined to load the scene {sceneName}, continuing with synchronization.");
+                }
                 return;
             }
 
