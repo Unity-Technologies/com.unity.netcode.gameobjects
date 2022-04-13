@@ -143,6 +143,11 @@ namespace Unity.Netcode
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public override void ReadDelta(FastBufferReader reader, bool keepDirtyDelta)
         {
+            // todo:
+            // keepDirtyDelta marks a variable received as dirty and causes the server to send the value to clients
+            // In a prefect world, whether a variable was A) modified locally or B) received and needs retransmit
+            // would be stored in different fields
+
             T previousValue = m_InternalValue;
             Read(reader, out m_InternalValue);
 
