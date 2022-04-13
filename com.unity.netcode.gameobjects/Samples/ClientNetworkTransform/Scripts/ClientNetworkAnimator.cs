@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -6,7 +5,7 @@ using UnityEngine;
 
 public class ClientNetworkAnimator : NetworkAnimator
 {
-    IReadOnlyList<ulong> m_AllClientsButOwnerCache;
+    private IReadOnlyList<ulong> m_AllClientsButOwnerCache;
     protected override bool SendMessagesAllowed => IsOwner;
 
     public override void OnGainedOwnership()
@@ -22,7 +21,7 @@ public class ClientNetworkAnimator : NetworkAnimator
         RefreshAllClientsButOwner();
     }
 
-    void OnClientRefresh(ulong _)
+    private void OnClientRefresh(ulong _)
     {
         RefreshAllClientsButOwner();
     }
@@ -48,7 +47,7 @@ public class ClientNetworkAnimator : NetworkAnimator
         NetworkManager.OnClientDisconnectCallback -= OnClientRefresh;
     }
 
-    void RefreshAllClientsButOwner()
+    private void RefreshAllClientsButOwner()
     {
         if (IsServer)
         {
@@ -80,7 +79,7 @@ public class ClientNetworkAnimator : NetworkAnimator
     }
 
     [ServerRpc]
-    void BroadcastToNonOwnerAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
+    private void BroadcastToNonOwnerAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
     {
         PlayAnimStateLocally(animSnapshot);
         SendAnimStateClientRpc(animSnapshot, new ClientRpcParams() { Send = new ClientRpcSendParams() { TargetClientIds = m_AllClientsButOwnerCache } });
@@ -102,7 +101,7 @@ public class ClientNetworkAnimator : NetworkAnimator
     }
 
     [ServerRpc]
-    void BroadcastToNonOwnerAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
+    private void BroadcastToNonOwnerAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
     {
         // play locally
         PlayAnimLocally(animSnapshot);
