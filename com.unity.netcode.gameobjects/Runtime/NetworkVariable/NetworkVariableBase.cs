@@ -95,6 +95,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Returns the ClientId of the owning client
+        /// </summary>
+        internal ulong OwnerClientId()
+        {
+            return m_NetworkBehaviour.NetworkObject.OwnerClientId;
+        }
+
+        /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="writer">The stream to write the dirty changes to</param>
