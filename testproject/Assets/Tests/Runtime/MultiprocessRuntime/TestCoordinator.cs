@@ -65,7 +65,7 @@ public class TestCoordinator : NetworkBehaviour
     private void Awake()
     {
         MultiprocessLogger.Log("TestCoordinator - Awake");
-        
+
         s_ProcessId = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Awake - {s_ProcessId}");
         string[] cliargList = Environment.GetCommandLineArgs();
@@ -76,19 +76,25 @@ public class TestCoordinator : NetworkBehaviour
             cliargs += cliargList[i];
         }
 
+        MultiprocessLogger.Log("Trying to read githash file");
         string rawgithash = "x";
         try
         {
-            rawgithash = Resources.Load<TextAsset>("Text/githash").ToString();
-            if (!string.IsNullOrEmpty(rawgithash))
+            var githash_resource = Resources.Load<TextAsset>("Text/githash");
+            if (githash_resource != null)
             {
-                rawgithash = rawgithash.Trim();
+                rawgithash = githash_resource.ToString();
+                if (!string.IsNullOrEmpty(rawgithash))
+                {
+                    rawgithash = rawgithash.Trim();
+                }
             }
         }
         catch (Exception e)
         {
             MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
         }
+        MultiprocessLogger.Log($"Trying to read githash file: {rawgithash}");
 
         try
         {
