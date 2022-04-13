@@ -16,8 +16,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public void Awake()
         {
+            Debug.Log("ThreeDText - Awake - Start");
             if (IsPerformanceTest)
             {
+                Debug.Log("Setting Active to false as this is a performance test");
                 gameObject.SetActive(false);
             }
         }
@@ -48,10 +50,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         // Update is called once per frame
         public void Update()
         {
+            var t = GetComponent<TextMesh>();
+            t.text = "On Update";
             m_UpdateCounter++;
             var testCoordinator = TestCoordinator.Instance;
             if (testCoordinator == null)
             {
+                t.text = t.text + " testCoordinator is null";
                 return;
             }
 
@@ -66,7 +71,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 transportString = transport.ToString();
             }
 
-            var t = GetComponent<TextMesh>();
+            t.text += " " + transportString + "\n" +
+                testCoordinator.isActiveAndEnabled + "\n" +
+                m_TransportString;
 
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
                 !m_HasFired ||

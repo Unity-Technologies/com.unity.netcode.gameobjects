@@ -127,15 +127,26 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             string testName = null;
             string testClass = " - c -";
-            try
-            {
-                testName = TestContext.CurrentContext.Test.Name;
-                testClass = TestContext.CurrentContext.Test.ClassName;
+            var st = new StackTrace(true);
 
-            }
-            catch (Exception)
+            if (TestCoordinator.ConfigurationType == ConfigurationType.ResourceFile ||
+                TestCoordinator.ConfigurationType == ConfigurationType.Unknown)
             {
-                // ignored
+                testName = " - unknown -";
+                testClass = " - unknown - ";
+            }
+            else
+            {
+                try
+                {
+                    testName = TestContext.CurrentContext.Test.Name;
+                    testClass = TestContext.CurrentContext.Test.ClassName;
+
+                }
+                catch (Exception)
+                {
+                    // ignored
+                }
             }
 
             if (string.IsNullOrEmpty(testName))
@@ -149,8 +160,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     testName = TestName;
                 }
             }
-
-            var st = new StackTrace(true);
 
             string methods = "";
 

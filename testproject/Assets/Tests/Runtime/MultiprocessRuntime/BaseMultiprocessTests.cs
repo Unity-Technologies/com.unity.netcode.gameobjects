@@ -170,7 +170,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [SetUp]
         public void SetUp()
         {
-            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count} {GetWorkerCount()}");
+            MultiprocessLogger.Log($"1/3 NUnit Level Setup in Base Class - Connected Clients: {m_ConnectedClientsList.Count}/{NetworkManager.Singleton.ConnectedClients.Count} GetWorkerCount: {GetWorkerCount()}");
             TestContext t1 = TestContext.CurrentContext;
             MultiprocessLogger.Log($"2/3 NUnit Level Setup - FullName: {t1.Test.FullName}");
             var t2 = TestContext.CurrentTestExecutionContext;

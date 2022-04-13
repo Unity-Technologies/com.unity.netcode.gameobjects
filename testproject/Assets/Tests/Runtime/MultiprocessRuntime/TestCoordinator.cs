@@ -24,19 +24,20 @@ using Unity.Netcode.Transports.UTP;
 [RequireComponent(typeof(NetworkObject))]
 public class TestCoordinator : NetworkBehaviour
 {
+    public static TestCoordinator Instance;
+
     public const int PerTestTimeoutSec = 4 * 60; // seconds
 
     public const float MaxWaitTimeoutSec = 56;
-    private const char k_MethodFullNameSplitChar = '@';
 
-    public ConfigurationType ConfigurationType;
+    public static ConfigurationType ConfigurationType;
+
+    private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
     private float m_TimeSinceLastConnected;
     private float m_TimeSinceLastKeepAlive;
     private bool m_IsClient;
-
-    public static TestCoordinator Instance;
 
     private Dictionary<ulong, List<float>> m_TestResultsLocal = new Dictionary<ulong, List<float>>(); // this isn't super efficient, but since it's used for signaling around the tests, shouldn't be too bad
     private Dictionary<ulong, bool> m_ClientIsFinished = new Dictionary<ulong, bool>();
@@ -56,9 +57,15 @@ public class TestCoordinator : NetworkBehaviour
     private Stopwatch m_Stopwatch;
     private static int s_ProcessId;
 
+    static TestCoordinator()
+    {
+        ConfigurationType = ConfigurationType.Unknown;
+    }
+
     private void Awake()
     {
         MultiprocessLogger.Log("TestCoordinator - Awake");
+        
         s_ProcessId = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Awake - {s_ProcessId}");
         string[] cliargList = Environment.GetCommandLineArgs();
@@ -113,9 +120,9 @@ public class TestCoordinator : NetworkBehaviour
             return;
         }
 
-        
+        Instance = this;
+
         JobQueueItemArray jobQueueItems = MultiprocessLogHandler.GetRemoteConfig();
-        
         if (jobQueueItems != null && jobQueueItems.jobQueueItems != null)
         {
             MultiprocessLogger.Log($"Remote configuration data {jobQueueItems.jobQueueItems.Count}");
@@ -128,8 +135,6 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Remote configuration data returned null");
         }
-
-        Instance = this;
     }
 
     public void Start()
