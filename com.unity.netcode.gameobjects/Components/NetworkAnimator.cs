@@ -191,6 +191,7 @@ namespace Unity.Netcode.Components
 
                 WriteParameters(m_ParameterWriter);
                 animMsg.Parameters = m_ParameterWriter.ToArray();
+
                 DoSendAnimState(animMsg);
             }
         }
@@ -343,7 +344,6 @@ namespace Unity.Netcode.Components
             {
                 m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
-
             m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
