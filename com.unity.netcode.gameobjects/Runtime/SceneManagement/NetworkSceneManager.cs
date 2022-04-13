@@ -1446,12 +1446,9 @@ namespace Unity.Netcode
 
             var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
-            // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
-            {
-                EndSceneEvent(sceneEventId);
-                return;
-            }
+            // Store the sceneHandle and hash
+            sceneEventData.ClientSceneHandle = sceneHandle;
+            sceneEventData.ClientSceneHash = sceneHash;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
             if (sceneHash == sceneEventData.SceneHash)
@@ -1468,9 +1465,12 @@ namespace Unity.Netcode
                 ScenePlacedObjects.Clear();
             }
 
-            // Store the sceneHandle and hash
-            sceneEventData.ClientSceneHandle = sceneHandle;
-            sceneEventData.ClientSceneHash = sceneHash;
+            // Always check to see if the scene needs to be validated
+            if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
+            {
+                ClientLoadedSynchronization(sceneEventId);
+                return;
+            }
 
             var shouldPassThrough = false;
             var sceneLoad = (AsyncOperation)null;
