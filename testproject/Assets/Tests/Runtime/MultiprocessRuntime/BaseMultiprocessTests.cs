@@ -443,7 +443,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
                     BokkenMachine.LogProcessListStatus();
-                    MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
+                    // MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                     MultiprocessOrchestration.ShutdownAllProcesses(true, 7);
                 }
                 MultiprocessLogger.Log(MultiprocessLogHandler.Flush());

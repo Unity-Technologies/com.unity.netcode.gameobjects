@@ -257,7 +257,7 @@ public class MultiprocessOrchestration
     {
         foreach (var f in MultiprocessDirInfo.GetFiles("*.json"))
         {
-            BokkenMachine.KillMultiprocessTestPlayer(f.FullName);
+            // BokkenMachine.KillMultiprocessTestPlayer(f.FullName);
         }
     }
 
