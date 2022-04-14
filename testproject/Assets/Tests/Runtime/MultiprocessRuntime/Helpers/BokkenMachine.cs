@@ -391,6 +391,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 string s = $" --command launch " +
                     $"--input-path {PathToJson} ";
+                MultiprocessLogger.Log(s);
                 return s;
             }
             else

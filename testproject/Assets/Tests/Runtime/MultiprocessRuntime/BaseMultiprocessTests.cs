@@ -132,6 +132,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             // MultiprocessLogger.Log($"OnSceneLoaded: Starting Host {((UnityTransport)transport).ConnectionData.Address}");
             bool didStart = NetworkManager.Singleton.StartHost();
+            // This isn't accurate but is a hack for the moment
+            // TODO: Clean up at next opportunity
+            TestCoordinator.ConfigurationType = ConfigurationType.CommandLine;
             MultiprocessLogger.Log($"OnSceneLoaded: Host Start Complete with status {didStart}");
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene
             NetworkManager.Singleton.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
