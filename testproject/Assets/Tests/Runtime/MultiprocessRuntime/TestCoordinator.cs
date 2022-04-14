@@ -26,7 +26,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public static TestCoordinator Instance;
 
-    public const int PerTestTimeoutSec = 4 * 60; // seconds
+    public const int PerTestTimeoutSec = 3 * 60; // seconds
 
     public const float MaxWaitTimeoutSec = 56;
 
