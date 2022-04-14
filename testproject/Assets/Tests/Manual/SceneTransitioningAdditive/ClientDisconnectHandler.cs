@@ -18,7 +18,7 @@ namespace TestProject.ManualTests
         [SerializeField]
         private bool m_AutoFlushScenes = true;
 
-        [Range(0.5f,20.0f)]
+        [Range(0.5f, 20.0f)]
         [SerializeField]
         private float m_DelayBetweenAttempts = 5;
         private WaitForSeconds m_RetryAttemptDelay;
@@ -64,9 +64,9 @@ namespace TestProject.ManualTests
                 return;
             }
 
-            if(sceneEvent.ClientId == NetworkManager.LocalClientId )
+            if (sceneEvent.ClientId == NetworkManager.LocalClientId)
             {
-                switch(sceneEvent.SceneEventType)
+                switch (sceneEvent.SceneEventType)
                 {
                     case SceneEventType.LoadComplete:
                         {
@@ -154,9 +154,9 @@ namespace TestProject.ManualTests
                 return;
             }
             var connectedClients = NetworkManager.ConnectedClientsIds.ToList();
-            foreach(var clientId in connectedClients)
+            foreach (var clientId in connectedClients)
             {
-                if(clientId == NetworkManager.LocalClientId)
+                if (clientId == NetworkManager.LocalClientId)
                 {
                     continue;
                 }
@@ -190,7 +190,7 @@ namespace TestProject.ManualTests
 
         private void NetworkManager_OnClientConnectedCallback(ulong obj)
         {
-            if(m_IsReconnecting)
+            if (m_IsReconnecting)
             {
                 m_IsReconnecting = false;
                 StopCoroutine(m_CurrentCoroutine);
@@ -201,7 +201,7 @@ namespace TestProject.ManualTests
 
         private IEnumerator ReconnectClient()
         {
-            while(m_ConnectionAttempts < m_ReconnectAttempts)
+            while (m_ConnectionAttempts < m_ReconnectAttempts)
             {
                 yield return m_RetryAttemptDelay;
                 NetworkManager.StartClient();

@@ -391,7 +391,7 @@ namespace Unity.Netcode
             var networkSceneTable = new Dictionary<int, Scene>();
             foreach (var lookupEntry in ServerSceneHandleToClientSceneHandle)
             {
-                if(ScenesLoaded.ContainsKey(lookupEntry.Value))
+                if (ScenesLoaded.ContainsKey(lookupEntry.Value))
                 {
                     networkSceneTable.Add(lookupEntry.Key, ScenesLoaded[lookupEntry.Value]);
                 }
