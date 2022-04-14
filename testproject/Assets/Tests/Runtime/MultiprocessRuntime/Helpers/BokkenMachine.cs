@@ -113,6 +113,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return defaultAndroid;
         }
 
+        public static BokkenMachine GetDefaultXboxOne(string name)
+        {
+            var defaultXboxOne = new BokkenMachine();
+            defaultXboxOne.Type = "Unity::console::xbox";
+            defaultXboxOne.Image = "gamecore/gamecore-ci:latest";
+            defaultXboxOne.Flavor = "b1.xlarge";
+            defaultXboxOne.Name = name;
+            return defaultXboxOne;
+        }
+
         public static BokkenMachine Parse(string shortcut)
         {
             BokkenMachine bokkenMachine = null;
@@ -134,6 +144,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else if (type.Equals("default-android"))
             {
                 bokkenMachine = GetDefaultAndroid(name);
+            }
+            else if (type.Equals("default-xboxone"))
+            {
+                bokkenMachine = GetDefaultXboxOne(name);
             }
 
             return bokkenMachine;

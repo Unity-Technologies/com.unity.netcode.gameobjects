@@ -65,7 +65,9 @@ public class MultiprocessOrchestration
 
     public static BokkenMachine ProvisionWorkerNode(string platformString)
     {
+        MultiprocessLogger.Log($"ProvisionWorkerNode - {platformString}");
         var bokkenMachine = BokkenMachine.Parse(platformString);
+        MultiprocessLogger.Log($"ProvisionWorkerNode - {bokkenMachine}");
         bokkenMachine.PathToJson = Path.Combine(s_MultiprocessDirInfo.FullName, $"{bokkenMachine.Name}.json");
         var fi = new FileInfo(bokkenMachine.PathToJson);
         MultiprocessLogger.Log($"ProvisionWorkerNode - {bokkenMachine.PathToJson}: {fi.Exists}, parsed from {platformString}");
