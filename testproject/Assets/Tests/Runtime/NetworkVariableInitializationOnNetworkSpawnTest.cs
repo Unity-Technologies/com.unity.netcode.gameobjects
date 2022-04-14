@@ -114,20 +114,12 @@ namespace TestProject.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult);
             var networkVariableInitOnNetworkSpawnClientSide = clientClientPlayerResult.Result.GetComponent<NetworkVariableInitOnNetworkSpawn>();
 
-            var timedOut = false;
-            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => networkVariableInitOnNetworkSpawnClientSide.Variable.Value ==
+            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient, timeoutHelper);
 
-            while (!timedOut)
-            {
-                if (networkVariableInitOnNetworkSpawnClientSide.Variable.Value == NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient)
-                {
-                    break;
-                }
-                timedOut = timeOutPeriod < Time.realtimeSinceStartup;
-            }
-
-            Assert.False(timedOut, $"Timed out while waiting for Variable.Value to equal {NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient}");
-
+            Assert.False(timeoutHelper.TimedOut, $"Timed out while waiting for Variable.Value ({networkVariableInitOnNetworkSpawnClientSide.Variable.Value}) " +
+                $"to equal {NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient}");
         }
 
         [UnityTest]

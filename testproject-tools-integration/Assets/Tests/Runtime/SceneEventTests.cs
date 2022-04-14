@@ -21,6 +21,12 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         private NetworkSceneManager m_ServerNetworkSceneManager;
         private Scene m_LoadedScene;
 
+        protected override IEnumerator OnSetup()
+        {
+            m_CreateServerFirst = false;
+            return base.OnSetup();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             // invoke the base first so the Server and client are set

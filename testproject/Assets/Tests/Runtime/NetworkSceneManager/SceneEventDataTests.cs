@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
@@ -28,11 +28,12 @@ namespace TestProject.RuntimeTests
             var networkManagerGameObject = new GameObject("NetworkManager - Host");
 
             var networkManager = networkManagerGameObject.AddComponent<NetworkManager>();
+            var unityTransport = networkManagerGameObject.AddComponent<UnityTransport>();
             networkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
                 NetworkPrefabs = new List<NetworkPrefab>(),
-                NetworkTransport = networkManagerGameObject.AddComponent<SIPTransport>(),
+                NetworkTransport = unityTransport
             };
 
             networkManager.StartHost();

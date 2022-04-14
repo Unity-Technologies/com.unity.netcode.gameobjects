@@ -79,6 +79,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected const uint k_DefaultTickRate = 30;
         protected abstract int NumberOfClients { get; }
 
+        /// <summary>
+        /// Set this to false to create the clients first.
+        /// Note: If you are using scene placed NetworkObjects or doing any form of scene testing and
+        /// get prefab hash id "soft synchronization" errors, then set this to false and run your test
+        /// again.  This is a work-around until we can resolve some issues with NetworkManagerOwner and
+        /// NetworkManager.Singleton.
+        /// </summary>
+        protected bool m_CreateServerFirst = true;
+
         public enum NetworkManagerInstatiationMode
         {
             PerTest,        // This will create and destroy new NetworkManagers for each test within a child derived class
@@ -107,8 +116,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected bool m_UseHost = true;
         protected int m_TargetFrameRate = 60;
-
-        protected NetcodeIntegrationTestHelpers.InstanceTransport m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
@@ -252,7 +259,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreatePlayerPrefab();
 
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_NetworkTransport))
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -558,6 +565,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 if (CanDestroyNetworkObject(networkObject))
                 {
+                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
@@ -668,6 +676,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var gameObject = new GameObject();
             gameObject.name = baseName;
             var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
