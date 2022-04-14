@@ -139,8 +139,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
 
-
-
             yield return WaitForCondition(() => clientSceneLoaded);
             Assert.IsTrue(clientSceneLoaded);
 
