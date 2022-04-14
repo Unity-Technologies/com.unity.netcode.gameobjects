@@ -8,14 +8,13 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class StopStartRuntimeTests
     {
-        [UnityTest]
-        public IEnumerator WhenShuttingDownAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
-        {            // create server and client instances
+        private IEnumerator StopStartTest(bool shutdownTwice)
+        {
+            // create server and client instances
             NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
 
             try
             {
-
                 // create prefab
                 var gameObject = new GameObject("PlayerObject");
                 var networkObject = gameObject.AddComponent<NetworkObject>();
@@ -51,6 +50,11 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsFalse(server.IsHost);
                 Assert.IsFalse(server.IsClient);
 
+                if (shutdownTwice)
+                {
+                    server.Shutdown();
+                }
+
                 server.StartServer();
                 // Verify the server started
                 Assert.IsTrue(server.IsServer);
@@ -69,6 +73,18 @@ namespace Unity.Netcode.RuntimeTests
                 // cleanup
                 NetcodeIntegrationTestHelpers.Destroy();
             }
+        }
+
+        [UnityTest]
+        public IEnumerator WhenShuttingDownAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
+        {
+            yield return StopStartTest(shutdownTwice: false);
+        }
+
+        [UnityTest]
+        public IEnumerator WhenShuttingDownTwiceAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
+        {
+            yield return StopStartTest(shutdownTwice: true);
         }
     }
 }
