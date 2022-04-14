@@ -376,6 +376,47 @@ namespace Unity.Netcode
         /// </summary>
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
 
+        internal Dictionary<int, Scene> NetworkSceneTableState = new Dictionary<int, Scene>();
+        private bool m_AutoFlushRemainingScenes;
+
+        /// <summary>
+        /// Returns a table of entries that are keyed by NetworkSceneHandle and each handle is paired to the local scene.
+        /// Primarily used by clients to restore the state prior to reconnecting a client that was disconnected and is
+        /// trying to reconnect to the same network session.
+        /// <see cref="SetNetworkSceneTableState(Dictionary{int, Scene}, bool)"/>
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<int, Scene> GetNetworkSceneTableState()
+        {
+            var networkSceneTable = new Dictionary<int, Scene>();
+            foreach (var lookupEntry in ServerSceneHandleToClientSceneHandle)
+            {
+                if(ScenesLoaded.ContainsKey(lookupEntry.Value))
+                {
+                    networkSceneTable.Add(lookupEntry.Key, ScenesLoaded[lookupEntry.Value]);
+                }
+            }
+            return networkSceneTable;
+        }
+
+        /// <summary>
+        /// This should be called during <see cref="NetworkManager.OnClientStarted"/> before a client
+        /// synchronizes in order to bypass reloading of already loaded scenes.
+        /// Note: The NetworkSceneTableState is server authoritative and so clients can only apply
+        /// a networkSceneTableState to their <see cref="NetworkSceneManager"/> instance.
+        /// </summary>
+        /// <param name="networkSceneTableState">a previously saved network scene table state</param>
+        /// <param name="autoFlushRemainingScenes">defaults to true, but when false you must handle the unloading
+        /// of any scenes that were unloaded between the time a client disconnects to the time the client reconnects</param>
+        public void SetNetworkSceneTableState(Dictionary<int, Scene> networkSceneTableState, bool autoFlushRemainingScenes = true)
+        {
+            if (!m_NetworkManager.IsServer)
+            {
+                NetworkSceneTableState = new Dictionary<int, Scene>(networkSceneTableState);
+                m_AutoFlushRemainingScenes = autoFlushRemainingScenes;
+            }
+        }
+
         /// <summary>
         /// Hash to build index lookup table
         /// </summary>
@@ -672,18 +713,18 @@ namespace Unity.Netcode
         /// <param name="serverSceneHandle"></param>
         internal void SetTheSceneBeingSynchronized(int serverSceneHandle)
         {
-            var clientSceneHandle = serverSceneHandle;
+            var networkSceneHandle = serverSceneHandle;
             if (ServerSceneHandleToClientSceneHandle.ContainsKey(serverSceneHandle))
             {
-                clientSceneHandle = ServerSceneHandleToClientSceneHandle[serverSceneHandle];
+                networkSceneHandle = ServerSceneHandleToClientSceneHandle[serverSceneHandle];
                 // If we were already set, then ignore
-                if (SceneBeingSynchronized.IsValid() && SceneBeingSynchronized.isLoaded && SceneBeingSynchronized.handle == clientSceneHandle)
+                if (SceneBeingSynchronized.IsValid() && SceneBeingSynchronized.isLoaded && SceneBeingSynchronized.handle == networkSceneHandle)
                 {
                     return;
                 }
 
                 // Get the scene currently being synchronized
-                SceneBeingSynchronized = ScenesLoaded.ContainsKey(clientSceneHandle) ? ScenesLoaded[clientSceneHandle] : new Scene();
+                SceneBeingSynchronized = ScenesLoaded.ContainsKey(networkSceneHandle) ? ScenesLoaded[networkSceneHandle] : new Scene();
 
                 if (!SceneBeingSynchronized.IsValid() || !SceneBeingSynchronized.isLoaded)
                 {
@@ -1447,7 +1488,7 @@ namespace Unity.Netcode
             var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Store the sceneHandle and hash
-            sceneEventData.ClientSceneHandle = sceneHandle;
+            sceneEventData.NetworkSceneHandle = sceneHandle;
             sceneEventData.ClientSceneHash = sceneHash;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
@@ -1475,8 +1516,9 @@ namespace Unity.Netcode
                 }
                 return;
             }
-
-            var shouldPassThrough = false;
+            // If we preloaded a previously saved NetworkSceneTableState and we already
+            // have loaded this scene, then don't load it again
+            var shouldPassThrough = NetworkSceneTableState.ContainsKey(sceneHandle);
             var sceneLoad = (AsyncOperation)null;
 
             // Check to see if the client already has loaded the scene to be loaded
@@ -1513,6 +1555,29 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// <see cref="SetNetworkSceneTableState(Dictionary{int, Scene})"/>
+        /// Can be used to reconnect a disconnected player without having to
+        /// force the client to unload and reload the already loaded scenes.
+        /// This removes each scene from the NetworkSceneTableState, so if
+        /// there were any scenes unloaded (server side) between the time of
+        /// disconnection and reconnection it will automatically unload those
+        /// scenes in the end (if m_AutoFlushRemainingScenes was set)
+        /// </summary>
+        /// <param name="networkSceneHandle"></param>
+        private Scene TryGetLoadedScene(int networkSceneHandle)
+        {
+            if (NetworkSceneTableState.ContainsKey(networkSceneHandle))
+            {
+                var scene = NetworkSceneTableState[networkSceneHandle];
+                NetworkSceneTableState.Remove(networkSceneHandle);
+                ScenesLoaded.Add(scene.handle, scene);
+                return scene;
+            }
+            // Otherwise return an invalid scene
+            return new Scene();
+        }
+
+        /// <summary>
         /// Once a scene is loaded ( or if it was already loaded) this gets called.
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
@@ -1521,7 +1586,12 @@ namespace Unity.Netcode
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
             var sceneName = SceneNameFromHash(sceneEventData.ClientSceneHash);
-            var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
+            var nextScene = TryGetLoadedScene(sceneEventData.NetworkSceneHandle);
+            var skipLoading = nextScene.IsValid() && nextScene.isLoaded;
+            if (!skipLoading)
+            {
+                nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
+            }
 
             if (!nextScene.isLoaded || !nextScene.IsValid())
             {
@@ -1536,9 +1606,9 @@ namespace Unity.Netcode
                 SceneManager.SetActiveScene(nextScene);
             }
 
-            if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.ClientSceneHandle))
+            if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.NetworkSceneHandle))
             {
-                ServerSceneHandleToClientSceneHandle.Add(sceneEventData.ClientSceneHandle, nextScene.handle);
+                ServerSceneHandleToClientSceneHandle.Add(sceneEventData.NetworkSceneHandle, nextScene.handle);
             }
             else
             {
@@ -1646,6 +1716,22 @@ namespace Unity.Netcode
                             ClientId = NetworkManager.ServerClientId,  // Server sent this to client
                         });
 
+                        // Players will always receive a ReSynchronize event even if there is nothing to resynchronize
+                        // This assures that when we do need to resynchronize if we are restoring already loaded scenes
+                        // that all NetworkObjects are despawned before any scenes that are no longer loaded (i.e. remaining
+                        // from the NetworkSceneTableState) are unloaded on the client side.
+                        if (m_AutoFlushRemainingScenes)
+                        {
+                            foreach (var networkStateEntry in NetworkSceneTableState)
+                            {
+                                if (networkStateEntry.Value.handle != m_NetworkManager.gameObject.scene.handle)
+                                {
+                                    SceneManager.UnloadSceneAsync(networkStateEntry.Value);
+                                }
+                            }
+                        }
+
+                        NetworkSceneTableState.Clear();
                         EndSceneEvent(sceneEventId);
                         break;
                     }
@@ -1750,7 +1836,9 @@ namespace Unity.Netcode
                         // NetworkObjects
                         m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
-                        if (sceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
+                        // We now always send the message, it just might not contain anything to be
+                        // resynchronized (for client reconnection synchronization using NetworkSceneTableState
+                        if (!DisableReSynchronization)
                         {
                             sceneEventData.SceneEventType = SceneEventType.ReSynchronize;
                             SendSceneEventData(sceneEventId, new ulong[] { clientId });

@@ -100,7 +100,7 @@ namespace Unity.Netcode
 
         // Used by the client during synchronization
         internal uint ClientSceneHash;
-        internal int ClientSceneHandle;
+        internal int NetworkSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
         /// NetworkVariable information.  If that process changes, then we need to update this

@@ -351,9 +351,14 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the server is ready
+        /// The callback to invoke once the server has been started
         /// </summary>
         public event Action OnServerStarted = null;
+
+        /// <summary>
+        /// The callback to invoke once the client has been started
+        /// </summary>
+        public event Action OnClientStarted = null;
 
         /// <summary>
         /// Delegate type called when connection has been approved. This only has to be set on the server.
@@ -844,6 +849,8 @@ namespace Unity.Netcode
             IsServer = false;
             IsClient = true;
             IsListening = true;
+
+            OnClientStarted?.Invoke();
 
             return true;
         }
