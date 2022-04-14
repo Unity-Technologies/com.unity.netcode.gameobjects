@@ -301,7 +301,7 @@ public class TestCoordinator : NetworkBehaviour
 
         if (!IsServer)
         {
-            if (m_NumberOfCallsToUpdate % 25 == 0 || m_Stopwatch.ElapsedMilliseconds > 5000)
+            if (m_NumberOfCallsToUpdate % 250 == 0 || m_Stopwatch.ElapsedMilliseconds > 5000)
             {
                 m_Stopwatch.Restart();
                 LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
