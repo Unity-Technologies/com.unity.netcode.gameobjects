@@ -2537,10 +2537,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1024114720}
-  - component: {fileID: 1024114719}
   - component: {fileID: 1024114718}
   - component: {fileID: 1024114721}
   - component: {fileID: 1024114722}
+  - component: {fileID: 1024114723}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -2564,7 +2564,7 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    NetworkTransport: {fileID: 1024114719}
+    NetworkTransport: {fileID: 1024114723}
     PlayerPrefab: {fileID: 4079352819444256614, guid: c16f03336b6104576a565ef79ad643c0,
       type: 3}
     NetworkPrefabs:
@@ -2633,25 +2633,6 @@ MonoBehaviour:
     LoadSceneTimeOut: 120
     MessageBufferTimeout: 20
     EnableNetworkLogs: 1
---- !u!114 &1024114719
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1024114717}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b84c2d8dfe509a34fb59e2b81f8e1319, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  MessageBufferSize: 65535
-  MaxConnections: 100
-  MaxSentMessageQueueSize: 512
-  ConnectAddress: 127.0.0.1
-  ConnectPort: 7777
-  ServerListenPort: 7777
-  MessageSendMode: 0
 --- !u!4 &1024114720
 Transform:
   m_ObjectHideFlags: 0
@@ -2693,6 +2674,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LogToConsole: 1
   TimeToLive: 10
+--- !u!114 &1024114723
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024114717}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6960e84d07fb87f47956e7a81d71c4e6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_ProtocolType: 0
+  m_MaxPacketQueueSize: 128
+  m_MaxPayloadSize: 256000
+  m_MaxSendQueueSize: 2097151
+  m_HeartbeatTimeoutMS: 500
+  m_ConnectTimeoutMS: 1000
+  m_MaxConnectAttempts: 60
+  m_DisconnectTimeoutMS: 30000
+  ConnectionData:
+    Address: 127.0.0.1
+    Port: 7777
+    ServerListenAddress: 127.0.0.1
+  DebugSimulator:
+    PacketDelayMS: 0
+    PacketJitterMS: 0
+    PacketDropRate: 0
 --- !u!1 &1113539278
 GameObject:
   m_ObjectHideFlags: 0
