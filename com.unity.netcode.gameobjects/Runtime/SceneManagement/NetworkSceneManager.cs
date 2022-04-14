@@ -1716,15 +1716,14 @@ namespace Unity.Netcode
                             ClientId = NetworkManager.ServerClientId,  // Server sent this to client
                         });
 
-                        // Players will always receive a ReSynchronize event even if there is nothing to resynchronize
-                        // This assures that when we do need to resynchronize if we are restoring already loaded scenes
-                        // that all NetworkObjects are despawned before any scenes that are no longer loaded (i.e. remaining
-                        // from the NetworkSceneTableState) are unloaded on the client side.
+                        // Client's will always receive a ReSynchronize event even if there is nothing to resynchronize.
+                        // This assures that any scenes that are no longer loaded (i.e. remaining NetworkSceneTableState entries)
+                        // are unloaded on the client side when m_AutoFlushRemainingScenes is set.
                         if (m_AutoFlushRemainingScenes)
                         {
                             foreach (var networkStateEntry in NetworkSceneTableState)
                             {
-                                if (networkStateEntry.Value.handle != m_NetworkManager.gameObject.scene.handle)
+                                if (networkStateEntry.Value.handle != m_NetworkManager.gameObject.scene.handle && networkStateEntry.Value.IsValid() && networkStateEntry.Value.isLoaded)
                                 {
                                     SceneManager.UnloadSceneAsync(networkStateEntry.Value);
                                 }
@@ -1837,9 +1836,7 @@ namespace Unity.Netcode
                         m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
                         // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
-                        // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)
-                        // We now always send the message, it just might not contain anything to be
-                        // resynchronized (for client reconnection synchronization using NetworkSceneTableState                        
+                        // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists).
                         if (!DisableReSynchronization && m_NetworkManager.ConnectedClients.ContainsKey(clientId))
                         {
                             sceneEventData.SceneEventType = SceneEventType.ReSynchronize;
