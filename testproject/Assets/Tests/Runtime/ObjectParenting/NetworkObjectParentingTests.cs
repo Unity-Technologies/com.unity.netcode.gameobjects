@@ -74,6 +74,7 @@ namespace TestProject.RuntimeTests
             SetupSet(serverSet.transform, 0, m_ServerNetworkManager);
             serverSet.name = "Set0 (Server)";
 
+
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 var clientSet = Object.Instantiate(serverSet);
@@ -180,7 +181,7 @@ namespace TestProject.RuntimeTests
             LogAssert.Expect(LogType.Exception, new Regex("start a server or host", RegexOptions.IgnoreCase));
             var cachedParent = m_Cube_NetObjs[setIndex].parent;
             m_Cube_NetObjs[setIndex].parent = m_Pickup_NetObjs[setIndex];
-            Assert.That(m_Cube_NetObjs[setIndex].parent, Is.EqualTo(cachedParent));
+            Assert.That(m_Cube_NetObjs[setIndex].parent, Is.EqualTo(cachedParent), $"Transform {m_Cube_NetObjs[setIndex].parent.name} is not equal to transform {cachedParent.name}");
         }
 
         [UnityTearDown]
@@ -200,12 +201,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentDirect()
         {
+            var waitForNetworkTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             // Server: Set/Cube -> Set/Pickup/Back/Cube
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return waitForNetworkTick;
 
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -219,8 +220,7 @@ namespace TestProject.RuntimeTests
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return waitForNetworkTick;
 
             // Client[n]: Set/Pickup/Back -> Root/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -234,8 +234,7 @@ namespace TestProject.RuntimeTests
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return waitForNetworkTick;
 
             // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)

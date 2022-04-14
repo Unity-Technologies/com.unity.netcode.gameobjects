@@ -16,6 +16,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private static readonly int k_ServerLogSentMessageOverhead = 2 + k_MessageHeaderSize;
         private static readonly int k_ServerLogReceivedMessageOverhead = 2;
 
+        protected override IEnumerator OnSetup()
+        {
+            m_CreateServerFirst = false;
+            return base.OnSetup();
+        }
+
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {

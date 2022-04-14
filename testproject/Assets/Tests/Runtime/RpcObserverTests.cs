@@ -30,11 +30,6 @@ namespace TestProject.RuntimeTests
 
         public RpcObserverTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
-        protected override void OnOneTimeSetup()
-        {
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-        }
-
         protected override void OnServerAndClientsCreated()
         {
             m_TestPrefab = CreateNetworkObjectPrefab($"{nameof(RpcObserverObject)}");
