@@ -83,6 +83,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnDestroy()
         {
+            CleanNetworkObjects();
             InternalStopCoroutine();
             DeregisterCustomPrefabHandler();
 
