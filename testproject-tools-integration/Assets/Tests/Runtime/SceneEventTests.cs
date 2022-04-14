@@ -122,13 +122,24 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             };
 
             var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
+
+            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            Assert.AreEqual(1, receivedMetrics.Count);
+            var receivedMetric = receivedMetrics.First();
+            Assert.AreEqual(SceneEventType.ReSynchronize.ToString(), receivedMetric.SceneEventType);
 
             // Load a scene to trigger the messages
             StartServerLoadScene();
 
+            waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+            yield return waitForReceivedMetric.WaitForMetricsReceived();
+
             // Wait for the server to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
             Assert.IsTrue(serverSceneLoaded);
+
+
 
             yield return WaitForCondition(() => clientSceneLoaded);
             Assert.IsTrue(clientSceneLoaded);
@@ -136,10 +147,10 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // Now start the wait for the metric to be emitted when the message is received.
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
-            var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
+            receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, receivedMetrics.Count);
 
-            var receivedMetric = receivedMetrics.First();
+            receivedMetric = receivedMetrics.First();
             Assert.AreEqual(SceneEventType.Load.ToString(), receivedMetric.SceneEventType);
             Assert.AreEqual(Server.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual(k_SimpleSceneName, receivedMetric.SceneName);
