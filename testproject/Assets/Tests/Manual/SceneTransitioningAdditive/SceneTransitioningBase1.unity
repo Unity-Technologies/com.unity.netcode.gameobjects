@@ -944,7 +944,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 616359116
   AlwaysReplicateAsRoot: 0
-  DontDestroyWithOwner: 1
+  DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!114 &193282988
 MonoBehaviour:
@@ -960,6 +960,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DisconnectClientButton: {fileID: 241168336}
   m_ReconnectAttempts: 5
+  m_AutoFlushScenes: 1
   m_DelayBetweenAttempts: 2
 --- !u!4 &193282989
 Transform:

@@ -29,7 +29,7 @@ namespace TestProject.ManualTests
 
         private void Start()
         {
-            if (m_DisconnectClientButton != null)
+            if (m_DisconnectClientButton != null && !IsServer)
             {
                 m_DisconnectClientButton.gameObject.SetActive(false);
             }
