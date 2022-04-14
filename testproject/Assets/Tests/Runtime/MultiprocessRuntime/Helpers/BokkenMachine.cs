@@ -235,8 +235,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Launch command - BokkenMachine process status: {ProcessList.Count}");
             MultiprocessLogger.Log($"Launch command - {Name} {Type} {Image}");
             Process p = ExecuteCommand(GenerateLaunchCommand(MultiprocessOrchestration.GetLocalIPAddress()), false);
-            MultiprocessLogger.Log($"Launch command ending with process exited state {p.HasExited}");
-            if (!ProcessList.Contains(p))
+            
+            if (p !=null && !ProcessList.Contains(p))
             {
                 ProcessList.Add(p);
             }
@@ -269,6 +269,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         /// <returns></returns>
         public static Process ExecuteCommand(string command, bool waitForResult = false, bool logStdOut = false, int timeToWait = 300000)
         {
+            if (string.IsNullOrEmpty(command))
+            {
+                return null;
+            }
             MultiprocessLogger.Log($"\"dotnet {PathToDll} {command}\"");
 
             var workerProcess = new Process();
@@ -382,6 +386,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     $"--remote-command \"./com.unity.netcode.gameobjects/testproject/Builds/MultiprocessTests/MultiprocessTestPlayer -isWorker -m client -logFile {LogPath} -jobid {MultiprocessLogHandler.JobId} -testname {testName} -nographics -batchmode -p 3076 -ip {ip}\"";
                 MultiprocessLogger.Log(s);
                 return s;
+            }
+            else if (Image.Contains("gamecore"))
+            {
+                // No need to start anything since gamecore is already started
+                return "";
             }
             else
             {
