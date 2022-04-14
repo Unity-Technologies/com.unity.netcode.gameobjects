@@ -1836,9 +1836,11 @@ namespace Unity.Netcode
                         // NetworkObjects
                         m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
+                        // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
+                        // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)
                         // We now always send the message, it just might not contain anything to be
-                        // resynchronized (for client reconnection synchronization using NetworkSceneTableState
-                        if (!DisableReSynchronization)
+                        // resynchronized (for client reconnection synchronization using NetworkSceneTableState                        
+                        if (!DisableReSynchronization && m_NetworkManager.ConnectedClients.ContainsKey(clientId))
                         {
                             sceneEventData.SceneEventType = SceneEventType.ReSynchronize;
                             SendSceneEventData(sceneEventId, new ulong[] { clientId });
