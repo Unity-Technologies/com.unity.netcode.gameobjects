@@ -389,8 +389,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else if (Image.Contains("gamecore"))
             {
-                // No need to start anything since gamecore is already started
-                return "";
+                string s = $" --command launch " +
+                    $"--input-path {PathToJson} ";
+                return s;
             }
             else
             {
