@@ -41,7 +41,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string[] args = System.Environment.GetCommandLineArgs();
             foreach (var arg in args)
             {
-                Debug.Log(arg);
                 CommandLineArguments += " " + arg;
             }
             Debug.Log($"CommandLineArguments {CommandLineArguments}");
