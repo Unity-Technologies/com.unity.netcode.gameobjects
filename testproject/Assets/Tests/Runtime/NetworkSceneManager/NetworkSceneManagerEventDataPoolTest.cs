@@ -376,7 +376,8 @@ namespace TestProject.RuntimeTests
             // to make sure it does not fully process (i.e. synchronization scene loading when reconnecting)
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
 
-            // Start reconnecting the disconnected client while also setting the
+            // Start reconnecting the disconnected client while also setting the NetworkSceneTable state on the newly
+            // constructed NetworkSceneManager instance.
             NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
             clientToTest.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
             clientToTest.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
