@@ -258,6 +258,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Starts one single client and makes sure properly register the hooks and handlers required
+        /// </summary>
+        /// <param name="clientToStart"></param>
+        public static void StartOneClient(NetworkManager clientToStart)
+        {
+            clientToStart.StartClient();
+            s_Hooks[clientToStart] = new MultiInstanceHooks();
+            clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            // if set, then invoke this for the client
+            RegisterHandlers(clientToStart);
+        }
+
+
+        /// <summary>
         /// Should always be invoked when finished with a single unit test
         /// (i.e. during TearDown)
         /// </summary>
@@ -378,13 +392,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             for (int i = 0; i < clients.Length; i++)
             {
-                clients[i].StartClient();
-                hooks = new MultiInstanceHooks();
-                clients[i].MessagingSystem.Hook(hooks);
-                s_Hooks[clients[i]] = hooks;
-
-                // if set, then invoke this for the client
-                RegisterHandlers(clients[i]);
+                StartOneClient(clients[i]);
             }
 
             return true;

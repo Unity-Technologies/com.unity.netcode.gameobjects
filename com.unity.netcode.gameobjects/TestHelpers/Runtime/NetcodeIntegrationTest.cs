@@ -490,6 +490,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return null;
         }
 
+        /// <summary>
+        /// Note: For <see cref="NetworkManagerInstatiationMode.PerTest"/> mode
+        /// Called after <see cref="ShutdownAndCleanUp"/>, this is good for post
+        /// shutdown clean up tasks.
+        /// </summary>
+        protected virtual IEnumerator OnPostTearDown()
+        {
+            yield return null;
+        }
+
         [UnityTearDown]
         public IEnumerator TearDown()
         {
@@ -500,7 +510,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 ShutdownAndCleanUp();
             }
-
+            OnPostTearDown();
             VerboseDebug($"Exiting {nameof(TearDown)}");
         }
 
