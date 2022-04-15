@@ -1453,10 +1453,9 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        // We must pass true here and not process any sends messages
-                        // as we are no longer connected and thus there is no one to
-                        // send any messages to and this will cause an exception within
-                        // UnityTransport as the client ID is no logner valid.
+                        // We must pass true here and not process any outgoing messages as the client is no longer
+                        // connected to the server. This can cause an exception within UnityTransport as the client
+                        // ID is no longer valid at this point.
                         Shutdown(true);
                     }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
