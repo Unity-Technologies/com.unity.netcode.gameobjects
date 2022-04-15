@@ -148,6 +148,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [MenuItem(MultiprocessBaseMenuName + "/Build Android")]
         public static void BuildAndroid()
         {
+            // Set scripting backend for Android to Mono
+            PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.Mono2x);
             var report = BuildPlayerUtility(BuildTarget.Android, ".apk");
             if (report.summary.result != BuildResult.Succeeded)
             {
