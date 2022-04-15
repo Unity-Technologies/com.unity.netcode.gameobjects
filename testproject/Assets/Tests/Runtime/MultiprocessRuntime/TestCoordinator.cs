@@ -94,14 +94,15 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
         }
-        MultiprocessLogger.Log($"Trying to read githash file: {rawgithash}");
+        MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read githash file: {rawgithash}");
 
         try
         {
+            MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read remoteConfig resource");
             var remoteConfig = Resources.Load<TextAsset>("Text/remoteConfig").ToString();
             if (!string.IsNullOrEmpty(remoteConfig))
             {
-                MultiprocessLogger.Log(remoteConfig);
+                MultiprocessLogger.Log($"Awake - {s_ProcessId} - remoteConfig resource is {remoteConfig}");
                 RemoteConfiguration rc = JsonUtility.FromJson<RemoteConfiguration>(remoteConfig);
                 MultiprocessLogger.Log("Checking remoteconfig object");
                 MultiprocessLogger.Log(rc.IpAddressOfHost);
@@ -112,10 +113,14 @@ public class TestCoordinator : NetworkBehaviour
                     m_IsClient = true;
                 }
             }
+            else
+            {
+                MultiprocessLogger.Log($"Awake - {s_ProcessId} remoteConfigFile was nullOrEmpty");
+            }
         }
         catch (Exception remoteConfigReadException)
         {
-            MultiprocessLogger.Log($"Exception reading remoteConfig {remoteConfigReadException.Message}");
+            MultiprocessLogger.Log($"Awake - {s_ProcessId} Exception reading remoteConfig {remoteConfigReadException.Message}");
         }
 
         MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {rawgithash}");
@@ -128,6 +133,7 @@ public class TestCoordinator : NetworkBehaviour
 
         Instance = this;
 
+        /*
         JobQueueItemArray jobQueueItems = MultiprocessLogHandler.GetRemoteConfig();
         if (jobQueueItems != null && jobQueueItems.jobQueueItems != null)
         {
@@ -141,11 +147,13 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Remote configuration data returned null");
         }
+        */
+
     }
 
     public void Start()
     {
-        MultiprocessLogger.Log($"TestCoordinator - Start {Application.platform}");
+        MultiprocessLogger.Log($"TestCoordinator {s_ProcessId} - Start {Application.platform}");
         m_Stopwatch = Stopwatch.StartNew();
         m_NumberOfCallsToUpdate = 0;
         m_NumberOfCallsToFixedUpdate = 0;
@@ -269,7 +277,7 @@ public class TestCoordinator : NetworkBehaviour
         m_FixedUpdateDeltaTime.Add(deltaTime);
         if (deltaTime > 0.4f)
         {
-            LogInformation($"FixedUpdate - Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
+            LogInformation($"FixedUpdate - {s_ProcessId} Count: {m_NumberOfCallsToFixedUpdate}; Time.deltaTime: {deltaTime}; Average: {m_FixedUpdateDeltaTime.Average()}");
         }
     }
 
@@ -301,10 +309,10 @@ public class TestCoordinator : NetworkBehaviour
 
         if (!IsServer)
         {
-            if (m_NumberOfCallsToUpdate % 250 == 0 || m_Stopwatch.ElapsedMilliseconds > 5000)
+            if (m_Stopwatch.ElapsedMilliseconds > 3500)
             {
                 m_Stopwatch.Restart();
-                LogInformation($"Update - Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+                LogInformation($"Update - {s_ProcessId} Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
             }
         }
     }
@@ -318,6 +326,7 @@ public class TestCoordinator : NetworkBehaviour
                 $" isServer: {IsServer};\n " +
                 $" platform: {RuntimeInformation.OSDescription} {RuntimeInformation.OSArchitecture};" +
                 $" pid: {s_ProcessId};" +
+                $" framerate: {Application.targetFrameRate} , vsynccount: {QualitySettings.vSyncCount}\n" + 
                 $" {extraMessage}");
     }
 
