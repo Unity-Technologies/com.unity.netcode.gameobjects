@@ -36,6 +36,12 @@ namespace TestProject.ManualTests
         private void Start()
         {
             m_NetworkManager = gameObject.GetComponent<NetworkManager>();
+            m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+        }
+
+        private void OnClientDisconnectCallback(ulong obj)
+        {
+            DeregisterFromOnSceneEvent();
         }
 
         private void DeregisterFromOnSceneEvent()
