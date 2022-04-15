@@ -1725,7 +1725,7 @@ namespace Unity.Netcode
                             {
                                 if (networkStateEntry.Value.handle != m_NetworkManager.gameObject.scene.handle && networkStateEntry.Value.IsValid() && networkStateEntry.Value.isLoaded)
                                 {
-                                    SceneManager.UnloadSceneAsync(networkStateEntry.Value);
+                                    SceneManagerHandler.UnloadSceneAsync(networkStateEntry.Value, new ISceneManagerHandler.SceneEventAction() { EventAction = new Action<uint>((c) => { }), SceneEventId = sceneEventId });
                                 }
                             }
                         }

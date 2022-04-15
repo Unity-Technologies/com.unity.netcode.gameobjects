@@ -44,6 +44,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            m_UnloadOnTearDown = true;
             m_CanStartServerOrClients = false;
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
@@ -386,7 +387,6 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = clientToTest.LocalClientId, ShouldWait = false });
-
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {clientToTest.name} to connect!");
             clientToTest.SceneManager.OnLoad -= ClientToTestReconnectOnLoadNotifications;
             Assert.True(m_ReconnectLoadedNewScene, $"Client did not attempt to load the scene {k_DifferentSceneToLoad} when reconnecting!");
@@ -460,10 +460,6 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        /// <summary>
-        /// This is for the NetworkSceneTableStateTest to clean up after itself and
-        /// unload the remaining loaded scenes
-        /// </summary>
         protected override IEnumerator OnPostTearDown()
         {
             if (!m_UnloadOnTearDown && m_ScenesLoaded.Count() > 0)
@@ -471,17 +467,19 @@ namespace TestProject.RuntimeTests
                 // Reverse how we unload the scenes
                 m_ScenesLoaded.Reverse();
                 var asyncOperations = new List<AsyncOperation>();
-                SceneManager.SetActiveScene(m_OriginalActiveScene);
                 foreach (var scene in m_ScenesLoaded)
                 {
-                    if (scene.name == k_BaseUnitTestSceneName || scene.name == k_MultiInstanceTestScenename)
+                    if (scene.name == k_BaseUnitTestSceneName || scene.name == k_MultiInstanceTestScenename || scene.name == k_DifferentSceneToLoad && scene != m_OriginalActiveScene)
                     {
+                        Debug.Log($"Unloading scene {scene.name}");
                         asyncOperations.Add(SceneManager.UnloadSceneAsync(scene));
                     }
                 }
                 yield return WaitForConditionOrTimeOut(() => asyncOperations.Where((c) => c.isDone).Count() == asyncOperations.Count());
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
                 Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out unloading scenes during tear down!");
             }
+            yield return base.OnPostTearDown();
         }
     }
 }

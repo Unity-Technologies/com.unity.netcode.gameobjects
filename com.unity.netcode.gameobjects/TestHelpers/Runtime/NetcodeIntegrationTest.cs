@@ -510,7 +510,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 ShutdownAndCleanUp();
             }
-            OnPostTearDown();
+            yield return OnPostTearDown();
             VerboseDebug($"Exiting {nameof(TearDown)}");
         }
 
