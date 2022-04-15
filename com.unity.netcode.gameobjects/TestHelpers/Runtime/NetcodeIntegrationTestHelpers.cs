@@ -270,7 +270,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             RegisterHandlers(clientToStart);
         }
 
-
         /// <summary>
         /// Should always be invoked when finished with a single unit test
         /// (i.e. during TearDown)
