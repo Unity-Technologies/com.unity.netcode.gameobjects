@@ -286,8 +286,19 @@ public class TestCoordinator : NetworkBehaviour
         float deltaTime = Time.deltaTime;
         m_NumberOfCallsToUpdate++;
         m_UpdateDeltaTime.Add(deltaTime);
+
+        if (!IsServer)
+        {
+            if (m_Stopwatch.ElapsedMilliseconds > 3500)
+            {
+                m_Stopwatch.Restart();
+                LogInformation($"Update - {s_ProcessId} Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
+            }
+        }
+
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
+            LogInformation($"Update - {s_ProcessId} - Exceeded PerTestTimeoutSec");
             QuitApplication($"{s_ProcessId} Stayed idle too long, quitting: {Time.time} - {m_TimeSinceLastKeepAlive} > {PerTestTimeoutSec}");
             Assert.Fail("Stayed idle too long");
         }
@@ -299,20 +310,11 @@ public class TestCoordinator : NetworkBehaviour
         else if (Time.time - m_TimeSinceLastConnected > MaxWaitTimeoutSec || m_ShouldShutdown)
         {
             // Make sure we don't have zombie processes
-            MultiprocessLogger.Log($"quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
+            LogInformation($"Update - {s_ProcessId} - quitting application, shouldShutdown set to {m_ShouldShutdown}, is listening {NetworkManager.Singleton.IsListening}, is connected client {NetworkManager.Singleton.IsConnectedClient}");
             if (!m_ShouldShutdown)
             {
                 QuitApplication($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
                 Assert.Fail($"something wrong happened, was not connected for {Time.time - m_TimeSinceLastConnected} seconds");
-            }
-        }
-
-        if (!IsServer)
-        {
-            if (m_Stopwatch.ElapsedMilliseconds > 3500)
-            {
-                m_Stopwatch.Restart();
-                LogInformation($"Update - {s_ProcessId} Count: {m_NumberOfCallsToUpdate}; Time.deltaTime: {deltaTime}; Average {m_UpdateDeltaTime.Average()}");
             }
         }
     }
