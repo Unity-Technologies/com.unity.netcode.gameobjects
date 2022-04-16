@@ -109,6 +109,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             {
                 if (sceneEvent.SceneEventType.Equals(SceneEventType.Load) && sceneEvent.ClientId == Client.LocalClientId)
                 {
+                    // When client receives SceneEventType.Load, we know the server has loaded the scene (it sends after it loads)
                     serverSceneLoaded = true;
                 }
             };
@@ -117,23 +118,30 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             {
                 if (sceneEvent.SceneEventType.Equals(SceneEventType.LoadComplete) && sceneEvent.ClientId == Client.LocalClientId)
                 {
+                    // Server receives the SceneEventType.LoadComplete event when the client is done loading the scene
                     clientSceneLoaded = true;
                 }
             };
 
+            // Load a scene to trigger the messages
+            StartServerLoadScene();
+            // Starting listening for the in-bound SceneEventType.Load message (see note below about Resynchronize)
             var waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 
             var receivedMetrics = waitForReceivedMetric.AssertMetricValuesHaveBeenFound();
             Assert.AreEqual(1, receivedMetrics.Count);
             var receivedMetric = receivedMetrics.First();
-            Assert.AreEqual(SceneEventType.ReSynchronize.ToString(), receivedMetric.SceneEventType);
-
-            // Load a scene to trigger the messages
-            StartServerLoadScene();
-
-            waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
-            yield return waitForReceivedMetric.WaitForMetricsReceived();
+            // Depending upon platform and whether in the editor or a stand alone build,
+            // sometimes this test can reach this point where the server has just sent the
+            // resynchronize message (slower platforms/editor) and so we want to create one
+            // more waitForReceivedMetric instance and wait for the next SceneEventReceived
+            // message which -should- be the SceneEventType.Load.
+            if (SceneEventType.ReSynchronize.ToString() == receivedMetric.SceneEventType)
+            {
+                waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);
+                yield return waitForReceivedMetric.WaitForMetricsReceived();
+            }
 
             // Wait for the server to load the scene locally first.
             yield return WaitForCondition(() => serverSceneLoaded);
