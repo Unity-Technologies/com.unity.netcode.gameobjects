@@ -258,7 +258,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Starts one single client and makes sure properly register the hooks and handlers required
+        /// Starts one single client and makes sure to register the required hooks and handlers
         /// </summary>
         /// <param name="clientToStart"></param>
         public static void StartOneClient(NetworkManager clientToStart)

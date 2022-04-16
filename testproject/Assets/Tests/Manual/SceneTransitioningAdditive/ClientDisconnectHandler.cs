@@ -31,6 +31,7 @@ namespace TestProject.ManualTests
             {
                 m_DisconnectClientButton.gameObject.SetActive(false);
             }
+            // Keep track of the scene we belong to (see notes in OnClientStarted)
             m_CurrentScene = gameObject.scene;
             NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         }
@@ -43,11 +44,12 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnClientStarted()
         {
-            // Clients can be reconnecting to a server that has already done a full
-            // scene switch (i.e. LoadSceneMode.Single) since being disconnected.
-            // Under this scenario, we have to check to make sure the scene is valid
-            // and still loaded.  If not, then we need to load a whole knew set of
-            // scenes so don't set the state.
+            // Clients can be reconnecting to a server that has already switched the scene
+            // (i.e. LoadSceneMode.Single) prior to the client reconnecting.  When this
+            // happens, we need to make sure the scene is valid and still loaded. If it is
+            // not loaded (most likely state between the two), then this is a "ghost object
+            // callback" where the component really is no longer valid (i.e. its scene is
+            // unloading/unloaded) so just exit and touch/access nothing.
             if (!IsServer && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded)
             {
                 m_ConnectionAttempts = 0;
@@ -61,6 +63,7 @@ namespace TestProject.ManualTests
 
         public override void OnDestroy()
         {
+            // We use NetworkManager.Singleton on purpose here
             if (!IsServer && NetworkManager.Singleton != null)
             {
                 NetworkManager.SceneManager.VerifySceneBeforeLoading = null;
