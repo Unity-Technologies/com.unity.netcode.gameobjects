@@ -52,6 +52,16 @@ namespace TestProject.ManualTests
             m_NetworkTransform = GetComponent<NetworkTransform>();
         }
 
+        public override void OnDestroy()
+        {
+            var networkObjectLabel = gameObject.GetComponentInChildren<NetworkObjectLabel>();
+            if (networkObjectLabel != null)
+            {
+                networkObjectLabel.LabelVisibility(false);
+            }
+            base.OnDestroy();
+        }
+
         /// <summary>
         /// Handles disabling the MeshRenderer when the client despawns a NetworkObject
         /// </summary>
@@ -189,7 +199,7 @@ namespace TestProject.ManualTests
 
                 if (!IsSpawned)
                 {
-                    if (IsRemovedFromPool)
+                    if (IsRemovedFromPool || !IsRegisteredPoolObject)
                     {
                         Destroy(gameObject);
                     }
