@@ -17,12 +17,22 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private const int k_MessageHeaderSize = 2;
         static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + k_MessageHeaderSize;
 
+        protected override void OnServerAndClientsCreated()
+        {
+            // Setting scene management to false to avoid any issues with client
+            // synchronization getting in the way of potentially causing the
+            // total bytes sent to be larger than expected (i.e. resynchronization)
+            m_ClientNetworkManagers[0].NetworkConfig.EnableSceneManagement = false;
+            m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+            base.OnServerAndClientsCreated();
+        }
+
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
         {
             var messageName = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
-            var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
+            var observer = new TotalBytesObserver(ServerMetrics.Dispatcher, NetworkMetricTypes.TotalBytesSent);
             try
             {
                 writer.WriteValueSafe(messageName);
@@ -34,12 +44,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 writer.Dispose();
             }
 
-            var nbFrames = 0;
-            while (!observer.Found || nbFrames < 10)
-            {
-                yield return null;
-                nbFrames++;
-            }
+            yield return WaitForConditionOrTimeOut(() => observer.Found);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for observer to receive {nameof(NetworkMetricTypes.TotalBytesSent)} metrics!");
 
             Assert.True(observer.Found);
             Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
@@ -62,14 +68,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 writer.Dispose();
             }
 
-
-
-            var nbFrames = 0;
-            while (!observer.Found || nbFrames < 10)
-            {
-                yield return null;
-                nbFrames++;
-            }
+            yield return WaitForConditionOrTimeOut(() => observer.Found);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for observer to receive {nameof(NetworkMetricTypes.TotalBytesReceived)} metrics!");
 
             Assert.True(observer.Found);
             Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
