@@ -31,9 +31,11 @@ namespace TestProject.ManualTests
             {
                 m_DisconnectClientButton.gameObject.SetActive(false);
             }
-
+            m_CurrentScene = gameObject.scene;
             NetworkManager.Singleton.OnClientStarted += OnClientStarted;
         }
+
+        private Scene m_CurrentScene;
 
         /// <summary>
         /// WHen the NetworkManager is started as a client, we check to see if we
@@ -41,7 +43,12 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnClientStarted()
         {
-            if (!IsServer)
+            // Clients can be reconnecting to a server that has already done a full
+            // scene switch (i.e. LoadSceneMode.Single) since being disconnected.
+            // Under this scenario, we have to check to make sure the scene is valid
+            // and still loaded.  If not, then we need to load a whole knew set of
+            // scenes so don't set the state.
+            if (!IsServer && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded)
             {
                 m_ConnectionAttempts = 0;
                 m_LastKnownClientId = NetworkManager.LocalClientId;

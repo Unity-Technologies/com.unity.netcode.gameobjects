@@ -43,6 +43,9 @@ namespace TestProject.ManualTests
         private GameObject m_ObjectToSpawn;
         private List<GameObject> m_ObjectPool;
 
+        private bool m_CachedIsServer;
+
+
         /// <summary>
         /// Handles registering the custom prefab handler
         /// </summary>
@@ -51,7 +54,7 @@ namespace TestProject.ManualTests
             // Register the custom spawn handler?
             if (EnableHandler)
             {
-                if (NetworkManager && NetworkManager.PrefabHandler != null)
+                if (NetworkObject != null && NetworkManager != null && NetworkManager.Singleton.PrefabHandler != null)
                 {
                     if (RegisterUsingNetworkObject)
                     {
@@ -83,6 +86,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnDestroy()
         {
+            NetworkManager.Singleton.OnClientStarted -= Singleton_OnClientStarted;
             CleanNetworkObjects();
             InternalStopCoroutine();
             DeregisterCustomPrefabHandler();
@@ -155,6 +159,7 @@ namespace TestProject.ManualTests
                                 if (gameObject.scene != SceneManager.GetActiveScene())
                                 {
                                     SceneManager.MoveGameObjectToScene(obj, activeScene);
+                                    genericBehaviour.IsRemovedFromPool = true;
                                 }
                             }
                         }
@@ -177,6 +182,7 @@ namespace TestProject.ManualTests
                             if (gameObject.scene != SceneManager.GetActiveScene())
                             {
                                 SceneManager.MoveGameObjectToScene(obj, activeScene);
+                                genericBehaviour.IsRemovedFromPool = true;
                             }
                         }
                     }
@@ -191,6 +197,7 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnUnloadScene()
         {
+            NetworkManager.Singleton.OnClientStarted -= Singleton_OnClientStarted;
             InternalStopCoroutine();
 
             // De-register the custom prefab handler
@@ -206,6 +213,7 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnNetworkSpawn()
         {
+            m_CachedIsServer = IsServer;
             NetworkManager.SceneManager.OnSceneEvent += OnSceneEvent;
             InitializeObjectPool();
             if (IsServer)
@@ -219,7 +227,40 @@ namespace TestProject.ManualTests
                     UpdateSpawnsPerSecond();
                 }
             }
+            else
+            {
+                if (EnableHandler)
+                {
+                    NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                }
+            }
         }
+
+        private void OnClientDisconnectCallback(ulong obj)
+        {
+            if (EnableHandler && !NetworkManager.Singleton.ShutdownInProgress)
+            {
+                NetworkManager.Singleton.OnClientStarted += Singleton_OnClientStarted;
+                NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+            }
+        }
+
+        private void Singleton_OnClientStarted()
+        {
+            if (EnableHandler)
+            {
+                NetworkManager.Singleton.OnClientStarted -= Singleton_OnClientStarted;
+            }
+
+            InitializeObjectPool();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            DeregisterCustomPrefabHandler();
+            base.OnNetworkDespawn();
+        }
+
 
         /// <summary>
         /// Determines which object is going to be spawned and then
@@ -234,7 +275,7 @@ namespace TestProject.ManualTests
             m_ObjectToSpawn = ServerObjectToPool;
 
             // Host and Client need to do an extra step
-            if (IsClient)
+            if (!m_CachedIsServer || IsHost)
             {
                 if (EnableHandler && ClientObjectToPool != null)
                 {
@@ -253,7 +294,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (EnableHandler || IsServer)
+            if ((EnableHandler || IsServer) && m_ObjectPool == null)
             {
                 m_ObjectPool = new List<GameObject>(PoolSize);
 

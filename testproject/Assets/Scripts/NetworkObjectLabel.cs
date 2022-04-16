@@ -6,7 +6,8 @@ public class NetworkObjectLabel : NetworkBehaviour
     private TextMesh m_ObjectLabel;
     private MeshRenderer m_Renderer;
 
-    private void OnEnable()
+
+    public void LabelVisibility(bool isVisible = true)
     {
         if (m_Renderer == null)
         {
@@ -15,21 +16,24 @@ public class NetworkObjectLabel : NetworkBehaviour
 
         if (m_Renderer != null)
         {
-            m_Renderer.enabled = true;
+            m_Renderer.enabled = isVisible;
         }
+    }
+
+    private void OnEnable()
+    {
+        LabelVisibility();
+    }
+
+    public override void OnDestroy()
+    {
+        LabelVisibility(false);
+        base.OnDestroy();
     }
 
     private void OnDisable()
     {
-        if (m_Renderer == null)
-        {
-            m_Renderer = GetComponent<MeshRenderer>();
-        }
-
-        if (m_Renderer != null)
-        {
-            m_Renderer.enabled = false;
-        }
+        LabelVisibility(false);
     }
 
     public override void OnNetworkSpawn()
