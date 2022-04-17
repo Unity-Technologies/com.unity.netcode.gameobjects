@@ -123,6 +123,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return defaultXboxOne;
         }
 
+        public static BokkenMachine GetDefaultPS4(string name)
+        {
+            var defaultPS4 = new BokkenMachine();
+            defaultPS4.Type = "Unity::console::ps4";
+            defaultPS4.Image = "playstation/ps4-buildandexecute:stable";
+            defaultPS4.Flavor = "b1.large";
+            defaultPS4.Name = name;
+            return defaultPS4;
+        }
+
         public static BokkenMachine Parse(string shortcut)
         {
             BokkenMachine bokkenMachine = null;
@@ -148,6 +158,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else if (type.Equals("default-xboxone"))
             {
                 bokkenMachine = GetDefaultXboxOne(name);
+            }
+            else if (type.Equals("default-ps4"))
+            {
+                bokkenMachine = GetDefaultPS4(name);
+            }
+            else
+            {
+                throw new NotImplementedException($"no implementation for {type} {name}");
             }
 
             return bokkenMachine;
