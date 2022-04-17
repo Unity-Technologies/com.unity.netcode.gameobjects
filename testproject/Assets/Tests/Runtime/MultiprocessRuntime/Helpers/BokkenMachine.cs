@@ -405,7 +405,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log(s);
                 return s;
             }
-            else if (Image.Contains("gamecore"))
+            else if (Image.Contains("gamecore") || Image.Contains("ps4"))
             {
                 string s = $" --command launch " +
                     $"--input-path {PathToJson} ";
