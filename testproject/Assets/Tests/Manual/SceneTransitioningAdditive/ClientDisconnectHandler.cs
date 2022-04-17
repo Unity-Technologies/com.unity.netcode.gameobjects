@@ -39,17 +39,16 @@ namespace TestProject.ManualTests
         private Scene m_CurrentScene;
 
         /// <summary>
-        /// WHen the NetworkManager is started as a client, we check to see if we
-        /// have a previously saved off NetworSceneTableState and if so set it
+        /// NetworkSceneTable state should be set before the client has connected
+        /// but after the NetworkManager is started to make sure when client is
+        /// synchronizing against the previously known NetworkSceneTable state.
         /// </summary>
         private void OnClientStarted()
         {
-            // Clients can be reconnecting to a server that has already switched the scene
-            // (i.e. LoadSceneMode.Single) prior to the client reconnecting.  When this
-            // happens, we need to make sure the scene is valid and still loaded. If it is
-            // not loaded (most likely state between the two), then this is a "ghost object
-            // callback" where the component really is no longer valid (i.e. its scene is
-            // unloading/unloaded) so just exit and touch/access nothing.
+            /// Note: When a client reconnects to a server that had already switched the scene
+            /// (i.e. LoadSceneMode.Single) prior to the client reconnecting, we need to make
+            /// the scene is valid and still loaded as a full scene switch will result in all
+            /// scenes from the previous NetworkSceneTable state to be unloaded.
             if (!IsServer && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded)
             {
                 m_ConnectionAttempts = 0;

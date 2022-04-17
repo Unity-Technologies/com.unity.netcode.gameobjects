@@ -188,15 +188,15 @@ namespace TestProject.ManualTests
             }
             else if (!IsServer)
             {
-                /// Under the condition that we were removed from our pool and we are no
+                /// Note: Under the condition that we were removed from our pool and we are no
                 /// long spawned, then we destroy ourselves.  This can happen when a
-                /// <see cref="NetworkPrefabPoolAdditive"/> is set to spawn in the same
-                /// scene it is located in as opposed to the currently active scene and then
-                /// the scene containing the spawned NetworkObjects is unloaded.  When this
-                /// happens the NetworkObjects are taken out of the pool and migrated to the
-                /// currently active scene which if we are no longer spawned then it needs to
-                /// be destroyed.
-
+                /// <see cref="NetworkPrefabPoolAdditive"/> is set to spawn NetworkObjects in
+                /// the same scene as the prefab handler. If this scene is unloaded and the
+                /// "DontDestroyWithOwner" flag is set, all currently spawned NetworkObjects
+                /// in the pool are migrated into the currently active scene and taken out of
+                /// the pool.  Thus, the below code handles destroying the NetworkObject if it
+                /// is no longer spawned and either removed from the pool or no longer registered
+                /// with a pool.
                 if (!IsSpawned)
                 {
                     if (IsRemovedFromPool || !IsRegisteredPoolObject)

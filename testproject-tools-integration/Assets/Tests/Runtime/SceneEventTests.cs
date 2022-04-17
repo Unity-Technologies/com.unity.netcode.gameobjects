@@ -133,10 +133,10 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             Assert.AreEqual(1, receivedMetrics.Count);
             var receivedMetric = receivedMetrics.First();
             // Depending upon platform and whether in the editor or a stand alone build,
-            // sometimes this test can reach this point where the server has just sent the
-            // resynchronize message (slower platforms/editor) and so we want to create one
-            // more waitForReceivedMetric instance and wait for the next SceneEventReceived
-            // message which -should- be the SceneEventType.Load.
+            // this test can reach this point in the code stack at the same time the
+            // resynchronize message (slower platforms/editor) was received.  When this
+            // happens, we need to create one more waitForReceivedMetric instance and wait
+            // for the next SceneEventReceived message which -should- be SceneEventType.Load.
             if (SceneEventType.ReSynchronize.ToString() == receivedMetric.SceneEventType)
             {
                 waitForReceivedMetric = new WaitForEventMetricValues<SceneEventMetric>(ClientMetrics.Dispatcher, NetworkMetricTypes.SceneEventReceived);

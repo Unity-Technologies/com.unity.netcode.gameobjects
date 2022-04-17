@@ -346,12 +346,13 @@ namespace TestProject.RuntimeTests
                 yield return LoadScene(k_MultiInstanceTestScenename);
             }
             Assert.True(m_TestClientSceneLoadNotifications == numberOfScenesToLoad, $"Client to test only had {m_TestClientSceneLoadNotifications} load event notifications and expected {numberOfScenesToLoad}!");
-            // We verified the client receives loading notifications, so we can unsubscribe from it now
+            // We verified the client receives loading notifications, so we can unsubscribe from this event now
             clientToTest.SceneManager.OnLoad -= ClientToTestPreloadingOnLoadNotifications;
 
-            // We want to get the NetworkSceneTable state when the client-side receives the notification it has been disconnected.
+            // Subscribe to the client disconnected notification as this is when We want to get the current (most up to date) NetworkSceneTable state
             clientToTest.OnClientDisconnectCallback += ClientToTest_OnClientDisconnectCallback;
-            // Remove this client from the m_ShouldWaitList
+
+            // Remove this client from the m_ShouldWaitList so we don't take it into account for the next part of test
             m_ShouldWaitList.Remove(m_ShouldWaitList.Where((c) => c.ClientId == originalClientId).First());
             m_ServerNetworkManager.DisconnectClient(originalClientId);
 
@@ -362,22 +363,21 @@ namespace TestProject.RuntimeTests
             // We can unsubscribe to this event now
             clientToTest.OnClientDisconnectCallback -= ClientToTest_OnClientDisconnectCallback;
 
-            // Now unload one of the scenes before the client reconnects to change the NetworkSceneTable state
+            // Change the NetworkSceneTable state: unload one of the scenes before the client reconnects
             var lastScene = m_ScenesLoaded.Last();
             m_ScenesLoaded.Remove(lastScene);
             yield return UnloadScene(lastScene);
 
-            // Now,  change the NetworkSceneTable state one more time by loading a different scene to make sure
-            // that the client does try to load this scene when it reconnects
+            // Change the NetworkSceneTable state: load a totally different scene to verify the client
+            // loads this scene when it reconnects and synchronizes
             yield return LoadScene(k_DifferentSceneToLoad);
 
             // At this point we don't need to track scene events to determine when all scenes are loaded
-            // and we subscribe to the clientToTest's NetworkSceneManager.OnLoad (disconnect/reconnect)
-            // to make sure it does not fully process (i.e. synchronization scene loading when reconnecting)
+            // so we can unsubscribe the server from OnSceneEvent.
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
 
             // Start reconnecting the disconnected client while also setting the NetworkSceneTable state on the newly
-            // constructed NetworkSceneManager instance.
+            // constructed NetworkSceneManager instance and other initialization related settings.
             NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
             clientToTest.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
             clientToTest.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
@@ -385,11 +385,10 @@ namespace TestProject.RuntimeTests
             clientToTest.SceneManager.DisableValidationWarnings(true);
             clientToTest.SceneManager.OnLoad += ClientToTestReconnectOnLoadNotifications;
             clientToTest.SceneManager.SetNetworkSceneTableState(m_NetworkSceneTableState);
-
             yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
-            m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = clientToTest.LocalClientId, ShouldWait = false });
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {clientToTest.name} to connect!");
             clientToTest.SceneManager.OnLoad -= ClientToTestReconnectOnLoadNotifications;
+
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {clientToTest.name} to connect!");
             Assert.True(m_ReconnectLoadedNewScene, $"Client did not attempt to load the scene {k_DifferentSceneToLoad} when reconnecting!");
         }
 
@@ -405,8 +404,8 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// The client that is disconnected and reconnect is the only subscriber to this event.
-        /// If it is invoked when the client is reconnecting then the test fails
+        /// Verify that the client receives notifications when it loads a scene locally
+        /// The test fails if it receives no notifications,
         /// </summary>
         private void ClientToTestPreloadingOnLoadNotifications(ulong clientId, string sceneName, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation)
         {
@@ -417,9 +416,10 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// The client that is disconnected and reconnect is the only subscriber to this event.
-        /// If it is invoked when the client is reconnecting then the test fails unless it is
-        /// loading the scene that was loaded by the server after the client disconnected
+        /// Verify newly loaded scenes are loaded and already loaded scenes are not when the client reconnects
+        /// The client fails the test if:
+        /// - It does not attempt to load the newly loaded scene, <see cref="k_DifferentSceneToLoad"/>, while the client was disconnected
+        /// - If the client attempts to load any other scene than the <see cref="m_ReconnectLoadedNewScene"/>
         /// </summary>
         private void ClientToTestReconnectOnLoadNotifications(ulong clientId, string sceneName, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation)
         {

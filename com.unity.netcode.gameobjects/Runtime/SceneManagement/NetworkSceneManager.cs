@@ -380,9 +380,10 @@ namespace Unity.Netcode
         private bool m_AutoFlushRemainingScenes;
 
         /// <summary>
-        /// Returns a table of entries that are keyed by NetworkSceneHandle and each handle is paired to the local scene.
-        /// Primarily used by clients to restore the state prior to reconnecting a client that was disconnected and is
-        /// trying to reconnect to the same network session.
+        /// Returns the current NetworkSceneTable state for the current network session.
+        /// Call this to save a client's NetworkSceneTable state when disconnected in order to be able to
+        /// reconnect without unloading the currently loaded scenes.
+        /// <see cref="NetworkManager.OnClientStarted"/> event.
         /// <see cref="SetNetworkSceneTableState(Dictionary{int, Scene}, bool)"/>
         /// </summary>
         /// <returns></returns>
@@ -400,10 +401,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Sets the current NetworkSceneTable state to be used when reconnecting to a previous network session.
         /// This should be called during <see cref="NetworkManager.OnClientStarted"/> before a client
         /// synchronizes in order to bypass reloading of already loaded scenes.
-        /// Note: The NetworkSceneTableState is server authoritative and so clients can only apply
+        /// Note: The NetworkSceneTable state is server authoritative and so clients can only apply
         /// a networkSceneTableState to their <see cref="NetworkSceneManager"/> instance.
+        ///
+        /// Note: This only applies to the initial client-server synchronization process so setting after the
+        /// client is already connected and synchronized will have no impact on the client's current NetworkSceneTable
+        /// state as by that time the server is dictating the state through network scene events.
         /// </summary>
         /// <param name="networkSceneTableState">a previously saved network scene table state</param>
         /// <param name="autoFlushRemainingScenes">defaults to true, but when false you must handle the unloading
