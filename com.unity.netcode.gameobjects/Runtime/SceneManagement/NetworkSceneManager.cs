@@ -382,11 +382,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Returns the current NetworkSceneTable state for the current network session.
         /// Call this to save a client's NetworkSceneTable state when disconnected in order to be able to
-        /// reconnect without unloading the currently loaded scenes.
+        /// reconnect without having to unload the currently loaded scenes on the client side.
         /// <see cref="NetworkManager.OnClientStarted"/> event.
         /// <see cref="SetNetworkSceneTableState(Dictionary{int, Scene}, bool)"/>
         /// </summary>
-        /// <returns></returns>
+        /// <returns>NetworkSceneTable state</returns>
         public Dictionary<int, Scene> GetNetworkSceneTableState()
         {
             var networkSceneTable = new Dictionary<int, Scene>();
@@ -1561,15 +1561,17 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// If this finds the scene in the NetworkSceneTable then it removes the
+        /// scene from the NetworkSceneTableState and returns it otherwise it
+        /// returns null and the scene will be loaded.
+        ///
+        /// Note: If there were any scenes unloaded (server side) between the time
+        /// the client disconnected and reconnected, then this is part of the process
+        /// of automatically unloading scenes that are no longer loaded on the server
+        /// side if m_AutoFlushRemainingScenes is set to true.
+        /// See Also:
         /// <see cref="SetNetworkSceneTableState(Dictionary{int, Scene})"/>
-        /// Can be used to reconnect a disconnected player without having to
-        /// force the client to unload and reload the already loaded scenes.
-        /// This removes each scene from the NetworkSceneTableState, so if
-        /// there were any scenes unloaded (server side) between the time of
-        /// disconnection and reconnection it will automatically unload those
-        /// scenes in the end (if m_AutoFlushRemainingScenes was set)
         /// </summary>
-        /// <param name="networkSceneHandle"></param>
         private Scene TryGetLoadedScene(int networkSceneHandle)
         {
             if (NetworkSceneTableState.ContainsKey(networkSceneHandle))
