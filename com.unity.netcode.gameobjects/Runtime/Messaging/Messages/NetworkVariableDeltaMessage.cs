@@ -225,7 +225,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
             }
         }
     }

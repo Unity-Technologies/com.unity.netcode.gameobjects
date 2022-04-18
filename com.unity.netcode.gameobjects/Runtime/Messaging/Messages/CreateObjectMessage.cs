@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
@@ -19,6 +21,11 @@ namespace Unity.Netcode
             }
 
             ObjectInfo.Deserialize(reader);
+            if (!networkManager.SpawnManager.HasPrefab(ObjectInfo.Header.IsSceneObject, ObjectInfo.Header.Hash))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Header.Hash, reader, ref context);
+                return false;
+            }
             m_ReceivedNetworkVariableData = reader;
 
             return true;
