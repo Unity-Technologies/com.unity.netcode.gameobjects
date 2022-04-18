@@ -1515,13 +1515,14 @@ namespace Unity.Netcode
             // Always check to see if the scene needs to be validated
             if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
             {
-                ClientLoadedSynchronization(sceneEventId);
+                HandleClientSceneEvent(sceneEventId);
                 if (m_NetworkManager.LogLevel == LogLevel.Developer)
                 {
                     NetworkLog.LogInfo($"Client declined to load the scene {sceneName}, continuing with synchronization.");
                 }
                 return;
             }
+
             // If we preloaded a previously saved NetworkSceneTableState and we already
             // have loaded this scene, then don't load it again
             var shouldPassThrough = NetworkSceneTableState.ContainsKey(sceneHandle);
