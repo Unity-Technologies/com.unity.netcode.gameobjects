@@ -15,7 +15,8 @@ namespace Unity.Netcode.EditorTests
             UNetTransport unet1 = null;
             UNetTransport unet2 = null;
 
-            try {
+            try
+            {
                 // Arrange
 
                 // We're expecting an error from UNET, but don't care to validate the specific message
