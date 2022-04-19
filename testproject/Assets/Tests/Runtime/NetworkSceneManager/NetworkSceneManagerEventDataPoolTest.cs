@@ -24,6 +24,7 @@ namespace TestProject.RuntimeTests
         private LoadSceneMode m_LoadSceneMode;
         private List<Scene> m_ScenesLoaded = new List<Scene>();
         private bool m_CanStartServerOrClients = false;
+        private Scene m_OriginalActiveScene;
 
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ClientVerificationAction;
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_ServerVerificationAction;
@@ -45,6 +46,7 @@ namespace TestProject.RuntimeTests
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
             m_ScenesLoaded.Clear();
+            m_CreateServerFirst = false;
             return base.OnSetup();
         }
 
@@ -283,7 +285,7 @@ namespace TestProject.RuntimeTests
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(clientSynchronizationMode, true);
 
-            Scene currentlyActiveScene = SceneManager.GetActiveScene();
+            m_OriginalActiveScene = SceneManager.GetActiveScene();
 
             yield return LoadScene(k_BaseUnitTestSceneName);
 
@@ -294,15 +296,34 @@ namespace TestProject.RuntimeTests
                 yield return LoadScene(k_MultiInstanceTestScenename);
             }
 
-            // Reverse how we unload the scenes
-            m_ScenesLoaded.Reverse();
+            yield return s_DefaultWaitForTick;
 
-            // Now unload the scene(s)
-            foreach (var scene in m_ScenesLoaded)
+            yield return UnloadAllScenes();
+        }
+
+        private IEnumerator UnloadAllScenes()
+        {
+            if (m_ScenesLoaded.Count > 0)
             {
-                yield return UnloadScene(scene);
+                // Reverse how we unload the scenes
+                m_ScenesLoaded.Reverse();
+
+                // Now unload the scene(s)
+                foreach (var scene in m_ScenesLoaded)
+                {
+                    yield return UnloadScene(scene);
+                }
+
+                SceneManager.SetActiveScene(m_OriginalActiveScene);
+
+                m_ScenesLoaded.Clear();
             }
-            SceneManager.SetActiveScene(currentlyActiveScene);
+        }
+
+
+        protected override IEnumerator OnTearDown()
+        {
+            yield return UnloadAllScenes();
         }
     }
 }

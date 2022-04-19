@@ -6,6 +6,7 @@ using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
@@ -30,11 +31,13 @@ namespace TestProject.RuntimeTests
 
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
+            var unityTransport = m_NetworkManagerGameObject.AddComponent<UnityTransport>();
+
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
                 NetworkPrefabs = new List<NetworkPrefab>() { new NetworkPrefab() { Prefab = m_DDOL_ObjectToSpawn } },
-                NetworkTransport = m_NetworkManagerGameObject.AddComponent<SIPTransport>(),
+                NetworkTransport = unityTransport
             };
             m_ServerNetworkManager.StartHost();
             yield break;

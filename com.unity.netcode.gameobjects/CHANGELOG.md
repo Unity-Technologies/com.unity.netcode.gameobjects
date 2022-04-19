@@ -20,10 +20,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed `NetcodeIntegrationTestHelpers` to use `UnityTransport` (#1870)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
 
 ### Removed
 
+- Removed `SIPTransport` (#1870)
 - Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 - Removed `com.unity.collections` dependency from the package (#1849)

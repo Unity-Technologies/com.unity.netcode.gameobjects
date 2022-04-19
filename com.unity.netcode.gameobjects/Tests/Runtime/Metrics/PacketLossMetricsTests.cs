@@ -24,11 +24,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             : base(HostOrServer.Server)
         {}
 
-        protected override void OnOneTimeSetup()
-        {
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-        }
-
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
