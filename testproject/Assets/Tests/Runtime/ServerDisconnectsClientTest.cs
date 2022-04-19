@@ -46,8 +46,7 @@ namespace TestProject.RuntimeTests
                 NetworkManager.OnClientDisconnectCallback -= NetworkManager_OnClientDisconnectCallback;
                 // To simulate that there were already messages to be sent this frame in the send queue,
                 // we just send a few packets to the server even though we are considered disconnected
-                // at this point.  We do this here to assure the messages are pending being sent while
-                // we are already considered disconnected by the transport.
+                // at this point.
                 for (int i = 0; i < 5; i++)
                 {
                     ClientToServerRpc();
