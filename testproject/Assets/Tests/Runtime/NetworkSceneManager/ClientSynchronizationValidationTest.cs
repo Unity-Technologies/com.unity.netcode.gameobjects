@@ -56,7 +56,7 @@ namespace TestProject.RuntimeTests
         {
             private NetworkManager m_NetworkManager;
             private Dictionary<string, int> m_ValidSceneEventCount = new Dictionary<string, int>();
-            public ClientSceneVerificationHandler(NetworkManager networkManager )
+            public ClientSceneVerificationHandler(NetworkManager networkManager)
             {
                 m_NetworkManager = networkManager;
                 m_NetworkManager.SceneManager.DisableValidationWarnings(true);
