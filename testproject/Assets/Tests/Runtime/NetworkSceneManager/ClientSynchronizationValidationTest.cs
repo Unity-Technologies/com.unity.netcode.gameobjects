@@ -72,7 +72,7 @@ namespace TestProject.RuntimeTests
             {
                 Assert.IsFalse(m_ValidSceneEventCount[k_SecondSceneToSkip] > 0, $"Client still loaded the invalidated scene {k_SecondSceneToSkip}!");
                 Assert.IsTrue(m_ValidSceneEventCount[k_FirstSceneToLoad] == 2, $"Client did not load and process the validated scene {k_FirstSceneToLoad}!");
-                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToLoad] == 2, $"Client did not  load and process the validated scene {k_ThirdSceneToLoad}!");
+                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToLoad] == 2, $"Client did not load and process the validated scene {k_ThirdSceneToLoad}!");
             }
 
             private void ClientSceneManager_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
