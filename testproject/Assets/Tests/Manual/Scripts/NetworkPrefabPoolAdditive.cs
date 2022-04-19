@@ -86,6 +86,10 @@ namespace TestProject.ManualTests
         /// </summary>
         public override void OnDestroy()
         {
+            if (NetworkManager.Singleton == null)
+            {
+                return;
+            }
             NetworkManager.Singleton.OnClientStarted -= Singleton_OnClientStarted;
             CleanNetworkObjects();
             InternalStopCoroutine();
@@ -251,8 +255,10 @@ namespace TestProject.ManualTests
             {
                 NetworkManager.Singleton.OnClientStarted -= Singleton_OnClientStarted;
             }
-
-            InitializeObjectPool();
+            if (IsSpawned)
+            {
+                InitializeObjectPool();
+            }
         }
 
         public override void OnNetworkDespawn()

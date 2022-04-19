@@ -12,6 +12,10 @@ namespace TestProject.ManualTests
     {
         [SerializeField]
         private GameObject m_DisconnectClientButton;
+
+        [SerializeField]
+        private GameObject m_ReconnectClientDialog;
+
         [SerializeField]
         private float m_ReconnectAttempts = 5;
 
@@ -31,6 +35,12 @@ namespace TestProject.ManualTests
             {
                 m_DisconnectClientButton.gameObject.SetActive(false);
             }
+
+            if (m_ReconnectClientDialog != null)
+            {
+                m_ReconnectClientDialog.SetActive(false);
+            }
+
             // Keep track of the scene we belong to (see notes in OnClientStarted)
             m_CurrentScene = gameObject.scene;
             NetworkManager.Singleton.OnClientStarted += OnClientStarted;
@@ -134,12 +144,28 @@ namespace TestProject.ManualTests
         {
             if (!m_IsReconnecting)
             {
-
                 m_NetworkSceneTableState = new Dictionary<int, Scene>(NetworkManager.SceneManager.GetNetworkSceneTableState());
                 m_IsReconnecting = true;
                 m_ConnectionAttempts = 0;
                 NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
-                m_CurrentCoroutine = StartCoroutine(ReconnectClient());
+
+                if (m_ReconnectClientDialog != null)
+                {
+                    m_ReconnectClientDialog.SetActive(true);
+                }
+                else
+                {
+                    m_CurrentCoroutine = StartCoroutine(ReconnectClient());
+                }
+            }
+        }
+
+        public void OnManualReconnectClient()
+        {
+            if (!IsServer)
+            {
+                m_ReconnectClientDialog.SetActive(false);
+                NetworkManager.StartClient();
             }
         }
 
@@ -152,7 +178,10 @@ namespace TestProject.ManualTests
             {
                 m_IsReconnecting = false;
                 m_ConnectionAttempts = 0;
-                StopCoroutine(m_CurrentCoroutine);
+                if (m_CurrentCoroutine != null)
+                {
+                    StopCoroutine(m_CurrentCoroutine);
+                }
                 m_LastKnownClientId = NetworkManager.LocalClientId;
                 NetworkManager.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
             }
