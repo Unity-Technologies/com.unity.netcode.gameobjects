@@ -15,9 +15,11 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float PositionThresholdDefault = .001f;
-        public const float RotAngleThresholdDefault = .01f;
-        public const float ScaleThresholdDefault = .01f;
+        public const float ThresholdMinimum = 0.001f;
+        public const float PositionThresholdDefault = 0.001f;
+        public const float RotAngleThresholdDefault = 0.01f;
+        public const float ScaleThresholdDefault = 0.01f;
+
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
@@ -248,8 +250,14 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
+
+        [Min(ThresholdMinimum)]
         public float PositionThreshold = PositionThresholdDefault;
+
+        [Range(ThresholdMinimum, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
+
+        [Min(ThresholdMinimum)]
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -450,7 +458,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleX &&
-                Mathf.Abs(networkState.RotAngleX - rotAngles.x) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
@@ -458,7 +466,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                Mathf.Abs(networkState.RotAngleY - rotAngles.y) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -466,7 +474,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
