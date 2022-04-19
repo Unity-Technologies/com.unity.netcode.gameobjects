@@ -319,7 +319,6 @@ namespace Unity.Netcode.RuntimeTests
 
         private void ReleaseSpawns()
         {
-            Debug.Log("RELEASE THE KRAKEN!");
             for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
             {
                 // Unhook first so the spawn catcher stops catching spawns
@@ -783,7 +782,6 @@ namespace Unity.Netcode.RuntimeTests
             serverObject.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().TestNetworkVariable.Value = 1;
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            Debug.Log("Wait");
             yield return WaitMultiple(coroutines);
 
             foreach (var client in m_ClientNetworkManagers)
@@ -975,7 +973,6 @@ namespace Unity.Netcode.RuntimeTests
             serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
 
-            Debug.Log("Yo");
             yield return WaitForClientsToCatchSpawns(2);
 
             var start = 0f;
@@ -993,7 +990,6 @@ namespace Unity.Netcode.RuntimeTests
                 manager.OnBeforeDefer = beforeDefer;
             }
 
-            Debug.Log("Bud");
             serverObject.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().SendTestClientRpc();
             serverObject.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().TestNetworkVariable.Value = 1;
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
@@ -1002,7 +998,6 @@ namespace Unity.Netcode.RuntimeTests
             serverObject2.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().TestNetworkVariable.Value = 1;
             serverObject2.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            Debug.Log("Sup");
             yield return WaitMultiple(coroutines);
 
             foreach (var unused in m_ClientNetworkManagers)
