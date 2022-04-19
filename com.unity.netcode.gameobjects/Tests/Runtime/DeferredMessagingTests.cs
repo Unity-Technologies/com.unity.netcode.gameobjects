@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
         // the purge completes)
         private HashSet<ulong> m_PurgedKeys = new HashSet<ulong>();
 
-        public TestDeferredMessageManager(NetworkManager networkManager):
+        public TestDeferredMessageManager(NetworkManager networkManager) :
             base(networkManager)
         {
         }
@@ -279,7 +279,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        private T GetComponentForClient<T>(ulong clientId) where T: NetworkBehaviour
+        private T GetComponentForClient<T>(ulong clientId) where T : NetworkBehaviour
         {
             foreach (var component in Object.FindObjectsOfType<T>())
             {
@@ -422,7 +422,7 @@ namespace Unity.Netcode.RuntimeTests
 
         private List<IEnumerator> WaitForAllClientsToReceive<TFirstMessage, TSecondMessage>()
             where TFirstMessage : INetworkMessage
-            where TSecondMessage: INetworkMessage
+            where TSecondMessage : INetworkMessage
         {
             var waiters = new List<IEnumerator>();
             foreach (var client in m_ClientNetworkManagers)
@@ -436,9 +436,9 @@ namespace Unity.Netcode.RuntimeTests
 
         private List<IEnumerator> WaitForAllClientsToReceive<TFirstMessage, TSecondMessage, TThirdMessage, TFourthMessage>()
             where TFirstMessage : INetworkMessage
-            where TSecondMessage: INetworkMessage
-            where TThirdMessage: INetworkMessage
-            where TFourthMessage: INetworkMessage
+            where TSecondMessage : INetworkMessage
+            where TThirdMessage : INetworkMessage
+            where TFourthMessage : INetworkMessage
         {
             var waiters = new List<IEnumerator>();
             foreach (var client in m_ClientNetworkManagers)
@@ -859,7 +859,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
-                    Assert.GreaterOrEqual(elapsed, timeout-0.05f);
+                    Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
                     Assert.AreEqual(1, manager.DeferredMessageCountTotal());
                     Assert.AreEqual(1, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
                     Assert.AreEqual(1, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
@@ -931,7 +931,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
-                    Assert.GreaterOrEqual(elapsed, timeout-0.05f);
+                    Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
                     Assert.AreEqual(4, manager.DeferredMessageCountTotal());
                     Assert.AreEqual(4, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
                     Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
@@ -1019,7 +1019,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
-                    Assert.GreaterOrEqual(elapsed, timeout-0.05f);
+                    Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
                     Assert.AreEqual(remainingMessagesTotalThisClient, manager.DeferredMessageCountTotal());
                     Assert.AreEqual(remainingMessagesTotalThisClient, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
                     Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
@@ -1105,7 +1105,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
-                    Assert.GreaterOrEqual(elapsed, timeout-0.05f);
+                    Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
                     Assert.AreEqual(2, manager.DeferredMessageCountTotal());
                     Assert.AreEqual(2, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
                     Assert.AreEqual(2, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
@@ -1196,7 +1196,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
-                    Assert.GreaterOrEqual(elapsed, timeout-0.05f);
+                    Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
                     Assert.AreEqual(2, manager.DeferredMessageCountTotal());
                     Assert.AreEqual(2, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
 

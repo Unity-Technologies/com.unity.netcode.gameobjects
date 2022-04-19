@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Unity.Netcode
@@ -7,21 +7,21 @@ namespace Unity.Netcode
     {
         internal delegate object CreateObjectDelegate(NetworkManager networkManager);
 
-        private static Dictionary<Type, CreateObjectDelegate> m_Delegates = new Dictionary<Type, CreateObjectDelegate>();
+        private static Dictionary<Type, CreateObjectDelegate> s_Delegates = new Dictionary<Type, CreateObjectDelegate>();
 
         public static T Create<T>(NetworkManager networkManager)
         {
-            return (T)m_Delegates[typeof(T)](networkManager);
+            return (T)s_Delegates[typeof(T)](networkManager);
         }
 
         public static void Register<T>(CreateObjectDelegate creator)
         {
-            m_Delegates[typeof(T)] = creator;
+            s_Delegates[typeof(T)] = creator;
         }
 
         public static void Deregister<T>()
         {
-            m_Delegates.Remove(typeof(T));
+            s_Delegates.Remove(typeof(T));
         }
 
         public static void SetDefaults()
@@ -31,9 +31,9 @@ namespace Unity.Netcode
 
         private static void SetDefault<T>(CreateObjectDelegate creator)
         {
-            if (!m_Delegates.ContainsKey(typeof(T)))
+            if (!s_Delegates.ContainsKey(typeof(T)))
             {
-                m_Delegates[typeof(T)] = creator;
+                s_Delegates[typeof(T)] = creator;
             }
         }
     }

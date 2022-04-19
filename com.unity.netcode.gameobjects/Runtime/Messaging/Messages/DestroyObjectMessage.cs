@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Unity.Netcode
 {
     internal struct DestroyObjectMessage : INetworkMessage
