@@ -19,11 +19,17 @@ namespace TestProject.RuntimeTests
 
         protected override void OnOneTimeSetup()
         {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             // Pre-load some scenes (i.e. server will tell clients to synchronize to these scenes)
             SceneManager.LoadSceneAsync(k_FirstSceneToLoad, LoadSceneMode.Additive);
             SceneManager.LoadSceneAsync(k_SecondSceneToSkip, LoadSceneMode.Additive);
             SceneManager.LoadSceneAsync(k_ThirdSceneToLoad, LoadSceneMode.Additive);
             base.OnOneTimeSetup();
+        }
+        private List<Scene> m_ScenesLoaded = new List<Scene>();
+        private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            m_ScenesLoaded.Add(scene);
         }
 
         protected override IEnumerator OnStartedServerAndClients()
@@ -47,6 +53,19 @@ namespace TestProject.RuntimeTests
                 clientSceneVerifier.ValidateScenesLoaded();
             }
             yield return null;
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            foreach (var scene in m_ScenesLoaded)
+            {
+                if (scene.isLoaded)
+                {
+                    SceneManager.UnloadSceneAsync(scene);
+                }
+            }
+            m_ScenesLoaded.Clear();
+            return base.OnTearDown();
         }
 
         /// <summary>
