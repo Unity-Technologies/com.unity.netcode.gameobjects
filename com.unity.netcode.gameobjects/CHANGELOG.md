@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Fixed
+- Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start [#854]
+
 ## [1.0.0-pre.7] - 2022-04-06
 
 ### Added
