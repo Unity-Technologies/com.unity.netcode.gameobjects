@@ -16,7 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `UnityTransport` settings can now be set programmatically. (#1845)
 - `FastBufferWriter` and Reader IsInitialized property. (#1859)
 - Prefabs can now be added to the SDK at ~~~~runtime (i.e., from an addressable asset). If `ForceSamePrefabs` is false, this can happen after a connection has been formed. (#1882)
-- When `ForceSamePrefabs` is false, a configurable delay (default 1 second) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
+- When `ForceSamePrefabs` is false, a configurable delay (default 1 second, configurable via `NetworkConfig.SpawnTimeout`) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
 
 ### Changed
 
