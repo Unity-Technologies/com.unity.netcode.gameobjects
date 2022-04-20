@@ -178,7 +178,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             private static Dictionary<ulong, VerifyObjectIsSpawnedOnClient> s_NetworkManagerRelativeSpawnedObjects = new Dictionary<ulong, VerifyObjectIsSpawnedOnClient>();
 
-            public static void ResetObjectTable ()
+            public static void ResetObjectTable()
             {
                 s_NetworkManagerRelativeSpawnedObjects.Clear();
             }
@@ -208,7 +208,7 @@ namespace Unity.Netcode.RuntimeTests
 
             public static VerifyObjectIsSpawnedOnClient GetClientInstance(ulong clientId)
             {
-                if(s_NetworkManagerRelativeSpawnedObjects.ContainsKey(clientId))
+                if (s_NetworkManagerRelativeSpawnedObjects.ContainsKey(clientId))
                 {
                     return s_NetworkManagerRelativeSpawnedObjects[clientId];
                 }
@@ -219,7 +219,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // This makes sure that the NetworkManager relative NetworkObject instances don't collide with each other
                 // and skew the position testing
-                foreach(var entry in s_NetworkManagerRelativeSpawnedObjects)
+                foreach (var entry in s_NetworkManagerRelativeSpawnedObjects)
                 {
                     Physics.IgnoreCollision(entry.Value.GetComponent<SphereCollider>(), GetComponent<SphereCollider>());
                 }
