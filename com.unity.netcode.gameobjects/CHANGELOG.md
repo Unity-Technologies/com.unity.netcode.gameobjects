@@ -15,11 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the NetworkEvent.Disconnect event and is using UTP. (#1884)
-
-## [Unreleased]
-
-### Fixed
-- Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start [#854]
+- Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
 
 ## [1.0.0-pre.7] - 2022-04-06
 
