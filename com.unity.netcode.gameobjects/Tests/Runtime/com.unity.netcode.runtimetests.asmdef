@@ -11,10 +11,20 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Networking.Transport",
         "ClientNetworkTransform",
-        "Unity.Netcode.TestHelpers.Runtime"
+        "Unity.Netcode.TestHelpers.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [
         {
@@ -31,6 +41,12 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "1.0.0-pre.7",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
+        },
+        {
+            "name": "com.unity.modules.physics",
+            "expression": "",
+            "define": "COM_UNITY_MODULES_PHYSICS"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

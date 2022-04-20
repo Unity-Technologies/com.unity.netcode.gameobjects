@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_PHYSICS
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -275,3 +276,4 @@ namespace Unity.Netcode.RuntimeTests
 
 
 }
+#endif
