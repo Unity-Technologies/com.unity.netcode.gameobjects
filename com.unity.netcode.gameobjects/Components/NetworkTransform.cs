@@ -15,7 +15,6 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float ThresholdMinimum = 0.001f;
         public const float PositionThresholdDefault = 0.001f;
         public const float RotAngleThresholdDefault = 0.01f;
         public const float ScaleThresholdDefault = 0.01f;
@@ -250,14 +249,11 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
-
-        [Min(ThresholdMinimum)]
         public float PositionThreshold = PositionThresholdDefault;
 
-        [Range(ThresholdMinimum, 360.0f)]
+        [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
 
-        [Min(ThresholdMinimum)]
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
