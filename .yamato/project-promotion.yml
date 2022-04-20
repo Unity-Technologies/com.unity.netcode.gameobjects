@@ -1,6 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 {% for project in projects -%}
+{% if project.publish == "true" -%}
 {% for package in project.packages -%}
 # Validation job for package {{ package.name }}, only using the first entry in the
 # platform and editor meta data
@@ -61,23 +62,5 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
     - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 
 {% endfor -%}
-
-promote_{{ project.name }}:
-  name: Promote ALL {{ project.name }} packages to Production
-  agent:
-    type: Unity::VM
-    image: package-ci/win10:stable
-    flavor: b1.small
-  variables:
-    UPMCI_PROMOTION: 1
-  commands:
-    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - upm-ci project promote --project-path {{ project.path }}
-  artifacts:
-    artifacts:
-      paths:
-        - "upm-ci~/packages/*.tgz"
-  dependencies:
-    - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.packages.first.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% endif -%}
 {% endfor -%}
