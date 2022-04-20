@@ -961,15 +961,21 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
+        /// <summary>
+        /// Override this and return false to follow the owner authoritative
+        /// Otherwise, it defaults to server authoritative
+        /// </summary>
         protected virtual bool OnIsServerAuthoritatitive()
         {
             return true;
         }
 
+        /// <summary>
+        /// Determines if the <see cref="NetworkTransform"/> is server or owner authoritative.
+        /// </summary>
         public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritatitive();
         }
-
     }
 }

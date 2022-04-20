@@ -75,7 +75,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        // Puts the Rigidbody in a kinematic non-interpolated mode on everyone but the server.
+        // Puts the Rigidbody in a kinematic non-interpolated mode on all non-authoritative instances
         private void UpdateRigidbodyKinematicMode()
         {
             if (m_IsAuthority == false)
