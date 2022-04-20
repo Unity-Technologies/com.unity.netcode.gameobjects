@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+## Unreleased
+
+### Added
+
+### Changed
+
+### Removed
+
+### Fixed
+- Fixed client throwing an exception if it has messages in the outbound queue when processing the NetworkEvent.Disconnect event and is using UTP. (#1884)
 
 ## [1.0.0-pre.7] - 2022-04-06
 
@@ -29,7 +39,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.collections` dependency from the package (#1849)
 
 ### Fixed
-- Fixed client throwing an exception if it has messages in the outbound queue when processing the NetworkEvent.Disconnect event and is using UTP. (#1884)
 - Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
 - Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
