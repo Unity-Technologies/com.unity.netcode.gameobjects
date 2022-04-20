@@ -13,7 +13,7 @@
         "ClientNetworkTransform",
         "Unity.Netcode.TestHelpers.Runtime"
     ],
-     "optionalUnityReferences": [
+    "optionalUnityReferences": [
         "TestAssemblies"
     ],
     "versionDefines": [
