@@ -398,6 +398,16 @@ namespace Unity.Netcode.Components
             m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
         }
 
+        /// <summary>
+        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed isDirty information returned.
+        /// </summary>
+        /// <param name="transform">transform to apply</param>
+        /// <returns>bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty</returns>
+        internal (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyLocalNetworkState(Transform transform)
+        {
+            return ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+        }
+
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)

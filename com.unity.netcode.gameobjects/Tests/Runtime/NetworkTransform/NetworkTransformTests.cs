@@ -22,6 +22,11 @@ namespace Unity.Netcode.RuntimeTests
 
             ReadyToReceivePositionUpdate = true;
         }
+
+        public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
+        {
+            return ApplyLocalNetworkState(transform);
+        }
     }
 
     // [TestFixture(true, true)]
@@ -170,6 +175,75 @@ namespace Unity.Netcode.RuntimeTests
             // TODO: This should be a separate test - verify 1 behavior per test
             LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
 #endif
+        }
+
+        [UnityTest]
+        public IEnumerator TestRotationThresholdDeltaCheck()
+        {
+            // Get the client player's NetworkTransform for both instances
+            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            otherSideNetworkTransform.RotAngleThreshold = authoritativeNetworkTransform.RotAngleThreshold = 5.0f;
+
+            var halfThreshold = authoritativeNetworkTransform.RotAngleThreshold * 0.50001f;
+            var serverRotation = authoritativeNetworkTransform.transform.rotation;
+            var serverEulerRotation = serverRotation.eulerAngles;
+
+            // Verify rotation is not marked dirty when rotated by half of the threshold
+            serverEulerRotation.y += halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            var results = authoritativeNetworkTransform.ApplyState();
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
+            yield return s_DefaultWaitForTick;
+
+            // Verify rotation is marked dirty when rotated by another half threshold value
+            serverEulerRotation.y += halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            results = authoritativeNetworkTransform.ApplyState();
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {authoritativeNetworkTransform.RotAngleThreshold} degrees!");
+            yield return s_DefaultWaitForTick;
+
+            //Reset rotation back to zero on all axis
+            serverRotation.eulerAngles = serverEulerRotation = Vector3.zero;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            yield return s_DefaultWaitForTick;
+
+            // Rotate by 360 minus halfThreshold (which is really just negative halfThreshold) and verify rotation is not marked dirty
+            serverEulerRotation.y = 360 - halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            results = authoritativeNetworkTransform.ApplyState();
+
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by " +
+                $"{Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+
+            serverEulerRotation.y -= halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            results = authoritativeNetworkTransform.ApplyState();
+
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+
+            //Reset rotation back to zero on all axis
+            serverRotation.eulerAngles = serverEulerRotation = Vector3.zero;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            yield return s_DefaultWaitForTick;
+
+            serverEulerRotation.y -= halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            results = authoritativeNetworkTransform.ApplyState();
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by " +
+                $"{Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+
+            serverEulerRotation.y -= halfThreshold;
+            serverRotation.eulerAngles = serverEulerRotation;
+            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            results = authoritativeNetworkTransform.ApplyState();
+
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
         }
 
         /*
