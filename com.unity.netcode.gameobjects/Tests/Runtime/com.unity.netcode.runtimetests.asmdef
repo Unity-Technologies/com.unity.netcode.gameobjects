@@ -37,6 +37,5 @@
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }
