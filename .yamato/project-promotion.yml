@@ -40,7 +40,7 @@ promote_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+    - .yamato/project-promotion.yml#promote_{{ project.name }}_{{ package.name }}_dry_run
 
 promote_{{ project.name }}_{{ package.name }}_dry_run:
   name: Promote Project {{ project.name }} - Package {{ package.name }} to Production (dry-run)
@@ -59,6 +59,7 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+    - .yamato/project-publish.yml#publish_{{ project.name }}_{{ package.name }}
     - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 
 {% endfor -%}
