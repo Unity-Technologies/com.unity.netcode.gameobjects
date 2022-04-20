@@ -76,8 +76,10 @@ namespace Unity.Netcode.Components
             // If you have authority then you are not kinematic
             m_Rigidbody.isKinematic = !m_IsAuthority;
 
-            // Set interpolation to none if NetworkTransform is handling interpolation, otherwise it sets it to the original value
-            m_Rigidbody.interpolation = m_NetworkTransform.Interpolate ? RigidbodyInterpolation.None : m_OriginalInterpolation;
+            // Set interpolation of the Rigidbody based on authority
+            // With authority: let local transform handle interpolation
+            // Without authority: let the NetworkTransform handle interpolation
+            m_Rigidbody.interpolation = m_IsAuthority ? m_OriginalInterpolation : RigidbodyInterpolation.None;
         }
 
         /// <inheritdoc />
