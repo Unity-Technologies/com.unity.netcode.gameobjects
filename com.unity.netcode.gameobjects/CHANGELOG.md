@@ -6,10 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [1.0.0-pre.7] - 2022-04-06
+## Unreleased
 
 ### Added
 
+### Changed
+
+### Removed
+
+### Fixed
+- Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
+
+## [1.0.0-pre.7] - 2022-04-06
+
+### Added
 - Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
@@ -29,7 +39,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.collections` dependency from the package (#1849)
 
 ### Fixed
-- Fixed `NetworkTransfrom` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
 - Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
 - Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
