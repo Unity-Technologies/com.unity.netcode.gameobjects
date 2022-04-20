@@ -29,6 +29,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `com.unity.collections` dependency from the package (#1849)
 
 ### Fixed
+- Fixed `NetworkTransfrom` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
 - Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
 - Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
 - Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
