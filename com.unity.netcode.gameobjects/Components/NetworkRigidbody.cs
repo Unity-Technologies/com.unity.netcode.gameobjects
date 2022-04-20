@@ -13,7 +13,6 @@ namespace Unity.Netcode.Components
     {
         /// <summary>
         /// Determines if we are server (true) or owner (false) authoritative
-        /// <see cref="NetworkTransform.IsServerAuthoritative"/>
         /// </summary>
         private bool m_IsServerAuthoritative;
 
