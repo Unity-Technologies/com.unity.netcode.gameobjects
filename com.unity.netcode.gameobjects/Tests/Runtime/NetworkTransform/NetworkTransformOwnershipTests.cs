@@ -54,11 +54,11 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         /// <param name="spawnWithHostOwnership">determines who starts as the owner (true): host | (false): client</param>
         [UnityTest]
-        public IEnumerator OwnerAuthoritativeTest([Values] StartingOwnership spawnWithHostOwnership)
+        public IEnumerator OwnerAuthoritativeTest([Values] StartingOwnership startingOwnership)
         {
             // Get the current ownership layout
-            var networkManagerOwner = spawnWithHostOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
-            var networkManagerNonOwner = spawnWithHostOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            var networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
+            var networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
 
             // Spawn the m_ClientNetworkTransformPrefab and wait for the client-side to spawn the object
             var serverSideInstance = SpawnObject(m_ClientNetworkTransformPrefab, networkManagerOwner);
@@ -100,8 +100,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change ownership!");
 
             // Re-assign the ownership references and wait for the non-owner instance to be notified of ownership change
-            networkManagerOwner = spawnWithHostOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-            networkManagerNonOwner = spawnWithHostOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
+            networkManagerOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
+            networkManagerNonOwner = startingOwnership == StartingOwnership.HostStartsAsOwner ? m_ServerNetworkManager : m_ClientNetworkManagers[0];
             ownerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerOwner.LocalClientId);
             Assert.NotNull(ownerInstance);
             yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId) != null);
