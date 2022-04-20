@@ -190,7 +190,7 @@ namespace Unity.Netcode.RuntimeTests
             var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
             otherSideNetworkTransform.RotAngleThreshold = authoritativeNetworkTransform.RotAngleThreshold = 5.0f;
 
-            var halfThreshold = authoritativeNetworkTransform.RotAngleThreshold * 0.500001f;
+            var halfThreshold = authoritativeNetworkTransform.RotAngleThreshold * 0.5001f;
             var serverRotation = authoritativeNetworkTransform.transform.rotation;
             var serverEulerRotation = serverRotation.eulerAngles;
 
