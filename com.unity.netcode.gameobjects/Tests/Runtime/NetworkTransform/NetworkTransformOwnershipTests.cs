@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode.Components;
 using NUnit.Framework;
-using Unity.Netcode.Samples;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -20,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
             m_ClientNetworkTransformPrefab = CreateNetworkObjectPrefab("OwnerAuthorityTest");
-            var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<ClientNetworkTransform>();
+            var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<TestClientNetworkTransform>();
             clientNetworkTransform.Interpolate = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
@@ -240,5 +239,39 @@ namespace Unity.Netcode.RuntimeTests
                 base.OnNetworkDespawn();
             }
         }
+
+        /// <summary>
+        /// Until we can better locate the ClientNetworkTransform
+        /// This will have to be used to verify the ownership authority
+        /// </summary>
+        [DisallowMultipleComponent]
+        public class TestClientNetworkTransform : NetworkTransform
+        {
+            public override void OnNetworkSpawn()
+            {
+                base.OnNetworkSpawn();
+                CanCommitToTransform = IsOwner;
+            }
+
+            protected override void Update()
+            {
+                CanCommitToTransform = IsOwner;
+                base.Update();
+                if (NetworkManager.Singleton != null && (NetworkManager.Singleton.IsConnectedClient || NetworkManager.Singleton.IsListening))
+                {
+                    if (CanCommitToTransform)
+                    {
+                        TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+                    }
+                }
+            }
+
+            protected override bool OnIsServerAuthoritatitive()
+            {
+                return false;
+            }
+        }
     }
+
+
 }

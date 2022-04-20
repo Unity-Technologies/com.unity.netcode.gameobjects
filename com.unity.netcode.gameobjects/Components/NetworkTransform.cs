@@ -971,9 +971,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Determines if the <see cref="NetworkTransform"/> is server or owner authoritative.
+        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
         /// </summary>
-        public bool IsServerAuthoritative()
+        internal bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritatitive();
         }
