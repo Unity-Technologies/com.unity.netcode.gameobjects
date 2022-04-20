@@ -218,7 +218,7 @@ namespace Unity.Netcode.RuntimeTests
             public override void OnNetworkSpawn()
             {
                 // This makes sure that the NetworkManager relative NetworkObject instances don't collide with each other
-                // and skew the position testing
+                // and skew the expected changes to the transforms
                 foreach (var entry in s_NetworkManagerRelativeSpawnedObjects)
                 {
                     Physics.IgnoreCollision(entry.Value.GetComponent<SphereCollider>(), GetComponent<SphereCollider>());
