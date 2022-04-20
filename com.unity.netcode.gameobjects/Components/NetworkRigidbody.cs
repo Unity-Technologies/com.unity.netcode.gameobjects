@@ -19,8 +19,6 @@ namespace Unity.Netcode.Components
 
         private Rigidbody m_Rigidbody;
         private NetworkTransform m_NetworkTransform;
-
-        private bool m_OriginalKinematic;
         private RigidbodyInterpolation m_OriginalInterpolation;
 
         // Used to cache the authority state of this Rigidbody during the last frame
@@ -32,8 +30,6 @@ namespace Unity.Netcode.Components
             m_IsServerAuthoritative = m_NetworkTransform.IsServerAuthoritative();
 
             m_Rigidbody = GetComponent<Rigidbody>();
-            // Store off the original kinematic state when instantiated
-            m_OriginalKinematic = m_Rigidbody.isKinematic;
             m_OriginalInterpolation = m_Rigidbody.interpolation;
 
             // Set interpolation to none if NetworkTransform is handling interpolation, otherwise it sets it to the original value
@@ -96,7 +92,7 @@ namespace Unity.Netcode.Components
         {
             m_Rigidbody.interpolation = m_OriginalInterpolation;
             // Turn off physics for the rigid body until spawned, otherwise
-            // clients can run fixed update before the first full
+            // non-owners can run fixed updates before the first full
             // NetworkTransform update and physics will be applied (i.e. gravity, etc)
             m_Rigidbody.isKinematic = true;
         }
