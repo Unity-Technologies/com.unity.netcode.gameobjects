@@ -960,5 +960,16 @@ namespace Unity.Netcode.Components
             TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
+
+        protected virtual bool OnIsServerAuthoritatitive()
+        {
+            return true;
+        }
+
+        public bool IsServerAuthoritative()
+        {
+            return OnIsServerAuthoritatitive();
+        }
+
     }
 }
