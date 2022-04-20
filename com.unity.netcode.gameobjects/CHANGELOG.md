@@ -14,7 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 
 ### Fixed
-
+- Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 
 ## [1.0.0-pre.7] - 2022-04-06
