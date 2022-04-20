@@ -8,6 +8,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## Unreleased
 
 ### Added
+- Added `NetworkSceneManager.GetNetworkSceneTableState` and `NetworkSceneManager.SetNetworkSceneTableState` to provide users with a way to reconnect to a network session without having to unload and reload the scenes. (#1886)
 
 ### Changed
 
@@ -16,16 +17,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the NetworkEvent.Disconnect event and is using UTP. (#1884)
 
-## Unreleased
-
-### Added
-- Added `NetworkSceneManager.GetNetworkSceneTableState` and `NetworkSceneManager.SetNetworkSceneTableState` to provide users with a way to reconnect to a network session without having to unload and reload the scenes. (#1886)
-- 
-### Changed
-
-### Removed
-
-### Fixed
 
 ## [1.0.0-pre.7] - 2022-04-06
 
