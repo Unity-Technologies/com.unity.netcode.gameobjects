@@ -22,14 +22,16 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkTransformPrefab = CreateNetworkObjectPrefab("OwnerAuthorityTest");
             var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<ClientNetworkTransform>();
             clientNetworkTransform.Interpolate = false;
-            m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
+            var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
+            rigidBody.useGravity = false;
             m_ClientNetworkTransformPrefab.AddComponent<NetworkRigidbody>();
             m_ClientNetworkTransformPrefab.AddComponent<SphereCollider>();
             m_ClientNetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
 
             m_NetworkTransformPrefab = CreateNetworkObjectPrefab("ServerAuthorityTest");
             var networkTransform = m_NetworkTransformPrefab.AddComponent<NetworkTransform>();
-            m_NetworkTransformPrefab.AddComponent<Rigidbody>();
+            rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
+            rigidBody.useGravity = false;
             m_NetworkTransformPrefab.AddComponent<NetworkRigidbody>();
             m_NetworkTransformPrefab.AddComponent<SphereCollider>();
             m_NetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
@@ -45,8 +47,10 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
-        /// This verifies that when authority is owner authoritative that
-        /// we can switch between owners and the owner can update the transform.
+        /// This verifies that when authority is owner authoritative the owner's
+        /// Rigidbody is kinematic and the non-owner's is not.
+        /// This also verifies that we can switch between owners and that only the
+        /// owner can update the transform while non-owners cannot.
         /// </summary>
         /// <param name="spawnWithHostOwnership">determines who starts as the owner (true): host | (false): client</param>
         [UnityTest]
@@ -65,6 +69,10 @@ namespace Unity.Netcode.RuntimeTests
             var nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
             Assert.NotNull(ownerInstance);
             Assert.NotNull(nonOwnerInstance);
+
+            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
+            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
+            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
 
             // Owner changes transform values
             var valueSetByOwner = Vector3.one * 2;
@@ -100,6 +108,10 @@ namespace Unity.Netcode.RuntimeTests
             nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(networkManagerNonOwner.LocalClientId);
             Assert.NotNull(nonOwnerInstance);
 
+            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
+            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerOwner.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
+            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
+
             // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
             valueSetByOwner = Vector3.one * 50;
             ownerInstance.transform.position = valueSetByOwner;
@@ -119,6 +131,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
+        /// <summary>
+        /// This verifies that when authority is server authoritative the
+        /// client's Rigidbody is kinematic and the server is not.
+        /// This also verifies only the server can apply updates to the
+        /// transform while the clients cannot.
+        /// </summary>
         [UnityTest]
         public IEnumerator ServerAuthoritativeTest()
         {
@@ -128,6 +146,10 @@ namespace Unity.Netcode.RuntimeTests
 
             var ownerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(m_ServerNetworkManager.LocalClientId);
             var nonOwnerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Make sure the owner is not kinematic and the non-owner(s) are kinematic
+            Assert.False(ownerInstance.GetComponent<Rigidbody>().isKinematic, $"{m_ServerNetworkManager.name}'s object instance {ownerInstance.name} is kinematic when it should not be!");
+            Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{m_ClientNetworkManagers[0].name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
 
             // Server changes transform values
             var valueSetByOwner = Vector3.one * 2;
@@ -143,13 +165,15 @@ namespace Unity.Netcode.RuntimeTests
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
                 $"Expected Scale: {valueSetByOwner} | Current Scale: {transformToTest.localScale}");
 
-
             // The last check is to verify clients cannot change transform values
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
             Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{m_ClientNetworkManagers[0].name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
+        /// <summary>
+        /// NetworkTransformOwnershipTests helper behaviour
+        /// </summary>
         public class VerifyObjectIsSpawnedOnClient : NetworkBehaviour
         {
             private static Dictionary<ulong, VerifyObjectIsSpawnedOnClient> s_NetworkManagerRelativeSpawnedObjects = new Dictionary<ulong, VerifyObjectIsSpawnedOnClient>();
@@ -193,6 +217,13 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
+                // This makes sure that the NetworkManager relative NetworkObject instances don't collide with each other
+                // and skew the position testing
+                foreach(var entry in s_NetworkManagerRelativeSpawnedObjects)
+                {
+                    Physics.IgnoreCollision(entry.Value.GetComponent<SphereCollider>(), GetComponent<SphereCollider>());
+                }
+
                 if (!s_NetworkManagerRelativeSpawnedObjects.ContainsKey(NetworkManager.LocalClientId))
                 {
                     s_NetworkManagerRelativeSpawnedObjects.Add(NetworkManager.LocalClientId, this);
