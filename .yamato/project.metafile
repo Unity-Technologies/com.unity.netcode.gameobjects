@@ -34,16 +34,19 @@ projects:
   - name: testproject
     path: testproject
     validate: true
+    publish: true
     # Packages within a project that will be tested
     packages:
       - name: com.unity.netcode.gameobjects
         path: com.unity.netcode.gameobjects
     test_editors:
-      - 2021.2
       - 2020.3
+      - 2021.2
       - trunk
   - name: minimalproject
     path: minimalproject
+    validate: false
+    publish: false
     packages:
       - name: com.unity.netcode.gameobjects
         path: com.unity.netcode.gameobjects
@@ -52,6 +55,7 @@ projects:
   - name: testproject-tools-integration
     path: testproject-tools-integration
     validate: false
+    publish: false
     test_editors:
       - 2021.2
       - trunk
