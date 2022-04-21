@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -697,16 +698,18 @@ namespace Unity.Netcode
                 {
                     // We only add the scene if:
                     // - It is not already in the ScenesLoaded list
-                    // - In the event there is a pre-existing NetworkSceneTableState, we don't add scenes that already are
-                    // in the NetworkSceneTableState. For example:
+                    // - In the event there is a pre-existing NetworkSceneTableState, we don't add scenes that are already
+                    // in the NetworkSceneTableState.
+                    // For example:
                     // The client disconnects and while the client is disconnected the server unloads additive scene-a and then
                     // shortly after unloading it reloads scene-a additively.  The client then reconnects with the previously
-                    // loaded instance of scene-a tied to the previously loaded scene-a on the server, but when synchronizing
-                    // is provided a new NetworkSceneHandle for the same scene-a which requires the client to reload scene-a.
-                    // At this point, there is still the previously loaded scene-a which the client will unload later during
-                    // resynchronization and it won't be in the ScenesLoaded list.  So, we add a check to make sure the scene
-                    // we are inspecting is not in the NetworkSceneTableState list as well before adding it (i.e. if it is then
-                    // we want to skip over it)
+                    // loaded instance of scene-a tied to the previously loaded scene-a on the server, but during synchronization
+                    // the client is provided a new NetworkSceneHandle for the same scene-a which requires the client to reload
+                    // scene-a.  At this point, there is still the previously loaded scene-a which the client will unload later
+                    // during resynchronization and that instance of scene-a won't be in the ScenesLoaded list.  So, we add a
+                    // check to make sure the scene we are inspecting is not in the NetworkSceneTableState list as well before
+                    // adding it (i.e. if it is in the NetworkSceneTableState then we want to skip over it) in order to make sure
+                    // we don't use any previously loaded scenes when we are looking for a newly loaded scene.
                     if (!ScenesLoaded.ContainsKey(sceneLoaded.handle) && !NetworkSceneTableState.Values.Contains(sceneLoaded))
                     {
                         ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
@@ -1590,12 +1593,13 @@ namespace Unity.Netcode
             if (NetworkSceneTableState.ContainsKey(networkSceneHandle))
             {
                 var scene = NetworkSceneTableState[networkSceneHandle];
-                Debug.Log($"Found a scene that was already loaded: [{networkSceneHandle}][{scene.name}][{scene.handle}]");
                 NetworkSceneTableState.Remove(networkSceneHandle);
                 ScenesLoaded.Add(scene.handle, scene);
+                LogInfo($"Found a scene that was already loaded: [{networkSceneHandle}][{scene.name}][{scene.handle}]", LogLevel.Developer);
                 return scene;
             }
-            Debug.Log($"Did not find an existing instance for NetworkSceneHandle: {networkSceneHandle} ");
+            LogInfo($"Did not find an existing instance for NetworkSceneHandle: {networkSceneHandle}", LogLevel.Developer);
+
             // Otherwise return an invalid scene
             return new Scene();
         }
@@ -1750,7 +1754,7 @@ namespace Unity.Netcode
                                 var scene = networkStateEntry.Value;
                                 if (scene.handle != m_NetworkManager.gameObject.scene.handle && scene.IsValid() && scene.isLoaded)
                                 {
-                                    Debug.Log($"Scene {scene.name} is no longer in NetworkSceneTable. Unloading scene handle: {scene.handle}");
+                                    LogInfo($"Scene {scene.name} with the handle [{scene.handle}] is being flushed.", LogLevel.Developer);
                                     SceneManagerHandler.UnloadSceneAsync(networkStateEntry.Value, new ISceneManagerHandler.SceneEventAction() { EventAction = new Action<uint>((c) => { }), SceneEventId = sceneEventId });
                                 }
                             }
@@ -2022,6 +2026,15 @@ namespace Unity.Netcode
                         SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
                     }
                 }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void LogInfo(string msg, LogLevel logLevel)
+        {
+            if (m_NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(msg);
             }
         }
     }
