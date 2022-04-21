@@ -695,7 +695,19 @@ namespace Unity.Netcode
                 var sceneLoaded = SceneManager.GetSceneAt(i);
                 if (sceneLoaded.name == sceneName)
                 {
-                    if (!ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                    // We only add the scene if:
+                    // - It is not already in the ScenesLoaded list
+                    // - In the event there is a pre-existing NetworkSceneTableState, we don't add scenes that already are
+                    // in the NetworkSceneTableState. For example:
+                    // The client disconnects and while the client is disconnected the server unloads additive scene-a and then
+                    // shortly after unloading it reloads scene-a additively.  The client then reconnects with the previously
+                    // loaded instance of scene-a tied to the previously loaded scene-a on the server, but when synchronizing
+                    // is provided a new NetworkSceneHandle for the same scene-a which requires the client to reload scene-a.
+                    // At this point, there is still the previously loaded scene-a which the client will unload later during
+                    // resynchronization and it won't be in the ScenesLoaded list.  So, we add a check to make sure the scene
+                    // we are inspecting is not in the NetworkSceneTableState list as well before adding it (i.e. if it is then
+                    // we want to skip over it)
+                    if (!ScenesLoaded.ContainsKey(sceneLoaded.handle) && !NetworkSceneTableState.Values.Contains(sceneLoaded))
                     {
                         ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
                         return sceneLoaded;
@@ -1578,10 +1590,12 @@ namespace Unity.Netcode
             if (NetworkSceneTableState.ContainsKey(networkSceneHandle))
             {
                 var scene = NetworkSceneTableState[networkSceneHandle];
+                Debug.Log($"Found a scene that was already loaded: [{networkSceneHandle}][{scene.name}][{scene.handle}]");
                 NetworkSceneTableState.Remove(networkSceneHandle);
                 ScenesLoaded.Add(scene.handle, scene);
                 return scene;
             }
+            Debug.Log($"Did not find an existing instance for NetworkSceneHandle: {networkSceneHandle} ");
             // Otherwise return an invalid scene
             return new Scene();
         }
@@ -1599,6 +1613,7 @@ namespace Unity.Netcode
             var skipLoading = nextScene.IsValid() && nextScene.isLoaded;
             if (!skipLoading)
             {
+
                 nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
             }
 
@@ -1732,8 +1747,10 @@ namespace Unity.Netcode
                         {
                             foreach (var networkStateEntry in NetworkSceneTableState)
                             {
-                                if (networkStateEntry.Value.handle != m_NetworkManager.gameObject.scene.handle && networkStateEntry.Value.IsValid() && networkStateEntry.Value.isLoaded)
+                                var scene = networkStateEntry.Value;
+                                if (scene.handle != m_NetworkManager.gameObject.scene.handle && scene.IsValid() && scene.isLoaded)
                                 {
+                                    Debug.Log($"Scene {scene.name} is no longer in NetworkSceneTable. Unloading scene handle: {scene.handle}");
                                     SceneManagerHandler.UnloadSceneAsync(networkStateEntry.Value, new ISceneManagerHandler.SceneEventAction() { EventAction = new Action<uint>((c) => { }), SceneEventId = sceneEventId });
                                 }
                             }
@@ -1958,8 +1975,8 @@ namespace Unity.Netcode
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.gameObject.scene.handle;
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
-                    sceneHandle == sceneToFilterBy.handle)
+                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager &&
+                    networkObjectInstance.gameObject.scene == sceneToFilterBy && sceneHandle == sceneToFilterBy.handle)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
