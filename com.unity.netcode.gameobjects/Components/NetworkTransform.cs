@@ -15,11 +15,10 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        // Minimum threshold value for position, rotation, and scale
-        public const float ThresholdMinimum = 0.001f;
         public const float PositionThresholdDefault = 0.001f;
         public const float RotAngleThresholdDefault = 0.01f;
         public const float ScaleThresholdDefault = 0.01f;
+
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
@@ -281,13 +280,11 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
-        [Min(ThresholdMinimum)]
         public float PositionThreshold = PositionThresholdDefault;
 
-        [Range(ThresholdMinimum, 360.0f)]
+        [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
 
-        [Min(ThresholdMinimum)]
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -431,6 +428,16 @@ namespace Unity.Netcode.Components
             m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
             m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
             m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
+        }
+
+        /// <summary>
+        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed isDirty information returned.
+        /// </summary>
+        /// <param name="transform">transform to apply</param>
+        /// <returns>bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty</returns>
+        internal (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyLocalNetworkState(Transform transform)
+        {
+            return ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
         }
 
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
@@ -1009,6 +1016,23 @@ namespace Unity.Netcode.Components
             // check server side
             TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+        }
+
+        /// <summary>
+        /// Override this and return false to follow the owner authoritative
+        /// Otherwise, it defaults to server authoritative
+        /// </summary>
+        protected virtual bool OnIsServerAuthoritatitive()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// </summary>
+        internal bool IsServerAuthoritative()
+        {
+            return OnIsServerAuthoritatitive();
         }
     }
 }
