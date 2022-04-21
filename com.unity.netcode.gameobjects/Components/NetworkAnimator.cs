@@ -176,8 +176,6 @@ namespace Unity.Netcode.Components
         [ServerRpc(RequireOwnership = false)]
         internal void TriggerAnimStateServerRpc(int stateHash, float normalizedTime, int layer)
         {
-            // Server RPC here, with stateHash normalizedTime layer ?
-
             var animMsg = new AnimationMessage
             {
                 StateHash = stateHash,
