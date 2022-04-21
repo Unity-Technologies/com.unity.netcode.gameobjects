@@ -39,22 +39,23 @@ namespace Unity.Netcode
         /// </summary>
         public virtual unsafe void DeferMessage(IDeferredMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
         {
-            if (!m_Triggers.ContainsKey(trigger))
+            if (!m_Triggers.TryGetValue(trigger, out var triggers))
             {
-                m_Triggers[trigger] = new Dictionary<ulong, TriggerInfo>();
+                triggers = new Dictionary<ulong, TriggerInfo>();
+                m_Triggers[trigger] = triggers;
             }
 
-            var triggers = m_Triggers[trigger];
-            if (!triggers.ContainsKey(key))
+            if (!triggers.TryGetValue(key, out var triggerInfo))
             {
-                triggers[key] = new TriggerInfo
+                triggerInfo = new TriggerInfo
                 {
                     Expiry = Time.realtimeSinceStartup + m_NetworkManager.NetworkConfig.SpawnTimeout,
                     TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
                 };
+                triggers[key] = triggerInfo;
             }
 
-            triggers[key].TriggerData.Add(new TriggerData
+            triggerInfo.TriggerData.Add(new TriggerData
             {
                 Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
                 Header = context.Header,
@@ -107,14 +108,12 @@ namespace Unity.Netcode
 
         public virtual void ProcessTriggers(IDeferredMessageManager.TriggerType trigger, ulong key)
         {
-            if (m_Triggers.ContainsKey(trigger))
+            if (m_Triggers.TryGetValue(trigger, out var triggers))
             {
-                var triggers = m_Triggers[trigger];
                 // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
                 // processed before the object is fully spawned. This must be the last thing done in the spawn process.
-                if (triggers.ContainsKey(key))
+                if (triggers.TryGetValue(key, out var triggerInfo))
                 {
-                    var triggerInfo = triggers[key];
                     foreach (var deferredMessage in triggerInfo.TriggerData)
                     {
                         // Reader will be disposed within HandleMessage

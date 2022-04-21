@@ -291,16 +291,16 @@ namespace Unity.Netcode
                 {
                     return true;
                 }
-                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var networkPrefab))
                 {
-                    switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
+                    switch (networkPrefab.Override)
                     {
                         default:
                         case NetworkPrefabOverride.None:
-                            return NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab != null;
+                            return networkPrefab.Prefab != null;
                         case NetworkPrefabOverride.Hash:
                         case NetworkPrefabOverride.Prefab:
-                            return NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab != null;
+                            return networkPrefab.OverridingTargetPrefab != null;
                     }
                 }
 
