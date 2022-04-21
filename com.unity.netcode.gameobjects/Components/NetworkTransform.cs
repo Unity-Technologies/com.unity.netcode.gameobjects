@@ -960,5 +960,22 @@ namespace Unity.Netcode.Components
             TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
+
+        /// <summary>
+        /// Override this and return false to follow the owner authoritative
+        /// Otherwise, it defaults to server authoritative
+        /// </summary>
+        protected virtual bool OnIsServerAuthoritatitive()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// </summary>
+        internal bool IsServerAuthoritative()
+        {
+            return OnIsServerAuthoritatitive();
+        }
     }
 }
