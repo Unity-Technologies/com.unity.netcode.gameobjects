@@ -51,8 +51,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
             }
 
-            //yield return waitForPacketLossMetric.WaitForMetricsReceived();
-            // MTT-Tools: This is a more RTT/latency tolerant way to wait for a metric to be found (especially for high-packet count integration tests)
+
+            // This is a more RTT/latency tolerant way to wait for a metric to be found (especially for high-packet count integration tests)
             yield return WaitForConditionOrTimeOut(() => waitForPacketLossMetric.MetricFound());
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Server {s_TimedoutMessage}");
 
@@ -76,8 +76,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
             }
 
-            //yield return waitForPacketLossMetric.WaitForMetricsReceived();
-            // MTT-Tools: This is a more RTT/latency tolerant way to wait for a metric to be found (especially for high-packet count integration tests)
+            // This is a more RTT/latency tolerant way to wait for a metric to be found (especially for high-packet count integration tests)
             yield return WaitForConditionOrTimeOut(() => waitForPacketLossMetric.MetricFound());
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Client {s_TimedoutMessage}");
 
