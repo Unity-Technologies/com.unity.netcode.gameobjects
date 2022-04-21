@@ -228,7 +228,7 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
-            Assert.True(result == SceneEventProgressStatus.Started);
+            Assert.True(result == SceneEventProgressStatus.Started, $"Loading scene {m_CurrentSceneName} failed with a result of: {result}!");
 
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
@@ -307,7 +307,9 @@ namespace TestProject.RuntimeTests
 
         private bool m_ReconnectUnloadedScene;
         private bool m_ReconnectLoadedNewScene;
+        private bool m_ReconnectLoadedSameSceneNewHandle;
         private int m_TestClientSceneLoadNotifications;
+        private string m_SameSceneNameWithNewHandle;
         private NetworkManager m_ClientToTest;
         private Dictionary<int, Scene> m_NetworkSceneTableState = new Dictionary<int, Scene>();
 
@@ -365,8 +367,13 @@ namespace TestProject.RuntimeTests
 
             // Change the NetworkSceneTable state: unload one of the scenes before the client reconnects
             var lastScene = m_ScenesLoaded.Last();
+            m_SameSceneNameWithNewHandle = lastScene.name;
             m_ScenesLoaded.Remove(lastScene);
             yield return UnloadScene(lastScene);
+
+            // Now reload the exact same scene so we can make sure that having the same scene unloaded
+            // and then reloaded while a client is disconnected synchronizes properly
+            yield return LoadScene(m_SameSceneNameWithNewHandle);
 
             // Change the NetworkSceneTable state: load a totally different scene to verify the client
             // loads this scene when it reconnects and synchronizes
@@ -390,6 +397,7 @@ namespace TestProject.RuntimeTests
 
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {clientToTest.name} to connect!");
             Assert.True(m_ReconnectLoadedNewScene, $"Client did not attempt to load the scene {k_DifferentSceneToLoad} when reconnecting!");
+            Assert.True(m_ReconnectLoadedSameSceneNewHandle, $"Client did not attempt to load the scene {m_SameSceneNameWithNewHandle} when reconnecting!");
         }
 
         /// <summary>
@@ -426,6 +434,11 @@ namespace TestProject.RuntimeTests
             if (sceneName == k_DifferentSceneToLoad)
             {
                 m_ReconnectLoadedNewScene = true;
+            }
+            else
+            if (sceneName == m_SameSceneNameWithNewHandle)
+            {
+                m_ReconnectLoadedSameSceneNewHandle = true;
             }
             else
             {
