@@ -412,7 +412,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ServerRpc (RequireOwnership = false)]
+        [ServerRpc(RequireOwnership = false)]
         internal void TriggerAnimationServerRpc(int hash, bool reset)
         {
             var animMsg = new AnimationTriggerMessage();
