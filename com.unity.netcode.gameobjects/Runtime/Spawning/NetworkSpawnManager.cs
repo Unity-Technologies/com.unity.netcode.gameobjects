@@ -569,6 +569,13 @@ namespace Unity.Netcode
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
 
+            // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
+            // the NetworkObject since it uses the NetworkManager.Singleton when not set
+            if (networkObject.NetworkManagerOwner != NetworkManager)
+            {
+                networkObject.NetworkManagerOwner = NetworkManager;
+            }
+
             if (NetworkManager.IsServer)
             {
                 if (playerObject)

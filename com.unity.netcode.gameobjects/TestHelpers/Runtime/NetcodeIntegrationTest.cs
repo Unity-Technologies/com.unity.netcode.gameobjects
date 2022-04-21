@@ -276,8 +276,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
+            // Renumber client NetworkManagers to reflect the client id labels
+            var count = 0;
             foreach (var client in m_ClientNetworkManagers)
             {
+                client.name = $"NetworkManager - Client - {++count}";
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
