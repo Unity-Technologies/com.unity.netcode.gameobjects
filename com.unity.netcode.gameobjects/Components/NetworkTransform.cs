@@ -23,35 +23,6 @@ namespace Unity.Netcode.Components
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
         protected const string k_PrecisionStringFormat = "0.0000000000";
-#if UNITY_EDITOR
-        // Make sure the rotation threshold is within the accepted range
-        // to "auto-correct"
-        private void OnValidate()
-        {
-            // Make sure all thresholds are greater than
-            // or equal to the ThresholdMinimum
-            if (PositionThreshold < ThresholdMinimum)
-            {
-                Debug.LogWarning($"{nameof(PositionThreshold)} ({PositionThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
-                PositionThreshold = ThresholdMinimum;
-            }
-            if (RotAngleThreshold < ThresholdMinimum)
-            {
-                Debug.LogWarning($"{nameof(RotAngleThreshold)} ({RotAngleThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
-                RotAngleThreshold = ThresholdMinimum;
-            }
-            if (ScaleThreshold < ThresholdMinimum)
-            {
-                Debug.LogWarning($"{nameof(ScaleThreshold)} ({ScaleThreshold}) was below the {nameof(ThresholdMinimum)}({ThresholdMinimum}) and is being changed back to the {nameof(ThresholdMinimum)} value");
-                ScaleThreshold = ThresholdMinimum;
-            }
-        }
-#endif
-
-        public virtual bool IsServerAuthoritative()
-        {
-            return true;
-        }
 
         internal struct NetworkTransformState : INetworkSerializable
         {

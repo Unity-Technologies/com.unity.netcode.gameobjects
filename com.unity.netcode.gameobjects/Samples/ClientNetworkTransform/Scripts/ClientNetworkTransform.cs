@@ -24,16 +24,6 @@ namespace Unity.Netcode.Samples
             CanCommitToTransform = IsOwner;
         }
 
-        /// <summary>
-        /// <see cref="ClientNetworkTransform"/> is a client ownership authoritative model
-        /// so we want to return false.
-        /// <see cref="NetworkTransform.IsServerAuthoritative"/>
-        /// </summary>
-        public override bool IsServerAuthoritative()
-        {
-            return false;
-        }
-
         protected override void Update()
         {
             CanCommitToTransform = IsOwner;
