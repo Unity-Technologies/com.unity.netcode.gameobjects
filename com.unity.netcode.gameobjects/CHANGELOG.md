@@ -8,6 +8,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## Unreleased
 
 ### Added
+- Added a way to get the `GlobalObjectIdHash` from a GameObject for use in `ConnectionApproval`. (#1893)
 
 ### Changed
 
