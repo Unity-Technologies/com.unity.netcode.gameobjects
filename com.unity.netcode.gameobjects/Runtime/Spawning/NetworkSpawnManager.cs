@@ -210,6 +210,46 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Gets the GlobalObjectIdHash from a NetworkPrefab.
+        /// This can be used to properly pass the GlobalObjectIdHash in the ConnectionApproval callback.
+        /// </summary>
+        /// <param name="gameObject">The GameObject you want to resolve a GlobalObjectIdHash for</param>
+        /// <returns>The GlobalObjectIdHash for the passed GameObject</returns>
+        public uint GetGlobalObjectIdHash(GameObject gameObject)
+        {
+            if (gameObject == null)
+            {
+                throw new ArgumentNullException(nameof(gameObject));
+            }
+
+            var isInPrefabsList = false;
+
+            // Doesn't use LINQ for performance ( GC )
+            for (int i = 0; i < NetworkManager.NetworkConfig.NetworkPrefabs.Count; i++)
+            {
+                if (NetworkManager.NetworkConfig.NetworkPrefabs[i].Prefab == gameObject)
+                {
+                    isInPrefabsList = true;
+                    break;
+                }
+            }
+
+            if (!isInPrefabsList)
+            {
+                throw new Exception("The gameObject is not registered as a NetworkPrefab");
+            }
+
+            var netObj = gameObject.GetComponent<NetworkObject>();
+
+            if (netObj == null)
+            {
+                throw new Exception("The gameObject does not have a NetworkObject component");
+            }
+
+            return netObj.GlobalObjectIdHash;
+        }
+
+        /// <summary>
         /// Defers processing of a message until the moment a specific networkObjectId is spawned.
         /// This is to handle situations where an RPC or other object-specific message arrives before the spawn does,
         /// either due to it being requested in OnNetworkSpawn before the spawn call has been executed
