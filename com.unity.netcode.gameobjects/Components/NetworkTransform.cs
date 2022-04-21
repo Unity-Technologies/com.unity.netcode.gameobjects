@@ -15,9 +15,10 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float PositionThresholdDefault = .001f;
-        public const float RotAngleThresholdDefault = .01f;
-        public const float ScaleThresholdDefault = .01f;
+        public const float PositionThresholdDefault = 0.001f;
+        public const float RotAngleThresholdDefault = 0.01f;
+        public const float ScaleThresholdDefault = 0.01f;
+
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
@@ -249,7 +250,10 @@ namespace Unity.Netcode.Components
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
         public float PositionThreshold = PositionThresholdDefault;
+
+        [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
+
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -390,6 +394,16 @@ namespace Unity.Netcode.Components
             m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
         }
 
+        /// <summary>
+        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed isDirty information returned.
+        /// </summary>
+        /// <param name="transform">transform to apply</param>
+        /// <returns>bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty</returns>
+        internal (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyLocalNetworkState(Transform transform)
+        {
+            return ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+        }
+
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
@@ -450,7 +464,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleX &&
-                Mathf.Abs(networkState.RotAngleX - rotAngles.x) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
@@ -458,7 +472,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                Mathf.Abs(networkState.RotAngleY - rotAngles.y) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -466,7 +480,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
