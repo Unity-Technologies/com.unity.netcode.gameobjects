@@ -12,6 +12,8 @@ namespace Unity.Netcode.Components
     [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour
     {
+        public bool OwnerControlled = false;
+
         internal struct AnimationMessage : INetworkSerializable
         {
             // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
@@ -101,9 +103,17 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
-            if (IsServer)
+            if (OwnerControlled)
             {
-                m_SendMessagesAllowed = true;
+                m_SendMessagesAllowed = IsOwner;
+            }
+            else
+            {
+                m_SendMessagesAllowed = IsServer;
+            }
+
+            if (m_SendMessagesAllowed)
+            {
                 int layers = m_Animator.layerCount;
 
                 m_TransitionHash = new int[layers];
@@ -163,6 +173,28 @@ namespace Unity.Netcode.Components
             m_SendMessagesAllowed = false;
         }
 
+        [ServerRpc(RequireOwnership = false)]
+        internal void TriggerAnimStateServerRpc(int stateHash, float normalizedTime, int layer)
+        {
+            // Server RPC here, with stateHash normalizedTime layer ?
+
+            var animMsg = new AnimationMessage
+            {
+                StateHash = stateHash,
+                NormalizedTime = normalizedTime,
+                Layer = layer,
+                Weight = m_LayerWeights[layer]
+            };
+
+            m_ParameterWriter.Seek(0);
+            m_ParameterWriter.Truncate();
+
+            WriteParameters(m_ParameterWriter);
+            animMsg.Parameters = m_ParameterWriter.ToArray();
+
+            SendAnimStateClientRpc(animMsg);
+        }
+
         private void FixedUpdate()
         {
             if (!m_SendMessagesAllowed || !m_Animator || !m_Animator.enabled)
@@ -179,21 +211,7 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
-                var animMsg = new AnimationMessage
-                {
-                    StateHash = stateHash,
-                    NormalizedTime = normalizedTime,
-                    Layer = layer,
-                    Weight = m_LayerWeights[layer]
-                };
-
-                m_ParameterWriter.Seek(0);
-                m_ParameterWriter.Truncate();
-
-                WriteParameters(m_ParameterWriter);
-                animMsg.Parameters = m_ParameterWriter.ToArray();
-
-                SendAnimStateClientRpc(animMsg);
+                TriggerAnimStateServerRpc(stateHash, normalizedTime, layer);
             }
         }
 
@@ -386,29 +404,35 @@ namespace Unity.Netcode.Components
         /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool reset = false)
         {
-            var animMsg = new AnimationTriggerMessage();
-            animMsg.Hash = hash;
-            animMsg.Reset = reset;
-
-            if (IsServer)
+            if (m_SendMessagesAllowed)
             {
-                //  trigger the animation locally on the server...
-                if (reset)
-                {
-                    m_Animator.ResetTrigger(hash);
-                }
-                else
-                {
-                    m_Animator.SetTrigger(hash);
-                }
-
-                // ...then tell all the clients to do the same
-                SendAnimTriggerClientRpc(animMsg);
+                TriggerAnimationServerRpc(hash, reset);
             }
             else
             {
                 Debug.LogWarning("Trying to call NetworkAnimator.SetTrigger on a client...ignoring");
             }
+        }
+
+        [ServerRpc (RequireOwnership = false)]
+        internal void TriggerAnimationServerRpc(int hash, bool reset)
+        {
+            var animMsg = new AnimationTriggerMessage();
+            animMsg.Hash = hash;
+            animMsg.Reset = reset;
+
+            //  trigger the animation locally on the server...
+            if (reset)
+            {
+                m_Animator.ResetTrigger(hash);
+            }
+            else
+            {
+                m_Animator.SetTrigger(hash);
+            }
+
+            // ...then tell all the clients to do the same
+            SendAnimTriggerClientRpc(animMsg);
         }
 
         /// <summary>
