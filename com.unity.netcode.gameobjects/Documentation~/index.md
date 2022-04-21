@@ -16,7 +16,7 @@ See guides below to install Unity Netcode for GameObjects, set up your project, 
 ## Requirements
 
 Netcode for GameObjects targets the following Unity versions:
-- Unity 2020.3, 2021.1, and 2021.2
+- Unity 2020.3, 2021.1, 2021.2 and 2021.3
 
 On the following runtime platforms:
 - Windows, MacOS, and Linux

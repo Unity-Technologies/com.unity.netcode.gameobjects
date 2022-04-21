@@ -8,21 +8,9 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkRigidbodyDynamicTest : NetworkRigidbodyTestBase
-    {
-        public override bool Kinematic => false;
-    }
-
-    public class NetworkRigidbodyKinematicTest : NetworkRigidbodyTestBase
-    {
-        public override bool Kinematic => true;
-    }
-
-    public abstract class NetworkRigidbodyTestBase : NetcodeIntegrationTest
+    public class NetworkRigidbodyTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-
-        public abstract bool Kinematic { get; }
 
         protected override void OnCreatePlayerPrefab()
         {
@@ -30,7 +18,6 @@ namespace Unity.Netcode.RuntimeTests
             m_PlayerPrefab.AddComponent<Rigidbody>();
             m_PlayerPrefab.AddComponent<NetworkRigidbody>();
             m_PlayerPrefab.GetComponent<Rigidbody>().interpolation = RigidbodyInterpolation.Interpolate;
-            m_PlayerPrefab.GetComponent<Rigidbody>().isKinematic = Kinematic;
         }
 
         /// <summary>
@@ -55,8 +42,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
 
-            // server rigidbody has authority and should have a kinematic mode of false
-            Assert.True(serverPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic, "serverPlayer kinematic");
+            // server rigidbody has authority and should not be kinematic
+            Assert.True(serverPlayer.GetComponent<Rigidbody>().isKinematic == false, "serverPlayer kinematic");
             Assert.AreEqual(RigidbodyInterpolation.Interpolate, serverPlayer.GetComponent<Rigidbody>().interpolation, "server equal interpolate");
 
             // client rigidbody has no authority and should have a kinematic mode of true
@@ -68,7 +55,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
 
-            Assert.IsTrue(serverPlayer.GetComponent<Rigidbody>().isKinematic == Kinematic, "serverPlayer second kinematic");
+            // When despawned, we should always be kinematic (i.e. don't apply physics when despawned)
+            Assert.IsTrue(serverPlayer.GetComponent<Rigidbody>().isKinematic == true, "serverPlayer second kinematic");
 
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
 
