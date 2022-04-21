@@ -724,7 +724,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="timeout">The max time in seconds to wait for</param>
         internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
         {
-            Debug.Log($"Waiting for {typeof(T).Name}");
             var hooks = s_Hooks[toBeReceivedBy];
             var check = new MessageReceiveCheckWithResult { CheckType = typeof(T) };
             hooks.ReceiveChecks.Add(check);

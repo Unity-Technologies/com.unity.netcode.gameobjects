@@ -233,21 +233,21 @@ namespace Unity.Netcode.RuntimeTests
             // Host is irrelevant, messages don't get sent to the host "client"
             m_UseHost = false;
 
-            m_RpcPrefab = new GameObject("Object");
+            m_RpcPrefab = new GameObject("Object With RPC");
             var networkObject = m_RpcPrefab.AddComponent<NetworkObject>();
             m_RpcPrefab.AddComponent<DeferredMessageTestRpcComponent>();
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            m_NetworkVariablePrefab = new GameObject("Object");
+            m_NetworkVariablePrefab = new GameObject("Object With NetworkVariable");
             networkObject = m_NetworkVariablePrefab.AddComponent<NetworkObject>();
             m_NetworkVariablePrefab.AddComponent<DeferredMessageTestNetworkVariableComponent>();
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            m_RpcAndNetworkVariablePrefab = new GameObject("Object");
+            m_RpcAndNetworkVariablePrefab = new GameObject("Object With NetworkVariable And RPC");
             networkObject = m_RpcAndNetworkVariablePrefab.AddComponent<NetworkObject>();
             m_RpcAndNetworkVariablePrefab.AddComponent<DeferredMessageTestRpcAndNetworkVariableComponent>();
 
