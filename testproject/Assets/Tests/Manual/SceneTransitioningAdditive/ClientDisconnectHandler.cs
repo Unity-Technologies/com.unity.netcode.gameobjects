@@ -65,6 +65,7 @@ namespace TestProject.ManualTests
                 if (m_NetworkSceneTableState.Count > 0)
                 {
                     NetworkManager.SceneManager.SetNetworkSceneTableState(m_NetworkSceneTableState, true);
+                    LogNetworkSceneTable();
                 }
             }
         }
@@ -136,6 +137,17 @@ namespace TestProject.ManualTests
         }
         private Dictionary<int, Scene> m_NetworkSceneTableState = new Dictionary<int, Scene>();
 
+        private void LogNetworkSceneTable()
+        {
+            var message = "NetworkSceneTable Entries:\n";
+            message += "[NetworkSceneHandle][Scene Name][Scene Handle]\n";
+            foreach (var entry in m_NetworkSceneTableState)
+            {
+                message += $"[{entry.Key}][{entry.Value.name}][{entry.Value.handle}]\n";
+            }
+            Debug.Log(message);
+        }
+
         /// <summary>
         /// When the client disconnects we get the current NetworkSceneTableState and start a co-routine to attempt to re-connect
         /// </summary>
@@ -144,6 +156,7 @@ namespace TestProject.ManualTests
             if (!m_IsReconnecting)
             {
                 m_NetworkSceneTableState = new Dictionary<int, Scene>(NetworkManager.SceneManager.GetNetworkSceneTableState());
+                LogNetworkSceneTable();
                 m_IsReconnecting = true;
                 m_ConnectionAttempts = 0;
                 NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
