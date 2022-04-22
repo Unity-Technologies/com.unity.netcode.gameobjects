@@ -93,7 +93,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-
+            // Always "shutdown in a tear-down" otherwise you can cause all proceeding tests to fail
             ShutdownAndCleanUp();
             yield return base.OnTearDown();
         }
