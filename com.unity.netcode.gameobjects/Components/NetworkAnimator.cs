@@ -71,7 +71,7 @@ namespace Unity.Netcode.Components
         }
 
         // 128 bytes per Animator
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
         // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
