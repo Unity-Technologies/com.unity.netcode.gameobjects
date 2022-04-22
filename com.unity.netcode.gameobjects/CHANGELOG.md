@@ -8,7 +8,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## Unreleased
 
 ### Added
-- Added `NetworkSceneManager.GetNetworkSceneTableState` and `NetworkSceneManager.SetNetworkSceneTableState` to provide users with a way to reconnect to a network session without having to unload and reload the scenes. (#1886)
+- Added `NetworkSceneManager.GetNetworkSceneTableState` and `NetworkSceneManager.SetNetworkSceneTableState` to provide users with a way to reconnect to a network session without having to unload and reload already loaded scenes. (#1886)
 
 ### Changed
 

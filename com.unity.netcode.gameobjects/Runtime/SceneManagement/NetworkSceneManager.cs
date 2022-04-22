@@ -408,7 +408,7 @@ namespace Unity.Netcode
         /// Note: The NetworkSceneTable state is server authoritative and so clients can only apply
         /// a networkSceneTableState to their <see cref="NetworkSceneManager"/> instance.
         ///
-        /// Note: This only applies to the initial client-server synchronization process so setting after the
+        /// Note: This only applies to the initial client-server synchronization process. Setting it after the
         /// client is already connected and synchronized will have no impact on the client's current NetworkSceneTable
         /// state as by that time the server is dictating the state through network scene events.
         /// </summary>
@@ -702,14 +702,14 @@ namespace Unity.Netcode
                     // in the NetworkSceneTableState.
                     // For example:
                     // The client disconnects and while the client is disconnected the server unloads additive scene-a and then
-                    // shortly after unloading it reloads scene-a additively.  The client then reconnects with the previously
-                    // loaded instance of scene-a tied to the previously loaded scene-a on the server, but during synchronization
-                    // the client is provided a new NetworkSceneHandle for the same scene-a which requires the client to reload
-                    // scene-a.  At this point, there is still the previously loaded scene-a which the client will unload later
-                    // during resynchronization and that instance of scene-a won't be in the ScenesLoaded list.  So, we add a
-                    // check to make sure the scene we are inspecting is not in the NetworkSceneTableState list as well before
-                    // adding it (i.e. if it is in the NetworkSceneTableState then we want to skip over it) in order to make sure
-                    // we don't use any previously loaded scenes when we are looking for a newly loaded scene.
+                    // shortly later reloads scene-a additively.  The client then reconnects with the previously loaded instance
+                    // of scene-a tied to the previously loaded scene-a on the server. During synchronization, the client is
+                    // provided a new NetworkSceneHandle for the same scene-a which requires the client to reload scene-a.
+                    // At this point, there is still the previously loaded scene-a which the client will unload later
+                    // during resynchronization and the newly loaded scene-a.  Both scenes are not in the ScenesLoaded table.
+                    // So, we need to make sure the scene we are inspecting is not in the NetworkSceneTableState list before
+                    // adding it in order to make sure we don't use any previously loaded scenes when looking for only newly
+                    // loaded scenes.
                     if (!ScenesLoaded.ContainsKey(sceneLoaded.handle) && !NetworkSceneTableState.Values.Contains(sceneLoaded))
                     {
                         ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
