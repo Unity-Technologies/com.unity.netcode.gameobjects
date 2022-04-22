@@ -284,8 +284,6 @@ namespace Unity.Netcode.Components
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
-        private NetworkTransformState m_PrevNetworkState;
-
         private const int k_DebugDrawLineTime = 10;
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
@@ -523,8 +521,6 @@ namespace Unity.Netcode.Components
 
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
         {
-            m_PrevNetworkState = networkState;
-
             var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
             // todo: we should store network state w/ quats vs. euler angles
@@ -601,8 +597,6 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.position = interpolatedPosition;
                 }
-
-                m_PrevNetworkState.Position = interpolatedPosition;
             }
 
             // RotAngles Apply
@@ -616,15 +610,12 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
-
-                m_PrevNetworkState.Rotation = interpolatedRotAngles;
             }
 
             // Scale Apply
             if (SyncScaleX || SyncScaleY || SyncScaleZ)
             {
                 transformToUpdate.localScale = interpolatedScale;
-                m_PrevNetworkState.Scale = interpolatedScale;
             }
         }
 
@@ -893,8 +884,6 @@ namespace Unity.Netcode.Components
                 {
                     TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }
-
-                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
@@ -918,36 +907,10 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-#if NGO_TRANSFORM_DEBUG
-                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        // TODO: This should be a component gizmo - not some debug draw based on log level
-                        var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
-                        Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
-
-                        // try to update previously consumed NetworkState
-                        // if we have any changes, that means made some updates locally
-                        // we apply the latest ReplNetworkState again to revert our changes
-                        var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
-
-                        // there are several bugs in this code, as we the message is dumped out under odd circumstances
-                        //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
-                        //  object vs. explicitly rotating it
-                        if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
-                        {
-                            // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
-                            // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                            var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                            Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
-                        }
-                    }
-#endif
-
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
-
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
