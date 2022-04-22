@@ -22,8 +22,6 @@ namespace Unity.Netcode.Components
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
-        protected const string k_PrecisionStringFormat = "0.0000000000";
-
         internal struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
@@ -286,8 +284,6 @@ namespace Unity.Netcode.Components
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
-        private NetworkTransformState m_PrevNetworkState;
-
         private const int k_DebugDrawLineTime = 10;
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
@@ -305,11 +301,6 @@ namespace Unity.Netcode.Components
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
-
-        /// <summary>
-        /// <see cref="SetAuthorityCheckDelay"/>
-        /// </summary>
-        private float m_AuthorityCheckDelay;
 
         /// <summary>
         /// Tries updating the server authoritative transform, only if allowed.
@@ -530,8 +521,6 @@ namespace Unity.Netcode.Components
 
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
         {
-            m_PrevNetworkState = networkState;
-
             var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
             // todo: we should store network state w/ quats vs. euler angles
@@ -608,8 +597,6 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.position = interpolatedPosition;
                 }
-
-                m_PrevNetworkState.Position = interpolatedPosition;
             }
 
             // RotAngles Apply
@@ -623,15 +610,12 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
-
-                m_PrevNetworkState.Rotation = interpolatedRotAngles;
             }
 
             // Scale Apply
             if (SyncScaleX || SyncScaleY || SyncScaleZ)
             {
                 transformToUpdate.localScale = interpolatedScale;
-                m_PrevNetworkState.Scale = interpolatedScale;
             }
         }
 
@@ -874,22 +858,6 @@ namespace Unity.Netcode.Components
         }
         #endregion
 
-        /// <summary>
-        /// If the parent changes and the <see cref="NetworkManager.LogLevel"/> is set to <see cref="LogLevel.Developer"/>,
-        /// then we want to delay authority checks for 1 NetworkTick as this has a high chance of generating a false positive
-        /// change on the client-side to position and/or rotation.
-        /// </summary>
-        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
-        {
-            // When the parent changes we want to delay for 1 tick before checking as
-            // this can cause false-positive warnings.
-            if (NetworkManager.LogLevel == LogLevel.Developer)
-            {
-                m_AuthorityCheckDelay = Time.realtimeSinceStartup + (1.0f / NetworkManager.NetworkConfig.TickRate);
-            }
-            base.OnNetworkObjectParentChanged(parentNetworkObject);
-        }
-
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
@@ -916,8 +884,6 @@ namespace Unity.Netcode.Components
                 {
                     TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }
-
-                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
@@ -941,23 +907,6 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer && m_AuthorityCheckDelay < Time.realtimeSinceStartup)
-                    {
-                        // TODO: This should be a component gizmo - not some debug draw based on log level
-                        var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
-                        Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
-
-                        // try to update previously consumed NetworkState
-                        // if we have any changes, that means made some updates locally
-                        // we apply the latest ReplNetworkState again to revert our changes
-                        var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
-
-                        if ((oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || oldStateDirtyInfo.isRotationDirty))
-                        {
-                            var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                            Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
-                        }
-                    }
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
