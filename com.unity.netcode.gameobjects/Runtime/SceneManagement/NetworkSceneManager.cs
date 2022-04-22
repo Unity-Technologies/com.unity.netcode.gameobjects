@@ -1411,6 +1411,7 @@ namespace Unity.Netcode
             }
 
             sceneEventData.AddSpawnedNetworkObjects();
+            sceneEventData.AddDespawnedInSceneNetworkObjects();
 
             var message = new SceneEventMessage
             {
