@@ -57,7 +57,7 @@ namespace Unity.Netcode.Components
         private bool m_SendMessagesAllowed = false;
 
         // Animators only support up to 32 params
-        private const int K_MaxAnimationParams = 32;
+        private const int k_MaxAnimationParams = 32;
 
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
