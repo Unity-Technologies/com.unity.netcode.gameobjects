@@ -720,18 +720,18 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="globalObjectIdHash"></param>
         /// <returns></returns>
-        internal NetworkObject GetSceneRelativeInSceneNetworkObject(uint globalObjectIdHash)
+        internal NetworkObject GetSceneRelativeInSceneNetworkObject(uint globalObjectIdHash, int? networkSceneHandle)
         {
             if (ScenePlacedObjects.ContainsKey(globalObjectIdHash))
             {
                 if (ScenePlacedObjects[globalObjectIdHash].ContainsKey(SceneBeingSynchronized.handle))
                 {
-                    var inScenePlacedNetworkObject = ScenePlacedObjects[globalObjectIdHash][SceneBeingSynchronized.handle];
-
-                    // We can only have 1 duplicated globalObjectIdHash per scene instance, so remove it once it has been returned
-                    ScenePlacedObjects[globalObjectIdHash].Remove(SceneBeingSynchronized.handle);
-
-                    return inScenePlacedNetworkObject;
+                    var sceneHandle = SceneBeingSynchronized.handle;
+                    if (networkSceneHandle.HasValue && networkSceneHandle.Value != 0)
+                    {
+                        sceneHandle = ServerSceneHandleToClientSceneHandle[networkSceneHandle.Value];
+                    }
+                    return ScenePlacedObjects[globalObjectIdHash][sceneHandle];
                 }
             }
             return null;

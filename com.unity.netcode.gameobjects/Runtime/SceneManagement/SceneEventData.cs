@@ -754,7 +754,7 @@ namespace Unity.Netcode
                             {
                                 var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
                                 var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.gameObject.scene == objectRelativeScene &&
-                                c.gameObject.scene.handle == localSceneHandle && (!c.IsSceneObject.HasValue || c.IsSceneObject.HasValue && c.IsSceneObject.Value == true)).ToList();
+                                c.gameObject.scene.handle == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                                 foreach(var inSceneObject in inSceneNetworkObjects)
                                 {
