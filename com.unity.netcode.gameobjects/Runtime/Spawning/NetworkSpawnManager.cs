@@ -385,7 +385,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Should only run on the client
         /// </summary>
-        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation, bool isReparented = false)
+        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, int? networkSceneHandle, Vector3? position, Quaternion? rotation, bool isReparented = false)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -430,19 +430,26 @@ namespace Unity.Netcode
                 {
                     // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
                     GameObject networkPrefabReference = null;
-                    if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                    if (!isSceneObject)
                     {
-                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
+                        if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                         {
-                            default:
-                            case NetworkPrefabOverride.None:
-                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
-                                break;
-                            case NetworkPrefabOverride.Hash:
-                            case NetworkPrefabOverride.Prefab:
-                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                                break;
+                            switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
+                            {
+                                default:
+                                case NetworkPrefabOverride.None:
+                                    networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
+                                    break;
+                                case NetworkPrefabOverride.Hash:
+                                case NetworkPrefabOverride.Prefab:
+                                    networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                                    break;
+                            }
                         }
+                    }
+                    else
+                    {
+                        return NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
                     }
 
                     // If not, then there is an issue (user possibly didn't register the prefab properly?)
@@ -476,7 +483,7 @@ namespace Unity.Netcode
             }
             else
             {
-                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
 
                 if (networkObject == null)
                 {
@@ -558,6 +565,7 @@ namespace Unity.Netcode
             //  the current design banks on getting the network behaviour set and then only reading from it after the
             //  below initialization code. However cowardice compels me to hold off on moving this until that commit
             networkObject.IsSceneObject = sceneObject;
+
             networkObject.NetworkObjectId = networkId;
 
             networkObject.DestroyWithScene = sceneObject || destroyWithScene;
@@ -637,11 +645,18 @@ namespace Unity.Netcode
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
         {
-            //Currently, if this is called and the clientId (destination) is the server's client Id, this case will be checked
-            // within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer placing this check here. [NSS]
-            if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+            // If we are a host and sending to the host's client id, then we can skip sending ourselves the spawn message.
+            if (clientId == NetworkManager.ServerClientId)
             {
                 return;
+            }
+
+            if (networkObject.IsSceneObject != false)
+            {
+                // This is used to distinguish between identical GlobalObjectIdhash values when
+                // the same scene is loaded multiple times additively.  This is only sent if the
+                // NetworkObject is an in-scene placed NetworkObject
+                networkObject.NetworkSceneHandle = networkObject.gameObject.scene.handle;
             }
 
             var message = new CreateObjectMessage
@@ -870,7 +885,8 @@ namespace Unity.Netcode
 
                         var message = new DestroyObjectMessage
                         {
-                            NetworkObjectId = networkObject.NetworkObjectId
+                            NetworkObjectId = networkObject.NetworkObjectId,
+                            DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true
                         };
                         var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                         foreach (var targetClientId in m_TargetClientIds)

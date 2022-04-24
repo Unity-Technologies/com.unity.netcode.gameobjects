@@ -16,6 +16,7 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        internal int NetworkSceneHandle;
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -369,7 +370,7 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value == true, playerObject, ownerClientId, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
@@ -831,6 +832,7 @@ namespace Unity.Netcode
                 public ulong NetworkObjectId;
                 public ulong OwnerClientId;
                 public uint Hash;
+                public int NetworkSceneHandle;
 
                 public bool IsPlayerObject;
                 public bool HasParent;
@@ -862,16 +864,17 @@ namespace Unity.Netcode
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
 
+            public int NetworkSceneHandle;
+
             public unsafe void Serialize(FastBufferWriter writer)
             {
-                if (!writer.TryBeginWrite(
-                    sizeof(HeaderData) +
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented
-                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
-                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
-                        : 0)))
+                var writeSize = sizeof(HeaderData);
+                writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
+                writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
+                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0 ;
+                writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+
+                if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
@@ -897,6 +900,11 @@ namespace Unity.Netcode
                     }
                 }
 
+                if (Header.IsSceneObject)
+                {
+                    writer.WriteValue(OwnerObject.NetworkSceneHandle);
+                }
+
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
@@ -907,10 +915,12 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
                 reader.ReadValue(out Header);
-                if (!reader.TryBeginRead(
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) : 0)))
+                var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
+                readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
+                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+
+                if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
@@ -934,6 +944,11 @@ namespace Unity.Netcode
                         LatestParent = latestParent;
                     }
                 }
+
+                if (Header.IsSceneObject)
+                {
+                    reader.ReadValue(out NetworkSceneHandle);
+                }
             }
         }
 
@@ -946,7 +961,7 @@ namespace Unity.Netcode
                     IsPlayerObject = IsPlayerObject,
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = OwnerClientId,
-                    IsSceneObject = IsSceneObject ?? true,
+                    IsSceneObject = IsSceneObject != false,
                     Hash = HostCheckForGlobalObjectIdHashOverride(),
                 },
                 OwnerObject = this,
@@ -1003,6 +1018,7 @@ namespace Unity.Netcode
             Vector3? position = null;
             Quaternion? rotation = null;
             ulong? parentNetworkId = null;
+            int? networkSceneHandle = null;
 
             if (sceneObject.Header.HasTransform)
             {
@@ -1015,10 +1031,15 @@ namespace Unity.Netcode
                 parentNetworkId = sceneObject.ParentObjectId;
             }
 
+            if (sceneObject.Header.IsSceneObject)
+            {
+                networkSceneHandle = sceneObject.NetworkSceneHandle;
+            }
+
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
                 sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Header.IsReparented);
+                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
 
             networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
 
