@@ -449,6 +449,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
+                        // Find and return the already existing despawned in-scene object
                         return NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
                     }
 
@@ -565,6 +566,13 @@ namespace Unity.Netcode
             //  the current design banks on getting the network behaviour set and then only reading from it after the
             //  below initialization code. However cowardice compels me to hold off on moving this until that commit
             networkObject.IsSceneObject = sceneObject;
+
+            // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
+            // the NetworkObject since it uses the NetworkManager.Singleton when not set
+            if (networkObject.NetworkManagerOwner != NetworkManager)
+            {
+                networkObject.NetworkManagerOwner = NetworkManager;
+            }
 
             networkObject.NetworkObjectId = networkId;
 
