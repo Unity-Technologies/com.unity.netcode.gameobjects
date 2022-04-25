@@ -158,15 +158,20 @@ namespace Unity.Netcode
             // We check to see if we need to shortcut for the case where we are the host/server and we can send a clientRPC
             // to ourself. Sadly we have to figure that out from the list of clientIds :(
             bool shouldSendToHost = false;
-
             if (clientRpcParams.Send.TargetClientIds != null)
             {
-                foreach (var clientId in clientRpcParams.Send.TargetClientIds)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
                 {
-                    if (clientId == NetworkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldSendToHost = true;
                         break;
+                    }
+
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -174,12 +179,18 @@ namespace Unity.Netcode
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
-                foreach (var clientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
                 {
-                    if (clientId == NetworkManager.ServerClientId)
+                    if (targetClientId == NetworkManager.ServerClientId)
                     {
                         shouldSendToHost = true;
                         break;
+                    }
+
+                    // Check to make sure we are sending to only observers, if not log an error.
+                    if (NetworkManager.LogLevel >= LogLevel.Error && !NetworkObject.Observers.Contains(targetClientId))
+                    {
+                        NetworkLog.LogError(GenerateObserverErrorMessage(clientRpcParams, targetClientId));
                     }
                 }
 
@@ -187,8 +198,17 @@ namespace Unity.Netcode
             }
             else
             {
-                shouldSendToHost = IsHost;
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, NetworkManager.ConnectedClientsIds);
+                var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                while (observerEnumerator.MoveNext())
+                {
+                    // Skip over the host
+                    if (IsHost && observerEnumerator.Current == NetworkManager.LocalClientId)
+                    {
+                        shouldSendToHost = true;
+                        continue;
+                    }
+                    rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
+                }
             }
 
             // If we are a server/host then we just no op and send to ourself
@@ -226,6 +246,12 @@ namespace Unity.Netcode
                 }
             }
 #endif
+        }
+
+        internal string GenerateObserverErrorMessage(ClientRpcParams clientRpcParams, ulong targetClientId)
+        {
+            var containerNameHoldingId = clientRpcParams.Send.TargetClientIds != null ? nameof(ClientRpcParams.Send.TargetClientIds) : nameof(ClientRpcParams.Send.TargetClientIdsNativeArray);
+            return $"Sending ClientRpc to non-observer! {containerNameHoldingId} contains clientId {targetClientId} that is not an observer!";
         }
 
         /// <summary>
@@ -493,12 +519,10 @@ namespace Unity.Netcode
 
             m_VarInit = true;
 
-            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
-
+            var sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
-                Type fieldType = sortedFields[i].FieldType;
-
+                var fieldType = sortedFields[i].FieldType;
                 if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
                 {
                     var instance = (NetworkVariableBase)sortedFields[i].GetValue(this);
@@ -559,7 +583,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void VariableUpdate(ulong clientId)
+        internal void VariableUpdate(ulong targetClientId)
         {
             if (!m_VarInit)
             {
@@ -567,67 +591,58 @@ namespace Unity.Netcode
             }
 
             PreNetworkVariableWrite();
-            NetworkVariableUpdate(clientId, NetworkBehaviourId);
+            NetworkVariableUpdate(targetClientId, NetworkBehaviourId);
         }
 
         internal readonly List<int> NetworkVariableIndexesToReset = new List<int>();
         internal readonly HashSet<int> NetworkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkVariableUpdate(ulong clientId, int behaviourIndex)
+        private void NetworkVariableUpdate(ulong targetClientId, int behaviourIndex)
         {
             if (!CouldHaveDirtyNetworkVariables())
             {
                 return;
             }
 
-            if (NetworkManager.NetworkConfig.UseSnapshotDelta)
+            for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
             {
+                var shouldSend = false;
                 for (int k = 0; k < NetworkVariableFields.Count; k++)
                 {
-                    NetworkManager.SnapshotSystem.Store(NetworkObjectId, behaviourIndex, k, NetworkVariableFields[k]);
-                }
-            }
-
-            if (!NetworkManager.NetworkConfig.UseSnapshotDelta)
-            {
-                for (int j = 0; j < m_DeliveryMappedNetworkVariableIndices.Count; j++)
-                {
-                    var shouldSend = false;
-                    for (int k = 0; k < NetworkVariableFields.Count; k++)
+                    var networkVariable = NetworkVariableFields[k];
+                    if (networkVariable.IsDirty() && networkVariable.CanClientRead(targetClientId))
                     {
-                        if (NetworkVariableFields[k].ShouldWrite(clientId, IsServer))
+                        shouldSend = true;
+                        break;
+                    }
+                }
+
+                if (shouldSend)
+                {
+                    var message = new NetworkVariableDeltaMessage
+                    {
+                        NetworkObjectId = NetworkObjectId,
+                        NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
+                        NetworkBehaviour = this,
+                        TargetClientId = targetClientId,
+                        DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
+                    };
+                    // TODO: Serialization is where the IsDirty flag gets changed.
+                    // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
+                    // we still have to actually serialize the message even though we're not sending it, otherwise
+                    // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
+                    // so we don't have to do this serialization work if we're not going to use the result.
+                    if (IsServer && targetClientId == NetworkManager.ServerClientId)
+                    {
+                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
+                        using (tmpWriter)
                         {
-                            shouldSend = true;
+                            message.Serialize(tmpWriter);
                         }
                     }
-
-                    if (shouldSend)
+                    else
                     {
-                        var message = new NetworkVariableDeltaMessage
-                        {
-                            NetworkObjectId = NetworkObjectId,
-                            NetworkBehaviourIndex = NetworkObject.GetNetworkBehaviourOrderIndex(this),
-                            NetworkBehaviour = this,
-                            ClientId = clientId,
-                            DeliveryMappedNetworkVariableIndex = m_DeliveryMappedNetworkVariableIndices[j]
-                        };
-                        // TODO: Serialization is where the IsDirty flag gets changed.
-                        // Messages don't get sent from the server to itself, so if we're host and sending to ourselves,
-                        // we still have to actually serialize the message even though we're not sending it, otherwise
-                        // the dirty flag doesn't change properly. These two pieces should be decoupled at some point
-                        // so we don't have to do this serialization work if we're not going to use the result.
-                        if (IsServer && clientId == NetworkManager.ServerClientId)
-                        {
-                            var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
-                            using (tmpWriter)
-                            {
-                                message.Serialize(tmpWriter);
-                            }
-                        }
-                        else
-                        {
-                            NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], clientId);
-                        }
+                        NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
                     }
                 }
             }
@@ -655,7 +670,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong clientId)
+        internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -664,7 +679,7 @@ namespace Unity.Netcode
 
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                bool canClientRead = NetworkVariableFields[j].CanClientRead(clientId);
+                bool canClientRead = NetworkVariableFields[j].CanClientRead(targetClientId);
 
                 if (canClientRead)
                 {

@@ -132,7 +132,7 @@ namespace Unity.Netcode
         private const NetworkDelivery k_DeliveryType = NetworkDelivery.ReliableFragmentedSequenced;
         internal const int InvalidSceneNameOrPath = -1;
 
-        // Used to be able to turn re-synchronization off for future snapshot development purposes.
+        // Used to be able to turn re-synchronization off
         internal static bool DisableReSynchronization;
 
         /// <summary>
@@ -530,7 +530,8 @@ namespace Unity.Netcode
             }
             else
             {
-                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!");
+                throw new Exception($"Scene Hash {sceneHash} does not exist in the {nameof(HashToBuildIndex)} table!  Verify that all scenes requiring" +
+                    $" server to client synchronization are in the scenes in build list.");
             }
         }
 
@@ -1197,7 +1198,6 @@ namespace Unity.Netcode
             // When it is set: Just before starting the asynchronous loading call
             // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
             // not destroy temporary scene are moved into the active scene
-            // TODO: When Snapshot scene spawning is enabled this needs to be removed.
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -1446,12 +1446,9 @@ namespace Unity.Netcode
 
             var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
-            // Always check to see if the scene needs to be validated
-            if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
-            {
-                EndSceneEvent(sceneEventId);
-                return;
-            }
+            // Store the sceneHandle and hash
+            sceneEventData.ClientSceneHandle = sceneHandle;
+            sceneEventData.ClientSceneHash = sceneHash;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
             if (sceneHash == sceneEventData.SceneHash)
@@ -1468,9 +1465,16 @@ namespace Unity.Netcode
                 ScenePlacedObjects.Clear();
             }
 
-            // Store the sceneHandle and hash
-            sceneEventData.ClientSceneHandle = sceneHandle;
-            sceneEventData.ClientSceneHash = sceneHash;
+            // Always check to see if the scene needs to be validated
+            if (!ValidateSceneBeforeLoading(sceneHash, loadSceneMode))
+            {
+                HandleClientSceneEvent(sceneEventId);
+                if (m_NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogInfo($"Client declined to load the scene {sceneName}, continuing with synchronization.");
+                }
+                return;
+            }
 
             var shouldPassThrough = false;
             var sceneLoad = (AsyncOperation)null;
@@ -1746,9 +1750,9 @@ namespace Unity.Netcode
                         // NetworkObjects
                         m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
 
-                        // TODO: This check and associated code can be removed once we determine all
-                        // snapshot destroy messages are being updated until the server receives ACKs
-                        if (sceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization)
+                        // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
+                        // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)
+                        if (sceneEventData.ClientNeedsReSynchronization() && !DisableReSynchronization && m_NetworkManager.ConnectedClients.ContainsKey(clientId))
                         {
                             sceneEventData.SceneEventType = SceneEventType.ReSynchronize;
                             SendSceneEventData(sceneEventId, new ulong[] { clientId });
@@ -1842,7 +1846,7 @@ namespace Unity.Netcode
         /// Using the local scene relative Scene.handle as a sub-key to the root dictionary allows us to
         /// distinguish between duplicate in-scene placed NetworkObjects
         /// </summary>
-        private void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
+        internal void PopulateScenePlacedObjects(Scene sceneToFilterBy, bool clearScenePlacedObjects = true)
         {
             if (clearScenePlacedObjects)
             {
@@ -1857,25 +1861,26 @@ namespace Unity.Netcode
             // at the end of scene loading we use this list to soft synchronize all in-scene placed NetworkObjects
             foreach (var networkObjectInstance in networkObjects)
             {
-                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (additive scenes)
-                if (networkObjectInstance.IsSceneObject == null && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
-                    networkObjectInstance.gameObject.scene.handle == sceneToFilterBy.handle)
+                var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
+                var sceneHandle = networkObjectInstance.gameObject.scene.handle;
+                // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
+                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
+                    sceneHandle == sceneToFilterBy.handle)
                 {
-                    if (!ScenePlacedObjects.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+                    if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
-                        ScenePlacedObjects.Add(networkObjectInstance.GlobalObjectIdHash, new Dictionary<int, NetworkObject>());
+                        ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
                     }
 
-                    if (!ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].ContainsKey(networkObjectInstance.gameObject.scene.handle))
+                    if (!ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneHandle))
                     {
-                        ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash].Add(networkObjectInstance.gameObject.scene.handle, networkObjectInstance);
+                        ScenePlacedObjects[globalObjectIdHash].Add(sceneHandle, networkObjectInstance);
                     }
                     else
                     {
-                        var exitingEntryName = ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash][networkObjectInstance.gameObject.scene.handle] != null ?
-                            ScenePlacedObjects[networkObjectInstance.GlobalObjectIdHash][networkObjectInstance.gameObject.scene.handle].name : "Null Entry";
+                        var exitingEntryName = ScenePlacedObjects[globalObjectIdHash][sceneHandle] != null ? ScenePlacedObjects[globalObjectIdHash][sceneHandle].name : "Null Entry";
                         throw new Exception($"{networkObjectInstance.name} tried to registered with {nameof(ScenePlacedObjects)} which already contains " +
-                            $"the same {nameof(NetworkObject.GlobalObjectIdHash)} value {networkObjectInstance.GlobalObjectIdHash} for {exitingEntryName}!");
+                            $"the same {nameof(NetworkObject.GlobalObjectIdHash)} value {globalObjectIdHash} for {exitingEntryName}!");
                     }
                 }
             }

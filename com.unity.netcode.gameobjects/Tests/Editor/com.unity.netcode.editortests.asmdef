@@ -9,7 +9,8 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats"
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Networking.Transport"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -23,6 +24,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
         }
     ]
 }

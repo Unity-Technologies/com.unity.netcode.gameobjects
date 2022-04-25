@@ -12,17 +12,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class PacketMetricsTests : SingleClientMetricTestBase
     {
-
-        protected override void OnOneTimeSetup()
-        {
-#if UTP_ADAPTER
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-#else
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
-#endif
-            base.OnOneTimeSetup();
-        }
-
         [UnityTest]
         public IEnumerator TrackPacketSentMetric()
         {

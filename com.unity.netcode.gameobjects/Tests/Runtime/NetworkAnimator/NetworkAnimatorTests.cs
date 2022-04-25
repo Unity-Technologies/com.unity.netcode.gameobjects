@@ -1,3 +1,4 @@
+#if COM_UNITY_MODULES_ANIMATION
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -235,3 +236,4 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
+#endif // COM_UNITY_MODULES_ANIMATION

@@ -24,7 +24,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal readonly unsafe WriterHandle* Handle;
+        internal unsafe WriterHandle* Handle;
 
         private static byte[] s_ByteArrayCache = new byte[65535];
 
@@ -63,6 +63,11 @@ namespace Unity.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Handle->Position > Handle->Length ? Handle->Position : Handle->Length;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the writer has been initialized and a handle allocated.
+        /// </summary>
+        public unsafe bool IsInitialized => Handle != null;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -113,6 +118,7 @@ namespace Unity.Netcode
                 UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);
             }
             UnsafeUtility.Free(Handle, Handle->Allocator);
+            Handle = null;
         }
 
         /// <summary>

@@ -20,7 +20,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal readonly unsafe ReaderHandle* Handle;
+        internal unsafe ReaderHandle* Handle;
 
         /// <summary>
         /// Get the current read position
@@ -39,6 +39,11 @@ namespace Unity.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Handle->Length;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the reader has been initialized and a handle allocated.
+        /// </summary>
+        public unsafe bool IsInitialized => Handle != null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void CommitBitwiseReads(int amount)
@@ -197,6 +202,7 @@ namespace Unity.Netcode
         public unsafe void Dispose()
         {
             UnsafeUtility.Free(Handle, Handle->Allocator);
+            Handle = null;
         }
 
         /// <summary>

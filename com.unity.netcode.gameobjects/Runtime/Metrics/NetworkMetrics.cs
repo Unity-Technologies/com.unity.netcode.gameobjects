@@ -87,6 +87,7 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
+        private readonly Gauge m_PacketLossGauge = new Gauge(NetworkMetricTypes.PacketLoss.Id);
 #endif
 
         private ulong m_NumberOfMetricsThisFrame;
@@ -110,6 +111,7 @@ namespace Unity.Netcode
                 .WithGauges(m_RttToServerGauge)
                 .WithGauges(m_NetworkObjectsGauge)
                 .WithGauges(m_ConnectionsGauge)
+                .WithGauges(m_PacketLossGauge)
 #endif
                 .Build();
 
@@ -462,15 +464,15 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackRttToServer(int rtt)
+        public void UpdateRttToServer(int rttMilliseconds)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
             {
                 return;
             }
-
-            m_RttToServerGauge.Set(rtt);
+            var rttSeconds = rttMilliseconds * 1e-3;
+            m_RttToServerGauge.Set(rttSeconds);
 #endif
         }
 
@@ -495,6 +497,18 @@ namespace Unity.Netcode
             }
 
             m_ConnectionsGauge.Set(count);
+#endif
+        }
+
+        public void UpdatePacketLoss(float packetLoss)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketLossGauge.Set(packetLoss);
 #endif
         }
 

@@ -15,9 +15,10 @@ namespace Unity.Netcode.Components
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float PositionThresholdDefault = .001f;
-        public const float RotAngleThresholdDefault = .01f;
-        public const float ScaleThresholdDefault = .01f;
+        public const float PositionThresholdDefault = 0.001f;
+        public const float RotAngleThresholdDefault = 0.01f;
+        public const float ScaleThresholdDefault = 0.01f;
+
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
@@ -249,7 +250,10 @@ namespace Unity.Netcode.Components
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
         public float PositionThreshold = PositionThresholdDefault;
+
+        [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
+
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -272,15 +276,13 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        public bool CanCommitToTransform;
+        public bool CanCommitToTransform { get; protected set; }
         protected bool m_CachedIsServer;
         protected NetworkManager m_CachedNetworkManager;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
-
-        private NetworkTransformState m_PrevNetworkState;
 
         private const int k_DebugDrawLineTime = 10;
 
@@ -390,6 +392,16 @@ namespace Unity.Netcode.Components
             m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
         }
 
+        /// <summary>
+        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed isDirty information returned.
+        /// </summary>
+        /// <param name="transform">transform to apply</param>
+        /// <returns>bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty</returns>
+        internal (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyLocalNetworkState(Transform transform)
+        {
+            return ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+        }
+
         // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
         // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
@@ -450,7 +462,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleX &&
-                Mathf.Abs(networkState.RotAngleX - rotAngles.x) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
@@ -458,7 +470,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleY &&
-                Mathf.Abs(networkState.RotAngleY - rotAngles.y) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
@@ -466,7 +478,7 @@ namespace Unity.Netcode.Components
             }
 
             if (SyncRotAngleZ &&
-                Mathf.Abs(networkState.RotAngleZ - rotAngles.z) > RotAngleThreshold)
+                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
@@ -509,8 +521,6 @@ namespace Unity.Netcode.Components
 
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
         {
-            m_PrevNetworkState = networkState;
-
             var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
             // todo: we should store network state w/ quats vs. euler angles
@@ -587,8 +597,6 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.position = interpolatedPosition;
                 }
-
-                m_PrevNetworkState.Position = interpolatedPosition;
             }
 
             // RotAngles Apply
@@ -602,15 +610,12 @@ namespace Unity.Netcode.Components
                 {
                     transformToUpdate.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
-
-                m_PrevNetworkState.Rotation = interpolatedRotAngles;
             }
 
             // Scale Apply
             if (SyncScaleX || SyncScaleY || SyncScaleZ)
             {
                 transformToUpdate.localScale = interpolatedScale;
-                m_PrevNetworkState.Scale = interpolatedScale;
             }
         }
 
@@ -691,7 +696,6 @@ namespace Unity.Netcode.Components
         {
             if (!NetworkObject.IsSpawned)
             {
-                // todo MTT-849 should never happen but yet it does! maybe revisit/dig after NetVar updates and snapshot system lands?
                 return;
             }
 
@@ -880,8 +884,6 @@ namespace Unity.Netcode.Components
                 {
                     TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }
-
-                m_PrevNetworkState = m_LocalAuthoritativeNetworkState;
             }
 
             // apply interpolated value
@@ -905,36 +907,10 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
-#if NGO_TRANSFORM_DEBUG
-                    if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        // TODO: This should be a component gizmo - not some debug draw based on log level
-                        var interpolatedPosition = new Vector3(m_PositionXInterpolator.GetInterpolatedValue(), m_PositionYInterpolator.GetInterpolatedValue(), m_PositionZInterpolator.GetInterpolatedValue());
-                        Debug.DrawLine(interpolatedPosition, interpolatedPosition + Vector3.up, Color.magenta, k_DebugDrawLineTime, false);
-
-                        // try to update previously consumed NetworkState
-                        // if we have any changes, that means made some updates locally
-                        // we apply the latest ReplNetworkState again to revert our changes
-                        var oldStateDirtyInfo = ApplyTransformToNetworkStateWithInfo(ref m_PrevNetworkState, 0, m_Transform);
-
-                        // there are several bugs in this code, as we the message is dumped out under odd circumstances
-                        //  For Matt, it would trigger when an object's rotation was perturbed by colliding with another
-                        //  object vs. explicitly rotating it
-                        if (oldStateDirtyInfo.isPositionDirty || oldStateDirtyInfo.isScaleDirty || (oldStateDirtyInfo.isRotationDirty && SyncRotAngleX && SyncRotAngleY && SyncRotAngleZ))
-                        {
-                            // ignoring rotation dirty since quaternions will mess with euler angles, making this impossible to determine if the change to a single axis comes
-                            // from an unauthorized transform change or euler to quaternion conversion artifacts.
-                            var dirtyField = oldStateDirtyInfo.isPositionDirty ? "position" : oldStateDirtyInfo.isRotationDirty ? "rotation" : "scale";
-                            Debug.LogWarning($"A local change to {dirtyField} without authority detected, reverting back to latest interpolated network state!", this);
-                        }
-                    }
-#endif
-
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
                 }
             }
-
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
@@ -960,6 +936,23 @@ namespace Unity.Netcode.Components
             // check server side
             TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+        }
+
+        /// <summary>
+        /// Override this and return false to follow the owner authoritative
+        /// Otherwise, it defaults to server authoritative
+        /// </summary>
+        protected virtual bool OnIsServerAuthoritatitive()
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// </summary>
+        internal bool IsServerAuthoritative()
+        {
+            return OnIsServerAuthoritatitive();
         }
     }
 }

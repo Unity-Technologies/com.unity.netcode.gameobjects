@@ -40,19 +40,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             m_ClientCount = numberOfClients == ClientCount.OneClient ? 1 : 2;
         }
 
-        /// <summary>
-        /// Note: We are using the OnOneTimeSetup to select the transport to use for
-        /// this test set.
-        /// </summary>
-        protected override void OnOneTimeSetup()
-        {
-#if UTP_ADAPTER
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-#else
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.SIP;
-#endif
-        }
-
         [UnityTest]
         public IEnumerator TrackRttMetricServerToClient()
         {
@@ -92,7 +79,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             foreach (var clientGaugeMetricValue in clientGaugeMetricValues)
             {
                 var rttValue = clientGaugeMetricValue.AssertMetricValueHaveBeenFound();
-                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1f));
+                Assert.That(rttValue, Is.GreaterThanOrEqualTo(1e-3f));
             }
         }
     }

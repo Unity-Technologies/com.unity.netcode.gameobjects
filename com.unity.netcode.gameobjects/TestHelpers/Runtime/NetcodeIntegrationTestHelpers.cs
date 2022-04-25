@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -106,14 +107,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
-        public enum InstanceTransport
-        {
-            SIP,
-#if UTP_ADAPTER
-            UTP
-#endif
-        }
-
         internal static IntegrationTestSceneHandler ClientSceneHandler = null;
 
         /// <summary>
@@ -163,22 +156,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        /// <summary>
-        /// Create the correct NetworkTransport, attach it to the game object and return it.
-        /// Default value is SIPTransport.
-        /// </summary>
-        internal static NetworkTransport CreateInstanceTransport(InstanceTransport instanceTransport, GameObject go)
+        public static NetworkManager CreateServer()
         {
-            switch (instanceTransport)
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            var server = go.AddComponent<NetworkManager>();
+            NetworkManagerInstances.Insert(0, server);
+
+            // Create transport
+            var unityTransport = go.AddComponent<UnityTransport>();
+            // We need to increase this buffer size for tests that spawn a bunch of things
+            unityTransport.MaxPayloadSize = 256000;
+            unityTransport.MaxSendQueueSize = 1024 * 1024;
+
+            // Allow 4 connection attempts that each will time out after 500ms
+            unityTransport.MaxConnectAttempts = 4;
+            unityTransport.ConnectTimeoutMS = 500;
+
+            // Set the NetworkConfig
+            server.NetworkConfig = new NetworkConfig()
             {
-                case InstanceTransport.SIP:
-                default:
-                    return go.AddComponent<SIPTransport>();
-#if UTP_ADAPTER
-                case InstanceTransport.UTP:
-                    return go.AddComponent<UnityTransport>();
-#endif
-            }
+                // Set transport
+                NetworkTransport = unityTransport
+            };
+            return server;
         }
 
         /// <summary>
@@ -188,24 +191,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="server">The server NetworkManager</param>
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, InstanceTransport instanceTransport = InstanceTransport.SIP)
+        /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
-            CreateNewClients(clientCount, out clients, instanceTransport);
-
-            // Create gameObject
-            var go = new GameObject("NetworkManager - Server");
-
-            // Create networkManager component
-            server = go.AddComponent<NetworkManager>();
-            NetworkManagerInstances.Insert(0, server);
-
-            // Set the NetworkConfig
-            server.NetworkConfig = new NetworkConfig()
+            server = null;
+            if (serverFirst)
             {
-                // Set transport
-                NetworkTransport = CreateInstanceTransport(instanceTransport, go)
-            };
+                server = CreateServer();
+            }
+
+            CreateNewClients(clientCount, out clients);
+
+            if (!serverFirst)
+            {
+                server = CreateServer();
+            }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
             Application.targetFrameRate = targetFrameRate;
@@ -218,7 +219,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, InstanceTransport instanceTransport = InstanceTransport.SIP)
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
             var activeSceneName = SceneManager.GetActiveScene().name;
@@ -229,11 +230,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Create networkManager component
                 clients[i] = go.AddComponent<NetworkManager>();
 
+                // Create transport
+                var unityTransport = go.AddComponent<UnityTransport>();
+
                 // Set the NetworkConfig
                 clients[i].NetworkConfig = new NetworkConfig()
                 {
                     // Set transport
-                    NetworkTransport = CreateInstanceTransport(instanceTransport, go)
+                    NetworkTransport = unityTransport
                 };
             }
 
@@ -276,7 +280,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Destroy the network manager instances
             foreach (var networkManager in NetworkManagerInstances)
             {
-                Object.DestroyImmediate(networkManager.gameObject);
+                if (networkManager.gameObject != null)
+                {
+                    Object.Destroy(networkManager.gameObject);
+                }
             }
 
             NetworkManagerInstances.Clear();

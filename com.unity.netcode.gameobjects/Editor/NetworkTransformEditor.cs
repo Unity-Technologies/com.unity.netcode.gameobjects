@@ -4,7 +4,7 @@ using Unity.Netcode.Components;
 
 namespace Unity.Netcode.Editor
 {
-    [CustomEditor(typeof(NetworkTransform))]
+    [CustomEditor(typeof(NetworkTransform), true)]
     public class NetworkTransformEditor : UnityEditor.Editor
     {
         private SerializedProperty m_SyncPositionXProperty;
@@ -112,6 +112,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
 
+#if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
             var go = ((NetworkTransform)target).gameObject;
             if (go.TryGetComponent<Rigidbody>(out _) && go.TryGetComponent<NetworkRigidbody>(out _) == false)
@@ -119,12 +120,15 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody but no NetworkRigidbody.\n" +
                     "Add a NetworkRigidbody component to improve Rigidbody synchronization.", MessageType.Warning);
             }
+#endif // COM_UNITY_MODULES_PHYSICS
 
+#if COM_UNITY_MODULES_PHYSICS2D
             if (go.TryGetComponent<Rigidbody2D>(out _) && go.TryGetComponent<NetworkRigidbody2D>(out _) == false)
             {
                 EditorGUILayout.HelpBox("This GameObject contains a Rigidbody2D but no NetworkRigidbody2D.\n" +
                     "Add a NetworkRigidbody2D component to improve Rigidbody2D synchronization.", MessageType.Warning);
             }
+#endif // COM_UNITY_MODULES_PHYSICS2D
 
             serializedObject.ApplyModifiedProperties();
         }

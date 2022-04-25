@@ -4,11 +4,12 @@
 Profiling/ @Unity-Technologies/multiplayer-tools
 Metrics/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-server
-/com.unity.netcode.adapter.utp/ @Unity-Technologies/multiplayer-server
-*.asmdef @mfatihmar
-package.json @mfatihmar
-AssemblyInfo.cs @mfatihmar
-.editorconfig @mfatihmar
-.gitignore @mfatihmar
-.github/ @mfatihmar @lpmaurice @ashwinimurt
-.yamato/ @mfatihmar @lpmaurice @ashwinimurt
+/com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-server
+/com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-server
+*.asmdef @ThusWroteNomad
+package.json @ThusWroteNomad
+AssemblyInfo.cs @ThusWroteNomad
+.editorconfig @ThusWroteNomad
+.gitignore @ThusWroteNomad
+.github/ @ThusWroteNomad @lpmaurice @ashwinimurt
+.yamato/ @ThusWroteNomad @lpmaurice @ashwinimurt

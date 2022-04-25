@@ -1,9 +1,0 @@
-# https://dotnet.github.io/docfx/tutorial/howto_filter_out_unwanted_apis_attributes.html
-
-apiRules:
-  - exclude:
-    uidRegex: ^Unity\.Netcode\.UTP\.EditorTests.*$
-    type: Namespace
-  - exclude:
-    uidRegex: ^Unity\.Netcode\.UTP\.RuntimeTests.*$
-    type: Namespace
