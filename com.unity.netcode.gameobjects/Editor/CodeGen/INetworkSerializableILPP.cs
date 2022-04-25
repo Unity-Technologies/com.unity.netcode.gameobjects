@@ -168,7 +168,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in structTypes)
                     {
-                        Console.WriteLine($"Initialize struct {type}");
                         var method = new GenericInstanceMethod(m_InitializeDelegatesStruct_MethodRef);
                         method.GenericArguments.Add(type);
                         instructions.Add(processor.Create(OpCodes.Call, method));
@@ -176,7 +175,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in networkSerializableTypes)
                     {
-                        Console.WriteLine($"Initialize serializable {type}");
                         var method = new GenericInstanceMethod(m_InitializeDelegatesNetworkSerializable_MethodRef);
                         method.GenericArguments.Add(type);
                         instructions.Add(processor.Create(OpCodes.Call, method));
@@ -184,7 +182,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in EnumTypes)
                     {
-                        Console.WriteLine($"Initialize enum {type}");
                         var method = new GenericInstanceMethod(m_InitializeDelegatesEnum_MethodRef);
                         method.GenericArguments.Add(type);
                         instructions.Add(processor.Create(OpCodes.Call, method));
