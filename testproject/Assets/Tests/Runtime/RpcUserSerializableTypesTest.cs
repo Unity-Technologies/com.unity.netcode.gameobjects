@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
@@ -8,16 +9,69 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
+    public struct TemplatedType<T1> : ISerializeByMemcpy where T1 : unmanaged
+    {
+        public enum Enum
+        {
+            One,
+            Two,
+            Three
+        }
+
+        public struct NestedTemplatedType<T2>: ISerializeByMemcpy where T2: unmanaged
+        {
+            public T1 Value1;
+            public T2 Value2;
+        }
+
+        public T1 Value;
+    }
+    public struct NetworkSerializableTemplatedType<T1> : INetworkSerializable where T1 : unmanaged, IComparable, IConvertible, IComparable<T1>, IEquatable<T1>
+    {
+        public struct NestedTemplatedType<T2>: INetworkSerializable where T2: unmanaged, IComparable, IConvertible, IComparable<T2>, IEquatable<T2>
+        {
+            public T1 Value1;
+            public T2 Value2;
+
+            public void NetworkSerialize<TImplementation>(BufferSerializer<TImplementation> serializer) where TImplementation : IReaderWriter
+            {
+                serializer.SerializeValue(ref Value1);
+                serializer.SerializeValue(ref Value2);
+            }
+        }
+
+        public T1 Value;
+
+        public void NetworkSerialize<TImplementation>(BufferSerializer<TImplementation> serializer) where TImplementation : IReaderWriter
+        {
+            serializer.SerializeValue(ref Value);
+        }
+    }
     public class RpcUserSerializableTypesTest : NetcodeIntegrationTest
     {
         private UserSerializableClass m_UserSerializableClass;
         private UserSerializableStruct m_UserSerializableStruct;
+
+        private TemplatedType<int> m_T1Val;
+        private TemplatedType<int>.NestedTemplatedType<int> m_T2Val;
+        private TemplatedType<int>.Enum m_EnumVal;
+        private NetworkSerializableTemplatedType<int> m_NetworkSerializableT1Val;
+        private NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> m_NetworkSerializableT2Val;
+
+        private TemplatedType<int>[] m_T1Vals;
+        private TemplatedType<int>.NestedTemplatedType<int>[] m_T2Vals;
+        private TemplatedType<int>.Enum[] m_EnumVals;
+        private NetworkSerializableTemplatedType<int>[] m_NetworkSerializableT1Vals;
+        private NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] m_NetworkSerializableT2Vals;
+
         private List<UserSerializableClass> m_UserSerializableClassArray;
         private List<UserSerializableStruct> m_UserSerializableStructArray;
 
         private bool m_FinishedTest;
         private bool m_FinishedStructTest;
         private bool m_FinishedClassTest;
+        private bool m_FinishedTemplateStructTest;
+        private bool m_FinishedNetworkSerializableTemplateStructTest;
 
         private bool m_IsSendingNull;
         private bool m_IsArrayEmpty;
@@ -39,6 +93,8 @@ namespace TestProject.RuntimeTests
             m_FinishedTest = false;
             m_FinishedStructTest = false;
             m_FinishedClassTest = false;
+            m_FinishedTemplateStructTest = false;
+            m_FinishedNetworkSerializableTemplateStructTest = false;
             var startTime = Time.realtimeSinceStartup;
 
             CreateServerAndClients();
@@ -52,6 +108,9 @@ namespace TestProject.RuntimeTests
             var clientSideNetworkBehaviourClass = clientClientPlayerResult.Result.gameObject.GetComponent<TestSerializationComponent>();
             clientSideNetworkBehaviourClass.OnSerializableClassUpdated = OnClientReceivedUserSerializableClassUpdated;
             clientSideNetworkBehaviourClass.OnSerializableStructUpdated = OnClientReceivedUserSerializableStructUpdated;
+            clientSideNetworkBehaviourClass.OnTemplateStructUpdated = OnClientReceivedUserSerializableTemplateStructUpdated;
+            clientSideNetworkBehaviourClass.OnNetworkSerializableTemplateStructUpdated = OnClientReceivedUserSerializableNetworkSerializableTemplateStructUpdated;            clientSideNetworkBehaviourClass.OnTemplateStructsUpdated = OnClientReceivedUserSerializableTemplateStructsUpdated;
+            clientSideNetworkBehaviourClass.OnNetworkSerializableTemplateStructsUpdated = OnClientReceivedUserSerializableNetworkSerializableTemplateStructsUpdated;
 
 
             var userSerializableClass = new UserSerializableClass();
@@ -68,8 +127,24 @@ namespace TestProject.RuntimeTests
             userSerializableStruct.MyintValue = 1;
             userSerializableStruct.MyulongValue = 100;
 
+            var t1val = new TemplatedType<int> { Value = 1 };
+            var t2val = new TemplatedType<int>.NestedTemplatedType<int> { Value1 = 1, Value2 = 2 };
+            var networkSerializableT1val = new NetworkSerializableTemplatedType<int> { Value = 1 };
+            var networkSerializableT2val = new NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> { Value1 = 1, Value2 = 2 };
+            var enumVal = TemplatedType<int>.Enum.One;
+
+            var t1vals = new[]{t1val};
+            var t2vals = new[]{t2val};
+            var networkSerializableT1vals = new[]{networkSerializableT1val};
+            var networkSerializableT2vals = new[]{networkSerializableT2val};
+            var enumVals = new[]{enumVal};
+
             clientSideNetworkBehaviourClass.ClientStartTest(userSerializableClass);
             clientSideNetworkBehaviourClass.ClientStartTest(userSerializableStruct);
+            clientSideNetworkBehaviourClass.ClientStartTest(t1val, t2val, enumVal);
+            clientSideNetworkBehaviourClass.ClientStartTest(networkSerializableT1val, networkSerializableT2val);
+            clientSideNetworkBehaviourClass.ClientStartTest(t1vals, t2vals, enumVals);
+            clientSideNetworkBehaviourClass.ClientStartTest(networkSerializableT1vals, networkSerializableT2vals);
 
             // Wait until the test has finished or we time out
             var timeOutPeriod = Time.realtimeSinceStartup + 5;
@@ -101,6 +176,22 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(m_UserSerializableStruct.MyintValue, userSerializableStruct.MyintValue + 1);
             Assert.AreEqual(m_UserSerializableStruct.MyulongValue, userSerializableStruct.MyulongValue + 1);
 
+            Assert.AreEqual(m_T1Val.Value, t1val.Value + 1);
+            Assert.AreEqual(m_T2Val.Value1, t2val.Value1 + 1);
+            Assert.AreEqual(m_T2Val.Value2, t2val.Value2 + 1);
+            Assert.AreEqual(m_NetworkSerializableT1Val.Value, networkSerializableT1val.Value + 1);
+            Assert.AreEqual(m_NetworkSerializableT2Val.Value1, networkSerializableT2val.Value1 + 1);
+            Assert.AreEqual(m_NetworkSerializableT2Val.Value2, networkSerializableT2val.Value2 + 1);
+            Assert.AreEqual(m_EnumVal, enumVal+1);
+
+            Assert.AreEqual(m_T1Vals[0].Value, t1val.Value + 1);
+            Assert.AreEqual(m_T2Vals[0].Value1, t2val.Value1 + 1);
+            Assert.AreEqual(m_T2Vals[0].Value2, t2val.Value2 + 1);
+            Assert.AreEqual(m_NetworkSerializableT1Vals[0].Value, networkSerializableT1val.Value + 1);
+            Assert.AreEqual(m_NetworkSerializableT2Vals[0].Value1, networkSerializableT2val.Value1 + 1);
+            Assert.AreEqual(m_NetworkSerializableT2Vals[0].Value2, networkSerializableT2val.Value2 + 1);
+            Assert.AreEqual(m_EnumVals[0], enumVal+1);
+
             // End of test
             ShutdownAndCleanUp();
         }
@@ -113,6 +204,10 @@ namespace TestProject.RuntimeTests
         public IEnumerator ExtensionMethodRpcTest()
         {
             m_FinishedTest = false;
+            m_FinishedStructTest = false;
+            m_FinishedClassTest = false;
+            m_FinishedTemplateStructTest = false;
+            m_FinishedNetworkSerializableTemplateStructTest = false;
             var startTime = Time.realtimeSinceStartup;
             CreateServerAndClients();
             m_PlayerPrefab.AddComponent<TestSerializationComponent>();
@@ -344,7 +439,7 @@ namespace TestProject.RuntimeTests
         {
             m_UserSerializableClass = userSerializableClass;
             m_FinishedClassTest = true;
-            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
         }
 
         /// <summary>
@@ -355,7 +450,41 @@ namespace TestProject.RuntimeTests
         {
             m_UserSerializableStruct = userSerializableStruct;
             m_FinishedStructTest = true;
-            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
+        }
+
+        private void OnClientReceivedUserSerializableTemplateStructUpdated(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
+        {
+            m_T1Val = t1val;
+            m_T2Val = t2val;
+            m_EnumVal = enumVal;
+            m_FinishedTemplateStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
+        }
+
+        private void OnClientReceivedUserSerializableNetworkSerializableTemplateStructUpdated(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
+        {
+            m_NetworkSerializableT1Val = t1val;
+            m_NetworkSerializableT2Val = t2val;
+            m_FinishedNetworkSerializableTemplateStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
+        }
+
+        private void OnClientReceivedUserSerializableTemplateStructsUpdated(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
+        {
+            m_T1Vals = t1val;
+            m_T2Vals = t2val;
+            m_EnumVals = enumVal;
+            m_FinishedTemplateStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
+        }
+
+        private void OnClientReceivedUserSerializableNetworkSerializableTemplateStructsUpdated(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
+        {
+            m_NetworkSerializableT1Vals = t1val;
+            m_NetworkSerializableT2Vals = t2val;
+            m_FinishedNetworkSerializableTemplateStructTest = true;
+            m_FinishedTest = m_FinishedClassTest && m_FinishedStructTest && m_FinishedTemplateStructTest && m_FinishedNetworkSerializableTemplateStructTest;
         }
 
         /// <summary>
@@ -589,6 +718,18 @@ namespace TestProject.RuntimeTests
         public delegate void OnSerializableStructUpdatedDelgateHandler(UserSerializableStruct userSerializableStruct);
         public OnSerializableStructUpdatedDelgateHandler OnSerializableStructUpdated;
 
+        public delegate void OnTemplateStructUpdatedDelgateHandler(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal);
+        public OnTemplateStructUpdatedDelgateHandler OnTemplateStructUpdated;
+
+        public delegate void OnNetworkSerializableTemplateStructUpdatedDelgateHandler(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val);
+        public OnNetworkSerializableTemplateStructUpdatedDelgateHandler OnNetworkSerializableTemplateStructUpdated;
+
+        public delegate void OnTemplateStructsUpdatedDelgateHandler(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal);
+        public OnTemplateStructsUpdatedDelgateHandler OnTemplateStructsUpdated;
+
+        public delegate void OnNetworkSerializableTemplateStructsUpdatedDelgateHandler(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val);
+        public OnNetworkSerializableTemplateStructsUpdatedDelgateHandler OnNetworkSerializableTemplateStructsUpdated;
+
         public delegate void OnMySharedObjectReferencedByIdUpdatedDelgateHandler(MySharedObjectReferencedById obj);
         public OnMySharedObjectReferencedByIdUpdatedDelgateHandler OnMySharedObjectReferencedByIdUpdated;
 
@@ -639,6 +780,113 @@ namespace TestProject.RuntimeTests
             if (OnSerializableClassUpdated != null)
             {
                 OnSerializableClassUpdated.Invoke(userSerializableClass);
+            }
+        }
+
+        public void ClientStartTest(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
+        {
+            SendTemplateStructServerRpc(t1val, t2val, enumVal);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SendTemplateStructServerRpc(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
+        {
+            Debug.Log($"Received server RPC values {t1val.Value} {t2val.Value1} {t2val.Value2} {enumVal}");
+            t1val.Value++;
+            t2val.Value1++;
+            t2val.Value2++;
+            enumVal += 1;
+
+            SendTemplateStructClientRpc(t1val, t2val, enumVal);
+        }
+
+        [ClientRpc]
+        private void SendTemplateStructClientRpc(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
+        {
+            Debug.Log($"Received client RPC values {t1val.Value} {t2val.Value1} {t2val.Value2}");
+            if (OnTemplateStructUpdated != null)
+            {
+                OnTemplateStructUpdated.Invoke(t1val, t2val, enumVal);
+            }
+        }
+
+        public void ClientStartTest(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
+        {
+            SendNetworkSerializableTemplateStructServerRpc(t1val, t2val);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SendNetworkSerializableTemplateStructServerRpc(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
+        {
+            Debug.Log($"Received NetworkSerializable server RPC values {t1val.Value} {t2val.Value1} {t2val.Value2}");
+            t1val.Value++;
+            t2val.Value1++;
+            t2val.Value2++;
+
+            SendNetworkSerializableTemplateStructClientRpc(t1val, t2val);
+        }
+
+        [ClientRpc]
+        private void SendNetworkSerializableTemplateStructClientRpc(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
+        {
+            Debug.Log($"Received NetworkSerializable client RPC values {t1val.Value} {t2val.Value1} {t2val.Value2}");
+            if (OnNetworkSerializableTemplateStructUpdated != null)
+            {
+                OnNetworkSerializableTemplateStructUpdated.Invoke(t1val, t2val);
+            }
+        }
+
+
+        public void ClientStartTest(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
+        {
+            SendTemplateStructServerRpc(t1val, t2val, enumVal);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SendTemplateStructServerRpc(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
+        {
+            Debug.Log($"Received server RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2} {enumVal[0]}");
+            t1val[0].Value++;
+            t2val[0].Value1++;
+            t2val[0].Value2++;
+            enumVal[0] += 1;
+
+            SendTemplateStructClientRpc(t1val, t2val, enumVal);
+        }
+
+        [ClientRpc]
+        private void SendTemplateStructClientRpc(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
+        {
+            Debug.Log($"Received client RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2}");
+            if (OnTemplateStructsUpdated != null)
+            {
+                OnTemplateStructsUpdated.Invoke(t1val, t2val, enumVal);
+            }
+        }
+
+        public void ClientStartTest(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
+        {
+            SendNetworkSerializableTemplateStructServerRpc(t1val, t2val);
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void SendNetworkSerializableTemplateStructServerRpc(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
+        {
+            Debug.Log($"Received NetworkSerializable server RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2}");
+            t1val[0].Value++;
+            t2val[0].Value1++;
+            t2val[0].Value2++;
+
+            SendNetworkSerializableTemplateStructClientRpc(t1val, t2val);
+        }
+
+        [ClientRpc]
+        private void SendNetworkSerializableTemplateStructClientRpc(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
+        {
+            Debug.Log($"Received NetworkSerializable client RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2}");
+            if (OnNetworkSerializableTemplateStructsUpdated != null)
+            {
+                OnNetworkSerializableTemplateStructsUpdated.Invoke(t1val, t2val);
             }
         }
 
