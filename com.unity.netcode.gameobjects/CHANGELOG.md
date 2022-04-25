@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Changed
+- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList`) can't be supported by the universal struct serializer. Structs that are intended to be serialized across the network must add `ISerializeByMemcpy` to the interface list (i.e., `struct Foo : ISerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with universal serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceSerializeByMemcpy<T>`. (#1901)
 
 ### Removed
 
@@ -19,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
+- Passing generic types to RPCs no longer causes a native crash (#1901)
 
 ## [1.0.0-pre.7] - 2022-04-06
 
