@@ -26,7 +26,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs) (#1912).
 
 ### Fixed
-- Fixed `NetworkSceneManager` does not synchronize despawned in-scene placed NetworkObjects nor do they have to register them to re-spawn them. (#1898)
+- Fixed issue where `NetworkSceneManager` did not synchronize despawned in-scene placed NetworkObjects. (#1898)
 - Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
@@ -47,6 +47,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - When `ForceSamePrefabs` is false, a configurable delay (default 1 second, configurable via `NetworkConfig.SpawnTimeout`) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
 
 ### Changed
+- Changed requirement to register in-scene placed NetworkObjects with `NetworkManager` in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
 
 - Changed `NetcodeIntegrationTestHelpers` to use `UnityTransport` (#1870)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
