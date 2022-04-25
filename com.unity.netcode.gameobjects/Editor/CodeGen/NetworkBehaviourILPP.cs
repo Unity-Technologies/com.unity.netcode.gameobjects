@@ -376,7 +376,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
-                        var rpcHandlers = new List<(uint RpcMethodId, MethodDefinition RpcHandler)>();
+            var rpcHandlers = new List<(uint RpcMethodId, MethodDefinition RpcHandler)>();
             var rpcNames = new List<(uint RpcMethodId, string RpcMethodName)>();
 
             bool isEditorOrDevelopment = assemblyDefines.Contains("UNITY_EDITOR") || assemblyDefines.Contains("DEVELOPMENT_BUILD");
@@ -390,9 +390,9 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
 
                 var rpcMethodId = methodDefinition.Hash();
-                                if (rpcMethodId == 0)
+                if (rpcMethodId == 0)
                 {
-                                        continue;
+                    continue;
                 }
 
                 if (methodDefinition.HasCustomAttributes)
@@ -410,7 +410,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                 rpcHandlers.Add((rpcMethodId, GenerateStaticHandler(methodDefinition, rpcAttribute, rpcMethodId)));
 
-                                if (isEditorOrDevelopment)
+                if (isEditorOrDevelopment)
                 {
                     rpcNames.Add((rpcMethodId, methodDefinition.Name));
                 }
@@ -483,7 +483,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             m_MainModule.RemoveRecursiveReferences();
-                    }
+        }
 
         private CustomAttribute CheckAndGetRpcAttribute(MethodDefinition methodDefinition)
         {

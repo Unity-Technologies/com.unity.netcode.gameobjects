@@ -8,7 +8,6 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
-using UnityEngine.Diagnostics;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
@@ -154,7 +153,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // C# (that attribute doesn't exist in Unity, but the static module constructor still works)
         // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.moduleinitializerattribute?view=net-5.0
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
-        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkSerializableTypes, List<TypeDefinition> structTypes, List<TypeDefinition> EnumTypes)
+        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkSerializableTypes, List<TypeDefinition> structTypes, List<TypeDefinition> enumTypes)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {
@@ -180,7 +179,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Call, method));
                     }
 
-                    foreach (var type in EnumTypes)
+                    foreach (var type in enumTypes)
                     {
                         var method = new GenericInstanceMethod(m_InitializeDelegatesEnum_MethodRef);
                         method.GenericArguments.Add(type);

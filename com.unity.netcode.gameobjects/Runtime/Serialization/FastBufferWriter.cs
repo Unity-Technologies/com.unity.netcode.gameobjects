@@ -2,7 +2,6 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using Unity.Netcode;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -823,16 +822,16 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T: INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T: INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T: INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T: INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector2 value) => WriteUnmanaged(value);

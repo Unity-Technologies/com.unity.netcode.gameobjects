@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.Collections;
@@ -71,7 +70,7 @@ namespace Unity.Netcode.EditorTests
 
         #region Generic Checks
 
-        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T value) where T: unmanaged
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T).MakeByRefType() });
             if (method == null)
@@ -112,7 +111,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
-        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T[] value) where T: unmanaged
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in T[] value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T[]) });
             if (method == null)

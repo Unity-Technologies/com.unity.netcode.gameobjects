@@ -3,7 +3,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Header placed at the start of each message batch
     /// </summary>
-    internal struct BatchHeader: ISerializeByMemcpy
+    internal struct BatchHeader : ISerializeByMemcpy
     {
         /// <summary>
         /// Total number of messages in the batch.

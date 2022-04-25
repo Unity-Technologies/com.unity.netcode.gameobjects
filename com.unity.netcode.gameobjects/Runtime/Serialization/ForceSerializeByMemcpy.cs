@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
 namespace Unity.Netcode
 {
-    public struct ForceSerializeByMemcpy<T>: ISerializeByMemcpy, IEquatable<ForceSerializeByMemcpy<T>> where T : unmanaged, IEquatable<T>
+    public struct ForceSerializeByMemcpy<T> : ISerializeByMemcpy, IEquatable<ForceSerializeByMemcpy<T>> where T : unmanaged, IEquatable<T>
     {
         public T Value;
 

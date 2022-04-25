@@ -733,14 +733,14 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T: INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T: INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T: INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T: INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);

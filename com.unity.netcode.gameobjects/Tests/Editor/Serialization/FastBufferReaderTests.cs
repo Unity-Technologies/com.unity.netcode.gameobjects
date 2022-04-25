@@ -53,7 +53,7 @@ namespace Unity.Netcode.EditorTests
             return reader;
         }
 
-        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in T value) where T: unmanaged
+        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in T value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T).MakeByRefType() });
             if (method == null)
@@ -94,7 +94,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
-        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in T[] value) where T: unmanaged
+        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in T[] value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(T[]) });
             if (method == null)
@@ -135,7 +135,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
-        private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T value) where T: unmanaged
+        private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferReader).GetMethod(methodName, new[] { typeof(T).MakeByRefType() });
             if (method == null)
@@ -178,7 +178,7 @@ namespace Unity.Netcode.EditorTests
             value = (T)args[0];
         }
 
-        private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T[] value) where T: unmanaged
+        private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T[] value) where T : unmanaged
         {
             MethodInfo method = null;
 
@@ -219,7 +219,7 @@ namespace Unity.Netcode.EditorTests
 
             Assert.NotNull(method);
 
-            value = new T[]{};
+            value = new T[] { };
 
             object[] args = new object[method.GetParameters().Length];
             args[0] = value;

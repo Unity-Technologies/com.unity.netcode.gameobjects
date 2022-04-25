@@ -58,7 +58,7 @@ namespace Unity.Netcode.RuntimeTests
             bool hasReceivedClientRpcRemotely = false;
             bool hasReceivedClientRpcLocally = false;
 
-            Vector3 vector3 = new Vector3(1, 2, 3);
+            var vector3 = new Vector3(1, 2, 3);
             Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
 
             localClienRpcTestNB.OnClient_Rpc += () =>

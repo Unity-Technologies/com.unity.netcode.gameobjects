@@ -18,7 +18,7 @@ namespace TestProject.RuntimeTests
             Three
         }
 
-        public struct NestedTemplatedType<T2>: ISerializeByMemcpy where T2: unmanaged
+        public struct NestedTemplatedType<T2> : ISerializeByMemcpy where T2 : unmanaged
         {
             public T1 Value1;
             public T2 Value2;
@@ -28,7 +28,7 @@ namespace TestProject.RuntimeTests
     }
     public struct NetworkSerializableTemplatedType<T1> : INetworkSerializable where T1 : unmanaged, IComparable, IConvertible, IComparable<T1>, IEquatable<T1>
     {
-        public struct NestedTemplatedType<T2>: INetworkSerializable where T2: unmanaged, IComparable, IConvertible, IComparable<T2>, IEquatable<T2>
+        public struct NestedTemplatedType<T2> : INetworkSerializable where T2 : unmanaged, IComparable, IConvertible, IComparable<T2>, IEquatable<T2>
         {
             public T1 Value1;
             public T2 Value2;
@@ -109,7 +109,7 @@ namespace TestProject.RuntimeTests
             clientSideNetworkBehaviourClass.OnSerializableClassUpdated = OnClientReceivedUserSerializableClassUpdated;
             clientSideNetworkBehaviourClass.OnSerializableStructUpdated = OnClientReceivedUserSerializableStructUpdated;
             clientSideNetworkBehaviourClass.OnTemplateStructUpdated = OnClientReceivedUserSerializableTemplateStructUpdated;
-            clientSideNetworkBehaviourClass.OnNetworkSerializableTemplateStructUpdated = OnClientReceivedUserSerializableNetworkSerializableTemplateStructUpdated;            clientSideNetworkBehaviourClass.OnTemplateStructsUpdated = OnClientReceivedUserSerializableTemplateStructsUpdated;
+            clientSideNetworkBehaviourClass.OnNetworkSerializableTemplateStructUpdated = OnClientReceivedUserSerializableNetworkSerializableTemplateStructUpdated; clientSideNetworkBehaviourClass.OnTemplateStructsUpdated = OnClientReceivedUserSerializableTemplateStructsUpdated;
             clientSideNetworkBehaviourClass.OnNetworkSerializableTemplateStructsUpdated = OnClientReceivedUserSerializableNetworkSerializableTemplateStructsUpdated;
 
 
@@ -133,11 +133,11 @@ namespace TestProject.RuntimeTests
             var networkSerializableT2val = new NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> { Value1 = 1, Value2 = 2 };
             var enumVal = TemplatedType<int>.Enum.One;
 
-            var t1vals = new[]{t1val};
-            var t2vals = new[]{t2val};
-            var networkSerializableT1vals = new[]{networkSerializableT1val};
-            var networkSerializableT2vals = new[]{networkSerializableT2val};
-            var enumVals = new[]{enumVal};
+            var t1vals = new[] { t1val };
+            var t2vals = new[] { t2val };
+            var networkSerializableT1vals = new[] { networkSerializableT1val };
+            var networkSerializableT2vals = new[] { networkSerializableT2val };
+            var enumVals = new[] { enumVal };
 
             clientSideNetworkBehaviourClass.ClientStartTest(userSerializableClass);
             clientSideNetworkBehaviourClass.ClientStartTest(userSerializableStruct);
@@ -182,7 +182,7 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(m_NetworkSerializableT1Val.Value, networkSerializableT1val.Value + 1);
             Assert.AreEqual(m_NetworkSerializableT2Val.Value1, networkSerializableT2val.Value1 + 1);
             Assert.AreEqual(m_NetworkSerializableT2Val.Value2, networkSerializableT2val.Value2 + 1);
-            Assert.AreEqual(m_EnumVal, enumVal+1);
+            Assert.AreEqual(m_EnumVal, enumVal + 1);
 
             Assert.AreEqual(m_T1Vals[0].Value, t1val.Value + 1);
             Assert.AreEqual(m_T2Vals[0].Value1, t2val.Value1 + 1);
@@ -190,7 +190,7 @@ namespace TestProject.RuntimeTests
             Assert.AreEqual(m_NetworkSerializableT1Vals[0].Value, networkSerializableT1val.Value + 1);
             Assert.AreEqual(m_NetworkSerializableT2Vals[0].Value1, networkSerializableT2val.Value1 + 1);
             Assert.AreEqual(m_NetworkSerializableT2Vals[0].Value2, networkSerializableT2val.Value2 + 1);
-            Assert.AreEqual(m_EnumVals[0], enumVal+1);
+            Assert.AreEqual(m_EnumVals[0], enumVal + 1);
 
             // End of test
             ShutdownAndCleanUp();
@@ -1190,11 +1190,6 @@ namespace TestProject.RuntimeTests
             serializer.SerializeValue(ref MyintValue);
             serializer.SerializeValue(ref MyulongValue);
         }
-    }
-
-    public struct foo<T> : ISerializeByMemcpy
-    {
-        public T I;
     }
 
     public class MyObject
