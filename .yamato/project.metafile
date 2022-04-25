@@ -21,7 +21,7 @@ test_platforms:
     utr: ./utr
   - name: ubuntu
     type: Unity::VM
-    image: package-ci/ubuntu:v3.3.0
+    image: package-ci/ubuntu:pre-stable
     flavor: b1.large
     pathsep: /
     standalone: StandaloneLinux64
