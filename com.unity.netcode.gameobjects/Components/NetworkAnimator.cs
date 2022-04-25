@@ -15,11 +15,11 @@ namespace Unity.Netcode.Components
         internal struct AnimationMessage : INetworkSerializable
         {
             // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
-            public int StateHash;
-            public float NormalizedTime;
-            public int Layer;
-            public float Weight;
-            public byte[] Parameters;
+            internal int StateHash;
+            internal float NormalizedTime;
+            internal int Layer;
+            internal float Weight;
+            internal byte[] Parameters;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
@@ -33,8 +33,8 @@ namespace Unity.Netcode.Components
 
         internal struct AnimationTriggerMessage : INetworkSerializable
         {
-            public int Hash;
-            public bool Reset;
+            internal int Hash;
+            internal bool Reset;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
@@ -57,7 +57,7 @@ namespace Unity.Netcode.Components
         private bool m_SendMessagesAllowed = false;
 
         // Animators only support up to 32 params
-        public static int K_MaxAnimationParams = 32;
+        private const int k_MaxAnimationParams = 32;
 
         private int[] m_TransitionHash;
         private int[] m_AnimationHash;
@@ -65,21 +65,21 @@ namespace Unity.Netcode.Components
 
         private unsafe struct AnimatorParamCache
         {
-            public int Hash;
-            public int Type;
-            public fixed byte Value[4]; // this is a max size of 4 bytes
+            internal int Hash;
+            internal int Type;
+            internal fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
         // 128 bytes per Animator
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
         // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
         private struct AnimationParamEnumWrapper
         {
-            public static readonly int AnimatorControllerParameterInt;
-            public static readonly int AnimatorControllerParameterFloat;
-            public static readonly int AnimatorControllerParameterBool;
+            internal static readonly int AnimatorControllerParameterInt;
+            internal static readonly int AnimatorControllerParameterFloat;
+            internal static readonly int AnimatorControllerParameterBool;
 
             static AnimationParamEnumWrapper()
             {
