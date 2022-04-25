@@ -39,7 +39,7 @@ namespace Unity.Netcode.Components
             // 11-15: <unused>
             private ushort m_Bitset;
 
-            public bool InLocalSpace
+            internal bool InLocalSpace
             {
                 get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
                 set
@@ -50,7 +50,7 @@ namespace Unity.Netcode.Components
             }
 
             // Position
-            public bool HasPositionX
+            internal bool HasPositionX
             {
                 get => (m_Bitset & (1 << k_PositionXBit)) != 0;
                 set
@@ -60,7 +60,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasPositionY
+            internal bool HasPositionY
             {
                 get => (m_Bitset & (1 << k_PositionYBit)) != 0;
                 set
@@ -70,7 +70,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasPositionZ
+            internal bool HasPositionZ
             {
                 get => (m_Bitset & (1 << k_PositionZBit)) != 0;
                 set
@@ -81,7 +81,7 @@ namespace Unity.Netcode.Components
             }
 
             // RotAngles
-            public bool HasRotAngleX
+            internal bool HasRotAngleX
             {
                 get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
                 set
@@ -91,7 +91,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasRotAngleY
+            internal bool HasRotAngleY
             {
                 get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
                 set
@@ -101,7 +101,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasRotAngleZ
+            internal bool HasRotAngleZ
             {
                 get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
                 set
@@ -112,7 +112,7 @@ namespace Unity.Netcode.Components
             }
 
             // Scale
-            public bool HasScaleX
+            internal bool HasScaleX
             {
                 get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
                 set
@@ -122,7 +122,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasScaleY
+            internal bool HasScaleY
             {
                 get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
                 set
@@ -132,7 +132,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool HasScaleZ
+            internal bool HasScaleZ
             {
                 get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
                 set
@@ -142,7 +142,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public bool IsTeleportingNextFrame
+            internal bool IsTeleportingNextFrame
             {
                 get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
                 set
@@ -152,12 +152,12 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public float PositionX, PositionY, PositionZ;
-            public float RotAngleX, RotAngleY, RotAngleZ;
-            public float ScaleX, ScaleY, ScaleZ;
-            public double SentTime;
+            internal float PositionX, PositionY, PositionZ;
+            internal float RotAngleX, RotAngleY, RotAngleZ;
+            internal float ScaleX, ScaleY, ScaleZ;
+            internal double SentTime;
 
-            public Vector3 Position
+            internal Vector3 Position
             {
                 get { return new Vector3(PositionX, PositionY, PositionZ); }
                 set
@@ -168,7 +168,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public Vector3 Rotation
+            internal Vector3 Rotation
             {
                 get { return new Vector3(RotAngleX, RotAngleY, RotAngleZ); }
                 set
@@ -179,7 +179,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            public Vector3 Scale
+            internal Vector3 Scale
             {
                 get { return new Vector3(ScaleX, ScaleY, ScaleZ); }
                 set
@@ -795,8 +795,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        #region state set
-
         /// <summary>
         /// Directly sets a state on the authoritative transform.
         /// This will override any changes made previously to the transform
@@ -856,7 +854,6 @@ namespace Unity.Netcode.Components
             m_Transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
-        #endregion
 
         // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
