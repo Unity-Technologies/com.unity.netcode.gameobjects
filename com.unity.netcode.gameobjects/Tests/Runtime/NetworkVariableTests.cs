@@ -53,9 +53,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
+        public readonly NetworkList<ForceSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceSerializeByMemcpy<FixedString128Bytes>>();
 
-        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
+        public readonly NetworkVariable<ForceSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceSerializeByMemcpy<FixedString32Bytes>>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -86,7 +86,8 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(false)]
     public class NetworkVariableTests : NetcodeIntegrationTest
     {
-        private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
+        private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
+        private static readonly FixedString32Bytes s_FixedStringTestValue = k_StringTestValue;
         protected override int NumberOfClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
@@ -238,10 +239,10 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator FixedString32Test([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
-            m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
+            m_Player1OnServer.FixedString32.Value = s_FixedStringTestValue;
 
             // Now wait for the client side version to be updated to k_FixedStringTestValue
-            yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue);
+            yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.FixedString32.Value == s_FixedStringTestValue);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
         }
 
