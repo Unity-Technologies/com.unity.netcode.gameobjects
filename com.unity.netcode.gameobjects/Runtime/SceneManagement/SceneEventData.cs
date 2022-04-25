@@ -744,7 +744,7 @@ namespace Unity.Netcode
                     // We just need to get the scene
                     InternalBuffer.ReadValueSafe(out int networkSceneHandle);
                     InternalBuffer.ReadValueSafe(out uint globalObjectIdHash);
-                    var sceneRelativeNetworkObjects = new Dictionary<uint,NetworkObject>();
+                    var sceneRelativeNetworkObjects = new Dictionary<uint, NetworkObject>();
                     if (!sceneCache.ContainsKey(networkSceneHandle))
                     {
                         if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkSceneHandle))
@@ -756,7 +756,7 @@ namespace Unity.Netcode
                                 var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.gameObject.scene == objectRelativeScene &&
                                 c.gameObject.scene.handle == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
-                                foreach(var inSceneObject in inSceneNetworkObjects)
+                                foreach (var inSceneObject in inSceneNetworkObjects)
                                 {
                                     sceneRelativeNetworkObjects.Add(inSceneObject.GlobalObjectIdHash, inSceneObject);
                                 }
@@ -779,7 +779,7 @@ namespace Unity.Netcode
                     }
 
                     // Now find the in-scene NetworkObject with the current GlobalObjectIdHash we are looking for
-                    if(sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
+                    if (sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
                     {
                         // Since this is a NetworkObject that was never spawned, we just need to send a notification
                         // out that it was despawned so users can make adjustments
