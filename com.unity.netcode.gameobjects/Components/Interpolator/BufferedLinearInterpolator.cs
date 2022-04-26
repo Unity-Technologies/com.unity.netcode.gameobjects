@@ -82,7 +82,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// todo
+        /// Teleports current interpolation value to targetValue.
         /// </summary>
         public void ResetTo(T targetValue, double serverTime)
         {
