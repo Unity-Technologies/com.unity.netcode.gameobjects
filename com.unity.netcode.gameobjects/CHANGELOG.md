@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Changed
-- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList`) can't be supported by the universal struct serializer. Structs that are intended to be serialized across the network must add `ISerializeByMemcpy` to the interface list (i.e., `struct Foo : ISerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with universal serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceSerializeByMemcpy<T>`. (#1901)
+- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
 
 ### Removed
 
@@ -30,6 +30,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
 - `UnityTransport` settings can now be set programmatically. (#1845)
 - `FastBufferWriter` and Reader IsInitialized property. (#1859)
+- Prefabs can now be added to the network at **runtime** (i.e., from an addressable asset). If `ForceSamePrefabs` is false, this can happen after a connection has been formed. (#1882)
+- When `ForceSamePrefabs` is false, a configurable delay (default 1 second, configurable via `NetworkConfig.SpawnTimeout`) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
 
 ### Changed
 

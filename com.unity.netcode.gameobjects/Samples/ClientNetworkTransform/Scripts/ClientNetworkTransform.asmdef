@@ -1,8 +1,0 @@
-{
-	"name": "ClientNetworkTransform",
-    "rootNamespace": "Unity.Netcode.Samples",
-    "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components"
-    ]
-}

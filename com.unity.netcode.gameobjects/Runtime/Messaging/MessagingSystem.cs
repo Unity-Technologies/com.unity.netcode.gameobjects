@@ -136,6 +136,11 @@ namespace Unity.Netcode
             m_Hooks.Add(hooks);
         }
 
+        public void Unhook(INetworkHooks hooks)
+        {
+            m_Hooks.Remove(hooks);
+        }
+
         private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
             m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
@@ -208,11 +213,11 @@ namespace Unity.Netcode
             }
         }
 
-        private bool CanReceive(ulong clientId, Type messageType)
+        private bool CanReceive(ulong clientId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
         {
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
             {
-                if (!m_Hooks[hookIdx].OnVerifyCanReceive(clientId, messageType))
+                if (!m_Hooks[hookIdx].OnVerifyCanReceive(clientId, messageType, messageContent, ref context))
                 {
                     return false;
                 }
@@ -240,7 +245,7 @@ namespace Unity.Netcode
             };
 
             var type = m_ReverseTypeMap[header.MessageType];
-            if (!CanReceive(senderId, type))
+            if (!CanReceive(senderId, type, reader, ref context))
             {
                 reader.Dispose();
                 return;

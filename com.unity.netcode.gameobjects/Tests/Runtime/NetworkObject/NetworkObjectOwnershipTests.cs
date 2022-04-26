@@ -67,7 +67,7 @@ namespace Unity.Netcode.RuntimeTests
             m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
             m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfType<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
             var ownershipNetworkObjectId = m_OwnershipNetworkObject.NetworkObjectId;
             Assert.That(ownershipNetworkObjectId, Is.GreaterThan(0));

@@ -82,7 +82,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        public bool OnVerifyCanReceive(ulong senderId, Type messageType)
+        public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
         {
             return true;
         }
