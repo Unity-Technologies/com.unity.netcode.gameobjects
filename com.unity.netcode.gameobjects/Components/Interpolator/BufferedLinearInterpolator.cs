@@ -23,7 +23,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// todo
+        /// There’s two factors affecting interpolation: buffering (set in NetworkManager’s NetworkTimeSystem) and interpolation time, which is the amount of time it’ll take to reach the target. This is to affect the second one.
         /// </summary>
         public float MaximumInterpolationTime = 0.1f;
 
