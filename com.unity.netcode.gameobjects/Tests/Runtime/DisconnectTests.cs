@@ -9,6 +9,8 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class DisconnectTests
     {
+
+        private bool m_ClientDisconnected;
         [UnityTest]
         public IEnumerator RemoteDisconnectPlayerObjectCleanup()
         {
@@ -38,17 +40,25 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
 
             // disconnect the remote client
+            m_ClientDisconnected = false;
             server.DisconnectClient(clients[0].LocalClientId);
+            clients[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnected, timeoutHelper);
 
-            // wait 1 frame because destroys are delayed
-            var nextFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // We need to do this to remove other associated client properties/values from NetcodeIntegrationTestHelpers
+            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
 
             // ensure the object was destroyed
             Assert.False(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
 
             // cleanup
             NetcodeIntegrationTestHelpers.Destroy();
+        }
+
+        private void OnClientDisconnectCallback(ulong obj)
+        {
+            m_ClientDisconnected = true;
         }
     }
 }

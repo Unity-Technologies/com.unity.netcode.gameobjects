@@ -61,6 +61,7 @@ namespace TestProject.RuntimeTests
             m_ScenesLoaded.Clear();
             m_ServerVerifyScene = false;
             m_ClientVerifyScene = false;
+            m_CreateServerFirst = false;
 
             return base.OnSetup();
         }

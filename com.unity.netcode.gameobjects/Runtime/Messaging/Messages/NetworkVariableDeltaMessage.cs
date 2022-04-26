@@ -54,6 +54,14 @@ namespace Unity.Netcode
                     networkVariable.CanClientRead(TargetClientId) &&
                     (NetworkBehaviour.NetworkManager.IsServer || networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
 
+                // Prevent the server from writing to the client that owns a given NetworkVariable
+                // Allowing the write would send an old value to the client and cause jitter
+                if (networkVariable.WritePerm == NetworkVariableWritePermission.Owner &&
+                    networkVariable.OwnerClientId() == TargetClientId)
+                {
+                    shouldWrite = false;
+                }
+
                 if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
                     if (!shouldWrite)
@@ -225,7 +233,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.SpawnManager.TriggerOnSpawn(NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
             }
         }
     }

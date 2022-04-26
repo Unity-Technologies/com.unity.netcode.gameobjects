@@ -40,15 +40,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             m_ClientCount = numberOfClients == ClientCount.OneClient ? 1 : 2;
         }
 
-        /// <summary>
-        /// Note: We are using the OnOneTimeSetup to select the transport to use for
-        /// this test set.
-        /// </summary>
-        protected override void OnOneTimeSetup()
-        {
-            m_NetworkTransport = NetcodeIntegrationTestHelpers.InstanceTransport.UTP;
-        }
-
         [UnityTest]
         public IEnumerator TrackRttMetricServerToClient()
         {
