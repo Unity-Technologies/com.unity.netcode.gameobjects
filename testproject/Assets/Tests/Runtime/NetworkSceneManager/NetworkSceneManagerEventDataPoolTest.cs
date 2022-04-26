@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
                             m_ScenesLoaded.Add(scene);
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId),$"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId), $"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
                         SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
