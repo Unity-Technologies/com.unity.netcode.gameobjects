@@ -122,7 +122,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
-        internal static IntegrationTestSceneHandler ClientSceneHandler = null;
+        internal static List<IntegrationTestSceneHandler> ClientSceneHandlers = new List<IntegrationTestSceneHandler>();
 
         /// <summary>
         /// Registers the IntegrationTestSceneHandler for integration tests.
@@ -132,11 +132,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (!networkManager.IsServer)
             {
-                if (ClientSceneHandler == null)
-                {
-                    ClientSceneHandler = new IntegrationTestSceneHandler();
-                }
-                networkManager.SceneManager.SceneManagerHandler = ClientSceneHandler;
+                var handler = new IntegrationTestSceneHandler(networkManager);
+                ClientSceneHandlers.Add(handler);
+                networkManager.SceneManager.SceneManagerHandler = handler;
             }
         }
 
@@ -148,11 +146,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public static void CleanUpHandlers()
         {
-            if (ClientSceneHandler != null)
+            foreach(var handler in ClientSceneHandlers)
             {
-                ClientSceneHandler.Dispose();
-                ClientSceneHandler = null;
+                handler.Dispose();
             }
+            ClientSceneHandlers.Clear();
         }
 
         /// <summary>

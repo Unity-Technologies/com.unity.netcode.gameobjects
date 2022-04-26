@@ -632,6 +632,9 @@ namespace Unity.Netcode
             return validated;
         }
 
+        // WIP: Might be used for integration tests
+        internal Func<string, Scene> OverrideGetAndAddNewlyLoadedSceneByName;
+
         /// <summary>
         /// Since SceneManager.GetSceneByName only returns the first scene that matches the name
         /// we must "find" a newly added scene by looking through all loaded scenes and determining
@@ -643,20 +646,27 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
-            for (int i = 0; i < SceneManager.sceneCount; i++)
+            if (OverrideGetAndAddNewlyLoadedSceneByName != null)
             {
-                var sceneLoaded = SceneManager.GetSceneAt(i);
-                if (sceneLoaded.name == sceneName)
+                return OverrideGetAndAddNewlyLoadedSceneByName.Invoke(sceneName);
+            }
+            else
+            {
+                for (int i = 0; i < SceneManager.sceneCount; i++)
                 {
-                    if (!ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                    var sceneLoaded = SceneManager.GetSceneAt(i);
+                    if (sceneLoaded.name == sceneName)
                     {
-                        ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
-                        return sceneLoaded;
+                        if (!ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                        {
+                            ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
+                            return sceneLoaded;
+                        }
                     }
                 }
-            }
 
-            throw new Exception($"Failed to find any loaded scene named {sceneName}!");
+                throw new Exception($"Failed to find any loaded scene named {sceneName}!");
+            }
         }
 
         /// <summary>
