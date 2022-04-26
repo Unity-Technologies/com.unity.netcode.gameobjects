@@ -261,7 +261,7 @@ namespace Unity.Netcode
         /// </summary>
         protected abstract T Interpolate(T start, T end, float time);
         /// <summary>
-        /// todo
+        /// Method to override and adapted to the generic type. This assumes interpolation for that value will not be clamped.
         /// </summary>
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
