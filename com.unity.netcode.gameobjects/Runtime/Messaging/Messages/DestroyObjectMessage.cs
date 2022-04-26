@@ -17,7 +17,14 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
             reader.ReadValueSafe(out this);
+
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
+                return false;
+            }
             return true;
         }
 

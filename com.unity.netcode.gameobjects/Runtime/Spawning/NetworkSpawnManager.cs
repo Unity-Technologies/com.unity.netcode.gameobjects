@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -136,23 +135,6 @@ namespace Unity.Netcode
             return OwnershipToObjectsTable[clientId].Values.ToList();
         }
 
-
-        private struct TriggerData
-        {
-            public FastBufferReader Reader;
-            public MessageHeader Header;
-            public ulong SenderId;
-            public float Timestamp;
-            public int SerializedHeaderSize;
-        }
-        private struct TriggerInfo
-        {
-            public float Expiry;
-            public NativeList<TriggerData> TriggerData;
-        }
-
-        private readonly Dictionary<ulong, TriggerInfo> m_Triggers = new Dictionary<ulong, TriggerInfo>();
-
         /// <summary>
         /// Gets the NetworkManager associated with this SpawnManager.
         /// </summary>
@@ -207,87 +189,6 @@ namespace Unity.Netcode
             }
 
             return null;
-        }
-
-        /// <summary>
-        /// Defers processing of a message until the moment a specific networkObjectId is spawned.
-        /// This is to handle situations where an RPC or other object-specific message arrives before the spawn does,
-        /// either due to it being requested in OnNetworkSpawn before the spawn call has been executed
-        ///
-        /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
-        /// without the requested object ID being spawned, the triggers for it are automatically deleted.
-        /// </summary>
-        internal unsafe void TriggerOnSpawn(ulong networkObjectId, FastBufferReader reader, ref NetworkContext context)
-        {
-            if (!m_Triggers.ContainsKey(networkObjectId))
-            {
-                m_Triggers[networkObjectId] = new TriggerInfo
-                {
-                    Expiry = Time.realtimeSinceStartup + 1,
-                    TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
-                };
-            }
-
-            m_Triggers[networkObjectId].TriggerData.Add(new TriggerData
-            {
-                Reader = new FastBufferReader(reader.GetUnsafePtr(), Allocator.Persistent, reader.Length),
-                Header = context.Header,
-                Timestamp = context.Timestamp,
-                SenderId = context.SenderId,
-                SerializedHeaderSize = context.SerializedHeaderSize
-            });
-        }
-
-        /// <summary>
-        /// Cleans up any trigger that's existed for more than a second.
-        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
-        /// </summary>
-        internal unsafe void CleanupStaleTriggers()
-        {
-            ulong* staleKeys = stackalloc ulong[m_Triggers.Count()];
-            int index = 0;
-            foreach (var kvp in m_Triggers)
-            {
-                if (kvp.Value.Expiry < Time.realtimeSinceStartup)
-                {
-
-                    staleKeys[index++] = kvp.Key;
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning($"Deferred messages were received for {nameof(NetworkObject)} #{kvp.Key}, but it did not spawn within 1 second.");
-                    }
-
-                    foreach (var data in kvp.Value.TriggerData)
-                    {
-                        data.Reader.Dispose();
-                    }
-
-                    kvp.Value.TriggerData.Dispose();
-                }
-            }
-
-            for (var i = 0; i < index; ++i)
-            {
-                m_Triggers.Remove(staleKeys[i]);
-            }
-        }
-        /// <summary>
-        /// Cleans up any trigger that's existed for more than a second.
-        /// These triggers were probably for situations where a request was received after a despawn rather than before a spawn.
-        /// </summary>
-        internal void CleanupAllTriggers()
-        {
-            foreach (var kvp in m_Triggers)
-            {
-                foreach (var data in kvp.Value.TriggerData)
-                {
-                    data.Reader.Dispose();
-                }
-
-                kvp.Value.TriggerData.Dispose();
-            }
-
-            m_Triggers.Clear();
         }
 
         internal void RemoveOwnership(NetworkObject networkObject)
@@ -380,6 +281,33 @@ namespace Unity.Netcode
             {
                 NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
             }
+        }
+
+        internal bool HasPrefab(bool isSceneObject, uint globalObjectIdHash)
+        {
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !isSceneObject)
+            {
+                if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
+                {
+                    return true;
+                }
+                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var networkPrefab))
+                {
+                    switch (networkPrefab.Override)
+                    {
+                        default:
+                        case NetworkPrefabOverride.None:
+                            return networkPrefab.Prefab != null;
+                        case NetworkPrefabOverride.Hash:
+                        case NetworkPrefabOverride.Prefab:
+                            return networkPrefab.OverridingTargetPrefab != null;
+                    }
+                }
+
+                return false;
+            }
+            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+            return networkObject != null;
         }
 
         /// <summary>
@@ -628,20 +556,7 @@ namespace Unity.Netcode
 
             networkObject.InvokeBehaviourNetworkSpawn();
 
-            // This must happen after InvokeBehaviourNetworkSpawn, otherwise ClientRPCs and other messages can be
-            // processed before the object is fully spawned. This must be the last thing done in the spawn process.
-            if (m_Triggers.ContainsKey(networkId))
-            {
-                var triggerInfo = m_Triggers[networkId];
-                foreach (var trigger in triggerInfo.TriggerData)
-                {
-                    // Reader will be disposed within HandleMessage
-                    NetworkManager.MessagingSystem.HandleMessage(trigger.Header, trigger.Reader, trigger.SenderId, trigger.Timestamp, trigger.SerializedHeaderSize);
-                }
-
-                triggerInfo.TriggerData.Dispose();
-                m_Triggers.Remove(networkId);
-            }
+            NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredMessageManager.TriggerType.OnSpawn, networkId);
 
             // propagate the IsSceneObject setting to child NetworkObjects
             var children = networkObject.GetComponentsInChildren<NetworkObject>();

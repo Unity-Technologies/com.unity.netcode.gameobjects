@@ -128,10 +128,10 @@ namespace Unity.Netcode
         public int LoadSceneTimeOut = 120;
 
         /// <summary>
-        /// The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped.
+        /// The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped.
         /// </summary>
-        [Tooltip("The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped")]
-        public float MessageBufferTimeout = 20f;
+        [Tooltip("The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped")]
+        public float SpawnTimeout = 1f;
 
         /// <summary>
         /// Whether or not to enable network logs.
