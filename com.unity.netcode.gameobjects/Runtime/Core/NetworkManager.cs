@@ -1162,6 +1162,12 @@ namespace Unity.Netcode
         /// </param>
         public void Shutdown(bool discardMessageQueue = false)
         {
+            if (!IsServer && !IsClient)
+            {
+                NetworkLog.LogError("Can't Shutdown() without first calling StartHost(), StartServer() or StartClient().");
+                return;
+            }
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Shutdown));
