@@ -146,7 +146,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public static void CleanUpHandlers()
         {
-            foreach(var handler in ClientSceneHandlers)
+            foreach (var handler in ClientSceneHandlers)
             {
                 handler.Dispose();
             }
