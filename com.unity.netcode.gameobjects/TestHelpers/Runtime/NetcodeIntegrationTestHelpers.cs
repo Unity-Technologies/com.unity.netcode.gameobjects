@@ -128,9 +128,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Registers the IntegrationTestSceneHandler for integration tests.
         /// The default client behavior is to not load scenes on the client side.
         /// </summary>
-        private static void RegisterSceneManagerHandler(NetworkManager networkManager)
+        internal static void RegisterSceneManagerHandler(NetworkManager networkManager, bool allowServer = false)
         {
-            if (!networkManager.IsServer)
+            if (!networkManager.IsServer || networkManager.IsServer && allowServer)
             {
                 var handler = new IntegrationTestSceneHandler(networkManager);
                 ClientSceneHandlers.Add(handler);

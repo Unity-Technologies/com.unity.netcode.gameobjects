@@ -275,9 +275,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-
+            int count = 0;
             foreach (var client in m_ClientNetworkManagers)
             {
+                client.name = $"NetworkManager - Client - {++count}";
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
@@ -411,6 +412,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             IntegrationTestSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
             IntegrationTestSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
+            IntegrationTestSceneHandler.NetworkManagers.Clear();
         }
 
         /// <summary>
@@ -422,6 +424,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             IntegrationTestSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
             IntegrationTestSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
+            NetcodeIntegrationTestHelpers.RegisterSceneManagerHandler(m_ServerNetworkManager, true);
         }
 
         private bool ClientSceneHandler_CanClientsUnload()
