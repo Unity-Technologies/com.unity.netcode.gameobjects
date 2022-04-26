@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -269,43 +268,17 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
                 else
                 {
-                    var machines = new List<BokkenMachine>();
-                    var tasks = new List<Task>();
-                    foreach (var platform in platformList)
-                    {
-                        MultiprocessLogger.Log($"Provisioning platform {platform} if necessary");
-                        var provisionTask = Task.Factory.StartNew(() =>
-                        {
-                            var machine = MultiprocessOrchestration.ProvisionWorkerNode(platform);
-                            machines.Add(machine);
-                        });
-                        MultiprocessLogger.Log($"Task {provisionTask.Id} is for {platform}");
-                        tasks.Add(provisionTask);
-                    }
-
-                    foreach (var task in tasks)
-                    {
-                        MultiprocessLogger.Log($"Task id {task.Id}");
-                        task.Wait();
-                    }
-
+                    var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     MultiprocessLogger.Log($"We are trying to get to {numProcessesToCreate} from {m_ConnectedClientsList.Count}"
                         + $" by launching {machines.Count} new instances");
 
                     int initialCount = m_ConnectedClientsList.Count;
                     foreach (var machine in machines)
                     {
-                        if (!machine.IsValid())
-                        {
-                            MultiprocessLogger.Log("Warning: machine is not valid");
-                        }
-                        MultiprocessLogger.Log($"ConnectedClient count: {NetworkManager.Singleton.ConnectedClients.Count} , BokkenMachine process count before launch {BokkenMachine.ProcessList.Count}");
-                        MultiprocessLogger.Log($"Remotely spawning testplayer on {machine.Name} {machine.Image} {machine.Type} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {GetWorkerCount()} and platformList is not null");
                         initialCount = m_ConnectedClientsList.Count;
-                        machine.Launch();
+                        MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine);
                         MultiprocessLogger.Log($"Launching process complete... waiting for {m_ConnectedClientsList.Count} to increase from {initialCount}");
-                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);
-                        MultiprocessLogger.Log($"Done waiting... ConnectedClient count: {m_ConnectedClientsList.Count} , BokkenMachine process count after launch {BokkenMachine.ProcessList.Count}");
+                        yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);    
                     }
                 }
             }
@@ -446,7 +419,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 MultiprocessLogger.Log($" 7/20 - UnityTearDown - Reporting on processes calling bokkenapi");
                 if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
                 {
-                    BokkenMachine.LogProcessListStatus();
+                    
                     // MultiprocessOrchestration.KillAllTestPlayersOnRemoteMachines();
                     MultiprocessOrchestration.ShutdownAllProcesses(true, 7);
                 }
@@ -456,10 +429,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             else
             {
                 MultiprocessLogger.Log("Not running UnityTearDown");
-                foreach (var p in BokkenMachine.ProcessList)
-                {
-                    // There must be someway to safely figure out if there are errors in the spawned processes
-                }
             }
         }
 
@@ -471,11 +440,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             try
             {
                 MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-                if (MultiprocessOrchestration.ShouldRunMultiMachineTests())
-                {
-                    BokkenMachine.FetchAllLogFiles();
-                }
-
+                
                 MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {m_LaunchRemotely}");
                 MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");
