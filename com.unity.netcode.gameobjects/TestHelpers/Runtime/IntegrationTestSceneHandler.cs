@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
@@ -9,124 +10,24 @@ namespace Unity.Netcode.TestHelpers.Runtime
 {
     /// <summary>
     /// The default SceneManagerHandler used for all NetcodeIntegrationTest derived children.
-    /// Original class -- will be removed if the new IntegrationTestSceneHandler cannot load
-    /// scenes for all clients.
+    /// This enables clients to load scenes within the same scene hierarchy during integration
+    /// testing.
     /// </summary>
-    internal class OldIntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
+    internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
     {
-        internal CoroutineRunner CoroutineRunner;
+        // All IntegrationTestSceneHandler instances register their associated NetworkManager
+        internal static List<NetworkManager> NetworkManagers = new List<NetworkManager>();
+
+        internal static CoroutineRunner CoroutineRunner;
 
         // Default client simulated delay time
         protected const float k_ClientLoadingSimulatedDelay = 0.016f;
 
         // Controls the client simulated delay time
-        protected float m_ClientLoadingSimulatedDelay = k_ClientLoadingSimulatedDelay;
-
-        public delegate bool CanClientsLoadUnloadDelegateHandler();
-        public event CanClientsLoadUnloadDelegateHandler CanClientsLoad;
-        public event CanClientsLoadUnloadDelegateHandler CanClientsUnload;
-
-        internal List<Coroutine> CoroutinesRunning = new List<Coroutine>();
-
-        /// <summary>
-        /// Used to control when clients should attempt to fake-load a scene
-        /// Note: Unit/Integration tests that only use <see cref="NetcodeIntegrationTestHelpers"/>
-        /// need to subscribe to the CanClientsLoad and CanClientsUnload events
-        /// in order to control when clients can fake-load.
-        /// Tests that derive from <see cref="NetcodeIntegrationTest"/> already have integrated
-        /// support and you can override <see cref="NetcodeIntegrationTest.CanClientsLoad"/> and
-        /// <see cref="NetcodeIntegrationTest.CanClientsUnload"/>.
-        /// </summary>
-        protected bool OnCanClientsLoad()
-        {
-            if (CanClientsLoad != null)
-            {
-                return CanClientsLoad.Invoke();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Fake-Loads a scene for a client
-        /// </summary>
-        internal IEnumerator ClientLoadSceneCoroutine(string sceneName, ISceneManagerHandler.SceneEventAction sceneEventAction)
-        {
-            yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            while (!OnCanClientsLoad())
-            {
-                yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            }
-            sceneEventAction.Invoke();
-        }
-
-        protected bool OnCanClientsUnload()
-        {
-            if (CanClientsUnload != null)
-            {
-                return CanClientsUnload.Invoke();
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Fake-Unloads a scene for a client
-        /// </summary>
-        internal IEnumerator ClientUnloadSceneCoroutine(ISceneManagerHandler.SceneEventAction sceneEventAction)
-        {
-            yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            while (!OnCanClientsUnload())
-            {
-                yield return new WaitForSeconds(m_ClientLoadingSimulatedDelay);
-            }
-            sceneEventAction.Invoke();
-        }
-
-        public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
-        {
-            CoroutinesRunning.Add(CoroutineRunner.StartCoroutine(ClientLoadSceneCoroutine(sceneName, sceneEventAction)));
-            // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
-            return new AsyncOperation();
-        }
-
-        public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
-        {
-            CoroutinesRunning.Add(CoroutineRunner.StartCoroutine(ClientUnloadSceneCoroutine(sceneEventAction)));
-            // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
-            return new AsyncOperation();
-        }
-
-        public OldIntegrationTestSceneHandler()
-        {
-            if (CoroutineRunner == null)
-            {
-                CoroutineRunner = new GameObject("UnitTestSceneHandlerCoroutine").AddComponent<CoroutineRunner>();
-            }
-        }
-
-        public void Dispose()
-        {
-            foreach (var coroutine in CoroutinesRunning)
-            {
-                CoroutineRunner.StopCoroutine(coroutine);
-            }
-            CoroutineRunner.StopAllCoroutines();
-
-            Object.Destroy(CoroutineRunner.gameObject);
-        }
-    }
-
-    internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
-    {
-        internal static CoroutineRunner CoroutineRunner;
-
-        // Default client simulated delay time
-        protected const float k_ClientLoadingSimulatedDelay = 0.006f;
-
-        // Controls the client simulated delay time
         protected static float s_ClientLoadingSimulatedDelay = k_ClientLoadingSimulatedDelay;
 
 
-        internal static List<QueuedSceneJob> QueuedSceneJobs = new List<QueuedSceneJob>();
+        internal static Queue<QueuedSceneJob> QueuedSceneJobs = new Queue<QueuedSceneJob>();
         internal List<Coroutine> CoroutinesRunning = new List<Coroutine>();
         internal static Coroutine SceneJobProcessor;
         internal static QueuedSceneJob CurrentQueuedSceneJob;
@@ -181,6 +82,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+
+        /// <summary>
+        /// Processes scene loading jobs
+        /// </summary>
+        /// <param name="queuedSceneJob">job to process</param>
         static internal IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
@@ -190,12 +96,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 yield return s_WaitForSeconds;
             }
 
-            //SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-            //// We always load additively for all scenes during integration tests
-            //SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
-
-            CurrentQueuedSceneJob.SceneAction.Invoke();
-            CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            // We always load additively for all scenes during integration tests
+            SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
 
             // Wait for it to finish
             while (queuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed)
@@ -204,18 +107,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-
+        /// <summary>
+        /// Handles scene loading and assists with making sure the right NetworkManagerOwner
+        /// is assigned to newly instantiated NetworkObjects.
+        ///
+        /// Note: Static property usage is OK since jobs are processed one at a time
+        /// </summary>
         private static void SceneManager_sceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
         {
-            if (CurrentQueuedSceneJob.SceneName == scene.name)
+            if (CurrentQueuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed && CurrentQueuedSceneJob.SceneName == scene.name)
             {
                 SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
-                //scene.name += $"-OnClient({CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.LocalClientId})";
+
+                // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
+                var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => !c.IsSceneObject.HasValue && !c.IsSpawned && c.gameObject.scene.handle == scene.handle);
+                foreach (var sobj in inSceneNetworkObjects)
+                {
+                    sobj.NetworkManagerOwner = CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager;
+                }
+
                 CurrentQueuedSceneJob.SceneAction.Invoke();
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
         }
 
+
+        /// <summary>
+        /// Processes scene unloading jobs
+        /// </summary>
+        /// <param name="queuedSceneJob">job to process</param>
         static internal IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
@@ -225,19 +145,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 yield return s_WaitForSeconds;
             }
 
-            //SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
-            //if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded)
-            //{
-            //    SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
-            //}
-            //else
-            //{
-            //    CurrentQueuedSceneJob.SceneAction.Invoke();
-            //    CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
-            //}
+            SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
+            if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
+            }
+            else
+            {
+                CurrentQueuedSceneJob.SceneAction.Invoke();
+                CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
+            }
 
-            CurrentQueuedSceneJob.SceneAction.Invoke();
-            CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             // Wait for it to finish
             while (queuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed)
             {
@@ -245,9 +163,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Handles closing out scene unloading jobs
+        /// </summary>
         private static void SceneManager_sceneUnloaded(Scene scene)
         {
-            if (CurrentQueuedSceneJob.Scene.name == scene.name)
+            if (CurrentQueuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed && CurrentQueuedSceneJob.Scene.name == scene.name)
             {
                 SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
                 CurrentQueuedSceneJob.SceneAction.Invoke();
@@ -255,64 +176,108 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Processes all jobs within the queue.
+        /// When all jobs are finished, the coroutine stops.
+        /// </summary>
         static internal IEnumerator JobQueueProcessor()
         {
-            var nextJob = QueuedSceneJobs[0];
-            while (nextJob != null)
+            while (QueuedSceneJobs.Count != 0)
             {
-                CurrentQueuedSceneJob = nextJob;
-                if (nextJob.JobType == QueuedSceneJob.JobTypes.Loading)
+                CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
+                if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
                 {
-                    yield return ProcessLoadingSceneJob(nextJob);
+                    yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
                 }
-                else if (nextJob.JobType == QueuedSceneJob.JobTypes.Unloading)
+                else if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Unloading)
                 {
-                    yield return ProcessUnloadingSceneJob(nextJob);
+                    yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
                 }
-                QueuedSceneJobs.Remove(nextJob);
-                nextJob = QueuedSceneJobs.Count > 0 ? QueuedSceneJobs[0] : null;
             }
             SceneJobProcessor = null;
             yield break;
         }
 
+        /// <summary>
+        /// Adds a job to the job queue, and if  the JobQueueProcessor coroutine
+        /// is not running then it will be started as well.
+        /// </summary>
+        /// <param name="queuedSceneJob">job to add to the queue</param>
         private void AddJobToQueue(QueuedSceneJob queuedSceneJob)
         {
-            QueuedSceneJobs.Add(queuedSceneJob);
+            QueuedSceneJobs.Enqueue(queuedSceneJob);
             if (SceneJobProcessor == null)
             {
                 SceneJobProcessor = CoroutineRunner.StartCoroutine(JobQueueProcessor());
             }
         }
 
+        /// <summary>
+        /// Server always loads like it normally would
+        /// </summary>
+        public AsyncOperation ServerLoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        {
+            var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+            operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+            return operation;
+        }
+
+        /// <summary>
+        /// Server always unloads like it normally would
+        /// </summary>
+        public AsyncOperation ServerUnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        {
+            var operation = SceneManager.UnloadSceneAsync(scene);
+            operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+            return operation;
+        }
+
+
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Loading });
+            if (NetworkManager.IsServer)
+            {
+                return ServerLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
+            }
+            else // Clients are always processed in the queue
+            {
+                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Loading });
+            }
             // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
             return new AsyncOperation();
         }
 
         public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Unloading });
+            if (NetworkManager.IsServer)
+            {
+                return ServerUnloadSceneAsync(scene, sceneEventAction);
+            }
+            else // Clients are always processed in the queue
+            {
+                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Unloading });
+            }
             // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
             return new AsyncOperation();
         }
 
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
-            var otherNetworkManagers = NetworkManagers;
-            otherNetworkManagers.Remove(NetworkManager);
             for (int i = 0; i < SceneManager.sceneCount; i++)
             {
                 var sceneLoaded = SceneManager.GetSceneAt(i);
                 if (sceneLoaded.name == sceneName)
                 {
                     var skip = false;
-                    foreach (var otherNetworkManager in otherNetworkManagers)
+                    foreach (var networkManager in NetworkManagers)
                     {
-                        if (otherNetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                        if (NetworkManager.LocalClientId == networkManager.LocalClientId)
                         {
+                            continue;
+                        }
+                        if (networkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                        {
+                            Debug.Log($"{NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
                             skip = true;
                             break;
                         }
@@ -324,6 +289,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (!NetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                     {
+                        Debug.Log($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
                         NetworkManager.SceneManager.ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
                         return sceneLoaded;
                     }
@@ -333,9 +299,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             throw new Exception($"Failed to find any loaded scene named {sceneName}!");
         }
 
-
-        internal static List<NetworkManager> NetworkManagers = new List<NetworkManager>();
-
+        /// <summary>
+        /// Constructor now must take NetworkManager
+        /// </summary>
         public IntegrationTestSceneHandler(NetworkManager networkManager)
         {
             networkManager.SceneManager.OverrideGetAndAddNewlyLoadedSceneByName = GetAndAddNewlyLoadedSceneByName;

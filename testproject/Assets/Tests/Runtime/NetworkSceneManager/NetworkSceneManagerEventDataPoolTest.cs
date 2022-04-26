@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
@@ -13,7 +15,7 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 4;
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
@@ -39,7 +41,6 @@ namespace TestProject.RuntimeTests
         private List<SceneTestInfo> m_ShouldWaitList = new List<SceneTestInfo>();
         private List<ulong> m_ClientsReceivedSynchronize = new List<ulong>();
 
-
         protected override IEnumerator OnSetup()
         {
             m_CanStartServerOrClients = false;
@@ -47,7 +48,13 @@ namespace TestProject.RuntimeTests
             m_ShouldWaitList.Clear();
             m_ScenesLoaded.Clear();
             m_CreateServerFirst = false;
+            m_CanCheckLoadUnloadEvents = false;
             return base.OnSetup();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            base.OnServerAndClientsCreated();
         }
 
         protected override IEnumerator OnStartedServerAndClients()
@@ -61,10 +68,9 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
                 client.SceneManager.DisableValidationWarnings(true);
             }
-
             return base.OnStartedServerAndClients();
         }
-
+        private bool m_CanCheckLoadUnloadEvents = false;
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
             switch (sceneEvent.SceneEventType)
@@ -78,47 +84,58 @@ namespace TestProject.RuntimeTests
                 case SceneEventType.Load:
                 case SceneEventType.Unload:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                        Assert.IsNotNull(sceneEvent.AsyncOperation);
+                        if (m_CanCheckLoadUnloadEvents)
+                        {
+                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                            Assert.IsNotNull(sceneEvent.AsyncOperation);
+                        }
                         break;
                     }
                 case SceneEventType.LoadComplete:
                     {
-                        if (sceneEvent.ClientId == NetworkManager.ServerClientId)
+                        if (m_CanCheckLoadUnloadEvents)
                         {
-                            var scene = sceneEvent.Scene;
-                            m_CurrentScene = scene;
-                            m_ScenesLoaded.Add(scene);
+                            if (sceneEvent.ClientId == NetworkManager.ServerClientId)
+                            {
+                                var scene = sceneEvent.Scene;
+                                m_CurrentScene = scene;
+                                m_ScenesLoaded.Add(scene);
+                            }
+                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId), $"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
+                            SetClientProcessedEvent(sceneEvent.ClientId);
                         }
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId), $"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
-                        SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
                 case SceneEventType.UnloadComplete:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                        SetClientProcessedEvent(sceneEvent.ClientId);
+                        if (m_CanCheckLoadUnloadEvents)
+                        {
+                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                            SetClientProcessedEvent(sceneEvent.ClientId);
+                        }
                         break;
                     }
                 case SceneEventType.LoadEventCompleted:
                 case SceneEventType.UnloadEventCompleted:
                     {
-                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-
-                        // If we are a server and this is being processed by the server, then add the server to the completed list
-                        // to validate that the event completed on all clients (and the server).
-                        if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
-                            !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
+                        if (m_CanCheckLoadUnloadEvents)
                         {
-                            sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
-                        }
-                        Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
-                        SetClientWaitDone(sceneEvent.ClientsThatCompleted);
+                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
 
+                            // If we are a server and this is being processed by the server, then add the server to the completed list
+                            // to validate that the event completed on all clients (and the server).
+                            if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
+                                !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
+                            {
+                                sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
+                            }
+                            Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
+                            SetClientWaitDone(sceneEvent.ClientsThatCompleted);
+                        }
                         break;
                     }
             }
@@ -224,12 +241,14 @@ namespace TestProject.RuntimeTests
             // Test VerifySceneBeforeLoading with both server and client set to true
             ResetWait();
             var result = m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive);
-            Assert.True(result == SceneEventProgressStatus.Started);
+            Assert.True(result == SceneEventProgressStatus.Started, $"[{result}] Status receives when trying to load scene {sceneName}!");
 
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
 
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for clients to load the scene!");
+
+            yield return s_DefaultWaitForTick;
         }
 
         private IEnumerator UnloadScene(Scene scene)
@@ -240,11 +259,12 @@ namespace TestProject.RuntimeTests
             m_CurrentSceneName = scene.name;
 
             var result = m_ServerNetworkManager.SceneManager.UnloadScene(scene);
-            Assert.True(result == SceneEventProgressStatus.Started);
+            Assert.True(result == SceneEventProgressStatus.Started, $"UnloadScene did not start and returned {result}");
 
             // Wait for all clients to unload the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for clients to unload the scene!");
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
@@ -273,22 +293,36 @@ namespace TestProject.RuntimeTests
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 8, 16)] int numberOfScenesToLoad)
+        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 6)] int numberOfScenesToLoad)
         {
             m_LoadSceneMode = clientSynchronizationMode;
             m_CanStartServerOrClients = true;
+
             yield return StartServerAndClients();
 
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
 
-
+            m_CanCheckLoadUnloadEvents = true;
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(clientSynchronizationMode, true);
 
             m_OriginalActiveScene = SceneManager.GetActiveScene();
 
             yield return LoadScene(k_BaseUnitTestSceneName);
+
+            var message = "<<<Scene Handle Tables>>>\n";
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                message += $"{client.name}'s server to local scene handle table:\n";
+
+
+                foreach (var entry in client.SceneManager.ServerSceneHandleToClientSceneHandle)
+                {
+                    message += $"NetworkSceneHandle: {entry.Key} | ClientSceneHandle: {entry.Value}\n";
+                }
+            }
+            Debug.Log($"{message}");
 
             SceneManager.SetActiveScene(m_CurrentScene);
             // Now load the scene(s)
@@ -297,15 +331,56 @@ namespace TestProject.RuntimeTests
                 yield return LoadScene(k_MultiInstanceTestScenename);
             }
 
-            yield return s_DefaultWaitForTick;
+            Assert.True(m_ScenesLoaded.Count == (1 + numberOfScenesToLoad), $"Scene number mismatch! Expected {(1 + numberOfScenesToLoad)} but was {m_ScenesLoaded.Count}");
 
-            yield return UnloadAllScenes();
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.SceneManager.OnUnloadComplete += SceneManager_OnUnloadComplete;
+            }
+
+            yield return UnloadAllScenes(true);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.SceneManager.OnUnloadComplete -= SceneManager_OnUnloadComplete;
+            }
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+
+            m_CanCheckLoadUnloadEvents = false;
             yield return s_DefaultWaitForTick;
 
         }
 
-        private IEnumerator UnloadAllScenes()
+        private string m_SceneBeingUnloaded;
+        private List<ulong> m_ClientsThatUnloadedCurrentScene = new List<ulong>();
+
+        private void SceneManager_OnUnloadComplete(ulong clientId, string sceneName)
+        {
+            if (m_SceneBeingUnloaded.Contains(sceneName))
+            {
+                if (!m_ClientsThatUnloadedCurrentScene.Contains(clientId))
+                {
+                    m_ClientsThatUnloadedCurrentScene.Add(clientId);
+                }
+                else
+                {
+                    throw new Exception($"m_ClientsThatUnloadedCurrentScene already contains client id {clientId} when unloading scene {sceneName}!");
+                }
+            }
+        }
+
+        private bool AllClientsUnloadedScene()
+        {
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (!m_ClientsThatUnloadedCurrentScene.Contains(client.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private IEnumerator UnloadAllScenes(bool shouldCheckClients = false)
         {
             if (m_ScenesLoaded.Count > 0)
             {
@@ -315,9 +390,17 @@ namespace TestProject.RuntimeTests
                 // Now unload the scene(s)
                 foreach (var scene in m_ScenesLoaded)
                 {
-                    yield return UnloadScene(scene);
+                    if (scene.IsValid() && scene.isLoaded)
+                    {
+                        m_ClientsThatUnloadedCurrentScene.Clear();
+                        m_SceneBeingUnloaded = scene.name;
+                        yield return UnloadScene(scene);
+                        if (shouldCheckClients)
+                        {
+                            yield return WaitForConditionOrTimeOut(AllClientsUnloadedScene);
+                        }
+                    }
                 }
-
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
 
                 m_ScenesLoaded.Clear();
