@@ -22,6 +22,9 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
         public float MaximumInterpolationTime = 0.1f;
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
@@ -68,6 +71,9 @@ namespace Unity.Netcode
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
+        /// <summary>
+        /// todo
+        /// </summary>
         public void Clear()
         {
             m_Buffer.Clear();
@@ -75,6 +81,9 @@ namespace Unity.Netcode
             m_StartTimeConsumed = 0.0d;
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
         public void ResetTo(T targetValue, double serverTime)
         {
             m_LifetimeConsumedCount = 1;
@@ -87,7 +96,6 @@ namespace Unity.Netcode
 
             Update(0, serverTime, serverTime);
         }
-
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer(double renderTime, double serverTime)
@@ -211,6 +219,9 @@ namespace Unity.Netcode
             return m_CurrentInterpValue;
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
         public void AddMeasurement(T newMeasurement, double sentTime)
         {
             m_NbItemsReceivedThisFrame++;
@@ -237,15 +248,23 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
         public T GetInterpolatedValue()
         {
             return m_CurrentInterpValue;
         }
 
+        /// <summary>
+        /// todo
+        /// </summary>
         protected abstract T Interpolate(T start, T end, float time);
+        /// <summary>
+        /// todo
+        /// </summary>
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
-
 
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
