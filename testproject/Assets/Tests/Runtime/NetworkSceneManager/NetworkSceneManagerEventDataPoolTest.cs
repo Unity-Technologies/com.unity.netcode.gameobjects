@@ -13,7 +13,7 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 9;
+        protected override int NumberOfClients => 1;
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
@@ -92,7 +92,7 @@ namespace TestProject.RuntimeTests
                             m_ScenesLoaded.Add(scene);
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId),$"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
                         SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
@@ -282,6 +282,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
 
+
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(clientSynchronizationMode, true);
 
@@ -299,6 +300,9 @@ namespace TestProject.RuntimeTests
             yield return s_DefaultWaitForTick;
 
             yield return UnloadAllScenes();
+            m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+            yield return s_DefaultWaitForTick;
+
         }
 
         private IEnumerator UnloadAllScenes()
@@ -324,6 +328,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             yield return UnloadAllScenes();
+            m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
         }
     }
 }
