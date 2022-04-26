@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-
     /// <summary>
     /// Solves for incoming values that are jittered
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    internal abstract class BufferedLinearInterpolator<T> where T : struct
+    public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         private struct BufferedItem
         {
@@ -24,6 +22,7 @@ namespace Unity.Netcode
             }
         }
 
+        public float MaximumInterpolationTime = 0.1f;
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
@@ -205,8 +204,7 @@ namespace Unity.Netcode
                 }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
-                float maxInterpTime = 0.1f;
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime); // second interpolate to smooth out extrapolation jumps
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
             m_NbItemsReceivedThisFrame = 0;
