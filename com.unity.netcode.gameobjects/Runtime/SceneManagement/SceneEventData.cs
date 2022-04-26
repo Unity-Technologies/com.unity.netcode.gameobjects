@@ -784,6 +784,16 @@ namespace Unity.Netcode
                         // Since this is a NetworkObject that was never spawned, we just need to send a notification
                         // out that it was despawned so users can make adjustments
                         sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
+                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
+                        {
+                            m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
+                        }
+
+                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].gameObject.scene.handle))
+                        {
+                            m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].gameObject.scene.handle, sceneRelativeNetworkObjects[globalObjectIdHash]);
+                        }
+
                     }
                     else
                     {
