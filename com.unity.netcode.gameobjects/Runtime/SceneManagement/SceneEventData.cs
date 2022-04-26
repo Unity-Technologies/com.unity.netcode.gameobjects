@@ -91,7 +91,7 @@ namespace Unity.Netcode
     {
         internal SceneEventType SceneEventType;
         internal LoadSceneMode LoadSceneMode;
-        internal ForceSerializeByMemcpy<Guid> SceneEventProgressId;
+        internal ForceNetworkSerializeByMemcpy<Guid> SceneEventProgressId;
         internal uint SceneEventId;
 
 

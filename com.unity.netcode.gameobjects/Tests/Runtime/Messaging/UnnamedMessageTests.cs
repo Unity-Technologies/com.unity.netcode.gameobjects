@@ -19,7 +19,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator UnnamedMessageIsReceivedOnClientWithContent()
         {
-            var messageContent = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong receivedMessageSender = 0;
-            var receivedMessageContent = new ForceSerializeByMemcpy<Guid>(new Guid());
+            var receivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, FastBufferReader reader) =>
                 {
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator UnnamedMessageIsReceivedOnMultipleClientsWithContent()
         {
-            var messageContent = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong firstReceivedMessageSender = 0;
-            var firstReceivedMessageContent = new ForceSerializeByMemcpy<Guid>(new Guid());
+            var firstReceivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, FastBufferReader reader) =>
                 {
@@ -69,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
                 };
 
             ulong secondReceivedMessageSender = 0;
-            var secondReceivedMessageContent = new ForceSerializeByMemcpy<Guid>(new Guid());
+            var secondReceivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
             SecondClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, FastBufferReader reader) =>
                 {
@@ -90,7 +90,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingUnnamedMessageToAll_AllClientsReceiveIt()
         {
-            var messageContent = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -99,7 +99,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             ulong firstReceivedMessageSender = 0;
-            var firstReceivedMessageContent = new ForceSerializeByMemcpy<Guid>(new Guid());
+            var firstReceivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
             FirstClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, FastBufferReader reader) =>
                 {
@@ -109,7 +109,7 @@ namespace Unity.Netcode.RuntimeTests
                 };
 
             ulong secondReceivedMessageSender = 0;
-            var secondReceivedMessageContent = new ForceSerializeByMemcpy<Guid>(new Guid());
+            var secondReceivedMessageContent = new ForceNetworkSerializeByMemcpy<Guid>(new Guid());
             SecondClient.CustomMessagingManager.OnUnnamedMessage +=
                 (ulong sender, FastBufferReader reader) =>
                 {
@@ -130,7 +130,7 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void WhenSendingNamedMessageToNullClientList_ArgumentNullExceptionIsThrown()
         {
-            var messageContent = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {

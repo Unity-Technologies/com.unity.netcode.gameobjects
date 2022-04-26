@@ -24,6 +24,30 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
+        private TypeReference ResolveGenericType(TypeReference type, List<TypeReference> typeStack)
+        {
+            var genericName = type.Name;
+            var lastType = (GenericInstanceType)typeStack[typeStack.Count - 1];
+            var resolvedType = lastType.Resolve();
+            typeStack.RemoveAt(typeStack.Count - 1);
+            for (var i = 0; i < resolvedType.GenericParameters.Count; ++i)
+            {
+                var parameter = resolvedType.GenericParameters[i];
+                if (parameter.Name == genericName)
+                {
+                    var underlyingType = lastType.GenericArguments[i];
+                    if (underlyingType.Resolve() == null)
+                    {
+                        return ResolveGenericType(underlyingType, typeStack);
+                    }
+
+                    return underlyingType;
+                }
+            }
+
+            return null;
+        }
+
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly))
@@ -58,12 +82,78 @@ namespace Unity.Netcode.Editor.CodeGen
                         var enumTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().IsEnum && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
+
+                        var networkSerializableTypesSet = new HashSet<TypeReference>(networkSerializableTypes);
+                        var structTypesSet = new HashSet<TypeReference>(structTypes);
+                        var enumTypesSet = new HashSet<TypeReference>(enumTypes);
+                        var typeStack = new List<TypeReference>();
+                        foreach (var type in mainModule.GetTypes())
+                        {
+                            if (type.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
+                            {
+                                foreach (var field in type.Fields)
+                                {
+                                    var fieldType = field.FieldType;
+                                    var baseType = fieldType.Resolve().BaseType;
+                                    typeStack.Clear();
+                                    typeStack.Add(fieldType);
+                                    while(baseType.Name != mainModule.TypeSystem.Object.Name)
+                                    {
+                                        if (baseType.IsGenericInstance && baseType.Resolve() == m_networkVariableSerializationType)
+                                        {
+                                            var genericType = (GenericInstanceType)baseType;
+                                            var underlyingType = genericType.GenericArguments[0];
+                                            if (underlyingType.Resolve() == null)
+                                            {
+                                                underlyingType = ResolveGenericType(underlyingType, typeStack);
+                                            }
+
+                                            if (underlyingType.IsGenericInstance)
+                                            {
+                                                if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                                                {
+                                                    networkSerializableTypesSet.Add(underlyingType);
+                                                }
+
+                                                if (underlyingType.HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName))
+                                                {
+                                                    structTypesSet.Add(underlyingType);
+                                                }
+
+                                                if (underlyingType.Resolve().IsEnum)
+                                                {
+                                                    enumTypesSet.Add(underlyingType);
+                                                }
+                                            }
+
+                                            break;
+                                        }
+
+                                        typeStack.Add(baseType);
+                                        baseType = baseType.Resolve().BaseType;
+                                    }
+                                }
+                            }
+                            else if (type.HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName))
+                            {
+                                if (type.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                                {
+                                    m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types may not implement {nameof(INetworkSerializable)} - choose one or the other.");
+                                }
+                                if(!type.IsValueType)
+                                {
+                                    m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types must be unmanaged types.");
+
+                                }
+                            }
+                        }
+
                         if (networkSerializableTypes.Count + structTypes.Count + enumTypes.Count == 0)
                         {
                             return null;
                         }
 
-                        CreateModuleInitializer(assemblyDefinition, networkSerializableTypes, structTypes, enumTypes);
+                        CreateModuleInitializer(assemblyDefinition, networkSerializableTypesSet.ToList(), structTypesSet.ToList(), enumTypesSet.ToList());
                     }
                     else
                     {
@@ -102,6 +192,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_InitializeDelegatesStruct_MethodRef;
         private MethodReference m_InitializeDelegatesEnum_MethodRef;
 
+        private TypeDefinition m_networkVariableSerializationType;
+
         private const string k_InitializeNetworkSerializableMethodName = nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable);
         private const string k_InitializeStructMethodName = nameof(NetworkVariableHelper.InitializeDelegatesStruct);
         private const string k_InitializeEnumMethodName = nameof(NetworkVariableHelper.InitializeDelegatesEnum);
@@ -125,6 +217,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                 }
             }
+            m_networkVariableSerializationType = moduleDefinition.ImportReference(typeof(NetworkVariableSerialization<>)).Resolve();
             return true;
         }
 
@@ -153,7 +246,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // C# (that attribute doesn't exist in Unity, but the static module constructor still works)
         // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.moduleinitializerattribute?view=net-5.0
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
-        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkSerializableTypes, List<TypeDefinition> structTypes, List<TypeDefinition> enumTypes)
+        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeReference> networkSerializableTypes, List<TypeReference> structTypes, List<TypeReference> enumTypes)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {

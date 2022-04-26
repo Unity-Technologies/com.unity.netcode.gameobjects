@@ -20,7 +20,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
         {
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
             try
@@ -48,7 +48,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesReceived()
         {
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
             try

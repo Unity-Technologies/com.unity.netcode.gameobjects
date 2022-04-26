@@ -9,7 +9,7 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
-    public struct TemplatedType<T1> : ISerializeByMemcpy where T1 : unmanaged
+    public struct TemplatedType<T1> : INetworkSerializeByMemcpy where T1 : unmanaged
     {
         public enum Enum
         {
@@ -18,7 +18,7 @@ namespace TestProject.RuntimeTests
             Three
         }
 
-        public struct NestedTemplatedType<T2> : ISerializeByMemcpy where T2 : unmanaged
+        public struct NestedTemplatedType<T2> : INetworkSerializeByMemcpy where T2 : unmanaged
         {
             public T1 Value1;
             public T2 Value2;

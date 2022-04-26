@@ -1133,7 +1133,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(ISerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
+                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                         continue;
                     }
 
@@ -1448,7 +1448,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(ISerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
+                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                     continue;
                 }
 

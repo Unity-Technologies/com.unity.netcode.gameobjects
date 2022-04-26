@@ -18,23 +18,23 @@ namespace Unity.Netcode
         // RuntimeAccessModifiersILPP will make this `public`
         internal static void InitializeDelegatesNetworkSerializable<T>() where T : unmanaged, INetworkSerializable
         {
-            NetworkVariable<T>.Write = NetworkVariable<T>.WriteNetworkSerializable;
-            NetworkVariable<T>.Read = NetworkVariable<T>.ReadNetworkSerializable;
+            NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WriteNetworkSerializable);
+            NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadNetworkSerializable);
         }
-        internal static void InitializeDelegatesStruct<T>() where T : unmanaged, ISerializeByMemcpy
+        internal static void InitializeDelegatesStruct<T>() where T : unmanaged, INetworkSerializeByMemcpy
         {
-            NetworkVariable<T>.Write = NetworkVariable<T>.WriteStruct;
-            NetworkVariable<T>.Read = NetworkVariable<T>.ReadStruct;
+            NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WriteStruct);
+            NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadStruct);
         }
         internal static void InitializeDelegatesEnum<T>() where T : unmanaged, Enum
         {
-            NetworkVariable<T>.Write = NetworkVariable<T>.WriteEnum;
-            NetworkVariable<T>.Read = NetworkVariable<T>.ReadEnum;
+            NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WriteEnum);
+            NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadEnum);
         }
         internal static void InitializeDelegatesPrimitive<T>() where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>
         {
-            NetworkVariable<T>.Write = NetworkVariable<T>.WritePrimitive;
-            NetworkVariable<T>.Read = NetworkVariable<T>.ReadPrimitive;
+            NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WritePrimitive);
+            NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadPrimitive);
         }
 
         internal static void InitializeAllBaseDelegates()
@@ -55,23 +55,23 @@ namespace Unity.Netcode
             InitializeDelegatesPrimitive<ulong>();
 
             // Built-in Unity types, serialized with specific overloads because they're structs without ISerializeByMemcpy attached
-            NetworkVariable<Vector2>.Write = (FastBufferWriter writer, in Vector2 value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Vector3>.Write = (FastBufferWriter writer, in Vector3 value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Vector4>.Write = (FastBufferWriter writer, in Vector4 value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Quaternion>.Write = (FastBufferWriter writer, in Quaternion value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Color>.Write = (FastBufferWriter writer, in Color value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Color32>.Write = (FastBufferWriter writer, in Color32 value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Ray>.Write = (FastBufferWriter writer, in Ray value) => { writer.WriteValueSafe(value); };
-            NetworkVariable<Ray2D>.Write = (FastBufferWriter writer, in Ray2D value) => { writer.WriteValueSafe(value); };
+            NetworkVariableSerialization<Vector2>.SetWriteDelegate((FastBufferWriter writer, in Vector2 value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Vector3>.SetWriteDelegate((FastBufferWriter writer, in Vector3 value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Vector4>.SetWriteDelegate((FastBufferWriter writer, in Vector4 value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Quaternion>.SetWriteDelegate((FastBufferWriter writer, in Quaternion value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Color>.SetWriteDelegate((FastBufferWriter writer, in Color value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Color32>.SetWriteDelegate((FastBufferWriter writer, in Color32 value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Ray>.SetWriteDelegate((FastBufferWriter writer, in Ray value) => { writer.WriteValueSafe(value); });
+            NetworkVariableSerialization<Ray2D>.SetWriteDelegate((FastBufferWriter writer, in Ray2D value) => { writer.WriteValueSafe(value); });
 
-            NetworkVariable<Vector2>.Read = (FastBufferReader reader, out Vector2 value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Vector3>.Read = (FastBufferReader reader, out Vector3 value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Vector4>.Read = (FastBufferReader reader, out Vector4 value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Quaternion>.Read = (FastBufferReader reader, out Quaternion value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Color>.Read = (FastBufferReader reader, out Color value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Color32>.Read = (FastBufferReader reader, out Color32 value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Ray>.Read = (FastBufferReader reader, out Ray value) => { reader.ReadValueSafe(out value); };
-            NetworkVariable<Ray2D>.Read = (FastBufferReader reader, out Ray2D value) => { reader.ReadValueSafe(out value); };
+            NetworkVariableSerialization<Vector2>.SetReadDelegate((FastBufferReader reader, out Vector2 value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Vector3>.SetReadDelegate((FastBufferReader reader, out Vector3 value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Vector4>.SetReadDelegate((FastBufferReader reader, out Vector4 value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Quaternion>.SetReadDelegate((FastBufferReader reader, out Quaternion value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Color>.SetReadDelegate((FastBufferReader reader, out Color value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Color32>.SetReadDelegate((FastBufferReader reader, out Color32 value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Ray>.SetReadDelegate((FastBufferReader reader, out Ray value) => { reader.ReadValueSafe(out value); });
+            NetworkVariableSerialization<Ray2D>.SetReadDelegate((FastBufferReader reader, out Ray2D value) => { reader.ReadValueSafe(out value); });
         }
     }
 }

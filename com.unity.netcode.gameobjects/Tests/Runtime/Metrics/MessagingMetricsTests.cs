@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForEventMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
 
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -47,7 +47,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackNetworkMessageSentMetricToMultipleClients()
         {
             var waitForMetricValues = new WaitForEventMetricValues<NetworkMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NetworkMessageSent);
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackNetworkMessageReceivedMetric()
         {
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
 
             LogAssert.Expect(LogType.Log, $"Received from {Server.LocalClientId}");
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.Value.ToString(), (ulong sender, FastBufferReader payload) =>
@@ -94,7 +94,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForEventMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
 
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -118,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackNamedMessageSentMetricToMultipleClients()
         {
             var waitForMetricValues = new WaitForEventMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -139,7 +139,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackNamedMessageSentMetricToSelf()
         {
             var waitForMetricValues = new WaitForEventMetricValues<NamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.NamedMessageSent);
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -157,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         {
             var waitForMetricValues = new WaitForEventMetricValues<NamedMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.NamedMessageReceived);
 
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
 
             LogAssert.Expect(LogType.Log, $"Received from {Server.LocalClientId}");
             FirstClient.CustomMessagingManager.RegisterNamedMessageHandler(messageName.Value.ToString(), (ulong sender, FastBufferReader payload) =>
@@ -187,7 +187,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackUnnamedMessageSentMetric()
         {
-            var message = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var message = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(message);
@@ -211,7 +211,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackUnnamedMessageSentMetricToMultipleClients()
         {
-            var message = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var message = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var waitForMetricValues = new WaitForEventMetricValues<UnnamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageSent);
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
@@ -236,7 +236,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         public IEnumerator TrackUnnamedMessageSentMetricToSelf()
         {
             var waitForMetricValues = new WaitForEventMetricValues<UnnamedMessageEvent>(ServerMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageSent);
-            var messageName = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {
                 writer.WriteValueSafe(messageName);
@@ -252,7 +252,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackUnnamedMessageReceivedMetric()
         {
-            var message = new ForceSerializeByMemcpy<Guid>(Guid.NewGuid());
+            var message = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var waitForMetricValues = new WaitForEventMetricValues<UnnamedMessageEvent>(FirstClientMetrics.Dispatcher, NetworkMetricTypes.UnnamedMessageReceived);
             using (var writer = new FastBufferWriter(1300, Allocator.Temp))
             {

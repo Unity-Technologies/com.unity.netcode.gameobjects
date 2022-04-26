@@ -814,13 +814,13 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => WriteUnmanaged(value);
+        public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => WriteUnmanaged(value);
+        public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => WriteUnmanagedSafe(value);
+        public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => WriteUnmanagedSafe(value);
+        public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 

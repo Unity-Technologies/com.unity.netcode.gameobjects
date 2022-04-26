@@ -58,7 +58,7 @@ namespace Unity.Netcode.EditorTests
             C
         };
 
-        protected struct TestStruct : ISerializeByMemcpy
+        protected struct TestStruct : INetworkSerializeByMemcpy
         {
             public byte A;
             public short B;

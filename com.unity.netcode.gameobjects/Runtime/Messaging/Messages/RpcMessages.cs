@@ -83,7 +83,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal struct RpcMetadata : ISerializeByMemcpy
+    internal struct RpcMetadata : INetworkSerializeByMemcpy
     {
         public ulong NetworkObjectId;
         public ushort NetworkBehaviourId;

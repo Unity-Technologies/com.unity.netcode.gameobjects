@@ -19,7 +19,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
         {
-            var messageContent = new ForceSerializeByMemcpy<Guid> { Value = Guid.NewGuid() };
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid> { Value = Guid.NewGuid() };
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {

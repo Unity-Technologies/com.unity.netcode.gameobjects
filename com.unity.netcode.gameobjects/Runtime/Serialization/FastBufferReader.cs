@@ -723,14 +723,14 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => ReadUnmanaged(out value);
+        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => ReadUnmanaged(out value);
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => ReadUnmanagedSafe(out value);
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, ISerializeByMemcpy => ReadUnmanagedSafe(out value);
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);

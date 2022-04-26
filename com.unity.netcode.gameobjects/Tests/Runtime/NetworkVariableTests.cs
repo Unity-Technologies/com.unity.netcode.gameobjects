@@ -273,9 +273,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<ForceSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceSerializeByMemcpy<FixedString128Bytes>>();
+        public readonly NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>>();
 
-        public readonly NetworkVariable<ForceSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceSerializeByMemcpy<FixedString32Bytes>>();
+        public readonly NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {

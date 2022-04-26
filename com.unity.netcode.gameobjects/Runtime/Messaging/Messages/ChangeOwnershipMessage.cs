@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal struct ChangeOwnershipMessage : INetworkMessage, ISerializeByMemcpy
+    internal struct ChangeOwnershipMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public ulong NetworkObjectId;
         public ulong OwnerClientId;

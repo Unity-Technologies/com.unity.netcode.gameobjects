@@ -5,7 +5,7 @@ namespace Unity.Netcode.EditorTests
 {
     public class MessageRegistrationTests
     {
-        private struct TestMessageOne : INetworkMessage, ISerializeByMemcpy
+        private struct TestMessageOne : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
@@ -25,7 +25,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private struct TestMessageTwo : INetworkMessage, ISerializeByMemcpy
+        private struct TestMessageTwo : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
@@ -64,7 +64,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private struct TestMessageThree : INetworkMessage, ISerializeByMemcpy
+        private struct TestMessageThree : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
@@ -97,7 +97,7 @@ namespace Unity.Netcode.EditorTests
                 };
             }
         }
-        private struct TestMessageFour : INetworkMessage, ISerializeByMemcpy
+        private struct TestMessageFour : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
