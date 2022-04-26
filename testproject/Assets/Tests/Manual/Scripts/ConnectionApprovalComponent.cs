@@ -16,7 +16,7 @@ namespace TestProject.ManualTests
         private string m_ApprovalToken;
 
         [SerializeField]
-        private uint m_GlobalObjectIdHashOverride;
+        private GameObject m_PlayerPrefabOverride;
 
         [SerializeField]
         private Text m_ConnectionMessageToDisplay;
@@ -25,7 +25,7 @@ namespace TestProject.ManualTests
         private Toggle m_SimulateFailure;
 
         [SerializeField]
-        private Toggle m_PlayerPrefabOverride;
+        private Toggle m_OverridePlayerPrefab;
 
         [SerializeField]
         private Button m_ClientDisconnectButton;
@@ -43,9 +43,9 @@ namespace TestProject.ManualTests
 
         private void Start()
         {
-            if (m_PlayerPrefabOverride)
+            if (m_OverridePlayerPrefab)
             {
-                m_PlayerPrefabOverride.gameObject.SetActive(false);
+                m_OverridePlayerPrefab.gameObject.SetActive(false);
             }
 
             if (m_SimulateFailure)
@@ -126,9 +126,9 @@ namespace TestProject.ManualTests
                 m_SimulateFailure.gameObject.SetActive(IsServer);
             }
 
-            if (m_PlayerPrefabOverride)
+            if (m_OverridePlayerPrefab)
             {
-                m_PlayerPrefabOverride.gameObject.SetActive(IsServer);
+                m_OverridePlayerPrefab.gameObject.SetActive(IsServer);
             }
         }
 
@@ -163,9 +163,9 @@ namespace TestProject.ManualTests
                 isTokenValid = false;
             }
 
-            if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
+            if (m_PlayerPrefabOverride != null && m_OverridePlayerPrefab && m_OverridePlayerPrefab.isOn)
             {
-                aprovalCallback.Invoke(true, m_GlobalObjectIdHashOverride, isTokenValid, null, null);
+                aprovalCallback.Invoke(true, m_PlayerPrefabOverride.GetComponent<NetworkObject>(), isTokenValid, null, null);
             }
             else
             {

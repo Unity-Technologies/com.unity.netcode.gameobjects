@@ -15,7 +15,7 @@ namespace TestProject.RuntimeTests
         private string m_ConnectionToken;
         private uint m_SuccessfulConnections;
         private uint m_FailedConnections;
-        private uint m_PrefabOverrideGlobalObjectIdHash;
+        private NetworkObject m_PrefabOverride;
 
         private GameObject m_PlayerPrefab;
         private GameObject m_PlayerPrefabOverride;
@@ -83,7 +83,7 @@ namespace TestProject.RuntimeTests
                 // This assures that if a client is shutdown it will not destroy the prefab
                 networkObjectOverride.NetworkManagerOwner = server;
                 NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
-                m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
+                m_PrefabOverride = networkObjectOverride;
 
                 server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
                 foreach (var client in clients)
@@ -93,7 +93,7 @@ namespace TestProject.RuntimeTests
             }
             else
             {
-                m_PrefabOverrideGlobalObjectIdHash = 0;
+                m_PrefabOverride = null;
             }
 
             // [Host-Side] Set the player prefab
@@ -148,7 +148,7 @@ namespace TestProject.RuntimeTests
                 foreach (var networkClient in server.ConnectedClientsList)
                 {
                     Assert.IsNotNull(networkClient.PlayerObject);
-                    Assert.AreEqual(networkClient.PlayerObject.GlobalObjectIdHash, m_PrefabOverrideGlobalObjectIdHash);
+                    Assert.AreEqual(networkClient.PlayerObject.GlobalObjectIdHash, m_PrefabOverride.GlobalObjectIdHash);
                 }
             }
 
@@ -187,13 +187,13 @@ namespace TestProject.RuntimeTests
                 m_FailedConnections++;
             }
 
-            if (m_PrefabOverrideGlobalObjectIdHash == 0)
+            if (m_PrefabOverride == null)
             {
                 callback.Invoke(true, null, isApproved, null, null);
             }
             else
             {
-                callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
+                callback.Invoke(true, m_PrefabOverride, isApproved, null, null);
             }
         }
 
