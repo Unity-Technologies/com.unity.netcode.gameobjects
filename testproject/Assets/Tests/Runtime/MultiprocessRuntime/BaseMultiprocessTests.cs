@@ -241,7 +241,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else
             {
-                TestCoordinator.Instance.KeepAliveClientRpc();
+                // TestCoordinator.Instance.KeepAliveClientRpc();
             }
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
@@ -249,7 +249,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
             // Need to make sure the host doesn't shutdown while setting up the clients
-            TestCoordinator.Instance.KeepAliveOnServer();
+            // TestCoordinator.Instance.KeepAliveOnServer();
 
             var numProcessesToCreate = GetWorkerCount();
 
