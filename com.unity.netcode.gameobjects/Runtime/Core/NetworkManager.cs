@@ -359,11 +359,11 @@ namespace Unity.Netcode
         /// Delegate type called when connection has been approved. This only has to be set on the server.
         /// </summary>
         /// <param name="createPlayerObject">If true, a player object will be created. Otherwise the client will have no object.</param>
-        /// <param name="playerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
+        /// <param name="playerPrefab">The prefab to use for the client. If createPlayerObject is false, this is ignored. If playerPrefab is null, the default player prefab is used.</param>
         /// <param name="approved">Whether or not the client was approved</param>
         /// <param name="position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
+        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, NetworkObject playerPrefab, bool approved, Vector3? position, Quaternion? rotation);
 
         /// <summary>
         /// The callback to invoke during connection approval
@@ -1722,11 +1722,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="ownerClientId">client being approved</param>
         /// <param name="createPlayerObject">whether we want to create a player or not</param>
-        /// <param name="playerPrefabHash">the GlobalObjectIdHash value for the Network Prefab to create as the player</param>
+        /// <param name="playerPrefab">The Network Prefab to create as the player</param>
         /// <param name="approved">Is the player approved or not?</param>
         /// <param name="position">Used when createPlayerObject is true, position of the player when spawned </param>
         /// <param name="rotation">Used when createPlayerObject is true, rotation of the player when spawned</param>
-        internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(ulong ownerClientId, bool createPlayerObject, NetworkObject playerPrefab, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
             {
@@ -1738,9 +1738,9 @@ namespace Unity.Netcode
                 m_ConnectedClientsList.Add(client);
                 m_ConnectedClientIds.Add(client.ClientId);
 
-                if (createPlayerObject)
+                if (createPlayerObject && (playerPrefab != null || NetworkConfig.PlayerPrefab != null))
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefab == null ? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash : playerPrefab.GlobalObjectIdHash, ownerClientId, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
@@ -1781,13 +1781,13 @@ namespace Unity.Netcode
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
-                if (!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
+                if (!createPlayerObject || (playerPrefab == null && NetworkConfig.PlayerPrefab == null))
                 {
                     return;
                 }
 
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
-                ApprovedPlayerSpawn(ownerClientId, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                ApprovedPlayerSpawn(ownerClientId, playerPrefab == null ? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash : playerPrefab.GlobalObjectIdHash);
             }
             else
             {

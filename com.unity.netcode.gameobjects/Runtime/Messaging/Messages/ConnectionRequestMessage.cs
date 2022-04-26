@@ -102,10 +102,10 @@ namespace Unity.Netcode
                 // Note: Delegate creation allocates.
                 // Note: ToArray() also allocates. :(
                 networkManager.InvokeConnectionApproval(ConnectionData, senderId,
-                    (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
+                    (createPlayerObject, playerPrefab, approved, position, rotation) =>
                     {
                         var localCreatePlayerObject = createPlayerObject;
-                        networkManager.HandleApproval(senderId, localCreatePlayerObject, playerPrefabHash, approved, position, rotation);
+                        networkManager.HandleApproval(senderId, localCreatePlayerObject, playerPrefab, approved, position, rotation);
                     });
             }
             else
