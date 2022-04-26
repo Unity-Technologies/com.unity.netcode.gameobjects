@@ -40,7 +40,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         }
         protected bool m_HasSceneLoaded = false;
         protected bool m_LaunchRemotely;
-        protected virtual bool RunUnityTearDown => true;
+        protected virtual bool RunUnityTearDown => false;
 
         protected virtual bool IsPerformanceTest => false;
 
@@ -258,6 +258,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (m_ConnectedClientsList.Count < numProcessesToCreate && NetworkManager.Singleton.ConnectedClients.Count < numProcessesToCreate + 1)
             {
+                MultiprocessLogger.Log($"GetWorkerCount: {numProcessesToCreate} NetworkManager.Singleton.ConnectedClients.Count {NetworkManager.Singleton.ConnectedClients.Count}");
                 if (!m_LaunchRemotely)
                 {
                     for (int i = 1; i <= numProcessesToCreate; i++)
