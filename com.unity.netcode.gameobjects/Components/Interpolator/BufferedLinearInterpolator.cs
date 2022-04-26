@@ -72,7 +72,7 @@ namespace Unity.Netcode
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
         /// <summary>
-        /// todo
+        /// Resets Interpolator to initial state
         /// </summary>
         public void Clear()
         {
