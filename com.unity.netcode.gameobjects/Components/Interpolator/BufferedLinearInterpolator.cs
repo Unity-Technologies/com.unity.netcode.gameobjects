@@ -249,7 +249,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// todo
+        /// Gets latest value from the interpolator. This is updated every update as time goes by.
         /// </summary>
         public T GetInterpolatedValue()
         {
