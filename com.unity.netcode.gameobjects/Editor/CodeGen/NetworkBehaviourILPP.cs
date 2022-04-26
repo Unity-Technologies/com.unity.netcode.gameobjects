@@ -594,8 +594,8 @@ namespace Unity.Netcode.Editor.CodeGen
                         return method;
                     }
 
-                    if ((parameters[0].ParameterType == paramType ||
-                         (parameters[0].ParameterType == paramType.MakeByReferenceType() && parameters[0].IsIn)))
+                    if (parameters[0].ParameterType == paramType ||
+                        (parameters[0].ParameterType == paramType.MakeByReferenceType() && parameters[0].IsIn))
                     {
                         return method;
                     }
@@ -610,7 +610,6 @@ namespace Unity.Netcode.Editor.CodeGen
                                 var resolvedConstraint = constraint.Resolve();
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
-
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
                                     (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
                                     (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
@@ -762,6 +761,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                 {
                                     instanceMethod.GenericArguments.Add(paramType);
                                 }
+
                                 return instanceMethod;
                             }
                         }
@@ -1372,7 +1372,6 @@ namespace Unity.Netcode.Editor.CodeGen
                     int isSetLocalIndex = rpcHandler.Body.Variables.Count - 1;
                     processor.Emit(OpCodes.Ldarga, 1);
                     processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
-
 
                     for (var i = 1; i < boolMethodRef.Parameters.Count; ++i)
                     {

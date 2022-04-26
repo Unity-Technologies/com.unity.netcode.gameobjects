@@ -77,7 +77,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializable_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
                         var structTypes = mainModule.GetTypes()
-                            .Where(t => t.Resolve().HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
+                            .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
                         var enumTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().IsEnum && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
@@ -115,7 +115,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                                     networkSerializableTypesSet.Add(underlyingType);
                                                 }
 
-                                                if (underlyingType.HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName))
+                                                if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName))
                                                 {
                                                     structTypesSet.Add(underlyingType);
                                                 }
@@ -134,7 +134,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                     }
                                 }
                             }
-                            else if (type.HasInterface(CodeGenHelpers.ISerializeByMemcpy_FullName))
+                            else if (type.HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName))
                             {
                                 if (type.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                                 {
@@ -143,7 +143,6 @@ namespace Unity.Netcode.Editor.CodeGen
                                 if (!type.IsValueType)
                                 {
                                     m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types must be unmanaged types.");
-
                                 }
                             }
                         }
