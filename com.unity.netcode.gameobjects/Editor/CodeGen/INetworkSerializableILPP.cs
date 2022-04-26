@@ -97,9 +97,9 @@ namespace Unity.Netcode.Editor.CodeGen
                                     var baseType = fieldType.Resolve().BaseType;
                                     typeStack.Clear();
                                     typeStack.Add(fieldType);
-                                    while(baseType.Name != mainModule.TypeSystem.Object.Name)
+                                    while (baseType.Name != mainModule.TypeSystem.Object.Name)
                                     {
-                                        if (baseType.IsGenericInstance && baseType.Resolve() == m_networkVariableSerializationType)
+                                        if (baseType.IsGenericInstance && baseType.Resolve() == m_NetworkVariableSerializationType)
                                         {
                                             var genericType = (GenericInstanceType)baseType;
                                             var underlyingType = genericType.GenericArguments[0];
@@ -140,7 +140,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                 {
                                     m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types may not implement {nameof(INetworkSerializable)} - choose one or the other.");
                                 }
-                                if(!type.IsValueType)
+                                if (!type.IsValueType)
                                 {
                                     m_Diagnostics.AddError($"{nameof(INetworkSerializeByMemcpy)} types must be unmanaged types.");
 
@@ -192,7 +192,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_InitializeDelegatesStruct_MethodRef;
         private MethodReference m_InitializeDelegatesEnum_MethodRef;
 
-        private TypeDefinition m_networkVariableSerializationType;
+        private TypeDefinition m_NetworkVariableSerializationType;
 
         private const string k_InitializeNetworkSerializableMethodName = nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable);
         private const string k_InitializeStructMethodName = nameof(NetworkVariableHelper.InitializeDelegatesStruct);
@@ -217,7 +217,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                 }
             }
-            m_networkVariableSerializationType = moduleDefinition.ImportReference(typeof(NetworkVariableSerialization<>)).Resolve();
+            m_NetworkVariableSerializationType = moduleDefinition.ImportReference(typeof(NetworkVariableSerialization<>)).Resolve();
             return true;
         }
 

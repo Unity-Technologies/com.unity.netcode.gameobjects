@@ -1,7 +1,4 @@
-using UnityEngine;
 using System;
-using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -83,7 +80,7 @@ namespace Unity.Netcode
                 throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
 
             }
-            NetworkVariable<TForMethod>.Write(writer, value);
+            NetworkVariableSerialization<TForMethod>.Write(writer, value);
         }
 
         private static void ReadValue<TForMethod>(FastBufferReader reader, out TForMethod value)
@@ -106,7 +103,7 @@ namespace Unity.Netcode
                 throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
 
             }
-            NetworkVariable<TForMethod>.Read(reader, out value);
+            NetworkVariableSerialization<TForMethod>.Read(reader, out value);
         }
 
         protected internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, in TForMethod value);
@@ -127,17 +124,27 @@ namespace Unity.Netcode
         // NetworkVariable and NetworkSerializableVariable or something like that, which would have caused a poor
         // user experience and an API that's easier to get wrong than right. This is a bit ugly on the implementation
         // side, but it gets the best achievable user experience and performance.
-        protected static WriteDelegate<T> Write = WriteValue;
-        protected static ReadDelegate<T> Read = ReadValue;
+        private static WriteDelegate<T> s_Write = WriteValue;
+        private static ReadDelegate<T> s_Read = ReadValue;
+
+        protected static void Write(FastBufferWriter writer, in T value)
+        {
+            s_Write(writer, value);
+        }
+
+        protected static void Read(FastBufferReader reader, out T value)
+        {
+            s_Read(reader, out value);
+        }
 
         internal static void SetWriteDelegate(WriteDelegate<T> write)
         {
-            Write = write;
+            s_Write = write;
         }
 
         internal static void SetReadDelegate(ReadDelegate<T> read)
         {
-            Read = read;
+            s_Read = read;
         }
 
         protected NetworkVariableSerialization(
