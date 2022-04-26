@@ -30,10 +30,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             public MessageHandleCheck Check;
             public bool Result;
         }
+        internal class MessageReceiveCheckWithResult
+        {
+            public Type CheckType;
+            public bool Result;
+        }
 
         private class MultiInstanceHooks : INetworkHooks
         {
             public Dictionary<Type, List<MessageHandleCheckWithResult>> HandleChecks = new Dictionary<Type, List<MessageHandleCheckWithResult>>();
+            public List<MessageReceiveCheckWithResult> ReceiveChecks = new List<MessageReceiveCheckWithResult>();
 
             public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
             {
@@ -50,6 +56,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
             {
+                foreach (var check in ReceiveChecks)
+                {
+                    if (check.CheckType == messageType)
+                    {
+                        check.Result = true;
+                        ReceiveChecks.Remove(check);
+                        break;
+                    }
+                }
             }
 
             public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
@@ -77,7 +92,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 return true;
             }
 
-            public bool OnVerifyCanReceive(ulong senderId, Type messageType)
+            public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
             {
                 return true;
             }
@@ -707,7 +722,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfType<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        {
+            var hooks = s_Hooks[toBeReceivedBy];
+            var check = new MessageReceiveCheckWithResult { CheckType = typeof(T) };
+            hooks.ReceiveChecks.Add(check);
+            if (result == null)
+            {
+                result = new ResultWrapper<bool>();
+            }
+
+            var startTime = Time.realtimeSinceStartup;
+
+            while (!check.Result && Time.realtimeSinceStartup - startTime < timeout)
+            {
+                yield return null;
+            }
+
+            var res = check.Result;
+            result.Result = res;
+
+            Assert.True(result.Result, $"Expected message {typeof(T).Name} was not received within {timeout}s.");
+        }
+
+        /// <summary>
+        /// Waits for a message of the given type to be received
+        /// </summary>
+        /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
+        /// <param name="timeout">The max time in seconds to wait for</param>
+        internal static IEnumerator WaitForMessageOfTypeHandled<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             if (!hooks.HandleChecks.ContainsKey(typeof(T)))
@@ -722,7 +765,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             yield return ExecuteWaitForHook(check, result, timeout);
 
-            Assert.True(result.Result, $"Expected message {typeof(T).Name} was not received within {timeout}s.");
+            Assert.True(result.Result, $"Expected message {typeof(T).Name} was not handled within {timeout}s.");
         }
 
         /// <summary>
@@ -731,7 +774,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="requirement">Called for each received message to check if it's the right one</param>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageMeetingRequirement<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
+        internal static IEnumerator WaitForMessageMeetingRequirementHandled<T>(NetworkManager toBeReceivedBy, MessageHandleCheck requirement, ResultWrapper<bool> result = null, float timeout = DefaultTimeout)
         {
             var hooks = s_Hooks[toBeReceivedBy];
             if (!hooks.HandleChecks.ContainsKey(typeof(T)))
@@ -746,7 +789,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             yield return ExecuteWaitForHook(check, result, timeout);
 
-            Assert.True(result.Result, $"Expected message meeting user requirements was not received within {timeout}s.");
+            Assert.True(result.Result, $"Expected message meeting user requirements was not handled within {timeout}s.");
         }
 
         private static IEnumerator ExecuteWaitForHook(MessageHandleCheckWithResult check, ResultWrapper<bool> result, float timeout)
