@@ -197,6 +197,30 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Create a FastBufferReader from another existing FastBufferReader. This is typically used when you
+        /// want to change the allocator that a reader is allocated to - for example, upgrading a Temp reader to
+        /// a Persistent one to be processed later.
+        ///
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        ///
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// ownership of the data remains with the caller and the reader will point at it directly.
+        /// When created with Allocator.None, FastBufferReader will allocate some internal data using
+        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// the context in which it was created (it should neither be returned from that function nor
+        /// stored anywhere in heap memory).
+        /// </summary>
+        /// <param name="reader">The reader to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
+        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0)
+        {
+            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator);
+        }
+
+        /// <summary>
         /// Frees the allocated buffer
         /// </summary>
         public unsafe void Dispose()
