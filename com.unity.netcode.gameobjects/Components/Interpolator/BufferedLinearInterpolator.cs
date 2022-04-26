@@ -247,7 +247,7 @@ namespace Unity.Netcode
     }
 
 
-    internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
@@ -260,7 +260,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
