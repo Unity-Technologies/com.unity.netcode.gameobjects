@@ -283,15 +283,15 @@ namespace Unity.Netcode
             }
         }
 
-        internal bool HasPrefab(bool isSceneObject, uint globalObjectIdHash)
+        internal bool HasPrefab(NetworkObject.SceneObject sceneObject)//bool isSceneObject, uint globalObjectIdHash)
         {
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !isSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.Header.IsSceneObject)
             {
-                if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(sceneObject.Header.Hash))
                 {
                     return true;
                 }
-                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var networkPrefab))
+                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(sceneObject.Header.Hash, out var networkPrefab))
                 {
                     switch (networkPrefab.Override)
                     {
@@ -306,7 +306,7 @@ namespace Unity.Netcode
 
                 return false;
             }
-            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(sceneObject.Header.Hash, sceneObject.Header.NetworkSceneHandle);
             return networkObject != null;
         }
 
