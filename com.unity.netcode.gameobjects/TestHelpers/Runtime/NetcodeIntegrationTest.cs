@@ -409,11 +409,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DeRegisterSceneManagerHandler()
         {
-            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
-            {
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
-            }
+            IntegrationTestSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
+            IntegrationTestSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
         }
 
         /// <summary>
@@ -423,11 +420,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void RegisterSceneManagerHandler()
         {
-            if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
-            {
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
-                NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
-            }
+            IntegrationTestSceneHandler.CanClientsLoad += ClientSceneHandler_CanClientsLoad;
+            IntegrationTestSceneHandler.CanClientsUnload += ClientSceneHandler_CanClientsUnload;
         }
 
         private bool ClientSceneHandler_CanClientsUnload()
@@ -452,11 +446,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Shutdown and clean up both of our NetworkManager instances
             try
             {
-                if (NetcodeIntegrationTestHelpers.ClientSceneHandler != null)
-                {
-                    NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsLoad -= ClientSceneHandler_CanClientsLoad;
-                    NetcodeIntegrationTestHelpers.ClientSceneHandler.CanClientsUnload -= ClientSceneHandler_CanClientsUnload;
-                }
+                DeRegisterSceneManagerHandler();
 
                 NetcodeIntegrationTestHelpers.Destroy();
 
