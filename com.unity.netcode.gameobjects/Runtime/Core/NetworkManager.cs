@@ -1167,8 +1167,13 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Shutdown));
             }
 
-            m_ShuttingDown = true;
-            m_StopProcessingMessages = discardMessageQueue;
+            // If we're not running, don't start shutting down, it would only cause an immediate
+            // shutdown the next time the manager is started.
+            if (IsServer || IsClient)
+            {
+                m_ShuttingDown = true;
+                m_StopProcessingMessages = discardMessageQueue;
+            }
         }
 
         internal void ShutdownInternal()
