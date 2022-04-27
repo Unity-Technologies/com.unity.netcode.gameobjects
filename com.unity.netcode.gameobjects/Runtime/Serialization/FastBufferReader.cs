@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -517,61 +518,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Writes an unmanaged array
-        /// NOTE: ALLOCATES
-        /// </summary>
-        /// <param name="array">Stores the read array</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<T>(out T[] array) where T : unmanaged
-        {
-            ReadValue(out int sizeInTs);
-            int sizeInBytes = sizeInTs * sizeof(T);
-            array = new T[sizeInTs];
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native);
-                ReadBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
-        /// Reads an unmanaged array
-        /// NOTE: ALLOCATES
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="array">Stores the read array</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out T[] array) where T : unmanaged
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            if (!TryBeginReadInternal(sizeof(int)))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            ReadValue(out int sizeInTs);
-            int sizeInBytes = sizeInTs * sizeof(T);
-            if (!TryBeginReadInternal(sizeInBytes))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            array = new T[sizeInTs];
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native);
-                ReadBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
         /// Read a partial value. The value is zero-initialized and then the specified number of bytes is read into it.
         /// </summary>
         /// <param name="value">Value to read</param>
@@ -735,69 +681,155 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
-        /// Read a value of any unmanaged type to the buffer.
-        /// It will be copied from the buffer exactly as it existed in memory on the writing end.
-        /// </summary>
-        /// <param name="value">The read value</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<T>(out T value) where T : unmanaged
+        private unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-            if (Handle->Position + len > Handle->AllowedReadMark)
-            {
-                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
-            }
-#endif
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
+                byte* bytes = (byte*)ptr;
+                ReadBytes(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
-
-        /// <summary>
-        /// Read a value of any unmanaged type to the buffer.
-        /// It will be copied from the buffer exactly as it existed in memory on the writing end.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">The read value</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out T value) where T : unmanaged
+        private unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            if (!TryBeginReadInternal(len))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
+                byte* bytes = (byte*)ptr;
+                ReadBytesSafe(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
+        {
+            ReadUnmanaged(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new T[sizeInTs];
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                ReadBytes(bytes, sizeInBytes);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
+        {
+            ReadUnmanagedSafe(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new T[sizeInTs];
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                ReadBytesSafe(bytes, sizeInBytes);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector4[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Quaternion value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Quaternion[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color32 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color32[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray2D value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Quaternion value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Quaternion[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color32 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color32[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray2D value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
     }
 }

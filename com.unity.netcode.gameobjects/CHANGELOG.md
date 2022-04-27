@@ -11,6 +11,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
+
 ### Removed
 
 - Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
@@ -21,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
+- Passing generic types to RPCs no longer causes a native crash (#1901)
 
 ## [Unreleased]
 
