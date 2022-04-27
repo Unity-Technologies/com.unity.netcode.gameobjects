@@ -289,7 +289,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 // Maybe this should be an exception, there doesn't seem to be a legit reason to not have a new client for each test
                 MultiprocessLogger.Log($"No need to spawn a new test player as there are already connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
             }
-            var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
+            var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec/2;
             int counter = 0;
             while (m_ConnectedClientsList.Count < numProcessesToCreate)
             {
@@ -303,14 +303,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if (counter % 7 == 0)
                 {
                     float beforeYield = Time.realtimeSinceStartup;
-                    MultiprocessLogger.Log($"About to call yield return new WaitForSeconds(0.7f); with Time.realtimeSinceStartup {beforeYield} and scale time {Time.timeScale}");
+                    
                     yield return new WaitForSecondsRealtime(0.7f);
                     float afterYield = Time.realtimeSinceStartup;
                     if (afterYield - beforeYield < 0.7f)
                     {
                         MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...start");
                         Thread.Sleep(700);
-                        MultiprocessLogger.Log("yield didn't actually wait 7/10s of a second in realtime so forcing a thread sleep...done");
+                        
                     }
                     afterYield = Time.realtimeSinceStartup;
                     MultiprocessLogger.Log($"waiting... until {Time.realtimeSinceStartup} > {timeOutTime} while waiting for {m_ConnectedClientsList.Count} == {GetWorkerCount()} OR {NetworkManager.Singleton.ConnectedClients.Count - 1} == {GetWorkerCount()}, {afterYield} - {beforeYield} = {afterYield - beforeYield}");
