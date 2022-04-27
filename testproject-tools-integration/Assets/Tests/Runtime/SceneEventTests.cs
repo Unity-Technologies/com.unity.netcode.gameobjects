@@ -298,7 +298,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CUnloadSent()
         {
             // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName);
+            yield return LoadTestScene(k_SimpleSceneName, true);
 
             var serverSceneUnloaded = false;
             // Register a callback so we can notify the test when the scene has finished unloading server side
@@ -316,6 +316,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 NetworkMetricTypes.SceneEventSent,
                 metric => metric.SceneEventType.Equals(SceneEventType.Unload.ToString()));
 
+            yield return s_DefaultWaitForTick;
             // Unload the scene to trigger the messages
             StartServerUnloadScene();
 
@@ -384,7 +385,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestC2SUnloadCompleteSent()
         {
             // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName);
+            yield return LoadTestScene(k_SimpleSceneName, true);
 
             // Register a callback so we can notify the test when the scene has finished unloading client side
             // as this is when the message is sent.
@@ -420,7 +421,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestC2SUnloadCompleteReceived()
         {
             // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName);
+            yield return LoadTestScene(k_SimpleSceneName, true);
 
             // Register a callback we can notify the test when the scene has finished unloading client side
             // as this is when the message is sent
@@ -495,7 +496,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CUnloadCompleteReceived()
         {
             // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName, true);
+            yield return LoadTestScene(k_SimpleSceneName);
 
             // Register a callback so we can notify the test when the scene has finished unloading server side
             // as this is when the message is sent
@@ -682,7 +683,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
                 var clientIdToWaitFor = waitForClient == true ? m_ClientNetworkManagers[0].LocalClientId : m_ServerNetworkManager.LocalClientId;
-                if (sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
+                if (sceneEvent.SceneEventType == SceneEventType.LoadComplete)
                 {
                     sceneLoadComplete = true;
                 }
