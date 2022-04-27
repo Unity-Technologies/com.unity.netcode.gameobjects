@@ -363,7 +363,7 @@ namespace Unity.Netcode.Editor
             const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
             const string dismissButtonText = "Dismiss";
-            const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tools/install-tools";
+            const string targetUrl = "https://docs-multiplayer.unity3d.com/netcode/current/tools/install-tools";
             const string infoIconName = "console.infoicon";
 
             if (PlayerPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)

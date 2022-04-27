@@ -215,33 +215,48 @@ namespace TestProject.RuntimeTests
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
-
             // Server: Set/Pickup/Back -> Root/Cube
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
             yield return waitForNetworkTick;
 
-            // Client[n]: Set/Pickup/Back -> Root/Cube
-            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            bool CheckClientSideCubeForNull()
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
-                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+                // Client[n]: Set/Pickup/Back -> Root/Cube
+                for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+                {
+                    if (m_Cube_NetObjs[setIndex + 1].parent != null || m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject != null)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
-
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(CheckClientSideCubeForNull, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for client parent to be null!");
 
             // Server: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            yield return waitForNetworkTick;
-
-            // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
-            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            bool CheckClientSideCubeForParentAssignment()
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1]));
-                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
+                // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
+                for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+                {
+                    var transformToCheckFor = m_Dude_RightArm_NetObjs[setIndex + 1];
+                    if (m_Cube_NetObjs[setIndex + 1].parent != transformToCheckFor || m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject != transformToCheckFor.GetComponent<NetworkObject>())
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
+
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(CheckClientSideCubeForParentAssignment, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for client parent to be assigned!");
         }
 
         [UnityTest]
