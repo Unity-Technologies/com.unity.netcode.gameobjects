@@ -23,6 +23,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
 - Passing generic types to RPCs no longer causes a native crash (#1901)
 
+## [Unreleased]
+
+### Removed
+- Removed `SIPTransport` (#1870)
+
+### Fixed
+- Fixed an issue where calling `Shutdown` on a `NetworkManager` that was already shut down would cause an immediate shutdown the next time it was started (basically the fix makes `Shutdown` idempotent). (#1877)
+
 ## [1.0.0-pre.7] - 2022-04-06
 
 ### Added
@@ -41,7 +49,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed `SIPTransport` (#1870)
 - Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 - Removed `com.unity.collections` dependency from the package (#1849)
