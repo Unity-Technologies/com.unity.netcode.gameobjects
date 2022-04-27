@@ -58,7 +58,7 @@ namespace Unity.Netcode.EditorTests
             C
         };
 
-        protected struct TestStruct
+        protected struct TestStruct : INetworkSerializeByMemcpy
         {
             public byte A;
             public short B;
@@ -79,7 +79,6 @@ namespace Unity.Netcode.EditorTests
             WriteSafe
         }
         #endregion
-
 
         protected abstract void RunTypeTest<T>(T valueToTest) where T : unmanaged;
 
@@ -114,143 +113,144 @@ namespace Unity.Netcode.EditorTests
 
         #endregion
 
+
+        private void RunTestWithWriteType<T>(T val, WriteType wt, FastBufferWriter.ForPrimitives _ = default) where T : unmanaged
+        {
+            switch (wt)
+            {
+                case WriteType.WriteDirect:
+                    RunTypeTest(val);
+                    break;
+                case WriteType.WriteSafe:
+                    RunTypeTestSafe(val);
+                    break;
+            }
+        }
+
         public void BaseTypeTest(Type testType, WriteType writeType)
         {
             var random = new Random();
 
-            void RunTypeTestLocal<T>(T val, WriteType wt) where T : unmanaged
-            {
-                switch (wt)
-                {
-                    case WriteType.WriteDirect:
-                        RunTypeTest(val);
-                        break;
-                    case WriteType.WriteSafe:
-                        RunTypeTestSafe(val);
-                        break;
-                }
-            }
-
             if (testType == typeof(byte))
             {
-                RunTypeTestLocal((byte)random.Next(), writeType);
+                RunTestWithWriteType((byte)random.Next(), writeType);
             }
             else if (testType == typeof(sbyte))
             {
-                RunTypeTestLocal((sbyte)random.Next(), writeType);
+                RunTestWithWriteType((sbyte)random.Next(), writeType);
             }
             else if (testType == typeof(short))
             {
-                RunTypeTestLocal((short)random.Next(), writeType);
+                RunTestWithWriteType((short)random.Next(), writeType);
             }
             else if (testType == typeof(ushort))
             {
-                RunTypeTestLocal((ushort)random.Next(), writeType);
+                RunTestWithWriteType((ushort)random.Next(), writeType);
             }
             else if (testType == typeof(int))
             {
-                RunTypeTestLocal((int)random.Next(), writeType);
+                RunTestWithWriteType((int)random.Next(), writeType);
             }
             else if (testType == typeof(uint))
             {
-                RunTypeTestLocal((uint)random.Next(), writeType);
+                RunTestWithWriteType((uint)random.Next(), writeType);
             }
             else if (testType == typeof(long))
             {
-                RunTypeTestLocal(((long)random.Next() << 32) + random.Next(), writeType);
+                RunTestWithWriteType(((long)random.Next() << 32) + random.Next(), writeType);
             }
             else if (testType == typeof(ulong))
             {
-                RunTypeTestLocal(((ulong)random.Next() << 32) + (ulong)random.Next(), writeType);
+                RunTestWithWriteType(((ulong)random.Next() << 32) + (ulong)random.Next(), writeType);
             }
             else if (testType == typeof(bool))
             {
-                RunTypeTestLocal(true, writeType);
+                RunTestWithWriteType(true, writeType);
             }
             else if (testType == typeof(char))
             {
-                RunTypeTestLocal('a', writeType);
-                RunTypeTestLocal('\u263a', writeType);
+                RunTestWithWriteType('a', writeType);
+                RunTestWithWriteType('\u263a', writeType);
             }
             else if (testType == typeof(float))
             {
-                RunTypeTestLocal((float)random.NextDouble(), writeType);
+                RunTestWithWriteType((float)random.NextDouble(), writeType);
             }
             else if (testType == typeof(double))
             {
-                RunTypeTestLocal(random.NextDouble(), writeType);
+                RunTestWithWriteType(random.NextDouble(), writeType);
             }
             else if (testType == typeof(ByteEnum))
             {
-                RunTypeTestLocal(ByteEnum.C, writeType);
+                RunTestWithWriteType(ByteEnum.C, writeType);
             }
             else if (testType == typeof(SByteEnum))
             {
-                RunTypeTestLocal(SByteEnum.C, writeType);
+                RunTestWithWriteType(SByteEnum.C, writeType);
             }
             else if (testType == typeof(ShortEnum))
             {
-                RunTypeTestLocal(ShortEnum.C, writeType);
+                RunTestWithWriteType(ShortEnum.C, writeType);
             }
             else if (testType == typeof(UShortEnum))
             {
-                RunTypeTestLocal(UShortEnum.C, writeType);
+                RunTestWithWriteType(UShortEnum.C, writeType);
             }
             else if (testType == typeof(IntEnum))
             {
-                RunTypeTestLocal(IntEnum.C, writeType);
+                RunTestWithWriteType(IntEnum.C, writeType);
             }
             else if (testType == typeof(UIntEnum))
             {
-                RunTypeTestLocal(UIntEnum.C, writeType);
+                RunTestWithWriteType(UIntEnum.C, writeType);
             }
             else if (testType == typeof(LongEnum))
             {
-                RunTypeTestLocal(LongEnum.C, writeType);
+                RunTestWithWriteType(LongEnum.C, writeType);
             }
             else if (testType == typeof(ULongEnum))
             {
-                RunTypeTestLocal(ULongEnum.C, writeType);
+                RunTestWithWriteType(ULongEnum.C, writeType);
             }
             else if (testType == typeof(Vector2))
             {
-                RunTypeTestLocal(new Vector2((float)random.NextDouble(), (float)random.NextDouble()), writeType);
+                RunTestWithWriteType(new Vector2((float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(Vector3))
             {
-                RunTypeTestLocal(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
+                RunTestWithWriteType(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(Vector4))
             {
-                RunTypeTestLocal(new Vector4((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
+                RunTestWithWriteType(new Vector4((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(Quaternion))
             {
-                RunTypeTestLocal(new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
+                RunTestWithWriteType(new Quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(Color))
             {
-                RunTypeTestLocal(new Color((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
+                RunTestWithWriteType(new Color((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(Color32))
             {
-                RunTypeTestLocal(new Color32((byte)random.Next(), (byte)random.Next(), (byte)random.Next(), (byte)random.Next()), writeType);
+                RunTestWithWriteType(new Color32((byte)random.Next(), (byte)random.Next(), (byte)random.Next(), (byte)random.Next()), writeType);
             }
             else if (testType == typeof(Ray))
             {
-                RunTypeTestLocal(new Ray(
+                RunTestWithWriteType(new Ray(
                     new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble())), writeType);
             }
             else if (testType == typeof(Ray2D))
             {
-                RunTypeTestLocal(new Ray2D(
+                RunTestWithWriteType(new Ray2D(
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble())), writeType);
             }
             else if (testType == typeof(TestStruct))
             {
-                RunTypeTestLocal(GetTestStruct(), writeType);
+                RunTestWithWriteType(GetTestStruct(), writeType);
             }
             else
             {

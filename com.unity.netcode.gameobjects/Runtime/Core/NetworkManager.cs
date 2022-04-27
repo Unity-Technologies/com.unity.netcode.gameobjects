@@ -1071,6 +1071,7 @@ namespace Unity.Netcode
         private void Awake()
         {
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+            NetworkVariableHelper.InitializeAllBaseDelegates();
         }
 
         /// <summary>
@@ -1167,8 +1168,13 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Shutdown));
             }
 
-            m_ShuttingDown = true;
-            m_StopProcessingMessages = discardMessageQueue;
+            // If we're not running, don't start shutting down, it would only cause an immediate
+            // shutdown the next time the manager is started.
+            if (IsServer || IsClient)
+            {
+                m_ShuttingDown = true;
+                m_StopProcessingMessages = discardMessageQueue;
+            }
         }
 
         internal void ShutdownInternal()
@@ -1505,11 +1511,6 @@ namespace Unity.Netcode
                     break;
                 case NetworkEvent.Data:
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo($"Incoming Data From {clientId}: {payload.Count} bytes");
-                        }
-
                         clientId = TransportIdToClientId(clientId);
 
                         HandleIncomingData(clientId, payload, receiveTime);
