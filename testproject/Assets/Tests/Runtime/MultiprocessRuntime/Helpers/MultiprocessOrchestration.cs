@@ -219,7 +219,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return machineJson;
         }
 
-        public static void StartWorkersOnRemoteNodes(FileInfo machine)
+        public static Process StartWorkersOnRemoteNodes(FileInfo machine)
         {
             string command = $" --command launch " +
                     $"--input-path {machine.FullName} ";
@@ -250,6 +250,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             ProcessList.Add(workerProcess);
             
             MultiprocessLogger.Log($"Execute Command: {command} End");
+            return workerProcess;
         }
 
         public static void ShutdownAllProcesses(bool launchRemotely, int logCount)

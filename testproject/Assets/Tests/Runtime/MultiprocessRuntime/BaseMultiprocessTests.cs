@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using NUnit.Framework;
 using UnityEngine;
@@ -251,6 +252,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // TestCoordinator.Instance.KeepAliveOnServer();
 
             var numProcessesToCreate = GetWorkerCount();
+            var launchProcessList = new List<Process>();
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
@@ -276,7 +278,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var machine in machines)
                     {
                         initialCount = m_ConnectedClientsList.Count;
-                        MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine);
+                        launchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                         MultiprocessLogger.Log($"Launching process complete... waiting for {m_ConnectedClientsList.Count} to increase from {initialCount}");
                         yield return new WaitUntil(() => m_ConnectedClientsList.Count > initialCount);    
                     }
@@ -289,9 +291,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             int counter = 0;
-            while (m_ConnectedClientsList.Count < GetWorkerCount())
+            while (m_ConnectedClientsList.Count < numProcessesToCreate)
             {
-                if (NetworkManager.Singleton.ConnectedClients.Count > GetWorkerCount())
+                if (NetworkManager.Singleton.ConnectedClients.Count > numProcessesToCreate)
                 {
                     MultiprocessLogger.Log($"Clients connected based on listeners {m_ConnectedClientsList.Count}, vs NetworkManager {NetworkManager.Singleton.ConnectedClients.Count} WorkerCount: {GetWorkerCount()}");
                     break;
