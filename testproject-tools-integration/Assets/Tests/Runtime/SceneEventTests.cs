@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
@@ -23,8 +24,16 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             m_CreateServerFirst = false;
             return base.OnSetup();
+        }
+
+        private List<Scene> m_AllScenesLoaded = new List<Scene>();
+
+        private void SceneManager_sceneLoaded(Scene arg0, LoadSceneMode arg1)
+        {
+            m_AllScenesLoaded.Add(arg0);
         }
 
         protected override void OnServerAndClientsCreated()
@@ -47,7 +56,19 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            yield return UnloadTestScene(m_LoadedScene);
+            if (!m_AllScenesLoaded.Contains(m_LoadedScene))
+            {
+                m_AllScenesLoaded.Add(m_LoadedScene);
+            }
+
+            foreach (var sceneLoaded in m_AllScenesLoaded)
+            {
+                if (sceneLoaded.IsValid())
+                {
+                    yield return UnloadTestScene(sceneLoaded);
+                }
+            }
+
             yield return base.OnTearDown();
         }
 
@@ -474,7 +495,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
         public IEnumerator TestS2CUnloadCompleteReceived()
         {
             // Load a scene so that we can unload it
-            yield return LoadTestScene(k_SimpleSceneName);
+            yield return LoadTestScene(k_SimpleSceneName, true);
 
             // Register a callback so we can notify the test when the scene has finished unloading server side
             // as this is when the message is sent
@@ -646,8 +667,11 @@ namespace TestProject.ToolsIntegration.RuntimeTests
 
         private void StartServerUnloadScene()
         {
-            var unloadSceneResult = m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
-            Assert.AreEqual(SceneEventProgressStatus.Started, unloadSceneResult);
+            if (m_LoadedScene.IsValid() && m_LoadedScene.isLoaded)
+            {
+                var unloadSceneResult = m_ServerNetworkSceneManager.UnloadScene(m_LoadedScene);
+                Assert.AreEqual(SceneEventProgressStatus.Started, unloadSceneResult);
+            }
         }
 
         // Loads a scene, then waits for the client to notify the server
@@ -657,7 +681,7 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             var sceneLoadComplete = false;
             m_ClientNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                var clientIdToWaitFor = waitForClient == true ? m_ClientNetworkManagers[1].LocalClientId : m_ServerNetworkManager.LocalClientId;
+                var clientIdToWaitFor = waitForClient == true ? m_ClientNetworkManagers[0].LocalClientId : m_ServerNetworkManager.LocalClientId;
                 if (sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
                 {
                     sceneLoadComplete = true;
@@ -680,7 +704,6 @@ namespace TestProject.ToolsIntegration.RuntimeTests
                 // This is called after everything is done and destroyed.
                 // Just use the normal scene manager to unload the scene.
                 var asyncResults = SceneManager.UnloadSceneAsync(scene);
-
                 yield return WaitForCondition(() => asyncResults.isDone);
 
             }
