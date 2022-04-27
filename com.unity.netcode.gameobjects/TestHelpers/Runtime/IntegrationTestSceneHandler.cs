@@ -90,7 +90,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         static internal IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
-            yield return s_WaitForSeconds;
             while (!itegrationTestSceneHandler.OnCanClientsLoad())
             {
                 yield return s_WaitForSeconds;
@@ -139,7 +138,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         static internal IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
-            yield return s_WaitForSeconds;
             while (!itegrationTestSceneHandler.OnCanClientsUnload())
             {
                 yield return s_WaitForSeconds;
