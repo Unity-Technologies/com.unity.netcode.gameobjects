@@ -2,6 +2,11 @@ using System;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// This is a wrapper that adds `INetworkSerializeByMemcpy` support to existing structs that the developer
+    /// doesn't have the ability to modify (for example, external structs like `Guid`).
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public struct ForceNetworkSerializeByMemcpy<T> : INetworkSerializeByMemcpy, IEquatable<ForceNetworkSerializeByMemcpy<T>> where T : unmanaged, IEquatable<T>
     {
         public T Value;

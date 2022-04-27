@@ -777,6 +777,11 @@ namespace Unity.Netcode
             }
         }
 
+        // These structs enable overloading of WriteValue with different generic constraints.
+        // The compiler's actually able to distinguish between overloads based on generic constraints.
+        // But at the bytecode level, the constraints aren't included in the method signature.
+        // By adding a second parameter with a defaulted value, the signatures of each generic are different,
+        // thus allowing overloads of methods based on the first parameter meeting constraints.
         public struct ForPrimitives
         {
 

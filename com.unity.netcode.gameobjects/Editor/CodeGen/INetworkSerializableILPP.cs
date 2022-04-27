@@ -73,6 +73,15 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     if (ImportReferences(mainModule))
                     {
+                        // Initialize all the delegates for various NetworkVariable types to ensure they can be serailized
+
+                        // Find all types we know we're going to want to serialize.
+                        // The list of these types includes:
+                        // - Non-generic INetworkSerializable types
+                        // - Non-Generic INetworkSerializeByMemcpy types
+                        // - Enums that are not declared within generic types
+                        // We can't process generic types because, to initialize a generic, we need a value
+                        // for `T` to initialize it with.
                         var networkSerializableTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializable_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
@@ -83,24 +92,44 @@ namespace Unity.Netcode.Editor.CodeGen
                             .Where(t => t.Resolve().IsEnum && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
 
+                        // Now, to support generics, we have to do an extra pass.
+                        // We look for any type that's a NetworkBehaviour type
+                        // Then we look through all the fields in that type, finding any field whose type is
+                        // descended from `NetworkVariableSerialization`. Then we check `NetworkVariableSerialization`'s
+                        // `T` value, and if it's a generic, then we know it was missed in the above sweep and needs
+                        // to be initialized. Now we have a full generic instance rather than a generic definition,
+                        // so we can validly generate an initializer for that particular instance of the generic type.
                         var networkSerializableTypesSet = new HashSet<TypeReference>(networkSerializableTypes);
                         var structTypesSet = new HashSet<TypeReference>(structTypes);
                         var enumTypesSet = new HashSet<TypeReference>(enumTypes);
                         var typeStack = new List<TypeReference>();
                         foreach (var type in mainModule.GetTypes())
                         {
+                            // Check if it's a NetworkBehaviour
                             if (type.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
                             {
+                                // Iterate fields looking for NetworkVariableSerialization fields
                                 foreach (var field in type.Fields)
                                 {
+                                    // Get the field type and its base type
                                     var fieldType = field.FieldType;
                                     var baseType = fieldType.Resolve().BaseType;
+                                    // This type stack is used for resolving NetworkVariableSerialization's T value
+                                    // When looking at base types, we get the type definition rather than the
+                                    // type reference... which means that we get the generic definition with an
+                                    // undefined T rather than the instance with the type filled in.
+                                    // We then have to walk backward back down the type stack to resolve what T
+                                    // is.
                                     typeStack.Clear();
                                     typeStack.Add(fieldType);
+                                    // Iterate through the base types until we get to Object.
+                                    // Object is the base for everything so we'll stop when we hit that.
                                     while (baseType.Name != mainModule.TypeSystem.Object.Name)
                                     {
+                                        // If we've found a NetworkVariableSerialization type...
                                         if (baseType.IsGenericInstance && baseType.Resolve() == m_NetworkVariableSerializationType)
                                         {
+                                            // Then we need to figure out what T is
                                             var genericType = (GenericInstanceType)baseType;
                                             var underlyingType = genericType.GenericArguments[0];
                                             if (underlyingType.Resolve() == null)
@@ -108,8 +137,11 @@ namespace Unity.Netcode.Editor.CodeGen
                                                 underlyingType = ResolveGenericType(underlyingType, typeStack);
                                             }
 
+                                            // If T is generic...
                                             if (underlyingType.IsGenericInstance)
                                             {
+                                                // Then we pick the correct set to add it to and set it up
+                                                // for initialization.
                                                 if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                                                 {
                                                     networkSerializableTypesSet.Add(underlyingType);
@@ -134,6 +166,9 @@ namespace Unity.Netcode.Editor.CodeGen
                                     }
                                 }
                             }
+                            // We'll also avoid some confusion by ensuring users only choose one of the two
+                            // serialization schemes - by method OR by memcpy, not both. We'll also do a cursory
+                            // check that INetworkSerializeByMemcpy types are unmanaged.
                             else if (type.HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName))
                             {
                                 if (type.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
@@ -152,6 +187,9 @@ namespace Unity.Netcode.Editor.CodeGen
                             return null;
                         }
 
+                        // Finally we add to the module initializer some code to initialize the delegates in
+                        // NetworkVariableSerialization<T> for all necessary values of T, by calling initialization
+                        // methods in NetworkVariableHelpers.
                         CreateModuleInitializer(assemblyDefinition, networkSerializableTypesSet.ToList(), structTypesSet.ToList(), enumTypesSet.ToList());
                     }
                     else
