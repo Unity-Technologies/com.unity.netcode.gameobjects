@@ -15,6 +15,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 - Removed `SIPTransport` (#1870)
 
+- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
+
 ### Fixed
 
 - Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
