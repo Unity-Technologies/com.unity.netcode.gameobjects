@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed ClientNetworkTransform from NGO samples. Now moved to Boss Room's Utilities package and can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/tree/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
+- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
 
 ### Fixed
 
