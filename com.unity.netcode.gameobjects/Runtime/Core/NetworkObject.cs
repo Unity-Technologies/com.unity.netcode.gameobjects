@@ -827,7 +827,7 @@ namespace Unity.Netcode
 
         internal struct SceneObject
         {
-            public struct HeaderData
+            public struct HeaderData : INetworkSerializeByMemcpy
             {
                 public ulong NetworkObjectId;
                 public ulong OwnerClientId;
@@ -847,7 +847,7 @@ namespace Unity.Netcode
             public ulong ParentObjectId;
 
             //If(Metadata.HasTransform)
-            public struct TransformData
+            public struct TransformData : INetworkSerializeByMemcpy
             {
                 public Vector3 Position;
                 public Quaternion Rotation;

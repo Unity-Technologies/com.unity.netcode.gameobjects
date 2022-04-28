@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal struct DestroyObjectMessage : INetworkMessage
+    internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public ulong NetworkObjectId;
         public bool DestroyGameObject;

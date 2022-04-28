@@ -273,9 +273,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
+        public readonly NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>>();
 
-        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
+        public readonly NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -306,7 +306,8 @@ namespace Unity.Netcode.RuntimeTests
     [TestFixture(false)]
     public class NetworkVariableTests : NetcodeIntegrationTest
     {
-        private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
+        private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
+        private static readonly FixedString32Bytes k_FixedStringTestValue = k_StringTestValue;
         protected override int NumberOfClients => 2;
 
         private const uint k_TestUInt = 0x12345678;

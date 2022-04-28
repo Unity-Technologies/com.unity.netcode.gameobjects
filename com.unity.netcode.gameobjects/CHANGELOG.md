@@ -5,13 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
-## Unreleased
 
-### Added
+## [1.0.0-pre.8] - 2022-04-27
 
 ### Changed
 
+- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
+
 ### Removed
+- Removed `SIPTransport` (#1870)
+
+- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
 
 ### Fixed
 - Fixed issue where `NetworkSceneManager` did not synchronize despawned in-scene placed NetworkObjects. (#1898)
@@ -19,6 +23,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
+- Passing generic types to RPCs no longer causes a native crash (#1901)
+- Fixed an issue where calling `Shutdown` on a `NetworkManager` that was already shut down would cause an immediate shutdown the next time it was started (basically the fix makes `Shutdown` idempotent). (#1877)
 
 ## [1.0.0-pre.7] - 2022-04-06
 
@@ -39,7 +45,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Removed
 
-- Removed `SIPTransport` (#1870)
 - Removed `SnapshotSystem` (#1852)
 - Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
 - Removed `com.unity.collections` dependency from the package (#1849)
@@ -67,8 +72,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 - NetworkAnimator now properly synchrhonizes all animation layers as well as runtime-adjusted weighting between them (#1765)
 - Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#1735)
-
-### Changed
 
 ### Fixed
 - Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
