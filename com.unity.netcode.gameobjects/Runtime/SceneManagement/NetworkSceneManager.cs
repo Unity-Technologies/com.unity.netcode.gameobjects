@@ -734,13 +734,13 @@ namespace Unity.Netcode
         {
             if (ScenePlacedObjects.ContainsKey(globalObjectIdHash))
             {
-                if (ScenePlacedObjects[globalObjectIdHash].ContainsKey(SceneBeingSynchronized.handle))
+                var sceneHandle = SceneBeingSynchronized.handle;
+                if (networkSceneHandle.HasValue && networkSceneHandle.Value != 0)
                 {
-                    var sceneHandle = SceneBeingSynchronized.handle;
-                    if (networkSceneHandle.HasValue && networkSceneHandle.Value != 0)
-                    {
-                        sceneHandle = ServerSceneHandleToClientSceneHandle[networkSceneHandle.Value];
-                    }
+                    sceneHandle = ServerSceneHandleToClientSceneHandle[networkSceneHandle.Value];
+                }
+                if (ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneHandle))
+                {
                     return ScenePlacedObjects[globalObjectIdHash][sceneHandle];
                 }
             }
@@ -1458,7 +1458,7 @@ namespace Unity.Netcode
             var loadSceneMode = sceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive;
 
             // Store the sceneHandle and hash
-            sceneEventData.ClientSceneHandle = sceneHandle;
+            sceneEventData.NetworkSceneHandle = sceneHandle;
             sceneEventData.ClientSceneHash = sceneHash;
 
             // If this is the beginning of the synchronization event, then send client a notification that synchronization has begun
@@ -1547,9 +1547,9 @@ namespace Unity.Netcode
                 SceneManager.SetActiveScene(nextScene);
             }
 
-            if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.ClientSceneHandle))
+            if (!ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEventData.NetworkSceneHandle))
             {
-                ServerSceneHandleToClientSceneHandle.Add(sceneEventData.ClientSceneHandle, nextScene.handle);
+                ServerSceneHandleToClientSceneHandle.Add(sceneEventData.NetworkSceneHandle, nextScene.handle);
             }
             else
             {
