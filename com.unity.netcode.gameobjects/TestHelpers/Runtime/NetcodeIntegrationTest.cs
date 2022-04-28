@@ -470,8 +470,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 m_PlayerNetworkObjects.Clear();
                 s_GlobalNetworkObjects.Clear();
-
-                UnloadRemainingScenes();
             }
             catch (Exception e) { throw e; }
             finally
@@ -485,6 +483,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Cleanup any remaining NetworkObjects
             DestroySceneNetworkObjects();
+
+            UnloadRemainingScenes();
 
             // reset the m_ServerWaitForTick for the next test to initialize
             s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
@@ -821,7 +821,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     continue;
                 }
                 VerboseDebug($"Unloading scene {scene.name}-{scene.handle}");
-                var asyncOperation = SceneManager.UnloadSceneAsync(i);
+                var asyncOperation = SceneManager.UnloadSceneAsync(scene);
             }
         }
     }
