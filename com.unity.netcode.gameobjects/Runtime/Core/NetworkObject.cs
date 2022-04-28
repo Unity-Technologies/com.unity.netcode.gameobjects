@@ -370,7 +370,7 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value == true, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
@@ -961,7 +961,7 @@ namespace Unity.Netcode
                     IsPlayerObject = IsPlayerObject,
                     NetworkObjectId = NetworkObjectId,
                     OwnerClientId = OwnerClientId,
-                    IsSceneObject = IsSceneObject != false,
+                    IsSceneObject = IsSceneObject ?? true,
                     Hash = HostCheckForGlobalObjectIdHashOverride(),
                 },
                 OwnerObject = this,
