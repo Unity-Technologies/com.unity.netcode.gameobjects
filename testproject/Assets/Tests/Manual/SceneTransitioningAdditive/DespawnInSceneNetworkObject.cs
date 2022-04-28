@@ -5,6 +5,15 @@ using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
+    /// <summary>
+    /// Used for manually testing spawning and despawning in-scene
+    /// placed NetworkObjects
+    ///
+    /// Note: We do not destroy in-scene placed NetworkObjects, but
+    /// users must handle visibility (rendering wise) when the in-scene
+    /// NetworkObject is spawned and despawned.  This class just enables
+    /// or disabled the mesh renderer.
+    /// </summary>
     public class DespawnInSceneNetworkObject : NetworkBehaviour
     {
         private Coroutine m_ScanInputHandle;

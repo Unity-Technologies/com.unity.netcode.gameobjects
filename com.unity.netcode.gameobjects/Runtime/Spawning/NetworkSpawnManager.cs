@@ -283,7 +283,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal bool HasPrefab(NetworkObject.SceneObject sceneObject)//bool isSceneObject, uint globalObjectIdHash)
+        internal bool HasPrefab(NetworkObject.SceneObject sceneObject)
         {
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.Header.IsSceneObject)
             {

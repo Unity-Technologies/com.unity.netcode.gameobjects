@@ -104,11 +104,11 @@ namespace TestProject.RuntimeTests
             ddolBehaviour.SetInScene(isInScene);
 
             networkObject.Spawn();
-            yield return new WaitForSeconds(0.03f);
+            yield return waitForFullNetworkTick;
+
             Assert.That(networkObject.IsSpawned);
 
             objectInstance.SetActive(isActive);
-
             m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
 
             yield return waitForFullNetworkTick;
