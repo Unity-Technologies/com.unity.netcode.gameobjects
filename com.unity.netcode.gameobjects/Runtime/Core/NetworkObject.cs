@@ -16,6 +16,10 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        /// <summary>
+        /// For in-scene placed NetworkObjects, this is used to uniquely identify the
+        /// NetworkObject relative to the NetworkSceneHandle.
+        /// </summary>
         internal int NetworkSceneHandle;
 #if UNITY_EDITOR
         private void OnValidate()
@@ -903,6 +907,11 @@ namespace Unity.Netcode
                     }
                 }
 
+                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
+                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
+                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
+                // This is only set on in-scene placed NetworkObjects to reduce the over-all packet
+                // sizes for dynamically spawned NetworkObjects.
                 if (Header.IsSceneObject)
                 {
                     writer.WriteValue(OwnerObject.NetworkSceneHandle);
@@ -948,6 +957,11 @@ namespace Unity.Netcode
                     }
                 }
 
+                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
+                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
+                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
+                // Client-side NetworkSceneManagers use this to locate their local instance of the
+                // NetworkObject instance.
                 if (Header.IsSceneObject)
                 {
                     reader.ReadValue(out NetworkSceneHandle);
