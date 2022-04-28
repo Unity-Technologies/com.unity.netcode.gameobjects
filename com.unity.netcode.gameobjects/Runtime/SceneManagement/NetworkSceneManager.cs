@@ -632,7 +632,10 @@ namespace Unity.Netcode
             return validated;
         }
 
-        // WIP: Might be used for integration tests
+        /// <summary>
+        /// Used for NetcodeIntegrationTest testing in order to properly
+        /// assign the right loaded scene to the right client's ScenesLoaded list
+        /// </summary>
         internal Func<string, Scene> OverrideGetAndAddNewlyLoadedSceneByName;
 
         /// <summary>
