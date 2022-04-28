@@ -14,7 +14,7 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerSeneVerification : NetcodeIntegrationTest
     {
 
-        protected override int NumberOfClients => 9;
+        protected override int NumberOfClients => 4;
         public NetworkSceneManagerSeneVerification(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_AdditiveScene1 = "InSceneNetworkObject";
@@ -291,14 +291,14 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to load {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}");
 
             // Unload the scene
             ResetWait();
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
 
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to unload {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}");
 
             // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to false
             // Server will notify it failed scene verification and no client should load
@@ -321,7 +321,7 @@ namespace TestProject.RuntimeTests
 
             // Now wait for server to complete and all clients to fail
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to load {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}");
 
             // Now unload the scene the server loaded from last test
             ResetWait();
@@ -341,7 +341,7 @@ namespace TestProject.RuntimeTests
 
             // Now wait for server to unload and clients will fake unload
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to unload {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}");
         }
     }
 }
