@@ -20,13 +20,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         internal static CoroutineRunner CoroutineRunner;
 
-        // Default client simulated delay time
-        protected const float k_ClientLoadingSimulatedDelay = 0.016f;
-
-        // Controls the client simulated delay time
-        protected static float s_ClientLoadingSimulatedDelay = k_ClientLoadingSimulatedDelay;
-
-
         internal static Queue<QueuedSceneJob> QueuedSceneJobs = new Queue<QueuedSceneJob>();
         internal List<Coroutine> CoroutinesRunning = new List<Coroutine>();
         internal static Coroutine SceneJobProcessor;
@@ -38,6 +31,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static event CanClientsLoadUnloadDelegateHandler CanClientsLoad;
         public static event CanClientsLoadUnloadDelegateHandler CanClientsUnload;
 
+        /// <summary>
+        /// Used for loading scenes on the client-side during
+        /// an integration test
+        /// </summary>
         internal class QueuedSceneJob
         {
             public enum JobTypes
@@ -125,7 +122,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-
+        /// <summary>
+        /// Handles some pre-spawn processing of in-scene placed NetworkObjects
+        /// to make sure the appropriate NetworkManagerOwner is assigned.  It
+        /// also makes sure that each in-scene placed NetworkObject has an
+        /// ObjectIdentifier component if one is not assigned to it or its
+        /// children.
+        /// </summary>
+        /// <param name="scene">the scenes that was just loaded</param>
+        /// <param name="networkManager">the relative NetworkManager</param>
         private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
@@ -261,11 +266,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
+            // Server and non NetcodeIntegrationTest tests use the generic load scene method
             if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
             {
                 return GenericLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
             }
-            else // Clients are always processed in the queue
+            else // NetcodeIntegrationTest Clients always get added to the jobs queue
             {
                 AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Loading });
             }
@@ -275,11 +281,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
+            // Server and non NetcodeIntegrationTest tests use the generic unload scene method
             if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
             {
                 return GenericUnloadSceneAsync(scene, sceneEventAction);
             }
-            else // Clients are always processed in the queue
+            else // NetcodeIntegrationTest Clients always get added to the jobs queue
             {
                 AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Unloading });
             }
@@ -287,6 +294,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return new AsyncOperation();
         }
 
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="sceneName"></param>
+        /// <returns></returns>
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
             for (int i = 0; i < SceneManager.sceneCount; i++)
@@ -336,7 +348,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetworkManagers.Add(networkManager);
             if (s_WaitForSeconds == null)
             {
-                s_WaitForSeconds = new WaitForSeconds(s_ClientLoadingSimulatedDelay);
+                s_WaitForSeconds = new WaitForSeconds(0.01f);
             }
             NetworkManager = networkManager;
             if (CoroutineRunner == null)

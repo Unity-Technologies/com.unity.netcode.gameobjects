@@ -17,7 +17,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     public abstract class NetcodeIntegrationTest
     {
-        public static bool IsRunning { get; private set; }
+        /// <summary>
+        /// Used to determine if a NetcodeIntegrationTest is currently running to
+        /// determine how clients will load scenes
+        /// </summary>
+        internal static bool IsRunning { get; private set; }
         protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(4.0f);
         protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
@@ -278,10 +282,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-            int count = 0;
+
+            // Renaming client NetworkManagers to match player identification tags
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.name = $"NetworkManager - Client - {++count}";
+                client.name = $"NetworkManager - Client - {client.LocalClientId + 1}";
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
