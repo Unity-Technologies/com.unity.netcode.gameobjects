@@ -86,6 +86,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 {
                     buildPathExtension += "";
                     buildTarget = BuildTarget.StandaloneLinux64;
+                    PlayerSettings.SetScriptingBackend(BuildTargetGroup.Standalone, ScriptingImplementation.IL2CPP);
                 }
             }
 
