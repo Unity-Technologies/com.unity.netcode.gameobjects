@@ -94,7 +94,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var buildOptions = BuildOptions.None;
             buildOptions |= BuildOptions.Development;
-            buildOptions |= BuildOptions.DetailedBuildReport;
             buildOptions |= BuildOptions.StrictMode;
             buildOptions |= BuildOptions.IncludeTestAssemblies;
 
