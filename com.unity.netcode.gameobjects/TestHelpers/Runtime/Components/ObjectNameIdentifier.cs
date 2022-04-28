@@ -42,7 +42,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         continue;
                     }
                     var segment = nameSegment;
-                    if (nameSegment.Contains(k_TagInfoStart) && nameSegment.Contains(k_TagInfoStop))
+                    if (nameSegment.Contains($"{k_TagInfoStart}") && nameSegment.Contains($"{k_TagInfoStop}"))
                     {
                         var startPos = nameSegment.IndexOf(k_TagInfoStart);
                         var stopPos = nameSegment.IndexOf(k_TagInfoStop);
