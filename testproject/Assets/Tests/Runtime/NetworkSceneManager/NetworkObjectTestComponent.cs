@@ -5,6 +5,11 @@ using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
+    /// <summary>
+    /// Used with Integration tests to track how many instances of the component
+    /// have been spawned with additional debug log information for spawn and despawn
+    /// events.
+    /// </summary>
     public class NetworkObjectTestComponent : NetworkBehaviour
     {
         public static NetworkObject ServerNetworkObjectInstance;

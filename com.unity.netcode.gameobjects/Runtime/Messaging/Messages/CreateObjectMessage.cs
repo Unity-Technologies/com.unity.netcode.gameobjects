@@ -19,7 +19,6 @@ namespace Unity.Netcode
             }
 
             ObjectInfo.Deserialize(reader);
-
             if (!networkManager.NetworkConfig.ForceSamePrefabs && !networkManager.SpawnManager.HasPrefab(ObjectInfo))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnAddPrefab, ObjectInfo.Header.Hash, reader, ref context);
