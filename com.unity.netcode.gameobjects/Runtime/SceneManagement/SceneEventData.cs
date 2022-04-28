@@ -100,7 +100,7 @@ namespace Unity.Netcode
 
         // Used by the client during synchronization
         internal uint ClientSceneHash;
-        internal int ClientSceneHandle;
+        internal int NetworkSceneHandle;
 
         /// Only used for <see cref="SceneEventType.Synchronize"/> scene events, this assures permissions when writing
         /// NetworkVariable information.  If that process changes, then we need to update this
@@ -249,10 +249,10 @@ namespace Unity.Netcode
         internal void AddDespawnedInSceneNetworkObjects()
         {
             m_DespawnedInSceneObjectsSync.Clear();
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c)=>c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
-                if (sobj.Observers.Contains(TargetClientId) && sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
+                if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
                 {
                     m_DespawnedInSceneObjectsSync.Add(sobj);
                 }
