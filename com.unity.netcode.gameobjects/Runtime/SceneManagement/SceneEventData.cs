@@ -249,7 +249,7 @@ namespace Unity.Netcode
         internal void AddDespawnedInSceneNetworkObjects()
         {
             m_DespawnedInSceneObjectsSync.Clear();
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c)=>c.NetworkManager == m_NetworkManager);
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
