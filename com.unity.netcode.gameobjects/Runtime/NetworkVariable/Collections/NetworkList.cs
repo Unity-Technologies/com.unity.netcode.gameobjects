@@ -11,6 +11,7 @@ namespace Unity.Netcode
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
+        private NativeList<T> m_ListAtLastReset = new NativeList<T>(64, Allocator.Persistent);
         private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
@@ -41,7 +42,11 @@ namespace Unity.Netcode
         public override void ResetDirty()
         {
             base.ResetDirty();
-            m_DirtyEvents.Clear();
+            if (m_DirtyEvents.Length > 0)
+            {
+                m_DirtyEvents.Clear();
+                m_ListAtLastReset.CopyFrom(m_List);
+            }
         }
 
         /// <inheritdoc />
@@ -109,10 +114,10 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_List.Length);
-            for (int i = 0; i < m_List.Length; i++)
+            writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
+            for (int i = 0; i < m_ListAtLastReset.Length; i++)
             {
-                NetworkVariable<T>.Write(writer, m_List[i]);
+                NetworkVariable<T>.Write(writer, m_ListAtLastReset[i]);
             }
         }
 
@@ -454,6 +459,7 @@ namespace Unity.Netcode
         public override void Dispose()
         {
             m_List.Dispose();
+            m_ListAtLastReset.Dispose();
             m_DirtyEvents.Dispose();
         }
     }
