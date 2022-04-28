@@ -358,27 +358,19 @@ namespace Unity.Netcode
                 {
                     // See if there is a valid registered NetworkPrefabOverrideLink associated with the provided prefabHash
                     GameObject networkPrefabReference = null;
-                    if (!isSceneObject)
+                    if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
                     {
-                        if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(globalObjectIdHash))
+                        switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
                         {
-                            switch (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Override)
-                            {
-                                default:
-                                case NetworkPrefabOverride.None:
-                                    networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
-                                    break;
-                                case NetworkPrefabOverride.Hash:
-                                case NetworkPrefabOverride.Prefab:
-                                    networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
-                                    break;
-                            }
+                            default:
+                            case NetworkPrefabOverride.None:
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].Prefab;
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                            case NetworkPrefabOverride.Prefab:
+                                networkPrefabReference = NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks[globalObjectIdHash].OverridingTargetPrefab;
+                                break;
                         }
-                    }
-                    else
-                    {
-                        // Find and return the already existing despawned in-scene object
-                        return NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
                     }
 
                     // If not, then there is an issue (user possibly didn't register the prefab properly?)
@@ -576,9 +568,9 @@ namespace Unity.Netcode
 
             if (networkObject.IsSceneObject != false)
             {
-                // This is used to distinguish between identical GlobalObjectIdhash values when
-                // the same scene is loaded multiple times additively.  This is only sent if the
-                // NetworkObject is an in-scene placed NetworkObject
+                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
+                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
+                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
                 networkObject.NetworkSceneHandle = networkObject.gameObject.scene.handle;
             }
 
