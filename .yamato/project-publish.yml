@@ -18,6 +18,7 @@ publish_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
     - .yamato/project-publish.yml#publish_{{ project.name }}_{{ package.name }}_dry_run
 
 publish_{{ project.name }}_{{ package.name }}_dry_run:
