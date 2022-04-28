@@ -16,7 +16,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     public static class NetcodeIntegrationTestHelpers
     {
         public const int DefaultMinFrames = 1;
-        public const float DefaultTimeout = 1f;
+        public const float DefaultTimeout = 2f;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
@@ -118,7 +118,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private const string k_FirstPartOfTestRunnerSceneName = "InitTestScene";
+        internal const string FirstPartOfTestRunnerSceneName = "InitTestScene";
 
         public static List<NetworkManager> NetworkManagerInstances => s_NetworkManagerInstances;
 
@@ -271,6 +271,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Starts one single client and makes sure to register the required hooks and handlers
+        /// </summary>
+        /// <param name="clientToStart"></param>
+        public static void StartOneClient(NetworkManager clientToStart)
+        {
+            clientToStart.StartClient();
+            s_Hooks[clientToStart] = new MultiInstanceHooks();
+            clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            // if set, then invoke this for the client
+            RegisterHandlers(clientToStart);
+        }
+
+        /// <summary>
         /// Should always be invoked when finished with a single unit test
         /// (i.e. during TearDown)
         /// </summary>
@@ -313,7 +326,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static bool VerifySceneIsValidForClientsToLoad(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             // exclude test runner scene
-            if (sceneName.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            if (sceneName.StartsWith(FirstPartOfTestRunnerSceneName))
             {
                 return false;
             }
@@ -340,7 +353,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // warning about using the currently active scene
             var scene = SceneManager.GetActiveScene();
             // As long as this is a test runner scene (or most likely a test runner scene)
-            if (scene.name.StartsWith(k_FirstPartOfTestRunnerSceneName))
+            if (scene.name.StartsWith(FirstPartOfTestRunnerSceneName))
             {
                 // Register the test runner scene just so we avoid another warning about not being able to find the
                 // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
