@@ -138,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (id != otherClientId)
                 {
-                    if (HiddenVariableObject.ValueOnClient[id] != value)
+                    if (!HiddenVariableObject.ValueOnClient.ContainsKey(id) || HiddenVariableObject.ValueOnClient[id] != value)
                     {
                         return false;
                     }
