@@ -17,8 +17,8 @@ namespace TestProject.RuntimeTests
         protected override int NumberOfClients => 9;
         public NetworkSceneManagerSeneVerification(HostOrServer hostOrServer) : base(hostOrServer) { }
 
-        private const string k_AdditiveScene1 = "AdditiveScene1";
-        private const string k_AdditiveScene2 = "AdditiveScene2";
+        private const string k_AdditiveScene1 = "InSceneNetworkObject";
+        private const string k_AdditiveScene2 = "AdditiveSceneMultiInstance";
 
         private string m_CurrentSceneName;
         private Scene m_CurrentScene;
