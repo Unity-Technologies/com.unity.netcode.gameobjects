@@ -1,0 +1,16 @@
+﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkConditioningEditor.uss" />
+    <ui:DropdownField name="PresetDropdown" label="Connection Type" />
+    <ui:VisualElement class="slider-with-value">
+        <ui:SliderInt name="PacketDelaySlider" label="Packet Delay (ms)" low-value="0" high-value="9999" />
+        <uie:IntegerField name="PacketDelayField" />
+    </ui:VisualElement>
+    <ui:VisualElement class="slider-with-value">
+        <ui:SliderInt name="PacketJitterSlider" label="Packet Jitter (ms)" low-value="0" high-value="999" />
+        <uie:IntegerField name="PacketJitterField" />
+    </ui:VisualElement>
+    <ui:VisualElement class="slider-with-value">
+        <ui:SliderInt name="PacketLossSlider" label="Packet Loss (%)" low-value="0" high-value="100" />
+        <uie:IntegerField name="PacketLossField" />
+    </ui:VisualElement>
+</ui:UXML>

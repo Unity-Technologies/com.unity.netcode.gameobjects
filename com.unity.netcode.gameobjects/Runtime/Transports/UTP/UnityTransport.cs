@@ -202,9 +202,9 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
+            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
             {
-                if (!NetworkEndPoint.TryParse(ip, port, out var endpoint))
+                if (!NetworkEndpoint.TryParse(ip, port, out var endpoint))
                 {
                     Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
                     return default;
@@ -213,9 +213,9 @@ namespace Unity.Netcode.Transports.UTP
                 return endpoint;
             }
 
-            public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
-            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -320,7 +320,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ClientBindAndConnect()
         {
-            var serverEndpoint = default(NetworkEndPoint);
+            var serverEndpoint = default(NetworkEndpoint);
 
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
@@ -341,7 +341,7 @@ namespace Unity.Netcode.Transports.UTP
 
             InitDriver();
 
-            int result = m_Driver.Bind(NetworkEndPoint.AnyIpv4);
+            int result = m_Driver.Bind(NetworkEndpoint.AnyIpv4);
             if (result != 0)
             {
                 Debug.LogError("Client failed to bind");
@@ -354,7 +354,7 @@ namespace Unity.Netcode.Transports.UTP
             return true;
         }
 
-        private bool ServerBindAndListen(NetworkEndPoint endPoint)
+        private bool ServerBindAndListen(NetworkEndpoint endPoint)
         {
             InitDriver();
 
@@ -423,7 +423,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             RelayConnectionData hostConnectionData;
 
-            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var serverEndpoint))
+            if (!NetworkEndpoint.TryParse(ipv4Address, port, out var serverEndpoint))
             {
                 Debug.LogError($"Invalid address {ipv4Address}:{port}");
 
@@ -495,7 +495,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        public void SetConnectionData(NetworkEndPoint endPoint, NetworkEndPoint listenEndPoint = default)
+        public void SetConnectionData(NetworkEndpoint endPoint, NetworkEndpoint listenEndPoint = default)
         {
             string serverAddress = endPoint.Address.Split(':')[0];
 
@@ -544,7 +544,7 @@ namespace Unity.Netcode.Transports.UTP
             else
             {
                 m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
-                return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
+                return ServerBindAndListen(NetworkEndpoint.AnyIpv4);
             }
         }
 
@@ -964,8 +964,9 @@ namespace Unity.Netcode.Transports.UTP
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
 
             m_NetworkSettings
-                .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
-                .WithBaselibNetworkInterfaceParameters(
+                .WithFragmentationStageParameters(
+                    payloadCapacity: fragmentationCapacity)
+                .WithNetworkConfigParameters(
                     receiveQueueCapacity: m_MaxPacketQueueSize,
                     sendQueueCapacity: m_MaxPacketQueueSize);
 #endif
@@ -1094,30 +1095,32 @@ namespace Unity.Netcode.Transports.UTP
             m_ServerClientId = 0;
         }
 
-        private void ConfigureSimulator()
-        {
-            m_NetworkSettings.WithSimulatorStageParameters(
-                maxPacketCount: 300, // TODO Is there any way to compute a better value?
-                maxPacketSize: NetworkParameterConstants.MTU,
-                packetDelayMs: DebugSimulator.PacketDelayMS,
-                packetJitterMs: DebugSimulator.PacketJitterMS,
-                packetDropPercentage: DebugSimulator.PacketDropRate
-            );
-        }
-
-        public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
+        public void CreateDriver(
+            UnityTransport transport,
+            out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-#endif
             var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             maxFrameTimeMS = 100;
-            ConfigureSimulator();
+#if MULTIPLAYER_TOOLS
+            var networkConditioningComponent = GetComponent<NetworkConditioning>();
+            if (networkConditioningComponent != null)
+            {
+                m_NetworkSettings.WithSimulatorStageParameters(
+                    300,
+                    NetworkParameterConstants.MTU,
+                    ApplyMode.AllPackets,
+                    packetDelayMs: networkConditioningComponent.ConnectionType.PacketDelayMs,
+                    packetJitterMs: networkConditioningComponent.ConnectionType.PacketJitterMs,
+                    packetDropPercentage: networkConditioningComponent.ConnectionType.PacketLossPercent
+                );
+            }
+#endif
 #endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
@@ -1129,33 +1132,24 @@ namespace Unity.Netcode.Transports.UTP
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
+#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && MULTIPLAYER_TOOLS
+            if (networkConditioningComponent != null)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    , typeof(NetworkMetricsPipelineStage)
-#endif
+                    typeof(NetworkMetricsPipelineStage)
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
+                    typeof(NetworkMetricsPipelineStage)
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
+                    typeof(NetworkMetricsPipelineStage)
                 );
             }
             else
@@ -1181,6 +1175,23 @@ namespace Unity.Netcode.Transports.UTP
 #endif
                 );
             }
+        }
+
+        public void RefreshSimulationPipelineParameters(NetworkConditioningPreset preset)
+        {
+            var simulatorPipeStageId = NetworkPipelineStageCollection.GetStageId(typeof(SimulatorPipelineStage));
+
+            UpdatePipelineParameter(m_ReliableSequencedPipeline, simulatorPipeStageId, preset);
+            UpdatePipelineParameter(m_UnreliableFragmentedPipeline, simulatorPipeStageId, preset);
+            UpdatePipelineParameter(m_UnreliableSequencedFragmentedPipeline, simulatorPipeStageId, preset);
+        }
+
+        unsafe void UpdatePipelineParameter(NetworkPipeline pipe, NetworkPipelineStageId stageId, NetworkConditioningPreset preset)
+        {
+            var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipe, stageId);
+            parameter->PacketDelayMs = preset.PacketDelayMs;
+            parameter->PacketJitterMs = preset.PacketJitterMs;
+            parameter->PacketDropPercentage = preset.PacketLossPercent;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
