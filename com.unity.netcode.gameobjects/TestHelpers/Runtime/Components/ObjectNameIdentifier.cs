@@ -1,4 +1,3 @@
-
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     public class ObjectNameIdentifier : NetworkBehaviour
@@ -6,6 +5,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private ulong m_CurrentOwner;
         private ulong m_CurrentNetworkObjectId;
         private bool m_IsRegistered;
+
+        private const char k_TagInfoStart = '{';
+        private const char k_TagInfoStop = '}';
 
         /// <summary>
         /// Keep a reference to the assigned NetworkObject
@@ -18,6 +20,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             RegisterAndLabelNetworkObject();
         }
 
+
         protected void RegisterAndLabelNetworkObject()
         {
             if (!m_IsRegistered)
@@ -27,16 +30,38 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_NetworkObject = NetworkObject;
                 m_CurrentOwner = OwnerClientId;
                 m_CurrentNetworkObjectId = NetworkObjectId;
-                var objectOriginalName = gameObject.name.Replace("(Clone)", "");
+
+                // This section handles removing existing labels and re-applying new labels
+                // This is for spawning and despawning persistent NetworkObjects (i.e. pools or in-scene)
+                var objectOriginalName = string.Empty;
+                var splitString = gameObject.name.Replace("(Clone)", "").Split('-');
+                foreach (var nameSegment in splitString)
+                {
+                    if (nameSegment.Contains("OnServer") || nameSegment.Contains("OnClient"))
+                    {
+                        continue;
+                    }
+                    var segment = nameSegment;
+                    if (nameSegment.Contains(k_TagInfoStart) && nameSegment.Contains(k_TagInfoStop))
+                    {
+                        var startPos = nameSegment.IndexOf(k_TagInfoStart);
+                        var stopPos = nameSegment.IndexOf(k_TagInfoStop);
+                        if (stopPos > startPos)
+                        {
+                            segment = nameSegment.Remove(nameSegment.IndexOf(k_TagInfoStart), stopPos - startPos);
+                        }
+                    }
+                    objectOriginalName += segment;
+                }
                 var serverOrClient = IsServer ? "Server" : "Client";
                 if (NetworkObject.IsPlayerObject)
                 {
-                    gameObject.name = NetworkManager.LocalClientId == OwnerClientId ? $"{objectOriginalName}({OwnerClientId})-Local{objectOriginalName}" :
-                        $"{objectOriginalName}({OwnerClientId})-On{serverOrClient}({NetworkManager.LocalClientId})";
+                    gameObject.name = NetworkManager.LocalClientId == OwnerClientId ? $"{objectOriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}-Local{objectOriginalName}" :
+                        $"{objectOriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}- On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
                 }
                 else
                 {
-                    gameObject.name = $"{objectOriginalName}({NetworkObjectId})-On{serverOrClient}({NetworkManager.LocalClientId})";
+                    gameObject.name = $"{objectOriginalName}{k_TagInfoStart}{NetworkObjectId}{k_TagInfoStop}-On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
                 }
 
                 // Don't add the player objects to the global list of NetworkObjects
