@@ -218,7 +218,7 @@ namespace Unity.Netcode.Editor
         /// </summary>
         private void OnEnable()
         {
-            // This can be null and throw an exception when running in test runner
+            // This can be null and throw an exception when running test runner in the editor
             if (target == null)
             {
                 return;
