@@ -118,18 +118,30 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
 
-                // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
-                var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => !c.IsSceneObject.HasValue && !c.IsSpawned && c.gameObject.scene.handle == scene.handle);
-                foreach (var sobj in inSceneNetworkObjects)
-                {
-                    sobj.NetworkManagerOwner = CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager;
-                }
+                ProcessInSceneObjects(scene, CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager);
 
                 CurrentQueuedSceneJob.SceneAction.Invoke();
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
         }
 
+
+        private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
+        {
+            // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
+            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.gameObject.scene.handle == scene.handle);
+            foreach (var sobj in inSceneNetworkObjects)
+            {
+                if (sobj.NetworkManagerOwner != networkManager)
+                {
+                    sobj.NetworkManagerOwner = networkManager;
+                }
+                if (sobj.GetComponent<ObjectNameIdentifier>() == null && sobj.GetComponentInChildren<ObjectNameIdentifier>() == null)
+                {
+                    sobj.gameObject.AddComponent<ObjectNameIdentifier>();
+                }
+            }
+        }
 
         /// <summary>
         /// Processes scene unloading jobs
@@ -210,20 +222,36 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        private string m_ServerSceneBeingLoaded;
         /// <summary>
         /// Server always loads like it normally would
         /// </summary>
-        public AsyncOperation ServerLoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation GenericLoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
+            m_ServerSceneBeingLoaded = sceneName;
+            if (NetcodeIntegrationTest.IsRunning)
+            {
+                SceneManager.sceneLoaded += Sever_SceneLoaded;
+            }
             var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+
             operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
             return operation;
+        }
+
+        private void Sever_SceneLoaded(Scene scene, LoadSceneMode arg1)
+        {
+            if (m_ServerSceneBeingLoaded == scene.name)
+            {
+                ProcessInSceneObjects(scene, NetworkManager);
+                SceneManager.sceneLoaded -= Sever_SceneLoaded;
+            }
         }
 
         /// <summary>
         /// Server always unloads like it normally would
         /// </summary>
-        public AsyncOperation ServerUnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation GenericUnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             var operation = SceneManager.UnloadSceneAsync(scene);
             operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
@@ -233,9 +261,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            if (NetworkManager.IsServer)
+            if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
             {
-                return ServerLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
+                return GenericLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
             }
             else // Clients are always processed in the queue
             {
@@ -247,9 +275,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            if (NetworkManager.IsServer)
+            if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
             {
-                return ServerUnloadSceneAsync(scene, sceneEventAction);
+                return GenericUnloadSceneAsync(scene, sceneEventAction);
             }
             else // Clients are always processed in the queue
             {
@@ -275,19 +303,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         }
                         if (networkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                         {
-                            Debug.Log($"{NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
+                            if (NetworkManager.LogLevel == LogLevel.Developer)
+                            {
+                                NetworkLog.LogInfo($"{NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
+                            }
                             skip = true;
                             break;
                         }
                     }
-                    if (skip)
-                    {
-                        continue;
-                    }
 
-                    if (!NetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
+                    if (!skip && !NetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                     {
-                        Debug.Log($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
+                        if (NetworkManager.LogLevel == LogLevel.Developer)
+                        {
+                            NetworkLog.LogInfo($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
+                        }
                         NetworkManager.SceneManager.ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
                         return sceneLoaded;
                     }
