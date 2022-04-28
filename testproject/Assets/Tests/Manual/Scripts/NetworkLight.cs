@@ -10,7 +10,7 @@ namespace TestProject.ManualTests
     {
         public override void OnNetworkSpawn()
         {
-            if(!IsServer)
+            if (!IsServer)
             {
                 gameObject.SetActive(false);
             }
