@@ -152,6 +152,7 @@ namespace Unity.Netcode
 #endif
         }
 
+        private readonly HashSet<ulong> m_EmptyULongHashSet = new HashSet<ulong>();
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
@@ -160,7 +161,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                throw new SpawnStateException("Object is not spawned");
+                return m_EmptyULongHashSet.GetEnumerator();
             }
 
             return Observers.GetEnumerator();
@@ -175,9 +176,8 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                throw new SpawnStateException("Object is not spawned");
+                return false;
             }
-
             return Observers.Contains(clientId);
         }
 
