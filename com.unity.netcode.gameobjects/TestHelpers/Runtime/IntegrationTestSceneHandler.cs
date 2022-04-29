@@ -187,7 +187,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 yield return s_WaitForSeconds;
             }
-            yield return s_WaitForSeconds;
             CurrentQueuedSceneJob.SceneAction.Invoke();
         }
 
