@@ -246,6 +246,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             item.githash = githash;
             item.jobid = JobId;
             item.hostip = MultiprocessOrchestration.GetLocalIPAddress();
+            item.CreatedBy = "zmecklai";
+            item.UpdatedBy = "zmecklai";
+            
+            
             Task t = PostJobQueueItem(item);
             t.Wait();
             
@@ -351,8 +355,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public long jobid;
         public string githash;
         public string hostip;
-        public string platform;
-        public int jobstate;
+        public int PlatformId;
+        public int JobStateId;
+        public string CreatedBy;
+        public string UpdatedBy;
 #pragma warning restore IDE1006 // Naming Styles
     }
 
