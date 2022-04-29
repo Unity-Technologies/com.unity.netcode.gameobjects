@@ -306,7 +306,7 @@ namespace Unity.Netcode
 
                 return false;
             }
-            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(sceneObject.Header.Hash, sceneObject.Header.NetworkSceneHandle);
+            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(sceneObject.Header.Hash, sceneObject.NetworkSceneHandle);
             return networkObject != null;
         }
 
@@ -564,14 +564,6 @@ namespace Unity.Netcode
             if (clientId == NetworkManager.ServerClientId)
             {
                 return;
-            }
-
-            if (networkObject.IsSceneObject != false)
-            {
-                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
-                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
-                networkObject.NetworkSceneHandle = networkObject.gameObject.scene.handle;
             }
 
             var message = new CreateObjectMessage

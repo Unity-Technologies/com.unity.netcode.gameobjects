@@ -16,11 +16,6 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-        /// <summary>
-        /// For in-scene placed NetworkObjects, this is used to uniquely identify the
-        /// NetworkObject relative to the NetworkSceneHandle.
-        /// </summary>
-        internal int NetworkSceneHandle;
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -836,7 +831,6 @@ namespace Unity.Netcode
                 public ulong NetworkObjectId;
                 public ulong OwnerClientId;
                 public uint Hash;
-                public int NetworkSceneHandle;
 
                 public bool IsPlayerObject;
                 public bool HasParent;
@@ -911,7 +905,7 @@ namespace Unity.Netcode
                 // sizes for dynamically spawned NetworkObjects.
                 if (Header.IsSceneObject)
                 {
-                    writer.WriteValue(OwnerObject.NetworkSceneHandle);
+                    writer.WriteValue(OwnerObject.gameObject.scene.handle);
                 }
 
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
