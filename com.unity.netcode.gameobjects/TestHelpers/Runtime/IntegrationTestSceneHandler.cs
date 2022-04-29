@@ -111,6 +111,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 yield return s_WaitForSeconds;
             }
+            yield return s_WaitForSeconds;
+            CurrentQueuedSceneJob.SceneAction.Invoke();
         }
 
         /// <summary>
@@ -127,7 +129,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 ProcessInSceneObjects(scene, CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager);
 
-                CurrentQueuedSceneJob.SceneAction.Invoke();
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
         }
@@ -186,6 +187,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 yield return s_WaitForSeconds;
             }
+            yield return s_WaitForSeconds;
+            CurrentQueuedSceneJob.SceneAction.Invoke();
         }
 
         /// <summary>
@@ -196,7 +199,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (CurrentQueuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed && CurrentQueuedSceneJob.Scene.name == scene.name)
             {
                 SceneManager.sceneUnloaded -= SceneManager_sceneUnloaded;
-                CurrentQueuedSceneJob.SceneAction.Invoke();
+
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
         }
@@ -207,7 +210,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         static internal IEnumerator JobQueueProcessor()
         {
-            var waitforJob = new WaitForSeconds(0.25f);
             while (true)
             {
                 while (QueuedSceneJobs.Count != 0)
@@ -224,7 +226,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                     VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
                 }
-                yield return waitforJob;
+                yield return s_WaitForSeconds;
             }
         }
 
@@ -361,7 +363,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetworkManagers.Add(networkManager);
             if (s_WaitForSeconds == null)
             {
-                s_WaitForSeconds = new WaitForSeconds(0.01f);
+                s_WaitForSeconds = new WaitForSeconds(0.075f);
             }
             NetworkManager = networkManager;
             if (CoroutineRunner == null)
@@ -376,8 +378,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (SceneJobProcessor != null)
             {
                 CoroutineRunner.StopCoroutine(SceneJobProcessor);
+                SceneJobProcessor = null;
             }
-            CoroutineRunner.StopAllCoroutines();
 
             foreach (var job in QueuedSceneJobs)
             {
