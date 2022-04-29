@@ -48,7 +48,6 @@ namespace TestProject.RuntimeTests
             m_ShouldWaitList.Clear();
             m_ScenesLoaded.Clear();
             m_CreateServerFirst = false;
-            m_CanCheckLoadUnloadEvents = false;
             return base.OnSetup();
         }
 
@@ -70,7 +69,7 @@ namespace TestProject.RuntimeTests
             }
             return base.OnStartedServerAndClients();
         }
-        private bool m_CanCheckLoadUnloadEvents = false;
+
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
             switch (sceneEvent.SceneEventType)
@@ -84,58 +83,46 @@ namespace TestProject.RuntimeTests
                 case SceneEventType.Load:
                 case SceneEventType.Unload:
                     {
-                        if (m_CanCheckLoadUnloadEvents)
-                        {
-                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                            Assert.IsNotNull(sceneEvent.AsyncOperation);
-                        }
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                        Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
                     }
                 case SceneEventType.LoadComplete:
                     {
-                        if (m_CanCheckLoadUnloadEvents)
+                        if (sceneEvent.ClientId == NetworkManager.ServerClientId)
                         {
-                            if (sceneEvent.ClientId == NetworkManager.ServerClientId)
-                            {
-                                var scene = sceneEvent.Scene;
-                                m_CurrentScene = scene;
-                                m_ScenesLoaded.Add(scene);
-                            }
-                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId), $"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
-                            SetClientProcessedEvent(sceneEvent.ClientId);
+                            var scene = sceneEvent.Scene;
+                            m_CurrentScene = scene;
+                            m_ScenesLoaded.Add(scene);
                         }
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId), $"[{m_CurrentSceneName}]Client ID {sceneEvent.ClientId} is not in {nameof(m_ShouldWaitList)}");
+                        SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
                 case SceneEventType.UnloadComplete:
                     {
-                        if (m_CanCheckLoadUnloadEvents)
-                        {
-                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                            SetClientProcessedEvent(sceneEvent.ClientId);
-                        }
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                        SetClientProcessedEvent(sceneEvent.ClientId);
                         break;
                     }
                 case SceneEventType.LoadEventCompleted:
                 case SceneEventType.UnloadEventCompleted:
                     {
-                        if (m_CanCheckLoadUnloadEvents)
-                        {
-                            Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
-                            Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
+                        Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
+                        Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
 
-                            // If we are a server and this is being processed by the server, then add the server to the completed list
-                            // to validate that the event completed on all clients (and the server).
-                            if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
-                                !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
-                            {
-                                sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
-                            }
-                            Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
-                            SetClientWaitDone(sceneEvent.ClientsThatCompleted);
+                        // If we are a server and this is being processed by the server, then add the server to the completed list
+                        // to validate that the event completed on all clients (and the server).
+                        if (!m_ServerNetworkManager.IsHost && sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId &&
+                            !sceneEvent.ClientsThatCompleted.Contains(m_ServerNetworkManager.LocalClientId))
+                        {
+                            sceneEvent.ClientsThatCompleted.Add(m_ServerNetworkManager.LocalClientId);
                         }
+                        Assert.IsTrue(ContainsAllClients(sceneEvent.ClientsThatCompleted));
+                        SetClientWaitDone(sceneEvent.ClientsThatCompleted);
                         break;
                     }
             }
@@ -303,7 +290,6 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
 
-            m_CanCheckLoadUnloadEvents = true;
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(clientSynchronizationMode, true);
 
@@ -345,9 +331,7 @@ namespace TestProject.RuntimeTests
             }
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
 
-            m_CanCheckLoadUnloadEvents = false;
             yield return s_DefaultWaitForTick;
-
         }
 
         private string m_SceneBeingUnloaded;
@@ -406,7 +390,6 @@ namespace TestProject.RuntimeTests
                 m_ScenesLoaded.Clear();
             }
         }
-
 
         protected override IEnumerator OnTearDown()
         {
