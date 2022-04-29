@@ -173,7 +173,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
-
+            IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
             VerboseDebug($"Entering {nameof(OneTimeSetup)}");
 
             m_NetworkManagerInstatiationMode = OnSetIntegrationTestMode();
@@ -531,6 +531,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
+            IntegrationTestSceneHandler.VerboseDebugMode = false;
             VerboseDebug($"Entering {nameof(OneTimeTearDown)}");
             OnOneTimeTearDown();
 
