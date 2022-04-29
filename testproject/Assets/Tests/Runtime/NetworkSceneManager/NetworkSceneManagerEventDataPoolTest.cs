@@ -233,7 +233,16 @@ namespace TestProject.RuntimeTests
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
 
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for clients to load the scene!");
+            var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:";
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                foreach(var entry in m_ShouldWaitList)
+                {
+                    errorMessage += $"ClientId: {entry.ClientId} | Processed: {entry.ProcessedEvent} | ShouldWait: {entry.ShouldWait}";
+                }
+            }
+
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, errorMessage);
 
             yield return s_DefaultWaitForTick;
         }
@@ -250,6 +259,17 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to unload the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
+            var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:";
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                foreach (var entry in m_ShouldWaitList)
+                {
+                    errorMessage += $"ClientId: {entry.ClientId} | Processed: {entry.ProcessedEvent} | ShouldWait: {entry.ShouldWait}";
+                }
+            }
+
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, errorMessage);
+
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for clients to unload the scene!");
             yield return s_DefaultWaitForTick;
         }

@@ -283,10 +283,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Set the player prefab for the server and clients
             m_ServerNetworkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
-            // Renaming client NetworkManagers to match player identification tags
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.name = $"NetworkManager - Client - {client.LocalClientId + 1}";
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
@@ -330,6 +328,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // This provides a simpler way to get a specific player instance relative to a client instance
             foreach (var networkManager in m_ClientNetworkManagers)
             {
+                networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
                 Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
                 // Get all player instances for the current client NetworkManager instance
