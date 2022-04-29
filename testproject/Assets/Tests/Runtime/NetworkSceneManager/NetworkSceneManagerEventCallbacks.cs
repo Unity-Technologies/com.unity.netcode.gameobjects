@@ -105,17 +105,18 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => (!NotificationTestShouldWait() && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded) ? true : !ValidateCompletedNotifications());
             AssertOnTimeout($"Timed out waiting for client to load the scene {k_SceneToLoad}!");
 
-            // Reset for next test
-            ResetNotificationInfo();
-
             yield return s_DefaultWaitForTick;
 
+            // Reset for next test
+            ResetNotificationInfo();
             //////////////////////////////////////////
             // Testing unload event notifications
             Assert.That(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene) == SceneEventProgressStatus.Started);
 
             yield return WaitForConditionOrTimeOut(() => (!NotificationTestShouldWait() && !m_CurrentScene.isLoaded) ? true : !ValidateCompletedNotifications());
             AssertOnTimeout($"Timed out waiting for client to unload the scene {k_SceneToLoad}!");
+
+            yield return s_DefaultWaitForTick;
         }
 
 

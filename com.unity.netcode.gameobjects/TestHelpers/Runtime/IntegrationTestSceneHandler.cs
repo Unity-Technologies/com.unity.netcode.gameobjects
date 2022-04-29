@@ -178,7 +178,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             else
             {
-                CurrentQueuedSceneJob.SceneAction.Invoke();
                 CurrentQueuedSceneJob.JobType = QueuedSceneJob.JobTypes.Completed;
             }
 
