@@ -236,7 +236,7 @@ namespace TestProject.RuntimeTests
             var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:";
             if (s_GlobalTimeoutHelper.TimedOut)
             {
-                foreach(var entry in m_ShouldWaitList)
+                foreach (var entry in m_ShouldWaitList)
                 {
                     errorMessage += $"ClientId: {entry.ClientId} | Processed: {entry.ProcessedEvent} | ShouldWait: {entry.ShouldWait}";
                 }
