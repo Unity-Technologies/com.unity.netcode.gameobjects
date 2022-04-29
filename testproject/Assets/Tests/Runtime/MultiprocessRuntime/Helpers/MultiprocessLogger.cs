@@ -239,6 +239,32 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             return theList;
         }
 
+        public static void PostJobQueueItem(string githash)
+        {
+            MultiprocessLogger.Log($"Posting remoteConfig to server {githash}");
+            var item = new JobQueueItem();
+            item.githash = githash;
+            item.jobid = JobId;
+            item.hostip = MultiprocessOrchestration.GetLocalIPAddress();
+            Task t = PostJobQueueItem(item);
+            t.Wait();
+        }
+
+        public static async Task PostJobQueueItem(JobQueueItem item)
+        {
+            using var client = new HttpClient();
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile");
+            var json = JsonUtility.ToJson(item);
+            using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
+            request.Content = stringContent;
+            MultiprocessLogger.Log($"Posting remoteConfig to server {stringContent}");
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+
+            using var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token)
+                .ConfigureAwait(false);
+        }
+
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
         {
             using var client = new HttpClient();
@@ -320,7 +346,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
 #pragma warning disable IDE1006 // Naming Styles
         public int id;
-        public int jobid;
+        public long jobid;
         public string githash;
         public string hostip;
         public string platform;

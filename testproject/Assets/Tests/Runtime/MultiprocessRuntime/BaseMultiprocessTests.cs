@@ -253,6 +253,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var numProcessesToCreate = GetWorkerCount();
             var launchProcessList = new List<Process>();
+            MultiprocessLogger.Log("Posting remoteConfig to server");
+            MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
+            MultiprocessLogger.Log("Posting remoteConfig to server...done");
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and

@@ -56,10 +56,12 @@ public class TestCoordinator : NetworkBehaviour
     private List<float> m_FixedUpdateDeltaTime;
     private Stopwatch m_Stopwatch;
     private static int s_ProcessId;
+    public static string Rawgithash;
 
     static TestCoordinator()
     {
         ConfigurationType = ConfigurationType.Unknown;
+        Rawgithash = "x";
     }
 
     private void Awake()
@@ -77,16 +79,16 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         MultiprocessLogger.Log("Trying to read githash file");
-        string rawgithash = "x";
+        
         try
         {
             var githash_resource = Resources.Load<TextAsset>("Text/githash");
             if (githash_resource != null)
             {
-                rawgithash = githash_resource.ToString();
-                if (!string.IsNullOrEmpty(rawgithash))
+                Rawgithash = githash_resource.ToString();
+                if (!string.IsNullOrEmpty(Rawgithash))
                 {
-                    rawgithash = rawgithash.Trim();
+                    Rawgithash = Rawgithash.Trim();
                 }
             }
         }
@@ -94,7 +96,13 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
         }
-        MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read githash file: {rawgithash}");
+        MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read githash file: {Rawgithash}");
+
+        // Try to get config data from remoteUrl
+        MultiprocessLogger.Log("Try to get config data from server");
+        var jobQueue = MultiprocessLogHandler.GetRemoteConfig();
+        MultiprocessLogger.Log("Try to get config data from server...done");
+        MultiprocessLogger.Log($"{jobQueue.jobQueueItems.}");
 
         try
         {
@@ -123,7 +131,7 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"Awake - {s_ProcessId} Exception reading remoteConfig {remoteConfigReadException.Message}");
         }
 
-        MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {rawgithash}");
+        MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {Rawgithash}");
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
