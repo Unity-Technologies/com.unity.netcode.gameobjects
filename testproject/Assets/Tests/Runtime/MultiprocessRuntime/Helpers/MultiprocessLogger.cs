@@ -231,7 +231,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var response = responseTask.Result;
             var contentTask = response.Content.ReadAsStringAsync();
             contentTask.Wait();
-            MultiprocessLogger.Log($"Remote config content is {contentTask.Result}");
+            MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
             // var l = JsonUtility.FromJson<JobQueueItemArray>(contentTask.Result);
             var theList = new JobQueueItemArray();
             JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
@@ -248,6 +248,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             item.hostip = MultiprocessOrchestration.GetLocalIPAddress();
             Task t = PostJobQueueItem(item);
             t.Wait();
+            
         }
 
         public static async Task PostJobQueueItem(JobQueueItem item)
@@ -257,12 +258,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var json = JsonUtility.ToJson(item);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
-            MultiprocessLogger.Log($"Posting remoteConfig to server {stringContent}");
+            MultiprocessLogger.Log($"Posting remoteConfig to server {json}");
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
             using var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token)
                 .ConfigureAwait(false);
+            MultiprocessLogger.Log($"remoteConfig posted, checking response {response.StatusCode}");
         }
 
         private static async Task PostBasicAsync(WebLog content, CancellationToken cancellationToken)
