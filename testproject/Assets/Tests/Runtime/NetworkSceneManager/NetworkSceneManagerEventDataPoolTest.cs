@@ -352,18 +352,6 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        private bool AllClientsUnloadedScene()
-        {
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                if (!m_ClientsThatUnloadedCurrentScene.Contains(client.LocalClientId))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
         private IEnumerator UnloadAllScenes(bool shouldCheckClients = false)
         {
             if (m_ScenesLoaded.Count > 0)
@@ -378,17 +366,14 @@ namespace TestProject.RuntimeTests
                     {
                         m_ClientsThatUnloadedCurrentScene.Clear();
                         m_SceneBeingUnloaded = scene.name;
-                        yield return UnloadScene(scene);
-                        if (shouldCheckClients)
-                        {
-                            yield return WaitForConditionOrTimeOut(AllClientsUnloadedScene);
-                        }
+                        SceneManager.UnloadSceneAsync(scene);
                     }
                 }
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
 
                 m_ScenesLoaded.Clear();
             }
+            yield return null;
         }
 
         protected override IEnumerator OnTearDown()
