@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
@@ -245,7 +244,6 @@ namespace TestProject.RuntimeTests
             }
 
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, errorMessage);
-
             yield return s_DefaultWaitForTick;
         }
 
@@ -307,8 +305,6 @@ namespace TestProject.RuntimeTests
             m_LoadSceneMode = clientSynchronizationMode;
             m_CanStartServerOrClients = true;
 
-
-
             yield return StartServerAndClients();
 
             // Now prepare for the loading and unloading additive scene testing
@@ -316,8 +312,6 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
-
-
 
             m_OriginalActiveScene = SceneManager.GetActiveScene();
 
@@ -334,7 +328,7 @@ namespace TestProject.RuntimeTests
                     message += $"NetworkSceneHandle: {entry.Key} | ClientSceneHandle: {entry.Value}\n";
                 }
             }
-            Debug.Log($"{message}");
+            VerboseDebug($"{message}");
 
             SceneManager.SetActiveScene(m_CurrentScene);
             // Now load the scene(s)
