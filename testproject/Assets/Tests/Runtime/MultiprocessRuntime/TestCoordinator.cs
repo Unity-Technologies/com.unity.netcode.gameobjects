@@ -102,7 +102,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log("Try to get config data from server");
         var jobQueue = MultiprocessLogHandler.GetRemoteConfig();
         MultiprocessLogger.Log("Try to get config data from server...done");
-        MultiprocessLogger.Log($"{jobQueue.jobQueueItems.}");
+        MultiprocessLogger.Log($"{jobQueue.jobQueueItems.Count}");
 
         try
         {
