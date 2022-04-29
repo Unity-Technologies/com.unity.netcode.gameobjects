@@ -15,5 +15,12 @@
         "Mono.Cecil.Pdb.dll",
         "Mono.Cecil.Rocks.dll"
     ],
-    "autoReferenced": false
+    "autoReferenced": false,
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a11)",
+            "define": "UNITY_CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES"
+        }
+    ]
 }
