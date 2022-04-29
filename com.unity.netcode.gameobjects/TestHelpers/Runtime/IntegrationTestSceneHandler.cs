@@ -31,6 +31,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static event CanClientsLoadUnloadDelegateHandler CanClientsLoad;
         public static event CanClientsLoadUnloadDelegateHandler CanClientsUnload;
 
+
+        public static bool VerboseDebugMode;
         /// <summary>
         /// Used for loading scenes on the client-side during
         /// an integration test
@@ -79,6 +81,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+
+        internal static void VerboseDebug(string message)
+        {
+            if (VerboseDebugMode)
+            {
+                Debug.Log(message);
+            }
+        }
 
         /// <summary>
         /// Processes scene loading jobs
@@ -197,20 +207,25 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         static internal IEnumerator JobQueueProcessor()
         {
-            while (QueuedSceneJobs.Count != 0)
+            var waitforJob = new WaitForSeconds(0.25f);
+            while (true)
             {
-                CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
-                if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
+                while (QueuedSceneJobs.Count != 0)
                 {
-                    yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
+                    CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
+                    VerboseDebug($"[ITSH-START] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
+                    if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
+                    {
+                        yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
+                    }
+                    else if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Unloading)
+                    {
+                        yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
+                    }
+                    VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
                 }
-                else if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Unloading)
-                {
-                    yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
-                }
+                yield return waitforJob;
             }
-            SceneJobProcessor = null;
-            yield break;
         }
 
         /// <summary>
@@ -295,10 +310,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        ///
+        /// Replacement callback takes other NetworkManagers into consideration
         /// </summary>
-        /// <param name="sceneName"></param>
-        /// <returns></returns>
         internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
         {
             for (int i = 0; i < SceneManager.sceneCount; i++)

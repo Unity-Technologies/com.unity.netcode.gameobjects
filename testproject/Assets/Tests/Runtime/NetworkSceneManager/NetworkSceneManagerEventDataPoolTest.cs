@@ -48,6 +48,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            IntegrationTestSceneHandler.VerboseDebugMode = true;
             m_CanStartServerOrClients = false;
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
@@ -240,7 +241,7 @@ namespace TestProject.RuntimeTests
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
 
-            var errorMessage = $"Timed out waiting for clients to load the scene {m_CurrentSceneName}!\nShould Wait List:";
+            var errorMessage = $"Timed out waiting for clients to load the scene {m_CurrentSceneName}!\nShould Wait List:\n";
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 foreach (var entry in m_ShouldWaitList)
@@ -269,7 +270,7 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to unload the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:";
+            var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:\n";
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 foreach (var entry in m_ShouldWaitList)
@@ -409,6 +410,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             yield return UnloadAllScenes();
+            IntegrationTestSceneHandler.VerboseDebugMode = false;
         }
     }
 }
