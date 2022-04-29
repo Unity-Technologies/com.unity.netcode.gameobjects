@@ -15,7 +15,7 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 4;
+        protected override int NumberOfClients => 1;
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
@@ -41,14 +41,8 @@ namespace TestProject.RuntimeTests
         private List<SceneTestInfo> m_ShouldWaitList = new List<SceneTestInfo>();
         private List<ulong> m_ClientsReceivedSynchronize = new List<ulong>();
 
-        protected override bool OnSetVerboseDebug()
-        {
-            return true;
-        }
-
         protected override IEnumerator OnSetup()
         {
-            IntegrationTestSceneHandler.VerboseDebugMode = true;
             m_CanStartServerOrClients = false;
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
@@ -410,7 +404,6 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             yield return UnloadAllScenes();
-            IntegrationTestSceneHandler.VerboseDebugMode = false;
         }
     }
 }

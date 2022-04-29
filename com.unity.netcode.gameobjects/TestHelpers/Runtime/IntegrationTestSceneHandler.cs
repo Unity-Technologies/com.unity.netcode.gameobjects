@@ -210,24 +210,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         static internal IEnumerator JobQueueProcessor()
         {
-            while (true)
+            while (QueuedSceneJobs.Count != 0)
             {
-                while (QueuedSceneJobs.Count != 0)
+                CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
+                VerboseDebug($"[ITSH-START] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
+                if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
                 {
-                    CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
-                    VerboseDebug($"[ITSH-START] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
-                    if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
-                    {
-                        yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
-                    }
-                    else if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Unloading)
-                    {
-                        yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
-                    }
-                    VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
+                    yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
                 }
-                yield return s_WaitForSeconds;
+                else if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Unloading)
+                {
+                    yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
+                }
+                VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
             }
+            SceneJobProcessor = null;
+            yield break;
         }
 
         /// <summary>
@@ -363,7 +361,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetworkManagers.Add(networkManager);
             if (s_WaitForSeconds == null)
             {
-                s_WaitForSeconds = new WaitForSeconds(0.075f);
+                s_WaitForSeconds = new WaitForSeconds(0.032f);
             }
             NetworkManager = networkManager;
             if (CoroutineRunner == null)
