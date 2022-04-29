@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
+- Changed requirement to register in-scene placed NetworkObjects with `NetworkManager` in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
 
 ### Removed
 - Removed `SIPTransport` (#1870)
@@ -29,6 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [1.0.0-pre.7] - 2022-04-06
 
 ### Added
+
 - Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
 - Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
 - Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
@@ -38,7 +40,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - When `ForceSamePrefabs` is false, a configurable delay (default 1 second, configurable via `NetworkConfig.SpawnTimeout`) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
 
 ### Changed
-- Changed requirement to register in-scene placed NetworkObjects with `NetworkManager` in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
 
 - Changed `NetcodeIntegrationTestHelpers` to use `UnityTransport` (#1870)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
