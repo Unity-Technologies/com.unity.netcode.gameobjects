@@ -15,6 +15,10 @@ namespace Unity.Netcode
         {
             internal uint SceneEventId;
             internal Action<uint> EventAction;
+            /// <summary>
+            /// Used server-side for integration testing in order to
+            /// invoke the SceneEventProgress once done loading
+            /// </summary>
             internal Action Completed;
             internal void Invoke()
             {

@@ -14,7 +14,7 @@ namespace TestProject.RuntimeTests
     [TestFixture(HostOrServer.Server)]
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 4;
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
@@ -48,11 +48,6 @@ namespace TestProject.RuntimeTests
             m_ScenesLoaded.Clear();
             m_CreateServerFirst = false;
             return base.OnSetup();
-        }
-
-        protected override void OnServerAndClientsCreated()
-        {
-            base.OnServerAndClientsCreated();
         }
 
         protected override IEnumerator OnStartedServerAndClients()
@@ -234,7 +229,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(ConditionPassed);
 
             var errorMessage = $"Timed out waiting for clients to load the scene {m_CurrentSceneName}!\nShould Wait List:\n";
-            if (s_GlobalTimeoutHelper.TimedOut)
+            if (m_EnableVerboseDebug && s_GlobalTimeoutHelper.TimedOut)
             {
                 foreach (var entry in m_ShouldWaitList)
                 {
@@ -259,8 +254,9 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to unload the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
+
             var errorMessage = $"Timed out waiting for clients to unload the scene {m_CurrentSceneName}!\nShould Wait List:\n";
-            if (s_GlobalTimeoutHelper.TimedOut)
+            if (m_EnableVerboseDebug && s_GlobalTimeoutHelper.TimedOut)
             {
                 foreach (var entry in m_ShouldWaitList)
                 {

@@ -961,6 +961,7 @@ namespace Unity.Netcode
             var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded };
             var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventAction);
 
+            // If integration testing, IntegrationTestSceneHandler returns null
             if (sceneUnload == null)
             {
                 sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
@@ -1168,6 +1169,8 @@ namespace Unity.Netcode
             // Now start loading the scene
             var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded };
             var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
+
+            // If integration testing, IntegrationTestSceneHandler returns null
             if (sceneLoad == null)
             {
                 sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
