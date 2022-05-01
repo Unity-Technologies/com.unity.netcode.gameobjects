@@ -85,6 +85,17 @@ namespace TestProject.RuntimeTests
             return base.OnStartedServerAndClients();
         }
 
+        private bool ValidateSceneIsLoaded()
+        {
+            if (!NotificationTestShouldWait() && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded)
+            {
+                if (ValidateCompletedNotifications())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         [UnityTest]
         public IEnumerator SceneEventCallbackNotifications()
@@ -102,7 +113,7 @@ namespace TestProject.RuntimeTests
             // Testing load event notifications
             Assert.That(m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive) == SceneEventProgressStatus.Started);
 
-            yield return WaitForConditionOrTimeOut(() => (!NotificationTestShouldWait() && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded) ? true : !ValidateCompletedNotifications());
+            yield return WaitForConditionOrTimeOut(ValidateSceneIsLoaded);
             AssertOnTimeout($"Timed out waiting for client to load the scene {k_SceneToLoad}!");
 
             yield return s_DefaultWaitForTick;
@@ -111,7 +122,8 @@ namespace TestProject.RuntimeTests
             ResetNotificationInfo();
             //////////////////////////////////////////
             // Testing unload event notifications
-            Assert.That(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene) == SceneEventProgressStatus.Started);
+            var unloadStatus = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.That(unloadStatus == SceneEventProgressStatus.Started, $"Unload scene failed to start with a status code of: {unloadStatus}");
 
             yield return WaitForConditionOrTimeOut(() => (!NotificationTestShouldWait() && !m_CurrentScene.isLoaded) ? true : !ValidateCompletedNotifications());
             AssertOnTimeout($"Timed out waiting for client to unload the scene {k_SceneToLoad}!");

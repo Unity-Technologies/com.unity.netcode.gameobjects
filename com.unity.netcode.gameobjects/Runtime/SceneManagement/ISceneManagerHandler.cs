@@ -15,8 +15,10 @@ namespace Unity.Netcode
         {
             internal uint SceneEventId;
             internal Action<uint> EventAction;
+            internal Action Completed;
             internal void Invoke()
             {
+                Completed?.Invoke();
                 EventAction.Invoke(SceneEventId);
             }
         }

@@ -11,11 +11,10 @@ namespace TestProject.RuntimeTests
 {
     [TestFixture(HostOrServer.Host)]
     [TestFixture(HostOrServer.Server)]
-    public class NetworkSceneManagerSeneVerification : NetcodeIntegrationTest
+    public class NetworkSceneManagerSceneVerification : NetcodeIntegrationTest
     {
-
         protected override int NumberOfClients => 4;
-        public NetworkSceneManagerSeneVerification(HostOrServer hostOrServer) : base(hostOrServer) { }
+        public NetworkSceneManagerSceneVerification(HostOrServer hostOrServer) : base(hostOrServer) { }
 
         private const string k_AdditiveScene1 = "InSceneNetworkObject";
         private const string k_AdditiveScene2 = "AdditiveSceneMultiInstance";
@@ -47,12 +46,6 @@ namespace TestProject.RuntimeTests
         private List<SceneTestInfo> m_ShouldWaitList = new List<SceneTestInfo>();
         private List<ulong> m_ClientsReceivedSynchronize = new List<ulong>();
 
-        private bool m_ClientsAreOkToLoad = true;
-        protected override bool CanClientsLoad()
-        {
-            return m_ClientsAreOkToLoad;
-        }
-
         protected override IEnumerator OnSetup()
         {
             m_CanStartServerOrClients = false;
@@ -83,6 +76,7 @@ namespace TestProject.RuntimeTests
 
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
+            VerboseDebug($"SceneEvent: {sceneEvent.SceneEventType} | {sceneEvent.SceneName} | {sceneEvent.ClientId}");
             switch (sceneEvent.SceneEventType)
             {
                 // Validates that we sent the proper number of synchronize events to the clients
@@ -96,7 +90,6 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                        Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
                     }
                 case SceneEventType.LoadComplete:
@@ -106,7 +99,7 @@ namespace TestProject.RuntimeTests
                             var scene = sceneEvent.Scene;
                             m_CurrentScene = scene;
                             m_ScenesLoaded.Add(scene);
-                            m_ClientsAreOkToLoad = true;
+                            //m_ClientsAreOkToLoad = true;
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
@@ -191,6 +184,23 @@ namespace TestProject.RuntimeTests
                 return !((m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true &&
                 c.ClientId == NetworkManager.ServerClientId).Count() > 0) && m_ClientsThatFailedVerification != NumberOfClients);
             }
+        }
+
+        private string PrintFailedCondition()
+        {
+            if (m_EnableVerboseDebug)
+            {
+                var message = $"FailedCondition IsTestingVerifyScene {m_IsTestingVerifyScene}:\n";
+                var stillWaiting = m_ShouldWaitList.Select(c => c).Where(c => c.ProcessedEvent != true && c.ShouldWait == true && c.ClientId == NetworkManager.ServerClientId);
+                foreach (var entry in stillWaiting)
+                {
+                    message += $"Client-{entry.ClientId}: Processed {entry.ProcessedEvent} | shouldWait {entry.ShouldWait}\n";
+                }
+
+                message += $"Clients That Failed Verification: {m_ClientsThatFailedVerification} vs NumberOfClients {NumberOfClients}";
+                return message;
+            }
+            return string.Empty;
         }
 
         /// <summary>
@@ -316,12 +326,12 @@ namespace TestProject.RuntimeTests
             m_ClientVerifyScene = false;
             m_IsTestingVerifyScene = true;
             m_ClientsThatFailedVerification = 0;
-            m_ClientsAreOkToLoad = false;
+
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.LoadScene(m_CurrentSceneName, LoadSceneMode.Additive), SceneEventProgressStatus.Started);
 
             // Now wait for server to complete and all clients to fail
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}!\n");
 
             // Now unload the scene the server loaded from last test
             ResetWait();
@@ -339,9 +349,9 @@ namespace TestProject.RuntimeTests
             m_IsTestingVerifyScene = false;
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
 
-            // Now wait for server to unload and clients will fake unload
+            // Now wait for scenes to unload
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!");
         }
     }
 }
