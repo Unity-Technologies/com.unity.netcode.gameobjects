@@ -375,7 +375,6 @@ namespace TestProject.RuntimeTests
                         m_SceneBeingUnloaded = scene.name;
 
                         yield return UnloadScene(scene);
-                        //SceneManager.UnloadSceneAsync(scene);
                     }
                 }
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
