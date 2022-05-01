@@ -99,7 +99,6 @@ namespace TestProject.RuntimeTests
                             var scene = sceneEvent.Scene;
                             m_CurrentScene = scene;
                             m_ScenesLoaded.Add(scene);
-                            //m_ClientsAreOkToLoad = true;
                         }
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
@@ -301,14 +300,15 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}\n{PrintFailedCondition()}");
 
             // Unload the scene
             ResetWait();
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
 
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}");
+
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}\n{PrintFailedCondition()}");
 
             // Test VerifySceneBeforeLoading with m_ServerVerifyScene set to false
             // Server will notify it failed scene verification and no client should load
@@ -331,7 +331,7 @@ namespace TestProject.RuntimeTests
 
             // Now wait for server to complete and all clients to fail
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}!\n");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}!\n{PrintFailedCondition()}");
 
             // Now unload the scene the server loaded from last test
             ResetWait();
@@ -351,7 +351,7 @@ namespace TestProject.RuntimeTests
 
             // Now wait for scenes to unload
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!");
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!\n{PrintFailedCondition()}");
         }
     }
 }

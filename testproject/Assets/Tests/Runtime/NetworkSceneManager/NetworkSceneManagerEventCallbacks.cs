@@ -15,7 +15,7 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerEventCallbacks : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "EmptyScene";
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 4;
         private Scene m_CurrentScene;
         private bool m_CanStartServerOrClients = false;
 

@@ -137,29 +137,28 @@ namespace Unity.Netcode
 
         internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
-            try
-            {
-                m_SceneLoadOperation = sceneLoadOperation;
-                m_SceneLoadOperation.completed += operation => CheckCompletion();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
+            m_SceneLoadOperation = sceneLoadOperation;
+            m_SceneLoadOperation.completed += operation => CheckCompletion();
         }
 
+        /// <summary>
+        /// Called only on the server-side during integration test (NetcodeIntegrationTest specific)
+        /// scene loading and unloading.
+        ///
+        /// Note: During integration testing we must queue all scene loading and unloading requests for
+        /// both the server and all clients so they can be processed in a FIFO/linear fashion to avoid
+        /// conflicts when the  <see cref="SceneManager.sceneLoaded"/> and <see cref="SceneManager.sceneUnloaded"/>
+        /// events are triggered. The Completed action simulates the <see cref="AsyncOperation.completed"/> event.
+        /// (See: Unity.Netcode.TestHelpers.Runtime.IntegrationTestSceneHandler)
+        /// </summary>
         internal void SetSceneLoadOperation(ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            try
-            {
-                sceneEventAction.Completed = SetComplete;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
+            sceneEventAction.Completed = SetComplete;
         }
 
+        /// <summary>
+        /// Finalizes the SceneEventProgress
+        /// </summary>
         internal void SetComplete()
         {
             IsCompleted = true;
