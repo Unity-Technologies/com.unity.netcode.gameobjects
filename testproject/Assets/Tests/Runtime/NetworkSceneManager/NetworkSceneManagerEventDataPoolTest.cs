@@ -85,7 +85,6 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                        Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
                     }
                 case SceneEventType.LoadComplete:
@@ -242,9 +241,7 @@ namespace TestProject.RuntimeTests
                     errorMessage += $"ClientId: {entry.ClientId} | Processed: {entry.ProcessedEvent} | ShouldWait: {entry.ShouldWait}\n";
                 }
             }
-
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, errorMessage);
-            yield return s_DefaultWaitForTick;
         }
 
         private IEnumerator UnloadScene(Scene scene)
@@ -271,7 +268,6 @@ namespace TestProject.RuntimeTests
                 }
             }
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, errorMessage);
-            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
@@ -350,8 +346,6 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.OnUnloadComplete -= SceneManager_OnUnloadComplete;
             }
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
-
-            yield return s_DefaultWaitForTick;
         }
 
         private string m_SceneBeingUnloaded;

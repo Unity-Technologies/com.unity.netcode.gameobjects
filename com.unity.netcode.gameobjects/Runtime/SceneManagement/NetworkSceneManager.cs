@@ -958,11 +958,18 @@ namespace Unity.Netcode
             sceneEventProgress.SceneEventType = SceneEventType.UnloadEventCompleted;
 
             ScenesLoaded.Remove(scene.handle);
+            var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded };
+            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventAction);
 
-            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene,
-                    new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
+            if (sceneUnload == null)
+            {
+                sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
+            }
+            else
+            {
+                sceneEventProgress.SetSceneLoadOperation(sceneUnload);
+            }
 
-            sceneEventProgress.SetSceneLoadOperation(sceneUnload);
 
             // Notify local server that a scene is going to be unloaded
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1137,12 +1144,12 @@ namespace Unity.Netcode
             sceneEventData.SceneEventType = SceneEventType.Load;
             sceneEventData.SceneHash = SceneHashFromNameOrPath(sceneName);
             sceneEventData.LoadSceneMode = loadSceneMode;
-
+            var sceneEventId = sceneEventData.SceneEventId;
             // This both checks to make sure the scene is valid and if not resets the active scene event
             m_IsSceneEventActive = ValidateSceneBeforeLoading(sceneEventData.SceneHash, loadSceneMode);
             if (!m_IsSceneEventActive)
             {
-                EndSceneEvent(sceneEventData.SceneEventId);
+                EndSceneEvent(sceneEventId);
                 return SceneEventProgressStatus.SceneFailedVerification;
             }
 
@@ -1155,14 +1162,20 @@ namespace Unity.Netcode
                 MoveObjectsToDontDestroyOnLoad();
 
                 // Now Unload all currently additively loaded scenes
-                UnloadAdditivelyLoadedScenes(sceneEventData.SceneEventId);
+                UnloadAdditivelyLoadedScenes(sceneEventId);
             }
 
             // Now start loading the scene
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
-                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneLoaded });
-
-            sceneEventProgress.SetSceneLoadOperation(sceneLoad);
+            var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded };
+            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
+            if (sceneLoad == null)
+            {
+                sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
+            }
+            else
+            {
+                sceneEventProgress.SetSceneLoadOperation(sceneLoad);
+            }
 
             // Notify the local server that a scene loading event has begun
             OnSceneEvent?.Invoke(new SceneEvent()

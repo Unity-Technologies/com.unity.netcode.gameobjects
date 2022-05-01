@@ -280,7 +280,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             // Server and non NetcodeIntegrationTest tests use the generic load scene method
-            if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
+            if (!NetcodeIntegrationTest.IsRunning)
             {
                 return GenericLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
             }
@@ -288,14 +288,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Loading });
             }
-            // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
-            return new AsyncOperation();
+
+            return null;
         }
 
         public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
             // Server and non NetcodeIntegrationTest tests use the generic unload scene method
-            if (NetworkManager.IsServer || !NetcodeIntegrationTest.IsRunning)
+            if (!NetcodeIntegrationTest.IsRunning)
             {
                 return GenericUnloadSceneAsync(scene, sceneEventAction);
             }
@@ -304,7 +304,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Unloading });
             }
             // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
-            return new AsyncOperation();
+            return null;
         }
 
         /// <summary>
@@ -359,7 +359,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetworkManagers.Add(networkManager);
             if (s_WaitForSeconds == null)
             {
-                s_WaitForSeconds = new WaitForSeconds(0.032f);
+                s_WaitForSeconds = new WaitForSeconds(1.0f / networkManager.NetworkConfig.TickRate);
             }
             NetworkManager = networkManager;
             if (CoroutineRunner == null)

@@ -137,23 +137,54 @@ namespace Unity.Netcode
 
         internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
-            m_SceneLoadOperation = sceneLoadOperation;
-            m_SceneLoadOperation.completed += operation => CheckCompletion();
+            try
+            {
+                m_SceneLoadOperation = sceneLoadOperation;
+                m_SceneLoadOperation.completed += operation => CheckCompletion();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        internal void SetSceneLoadOperation(ISceneManagerHandler.SceneEventAction sceneEventAction)
+        {
+            try
+            {
+                sceneEventAction.Completed = SetComplete;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        internal void SetComplete()
+        {
+            IsCompleted = true;
+            AreAllClientsDoneLoading = true;
+
+            // If OnComplete is not registered or it is and returns true then remove this from the progress tracking
+            if (OnComplete == null || (OnComplete != null && OnComplete.Invoke(this)))
+            {
+                m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
+            }
+            m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
         }
 
         internal void CheckCompletion()
         {
-            if ((!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && m_SceneLoadOperation.isDone) || (!IsCompleted && TimedOut))
+            try
             {
-                IsCompleted = true;
-                AreAllClientsDoneLoading = true;
-
-                // If OnComplete is not registered or it is and returns true then remove this from the progress tracking
-                if (OnComplete == null || (OnComplete != null && OnComplete.Invoke(this)))
+                if ((!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && (m_SceneLoadOperation == null || m_SceneLoadOperation.isDone)) || (!IsCompleted && TimedOut))
                 {
-                    m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
+                    SetComplete();
                 }
-                m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
             }
         }
     }

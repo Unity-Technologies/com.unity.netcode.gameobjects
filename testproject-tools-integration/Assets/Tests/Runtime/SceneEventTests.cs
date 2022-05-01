@@ -348,10 +348,9 @@ namespace TestProject.ToolsIntegration.RuntimeTests
             // as this is when the message is sent
             m_ServerNetworkSceneManager.OnSceneEvent += sceneEvent =>
             {
-                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload))
+                if (sceneEvent.SceneEventType.Equals(SceneEventType.Unload) && sceneEvent.ClientId == Server.LocalClientId)
                 {
-                    serverSceneUnloaded = sceneEvent.AsyncOperation.isDone;
-                    sceneEvent.AsyncOperation.completed += _ => serverSceneUnloaded = true;
+                    serverSceneUnloaded = true;
                 }
             };
 
