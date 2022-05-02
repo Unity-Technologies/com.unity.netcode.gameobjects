@@ -35,6 +35,7 @@ projects:
     path: testproject
     validate: true
     publish: true
+    has_tests: true
     # Packages within a project that will be tested
     packages:
       - name: com.unity.netcode.gameobjects
@@ -47,6 +48,7 @@ projects:
     path: minimalproject
     validate: false
     publish: false
+    has_tests: false
     packages:
       - name: com.unity.netcode.gameobjects
         path: com.unity.netcode.gameobjects
@@ -56,6 +58,7 @@ projects:
     path: testproject-tools-integration
     validate: false
     publish: false
+    has_tests: true
     test_editors:
       - 2021.3
       - trunk
