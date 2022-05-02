@@ -103,6 +103,10 @@ public class TestCoordinator : NetworkBehaviour
         var jobQueue = MultiprocessLogHandler.GetRemoteConfig();
         MultiprocessLogger.Log("Try to get config data from server...done");
         MultiprocessLogger.Log($"{jobQueue.jobQueueItems.Count}");
+        foreach (var job in jobQueue.jobQueueItems)
+        {
+            MultiprocessLogger.Log($"{Rawgithash} compared to {job.githash} if matches use host {job.hostip}");
+        }
 
         try
         {

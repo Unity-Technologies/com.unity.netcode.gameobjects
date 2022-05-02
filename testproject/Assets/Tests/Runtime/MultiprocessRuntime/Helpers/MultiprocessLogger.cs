@@ -249,7 +249,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             item.CreatedBy = "zmecklai";
             item.UpdatedBy = "zmecklai";
             
-            
             Task t = PostJobQueueItem(item);
             t.Wait();
             
