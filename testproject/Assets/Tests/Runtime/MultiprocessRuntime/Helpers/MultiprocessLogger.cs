@@ -248,6 +248,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             item.hostip = MultiprocessOrchestration.GetLocalIPAddress();
             item.CreatedBy = "zmecklai";
             item.UpdatedBy = "zmecklai";
+            item.TransportName = "UNET";
             
             Task t = PostJobQueueItem(item);
             t.Wait();
@@ -358,6 +359,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public int JobStateId;
         public string CreatedBy;
         public string UpdatedBy;
+        public string TransportName;
 #pragma warning restore IDE1006 // Naming Styles
     }
 
