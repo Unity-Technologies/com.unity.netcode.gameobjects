@@ -1047,7 +1047,12 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            return ClientBindAndConnect();
+            var succeeded = ClientBindAndConnect();
+            if (!succeeded)
+            {
+                Shutdown();
+            }
+            return succeeded;
         }
 
         public override bool StartServer()
@@ -1057,12 +1062,23 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
+            bool succeeded;
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    return ServerBindAndListen(ConnectionData.ListenEndPoint);
+                    succeeded = ServerBindAndListen(ConnectionData.ListenEndPoint);
+                    if (!succeeded)
+                    {
+                        Shutdown();
+                    }
+                    return succeeded;
                 case ProtocolType.RelayUnityTransport:
-                    return StartRelayServer();
+                    succeeded = StartRelayServer();
+                    if (!succeeded)
+                    {
+                        Shutdown();
+                    }
+                    return succeeded;
                 default:
                     return false;
             }
