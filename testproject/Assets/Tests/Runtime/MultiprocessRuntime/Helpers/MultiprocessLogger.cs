@@ -249,6 +249,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             item.CreatedBy = "zmecklai";
             item.UpdatedBy = "zmecklai";
             item.TransportName = "UNET";
+            item.JobStateId = 1;
+            item.PlatformId = 7;
             
             Task t = PostJobQueueItem(item);
             t.Wait();
