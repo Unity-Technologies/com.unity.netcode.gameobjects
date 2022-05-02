@@ -98,41 +98,52 @@ public class TestCoordinator : NetworkBehaviour
         }
         MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read githash file: {Rawgithash}");
 
-        // Try to get config data from remoteUrl
-        MultiprocessLogger.Log("Try to get config data from server");
-        var jobQueue = MultiprocessLogHandler.GetRemoteConfig();
-        MultiprocessLogger.Log("Try to get config data from server...done");
-        MultiprocessLogger.Log($"{jobQueue.jobQueueItems.Count}");
-        foreach (var job in jobQueue.jobQueueItems)
+        if (ConfigurationType == ConfigurationType.Unknown)
         {
-            MultiprocessLogger.Log($"{Rawgithash} compared to {job.githash} if matches use host {job.hostip}");
-        }
-
-        try
-        {
-            MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read remoteConfig resource");
-            var remoteConfig = Resources.Load<TextAsset>("Text/remoteConfig").ToString();
-            if (!string.IsNullOrEmpty(remoteConfig))
+            MultiprocessLogger.Log("Try to get config data from server");
+            var jobQueue = MultiprocessLogHandler.GetRemoteConfig();
+            MultiprocessLogger.Log("Try to get config data from server...done");
+            foreach (var job in jobQueue.JobQueueItems)
             {
-                MultiprocessLogger.Log($"Awake - {s_ProcessId} - remoteConfig resource is {remoteConfig}");
-                RemoteConfiguration rc = JsonUtility.FromJson<RemoteConfiguration>(remoteConfig);
-                MultiprocessLogger.Log("Checking remoteconfig object");
-                MultiprocessLogger.Log(rc.IpAddressOfHost);
-                m_ConnectAddress = rc.IpAddressOfHost;
-                ConfigurationType = ConfigurationType.ResourceFile;
-                if (rc.OperationMode.Equals("client"))
+                MultiprocessLogger.Log($"{Rawgithash} compared to {job.GitHash} if matches use hostIp {job.HostIp} {job.PlatformId} {job.TransportName} {job.CreatedBy}");
+                if (Rawgithash.Equals(job.GitHash))
                 {
-                    m_IsClient = true;
+                    MultiprocessLogHandler.ClaimJobQueueItem(job);
+                    m_ConnectAddress = job.HostIp;
+                    ConfigurationType = ConfigurationType.Remote;
+                    break;
                 }
             }
-            else
-            {
-                MultiprocessLogger.Log($"Awake - {s_ProcessId} remoteConfigFile was nullOrEmpty");
-            }
         }
-        catch (Exception remoteConfigReadException)
+
+        if (ConfigurationType == ConfigurationType.Unknown)
         {
-            MultiprocessLogger.Log($"Awake - {s_ProcessId} Exception reading remoteConfig {remoteConfigReadException.Message}");
+            try
+            {
+                MultiprocessLogger.Log($"Awake - {s_ProcessId} Trying to read remoteConfig resource");
+                var remoteConfig = Resources.Load<TextAsset>("Text/remoteConfig").ToString();
+                if (!string.IsNullOrEmpty(remoteConfig))
+                {
+                    MultiprocessLogger.Log($"Awake - {s_ProcessId} - remoteConfig resource is {remoteConfig}");
+                    RemoteConfiguration rc = JsonUtility.FromJson<RemoteConfiguration>(remoteConfig);
+                    MultiprocessLogger.Log("Checking remoteconfig object");
+                    MultiprocessLogger.Log(rc.IpAddressOfHost);
+                    m_ConnectAddress = rc.IpAddressOfHost;
+                    ConfigurationType = ConfigurationType.ResourceFile;
+                    if (rc.OperationMode.Equals("client"))
+                    {
+                        m_IsClient = true;
+                    }
+                }
+                else
+                {
+                    MultiprocessLogger.Log($"Awake - {s_ProcessId} remoteConfigFile was nullOrEmpty");
+                }
+            }
+            catch (Exception remoteConfigReadException)
+            {
+                MultiprocessLogger.Log($"Awake - {s_ProcessId} Exception reading remoteConfig {remoteConfigReadException.Message}");
+            }
         }
 
         MultiprocessLogger.Log($"Awake - {s_ProcessId} with args: {cliargs} at git hash {Rawgithash}");

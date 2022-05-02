@@ -235,7 +235,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // var l = JsonUtility.FromJson<JobQueueItemArray>(contentTask.Result);
             var theList = new JobQueueItemArray();
             JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
-            
+            MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
             return theList;
         }
 
@@ -243,9 +243,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log($"Posting remoteConfig to server {githash}");
             var item = new JobQueueItem();
-            item.githash = githash;
-            item.jobid = JobId;
-            item.hostip = MultiprocessOrchestration.GetLocalIPAddress();
+            item.GitHash = githash;
+            item.JobId = JobId;
+            item.HostIp = MultiprocessOrchestration.GetLocalIPAddress();
             item.CreatedBy = "zmecklai";
             item.UpdatedBy = "zmecklai";
             item.TransportName = "UNET";
@@ -257,10 +257,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             
         }
 
-        public static async Task PostJobQueueItem(JobQueueItem item)
+        public static void ClaimJobQueueItem(JobQueueItem item)
+        {
+            Task t = PostJobQueueItem(item, "/claim");
+            t.Wait();
+        }
+
+        public static async Task PostJobQueueItem(JobQueueItem item, string path="")
         {
             using var client = new HttpClient();
-            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile");
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile" + path);
             var json = JsonUtility.ToJson(item);
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
@@ -352,24 +358,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [Serializable]
     public class JobQueueItem
     {
-#pragma warning disable IDE1006 // Naming Styles
-        public int id;
-        public long jobid;
-        public string githash;
-        public string hostip;
+
+        public int Id;
+        public long JobId;
+        public string GitHash;
+        public string HostIp;
         public int PlatformId;
         public int JobStateId;
         public string CreatedBy;
         public string UpdatedBy;
         public string TransportName;
-#pragma warning restore IDE1006 // Naming Styles
+
     }
 
     [Serializable]
     public class JobQueueItemArray
     {
-#pragma warning disable IDE1006 // Naming Styles
-        public List<JobQueueItem> jobQueueItems;
-#pragma warning restore IDE1006 // Naming Styles
+        public List<JobQueueItem> JobQueueItems;
     }
 }

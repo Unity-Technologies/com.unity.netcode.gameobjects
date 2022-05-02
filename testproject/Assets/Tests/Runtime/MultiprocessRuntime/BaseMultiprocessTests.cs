@@ -68,6 +68,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual void SetupTestSuite()
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
+            TestCoordinator.ConfigurationType = ConfigurationType.Host;
             m_ConnectedClientsList = new List<ulong>();
             MultiprocessOrchestration.IsPerformanceTest = IsPerformanceTest;
             
@@ -253,8 +254,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var numProcessesToCreate = GetWorkerCount();
             var launchProcessList = new List<Process>();
-            MultiprocessLogger.Log("Posting remoteConfig to server");
-            MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
+            
+            for (int i = 0; i < numProcessesToCreate; i++)
+            {
+                MultiprocessLogger.Log($"Posting remoteConfig to server {i} out of {numProcessesToCreate}");
+                MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
+            }
             MultiprocessLogger.Log("Posting remoteConfig to server...done");
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
