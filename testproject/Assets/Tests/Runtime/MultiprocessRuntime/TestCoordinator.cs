@@ -108,10 +108,16 @@ public class TestCoordinator : NetworkBehaviour
                 MultiprocessLogger.Log($"{Rawgithash} compared to {job.GitHash} if matches use hostIp {job.HostIp} {job.PlatformId} {job.TransportName} {job.CreatedBy}");
                 if (Rawgithash.Equals(job.GitHash))
                 {
+                    MultiprocessLogger.Log($"GitHas Match!");
                     MultiprocessLogHandler.ClaimJobQueueItem(job);
+                    MultiprocessLogger.Log($"Claimed job, setting Host Ip to {job.HostIp}");
                     m_ConnectAddress = job.HostIp;
                     ConfigurationType = ConfigurationType.Remote;
                     break;
+                }
+                else
+                {
+                    MultiprocessLogger.Log($"No match between {Rawgithash} and {job.GitHash}");
                 }
             }
         }
