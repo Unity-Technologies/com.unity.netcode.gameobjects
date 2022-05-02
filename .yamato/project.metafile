@@ -59,3 +59,11 @@ projects:
     test_editors:
       - 2021.3
       - trunk
+
+# Scripting backends used by Standalone Playmode Tests
+scripting_backends: 
+  - mono
+  - il2cpp
+
+# Images with build-tools installed required for Standalone Tests - IL2CPP
+win_il2cpp_test_image: dots-player/windows10:latest

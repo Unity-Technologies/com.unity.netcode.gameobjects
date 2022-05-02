@@ -1,7 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 develop_nightly:
-  name: "[Nightly] Run All Tests"
+  name: "\U0001F319 [Nightly] Run All Tests"
   triggers:
     recurring:
     - branch: develop
@@ -24,7 +24,7 @@ develop_weekly_trunk:
     - .yamato/_run-all.yml#run_all_tests_trunk
 
 multiprocess_nightly:
-  name: "[Nightly] Run Multiprocess Tests"
+  name: "\U0001F319 [Nightly] Run Multiprocess Tests"
   triggers:
     recurring:
     - branch: develop
