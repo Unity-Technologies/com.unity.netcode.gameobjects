@@ -10,10 +10,28 @@ run_all_tests:
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
+{% if editor != "trunk" -%}
 {% for package in project.packages -%}
     - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
+{% endif -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+run_all_tests_trunk:
+  name: Run All Package and Project Tests [Trunk]
+  dependencies:
+{% for platform in test_platforms -%}
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+{% if editor == "trunk" -%}
+{% for package in project.packages -%}
+    - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
