@@ -183,17 +183,14 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log($"TestCoordinator {s_ProcessId} - Start {Application.platform}");
+        MultiprocessLogger.Log($"TestCoordinator {s_ProcessId} - Start {Application.platform} - m_IsClient {m_IsClient}");
         m_Stopwatch = Stopwatch.StartNew();
         m_NumberOfCallsToUpdate = 0;
         m_NumberOfCallsToFixedUpdate = 0;
         m_FixedUpdateDeltaTime = new List<float>();
         m_UpdateDeltaTime = new List<float>();
-        if (ConfigurationType == ConfigurationType.ResourceFile)
-        {
-
-        }
-        else
+        if (ConfigurationType == ConfigurationType.CommandLine ||
+            ConfigurationType == ConfigurationType.Unknown)
         {
             m_IsClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
             string[] args = Environment.GetCommandLineArgs();
@@ -227,35 +224,43 @@ public class TestCoordinator : NetworkBehaviour
                 }
             }
         }
-        MultiprocessLogger.Log($"{m_Port}");
+        
         var ushortport = ushort.Parse(m_Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-        MultiprocessLogger.Log($"Transport is {transport.ToString()}");
+        
         if (!m_IsClient)
         {
             m_ConnectAddress = "0.0.0.0";
         }
 
-        switch (transport)
+        MultiprocessLogger.Log($"Transport is {transport.ToString()} {m_ConnectAddress} {ushortport}");
+
+        try
         {
-            case UNetTransport unetTransport:
-                unetTransport.ConnectPort = ushortport;
-                unetTransport.ServerListenPort = ushortport;
-                if (m_IsClient)
-                {
-                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
-                    unetTransport.ConnectAddress = m_ConnectAddress;
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
                     unetTransport.ConnectPort = ushortport;
-                }
-                break;
-            case UnityTransport unityTransport:
-                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
-                unityTransport.ConnectionData.Port = ushortport;
-                unityTransport.ConnectionData.Address = m_ConnectAddress;
-                break;
-            default:
-                MultiprocessLogger.LogError($"The transport {transport} has no case");
-                break;
+                    unetTransport.ServerListenPort = ushortport;
+                    if (m_IsClient)
+                    {
+                        MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
+                        unetTransport.ConnectAddress = m_ConnectAddress;
+                    }
+                    break;
+                case UnityTransport unityTransport:
+                    MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
+                    unityTransport.ConnectionData.Port = ushortport;
+                    unityTransport.ConnectionData.Address = m_ConnectAddress;
+                    break;
+                default:
+                    MultiprocessLogger.LogError($"The transport {transport} has no case");
+                    break;
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.Log($"Exception in switch/case for transport {transport} {e.Message}");
         }
 
         // Let's set the target framerate to see if we get more predictable results
