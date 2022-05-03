@@ -249,6 +249,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
+            TestCoordinator.Instance.KeepAliveOnServer();
+            PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
+
             // Need to make sure the host doesn't shutdown while setting up the clients
             // TestCoordinator.Instance.KeepAliveOnServer();
 
@@ -285,6 +288,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     int initialCount = m_ConnectedClientsList.Count;
                     foreach (var machine in machines)
                     {
+                        TestCoordinator.Instance.KeepAliveOnServer();
+                        PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
+
                         initialCount = m_ConnectedClientsList.Count;
                         launchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                         MultiprocessLogger.Log($"Launching process complete... waiting for {m_ConnectedClientsList.Count} to increase from {initialCount}");
