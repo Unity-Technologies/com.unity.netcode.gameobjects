@@ -221,21 +221,30 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static JobQueueItemArray GetRemoteConfig()
         {
-            using var client = new HttpClient();
-            
-            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
-                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
-
-            responseTask.Wait();
-            var response = responseTask.Result;
-            var contentTask = response.Content.ReadAsStringAsync();
-            contentTask.Wait();
-            MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
-            // var l = JsonUtility.FromJson<JobQueueItemArray>(contentTask.Result);
             var theList = new JobQueueItemArray();
-            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
-            MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
+            try
+            {
+                using var client = new HttpClient();
+                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
+                    HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+                responseTask.Wait();
+                var response = responseTask.Result;
+                var contentTask = response.Content.ReadAsStringAsync();
+                contentTask.Wait();
+                MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
+                JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
+                MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
+                
+            }
+            catch (Exception e)
+            {
+                MultiprocessLogger.Log($"GetRemoteConfig - Exception {e.Message}");
+            }
+            finally
+            {
+                MultiprocessLogger.Log($"GetRemoteConfig - finally block");
+            }
             return theList;
         }
 
