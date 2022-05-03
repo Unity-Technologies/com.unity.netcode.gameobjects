@@ -103,6 +103,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             IsSceneLoading = true;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogHandler.Flush();
+            
+            var numProcessesToCreate = GetWorkerCount();
+            for (int i = 0; i < numProcessesToCreate; i++)
+            {
+                MultiprocessLogger.Log($"Posting remoteConfig to server {i} out of {numProcessesToCreate}");
+                MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
+            }
+            MultiprocessLogger.Log("Posting remoteConfig to server...done");
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
         }
 
@@ -257,13 +265,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             var numProcessesToCreate = GetWorkerCount();
             var launchProcessList = new List<Process>();
-            
-            for (int i = 0; i < numProcessesToCreate; i++)
-            {
-                MultiprocessLogger.Log($"Posting remoteConfig to server {i} out of {numProcessesToCreate}");
-                MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
-            }
-            MultiprocessLogger.Log("Posting remoteConfig to server...done");
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
