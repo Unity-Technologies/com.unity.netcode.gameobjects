@@ -103,14 +103,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             IsSceneLoading = true;
             SceneManager.LoadScene(BuildMultiprocessTestPlayer.MainSceneName, LoadSceneMode.Additive);
             MultiprocessLogHandler.Flush();
-            
-            var numProcessesToCreate = GetWorkerCount();
-            for (int i = 0; i < numProcessesToCreate; i++)
-            {
-                MultiprocessLogger.Log($"Posting remoteConfig to server {i} out of {numProcessesToCreate}");
-                MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
-            }
-            MultiprocessLogger.Log("Posting remoteConfig to server...done");
+
             MultiprocessLogger.Log("BaseMultiprocessTests - Running SetupTestSuite - OneTimeSetup --- complete");
         }
 
@@ -256,6 +249,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
+
+
+            var numProcessesToCreate = GetWorkerCount();
+            for (int i = 0; i < numProcessesToCreate; i++)
+            {
+                MultiprocessLogger.Log($"Posting remoteConfig to server {i} out of {numProcessesToCreate}");
+                MultiprocessLogHandler.PostJobQueueItem(TestCoordinator.Rawgithash);
+            }
+            MultiprocessLogger.Log("Posting remoteConfig to server...done");
 
             TestCoordinator.Instance.KeepAliveOnServer();
             PlayerConnection.instance.Send(new Guid("8c0c307b-f7fd-4216-8623-35b4b3f55fb6"), new byte[0]);
