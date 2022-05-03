@@ -457,7 +457,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             try
             {
                 MultiprocessLogger.Log($"3/20 - BaseMultiProcessTests - TeardownSuite : One time teardown - Should run MultiMachine Tests {MultiprocessOrchestration.ShouldRunMultiMachineTests()}");
-                
+                // Remove all jobs from the queue
+                var queue = MultiprocessLogHandler.GetRemoteConfig();
+                foreach (var job in queue.JobQueueItems)
+                {
+                    if (job.JobId == MultiprocessLogHandler.JobId)
+                    {
+                        MultiprocessLogHandler.CompleteJobQueueItem(job);
+                    }
+                }
                 MultiprocessLogger.Log($"5/20 - TeardownSuite - ShutdownAllProcesses - launchRemotely {m_LaunchRemotely}");
                 MultiprocessOrchestration.ShutdownAllProcesses(m_LaunchRemotely, 5);
                 MultiprocessLogger.Log($"6/20 - NetworkManager.Singleton.Shutdown");

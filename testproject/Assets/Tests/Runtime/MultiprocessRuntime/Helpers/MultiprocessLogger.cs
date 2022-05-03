@@ -257,6 +257,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             
         }
 
+        public static void CompleteJobQueueItem(JobQueueItem item)
+        {
+            Task t = PostJobQueueItem(item, "/complete");
+            t.Wait();
+        }
+
         public static void ClaimJobQueueItem(JobQueueItem item)
         {
             Task t = PostJobQueueItem(item, "/claim");
