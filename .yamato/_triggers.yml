@@ -87,9 +87,11 @@ badges_test_trigger:
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endif -%}
 {% for editor in project.test_editors -%}
+{% if editor != "trunk" -%}
 {% for platform in test_platforms -%}
     - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
