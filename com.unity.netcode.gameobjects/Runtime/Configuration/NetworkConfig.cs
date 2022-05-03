@@ -53,9 +53,18 @@ namespace Unity.Netcode
         public uint TickRate = 30;
 
         /// <summary>
-        /// The amount of seconds to wait for handshake to complete before timing out a client
+        /// The amount of seconds for the server to wait for the connection approval handshake to complete before the client is disconnected.
+        ///
+        /// If the timeout is reached before approval is completed the client will be disconnected.
         /// </summary>
-        [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
+        /// <remarks>
+        /// The period begins after the <see cref="NetworkEvent.Connect"/> is received on the server.
+        /// The period ends once the server finishes processing a <see cref="ConnectionRequestMessage"/> from the client.
+        ///
+        /// This setting is independent of any Transport-level timeouts that may be in effect.
+        ///
+        /// This setting is server-side only.</remarks>
+        [Tooltip("The amount of seconds for the server to wait for the connection approval handshake to complete before the client is disconnected")]
         public int ClientConnectionBufferTimeout = 10;
 
         /// <summary>
