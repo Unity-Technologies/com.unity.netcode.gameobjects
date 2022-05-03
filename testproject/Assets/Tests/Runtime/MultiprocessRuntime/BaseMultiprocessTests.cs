@@ -265,7 +265,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Need to make sure the host doesn't shutdown while setting up the clients
             // TestCoordinator.Instance.KeepAliveOnServer();
 
-            var numProcessesToCreate = GetWorkerCount();
             var launchProcessList = new List<Process>();
 
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
