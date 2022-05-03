@@ -112,6 +112,7 @@ public class TestCoordinator : NetworkBehaviour
                     MultiprocessLogHandler.ClaimJobQueueItem(job);
                     MultiprocessLogger.Log($"Claimed job, setting Host Ip to {job.HostIp}");
                     m_ConnectAddress = job.HostIp;
+                    m_IsClient = true;
                     ConfigurationType = ConfigurationType.Remote;
                     break;
                 }
@@ -242,8 +243,9 @@ public class TestCoordinator : NetworkBehaviour
                 unetTransport.ServerListenPort = ushortport;
                 if (m_IsClient)
                 {
-                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress}");
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
                     unetTransport.ConnectAddress = m_ConnectAddress;
+                    unetTransport.ConnectPort = ushortport;
                 }
                 break;
             case UnityTransport unityTransport:
