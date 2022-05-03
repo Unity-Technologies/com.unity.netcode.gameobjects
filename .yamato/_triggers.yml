@@ -13,8 +13,8 @@ develop_nightly:
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
 {% endfor -%}
 
-develop_nightly_trunk:
-  name: "[Nightly] Run All Tests [Trunk]"
+develop_weekly_trunk:
+  name: "[Weekly] Run All Tests [Trunk]"
   triggers:
     recurring:
     - branch: develop
