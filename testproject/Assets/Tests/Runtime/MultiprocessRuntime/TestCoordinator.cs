@@ -113,6 +113,7 @@ public class TestCoordinator : NetworkBehaviour
                     MultiprocessLogger.Log($"Claimed job, setting Host Ip to {job.HostIp}");
                     m_ConnectAddress = job.HostIp;
                     m_IsClient = true;
+                    MultiprocessLogHandler.JobId = job.JobId;
                     ConfigurationType = ConfigurationType.Remote;
                     break;
                 }
