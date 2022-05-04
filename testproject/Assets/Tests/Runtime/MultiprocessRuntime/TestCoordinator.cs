@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.MultiprocessRuntimeTests;
+using Unity.Netcode.Transports.UNET;
+using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// TestCoordinator
@@ -37,9 +40,25 @@ public class TestCoordinator : NetworkBehaviour
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
-    private void Awake()
+    // Multimachine support
+    private static int s_ProcessId;
+    public static string Rawgithash;
+    public static ConfigurationType ConfigurationType;
+    private string m_ConnectAddress = "127.0.0.1";
+    public static string Port = "3076";
+    private bool m_IsClient;
+
+    public void Awake()
     {
-        MultiprocessLogger.Log("Awake");
+        s_ProcessId = Process.GetCurrentProcess().Id;
+        MultiprocessLogger.Log($"Awake {s_ProcessId}");
+        ReadGitHashFile();
+
+        // There are two possible ways for configuration data to be set
+        // 1. From a webapi
+        // 2. From a text file resource
+        ConfigureViaWebApi();
+
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -50,22 +69,96 @@ public class TestCoordinator : NetworkBehaviour
         Instance = this;
     }
 
+    private void ConfigureViaWebApi()
+    {
+        var jobQueue = ConfigurationTools.GetRemoteConfig();
+        foreach (var job in jobQueue.JobQueueItems)
+        {
+            if (Rawgithash.Equals(job.GitHash))
+            {
+                ConfigurationTools.ClaimJobQueueItem(job);
+                m_ConnectAddress = job.HostIp;
+                m_IsClient = true;
+                MultiprocessLogHandler.JobId = job.JobId;
+                ConfigurationType = ConfigurationType.Remote;
+                break;
+            }
+            else
+            {
+                MultiprocessLogger.Log($"No match between {Rawgithash} and {job.GitHash}");
+            }
+        }
+    }
+
+    private void ReadGitHashFile()
+    {
+        try
+        {
+            var githash_resource = Resources.Load<TextAsset>("Text/githash");
+            if (githash_resource != null)
+            {
+                Rawgithash = githash_resource.ToString();
+                if (!string.IsNullOrEmpty(Rawgithash))
+                {
+                    Rawgithash = Rawgithash.Trim();
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
+        }
+    }
+
+    private void SetAddressAndPort()
+    {
+        MultiprocessLogger.Log($"SetAddressAndPort - {Port} {m_ConnectAddress} {m_IsClient} ");
+        var ushortport = ushort.Parse(Port);
+        var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        MultiprocessLogger.Log($"transport is {transport}");
+        switch (transport)
+        {
+            case UNetTransport unetTransport:
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                if (m_IsClient)
+                {
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
+                }
+                break;
+            case UnityTransport unityTransport:
+                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
+                unityTransport.ConnectionData.Port = ushortport;
+                unityTransport.ConnectionData.Address = m_ConnectAddress;
+                break;
+            default:
+                MultiprocessLogger.LogError($"The transport {transport} has no case");
+                break;
+        }
+    }
+
     public void Start()
     {
         MultiprocessLogger.Log("Start");
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
+            m_IsClient = isClient;
+        }
+        if (m_IsClient)
+        {
+            SetAddressAndPort();
+
             MultiprocessLogger.Log("starting netcode client");
-            NetworkManager.Singleton.StartClient();
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
+            bool startClientResult = NetworkManager.Singleton.StartClient();
+            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
         }
         MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
     }
 
     public void Update()

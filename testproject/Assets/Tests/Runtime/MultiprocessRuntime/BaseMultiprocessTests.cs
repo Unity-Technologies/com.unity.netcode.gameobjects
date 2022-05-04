@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+using Unity.Netcode.Transports.UNET;
+using Unity.Netcode.Transports.UTP;
+
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -75,6 +78,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
                 SceneManager.SetActiveScene(scene);
+            }
+
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            MultiprocessLogger.Log($"transport is {transport}");
+            switch (transport)
+            {
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = int.Parse(TestCoordinator.Port);
+                    unetTransport.ConnectAddress = "0.0.0.0";
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {unetTransport.ConnectAddress} port {unetTransport.ConnectPort}");
+
+                    break;
+                case UnityTransport unityTransport:
+                    MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {unityTransport.ConnectionData.ServerListenAddress}");
+                    break;
+                default:
+                    MultiprocessLogger.LogError($"The transport {transport} has no case");
+                    break;
             }
 
             NetworkManager.Singleton.StartHost();
