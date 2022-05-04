@@ -4,49 +4,53 @@ using System.Net.Http;
 using System.Threading;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class ConfigurationTools
     {
-        public static JobQueueItemArray GetRemoteConfig()
+        public static JobQueueItemArray GetJobQueue()
         {
             var theList = new JobQueueItemArray();
-            try
-            {
-                using var client = new HttpClient();
-                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                var responseTask = client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
-                    HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
-                responseTask.Wait();
-                var response = responseTask.Result;
-                var contentTask = response.Content.ReadAsStringAsync();
-                contentTask.Wait();
-                MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
-                JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
-                MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
 
-            }
-            catch (Exception e)
-            {
-                MultiprocessLogger.Log($"GetRemoteConfig - Exception {e.Message}");
-            }
-            
+            var t = GetRemoteConfig();
+            t.Wait();
+
+            var contentTask = t.Result;
+            contentTask.Wait();
+            MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
+            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
+            MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
+
             return theList;
+
+        }
+
+        public static async Task<Task<string>> GetRemoteConfig()
+        {
+            using var client = new HttpClient();
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
+                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
+            // var contentTask = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            return response.Content.ReadAsStringAsync();
         }
 
         public static void CompleteJobQueueItem(JobQueueItem item)
         {
-            PostJobQueueItem(item, "/complete");
+            var t = PostJobQueueItem(item, "/complete");
+            t.Wait();
 
         }
 
         public static void ClaimJobQueueItem(JobQueueItem item)
         {
-            PostJobQueueItem(item, "/claim");
+            var t = PostJobQueueItem(item, "/claim");
+            t.Wait();
         }
 
-        public static void PostJobQueueItem(JobQueueItem item, string path = "")
+        public static async Task PostJobQueueItem(JobQueueItem item, string path = "")
         {
             using var client = new HttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile" + path);
@@ -56,12 +60,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Posting remoteConfig to server {json}");
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(20));
 
-            var response = client
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
-            response.Wait();
-            var responseMessage = response.Result;
+            var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
             
-            MultiprocessLogger.Log($"remoteConfig posted, checking response {responseMessage.StatusCode}");
+            MultiprocessLogger.Log($"remoteConfig posted, checking response {response.StatusCode}");
         }
     }
 
@@ -74,7 +76,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [Serializable]
     public class JobQueueItem
     {
-
         public int Id;
         public long JobId;
         public string GitHash;
