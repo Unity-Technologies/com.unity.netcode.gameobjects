@@ -12,29 +12,24 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         public static JobQueueItemArray GetJobQueue()
         {
-            var theList = new JobQueueItemArray();
-
             var t = GetRemoteConfig();
             t.Wait();
-
-            var contentTask = t.Result;
-            contentTask.Wait();
-            MultiprocessLogger.Log($"remoteConfig content is {contentTask.Result}");
-            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
-            MultiprocessLogger.Log($"remoteConfig content is {theList.JobQueueItems.Count}");
-
-            return theList;
-
+            return t.Result;
         }
 
-        public static async Task<Task<string>> GetRemoteConfig()
+        public static async Task<JobQueueItemArray> GetRemoteConfig()
         {
+            var theList = new JobQueueItemArray();
             using var client = new HttpClient();
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
                 HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
-            // var contentTask = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return response.Content.ReadAsStringAsync();
+            
+            var contentTask = response.Content.ReadAsStringAsync();
+            contentTask.Wait();
+            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
+
+            return theList;
         }
 
         public static void CompleteJobQueueItem(JobQueueItem item)

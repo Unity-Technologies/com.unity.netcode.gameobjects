@@ -71,7 +71,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void ConfigureViaWebApi()
     {
-        var jobQueue = ConfigurationTools.GetRemoteConfig();
+        var jobQueue = ConfigurationTools.GetJobQueue();
         foreach (var job in jobQueue.JobQueueItems)
         {
             if (Rawgithash.Equals(job.GitHash))
