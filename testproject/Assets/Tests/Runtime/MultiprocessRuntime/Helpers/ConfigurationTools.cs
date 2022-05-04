@@ -3,7 +3,6 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Text;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
@@ -32,26 +31,22 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 MultiprocessLogger.Log($"GetRemoteConfig - Exception {e.Message}");
             }
-            finally
-            {
-                MultiprocessLogger.Log($"GetRemoteConfig - finally block");
-            }
+            
             return theList;
         }
 
         public static void CompleteJobQueueItem(JobQueueItem item)
         {
-            Task t = PostJobQueueItem(item, "/complete");
-            t.Wait();
+            PostJobQueueItem(item, "/complete");
+
         }
 
         public static void ClaimJobQueueItem(JobQueueItem item)
         {
-            Task t = PostJobQueueItem(item, "/claim");
-            t.Wait();
+            PostJobQueueItem(item, "/claim");
         }
 
-        public static async Task PostJobQueueItem(JobQueueItem item, string path = "")
+        public static void PostJobQueueItem(JobQueueItem item, string path = "")
         {
             using var client = new HttpClient();
             using var request = new HttpRequestMessage(HttpMethod.Post, "https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile" + path);
@@ -61,9 +56,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Posting remoteConfig to server {json}");
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
-            using var response = await client
-                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token)
-                .ConfigureAwait(false);
+            var response = client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
+            response.Wait();
+            
             MultiprocessLogger.Log($"remoteConfig posted, checking response {response.StatusCode}");
         }
     }
