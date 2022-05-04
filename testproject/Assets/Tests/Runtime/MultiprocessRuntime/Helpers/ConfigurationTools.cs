@@ -54,13 +54,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             using var stringContent = new StringContent(json, Encoding.UTF8, "application/json");
             request.Content = stringContent;
             MultiprocessLogger.Log($"Posting remoteConfig to server {json}");
-            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(20));
 
             var response = client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token);
             response.Wait();
+            var responseMessage = response.Result;
             
-            MultiprocessLogger.Log($"remoteConfig posted, checking response {response.StatusCode}");
+            MultiprocessLogger.Log($"remoteConfig posted, checking response {responseMessage.StatusCode}");
         }
     }
 
