@@ -10,13 +10,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 {
     public class ConfigurationTools
     {
-        public static JobQueueItemArray GetJobQueue()
-        {
-            var t = GetRemoteConfig();
-            t.Wait();
-            return t.Result;
-        }
-
         public static async Task<JobQueueItemArray> GetRemoteConfig()
         {
             var theList = new JobQueueItemArray();
@@ -24,25 +17,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
                 HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
-            
-            var contentTask = response.Content.ReadAsStringAsync();
-            contentTask.Wait();
-            JsonUtility.FromJsonOverwrite(contentTask.Result, theList);
-
+            var content = await response.Content.ReadAsStringAsync();
+            JsonUtility.FromJsonOverwrite(content, theList);
             return theList;
         }
 
-        public static void CompleteJobQueueItem(JobQueueItem item)
+        public static async void CompleteJobQueueItem(JobQueueItem item)
         {
-            var t = PostJobQueueItem(item, "/complete");
-            t.Wait();
-
+            await PostJobQueueItem(item, "/complete");
         }
 
-        public static void ClaimJobQueueItem(JobQueueItem item)
+        public static async void ClaimJobQueueItem(JobQueueItem item)
         {
-            var t = PostJobQueueItem(item, "/claim");
-            t.Wait();
+            await PostJobQueueItem(item, "/claim");            
         }
 
         public static async Task PostJobQueueItem(JobQueueItem item, string path = "")
@@ -54,10 +41,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             request.Content = stringContent;
             MultiprocessLogger.Log($"Posting remoteConfig to server {json}");
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-
             var response = await client
                 .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
-            
             MultiprocessLogger.Log($"remoteConfig posted, checking response {response.StatusCode}");
         }
     }
@@ -80,6 +65,5 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public string CreatedBy;
         public string UpdatedBy;
         public string TransportName;
-
     }
 }

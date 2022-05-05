@@ -40,13 +40,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 if (arg.Length > 15)
                 {
-                    CommandLineArguments += " " + arg.Substring(0,14);
+                    CommandLineArguments += " " + arg.Substring(0, 14);
                 }
                 else
                 {
                     CommandLineArguments += "\n" + arg;
                 }
-                
             }
         }
 
@@ -83,7 +82,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n" +
                     $"Transport: {transportString}\n" +
                     $"{CommandLineArguments}\n" +
-                    $"IsHost: {NetworkManager.Singleton.IsHost} IsClient: {NetworkManager.Singleton.IsClient}\n" + 
+                    $"IsHost: {NetworkManager.Singleton.IsHost} IsClient: {NetworkManager.Singleton.IsClient}\n" +
                     $"{m_UpdateCounter}\n";
             }
         }
