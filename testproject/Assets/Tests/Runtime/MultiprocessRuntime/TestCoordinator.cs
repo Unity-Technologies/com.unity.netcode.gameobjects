@@ -69,9 +69,9 @@ public class TestCoordinator : NetworkBehaviour
         Instance = this;
     }
 
-    private void ConfigureViaWebApi()
+    private async void ConfigureViaWebApi()
     {
-        var jobQueue = ConfigurationTools.GetJobQueue();
+        var jobQueue = await ConfigurationTools.GetRemoteConfig();
         foreach (var job in jobQueue.JobQueueItems)
         {
             if (Rawgithash.Equals(job.GitHash))
