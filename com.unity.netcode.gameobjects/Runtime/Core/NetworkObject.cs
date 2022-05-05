@@ -75,7 +75,7 @@ namespace Unity.Netcode
         public bool IsPlayerObject { get; internal set; }
 
         /// <summary>
-        /// Gets if the object is the the personal clients player object
+        /// Gets if the object is the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
 
