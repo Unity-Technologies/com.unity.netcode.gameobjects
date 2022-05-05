@@ -29,7 +29,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         public static async void ClaimJobQueueItem(JobQueueItem item)
         {
-            await PostJobQueueItem(item, "/claim");            
+            await PostJobQueueItem(item, "/claim");
         }
 
         public static async Task PostJobQueueItem(JobQueueItem item, string path = "")
