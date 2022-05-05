@@ -61,9 +61,12 @@ namespace Unity.Netcode
         /// The period begins after the <see cref="NetworkEvent.Connect"/> is received on the server.
         /// The period ends once the server finishes processing a <see cref="ConnectionRequestMessage"/> from the client.
         ///
-        /// This setting is independent of any Transport-level timeouts that may be in effect.
+        /// This setting is independent of any Transport-level timeouts that may be in effect. It covers the time between
+        /// the connection being established on the Transport layer, the client sending a
+        /// <see cref="ConnectionRequestMessage"/>, and the server processing that message through <see cref="ConnectionApproval"/>.
         ///
-        /// This setting is server-side only.</remarks>
+        /// This setting is server-side only.
+        /// </remarks>
         [Tooltip("The amount of seconds for the server to wait for the connection approval handshake to complete before the client is disconnected")]
         public int ClientConnectionBufferTimeout = 10;
 
