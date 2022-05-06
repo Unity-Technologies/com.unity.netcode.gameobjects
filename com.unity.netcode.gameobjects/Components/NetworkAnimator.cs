@@ -1,4 +1,5 @@
 #if COM_UNITY_MODULES_ANIMATION
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -70,8 +71,21 @@ namespace Unity.Netcode.Components
             internal fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
+        private class ParameterState
+        {
+            public AnimatorControllerParameterType AnimatorControllerParameterType;
+            public bool CurrentStateBool;
+            public int CurrentStateInt;
+            public float CurrentStateFloat;
+        }
+
+
+        private Dictionary<int, ParameterState> m_ParameterStates = new Dictionary<int, ParameterState>();
+
         // 128 bytes per Animator
         private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+
+
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
         // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
@@ -138,15 +152,26 @@ namespace Unity.Netcode.Components
                         case AnimatorControllerParameterType.Float:
                             var value = m_Animator.GetFloat(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, value);
+                            if (!m_ParameterStates.ContainsKey(i))
+                            {
+                                m_ParameterStates.Add(i, new ParameterState() { CurrentStateFloat = value, AnimatorControllerParameterType = AnimatorControllerParameterType.Float });
+                            }
                             break;
                         case AnimatorControllerParameterType.Int:
                             var valueInt = m_Animator.GetInteger(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueInt);
-
+                            if (!m_ParameterStates.ContainsKey(i))
+                            {
+                                m_ParameterStates.Add(i, new ParameterState() { CurrentStateInt = valueInt, AnimatorControllerParameterType = AnimatorControllerParameterType.Int });
+                            }
                             break;
                         case AnimatorControllerParameterType.Bool:
                             var valueBool = m_Animator.GetBool(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueBool);
+                            if (!m_ParameterStates.ContainsKey(i))
+                            {
+                                m_ParameterStates.Add(i, new ParameterState() { CurrentStateBool = valueBool, AnimatorControllerParameterType = AnimatorControllerParameterType.Bool });
+                            }
                             break;
                         case AnimatorControllerParameterType.Trigger:
                         default:
@@ -197,7 +222,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
+        unsafe private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
         {
             bool shouldUpdate = false;
             stateHash = 0;
@@ -239,6 +264,42 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
+            {
+                ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
+                var hash = cacheValue.Hash;
+                if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
+                {
+                    var valueInt = m_Animator.GetInteger(hash);
+                    var currentState = m_ParameterStates[i].CurrentStateInt;
+                    if (valueInt != currentState)
+                    {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
+                {
+                    var valueBool = m_Animator.GetBool(hash);
+                    var currentState = (bool)m_ParameterStates[i].CurrentStateBool;
+                    if (valueBool != currentState)
+                    {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+                else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
+                {
+                    var valueFloat = m_Animator.GetFloat(hash);
+                    var currentState = (float)m_ParameterStates[i].CurrentStateFloat;
+                    if (Mathf.Abs(valueFloat - currentState) > 0.00f)
+                    {
+                        shouldUpdate = true;
+                        break;
+                    }
+                }
+            }
+
             return shouldUpdate;
         }
 
@@ -258,6 +319,7 @@ namespace Unity.Netcode.Components
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     var valueInt = m_Animator.GetInteger(hash);
+                    m_ParameterStates[i].CurrentStateInt = valueInt;
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueInt);
@@ -267,6 +329,7 @@ namespace Unity.Netcode.Components
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
                     var valueBool = m_Animator.GetBool(hash);
+                    m_ParameterStates[i].CurrentStateBool = valueBool;
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueBool);
@@ -276,6 +339,7 @@ namespace Unity.Netcode.Components
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                 {
                     var valueFloat = m_Animator.GetFloat(hash);
+                    m_ParameterStates[i].CurrentStateFloat = valueFloat;
                     fixed (void* value = cacheValue.Value)
                     {
 
