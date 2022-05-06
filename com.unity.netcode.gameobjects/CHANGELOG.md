@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+### Fixed
+
+- Fixed: Hosting again after failing to host now works correctly
+
 ## [1.0.0-pre.8] - 2022-04-27
 
 ### Changed

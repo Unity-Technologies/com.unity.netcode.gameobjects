@@ -1175,6 +1175,8 @@ namespace Unity.Netcode
                 m_ShuttingDown = true;
                 m_StopProcessingMessages = discardMessageQueue;
             }
+
+            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
         }
 
         internal void ShutdownInternal()
