@@ -7,6 +7,7 @@
     "includePlatforms": [
         "Editor"
     ],
+    "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
@@ -16,11 +17,13 @@
         "Mono.Cecil.Rocks.dll"
     ],
     "autoReferenced": false,
+    "defineConstraints": [],
     "versionDefines": [
         {
-            "name": "Unity",
-            "expression": "(0,2022.2.0a11)",
-            "define": "UNITY_CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES"
+            "name": "com.unity.nuget.mono-cecil",
+            "expression": "(0,1.11.4)",
+            "define": "CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

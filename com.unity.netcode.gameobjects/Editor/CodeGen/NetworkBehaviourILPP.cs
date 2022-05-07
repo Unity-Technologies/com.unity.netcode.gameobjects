@@ -607,7 +607,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
-#if UNITY_CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
 #else
                                 var resolvedConstraint = constraint.ConstraintType.Resolve();
@@ -741,7 +741,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
-#if UNITY_CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
 #else
                                 var resolvedConstraint = constraint.ConstraintType.Resolve();
