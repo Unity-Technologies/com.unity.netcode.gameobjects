@@ -6,7 +6,8 @@
         "Unity.Netcode.RuntimeTests",
         "TestProject.ManualTests",
         "TestProject",
-        "Unity.Netcode.TestHelpers.Runtime"
+        "Unity.Netcode.TestHelpers.Runtime",
+        "Unity.Collections"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

@@ -727,6 +727,31 @@ namespace Unity.Netcode
             return sizeof(T);
         }
 
+        public static int GetWriteSize(in FixedString32Bytes value)
+        {
+            return value.Length + sizeof(int);
+        }
+
+        public static int GetWriteSize(in FixedString64Bytes value)
+        {
+            return value.Length + sizeof(int);
+        }
+
+        public static int GetWriteSize(in FixedString128Bytes value)
+        {
+            return value.Length + sizeof(int);
+        }
+
+        public static int GetWriteSize(in FixedString512Bytes value)
+        {
+            return value.Length + sizeof(int);
+        }
+
+        public static int GetWriteSize(in FixedString4096Bytes value)
+        {
+            return value.Length + sizeof(int);
+        }
+
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
         /// </summary>
@@ -802,22 +827,20 @@ namespace Unity.Netcode
 
         }
 
+        public struct ForFixedStructs
+        {
+
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+        public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+        public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -826,17 +849,77 @@ namespace Unity.Netcode
         public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValue<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValue<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+        public void WriteValue(in bool value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(bool[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in byte value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(byte[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in sbyte value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(sbyte[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in char value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(char[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in decimal value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(decimal[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(double[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(float[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(int[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(uint[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in long value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(long[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in ulong value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(ulong[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in short value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(short[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in ushort value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(ushort[] value) => WriteUnmanaged(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector2 value) => WriteUnmanaged(value);
@@ -846,6 +929,14 @@ namespace Unity.Netcode
         public void WriteValue(in Vector3 value) => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Vector3[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector2Int value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector2Int[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector3Int value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector3Int[] value) => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector4 value) => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -870,6 +961,7 @@ namespace Unity.Netcode
         public void WriteValue(in Ray2D value) => WriteUnmanaged(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Vector2 value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -878,6 +970,14 @@ namespace Unity.Netcode
         public void WriteValueSafe(in Vector3 value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Vector3[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector2Int value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector2Int[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector3Int value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector3Int[] value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Vector4 value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -902,5 +1002,24 @@ namespace Unity.Netcode
         public void WriteValueSafe(in Ray2D value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteValue<T>(in T value, ForFixedStructs unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            WriteUnmanaged(value.Length);
+            WriteBytes(value.GetUnsafePtr(), value.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForFixedStructs unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            if (!TryBeginWriteInternal(sizeof(int) + value.Length))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            WriteValue(value);
+        }
     }
 }

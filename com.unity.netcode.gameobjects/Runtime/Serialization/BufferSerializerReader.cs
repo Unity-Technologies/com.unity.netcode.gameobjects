@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -39,6 +40,10 @@ namespace Unity.Netcode
         public void SerializeValue(ref Vector2[] value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Vector3 value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Vector3[] value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref Vector2Int value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref Vector2Int[] value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref Vector3Int value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref Vector3Int[] value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Vector4 value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Vector4[] value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Quaternion value) => m_Reader.ReadValueSafe(out value);
@@ -51,6 +56,12 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray[] value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Ray2D value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Ray2D[] value) => m_Reader.ReadValueSafe(out value);
+
+        public void SerializeValue(ref FixedString32Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref FixedString64Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref FixedString128Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref FixedString512Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref FixedString4096Bytes value) => m_Reader.ReadValueSafe(out value);
 
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new() => m_Reader.ReadNetworkSerializable(out value);
 
@@ -71,6 +82,10 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Vector2[] value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Vector3 value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Vector3[] value) => m_Reader.ReadValue(out value);
+        public void SerializeValuePreChecked(ref Vector2Int value) => m_Reader.ReadValue(out value);
+        public void SerializeValuePreChecked(ref Vector2Int[] value) => m_Reader.ReadValue(out value);
+        public void SerializeValuePreChecked(ref Vector3Int value) => m_Reader.ReadValue(out value);
+        public void SerializeValuePreChecked(ref Vector3Int[] value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Vector4 value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Vector4[] value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Quaternion value) => m_Reader.ReadValue(out value);
@@ -83,5 +98,11 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Ray[] value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Ray2D value) => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Reader.ReadValue(out value);
+
+        public void SerializeValuePreChecked(ref FixedString32Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValuePreChecked(ref FixedString64Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValuePreChecked(ref FixedString128Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValuePreChecked(ref FixedString512Bytes value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValuePreChecked(ref FixedString4096Bytes value) => m_Reader.ReadValueSafe(out value);
     }
 }

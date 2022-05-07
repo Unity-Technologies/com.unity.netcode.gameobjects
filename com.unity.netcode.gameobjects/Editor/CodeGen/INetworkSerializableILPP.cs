@@ -137,24 +137,47 @@ namespace Unity.Netcode.Editor.CodeGen
                                                 underlyingType = ResolveGenericType(underlyingType, typeStack);
                                             }
 
-                                            // If T is generic...
-                                            if (underlyingType.IsGenericInstance)
+                                            // Then we pick the correct set to add it to and set it up
+                                            // for initialization, if it's generic. We'll also use this moment to catch
+                                            // any NetworkVariables with invalid T types at compile time.
+                                            if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                                             {
-                                                // Then we pick the correct set to add it to and set it up
-                                                // for initialization.
-                                                if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
+                                                if (underlyingType.IsGenericInstance)
                                                 {
                                                     networkSerializableTypesSet.Add(underlyingType);
                                                 }
+                                            }
 
-                                                if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName))
+                                            else if (underlyingType.HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName))
+                                            {
+                                                if (underlyingType.IsGenericInstance)
                                                 {
                                                     structTypesSet.Add(underlyingType);
                                                 }
+                                            }
 
-                                                if (underlyingType.Resolve().IsEnum)
+                                            else if (underlyingType.Resolve().IsEnum)
+                                            {
+                                                if (underlyingType.IsGenericInstance)
                                                 {
                                                     enumTypesSet.Add(underlyingType);
+                                                }
+                                            }
+                                            else if(!underlyingType.Resolve().IsPrimitive)
+                                            {
+                                                bool methodExists = false;
+                                                foreach (var method in m_FastBufferWriterType.Methods)
+                                                {
+                                                    if (!method.HasGenericParameters && method.Parameters.Count == 1 && method.Parameters[0].ParameterType.Resolve() == underlyingType.Resolve())
+                                                    {
+                                                        methodExists = true;
+                                                        break;
+                                                    }
+                                                }
+
+                                                if (!methodExists)
+                                                {
+                                                    m_Diagnostics.AddError($"{type}.{field.Name}: {underlyingType} is not valid for use in {typeof(NetworkVariable<>).Name} types. Types must either implement {nameof(INetworkSerializeByMemcpy)} or {nameof(INetworkSerializable)}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {underlyingType} with {typeof(ForceNetworkSerializeByMemcpy<>).Name}<{underlyingType}>, or you can create extension methods for {nameof(FastBufferReader)}.{nameof(FastBufferReader.ReadValueSafe)}(this {nameof(FastBufferReader)}, out {underlyingType}) and {nameof(FastBufferWriter)}.{nameof(FastBufferWriter.WriteValueSafe)}(this {nameof(FastBufferWriter)}, in {underlyingType}) to define serialization for this type.");
                                                 }
                                             }
 
@@ -230,6 +253,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_InitializeDelegatesEnum_MethodRef;
 
         private TypeDefinition m_NetworkVariableSerializationType;
+        private TypeDefinition m_FastBufferWriterType;
 
         private const string k_InitializeNetworkSerializableMethodName = nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable);
         private const string k_InitializeStructMethodName = nameof(NetworkVariableHelper.InitializeDelegatesStruct);
@@ -255,6 +279,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
             m_NetworkVariableSerializationType = moduleDefinition.ImportReference(typeof(NetworkVariableSerialization<>)).Resolve();
+            m_NetworkVariableSerializationType = moduleDefinition.ImportReference(typeof(FastBufferWriter)).Resolve();
             return true;
         }
 

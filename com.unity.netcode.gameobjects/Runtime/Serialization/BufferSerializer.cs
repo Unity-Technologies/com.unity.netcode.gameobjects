@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -75,6 +76,10 @@ namespace Unity.Netcode
         public void SerializeValue(ref Vector2[] value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Vector3 value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Vector3[] value) => m_Implementation.SerializeValue(ref value);
+        public void SerializeValue(ref Vector2Int value) => m_Implementation.SerializeValue(ref value);
+        public void SerializeValue(ref Vector2Int[] value) => m_Implementation.SerializeValue(ref value);
+        public void SerializeValue(ref Vector3Int value) => m_Implementation.SerializeValue(ref value);
+        public void SerializeValue(ref Vector3Int[] value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Vector4 value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Vector4[] value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Quaternion value) => m_Implementation.SerializeValue(ref value);
@@ -87,6 +92,12 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray[] value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Ray2D value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Ray2D[] value) => m_Implementation.SerializeValue(ref value);
+
+        void SerializeValue(ref FixedString32Bytes value) => m_Implementation.SerializeValue(ref value);
+        void SerializeValue(ref FixedString64Bytes value) => m_Implementation.SerializeValue(ref value);
+        void SerializeValue(ref FixedString128Bytes value) => m_Implementation.SerializeValue(ref value);
+        void SerializeValue(ref FixedString512Bytes value) => m_Implementation.SerializeValue(ref value);
+        void SerializeValue(ref FixedString4096Bytes value) => m_Implementation.SerializeValue(ref value);
 
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new() => m_Implementation.SerializeNetworkSerializable(ref value);
 
@@ -107,6 +118,10 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Vector2[] value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Vector3 value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Vector3[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+        public void SerializeValuePreChecked(ref Vector2Int value) => m_Implementation.SerializeValuePreChecked(ref value);
+        public void SerializeValuePreChecked(ref Vector2Int[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+        public void SerializeValuePreChecked(ref Vector3Int value) => m_Implementation.SerializeValuePreChecked(ref value);
+        public void SerializeValuePreChecked(ref Vector3Int[] value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Vector4 value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Vector4[] value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Quaternion value) => m_Implementation.SerializeValuePreChecked(ref value);
@@ -119,5 +134,11 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Ray[] value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Ray2D value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Implementation.SerializeValuePreChecked(ref value);
+
+        void SerializeValuePreChecked(ref FixedString32Bytes value) => m_Implementation.SerializeValuePreChecked(ref value);
+        void SerializeValuePreChecked(ref FixedString64Bytes value) => m_Implementation.SerializeValuePreChecked(ref value);
+        void SerializeValuePreChecked(ref FixedString128Bytes value) => m_Implementation.SerializeValuePreChecked(ref value);
+        void SerializeValuePreChecked(ref FixedString512Bytes value) => m_Implementation.SerializeValuePreChecked(ref value);
+        void SerializeValuePreChecked(ref FixedString4096Bytes value) => m_Implementation.SerializeValuePreChecked(ref value);
     }
 }
