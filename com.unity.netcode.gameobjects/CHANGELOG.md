@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
 - Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
 - Passing generic types to RPCs no longer causes a native crash (#1901)
+- Fixed a compile failure when compiling against com.unity.nuget.mono-cecil >= 1.11.4 (#1920)
 
 ## [Unreleased]
 
