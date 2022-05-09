@@ -74,7 +74,7 @@ namespace Unity.Netcode.RuntimeTests
             int count = 0;
             do
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
                 count++;
 
                 if (count > 20)
@@ -196,11 +196,11 @@ namespace Unity.Netcode.RuntimeTests
                 // hide them on one client
                 Show(mode == 0, false);
 
-                yield return new WaitForSeconds(1.0f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value = 3;
 
-                yield return new WaitForSeconds(1.0f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 // verify they got hidden
                 yield return CheckVisible(false);
@@ -208,6 +208,45 @@ namespace Unity.Netcode.RuntimeTests
                 // show them to that client
                 Show(mode == 0, true);
                 yield return RefreshNetworkObjects();
+
+                // verify they become visible
+                yield return CheckVisible(true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkShowHideQuickTest()
+        {
+            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+
+            var spawnedObject1 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject2 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject3 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
+            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
+            m_NetSpawnedObject1.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject2.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject3.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject1.Spawn();
+            m_NetSpawnedObject2.Spawn();
+            m_NetSpawnedObject3.Spawn();
+
+            for (int mode = 0; mode < 2; mode++)
+            {
+                // get the NetworkObject on a client instance
+                yield return RefreshNetworkObjects();
+
+                // check object start visible
+                yield return CheckVisible(true);
+
+                // hide and show them on one client, during the same frame
+                Show(mode == 0, false);
+                Show(mode == 0, true);
+
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+                yield return RefreshNetworkObjects();
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 // verify they become visible
                 yield return CheckVisible(true);
