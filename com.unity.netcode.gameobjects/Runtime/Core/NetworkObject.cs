@@ -75,7 +75,7 @@ namespace Unity.Netcode
         public bool IsPlayerObject { get; internal set; }
 
         /// <summary>
-        /// Gets if the object is the the personal clients player object
+        /// Gets if the object is the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
 
@@ -352,7 +352,10 @@ namespace Unity.Netcode
             if (NetworkManager != null && NetworkManager.SpawnManager != null &&
                 NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-                NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                if (this == networkObject)
+                {
+                    NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                }
             }
         }
 
