@@ -541,6 +541,32 @@ namespace Unity.Netcode
             }
         }
 
+        public void RemoveNetworkPrefab(GameObject prefab)
+        {
+            var globalObjectIdHash = prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+            for (var i = 0; i < NetworkConfig.NetworkPrefabs.Count; ++i)
+            {
+                if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash == globalObjectIdHash)
+                {
+                    NetworkConfig.NetworkPrefabs.RemoveAt(i);
+                    break;
+                }
+            }
+            if (PrefabHandler.ContainsHandler(globalObjectIdHash))
+            {
+                PrefabHandler.RemoveHandler(globalObjectIdHash);
+            }
+            if (NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var targetPrefab))
+            {
+                NetworkConfig.NetworkPrefabOverrideLinks.Remove(globalObjectIdHash);
+                var targetHash = targetPrefab.Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                if (NetworkConfig.OverrideToNetworkPrefab.ContainsKey(targetHash))
+                {
+                    NetworkConfig.OverrideToNetworkPrefab.Remove(targetHash);
+                }
+            }
+        }
+
         private bool ShouldAddPrefab(NetworkPrefab networkPrefab, out uint sourcePrefabGlobalObjectIdHash, out uint targetPrefabGlobalObjectIdHash, int index = -1)
         {
             sourcePrefabGlobalObjectIdHash = 0;
