@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+- Added NetworkManager.RemoveNetworkPrefab to remove a prefab from the prefabs list (#1950)
+
 ### Fixed
 
 - Fixed: Hosting again after failing to host now works correctly
