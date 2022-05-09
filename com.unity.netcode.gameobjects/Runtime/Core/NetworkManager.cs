@@ -56,6 +56,11 @@ namespace Unity.Netcode
 
         internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
 
+        internal void MarkNetworkObjectDirty(NetworkObject networkObject)
+        {
+            BehaviourUpdater.AddForUpdate(networkObject);
+        }
+
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
