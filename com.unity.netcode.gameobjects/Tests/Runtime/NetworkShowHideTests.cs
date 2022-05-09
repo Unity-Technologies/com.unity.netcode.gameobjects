@@ -140,18 +140,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object1OnClient0 = serverClientPlayerResult.Result;
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object2OnClient0 = serverClientPlayerResult.Result;
             serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object3OnClient0 = serverClientPlayerResult.Result;
