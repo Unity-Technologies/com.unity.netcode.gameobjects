@@ -115,7 +115,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for the client side to update to the new parameter values
-            yield return WaitForConditionOrTimeOut(()=>ClientSideValuesMatch(authoritativeMode));
+            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(authoritativeMode));
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
         }
 
