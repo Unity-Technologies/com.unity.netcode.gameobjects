@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed: Hosting again after failing to host now works correctly
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa. (#1947)
 
+- Fixed NetworkManager to cleanup connected client lists after stopping (#1945)
 - Fixed: NetworkHide followed by NetworkShow on the same frame works correctly (#1940)
 
 ## [1.0.0-pre.8] - 2022-04-27
