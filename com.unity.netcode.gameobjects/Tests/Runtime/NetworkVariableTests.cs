@@ -365,6 +365,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on client and server side
             yield return WaitForClientsConnectedOrTimeOut();
+            AssertOnTimeout($"Timed-out waiting for all clients to connect!");
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
             var result = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
