@@ -74,7 +74,7 @@ namespace Unity.Netcode.RuntimeTests
             int count = 0;
             do
             {
-                yield return new WaitForSeconds(0.1f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
                 count++;
 
                 if (count > 20)
@@ -196,11 +196,11 @@ namespace Unity.Netcode.RuntimeTests
                 // hide them on one client
                 Show(mode == 0, false);
 
-                yield return new WaitForSeconds(1.0f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value = 3;
 
-                yield return new WaitForSeconds(1.0f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 // verify they got hidden
                 yield return CheckVisible(false);
@@ -244,9 +244,9 @@ namespace Unity.Netcode.RuntimeTests
                 Show(mode == 0, false);
                 Show(mode == 0, true);
 
-                yield return new WaitForSeconds(0.5f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
                 yield return RefreshNetworkObjects();
-                yield return new WaitForSeconds(0.5f);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 // verify they become visible
                 yield return CheckVisible(true);
