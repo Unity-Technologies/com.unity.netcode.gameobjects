@@ -71,6 +71,10 @@ namespace Unity.Netcode.Components
             internal fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
+        /// <summary>
+        /// Used to track parameter state change in order to update the changed
+        /// parameters when the animator's layer has not changed
+        /// </summary>
         private class ParameterState
         {
             public AnimatorControllerParameterType AnimatorControllerParameterType;
@@ -152,6 +156,7 @@ namespace Unity.Netcode.Components
                         case AnimatorControllerParameterType.Float:
                             var value = m_Animator.GetFloat(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, value);
+                            // Track this parameter
                             if (!m_ParameterStates.ContainsKey(i))
                             {
                                 m_ParameterStates.Add(i, new ParameterState() { CurrentStateFloat = value, AnimatorControllerParameterType = AnimatorControllerParameterType.Float });
@@ -160,6 +165,7 @@ namespace Unity.Netcode.Components
                         case AnimatorControllerParameterType.Int:
                             var valueInt = m_Animator.GetInteger(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueInt);
+                            // Track this parameter
                             if (!m_ParameterStates.ContainsKey(i))
                             {
                                 m_ParameterStates.Add(i, new ParameterState() { CurrentStateInt = valueInt, AnimatorControllerParameterType = AnimatorControllerParameterType.Int });
@@ -168,6 +174,7 @@ namespace Unity.Netcode.Components
                         case AnimatorControllerParameterType.Bool:
                             var valueBool = m_Animator.GetBool(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueBool);
+                            // Track this parameter
                             if (!m_ParameterStates.ContainsKey(i))
                             {
                                 m_ParameterStates.Add(i, new ParameterState() { CurrentStateBool = valueBool, AnimatorControllerParameterType = AnimatorControllerParameterType.Bool });
@@ -264,6 +271,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // Whether the layer has changed or not, we always check to see if parameters have changed and send updates if they have.
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
             {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
