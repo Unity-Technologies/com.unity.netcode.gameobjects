@@ -352,7 +352,10 @@ namespace Unity.Netcode
             if (NetworkManager != null && NetworkManager.SpawnManager != null &&
                 NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
-                NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                if (this == networkObject)
+                {
+                    NetworkManager.SpawnManager.OnDespawnObject(networkObject, false);
+                }
             }
         }
 
