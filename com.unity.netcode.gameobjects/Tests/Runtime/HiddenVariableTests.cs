@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -12,6 +13,8 @@ namespace Unity.Netcode.RuntimeTests
 
     public class HiddenVariableObject : NetworkBehaviour
     {
+        public static List<NetworkObject> ClientInstancesSpawned = new List<NetworkObject>();
+
         public NetworkVariable<int> MyNetworkVariable = new NetworkVariable<int>();
         public NetworkList<int> MyNetworkList = new NetworkList<int>();
 
@@ -21,6 +24,10 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
+            if (!IsServer)
+            {
+                ClientInstancesSpawned.Add(NetworkObject);
+            }
             Debug.Log($"{nameof(HiddenVariableObject)}.{nameof(OnNetworkSpawn)}() with value {MyNetworkVariable.Value}");
 
             MyNetworkVariable.OnValueChanged += Changed;
@@ -28,6 +35,15 @@ namespace Unity.Netcode.RuntimeTests
             SpawnCount++;
 
             base.OnNetworkSpawn();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (!IsServer)
+            {
+                ClientInstancesSpawned.Remove(NetworkObject);
+            }
+            base.OnNetworkDespawn();
         }
 
         public void Changed(int before, int after)
@@ -71,50 +87,75 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        public void VerifyLists()
+        public bool VerifyLists()
         {
             NetworkList<int> prev = null;
             int numComparison = 0;
-
+            var prevObject = (NetworkObject)null;
             // for all the instances of NetworkList
-            foreach (var gameObject in m_NetSpawnedObjectOnClient)
+            foreach (var networkObject in m_NetSpawnedObjectOnClient)
             {
                 // this skips despawned/hidden objects
-                if (gameObject != null)
+                if (networkObject != null)
                 {
                     // if we've seen another one before
                     if (prev != null)
                     {
-                        var curr = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList;
+                        var curr = networkObject.GetComponent<HiddenVariableObject>().MyNetworkList;
 
                         // check that the two lists are identical
-                        Debug.Assert(curr.Count == prev.Count);
+                        if (curr.Count != prev.Count)
+                        {
+                            return false;
+                        }
                         for (int index = 0; index < curr.Count; index++)
                         {
-                            Debug.Assert(curr[index] == prev[index]);
+                            if (curr[index] != prev[index])
+                            {
+                                return false;
+                            }
                         }
                         numComparison++;
                     }
+                    prevObject = networkObject;
                     // store the list
-                    prev = gameObject.GetComponent<HiddenVariableObject>().MyNetworkList;
+                    prev = networkObject.GetComponent<HiddenVariableObject>().MyNetworkList;
                 }
             }
-            Debug.Log($"{numComparison} comparisons done.");
+            return true;
         }
 
-        public IEnumerator RefreshGameObects()
+        public IEnumerator RefreshGameObects(int numberToExpect)
         {
-            m_NetSpawnedObjectOnClient.Clear();
+            yield return WaitForConditionOrTimeOut(() => numberToExpect == HiddenVariableObject.ClientInstancesSpawned.Count);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for total spawned count to reach {numberToExpect} but is currently {HiddenVariableObject.ClientInstancesSpawned.Count}");
+            m_NetSpawnedObjectOnClient = HiddenVariableObject.ClientInstancesSpawned;
+        }
 
-            foreach (var netMan in m_ClientNetworkManagers)
+        private bool CheckValueOnClient(ulong otherClientId, int value)
+        {
+            foreach (var id in m_ServerNetworkManager.ConnectedClientsIds)
             {
-                var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                        x => x.NetworkObjectId == m_NetSpawnedObject.NetworkObjectId,
-                        netMan,
-                        serverClientPlayerResult);
-                m_NetSpawnedObjectOnClient.Add(serverClientPlayerResult.Result);
+                if (id != otherClientId)
+                {
+                    if (!HiddenVariableObject.ValueOnClient.ContainsKey(id) || HiddenVariableObject.ValueOnClient[id] != value)
+                    {
+                        return false;
+                    }
+                }
             }
+            return true;
+        }
+
+        private IEnumerator SetAndCheckValueSet(ulong otherClientId, int value)
+        {
+            yield return WaitForConditionOrTimeOut(() => CheckValueOnClient(otherClientId, value));
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to have a value of {value}");
+
+            yield return WaitForConditionOrTimeOut(VerifyLists);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for all clients to have identical values!");
+
+            Debug.Log("Value changed");
         }
 
         [UnityTest]
@@ -127,15 +168,14 @@ namespace Unity.Netcode.RuntimeTests
 
             Debug.Log("Running test");
 
-
             // ==== Spawn object with ownership on one client
             var client = m_ServerNetworkManager.ConnectedClientsList[1];
             var otherClient = m_ServerNetworkManager.ConnectedClientsList[2];
             m_NetSpawnedObject = SpawnObject(m_TestNetworkPrefab, m_ClientNetworkManagers[1]).GetComponent<NetworkObject>();
 
-            yield return RefreshGameObects();
+            yield return RefreshGameObects(4);
 
-            // === Check spawn occured
+            // === Check spawn occurred
             yield return WaitForSpawnCount(NumberOfClients + 1);
             Debug.Assert(HiddenVariableObject.SpawnCount == NumberOfClients + 1);
             Debug.Log("Objects spawned");
@@ -143,41 +183,22 @@ namespace Unity.Netcode.RuntimeTests
             // ==== Set the NetworkVariable value to 2
             HiddenVariableObject.ExpectedSize = 1;
             HiddenVariableObject.SpawnCount = 0;
+            var currentValueSet = 2;
 
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 2;
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(2);
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = currentValueSet;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(currentValueSet);
 
-            yield return new WaitForSeconds(1.0f);
-
-            foreach (var id in m_ServerNetworkManager.ConnectedClientsIds)
-            {
-                Debug.Assert(HiddenVariableObject.ValueOnClient[id] == 2);
-            }
-
-            VerifyLists();
-
-            Debug.Log("Value changed");
+            yield return SetAndCheckValueSet(otherClient.ClientId, currentValueSet);
 
             // ==== Hide our object to a different client
             HiddenVariableObject.ExpectedSize = 2;
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);
 
-            // ==== Change the NetworkVariable value
-            // we should get one less notification of value changing and no errors or exception
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 3;
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(3);
+            currentValueSet = 3;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = currentValueSet;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(currentValueSet);
 
-            yield return new WaitForSeconds(1.0f);
-            foreach (var id in m_ServerNetworkManager.ConnectedClientsIds)
-            {
-                if (id != otherClient.ClientId)
-                {
-                    Debug.Assert(HiddenVariableObject.ValueOnClient[id] == 3);
-                }
-            }
-
-            VerifyLists();
-            Debug.Log("Values changed");
+            yield return SetAndCheckValueSet(otherClient.ClientId, currentValueSet);
 
             // ==== Show our object again to this client
             HiddenVariableObject.ExpectedSize = 3;
@@ -189,22 +210,13 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log("Object spawned");
 
             // ==== We need a refresh for the newly re-spawned object
-            yield return RefreshGameObects();
+            yield return RefreshGameObects(4);
 
-            // ==== Change the NetworkVariable value
-            // we should get all notifications of value changing and no errors or exception
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = 4;
-            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(4);
+            currentValueSet = 4;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkVariable.Value = currentValueSet;
+            m_NetSpawnedObject.GetComponent<HiddenVariableObject>().MyNetworkList.Add(currentValueSet);
 
-            yield return new WaitForSeconds(1.0f);
-
-            foreach (var id in m_ServerNetworkManager.ConnectedClientsIds)
-            {
-                Debug.Assert(HiddenVariableObject.ValueOnClient[id] == 4);
-            }
-
-            VerifyLists();
-            Debug.Log("Values changed");
+            yield return SetAndCheckValueSet(otherClient.ClientId, currentValueSet);
 
             // ==== Hide our object to that different client again, and then destroy it
             m_NetSpawnedObject.NetworkHide(otherClient.ClientId);

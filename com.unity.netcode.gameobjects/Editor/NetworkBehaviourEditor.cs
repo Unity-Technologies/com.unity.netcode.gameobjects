@@ -218,6 +218,11 @@ namespace Unity.Netcode.Editor
         /// </summary>
         private void OnEnable()
         {
+            // This can be null and throw an exception when running test runner in the editor
+            if (target == null)
+            {
+                return;
+            }
             // When we first add a NetworkBehaviour this editor will be enabled
             // so we go ahead and check for an already existing NetworkObject here
             CheckForNetworkObject((target as NetworkBehaviour).gameObject);
