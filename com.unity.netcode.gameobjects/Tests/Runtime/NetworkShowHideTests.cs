@@ -140,18 +140,18 @@ namespace Unity.Netcode.RuntimeTests
         {
             var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object1OnClient0 = serverClientPlayerResult.Result;
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object2OnClient0 = serverClientPlayerResult.Result;
             serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
             yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId,
+                    x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId && x.IsSpawned,
                     m_ClientNetworkManagers[0],
                     serverClientPlayerResult);
             m_Object3OnClient0 = serverClientPlayerResult.Result;
@@ -208,6 +208,45 @@ namespace Unity.Netcode.RuntimeTests
                 // show them to that client
                 Show(mode == 0, true);
                 yield return RefreshNetworkObjects();
+
+                // verify they become visible
+                yield return CheckVisible(true);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkShowHideQuickTest()
+        {
+            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+
+            var spawnedObject1 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject2 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject3 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
+            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
+            m_NetSpawnedObject1.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject2.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject3.NetworkManagerOwner = m_ServerNetworkManager;
+            m_NetSpawnedObject1.Spawn();
+            m_NetSpawnedObject2.Spawn();
+            m_NetSpawnedObject3.Spawn();
+
+            for (int mode = 0; mode < 2; mode++)
+            {
+                // get the NetworkObject on a client instance
+                yield return RefreshNetworkObjects();
+
+                // check object start visible
+                yield return CheckVisible(true);
+
+                // hide and show them on one client, during the same frame
+                Show(mode == 0, false);
+                Show(mode == 0, true);
+
+                yield return new WaitForSeconds(0.5f);
+                yield return RefreshNetworkObjects();
+                yield return new WaitForSeconds(0.5f);
 
                 // verify they become visible
                 yield return CheckVisible(true);
