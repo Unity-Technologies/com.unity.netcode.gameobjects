@@ -133,7 +133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1633685739}
   - component: {fileID: 1633685738}
-  - component: {fileID: 1633685740}
+  - component: {fileID: 1633685742}
   m_Layer: 0
   m_Name: InSceneObject
   m_TagString: Untagged
@@ -172,7 +172,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1633685740
+--- !u!114 &1633685742
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -181,6 +181,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 1633685737}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a915cfb2e4f748e4f9526a8bf5ee84f2, type: 3}
+  m_Script: {fileID: 11500000, guid: bd877da52a3b48f4f867ac2c973c0265, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
