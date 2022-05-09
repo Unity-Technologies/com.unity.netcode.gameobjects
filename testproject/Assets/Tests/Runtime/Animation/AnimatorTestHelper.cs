@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 
 namespace TestProject.RuntimeTests
 {
@@ -17,9 +18,12 @@ namespace TestProject.RuntimeTests
         }
 
         private Animator m_Animator;
+        private NetworkAnimator m_NetworkAnimator;
+
         private void Awake()
         {
             m_Animator = GetComponent<Animator>();
+            m_NetworkAnimator = GetComponent<NetworkAnimator>();
         }
 
         public override void OnNetworkSpawn()
@@ -35,6 +39,7 @@ namespace TestProject.RuntimeTests
                     ClientSideInstances.Add(NetworkManager.LocalClientId, this);
                 }
             }
+
             base.OnNetworkSpawn();
         }
 
@@ -44,9 +49,14 @@ namespace TestProject.RuntimeTests
             public int IntValue;
             public bool BoolValue;
 
-            public bool ValuesMatch(ParameterValues parameters)
+            public bool ValuesMatch(ParameterValues parameters, bool printOutput = false)
             {
-                return parameters.BoolValue = BoolValue && parameters.FloatValue == FloatValue && parameters.IntValue == IntValue;
+                if (printOutput)
+                {
+                    Debug.Log($"[ValuesMatch] Values to match {parameters}");
+                    Debug.Log($"[ValuesMatch] Current values: {FloatValue}, {IntValue}, {BoolValue}");
+                }
+                return parameters.BoolValue == BoolValue && parameters.FloatValue == FloatValue && parameters.IntValue == IntValue;
             }
         }
 
@@ -60,6 +70,11 @@ namespace TestProject.RuntimeTests
             m_Animator.SetFloat("TestFloat", parameterValues.FloatValue);
             m_Animator.SetInteger("TestInt", parameterValues.IntValue);
             m_Animator.SetBool("TestBool", parameterValues.BoolValue);
+        }
+
+        public void SetTrigger()
+        {
+            m_NetworkAnimator.SetTrigger("TestTrigger");
         }
     }
 }
