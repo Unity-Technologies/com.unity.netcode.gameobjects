@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
@@ -43,7 +43,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
 
-            Assert.That(MultiInstanceHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Create(k_ClientInstanceCount, out m_ServerNetworkManager, out m_ClientNetworkManagers));
 
             const string sceneName = nameof(NetworkObjectParentingTests);
 
@@ -74,6 +74,7 @@ namespace TestProject.RuntimeTests
             SetupSet(serverSet.transform, 0, m_ServerNetworkManager);
             serverSet.name = "Set0 (Server)";
 
+
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
             {
                 var clientSet = Object.Instantiate(serverSet);
@@ -82,13 +83,13 @@ namespace TestProject.RuntimeTests
             }
 
             // Start server and client NetworkManager instances
-            Assert.That(MultiInstanceHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
 
             // Wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
 
             // Wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(m_ServerNetworkManager);
         }
 
         public void SetupSet(Transform rootTransform, int setIndex, NetworkManager networkManager)
@@ -180,7 +181,7 @@ namespace TestProject.RuntimeTests
             LogAssert.Expect(LogType.Exception, new Regex("start a server or host", RegexOptions.IgnoreCase));
             var cachedParent = m_Cube_NetObjs[setIndex].parent;
             m_Cube_NetObjs[setIndex].parent = m_Pickup_NetObjs[setIndex];
-            Assert.That(m_Cube_NetObjs[setIndex].parent, Is.EqualTo(cachedParent));
+            Assert.That(m_Cube_NetObjs[setIndex].parent, Is.EqualTo(cachedParent), $"Transform {m_Cube_NetObjs[setIndex].parent.name} is not equal to transform {cachedParent.name}");
         }
 
         [UnityTearDown]
@@ -188,7 +189,7 @@ namespace TestProject.RuntimeTests
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
 
-            MultiInstanceHelpers.Destroy();
+            NetcodeIntegrationTestHelpers.Destroy();
 
             if (m_TestScene.isLoaded)
             {
@@ -200,12 +201,12 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SetParentDirect()
         {
+            var waitForNetworkTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             // Server: Set/Cube -> Set/Pickup/Back/Cube
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            int nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return waitForNetworkTick;
 
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
             for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
@@ -214,35 +215,48 @@ namespace TestProject.RuntimeTests
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
 
-
             // Server: Set/Pickup/Back -> Root/Cube
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            yield return waitForNetworkTick;
 
-            // Client[n]: Set/Pickup/Back -> Root/Cube
-            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            bool CheckClientSideCubeForNull()
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
-                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+                // Client[n]: Set/Pickup/Back -> Root/Cube
+                for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+                {
+                    if (m_Cube_NetObjs[setIndex + 1].parent != null || m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject != null)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
-
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(CheckClientSideCubeForNull, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for client parent to be null!");
 
             // Server: Root/Cube -> Set/Dude/Arms/RightArm/Cube
             m_Cube_NetObjs[0].parent = m_Dude_RightArm_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[0].GetComponent<NetworkObject>()));
 
-            nextFrameNumber = Time.frameCount + 2;
-            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-            // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
-            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            bool CheckClientSideCubeForParentAssignment()
             {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1]));
-                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_RightArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
+                // Client[n]: Root/Cube -> Set/Dude/Arms/RightArm/Cube
+                for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+                {
+                    var transformToCheckFor = m_Dude_RightArm_NetObjs[setIndex + 1];
+                    if (m_Cube_NetObjs[setIndex + 1].parent != transformToCheckFor || m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject != transformToCheckFor.GetComponent<NetworkObject>())
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
+
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(CheckClientSideCubeForParentAssignment, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for client parent to be assigned!");
         }
 
         [UnityTest]

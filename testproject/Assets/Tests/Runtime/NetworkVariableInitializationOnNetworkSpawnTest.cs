@@ -2,7 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -28,7 +28,7 @@ namespace TestProject.RuntimeTests
             // Shutdown and clean up both of our NetworkManager instances
             if (m_Prefab)
             {
-                MultiInstanceHelpers.Destroy();
+                NetcodeIntegrationTestHelpers.Destroy();
                 Object.Destroy(m_Prefab);
                 m_Prefab = null;
             }
@@ -47,14 +47,14 @@ namespace TestProject.RuntimeTests
             NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 5;
 
             const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
             m_Prefab.AddComponent<NetworkVariableInitOnNetworkSpawn>();
 
             var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
@@ -65,17 +65,17 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -110,24 +110,16 @@ namespace TestProject.RuntimeTests
             yield return waitForTickInterval;
 
             // Get the NetworkVariableInitOnNetworkSpawn NetworkObject on the client-side
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult);
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.GetComponent<NetworkVariableInitOnNetworkSpawn>() != null && x.IsOwnedByServer, clients[0], clientClientPlayerResult);
             var networkVariableInitOnNetworkSpawnClientSide = clientClientPlayerResult.Result.GetComponent<NetworkVariableInitOnNetworkSpawn>();
 
-            var timedOut = false;
-            var timeOutPeriod = Time.realtimeSinceStartup + 2.0f;
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => networkVariableInitOnNetworkSpawnClientSide.Variable.Value ==
+            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient, timeoutHelper);
 
-            while (!timedOut)
-            {
-                if (networkVariableInitOnNetworkSpawnClientSide.Variable.Value == NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient)
-                {
-                    break;
-                }
-                timedOut = timeOutPeriod < Time.realtimeSinceStartup;
-            }
-
-            Assert.False(timedOut, $"Timed out while waiting for Variable.Value to equal {NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient}");
-
+            Assert.False(timeoutHelper.TimedOut, $"Timed out while waiting for Variable.Value ({networkVariableInitOnNetworkSpawnClientSide.Variable.Value}) " +
+                $"to equal {NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient}");
         }
 
         [UnityTest]
@@ -137,105 +129,6 @@ namespace TestProject.RuntimeTests
             yield return RunTest();
             Assert.IsTrue(NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnServer);
             Assert.IsTrue(NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient);
-        }
-
-        [UnityTest]
-        [Ignore("Snapshot specific")]
-        [Description("When a network variable is initialized in OnNetworkSpawn on the server, OnValueChanged is not called")]
-        public IEnumerator WhenANetworkVariableIsInitializedInOnNetworkSpawnOnTheServer_OnValueChangedIsNotCalled()
-        {
-            yield return RunTest();
-            Assert.IsFalse(NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient);
-        }
-
-        [UnityTest]
-        [Ignore("Snapshot specific")]
-        [Description("When a network variable is changed just after OnNetworkSpawn on the server, OnValueChanged is called after OnNetworkSpawn")]
-        public IEnumerator WhenANetworkVariableIsInitializedJustAfterOnNetworkSpawnOnTheServer_OnValueChangedIsCalledAfterOnNetworkSpawn()
-        {
-            const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
-            m_Prefab = new GameObject("Object");
-            var networkObject = m_Prefab.AddComponent<NetworkObject>();
-            m_Prefab.AddComponent<NetworkVariableInitOnNetworkSpawn>();
-
-            // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            var validNetworkPrefab = new NetworkPrefab();
-            validNetworkPrefab.Prefab = m_Prefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            foreach (var client in clients)
-            {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            }
-
-            // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
-            {
-                Debug.LogError("Failed to start instances");
-                Assert.Fail("Failed to start instances");
-            }
-
-            // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
-
-            // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
-
-            var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
-            NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
-            serverNetworkObject.Spawn();
-
-            Assert.IsFalse(NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient);
-
-            // Wait for the client-side to have actually spawned first
-            const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (!NetworkVariableInitOnNetworkSpawn.NetworkSpawnCalledOnClient)
-            {
-                if (Time.frameCount > maxFrames)
-                {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Did not successfully spawn all expected NetworkObjects");
-                        break;
-                    }
-                }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-
-            // Then set the value on the server
-            serverNetworkObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = 10;
-
-            // Expect the value to spawn with the already updated value
-            NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient = 10;
-
-            // Wait until all objects have spawned.
-            //const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
-            doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (!NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient)
-            {
-                if (Time.frameCount > maxFrames)
-                {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Did not successfully spawn all expected NetworkObjects");
-                        break;
-                    }
-                }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
-            // Test of ordering is handled by an assert within OnNetworkSpawn
-            Assert.IsTrue(NetworkVariableInitOnNetworkSpawn.OnValueChangedCalledOnClient);
         }
     }
 }

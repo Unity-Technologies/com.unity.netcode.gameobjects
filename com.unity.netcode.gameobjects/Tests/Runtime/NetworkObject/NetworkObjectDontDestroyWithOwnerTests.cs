@@ -1,77 +1,55 @@
 using System.Collections;
-using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
+using Unity.Netcode.TestHelpers.Runtime;
+
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkObjectDontDestroyWithOwnerTests
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
+    public class NetworkObjectDontDestroyWithOwnerTests : NetcodeIntegrationTest
     {
+        private const int k_NumberObjectsToSpawn = 32;
+        protected override int NumberOfClients => 1;
+
+        protected GameObject m_PrefabToSpawn;
+
+        public NetworkObjectDontDestroyWithOwnerTests(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_PrefabToSpawn = CreateNetworkObjectPrefab("ClientOwnedObject");
+            m_PrefabToSpawn.GetComponent<NetworkObject>().DontDestroyWithOwner = true;
+        }
+
         [UnityTest]
         public IEnumerator DontDestroyWithOwnerTest()
         {
-            // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+            var client = m_ClientNetworkManagers[0];
+            var clientId = client.LocalClientId;
+            var networkObjects = SpawnObjects(m_PrefabToSpawn, m_ClientNetworkManagers[0], k_NumberObjectsToSpawn);
 
-            // create prefab
-            var gameObject = new GameObject("ClientOwnedObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.DontDestroyWithOwner = true;
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab()
-            {
-                Prefab = gameObject
-            });
-
-            for (int i = 0; i < clients.Length; i++)
-            {
-                clients[i].NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab()
-                {
-                    Prefab = gameObject
-                });
-            }
-
-            // start server and connect clients
-            MultiInstanceHelpers.Start(false, server, clients);
-
-            // wait for connection on client side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
-
-            // wait for connection on server side
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
-
-            // network objects
-            var networkObjects = new List<NetworkObject>();
-
-            // create instances
-            for (int i = 0; i < 32; i++)
-            {
-                var no = Object.Instantiate(gameObject).GetComponent<NetworkObject>();
-                no.NetworkManagerOwner = server;
-                networkObjects.Add(no);
-                no.SpawnWithOwnership(clients[0].LocalClientId);
-            }
-
-            // wait for object spawn on client
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => clients[0].SpawnManager.SpawnedObjects.Count == 32));
+            // wait for object spawn on client to reach k_NumberObjectsToSpawn + 1 (k_NumberObjectsToSpawn and 1 for the player)
+            yield return WaitForConditionOrTimeOut(() => client.SpawnManager.GetClientOwnedObjects(clientId).Count() == k_NumberObjectsToSpawn + 1);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client to have 33 NetworkObjects spawned! Only {client.SpawnManager.GetClientOwnedObjects(clientId).Count()} were assigned!");
 
             // disconnect the client that owns all the clients
-            MultiInstanceHelpers.StopOneClient(clients[0]);
+            NetcodeIntegrationTestHelpers.StopOneClient(client);
 
+            var remainingClients = Mathf.Max(0, TotalClients - 1);
             // wait for disconnect
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => server.ConnectedClients.Count == 0));
+            yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ConnectedClients.Count == remainingClients);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client to disconnect!");
 
             for (int i = 0; i < networkObjects.Count; i++)
             {
+                var networkObject = networkObjects[i].GetComponent<NetworkObject>();
                 // ensure ownership was transferred back
-                Assert.That(networkObjects[i].OwnerClientId == server.ServerClientId);
+                Assert.That(networkObject.OwnerClientId == m_ServerNetworkManager.LocalClientId);
             }
-
-            // cleanup
-            MultiInstanceHelpers.Destroy();
         }
     }
 }

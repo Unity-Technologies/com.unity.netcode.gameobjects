@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEditor;
 
 namespace Unity.Netcode.Editor
@@ -12,7 +14,7 @@ namespace Unity.Netcode.Editor
     {
         internal static NetworkManagerHelper Singleton;
 
-        // This is primarily to handle multiInstance scenarios where more than 1 NetworkManager could exist
+        // This is primarily to handle IntegrationTest scenarios where more than 1 NetworkManager could exist
         private static Dictionary<NetworkManager, Transform> s_LastKnownNetworkManagerParents = new Dictionary<NetworkManager, Transform>();
 
         /// <summary>
@@ -25,7 +27,6 @@ namespace Unity.Netcode.Editor
         {
             Singleton = new NetworkManagerHelper();
             NetworkManager.NetworkManagerHelper = Singleton;
-
             EditorApplication.playModeStateChanged -= EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged -= EditorApplication_hierarchyChanged;
 
@@ -40,18 +41,104 @@ namespace Unity.Netcode.Editor
                 case PlayModeStateChange.ExitingEditMode:
                     {
                         s_LastKnownNetworkManagerParents.Clear();
+                        ScenesInBuildActiveSceneCheck();
                         break;
                     }
             }
         }
 
+        /// <summary>
+        /// Detects if a user is trying to enter into play mode when both conditions are true:
+        /// - the currently active and open scene is not added to the scenes in build list
+        /// - an instance of a NetworkManager with scene management enabled can be found
+        /// If both conditions are met then the user is presented with a dialog box that
+        /// provides the user with the option to add the scene to the scenes in build list
+        /// before entering into play mode or the user can continue under those conditions.
+        ///
+        /// ** When scene management is enabled the user should treat all scenes that need to
+        /// be synchronized using network scene management as if they were preparing for a build.
+        /// Any scene that needs to be loaded at run time has to be included in the scenes in
+        /// build list. **
+        /// </summary>
+        private static void ScenesInBuildActiveSceneCheck()
+        {
+            var scenesList = EditorBuildSettings.scenes.ToList();
+            var activeScene = SceneManager.GetActiveScene();
+            var isSceneInBuildSettings = scenesList.Where((c) => c.path == activeScene.path).Count() == 1;
+            var networkManager = Object.FindObjectOfType<NetworkManager>();
+            if (!isSceneInBuildSettings && networkManager != null)
+            {
+                if (networkManager.NetworkConfig != null && networkManager.NetworkConfig.EnableSceneManagement)
+                {
+                    if (EditorUtility.DisplayDialog("Add Scene to Scenes in Build", $"The current scene was not found in the scenes" +
+                        $" in build and a {nameof(NetworkManager)} instance was found with scene management enabled! Clients will not be able " +
+                        $"to synchronize to this scene unless it is added to the scenes in build list.\n\nWould you like to add it now?",
+                        "Yes", "No - Continue"))
+                    {
+                        scenesList.Add(new EditorBuildSettingsScene(activeScene.path, true));
+                        EditorBuildSettings.scenes = scenesList.ToArray();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Invoked only when the hierarchy changes
+        /// </summary>
         private static void EditorApplication_hierarchyChanged()
         {
             var allNetworkManagers = Resources.FindObjectsOfTypeAll<NetworkManager>();
             foreach (var networkManager in allNetworkManagers)
             {
-                networkManager.NetworkManagerCheckForParent();
+                if (!networkManager.NetworkManagerCheckForParent())
+                {
+                    Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager);
+                }
             }
+        }
+
+        /// <summary>
+        /// Handles notifying users that they cannot add a NetworkObject component
+        /// to a GameObject that also has a NetworkManager component. The NetworkObject
+        /// will always be removed.
+        /// GameObject + NetworkObject then NetworkManager = NetworkObject removed
+        /// GameObject + NetworkManager then NetworkObject = NetworkObject removed
+        /// Note: Since this is always invoked after <see cref="NetworkManagerCheckForParent"/>
+        /// we do not need to check for parent when searching for a NetworkObject component
+        /// </summary>
+        public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false)
+        {
+            // Check for any NetworkObject at the same gameObject relative layer
+            var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
+
+            if (networkObject == null)
+            {
+                // if none is found, check to see if any children have a NetworkObject
+                networkObject = networkManager.gameObject.GetComponentInChildren<NetworkObject>();
+                if (networkObject == null)
+                {
+                    return;
+                }
+            }
+
+            if (!EditorApplication.isUpdating)
+            {
+                Object.DestroyImmediate(networkObject);
+
+                if (!EditorApplication.isPlaying && !editorTest)
+                {
+                    EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", NetworkManagerAndNetworkObjectNotAllowedMessage(), "OK");
+                }
+                else
+                {
+                    Debug.LogError(NetworkManagerAndNetworkObjectNotAllowedMessage());
+                }
+            }
+        }
+
+        public string NetworkManagerAndNetworkObjectNotAllowedMessage()
+        {
+            return $"A {nameof(GameObject)} cannot have both a {nameof(NetworkManager)} and {nameof(NetworkObject)} assigned to it or any children under it.";
         }
 
         /// <summary>

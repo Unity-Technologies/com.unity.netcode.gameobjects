@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -22,7 +23,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal readonly unsafe WriterHandle* Handle;
+        internal unsafe WriterHandle* Handle;
 
         private static byte[] s_ByteArrayCache = new byte[65535];
 
@@ -61,6 +62,11 @@ namespace Unity.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Handle->Position > Handle->Length ? Handle->Position : Handle->Length;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the writer has been initialized and a handle allocated.
+        /// </summary>
+        public unsafe bool IsInitialized => Handle != null;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,6 +117,7 @@ namespace Unity.Netcode
                 UnsafeUtility.Free(Handle->BufferPointer, Handle->Allocator);
             }
             UnsafeUtility.Free(Handle, Handle->Allocator);
+            Handle = null;
         }
 
         /// <summary>
@@ -207,7 +214,7 @@ namespace Unity.Netcode
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
         /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
@@ -253,7 +260,7 @@ namespace Unity.Netcode
         /// When you know you will be writing multiple fields back-to-back and you know the total size,
         /// you can call TryBeginWrite() once on the total size, and then follow it with calls to
         /// WriteValue() instead of WriteValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe write operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginWrite(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginWrite is to avoid bounds checking in the following
@@ -523,60 +530,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Writes an unmanaged array
-        /// </summary>
-        /// <param name="array">The array to write</param>
-        /// <param name="count">The amount of elements to write</param>
-        /// <param name="offset">Where in the array to start</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValue<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
-        {
-            int sizeInTs = count != -1 ? count : array.Length - offset;
-            int sizeInBytes = sizeInTs * sizeof(T);
-            WriteValue(sizeInTs);
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native + offset);
-                WriteBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
-        /// Writes an unmanaged array
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling TryBeginWrite.
-        /// </summary>
-        /// <param name="array">The array to write</param>
-        /// <param name="count">The amount of elements to write</param>
-        /// <param name="offset">Where in the array to start</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValueSafe<T>(T[] array, int count = -1, int offset = 0) where T : unmanaged
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            int sizeInTs = count != -1 ? count : array.Length - offset;
-            int sizeInBytes = sizeInTs * sizeof(T);
-
-            if (!TryBeginWriteInternal(sizeInBytes + sizeof(int)))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-            WriteValue(sizeInTs);
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native + offset);
-                WriteBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
         /// Write a partial value. The specified number of bytes is written from the value and the rest is ignored.
         /// </summary>
         /// <param name="value">Value to write</param>
@@ -784,68 +737,170 @@ namespace Unity.Netcode
             return sizeof(T);
         }
 
-        /// <summary>
-        /// Write a value of any unmanaged type (including unmanaged structs) to the buffer.
-        /// It will be copied into the buffer exactly as it exists in memory.
-        /// </summary>
-        /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValue<T>(in T value) where T : unmanaged
+        private unsafe void WriteUnmanaged<T>(in T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-            if (Handle->Position + len > Handle->AllowedWriteMark)
-            {
-                throw new OverflowException($"Attempted to write without first calling {nameof(TryBeginWrite)}()");
-            }
-#endif
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy(Handle->BufferPointer + Handle->Position, (byte*)ptr, len);
+                byte* bytes = (byte*)ptr;
+                WriteBytes(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
-
-        /// <summary>
-        /// Write a value of any unmanaged type (including unmanaged structs) to the buffer.
-        /// It will be copied into the buffer exactly as it exists in memory.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple writes at once by calling TryBeginWrite.
-        /// </summary>
-        /// <param name="value">The value to copy</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValueSafe<T>(in T value) where T : unmanaged
+        private unsafe void WriteUnmanagedSafe<T>(in T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferWriter in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            if (!TryBeginWriteInternal(len))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy(Handle->BufferPointer + Handle->Position, (byte*)ptr, len);
+                byte* bytes = (byte*)ptr;
+                WriteBytesSafe(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
+        {
+            WriteUnmanaged(value.Length);
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytes(bytes, sizeof(T) * value.Length);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
+        {
+            WriteUnmanagedSafe(value.Length);
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                WriteBytesSafe(bytes, sizeof(T) * value.Length);
+            }
+        }
+
+        // These structs enable overloading of WriteValue with different generic constraints.
+        // The compiler's actually able to distinguish between overloads based on generic constraints.
+        // But at the bytecode level, the constraints aren't included in the method signature.
+        // By adding a second parameter with a defaulted value, the signatures of each generic are different,
+        // thus allowing overloads of methods based on the first parameter meeting constraints.
+        public struct ForPrimitives
+        {
+
+        }
+
+        public struct ForEnums
+        {
+
+        }
+
+        public struct ForStructs
+        {
+
+        }
+
+        public struct ForNetworkSerializable
+        {
+
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector2[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector3[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector4[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Quaternion value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Quaternion[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Color value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Color[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Color32 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Color32[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Ray value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Ray[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Ray2D value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector2[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector3[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector4[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Quaternion value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Quaternion[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Color value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Color[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Color32 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Color32[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Ray value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Ray[] value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Ray2D value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
     }
 }

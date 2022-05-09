@@ -1,0 +1,26 @@
+{
+    "name": "Unity.Netcode.TestHelpers.Runtime",
+    "rootNamespace": "Unity.Netcode.TestHelpers.Runtime",
+    "references": [
+        "Unity.Netcode.Runtime",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.7",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
+        }
+    ]
+}

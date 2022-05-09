@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -11,24 +12,24 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     internal class NetworkVariableTestComponent : NetworkBehaviour
     {
-        private NetworkVariable<bool> m_NetworkVariableBool;
-        private NetworkVariable<byte> m_NetworkVariableByte;
-        private NetworkVariable<Color> m_NetworkVariableColor;
-        private NetworkVariable<Color32> m_NetworkVariableColor32;
-        private NetworkVariable<double> m_NetworkVariableDouble;
-        private NetworkVariable<float> m_NetworkVariableFloat;
-        private NetworkVariable<int> m_NetworkVariableInt;
-        private NetworkVariable<long> m_NetworkVariableLong;
-        private NetworkVariable<sbyte> m_NetworkVariableSByte;
-        private NetworkVariable<Quaternion> m_NetworkVariableQuaternion;
-        private NetworkVariable<short> m_NetworkVariableShort;
-        private NetworkVariable<Vector4> m_NetworkVariableVector4;
-        private NetworkVariable<Vector3> m_NetworkVariableVector3;
-        private NetworkVariable<Vector2> m_NetworkVariableVector2;
-        private NetworkVariable<Ray> m_NetworkVariableRay;
-        private NetworkVariable<ulong> m_NetworkVariableULong;
-        private NetworkVariable<uint> m_NetworkVariableUInt;
-        private NetworkVariable<ushort> m_NetworkVariableUShort;
+        private NetworkVariable<bool> m_NetworkVariableBool = new NetworkVariable<bool>();
+        private NetworkVariable<byte> m_NetworkVariableByte = new NetworkVariable<byte>();
+        private NetworkVariable<Color> m_NetworkVariableColor = new NetworkVariable<Color>();
+        private NetworkVariable<Color32> m_NetworkVariableColor32 = new NetworkVariable<Color32>();
+        private NetworkVariable<double> m_NetworkVariableDouble = new NetworkVariable<double>();
+        private NetworkVariable<float> m_NetworkVariableFloat = new NetworkVariable<float>();
+        private NetworkVariable<int> m_NetworkVariableInt = new NetworkVariable<int>();
+        private NetworkVariable<long> m_NetworkVariableLong = new NetworkVariable<long>();
+        private NetworkVariable<sbyte> m_NetworkVariableSByte = new NetworkVariable<sbyte>();
+        private NetworkVariable<Quaternion> m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>();
+        private NetworkVariable<short> m_NetworkVariableShort = new NetworkVariable<short>();
+        private NetworkVariable<Vector4> m_NetworkVariableVector4 = new NetworkVariable<Vector4>();
+        private NetworkVariable<Vector3> m_NetworkVariableVector3 = new NetworkVariable<Vector3>();
+        private NetworkVariable<Vector2> m_NetworkVariableVector2 = new NetworkVariable<Vector2>();
+        private NetworkVariable<Ray> m_NetworkVariableRay = new NetworkVariable<Ray>();
+        private NetworkVariable<ulong> m_NetworkVariableULong = new NetworkVariable<ulong>();
+        private NetworkVariable<uint> m_NetworkVariableUInt = new NetworkVariable<uint>();
+        private NetworkVariable<ushort> m_NetworkVariableUShort = new NetworkVariable<ushort>();
 
 
         public NetworkVariableHelper<bool> Bool_Var;
@@ -102,46 +103,6 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableUInt = new NetworkVariable<uint>(1);
             m_NetworkVariableUShort = new NetworkVariable<ushort>(1);
 
-            m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableByte = new NetworkVariable<byte>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableColor = new NetworkVariable<Color>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableColor32 = new NetworkVariable<Color32>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableDouble = new NetworkVariable<double>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableFloat = new NetworkVariable<float>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableInt = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableLong = new NetworkVariable<long>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableShort = new NetworkVariable<short>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableRay = new NetworkVariable<Ray>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableULong = new NetworkVariable<ulong>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableUInt = new NetworkVariable<uint>(NetworkVariableReadPermission.Everyone);
-            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone);
-
-
-            // NetworkVariable Value Type and NetworkVariableSettings Constructor Test Coverage
-            m_NetworkVariableBool = new NetworkVariable<bool>(NetworkVariableReadPermission.Everyone, true);
-            m_NetworkVariableByte = new NetworkVariable<byte>(NetworkVariableReadPermission.Everyone, 0);
-            m_NetworkVariableColor = new NetworkVariable<Color>(NetworkVariableReadPermission.Everyone, new Color(1, 1, 1, 1));
-            m_NetworkVariableColor32 = new NetworkVariable<Color32>(NetworkVariableReadPermission.Everyone, new Color32(1, 1, 1, 1));
-            m_NetworkVariableDouble = new NetworkVariable<double>(NetworkVariableReadPermission.Everyone, 1.0);
-            m_NetworkVariableFloat = new NetworkVariable<float>(NetworkVariableReadPermission.Everyone, 1.0f);
-            m_NetworkVariableInt = new NetworkVariable<int>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableLong = new NetworkVariable<long>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>(NetworkVariableReadPermission.Everyone, 0);
-            m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(NetworkVariableReadPermission.Everyone, Quaternion.identity);
-            m_NetworkVariableShort = new NetworkVariable<short>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableVector4 = new NetworkVariable<Vector4>(NetworkVariableReadPermission.Everyone, new Vector4(1, 1, 1, 1));
-            m_NetworkVariableVector3 = new NetworkVariable<Vector3>(NetworkVariableReadPermission.Everyone, new Vector3(1, 1, 1));
-            m_NetworkVariableVector2 = new NetworkVariable<Vector2>(NetworkVariableReadPermission.Everyone, new Vector2(1, 1));
-            m_NetworkVariableRay = new NetworkVariable<Ray>(NetworkVariableReadPermission.Everyone, new Ray());
-            m_NetworkVariableULong = new NetworkVariable<ulong>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableUInt = new NetworkVariable<uint>(NetworkVariableReadPermission.Everyone, 1);
-            m_NetworkVariableUShort = new NetworkVariable<ushort>(NetworkVariableReadPermission.Everyone, 1);
-
             // Use this nifty class: NetworkVariableHelper
             // Tracks if NetworkVariable changed invokes the OnValueChanged callback for the given instance type
             Bool_Var = new NetworkVariableHelper<bool>(m_NetworkVariableBool);
@@ -192,7 +153,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (EnableTesting)
             {
-                //Added timeout functionality for near future changes to NetworkVariables and the Snapshot system
+                //Added timeout functionality for near future changes to NetworkVariables
                 if (!m_FinishedTests && m_ChangesAppliedToNetworkVariables)
                 {
                     //We finish testing if all NetworkVariables changed their value or we timed out waiting for

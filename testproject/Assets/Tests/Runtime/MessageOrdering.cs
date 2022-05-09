@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
 using UnityEngine;
@@ -12,6 +12,10 @@ namespace TestProject.RuntimeTests
     public class MessageOrderingTests
     {
         private GameObject m_Prefab;
+
+        private NetworkManager m_ServerNetworkManager;
+        private NetworkManager[] m_ClientNetworkManagers;
+
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -30,9 +34,9 @@ namespace TestProject.RuntimeTests
             // Shutdown and clean up both of our NetworkManager instances
             if (m_Prefab)
             {
-                MultiInstanceHelpers.Destroy();
                 Object.Destroy(m_Prefab);
                 m_Prefab = null;
+                NetcodeIntegrationTestHelpers.Destroy();
                 Support.SpawnRpcDespawn.ClientUpdateCount = 0;
                 Support.SpawnRpcDespawn.ServerUpdateCount = 0;
                 Support.SpawnRpcDespawn.ClientNetworkSpawnRpcCalled = false;
@@ -45,12 +49,12 @@ namespace TestProject.RuntimeTests
         public IEnumerator SpawnChangeOwnership()
         {
             const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
@@ -61,18 +65,17 @@ namespace TestProject.RuntimeTests
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512);
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -104,59 +107,78 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator SpawnRpcDespawn()
         {
+            var frameCountStart = Time.frameCount;
             // Must be 1 for this test.
             const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out m_ServerNetworkManager, out m_ClientNetworkManagers));
             m_Prefab = new GameObject("Object");
             m_Prefab.AddComponent<SpawnRpcDespawn>();
             Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var handlers = new List<SpawnRpcDespawnInstanceHandler>();
-            var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
-
-            foreach (var client in clients)
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            var clientHandlers = new List<SpawnRpcDespawnInstanceHandler>();
+            //var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+            //server.PrefabHandler.AddHandler(networkObject.GlobalObjectIdHash, handler);
+            foreach (var client in m_ClientNetworkManagers)
             {
-                // TODO: Create a unique handler per client
-                client.PrefabHandler.AddHandler(networkObject, handler);
+                var clientHandler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
+                client.PrefabHandler.AddHandler(networkObject, clientHandler);
+                clientHandlers.Add(clientHandler);
             }
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-            foreach (var client in clients)
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
             }
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(true, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length + 1, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, m_ClientNetworkManagers.Length + 1, null, 512);
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverNetworkObject.Spawn();
+
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
             srdComponent.Activate();
 
             // Wait until all objects have spawned.
-            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + 1;
-            const int maxFrames = 240;
+            int expectedCount = Support.SpawnRpcDespawn.ClientUpdateCount + numClients + 1; // Clients plus host
+            int maxFrames = 240 + Time.frameCount;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (Support.SpawnRpcDespawn.ClientUpdateCount < expectedCount && !handler.WasSpawned)
+            var clientCountReached = false;
+            var allHandlersSpawned = false;
+            var allHandlersDestroyed = false;
+            var waitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+
+            while (!(allHandlersSpawned && clientCountReached && allHandlersDestroyed))
             {
+                clientCountReached = (Support.SpawnRpcDespawn.ClientUpdateCount == expectedCount);
+                foreach (var clientHandler in clientHandlers)
+                {
+                    allHandlersSpawned = clientHandler.WasSpawned;
+                    allHandlersDestroyed = clientHandler.WasDestroyed;
+                    if (!allHandlersSpawned || !allHandlersDestroyed)
+                    {
+                        break;
+                    }
+                }
+
                 if (Time.frameCount > maxFrames)
                 {
                     // This is here in the event a platform is running at a higher
@@ -167,15 +189,15 @@ namespace TestProject.RuntimeTests
                         break;
                     }
                 }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+                yield return waitForTick;
             }
 
-            Assert.AreEqual(NetworkUpdateStage.EarlyUpdate, Support.SpawnRpcDespawn.StageExecutedByReceiver);
-            Assert.AreEqual(Support.SpawnRpcDespawn.ServerUpdateCount, Support.SpawnRpcDespawn.ClientUpdateCount);
-            var lastFrameNumber = Time.frameCount + 1;
-            yield return new WaitUntil(() => Time.frameCount >= lastFrameNumber);
-            Assert.True(handler.WasDestroyed);
+            Assert.True(allHandlersSpawned, $"Not all client-side handlers were spawned!");
+            Assert.True(allHandlersDestroyed, $"Not all client-side handlers were destroyed!");
+            Assert.True(clientCountReached, $"Client count ({Support.SpawnRpcDespawn.ClientUpdateCount}) did not match the expected count ({expectedCount})");
+
+            Debug.Log($"It took {Time.frameCount - frameCountStart} frames to process the MessageOrdering.SpawnRpcDespawn integration test.");
         }
 
         [UnityTest]
@@ -184,14 +206,14 @@ namespace TestProject.RuntimeTests
             Support.SpawnRpcDespawn.ExecuteClientRpc = true;
             // Must be 1 for this test.
             const int numClients = 1;
-            Assert.True(MultiInstanceHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
+            Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             m_Prefab.AddComponent<SpawnRpcDespawn>();
             Support.SpawnRpcDespawn.TestStage = NetworkUpdateStage.EarlyUpdate;
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
-            MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var handlers = new List<SpawnRpcDespawnInstanceHandler>();
             var handler = new SpawnRpcDespawnInstanceHandler(networkObject.GlobalObjectIdHash);
 
@@ -217,18 +239,17 @@ namespace TestProject.RuntimeTests
             var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);
 
             // Start the instances
-            if (!MultiInstanceHelpers.Start(false, server, clients))
+            if (!NetcodeIntegrationTestHelpers.Start(false, server, clients))
             {
                 Debug.LogError("Failed to start instances");
                 Assert.Fail("Failed to start instances");
             }
 
             // [Client-Side] Wait for a connection to the server
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients, null, 512);
 
             // [Host-Side] Check to make sure all clients are connected
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForClientsConnectedToServer(server, clients.Length, null, 512));
+            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnectedToServer(server, clients.Length, null, 512);
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();

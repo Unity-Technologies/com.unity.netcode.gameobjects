@@ -1,8 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
-# `develop` trigger
-develop_nightly_trigger:
-  name: Develop Branch Nightly Trigger
+develop_nightly:
+  name: "[Nightly] Run All Tests"
   triggers:
     recurring:
     - branch: develop
@@ -11,23 +10,28 @@ develop_nightly_trigger:
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
-    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
+    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}_{{ validation_editor }}
 {% endfor -%}
-    
-# Legacy job that matches the name with branch protections as of 8/11
-# Can be removed once branch protections are updated to the new name
-pull_request_trigger_legacy:
-  name: Pull Request Trigger on 2021.1 (master, develop, & release branches)
-  dependencies:
-    - .yamato/_triggers.yml#pull_request_trigger
+
+develop_weekly_trunk:
+  name: "[Weekly] Run All Tests [Trunk]"
   triggers:
-    cancel_old_ci: true
-    pull_requests:
-    - targets:
-        only:
-          - "master"
-          - "develop"
-          - "/release\/.*/"
+    recurring:
+    - branch: develop
+      frequency: weekly
+      rerun: always
+  dependencies:
+    - .yamato/_run-all.yml#run_all_tests_trunk
+
+multiprocess_nightly:
+  name: "[Nightly] Run Multiprocess Tests"
+  triggers:
+    recurring:
+    - branch: develop
+      frequency: daily
+      rerun: always
+  dependencies:
+    - .yamato/_run-all.yml#all_singlenode_multiprocess_tests
 
 # Run all relevant tasks when a pull request targeting the develop
 # branch is created or updated. Currently only netcode package tests are
@@ -83,9 +87,11 @@ badges_test_trigger:
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endif -%}
 {% for editor in project.test_editors -%}
+{% if editor != "trunk" -%}
 {% for platform in test_platforms -%}
     - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

@@ -6,14 +6,82 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+### Fixed
 
-### Added
+- Fixed: Hosting again after failing to host now works correctly
+
+- Fixed NetworkManager to cleanup connected client lists after stopping (#1945)
+- Fixed: NetworkHide followed by NetworkShow on the same frame works correctly (#1940)
+- Fixed throwing an exception in OnNetworkSpawn/OnNetworkDespawn causing other OnNetworkSpawn/OnNetworkDespawn calls to not be executed. (#1739)
+
+
+## [1.0.0-pre.8] - 2022-04-27
 
 ### Changed
 
+- `unmanaged` structs are no longer universally accepted as RPC parameters because some structs (i.e., structs with pointers in them, such as `NativeList<T>`) can't be supported by the default memcpy struct serializer. Structs that are intended to be serialized across the network must add `INetworkSerializeByMemcpy` to the interface list (i.e., `struct Foo : INetworkSerializeByMemcpy`). This interface is empty and just serves to mark the struct as compatible with memcpy serialization. For external structs you can't edit, you can pass them to RPCs by wrapping them in `ForceNetworkSerializeByMemcpy<T>`. (#1901)
+
+### Removed
+- Removed `SIPTransport` (#1870)
+
+- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
+
 ### Fixed
 
+- Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
+- Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
+- Fixed issue during client synchronization if 'ValidateSceneBeforeLoading' returned false it would halt the client synchronization process resulting in a client that was approved but not synchronized or fully connected with the server. (#1883)
+- Fixed an issue where UNetTransport.StartServer would return success even if the underlying transport failed to start (#854)
+- Passing generic types to RPCs no longer causes a native crash (#1901)
+- Fixed an issue where calling `Shutdown` on a `NetworkManager` that was already shut down would cause an immediate shutdown the next time it was started (basically the fix makes `Shutdown` idempotent). (#1877)
+
+## [1.0.0-pre.7] - 2022-04-06
+
+### Added
+- Added editor only check prior to entering into play mode if the currently open and active scene is in the build list and if not displays a dialog box asking the user if they would like to automatically add it prior to entering into play mode. (#1828)
+- Added `UnityTransport` implementation and `com.unity.transport` package dependency (#1823)
+- Added `NetworkVariableWritePermission` to `NetworkVariableBase` and implemented `Owner` client writable netvars. (#1762)
+- `UnityTransport` settings can now be set programmatically. (#1845)
+- `FastBufferWriter` and Reader IsInitialized property. (#1859)
+- Prefabs can now be added to the network at **runtime** (i.e., from an addressable asset). If `ForceSamePrefabs` is false, this can happen after a connection has been formed. (#1882)
+- When `ForceSamePrefabs` is false, a configurable delay (default 1 second, configurable via `NetworkConfig.SpawnTimeout`) has been introduced to gracefully handle race conditions where a spawn call has been received for an object whose prefab is still being loaded. (#1882)
+
+### Changed
+
+- Changed `NetcodeIntegrationTestHelpers` to use `UnityTransport` (#1870)
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.0.0 (#1849)
+
+### Removed
+
+- Removed `SnapshotSystem` (#1852)
+- Removed `com.unity.modules.animation`, `com.unity.modules.physics` and `com.unity.modules.physics2d` dependencies from the package (#1812)
+- Removed `com.unity.collections` dependency from the package (#1849)
+
+### Fixed
+
+- Fixed in-scene placed NetworkObjects not being found/ignored after a client disconnects and then reconnects. (#1850)
+- Fixed issue where `UnityTransport` send queues were not flushed when calling `DisconnectLocalClient` or `DisconnectRemoteClient`. (#1847)
+- Fixed NetworkBehaviour dependency verification check for an existing NetworkObject not searching from root parent transform relative GameObject. (#1841)
+- Fixed issue where entries were not being removed from the NetworkSpawnManager.OwnershipToObjectsTable. (#1838)
+- Fixed ClientRpcs would always send to all connected clients by default as opposed to only sending to the NetworkObject's Observers list by default. (#1836)
+- Fixed clarity for NetworkSceneManager client side notification when it receives a scene hash value that does not exist in its local hash table. (#1828)
+- Fixed client throws a key not found exception when it times out using UNet or UTP. (#1821)
+- Fixed network variable updates are no longer limited to 32,768 bytes when NetworkConfig.EnsureNetworkVariableLengthSafety is enabled. The limits are now determined by what the transport can send in a message. (#1811)
+- Fixed in-scene NetworkObjects get destroyed if a client fails to connect and shuts down the NetworkManager. (#1809)
+- Fixed user never being notified in the editor that a NetworkBehaviour requires a NetworkObject to function properly. (#1808)
+- Fixed PlayerObjects and dynamically spawned NetworkObjects not being added to the NetworkClient's OwnedObjects (#1801)
+- Fixed issue where NetworkManager would continue starting even if the NetworkTransport selected failed. (#1780)
+- Fixed issue when spawning new player if an already existing player exists it does not remove IsPlayer from the previous player (#1779)
+- Fixed lack of notification that NetworkManager and NetworkObject cannot be added to the same GameObject with in-editor notifications (#1777)
+- Fixed parenting warning printing for false positives (#1855)
+
+## [1.0.0-pre.6] - 2022-03-02
+
+### Added
+- NetworkAnimator now properly synchrhonizes all animation layers as well as runtime-adjusted weighting between them (#1765)
+- Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#1735)
+
+### Fixed
 - Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
 - Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
 - Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
@@ -25,9 +93,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed error when serializing ConnectionApprovalMessage with scene management disabled when one or more objects is hidden via the CheckObjectVisibility delegate (#1720)
 - Fixed CheckObjectVisibility delegate not being properly invoked for connecting clients when Scene Management is enabled. (#1680)
 - Fixed NetworkList to properly call INetworkSerializable's NetworkSerialize() method (#1682)
+- Fixed NetworkVariables containing more than 1300 bytes of data (such as large NetworkLists) no longer cause an OverflowException (the limit on data size is now whatever limit the chosen transport imposes on fragmented NetworkDelivery mechanisms) (#1725)
+- Fixed ServerRpcParams and ClientRpcParams must be the last parameter of an RPC in order to function properly. Added a compile-time check to ensure this is the case and trigger an error if they're placed elsewhere (#1721)
+- Fixed FastBufferReader being created with a length of 1 if provided an input of length 0 (#1724)
 - Fixed The NetworkConfig's checksum hash includes the NetworkTick so that clients with a different tickrate than the server are identified and not allowed to connect (#1728)
 - Fixed OwnedObjects not being properly modified when using ChangeOwnership (#1731)
-- Fixed throwing an exception in OnNetworkSpawn/OnNetworkDespawn causing other OnNetworkSpawn/OnNetworkDespawn calls to not be executed. (#1739)
+- Improved performance in NetworkAnimator (#1735)
+- Removed the "always sync" network animator (aka "autosend") parameters (#1746)
+- Fixed in-scene placed NetworkObjects not respawning after shutting down the NetworkManager and then starting it back up again (#1769)
 
 ## [1.0.0-pre.5] - 2022-01-26
 

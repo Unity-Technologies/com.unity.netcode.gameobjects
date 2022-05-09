@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -12,18 +13,9 @@ namespace Unity.Netcode.RuntimeTests
     /// - Server destroy spawned => Object gets destroyed and despawned/destroyed on all clients. Server does not run <see cref="NetworkPrefaInstanceHandler.HandleNetworkPrefabDestroy"/>. Client runs it.
     /// - Client destroy spawned => throw exception.
     /// </summary>
-    public class NetworkObjectDestroyTests : BaseMultiInstanceTest
+    public class NetworkObjectDestroyTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
-
-        [UnitySetUp]
-        public override IEnumerator Setup()
-        {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                // playerPrefab.AddComponent<TestDestroy>();
-            });
-        }
+        protected override int NumberOfClients => 1;
 
         /// <summary>
         /// Tests that a server can destroy a NetworkObject and that it gets despawned correctly.
@@ -33,12 +25,12 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestNetworkObjectServerDestroy()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
 
             Assert.IsNotNull(serverClientPlayerResult.Result.gameObject);
             Assert.IsNotNull(clientClientPlayerResult.Result.gameObject);
@@ -46,12 +38,9 @@ namespace Unity.Netcode.RuntimeTests
             // destroy the server player
             Object.Destroy(serverClientPlayerResult.Result.gameObject);
 
-            yield return null;
+            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<DestroyObjectMessage>(m_ClientNetworkManagers[0]);
 
             Assert.IsTrue(serverClientPlayerResult.Result == null); // Assert.IsNull doesn't work here
-
-            yield return null; // wait one frame more until we receive on client
-
             Assert.IsTrue(clientClientPlayerResult.Result == null);
 
             // create an unspawned networkobject and destroy it
@@ -71,12 +60,12 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestNetworkObjectClientDestroy()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
 
             // destroy the client player, this is not allowed
             LogAssert.Expect(LogType.Exception, "NotServerException: Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");

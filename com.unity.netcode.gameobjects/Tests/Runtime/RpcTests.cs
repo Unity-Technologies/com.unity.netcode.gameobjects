@@ -1,16 +1,20 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class RpcTests : BaseMultiInstanceTest
+    public class RpcTests : NetcodeIntegrationTest
     {
         public class RpcTestNB : NetworkBehaviour
         {
             public event Action<ulong, ServerRpcParams> OnServer_Rpc;
+            public event Action<Vector3, Vector3[]> OnTypedServer_Rpc;
             public event Action OnClient_Rpc;
 
             [ServerRpc]
@@ -24,72 +28,109 @@ namespace Unity.Netcode.RuntimeTests
             {
                 OnClient_Rpc();
             }
+
+            [ServerRpc]
+            public void MyTypedServerRpc(Vector3 param1, Vector3[] param2)
+            {
+                OnTypedServer_Rpc(param1, param2);
+            }
         }
 
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<RpcTestNB>();
-            });
+            m_PlayerPrefab.AddComponent<RpcTestNB>();
         }
 
         [UnityTest]
         public IEnumerator TestRpcs()
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            var clientId = m_ClientNetworkManagers[0].LocalClientId;
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clientId), m_ServerNetworkManager, serverClientPlayerResult));
+            // This is the *SERVER VERSION* of the *CLIENT PLAYER* RpcTestNB component
+            var serverClientRpcTestNB = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNB>();
 
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == clientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            // This is the *CLIENT VERSION* of the *CLIENT PLAYER* RpcTestNB component
+            var localClienRpcTestNB = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<RpcTestNB>();
 
             // Setup state
             bool hasReceivedServerRpc = false;
+            bool hasReceivedTypedServerRpc = false;
             bool hasReceivedClientRpcRemotely = false;
             bool hasReceivedClientRpcLocally = false;
 
-            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnClient_Rpc += () =>
+            var vector3 = new Vector3(1, 2, 3);
+            Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
+
+            localClienRpcTestNB.OnClient_Rpc += () =>
             {
                 Debug.Log("ClientRpc received on client object");
                 hasReceivedClientRpcRemotely = true;
             };
 
-            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += (clientId, param) =>
+            localClienRpcTestNB.OnServer_Rpc += (clientId, param) =>
             {
                 // The RPC invoked locally. (Weaver failure?)
                 Assert.Fail("ServerRpc invoked locally. Weaver failure?");
             };
 
-            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnServer_Rpc += (clientId, param) =>
+            serverClientRpcTestNB.OnServer_Rpc += (clientId, param) =>
             {
                 Debug.Log("ServerRpc received on server object");
                 Assert.True(param.Receive.SenderClientId == clientId);
                 hasReceivedServerRpc = true;
             };
 
-            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().OnClient_Rpc += () =>
+            serverClientRpcTestNB.OnClient_Rpc += () =>
             {
                 // The RPC invoked locally. (Weaver failure?)
                 Debug.Log("ClientRpc received on server object");
                 hasReceivedClientRpcLocally = true;
             };
 
+            serverClientRpcTestNB.OnTypedServer_Rpc += (param1, param2) =>
+            {
+                Debug.Log("TypedServerRpc received on server object");
+                Assert.AreEqual(param1, vector3);
+                Assert.AreEqual(param2.Length, vector3s.Length);
+                Assert.AreEqual(param2[0], vector3s[0]);
+                Assert.AreEqual(param2[1], vector3s[1]);
+                hasReceivedTypedServerRpc = true;
+            };
+
             // Send ServerRpc
-            clientClientPlayerResult.Result.GetComponent<RpcTestNB>().MyServerRpc(clientId);
+            localClienRpcTestNB.MyServerRpc(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Send TypedServerRpc
+            localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s);
 
             // Send ClientRpc
-            serverClientPlayerResult.Result.GetComponent<RpcTestNB>().MyClientRpc();
+            serverClientRpcTestNB.MyClientRpc();
 
-            // Wait for RPCs to be received
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForCondition(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely));
+            // Validate each NetworkManager relative MessagingSystem received each respective RPC
+            var messageHookList = new List<MessageHookEntry>();
+            var serverMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
+            serverMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(serverMessageHookEntry);
+
+            var typedServerMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
+            typedServerMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+            messageHookList.Add(typedServerMessageHookEntry);
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var clientMessageHookEntry = new MessageHookEntry(client);
+                clientMessageHookEntry.AssignMessageType<ClientRpcMessage>();
+                messageHookList.Add(clientMessageHookEntry);
+            }
+            var rpcMessageHooks = new MessageHooksConditional(messageHookList);
+            yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");
+
+            // Make sure RPCs propagated all the way up and were called on the relative destination class instance
+            yield return WaitForConditionOrTimeOut(() => hasReceivedServerRpc && hasReceivedClientRpcLocally && hasReceivedClientRpcRemotely && hasReceivedTypedServerRpc);
 
             Assert.True(hasReceivedServerRpc, "ServerRpc was not received");
+            Assert.True(hasReceivedTypedServerRpc, "TypedServerRpc was not received");
             Assert.True(hasReceivedClientRpcLocally, "ClientRpc was not locally received on the server");
             Assert.True(hasReceivedClientRpcRemotely, "ClientRpc was not remotely received on the client");
         }

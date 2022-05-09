@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal struct DestroyObjectMessage : INetworkMessage
+    internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public ulong NetworkObjectId;
 
@@ -16,7 +16,14 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
             reader.ReadValueSafe(out this);
+
+            if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            {
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
+                return false;
+            }
             return true;
         }
 

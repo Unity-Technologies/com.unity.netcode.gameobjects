@@ -1,21 +1,22 @@
-using System.Collections;
 using UnityEngine;
+using NUnit.Framework;
 using UnityEngine.TestTools;
+using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
     public class NestedNetworkManagerTests
     {
-        [UnityTest]
-        public IEnumerator CheckNestedNetworkManager()
+        [Test]
+        public void CheckNestedNetworkManager()
         {
             var parent = new GameObject("ParentObject");
             var networkManagerObject = new GameObject(nameof(CheckNestedNetworkManager));
 
-            var transport = networkManagerObject.AddComponent<SIPTransport>();
+            var unityTransport = networkManagerObject.AddComponent<UnityTransport>();
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+            networkManager.NetworkConfig = new NetworkConfig() { NetworkTransport = unityTransport };
 
             // Make our NetworkManager's GameObject nested
             networkManagerObject.transform.parent = parent.transform;
@@ -30,12 +31,8 @@ namespace Unity.Netcode.RuntimeTests
             LogAssert.Expect(LogType.Exception, $"Exception: {messageToCheck}");
 #endif
 
-            yield return new WaitForSeconds(0.02f);
-
             // Clean up
             Object.Destroy(parent);
-
-            yield return null;
         }
     }
 }

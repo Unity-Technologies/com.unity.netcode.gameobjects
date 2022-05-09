@@ -4,13 +4,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-
     /// <summary>
     /// Solves for incoming values that are jittered
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    internal abstract class BufferedLinearInterpolator<T> where T : struct
+    public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         private struct BufferedItem
         {
@@ -24,6 +22,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// There’s two factors affecting interpolation: buffering (set in NetworkManager’s NetworkTimeSystem) and interpolation time, which is the amount of time it’ll take to reach the target. This is to affect the second one.
+        /// </summary>
+        public float MaximumInterpolationTime = 0.1f;
 
         private const double k_SmallValue = 9.999999439624929E-11; // copied from Vector3's equal operator
 
@@ -69,6 +71,9 @@ namespace Unity.Netcode
 
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
+        /// <summary>
+        /// Resets Interpolator to initial state
+        /// </summary>
         public void Clear()
         {
             m_Buffer.Clear();
@@ -76,6 +81,9 @@ namespace Unity.Netcode
             m_StartTimeConsumed = 0.0d;
         }
 
+        /// <summary>
+        /// Teleports current interpolation value to targetValue.
+        /// </summary>
         public void ResetTo(T targetValue, double serverTime)
         {
             m_LifetimeConsumedCount = 1;
@@ -88,7 +96,6 @@ namespace Unity.Netcode
 
             Update(0, serverTime, serverTime);
         }
-
 
         // todo if I have value 1, 2, 3 and I'm treating 1 to 3, I shouldn't interpolate between 1 and 3, I should interpolate from 1 to 2, then from 2 to 3 to get the best path
         private void TryConsumeFromBuffer(double renderTime, double serverTime)
@@ -186,7 +193,14 @@ namespace Unity.Netcode
 
                     if (t < 0.0f)
                     {
-                        throw new OverflowException($"t = {t} but must be >= 0. range {range}, RenderTime {renderTime}, Start time {m_StartTimeConsumed}, end time {m_EndTimeConsumed}");
+                        // There is no mechanism to guarantee renderTime to not be before m_StartTimeConsumed
+                        // This clamps t to a minimum of 0 and fixes issues with longer frames and pauses
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"renderTime was before m_StartTimeConsumed. This should never happen. {nameof(renderTime)} is {renderTime}, {nameof(m_StartTimeConsumed)} is {m_StartTimeConsumed}");
+                        }
+                        t = 0.0f;
                     }
 
                     if (t > 3.0f) // max extrapolation
@@ -198,14 +212,16 @@ namespace Unity.Netcode
                 }
 
                 var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
-                float maxInterpTime = 0.1f;
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / maxInterpTime); // second interpolate to smooth out extrapolation jumps
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
             m_NbItemsReceivedThisFrame = 0;
             return m_CurrentInterpValue;
         }
 
+        /// <summary>
+        /// Add measurements to be used during interpolation. These will be buffered before being made available to be displayed as "latest value".
+        /// </summary>
         public void AddMeasurement(T newMeasurement, double sentTime)
         {
             m_NbItemsReceivedThisFrame++;
@@ -218,6 +234,8 @@ namespace Unity.Netcode
                 {
                     m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                     ResetTo(newMeasurement, sentTime);
+                    // Next line keeps renderTime above m_StartTimeConsumed. Fixes pause/unpause issues
+                    m_Buffer.Add(m_LastBufferedItemReceived);
                 }
 
                 return;
@@ -230,17 +248,25 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Gets latest value from the interpolator. This is updated every update as time goes by.
+        /// </summary>
         public T GetInterpolatedValue()
         {
             return m_CurrentInterpValue;
         }
 
+        /// <summary>
+        /// Method to override and adapted to the generic type. This assumes interpolation for that value will be clamped.
+        /// </summary>
         protected abstract T Interpolate(T start, T end, float time);
+        /// <summary>
+        /// Method to override and adapted to the generic type. This assumes interpolation for that value will not be clamped.
+        /// </summary>
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
 
-
-    internal class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
+    public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
@@ -253,7 +279,7 @@ namespace Unity.Netcode
         }
     }
 
-    internal class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
+    public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {

@@ -10,11 +10,28 @@ run_all_tests:
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
+{% if editor != "trunk" -%}
 {% for package in project.packages -%}
     - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
     - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
-    - .yamato/project-tests.yml#multiprocess_test_testproject_{{ editor }}_{{ platform.name }}
+{% endif -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+run_all_tests_trunk:
+  name: Run All Package and Project Tests [Trunk]
+  dependencies:
+{% for platform in test_platforms -%}
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+{% if editor == "trunk" -%}
+{% for package in project.packages -%}
+    - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
+{% endfor -%}
+    - .yamato/project-tests.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -43,6 +60,20 @@ all_package_tests:
 {% for package in project.packages -%}
     - .yamato/package-tests.yml#test_{{ project.name}}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}
+
+all_singlenode_multiprocess_tests:
+  name: Run All Multiprocess Tests - Single Node
+  dependencies:
+    # Pull in package and validate jobs through the badges job
+{% for platform in test_platforms -%}
+{% for project in projects -%}
+{% for editor in project.test_editors -%}
+{% if editor != "trunk" %}
+    - .yamato/multiprocess-project-tests.yml#singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}
+{% endif %}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

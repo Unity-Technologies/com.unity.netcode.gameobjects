@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -19,7 +20,7 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal readonly unsafe ReaderHandle* Handle;
+        internal unsafe ReaderHandle* Handle;
 
         /// <summary>
         /// Get the current read position
@@ -38,6 +39,11 @@ namespace Unity.Netcode
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => Handle->Length;
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the reader has been initialized and a handle allocated.
+        /// </summary>
+        public unsafe bool IsInitialized => Handle != null;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void CommitBitwiseReads(int amount)
@@ -76,7 +82,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -93,12 +99,12 @@ namespace Unity.Netcode
         /// <param name="offset"></param>
         public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from an ArraySegment.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -117,13 +123,13 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Count : length), offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator);
             }
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte array.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -142,13 +148,13 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, Math.Max(1, length == -1 ? buffer.Length : length), offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator);
             }
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -165,12 +171,12 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
         {
-            Handle = CreateHandle(buffer, Math.Max(1, length), offset, allocator);
+            Handle = CreateHandle(buffer, length, offset, allocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
-        /// 
+        ///
         /// A new buffer will be created using the given allocator and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
@@ -187,7 +193,31 @@ namespace Unity.Netcode
         /// <param name="offset">The offset of the buffer to start copying from</param>
         public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), Math.Max(1, length == -1 ? writer.Length : length), offset, allocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator);
+        }
+
+        /// <summary>
+        /// Create a FastBufferReader from another existing FastBufferReader. This is typically used when you
+        /// want to change the allocator that a reader is allocated to - for example, upgrading a Temp reader to
+        /// a Persistent one to be processed later.
+        ///
+        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// FastBufferReader will then own the data.
+        ///
+        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// ownership of the data remains with the caller and the reader will point at it directly.
+        /// When created with Allocator.None, FastBufferReader will allocate some internal data using
+        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// the context in which it was created (it should neither be returned from that function nor
+        /// stored anywhere in heap memory).
+        /// </summary>
+        /// <param name="reader">The reader to copy from</param>
+        /// <param name="allocator">The allocator to use</param>
+        /// <param name="length">The number of bytes to copy (all if this is -1)</param>
+        /// <param name="offset">The offset of the buffer to start copying from</param>
+        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0)
+        {
+            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator);
         }
 
         /// <summary>
@@ -196,6 +226,7 @@ namespace Unity.Netcode
         public unsafe void Dispose()
         {
             UnsafeUtility.Free(Handle, Handle->Allocator);
+            Handle = null;
         }
 
         /// <summary>
@@ -250,7 +281,7 @@ namespace Unity.Netcode
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
         /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
@@ -284,7 +315,7 @@ namespace Unity.Netcode
         /// When you know you will be reading multiple fields back-to-back and you know the total size,
         /// you can call TryBeginRead() once on the total size, and then follow it with calls to
         /// ReadValue() instead of ReadValueSafe() for faster serialization.
-        /// 
+        ///
         /// Unsafe read operations will throw OverflowException in editor and development builds if you
         /// go past the point you've marked using TryBeginRead(). In release builds, OverflowException will not be thrown
         /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
@@ -487,61 +518,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Writes an unmanaged array
-        /// NOTE: ALLOCATES
-        /// </summary>
-        /// <param name="array">Stores the read array</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<T>(out T[] array) where T : unmanaged
-        {
-            ReadValue(out int sizeInTs);
-            int sizeInBytes = sizeInTs * sizeof(T);
-            array = new T[sizeInTs];
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native);
-                ReadBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
-        /// Reads an unmanaged array
-        /// NOTE: ALLOCATES
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="array">Stores the read array</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out T[] array) where T : unmanaged
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            if (!TryBeginReadInternal(sizeof(int)))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            ReadValue(out int sizeInTs);
-            int sizeInBytes = sizeInTs * sizeof(T);
-            if (!TryBeginReadInternal(sizeInBytes))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            array = new T[sizeInTs];
-            fixed (T* native = array)
-            {
-                byte* bytes = (byte*)(native);
-                ReadBytes(bytes, sizeInBytes);
-            }
-        }
-
-        /// <summary>
         /// Read a partial value. The value is zero-initialized and then the specified number of bytes is read into it.
         /// </summary>
         /// <param name="value">Value to read</param>
@@ -705,69 +681,155 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
-        /// Read a value of any unmanaged type to the buffer.
-        /// It will be copied from the buffer exactly as it existed in memory on the writing end.
-        /// </summary>
-        /// <param name="value">The read value</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValue<T>(out T value) where T : unmanaged
+        private unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-            if (Handle->Position + len > Handle->AllowedReadMark)
-            {
-                throw new OverflowException($"Attempted to read without first calling {nameof(TryBeginRead)}()");
-            }
-#endif
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
+                byte* bytes = (byte*)ptr;
+                ReadBytes(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
-
-        /// <summary>
-        /// Read a value of any unmanaged type to the buffer.
-        /// It will be copied from the buffer exactly as it existed in memory on the writing end.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">The read value</param>
-        /// <typeparam name="T">Any unmanaged type</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out T value) where T : unmanaged
+        private unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
         {
-            int len = sizeof(T);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (Handle->InBitwiseContext)
-            {
-                throw new InvalidOperationException(
-                    "Cannot use BufferReader in bytewise mode while in a bitwise context.");
-            }
-#endif
-
-            if (!TryBeginReadInternal(len))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-
-
             fixed (T* ptr = &value)
             {
-                UnsafeUtility.MemCpy((byte*)ptr, Handle->BufferPointer + Handle->Position, len);
+                byte* bytes = (byte*)ptr;
+                ReadBytesSafe(bytes, sizeof(T));
             }
-            Handle->Position += len;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
+        {
+            ReadUnmanaged(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new T[sizeInTs];
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                ReadBytes(bytes, sizeInBytes);
+            }
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
+        {
+            ReadUnmanagedSafe(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new T[sizeInTs];
+            fixed (T* ptr = value)
+            {
+                byte* bytes = (byte*)ptr;
+                ReadBytesSafe(bytes, sizeInBytes);
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector4[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Quaternion value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Quaternion[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color32 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Color32[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray2D value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Quaternion value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Quaternion[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color32 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Color32[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray2D value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
     }
 }

@@ -4,8 +4,8 @@ using System.Collections;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
 {
@@ -16,6 +16,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private static readonly int k_ServerLogSentMessageOverhead = 2 + k_MessageHeaderSize;
         private static readonly int k_ServerLogReceivedMessageOverhead = 2;
 
+        protected override IEnumerator OnSetup()
+        {
+            m_CreateServerFirst = false;
+            return base.OnSetup();
+        }
+
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
@@ -25,6 +31,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Client.LogLevel = LogLevel.Developer;
             Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
+            yield return s_DefaultWaitForTick;
 
             yield return waitForSentMetric.WaitForMetricsReceived();
 
@@ -46,6 +53,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             Client.LogLevel = LogLevel.Developer;
             Server.LogLevel = LogLevel.Developer;
             NetworkLog.LogWarningServer(message);
+
+            yield return s_DefaultWaitForTick;
 
             yield return waitForReceivedMetric.WaitForMetricsReceived();
 

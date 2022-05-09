@@ -1,12 +1,12 @@
+#if COM_UNITY_MODULES_ANIMATION
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-
 using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A prototype component for syncing animations
+    /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
     [AddComponentMenu("Netcode/" + nameof(NetworkAnimator))]
     [RequireComponent(typeof(Animator))]
@@ -14,32 +14,27 @@ namespace Unity.Netcode.Components
     {
         internal struct AnimationMessage : INetworkSerializable
         {
-            public int StateHash;      // if non-zero, then Play() this animation, skipping transitions
-            public float NormalizedTime;
-            public byte[] Parameters;
+            // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            internal int StateHash;
+            internal float NormalizedTime;
+            internal int Layer;
+            internal float Weight;
+            internal byte[] Parameters;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref StateHash);
                 serializer.SerializeValue(ref NormalizedTime);
-                serializer.SerializeValue(ref Parameters);
-            }
-        }
-
-        internal struct AnimationParametersMessage : INetworkSerializable
-        {
-            public byte[] Parameters;
-
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
+                serializer.SerializeValue(ref Layer);
+                serializer.SerializeValue(ref Weight);
                 serializer.SerializeValue(ref Parameters);
             }
         }
 
         internal struct AnimationTriggerMessage : INetworkSerializable
         {
-            public int Hash;
-            public bool Reset;
+            internal int Hash;
+            internal bool Reset;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
@@ -49,8 +44,6 @@ namespace Unity.Netcode.Components
         }
 
         [SerializeField] private Animator m_Animator;
-        [SerializeField] private uint m_ParameterSendBits;
-        [SerializeField] private float m_SendRate = 0.1f;
 
         public Animator Animator
         {
@@ -58,86 +51,41 @@ namespace Unity.Netcode.Components
             set
             {
                 m_Animator = value;
-                ResetParameterOptions();
             }
         }
 
-        /* 
-         * AutoSend is the ability to select which parameters linked to this animator 
-         * get replicated on a regular basis regardless of a state change. The thinking
-         * behind this is that many of the parameters people use are usually booleans 
-         * which result in a state change and thus would cause a full sync of state. 
-         * Thus if you really care about a parameter syncing then you need to be explict
-         * by selecting it in the inspector when an NetworkAnimator is selected.
-         */
-        public void SetParameterAutoSend(int index, bool value)
-        {
-            if (value)
-            {
-                m_ParameterSendBits |= (uint)(1 << index);
-            }
-            else
-            {
-                m_ParameterSendBits &= (uint)(~(1 << index));
-            }
-        }
-
-        public bool GetParameterAutoSend(int index)
-        {
-            return (m_ParameterSendBits & (uint)(1 << index)) != 0;
-        }
+        private bool m_SendMessagesAllowed = false;
 
         // Animators only support up to 32 params
-        public static int K_MaxAnimationParams = 32;
+        private const int k_MaxAnimationParams = 32;
 
-        private int m_TransitionHash;
-        private double m_NextSendTime = 0.0f;
-
-        private int m_AnimationHash;
-        public int AnimationHash { get => m_AnimationHash; }
+        private int[] m_TransitionHash;
+        private int[] m_AnimationHash;
+        private float[] m_LayerWeights;
 
         private unsafe struct AnimatorParamCache
         {
-            public int Hash;
-            public int Type;
-            public fixed byte Value[4]; // this is a max size of 4 bytes
+            internal int Hash;
+            internal int Type;
+            internal fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
-        // 128bytes per Animator 
-        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(K_MaxAnimationParams * sizeof(float), Allocator.Persistent);
+        // 128 bytes per Animator
+        private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
-        // We cache these values because UnsafeUtility.EnumToInt use direct IL that allows a nonboxing conversion
+        // We cache these values because UnsafeUtility.EnumToInt uses direct IL that allows a non-boxing conversion
         private struct AnimationParamEnumWrapper
         {
-            public static readonly int AnimatorControllerParameterInt;
-            public static readonly int AnimatorControllerParameterFloat;
-            public static readonly int AnimatorControllerParameterBool;
+            internal static readonly int AnimatorControllerParameterInt;
+            internal static readonly int AnimatorControllerParameterFloat;
+            internal static readonly int AnimatorControllerParameterBool;
 
             static AnimationParamEnumWrapper()
             {
                 AnimatorControllerParameterInt = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Int);
                 AnimatorControllerParameterFloat = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Float);
                 AnimatorControllerParameterBool = UnsafeUtility.EnumToInt(AnimatorControllerParameterType.Bool);
-            }
-        }
-
-        internal void ResetParameterOptions()
-        {
-
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfoServer("ResetParameterOptions");
-            }
-
-            m_ParameterSendBits = 0;
-        }
-
-        private bool sendMessagesAllowed
-        {
-            get
-            {
-                return IsServer && NetworkObject.IsSpawned;
             }
         }
 
@@ -153,10 +101,18 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
+            if (IsServer)
+            {
+                m_SendMessagesAllowed = true;
+                int layers = m_Animator.layerCount;
+
+                m_TransitionHash = new int[layers];
+                m_AnimationHash = new int[layers];
+                m_LayerWeights = new float[layers];
+            }
+
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
-
-            m_AnimationHash = -1;
 
             for (var i = 0; i < parameters.Length; i++)
             {
@@ -164,14 +120,17 @@ namespace Unity.Netcode.Components
 
                 if (m_Animator.IsParameterControlledByCurve(parameter.nameHash))
                 {
-                    //we are ignoring parameters that are controlled by animation curves - syncing the layer states indirectly syncs the values that are driven by the animation curves
+                    // we are ignoring parameters that are controlled by animation curves - syncing the layer
+                    //  states indirectly syncs the values that are driven by the animation curves
                     continue;
                 }
 
-                var cacheParam = new AnimatorParamCache();
+                var cacheParam = new AnimatorParamCache
+                {
+                    Type = UnsafeUtility.EnumToInt(parameter.type),
+                    Hash = parameter.nameHash
+                };
 
-                cacheParam.Type = UnsafeUtility.EnumToInt(parameter.type);
-                cacheParam.Hash = parameter.nameHash;
                 unsafe
                 {
                     switch (parameter.type)
@@ -199,115 +158,100 @@ namespace Unity.Netcode.Components
             }
         }
 
+        public override void OnNetworkDespawn()
+        {
+            m_SendMessagesAllowed = false;
+        }
+
         private void FixedUpdate()
         {
-            if (!sendMessagesAllowed)
+            if (!m_SendMessagesAllowed || !m_Animator || !m_Animator.enabled)
             {
                 return;
             }
 
-            int stateHash;
-            float normalizedTime;
-            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
-                // We only want to check and send if we don't have any other state to since
-                // as we will sync all params as part of the state sync
-                CheckAndSend();
-
-                return;
-            }
-
-            var animMsg = new AnimationMessage();
-            animMsg.StateHash = stateHash;
-            animMsg.NormalizedTime = normalizedTime;
-
-            m_ParameterWriter.Seek(0);
-            m_ParameterWriter.Truncate();
-
-            WriteParameters(m_ParameterWriter, false);
-            animMsg.Parameters = m_ParameterWriter.ToArray();
-
-            SendAnimStateClientRpc(animMsg);
-        }
-
-        private void CheckAndSend()
-        {
-            var networkTime = NetworkManager.ServerTime.Time;
-            if (sendMessagesAllowed && m_SendRate != 0 && m_NextSendTime < networkTime)
-            {
-                m_NextSendTime = networkTime + m_SendRate;
-
-                m_ParameterWriter.Seek(0);
-                m_ParameterWriter.Truncate();
-
-                if (WriteParameters(m_ParameterWriter, true))
-                {
-                    // we then sync the params we care about
-                    var animMsg = new AnimationParametersMessage()
-                    {
-                        Parameters = m_ParameterWriter.ToArray()
-                    };
-
-                    SendParamsClientRpc(animMsg);
-                }
-            }
-        }
-
-        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
-        {
-            stateHash = 0;
-            normalizedTime = 0;
-
-            if (m_Animator.IsInTransition(0))
-            {
-                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(0);
-                if (tt.fullPathHash != m_TransitionHash)
-                {
-                    // first time in this transition
-                    m_TransitionHash = tt.fullPathHash;
-                    m_AnimationHash = 0;
-                    return true;
-                }
-                return false;
-            }
-
-            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(0);
-            if (st.fullPathHash != m_AnimationHash)
-            {
-                // first time in this animation state
-                if (m_AnimationHash != 0)
-                {
-                    // came from another animation directly - from Play()
-                    stateHash = st.fullPathHash;
-                    normalizedTime = st.normalizedTime;
-                }
-                m_TransitionHash = 0;
-                m_AnimationHash = st.fullPathHash;
-                return true;
-            }
-            return false;
-        }
-
-        /* $AS TODO: Right now we are not checking for changed values this is because
-        the read side of this function doesn't have similar logic which would cause
-        an overflow read because it doesn't know if the value is there or not. So 
-        there needs to be logic to track which indexes changed in order for there 
-        to be proper value change checking. Will revist in 1.1.0.
-        */
-        private unsafe bool WriteParameters(FastBufferWriter writer, bool autoSend)
-        {
-            if (m_CachedAnimatorParameters == null)
-            {
-                return false;
-            }
-
-            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
-            {
-                if (autoSend && !GetParameterAutoSend(i))
+                int stateHash;
+                float normalizedTime;
+                if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
                 {
                     continue;
                 }
 
+                var animMsg = new AnimationMessage
+                {
+                    StateHash = stateHash,
+                    NormalizedTime = normalizedTime,
+                    Layer = layer,
+                    Weight = m_LayerWeights[layer]
+                };
+
+                m_ParameterWriter.Seek(0);
+                m_ParameterWriter.Truncate();
+
+                WriteParameters(m_ParameterWriter);
+                animMsg.Parameters = m_ParameterWriter.ToArray();
+
+                SendAnimStateClientRpc(animMsg);
+            }
+        }
+
+        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
+        {
+            bool shouldUpdate = false;
+            stateHash = 0;
+            normalizedTime = 0;
+
+            float layerWeightNow = m_Animator.GetLayerWeight(layer);
+
+            if (!Mathf.Approximately(layerWeightNow, m_LayerWeights[layer]))
+            {
+                m_LayerWeights[layer] = layerWeightNow;
+                shouldUpdate = true;
+            }
+            if (m_Animator.IsInTransition(layer))
+            {
+                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
+                if (tt.fullPathHash != m_TransitionHash[layer])
+                {
+                    // first time in this transition for this layer
+                    m_TransitionHash[layer] = tt.fullPathHash;
+                    m_AnimationHash[layer] = 0;
+                    shouldUpdate = true;
+                }
+            }
+            else
+            {
+                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
+                if (st.fullPathHash != m_AnimationHash[layer])
+                {
+                    // first time in this animation state
+                    if (m_AnimationHash[layer] != 0)
+                    {
+                        // came from another animation directly - from Play()
+                        stateHash = st.fullPathHash;
+                        normalizedTime = st.normalizedTime;
+                    }
+                    m_TransitionHash[layer] = 0;
+                    m_AnimationHash[layer] = st.fullPathHash;
+                    shouldUpdate = true;
+                }
+            }
+
+            return shouldUpdate;
+        }
+
+        /* $AS TODO: Right now we are not checking for changed values this is because
+        the read side of this function doesn't have similar logic which would cause
+        an overflow read because it doesn't know if the value is there or not. So
+        there needs to be logic to track which indexes changed in order for there
+        to be proper value change checking. Will revist in 1.1.0.
+        */
+        private unsafe void WriteParameters(FastBufferWriter writer)
+        {
+            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
+            {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
                 var hash = cacheValue.Hash;
 
@@ -340,24 +284,12 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-
-            // If we do not write any values to the writer then we should not send any data
-            return writer.Length > 0;
         }
 
-        private unsafe void ReadParameters(FastBufferReader reader, bool autoSend)
+        private unsafe void ReadParameters(FastBufferReader reader)
         {
-            if (m_CachedAnimatorParameters == null)
-            {
-                return;
-            }
-
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
             {
-                if (autoSend && !GetParameterAutoSend(i))
-                {
-                    continue;
-                }
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
                 var hash = cacheValue.Hash;
 
@@ -391,28 +323,20 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ClientRpc]
-        private unsafe void SendParamsClientRpc(AnimationParametersMessage animSnapshot, ClientRpcParams clientRpcParams = default)
-        {
-            if (animSnapshot.Parameters != null)
-            {
-                // We use a fixed value here to avoid the copy of data from the byte buffer since we own the data
-                fixed (byte* parameters = animSnapshot.Parameters)
-                {
-                    var reader = new FastBufferReader(parameters, Allocator.None, animSnapshot.Parameters.Length);
-                    ReadParameters(reader, true);
-                }
-            }
-        }
-
+        /// <summary>
+        /// Internally-called RPC client receiving function to update some animation parameters on a client when
+        ///   the server wants to update them
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the parameters to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (animSnapshot.StateHash != 0)
             {
-                m_AnimationHash = animSnapshot.StateHash;
-                m_Animator.Play(animSnapshot.StateHash, 0, animSnapshot.NormalizedTime);
+                m_Animator.Play(animSnapshot.StateHash, animSnapshot.Layer, animSnapshot.NormalizedTime);
             }
+            m_Animator.SetLayerWeight(animSnapshot.Layer, animSnapshot.Weight);
 
             if (animSnapshot.Parameters != null && animSnapshot.Parameters.Length != 0)
             {
@@ -420,11 +344,17 @@ namespace Unity.Netcode.Components
                 fixed (byte* parameters = animSnapshot.Parameters)
                 {
                     var reader = new FastBufferReader(parameters, Allocator.None, animSnapshot.Parameters.Length);
-                    ReadParameters(reader, false);
+                    ReadParameters(reader);
                 }
             }
         }
 
+        /// <summary>
+        /// Internally-called RPC client receiving function to update a trigger when the server wants to forward
+        ///   a trigger for a client to play / reset
+        /// </summary>
+        /// <param name="animSnapshot">the payload containing the trigger data to apply</param>
+        /// <param name="clientRpcParams">unused</param>
         [ClientRpc]
         private void SendAnimTriggerClientRpc(AnimationTriggerMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
@@ -438,11 +368,22 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Sets the trigger for the associated animation
+        ///  Note, triggers are special vs other kinds of parameters.  For all the other parameters we watch for changes
+        ///  in FixedUpdate and users can just set them normally off of Animator. But because triggers are transitory
+        ///  and likely to come and go between FixedUpdate calls, we require users to set them here to guarantee us to
+        ///  catch it...then we forward it to the Animator component
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to activate</param>
         public void SetTrigger(string triggerName)
         {
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <inheritdoc cref="SetTrigger(string)" />
+        /// <param name="hash">The hash for the trigger to activate</param>
+        /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool reset = false)
         {
             var animMsg = new AnimationTriggerMessage();
@@ -451,18 +392,40 @@ namespace Unity.Netcode.Components
 
             if (IsServer)
             {
+                //  trigger the animation locally on the server...
+                if (reset)
+                {
+                    m_Animator.ResetTrigger(hash);
+                }
+                else
+                {
+                    m_Animator.SetTrigger(hash);
+                }
+
+                // ...then tell all the clients to do the same
                 SendAnimTriggerClientRpc(animMsg);
+            }
+            else
+            {
+                Debug.LogWarning("Trying to call NetworkAnimator.SetTrigger on a client...ignoring");
             }
         }
 
+        /// <summary>
+        /// Resets the trigger for the associated animation.  See <see cref="SetTrigger(string)">SetTrigger</see> for more on how triggers are special
+        /// </summary>
+        /// <param name="triggerName">The string name of the trigger to reset</param>
         public void ResetTrigger(string triggerName)
         {
             ResetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <inheritdoc cref="ResetTrigger(string)" path="summary" />
+        /// <param name="hash">The hash for the trigger to activate</param>
         public void ResetTrigger(int hash)
         {
             SetTrigger(hash, true);
         }
     }
 }
+#endif // COM_UNITY_MODULES_ANIMATION

@@ -5,23 +5,27 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
-using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode;
 using Debug = UnityEngine.Debug;
 
 namespace TestProject.RuntimeTests
 {
-    public class RpcTestsAutomated : BaseMultiInstanceTest
+    public class RpcTestsAutomated : NetcodeIntegrationTest
     {
         private bool m_TimedOut;
         private int m_MaxFrames;
 
-        protected override int NbClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
+        protected override int NumberOfClients => throw new NotSupportedException("Not implemented on purpose, setup is implementing this itself");
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override NetworkManagerInstatiationMode OnSetIntegrationTestMode()
         {
-            yield break;
+            return NetworkManagerInstatiationMode.DoNotCreate;
+        }
+
+        protected override void OnOneTimeTearDown()
+        {
+            ShutdownAndCleanUp();
         }
 
         [UnityTest]
@@ -29,7 +33,6 @@ namespace TestProject.RuntimeTests
         {
             return AutomatedRpcTestsHandler(9);
         }
-
 
         /// <summary>
         /// This just helps to simplify any further tests that can leverage from
@@ -47,16 +50,13 @@ namespace TestProject.RuntimeTests
 
             // Set RpcQueueManualTests into unit testing mode
             RpcQueueManualTests.UnitTesting = true;
-
-            yield return StartSomeClientsAndServerWithPlayers(useHost: true, numClients, playerPrefab =>
-             {
-                 // Add our RpcQueueManualTests component
-                 playerPrefab.AddComponent<RpcQueueManualTests>();
-             });
+            CreateServerAndClients(numClients);
+            m_PlayerPrefab.AddComponent<RpcQueueManualTests>();
+            yield return StartServerAndClients();
 
             // [Host-Side] Get the Host owned instance of the RpcQueueManualTests
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
 
             var serverRpcTests = serverClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
             Assert.IsNotNull(serverRpcTests);
@@ -68,8 +68,8 @@ namespace TestProject.RuntimeTests
             var clientRpcQueueManualTestInstsances = new List<RpcQueueManualTests>();
             foreach (var client in m_ClientNetworkManagers)
             {
-                var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult));
+                var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+                yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), client, clientClientPlayerResult);
                 var clientRpcTests = clientClientPlayerResult.Result.GetComponent<RpcQueueManualTests>();
                 Assert.IsNotNull(clientRpcTests);
                 clientRpcQueueManualTestInstsances.Add(clientRpcTests);

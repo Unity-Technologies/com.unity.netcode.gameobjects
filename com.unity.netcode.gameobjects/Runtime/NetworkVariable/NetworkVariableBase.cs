@@ -10,7 +10,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The delivery type (QoS) to send data with
         /// </summary>
-        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableSequenced;
+        internal const NetworkDelivery Delivery = NetworkDelivery.ReliableFragmentedSequenced;
 
         private protected NetworkBehaviour m_NetworkBehaviour;
 
@@ -19,9 +19,15 @@ namespace Unity.Netcode
             m_NetworkBehaviour = networkBehaviour;
         }
 
-        protected NetworkVariableBase(NetworkVariableReadPermission readPermIn = NetworkVariableReadPermission.Everyone)
+        public const NetworkVariableReadPermission DefaultReadPerm = NetworkVariableReadPermission.Everyone;
+        public const NetworkVariableWritePermission DefaultWritePerm = NetworkVariableWritePermission.Server;
+
+        protected NetworkVariableBase(
+            NetworkVariableReadPermission readPerm = DefaultReadPerm,
+            NetworkVariableWritePermission writePerm = DefaultWritePerm)
         {
-            ReadPerm = readPermIn;
+            ReadPerm = readPerm;
+            WritePerm = writePerm;
         }
 
         private protected bool m_IsDirty;
@@ -36,6 +42,8 @@ namespace Unity.Netcode
         /// The read permission for this var
         /// </summary>
         public readonly NetworkVariableReadPermission ReadPerm;
+
+        public readonly NetworkVariableWritePermission WritePerm;
 
         /// <summary>
         /// Sets whether or not the variable needs to be delta synced
@@ -62,26 +70,36 @@ namespace Unity.Netcode
             return m_IsDirty;
         }
 
-        public virtual bool ShouldWrite(ulong clientId, bool isServer)
-        {
-            return IsDirty() && isServer && CanClientRead(clientId);
-        }
-
-        /// <summary>
-        /// Gets Whether or not a specific client can read to the varaible
-        /// </summary>
-        /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Whether or not the client can read to the variable</returns>
         public bool CanClientRead(ulong clientId)
         {
             switch (ReadPerm)
             {
+                default:
                 case NetworkVariableReadPermission.Everyone:
                     return true;
-                case NetworkVariableReadPermission.OwnerOnly:
-                    return m_NetworkBehaviour.OwnerClientId == clientId;
+                case NetworkVariableReadPermission.Owner:
+                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
             }
-            return true;
+        }
+
+        public bool CanClientWrite(ulong clientId)
+        {
+            switch (WritePerm)
+            {
+                default:
+                case NetworkVariableWritePermission.Server:
+                    return clientId == NetworkManager.ServerClientId;
+                case NetworkVariableWritePermission.Owner:
+                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
+            }
+        }
+
+        /// <summary>
+        /// Returns the ClientId of the owning client
+        /// </summary>
+        internal ulong OwnerClientId()
+        {
+            return m_NetworkBehaviour.NetworkObject.OwnerClientId;
         }
 
         /// <summary>
@@ -107,7 +125,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="reader">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-
         public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
         public virtual void Dispose()

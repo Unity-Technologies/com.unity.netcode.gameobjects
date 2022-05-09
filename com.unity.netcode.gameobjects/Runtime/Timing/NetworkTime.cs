@@ -81,7 +81,10 @@ namespace Unity.Netcode
             : this(tickRate)
         {
             Assert.IsTrue(tickOffset < 1d / tickRate);
-            this += tick * m_TickInterval + tickOffset;
+
+            m_CachedTickOffset = tickOffset;
+            m_CachedTick = tick;
+            m_TimeSec = tick * m_TickInterval + tickOffset;
         }
 
         /// <summary>

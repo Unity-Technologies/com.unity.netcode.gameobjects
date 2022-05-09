@@ -66,7 +66,7 @@ namespace Unity.Netcode
         private readonly EventMetric<SceneEventMetric> m_SceneEventSentEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventSent.Id);
         private readonly EventMetric<SceneEventMetric> m_SceneEventReceivedEvent = new EventMetric<SceneEventMetric>(NetworkMetricTypes.SceneEventReceived.Id);
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
         private readonly Counter m_PacketSentCounter = new Counter(NetworkMetricTypes.PacketsSent.Id)
         {
             ShouldResetOnDispatch = true,
@@ -79,6 +79,15 @@ namespace Unity.Netcode
         {
             ShouldResetOnDispatch = true,
         };
+        private readonly Gauge m_NetworkObjectsGauge = new Gauge(NetworkMetricTypes.NetworkObjects.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        private readonly Gauge m_ConnectionsGauge = new Gauge(NetworkMetricTypes.ConnectedClients.Id)
+        {
+            ShouldResetOnDispatch = true,
+        };
+        private readonly Gauge m_PacketLossGauge = new Gauge(NetworkMetricTypes.PacketLoss.Id);
 #endif
 
         private ulong m_NumberOfMetricsThisFrame;
@@ -97,9 +106,12 @@ namespace Unity.Netcode
                 .WithMetricEvents(m_RpcSentEvent, m_RpcReceivedEvent)
                 .WithMetricEvents(m_ServerLogSentEvent, m_ServerLogReceivedEvent)
                 .WithMetricEvents(m_SceneEventSentEvent, m_SceneEventReceivedEvent)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 .WithCounters(m_PacketSentCounter, m_PacketReceivedCounter)
                 .WithGauges(m_RttToServerGauge)
+                .WithGauges(m_NetworkObjectsGauge)
+                .WithGauges(m_ConnectionsGauge)
+                .WithGauges(m_PacketLossGauge)
 #endif
                 .Build();
 
@@ -428,7 +440,7 @@ namespace Unity.Netcode
 
         public void TrackPacketSent(uint packetCount)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
             {
                 return;
@@ -441,7 +453,7 @@ namespace Unity.Netcode
 
         public void TrackPacketReceived(uint packetCount)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
             {
                 return;
@@ -452,15 +464,51 @@ namespace Unity.Netcode
 #endif
         }
 
-        public void TrackRttToServer(int rtt)
+        public void UpdateRttToServer(int rttMilliseconds)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_4
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+            var rttSeconds = rttMilliseconds * 1e-3;
+            m_RttToServerGauge.Set(rttSeconds);
+#endif
+        }
+
+        public void UpdateNetworkObjectsCount(int count)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             if (!CanSendMetrics)
             {
                 return;
             }
 
-            m_RttToServerGauge.Set(rtt);
+            m_NetworkObjectsGauge.Set(count);
+#endif
+        }
+
+        public void UpdateConnectionsCount(int count)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_ConnectionsGauge.Set(count);
+#endif
+        }
+
+        public void UpdatePacketLoss(float packetLoss)
+        {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+            if (!CanSendMetrics)
+            {
+                return;
+            }
+
+            m_PacketLossGauge.Set(packetLoss);
 #endif
         }
 

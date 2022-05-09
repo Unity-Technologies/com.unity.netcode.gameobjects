@@ -41,7 +41,6 @@ namespace Unity.Netcode
         /// <b>Invocation:</b> Server Side<br/>
         /// <b>Message Flow:</b> Server to client<br/>
         /// <b>Event Notification:</b> Both server and client receive a local notification<br/>
-        /// <em>Note: This will be removed once snapshot and buffered messages are finalized as it will no longer be needed at that point.</em>
         /// </summary>
         ReSynchronize,
         /// <summary>
@@ -92,7 +91,7 @@ namespace Unity.Netcode
     {
         internal SceneEventType SceneEventType;
         internal LoadSceneMode LoadSceneMode;
-        internal Guid SceneEventProgressId;
+        internal ForceNetworkSerializeByMemcpy<Guid> SceneEventProgressId;
         internal uint SceneEventId;
 
 
@@ -592,9 +591,6 @@ namespace Unity.Netcode
                         networkObject.IsSpawned = false;
                         if (m_NetworkManager.PrefabHandler.ContainsHandler(networkObject))
                         {
-                            // Since this is the client side and we have missed the delete message, until the Snapshot system is in place for spawn and despawn handling
-                            // we have to remove this from the list of spawned objects manually or when a NetworkObjectId is recycled the client will throw an error
-                            // about the id already being assigned.
                             if (m_NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                             {
                                 m_NetworkManager.SpawnManager.SpawnedObjects.Remove(networkObjectId);

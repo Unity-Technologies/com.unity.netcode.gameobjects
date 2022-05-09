@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -67,12 +68,9 @@ namespace Unity.Netcode.RuntimeTests
                     previous_serverTickCalculated++;
                 }
 
-                Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} " +
-                    $"does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!");
-                Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} " +
-                    $"does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!");
-                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time), $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} " +
-                    $"is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!");
+                Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!");
+                Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!");
+                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time), $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!");
             }
         }
 

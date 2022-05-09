@@ -55,37 +55,3 @@ test_{{ project.name }}_{{ editor }}_{{ platform.name }}:
 {% endfor -%}
 {% endfor -%}
 
-{% for project in projects -%}
-{% if project.name == "testproject" %}
-{% for editor in project.multiprocess_test_editors -%}
-{% for platform in test_platforms -%}
-multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
-  name : multiprocess tests - {{ editor }} on {{ platform.name }}
-  agent:
-    type: {{ platform.type }}
-    image: {{ platform.image }}
-    flavor: {{ platform.flavor}}
-  commands:
-    - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u {{ editor }} -c editor -w --fast
-    - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr{% if platform.name == "win" %}.bat --output utr.bat{% endif %}{% if platform.name != "win" %} --output utr && chmod +x ./utr{% endif %}
-    - {{ platform.editorpath }} -projectpath testproject -batchmode -nographics -quit -logfile BuildMultiprocessTestPlayer.log -executeMethod Unity.Netcode.MultiprocessRuntimeTests.BuildMultiprocessTestPlayer.BuildRelease
-{% if platform.name == "mac" %}    -  sudo codesign --force --deep --sign - ./testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app{% endif %}
-    - {{ platform.utr }} --suite=playmode --testproject=testproject --editor-location=.Editor --testfilter=Unity.Netcode.MultiprocessRuntimeTests --extra-editor-arg=-bypassIgnoreUTR
-  after:
-{% if platform.name == "win" %}    - copy %USERPROFILE%\.multiprocess\logfile* .{% endif %}
-{% if platform.name != "win" %}    - cp $HOME/.multiprocess/logfile* .{% endif %}
-  artifacts:
-    logs:
-      paths:
-        - "upm-ci~/test-results/**/*"
-        - BuildMultiprocessTestPlayer.log
-        - "logfile*"
-        - "*.log"
-        - "*.txt"
-  dependencies:
-    - .yamato/project-pack.yml#pack_{{ project.name }}
-{% endfor -%}
-{% endfor -%}
-{% endif -%}
-{% endfor -%}

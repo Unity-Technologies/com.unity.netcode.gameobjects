@@ -4,9 +4,10 @@ using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
-namespace Unity.Netcode.RuntimeTests.Serialization
+namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
     /// Unit tests to test:

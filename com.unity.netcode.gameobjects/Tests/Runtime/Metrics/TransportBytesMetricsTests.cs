@@ -6,7 +6,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
-using Unity.Netcode.RuntimeTests.Metrics.Utility;
+using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
@@ -20,14 +20,14 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
         {
-            var messageName = Guid.NewGuid();
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
             try
             {
                 writer.WriteValueSafe(messageName);
-                
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
+
+                Server.CustomMessagingManager.SendNamedMessage(messageName.Value.ToString(), Client.LocalClientId, writer);
             }
             finally
             {
@@ -48,14 +48,14 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesReceived()
         {
-            var messageName = Guid.NewGuid();
+            var messageName = new ForceNetworkSerializeByMemcpy<Guid>(Guid.NewGuid());
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             var observer = new TotalBytesObserver(ClientMetrics.Dispatcher, NetworkMetricTypes.TotalBytesReceived);
             try
             {
                 writer.WriteValueSafe(messageName);
-                
-                Server.CustomMessagingManager.SendNamedMessage(messageName.ToString(), Client.LocalClientId, writer);
+
+                Server.CustomMessagingManager.SendNamedMessage(messageName.Value.ToString(), Client.LocalClientId, writer);
             }
             finally
             {

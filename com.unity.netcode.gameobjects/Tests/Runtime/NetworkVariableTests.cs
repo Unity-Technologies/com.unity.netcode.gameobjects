@@ -4,10 +4,231 @@ using System.Collections.Generic;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Netcode.TestHelpers.Runtime;
 using Random = UnityEngine.Random;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class NetVarPermTestComp : NetworkBehaviour
+    {
+        public NetworkVariable<Vector3> OwnerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Owner);
+        public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
+    }
+
+    [TestFixtureSource(nameof(TestDataSource))]
+    public class NetworkVariablePermissionTests : NetcodeIntegrationTest
+    {
+        public static IEnumerable<TestFixtureData> TestDataSource()
+        {
+            foreach (HostOrServer hostOrServer in Enum.GetValues(typeof(HostOrServer)))
+            {
+                yield return new TestFixtureData(hostOrServer);
+            }
+        }
+
+        protected override int NumberOfClients => 3;
+
+        public NetworkVariablePermissionTests(HostOrServer hostOrServer)
+            : base(hostOrServer)
+        {
+        }
+
+        private GameObject m_TestObjPrefab;
+        private ulong m_TestObjId = 0;
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_TestObjPrefab = CreateNetworkObjectPrefab($"[{nameof(NetworkVariablePermissionTests)}.{nameof(m_TestObjPrefab)}]");
+            var testComp = m_TestObjPrefab.AddComponent<NetVarPermTestComp>();
+        }
+
+        protected override IEnumerator OnServerAndClientsConnected()
+        {
+            m_TestObjId = SpawnObject(m_TestObjPrefab, m_ServerNetworkManager).GetComponent<NetworkObject>().NetworkObjectId;
+            yield return null;
+        }
+
+        private IEnumerator WaitForPositionsAreEqual(NetworkVariable<Vector3> netvar, Vector3 expected)
+        {
+            yield return WaitForConditionOrTimeOut(() => netvar.Value == expected);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut);
+        }
+
+        private IEnumerator WaitForOwnerWritableAreEqualOnAll()
+        {
+            yield return WaitForConditionOrTimeOut(CheckOwnerWritableAreEqualOnAll);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut);
+        }
+
+        private bool CheckOwnerWritableAreEqualOnAll()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                if (testObjServer.OwnerClientId != testObjClient.OwnerClientId ||
+                    testCompServer.OwnerWritable_Position.Value != testCompClient.OwnerWritable_Position.Value ||
+                    testCompServer.OwnerWritable_Position.ReadPerm != testCompClient.OwnerWritable_Position.ReadPerm ||
+                    testCompServer.OwnerWritable_Position.WritePerm != testCompClient.OwnerWritable_Position.WritePerm)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private IEnumerator WaitForServerWritableAreEqualOnAll()
+        {
+            yield return WaitForConditionOrTimeOut(CheckServerWritableAreEqualOnAll);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut);
+        }
+
+        private bool CheckServerWritableAreEqualOnAll()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                if (testCompServer.ServerWritable_Position.Value != testCompClient.ServerWritable_Position.Value ||
+                    testCompServer.ServerWritable_Position.ReadPerm != testCompClient.ServerWritable_Position.ReadPerm ||
+                    testCompServer.ServerWritable_Position.WritePerm != testCompClient.ServerWritable_Position.WritePerm)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator ServerChangesOwnerWritableNetVar()
+        {
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompServer.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompServer.OwnerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompServer.OwnerWritable_Position, newValue);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ServerChangesServerWritableNetVar()
+        {
+            yield return WaitForServerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompServer.ServerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompServer.ServerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompServer.ServerWritable_Position, newValue);
+
+            yield return WaitForServerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ClientChangesOwnerWritableNetVar()
+        {
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompClient.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompClient.OwnerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompClient.OwnerWritable_Position, newValue);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ClientCannotChangeServerWritableNetVar()
+        {
+            yield return WaitForServerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            yield return WaitForServerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompClient.ServerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            Assert.That(() => testCompClient.ServerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            yield return WaitForPositionsAreEqual(testCompServer.ServerWritable_Position, oldValue);
+
+            yield return WaitForServerWritableAreEqualOnAll();
+
+            testCompServer.ServerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompServer.ServerWritable_Position, newValue);
+
+            yield return WaitForServerWritableAreEqualOnAll();
+        }
+
+        [UnityTest]
+        public IEnumerator ServerCannotChangeOwnerWritableNetVar()
+        {
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var oldValue = testCompServer.OwnerWritable_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            Assert.That(() => testCompServer.OwnerWritable_Position.Value = newValue, Throws.TypeOf<InvalidOperationException>());
+            yield return WaitForPositionsAreEqual(testCompServer.OwnerWritable_Position, oldValue);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            testCompClient.OwnerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompClient.OwnerWritable_Position, newValue);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+        }
+    }
+
     public struct TestStruct : INetworkSerializable, IEquatable<TestStruct>
     {
         public uint SomeInt;
@@ -52,9 +273,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
+        public readonly NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>>();
 
-        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
+        public readonly NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -83,18 +304,17 @@ namespace Unity.Netcode.RuntimeTests
 
     [TestFixture(true)]
     [TestFixture(false)]
-    public class NetworkVariableTests : BaseMultiInstanceTest
+    public class NetworkVariableTests : NetcodeIntegrationTest
     {
-        private const string k_FixedStringTestValue = "abcdefghijklmnopqrstuvwxyz";
-        protected override int NbClients => 2;
+        private const string k_StringTestValue = "abcdefghijklmnopqrstuvwxyz";
+        private static readonly FixedString32Bytes k_FixedStringTestValue = k_StringTestValue;
+        protected override int NumberOfClients => 2;
 
         private const uint k_TestUInt = 0x12345678;
 
         private const int k_TestVal1 = 111;
         private const int k_TestVal2 = 222;
         private const int k_TestVal3 = 333;
-
-        private const int k_TestKey1 = 0x0f0f;
 
         private static List<NetworkVariableTest> s_ClientNetworkVariableTestInstances = new List<NetworkVariableTest>();
         public static void ClientNetworkVariableTestSpawned(NetworkVariableTest networkVariableTest)
@@ -110,19 +330,16 @@ namespace Unity.Netcode.RuntimeTests
 
         private NetworkListTestPredicate m_NetworkListPredicateHandler;
 
-        private bool m_EnsureLengthSafety;
+        private readonly bool m_EnsureLengthSafety;
 
         public NetworkVariableTests(bool ensureLengthSafety)
         {
             m_EnsureLengthSafety = ensureLengthSafety;
         }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override bool CanStartServerAndClients()
         {
-            m_BypassStartAndWaitForClients = true;
-
-            yield return base.Setup();
+            return false;
         }
 
         /// <summary>
@@ -142,23 +359,17 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            Assert.True(MultiInstanceHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
-            // Wait for connection on client side
-            yield return MultiInstanceHelpers.WaitForClientsConnected(m_ClientNetworkManagers);
-
-            yield return m_DefaultWaitForTick;
-
-            // Wait for connection on server side
-            var clientsToWaitFor = useHost ? NbClients + 1 : NbClients;
-            yield return MultiInstanceHelpers.WaitForClientsConnectedToServer(m_ServerNetworkManager, clientsToWaitFor);
+            // Wait for connection on client and server side
+            yield return WaitForClientsConnectedOrTimeOut();
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
-            var result = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
+            var result = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
 
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ServerNetworkManager, result);
 
@@ -166,7 +377,7 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnServer = result.Result.GetComponent<NetworkVariableTest>();
 
             // This is client1's view of itself
-            yield return MultiInstanceHelpers.GetNetworkObjectByRepresentation(
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
                 x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId,
                 m_ClientNetworkManagers[0], result);
 
@@ -184,13 +395,13 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost ? NbClients * 3 : NbClients * 2;
+            var instanceCount = useHost ? NumberOfClients * 3 : NumberOfClients * 2;
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 
-            Assert.False(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for all client NetworkVariableTest instances to register they have spawned!");
 
-            yield return m_DefaultWaitForTick;
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
@@ -201,7 +412,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
-            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
 
@@ -217,7 +428,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.EnableTesting = true;
 
             yield return WaitForConditionOrTimeOut(() => true == networkVariableTestComponent.IsTestComplete());
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for the test to complete!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for the test to complete!");
 
             // Stop Testing
             networkVariableTestComponent.EnableTesting = false;
@@ -228,7 +439,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.gameObject.SetActive(false);
 
             // This would normally go in Teardown, but since every other test but this one
-            //  uses MultiInstanceHelper, and it does its own NetworkManager setup / teardown,
+            //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
             NetworkManagerHelper.ShutdownNetworkManager();
         }
@@ -250,7 +461,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Now wait for the client side version to be updated to k_FixedStringTestValue
             yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.FixedString32.Value == k_FixedStringTestValue);
-            Assert.IsFalse(s_GloabalTimeOutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
         }
 
         [UnityTest]
@@ -262,7 +473,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [Ignore("TODO: This will not currently work on v1.0.0 as the message system sends delta updates in non-fragmented messages (i.e. < 1300 bytes)")]
         public IEnumerator WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
@@ -380,22 +590,6 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestListOfINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
-        {
-            yield return InitializeServerAndClients(useHost);
-            yield return MultiInstanceHelpers.RunAndWaitForCondition(
-                () =>
-                {
-                    TestStruct.NetworkSerializeCalledOnWrite = false;
-                    TestStruct.NetworkSerializeCalledOnRead = false;
-                    m_Player1OnServer.TheListOfStructs.Add(new TestStruct() { SomeInt = k_TestUInt, SomeBool = false });
-                    m_Player1OnServer.TheListOfStructs.SetDirty(true);
-                },
-                () => TestStruct.NetworkSerializeCalledOnWrite && TestStruct.NetworkSerializeCalledOnRead
-            );
-        }
-
-        [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
@@ -464,17 +658,17 @@ namespace Unity.Netcode.RuntimeTests
         }
         #endregion
 
-        [UnityTearDown]
-        public override IEnumerator Teardown()
+
+        protected override IEnumerator OnTearDown()
         {
             m_NetworkListPredicateHandler = null;
-            yield return base.Teardown();
+            yield return base.OnTearDown();
         }
     }
 
     /// <summary>
     /// Handles the more generic conditional logic for NetworkList tests
-    /// which can be used with the <see cref="BaseMultiInstanceTest.WaitForConditionOrTimeOut"/>
+    /// which can be used with the <see cref="NetcodeIntegrationTest.WaitForConditionOrTimeOut"/>
     /// that accepts anything derived from the <see cref="ConditionalPredicateBase"/> class
     /// as a parameter.
     /// </summary>

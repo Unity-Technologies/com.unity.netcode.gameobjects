@@ -509,6 +509,12 @@ namespace Unity.Netcode.Editor.CodeGen
                         isValid = false;
                     }
 
+                    if (methodDefinition.HasGenericParameters)
+                    {
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be generic!");
+                        isValid = false;
+                    }
+
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
                         m_Diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
@@ -532,6 +538,10 @@ namespace Unity.Netcode.Editor.CodeGen
                     if (isValid)
                     {
                         rpcAttribute = customAttribute;
+                    }
+                    else
+                    {
+                        return null;
                     }
                 }
             }
@@ -575,11 +585,17 @@ namespace Unity.Netcode.Editor.CodeGen
                     var checkType = paramType.Resolve();
                     if (paramType.IsArray)
                     {
-                        checkType = paramType.GetElementType().Resolve();
+                        checkType = ((ArrayType)paramType).ElementType.Resolve();
                     }
 
                     if ((parameters[0].ParameterType.Resolve() == checkType ||
-                        (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
+                         (parameters[0].ParameterType.Resolve() == checkType.MakeByReferenceType().Resolve() && parameters[0].IsIn)))
+                    {
+                        return method;
+                    }
+
+                    if (parameters[0].ParameterType == paramType ||
+                        (parameters[0].ParameterType == paramType.MakeByReferenceType() && parameters[0].IsIn))
                     {
                         return method;
                     }
@@ -593,8 +609,9 @@ namespace Unity.Netcode.Editor.CodeGen
                             {
                                 var resolvedConstraint = constraint.Resolve();
 
-                                if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraint.FullName)) ||
-                                    (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName)) ||
+                                var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+                                if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
+                                    (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
                                     (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
                                 {
                                     meetsConstraints = false;
@@ -605,7 +622,14 @@ namespace Unity.Netcode.Editor.CodeGen
                             if (meetsConstraints)
                             {
                                 var instanceMethod = new GenericInstanceMethod(method);
-                                instanceMethod.GenericArguments.Add(checkType);
+                                if (paramType.IsArray)
+                                {
+                                    instanceMethod.GenericArguments.Add(((ArrayType)paramType).ElementType);
+                                }
+                                else
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType);
+                                }
                                 return instanceMethod;
                             }
                         }
@@ -653,13 +677,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                // Try NetworkSerializable first because INetworkSerializable may also be valid for WriteValueSafe
-                // and that would cause boxing if so.
-                var typeMethod = GetFastBufferWriterWriteMethod("WriteNetworkSerializable", paramType);
-                if (typeMethod == null)
-                {
-                    typeMethod = GetFastBufferWriterWriteMethod(k_WriteValueMethodName, paramType);
-                }
+                var typeMethod = GetFastBufferWriterWriteMethod(k_WriteValueMethodName, paramType);
                 if (typeMethod != null)
                 {
                     methodRef = m_MainModule.ImportReference(typeMethod);
@@ -699,28 +717,52 @@ namespace Unity.Netcode.Editor.CodeGen
                     var checkType = paramType.Resolve();
                     if (paramType.IsArray)
                     {
-                        checkType = paramType.GetElementType().Resolve();
+                        checkType = ((ArrayType)paramType).ElementType.Resolve();
                     }
 
                     if (methodParam.Resolve() == checkType.Resolve() || methodParam.Resolve() == checkType.MakeByReferenceType().Resolve())
                     {
                         return method;
                     }
+
+                    if (methodParam.Resolve() == paramType || methodParam.Resolve() == paramType.MakeByReferenceType().Resolve())
+                    {
+                        return method;
+                    }
+
                     if (method.HasGenericParameters && method.GenericParameters.Count == 1)
                     {
                         if (method.GenericParameters[0].HasConstraints)
                         {
+                            var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
                                 var resolvedConstraint = constraint.Resolve();
 
-                                if ((resolvedConstraint.IsInterface && checkType.HasInterface(resolvedConstraint.FullName)) ||
-                                    (resolvedConstraint.IsClass && checkType.Resolve().IsSubclassOf(resolvedConstraint.FullName)))
+                                var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+
+                                if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
+                                    (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
+                                    (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
                                 {
-                                    var instanceMethod = new GenericInstanceMethod(method);
-                                    instanceMethod.GenericArguments.Add(checkType);
-                                    return instanceMethod;
+                                    meetsConstraints = false;
+                                    break;
                                 }
+                            }
+
+                            if (meetsConstraints)
+                            {
+                                var instanceMethod = new GenericInstanceMethod(method);
+                                if (paramType.IsArray)
+                                {
+                                    instanceMethod.GenericArguments.Add(((ArrayType)paramType).ElementType);
+                                }
+                                else
+                                {
+                                    instanceMethod.GenericArguments.Add(paramType);
+                                }
+
+                                return instanceMethod;
                             }
                         }
                     }
@@ -751,13 +793,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                 }
 
-                // Try NetworkSerializable first because INetworkSerializable may also be valid for ReadValueSafe
-                // and that would cause boxing if so.
-                var typeMethod = GetFastBufferReaderReadMethod("ReadNetworkSerializable", paramType);
-                if (typeMethod == null)
-                {
-                    typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
-                }
+                var typeMethod = GetFastBufferReaderReadMethod(k_ReadValueMethodName, paramType);
                 if (typeMethod != null)
                 {
                     methodRef = m_MainModule.ImportReference(typeMethod);
@@ -941,14 +977,43 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
-                    // ServerRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ClientRpcReceiveParams_FullName)
                     {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ClientRpcParams)} instead.");
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcSendParams_FullName ||
+                        paramType.FullName == CodeGenHelpers.ServerRpcReceiveParams_FullName)
+                    {
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {nameof(ServerRpcParams)} instead.");
+                        continue;
+                    }
+                    // ServerRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
+                    {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ServerRpcParams)} must be the last parameter in a ServerRpc.");
+                        }
+                        if (!isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ClientRpcs may not accept {nameof(ServerRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
                     // ClientRpcParams
-                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1)
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
                     {
+                        if (paramIndex != paramCount - 1)
+                        {
+                            m_Diagnostics.AddError(methodDefinition, $"{nameof(ClientRpcParams)} must be the last parameter in a ClientRpc.");
+                        }
+                        if (isServerRpc)
+                        {
+                            m_Diagnostics.AddError($"ServerRpcs may not accept {nameof(ClientRpcParams)} as a parameter.");
+                        }
                         continue;
                     }
 
@@ -974,6 +1039,17 @@ namespace Unity.Netcode.Editor.CodeGen
                         // bufferWriter.WriteValueSafe(isSet);
                         instructions.Add(processor.Create(OpCodes.Ldloca, bufWriterLocIdx));
                         instructions.Add(processor.Create(OpCodes.Ldloca, isSetLocalIndex));
+
+                        for (var i = 1; i < boolMethodRef.Parameters.Count; ++i)
+                        {
+                            var param = boolMethodRef.Parameters[i];
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                            int overloadParamLocalIdx = methodDefinition.Body.Variables.Count - 1;
+                            instructions.Add(processor.Create(OpCodes.Ldloca, overloadParamLocalIdx));
+                            instructions.Add(processor.Create(OpCodes.Initobj, param.ParameterType));
+                            instructions.Add(processor.Create(OpCodes.Ldloc, overloadParamLocalIdx));
+                        }
+
                         instructions.Add(processor.Create(OpCodes.Call, boolMethodRef));
 
                         // if(isSet) {
@@ -1026,11 +1102,38 @@ namespace Unity.Netcode.Editor.CodeGen
                         {
                             instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
                         }
+                        else
+                        {
+                            if (isExtensionMethod && methodRef.Parameters.Count > 2)
+                            {
+                                for (var i = 2; i < methodRef.Parameters.Count; ++i)
+                                {
+                                    var param = methodRef.Parameters[i];
+                                    methodDefinition.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                                    int overloadParamLocalIdx = methodDefinition.Body.Variables.Count - 1;
+                                    instructions.Add(processor.Create(OpCodes.Ldloca, overloadParamLocalIdx));
+                                    instructions.Add(processor.Create(OpCodes.Initobj, param.ParameterType));
+                                    instructions.Add(processor.Create(OpCodes.Ldloc, overloadParamLocalIdx));
+                                }
+                            }
+                            else if (!isExtensionMethod && methodRef.Parameters.Count > 1)
+                            {
+                                for (var i = 1; i < methodRef.Parameters.Count; ++i)
+                                {
+                                    var param = methodRef.Parameters[i];
+                                    methodDefinition.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                                    int overloadParamLocalIdx = methodDefinition.Body.Variables.Count - 1;
+                                    instructions.Add(processor.Create(OpCodes.Ldloca, overloadParamLocalIdx));
+                                    instructions.Add(processor.Create(OpCodes.Initobj, param.ParameterType));
+                                    instructions.Add(processor.Create(OpCodes.Ldloc, overloadParamLocalIdx));
+                                }
+                            }
+                        }
                         instructions.Add(processor.Create(OpCodes.Call, methodRef));
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
+                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                         continue;
                     }
 
@@ -1269,6 +1372,17 @@ namespace Unity.Netcode.Editor.CodeGen
                     int isSetLocalIndex = rpcHandler.Body.Variables.Count - 1;
                     processor.Emit(OpCodes.Ldarga, 1);
                     processor.Emit(OpCodes.Ldloca, isSetLocalIndex);
+
+                    for (var i = 1; i < boolMethodRef.Parameters.Count; ++i)
+                    {
+                        var param = boolMethodRef.Parameters[i];
+                        rpcHandler.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                        int overloadParamLocalIdx = rpcHandler.Body.Variables.Count - 1;
+                        processor.Emit(OpCodes.Ldloca, overloadParamLocalIdx);
+                        processor.Emit(OpCodes.Initobj, param.ParameterType);
+                        processor.Emit(OpCodes.Ldloc, overloadParamLocalIdx);
+                    }
+
                     processor.Emit(OpCodes.Call, boolMethodRef);
 
                     // paramType param = null;
@@ -1302,11 +1416,38 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         processor.Emit(OpCodes.Ldc_I4_0);
                     }
+                    else
+                    {
+                        if (isExtensionMethod && methodRef.Parameters.Count > 2)
+                        {
+                            for (var i = 2; i < methodRef.Parameters.Count; ++i)
+                            {
+                                var param = methodRef.Parameters[i];
+                                rpcHandler.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                                int overloadParamLocalIdx = rpcHandler.Body.Variables.Count - 1;
+                                processor.Emit(OpCodes.Ldloca, overloadParamLocalIdx);
+                                processor.Emit(OpCodes.Initobj, param.ParameterType);
+                                processor.Emit(OpCodes.Ldloc, overloadParamLocalIdx);
+                            }
+                        }
+                        else if (!isExtensionMethod && methodRef.Parameters.Count > 1)
+                        {
+                            for (var i = 1; i < methodRef.Parameters.Count; ++i)
+                            {
+                                var param = methodRef.Parameters[i];
+                                rpcHandler.Body.Variables.Add(new VariableDefinition(param.ParameterType));
+                                int overloadParamLocalIdx = rpcHandler.Body.Variables.Count - 1;
+                                processor.Emit(OpCodes.Ldloca, overloadParamLocalIdx);
+                                processor.Emit(OpCodes.Initobj, param.ParameterType);
+                                processor.Emit(OpCodes.Ldloc, overloadParamLocalIdx);
+                            }
+                        }
+                    }
                     processor.Emit(OpCodes.Call, methodRef);
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to deserialize {paramType.Name} - implement {nameof(INetworkSerializable)} or add an extension method for {nameof(FastBufferReader)}.{k_ReadValueMethodName} to define serialization.");
+                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
                     continue;
                 }
 

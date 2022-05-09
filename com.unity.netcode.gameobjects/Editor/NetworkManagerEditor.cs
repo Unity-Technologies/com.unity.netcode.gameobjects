@@ -135,9 +135,13 @@ namespace Unity.Netcode.Editor
             m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
             m_NetworkPrefabsList.elementHeightCallback = index =>
             {
-                var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-                var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
-                var networkOverrideInt = networkOverrideProp.enumValueIndex;
+                var networkOverrideInt = 0;
+                if (m_NetworkPrefabsList.count > 0)
+                {
+                    var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
+                    var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
+                    networkOverrideInt = networkOverrideProp.enumValueIndex;
+                }
 
                 return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
             };
@@ -359,7 +363,7 @@ namespace Unity.Netcode.Editor
             const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
             const string dismissButtonText = "Dismiss";
-            const string targetUrl = "https://docs-multiplayer.unity3d.com/docs/tools/install-tools";
+            const string targetUrl = "https://docs-multiplayer.unity3d.com/netcode/current/tools/install-tools";
             const string infoIconName = "console.infoicon";
 
             if (PlayerPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)

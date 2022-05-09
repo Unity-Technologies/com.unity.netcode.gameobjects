@@ -9,7 +9,8 @@
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
         "Unity.Multiplayer.Tools.MetricTypes",
-        "Unity.Multiplayer.Tools.NetStats"
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Networking.Transport"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -17,23 +18,17 @@
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
-    ],
-    "versionDefines": [],
-    "noEngineReferences": false,
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
             "expression": "",
             "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
         }
     ]
 }

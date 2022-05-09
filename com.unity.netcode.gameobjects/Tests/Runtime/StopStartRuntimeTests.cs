@@ -2,72 +2,79 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class StopStartRuntimeTests
+    public class StopStartRuntimeTests : NetcodeIntegrationTest
     {
+        protected override int NumberOfClients => 1;
+
+        protected override void OnOneTimeSetup()
+        {
+            m_UseHost = false;
+            base.OnOneTimeSetup();
+        }
+
         [UnityTest]
         public IEnumerator WhenShuttingDownAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
-        {            // create server and client instances
-            MultiInstanceHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+        {
+            // shutdown the server
+            m_ServerNetworkManager.Shutdown();
 
-            try
-            {
+            // wait 1 frame because shutdowns are delayed
+            var nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-                // create prefab
-                var gameObject = new GameObject("PlayerObject");
-                var networkObject = gameObject.AddComponent<NetworkObject>();
-                networkObject.DontDestroyWithOwner = true;
-                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            // Verify the shutdown occurred
+            Assert.IsFalse(m_ServerNetworkManager.IsServer);
+            Assert.IsFalse(m_ServerNetworkManager.IsListening);
+            Assert.IsFalse(m_ServerNetworkManager.IsHost);
+            Assert.IsFalse(m_ServerNetworkManager.IsClient);
 
-                server.NetworkConfig.PlayerPrefab = gameObject;
+            m_ServerNetworkManager.StartServer();
+            // Verify the server started
+            Assert.IsTrue(m_ServerNetworkManager.IsServer);
+            Assert.IsTrue(m_ServerNetworkManager.IsListening);
 
-                for (int i = 0; i < clients.Length; i++)
-                {
-                    clients[i].NetworkConfig.PlayerPrefab = gameObject;
-                }
+            // Wait several frames / one full network tick
+            yield return s_DefaultWaitForTick;
 
-                // start server and connect clients
-                MultiInstanceHelpers.Start(false, server, clients);
+            // Verify the server is still running
+            Assert.IsTrue(m_ServerNetworkManager.IsServer);
+            Assert.IsTrue(m_ServerNetworkManager.IsListening);
+        }
 
-                // wait for connection on client side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientsConnected(clients));
+        [UnityTest]
+        public IEnumerator WhenShuttingDownTwiceAndRestarting_SDKRestartsSuccessfullyAndStaysRunning()
+        {
+            // shutdown the server
+            m_ServerNetworkManager.Shutdown();
 
-                // wait for connection on server side
-                yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.WaitForClientConnectedToServer(server));
+            // wait 1 frame because shutdowns are delayed
+            var nextFrameNumber = Time.frameCount + 1;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 
-                // shutdown the server
-                server.Shutdown();
+            // Verify the shutdown occurred
+            Assert.IsFalse(m_ServerNetworkManager.IsServer);
+            Assert.IsFalse(m_ServerNetworkManager.IsListening);
+            Assert.IsFalse(m_ServerNetworkManager.IsHost);
+            Assert.IsFalse(m_ServerNetworkManager.IsClient);
 
-                // wait 1 frame because shutdowns are delayed
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            // Shutdown the server again.
+            m_ServerNetworkManager.Shutdown();
 
-                // Verify the shutdown occurred
-                Assert.IsFalse(server.IsServer);
-                Assert.IsFalse(server.IsListening);
-                Assert.IsFalse(server.IsHost);
-                Assert.IsFalse(server.IsClient);
+            m_ServerNetworkManager.StartServer();
+            // Verify the server started
+            Assert.IsTrue(m_ServerNetworkManager.IsServer);
+            Assert.IsTrue(m_ServerNetworkManager.IsListening);
 
-                server.StartServer();
-                // Verify the server started
-                Assert.IsTrue(server.IsServer);
-                Assert.IsTrue(server.IsListening);
+            // Wait several frames / one full network tick
+            yield return s_DefaultWaitForTick;
 
-                // Wait several frames
-                nextFrameNumber = Time.frameCount + 10;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-
-                // Verify the server is still running
-                Assert.IsTrue(server.IsServer);
-                Assert.IsTrue(server.IsListening);
-            }
-            finally
-            {
-                // cleanup
-                MultiInstanceHelpers.Destroy();
-            }
+            // Verify the server is still running
+            Assert.IsTrue(m_ServerNetworkManager.IsServer);
+            Assert.IsTrue(m_ServerNetworkManager.IsListening);
         }
     }
 }

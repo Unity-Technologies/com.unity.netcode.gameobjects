@@ -107,7 +107,15 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegates))
+                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesEnum))
+                {
+                    methodDefinition.IsPublic = true;
+                }
+                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesStruct))
+                {
+                    methodDefinition.IsPublic = true;
+                }
+                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable))
                 {
                     methodDefinition.IsPublic = true;
                 }

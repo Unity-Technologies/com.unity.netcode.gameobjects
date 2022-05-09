@@ -1,17 +1,17 @@
 using System;
 using System.Collections;
 using Unity.Netcode;
-using Unity.Netcode.RuntimeTests;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
-    public class SenderIdTests : BaseMultiInstanceTest
+    public class SenderIdTests : NetcodeIntegrationTest
     {
-        protected override int NbClients => 2;
+        protected override int NumberOfClients => 2;
 
         private NetworkManager FirstClient => m_ClientNetworkManagers[0];
         private NetworkManager SecondClient => m_ClientNetworkManagers[1];
@@ -19,7 +19,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingMessageFromServerToClient_SenderIdIsCorrect()
         {
-            var messageContent = Guid.NewGuid();
+            var messageContent = new ForceNetworkSerializeByMemcpy<Guid> { Value = Guid.NewGuid() };
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
@@ -32,7 +32,7 @@ namespace TestProject.RuntimeTests
                 (sender, reader) =>
                 {
                     firstReceived = true;
-                    Assert.AreEqual(sender, FirstClient.ServerClientId);
+                    Assert.AreEqual(sender, NetworkManager.ServerClientId);
                     Assert.AreNotEqual(sender, FirstClient.LocalClientId);
                 };
 
@@ -41,7 +41,7 @@ namespace TestProject.RuntimeTests
                 (sender, reader) =>
                 {
                     secondReceived = true;
-                    Assert.AreEqual(sender, FirstClient.ServerClientId);
+                    Assert.AreEqual(sender, NetworkManager.ServerClientId);
                     Assert.AreNotEqual(sender, FirstClient.LocalClientId);
                 };
 
@@ -53,12 +53,11 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator WhenSendingMessageFromClientToServer_SenderIdIsCorrect()
         {
-            var messageContent = Guid.NewGuid();
             var writer = new FastBufferWriter(1300, Allocator.Temp);
             using (writer)
             {
-                FirstClient.CustomMessagingManager.SendNamedMessage("FirstClient", FirstClient.ServerClientId, writer);
-                SecondClient.CustomMessagingManager.SendNamedMessage("SecondClient", SecondClient.ServerClientId, writer);
+                FirstClient.CustomMessagingManager.SendNamedMessage("FirstClient", NetworkManager.ServerClientId, writer);
+                SecondClient.CustomMessagingManager.SendNamedMessage("SecondClient", NetworkManager.ServerClientId, writer);
 
             }
 
@@ -88,6 +87,38 @@ namespace TestProject.RuntimeTests
 
             Assert.IsTrue(firstReceived);
             Assert.IsTrue(secondReceived);
+        }
+
+        [UnityTest]
+        public IEnumerator WhenClientDisconnectsFromServer_ClientIdIsCorrect()
+        {
+            var firstClientId = FirstClient.LocalClientId;
+            bool received = false;
+            void firstCallback(ulong id)
+            {
+                Assert.AreEqual(firstClientId, id);
+                received = true;
+            }
+            m_ServerNetworkManager.OnClientDisconnectCallback += firstCallback;
+            FirstClient.Shutdown();
+
+            yield return new WaitForSeconds(0.2f);
+
+            Assert.IsTrue(received);
+            var secondClientId = SecondClient.LocalClientId;
+            received = false;
+
+            m_ServerNetworkManager.OnClientDisconnectCallback -= firstCallback;
+            m_ServerNetworkManager.OnClientDisconnectCallback += id =>
+            {
+                Assert.AreEqual(secondClientId, id);
+                received = true;
+            };
+            SecondClient.Shutdown();
+
+            yield return new WaitForSeconds(0.2f);
+
+            Assert.IsTrue(received);
         }
     }
 }

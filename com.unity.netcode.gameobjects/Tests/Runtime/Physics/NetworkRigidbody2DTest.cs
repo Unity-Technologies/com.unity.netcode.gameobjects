@@ -1,10 +1,12 @@
+#if COM_UNITY_MODULES_PHYSICS2D
 using System.Collections;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.TestHelpers.Runtime;
 
-namespace Unity.Netcode.RuntimeTests.Physics
+namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkRigidbody2DDynamicTest : NetworkRigidbody2DTestBase
     {
@@ -16,23 +18,19 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public override bool Kinematic => true;
     }
 
-    public abstract class NetworkRigidbody2DTestBase : BaseMultiInstanceTest
+    public abstract class NetworkRigidbody2DTestBase : NetcodeIntegrationTest
     {
-        protected override int NbClients => 1;
+        protected override int NumberOfClients => 1;
 
         public abstract bool Kinematic { get; }
 
-        [UnitySetUp]
-        public override IEnumerator Setup()
+        protected override void OnCreatePlayerPrefab()
         {
-            yield return StartSomeClientsAndServerWithPlayers(true, NbClients, playerPrefab =>
-            {
-                playerPrefab.AddComponent<NetworkTransform>();
-                playerPrefab.AddComponent<Rigidbody2D>();
-                playerPrefab.AddComponent<NetworkRigidbody2D>();
-                playerPrefab.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
-                playerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
-            });
+            m_PlayerPrefab.AddComponent<NetworkTransform>();
+            m_PlayerPrefab.AddComponent<Rigidbody2D>();
+            m_PlayerPrefab.AddComponent<NetworkRigidbody2D>();
+            m_PlayerPrefab.GetComponent<Rigidbody2D>().interpolation = RigidbodyInterpolation2D.Interpolate;
+            m_PlayerPrefab.GetComponent<Rigidbody2D>().isKinematic = Kinematic;
         }
 
         /// <summary>
@@ -43,19 +41,19 @@ namespace Unity.Netcode.RuntimeTests.Physics
         public IEnumerator TestRigidbodyKinematicEnableDisable()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult));
+            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ServerNetworkManager, serverClientPlayerResult);
             var serverPlayer = serverClientPlayerResult.Result.gameObject;
 
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new MultiInstanceHelpers.CoroutineResultWrapper<NetworkObject>();
-            yield return MultiInstanceHelpers.Run(MultiInstanceHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult));
+            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
+            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation((x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId), m_ClientNetworkManagers[0], clientClientPlayerResult);
             var clientPlayer = clientClientPlayerResult.Result.gameObject;
 
             Assert.IsNotNull(serverPlayer);
             Assert.IsNotNull(clientPlayer);
 
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
             // server rigidbody has authority and should have a kinematic mode of false
             Assert.True(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
@@ -68,20 +66,15 @@ namespace Unity.Netcode.RuntimeTests.Physics
             // despawn the server player, (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
             // This should equal Kinematic
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 
-            yield return WaitForTicks(m_ServerNetworkManager, 5);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
         }
-
-        public IEnumerator WaitForTicks(NetworkManager networkManager, int count)
-        {
-            int nextTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= nextTick);
-        }
     }
 }
+#endif // COM_UNITY_MODULES_PHYSICS2D
