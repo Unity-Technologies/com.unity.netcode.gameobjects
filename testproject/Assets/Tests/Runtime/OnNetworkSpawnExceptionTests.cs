@@ -3,6 +3,7 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using Unity.Netcode;
 using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.TestTools;
@@ -41,7 +42,7 @@ namespace TestProject.RuntimeTests
         }
 
     }
-    public class OnNetworkSpawnExceptionTests : BaseMultiInstanceTest
+    public class OnNetworkSpawnExceptionTests : NetcodeIntegrationTest
     {
         private GameObject m_Prefab;
         private GameObject[] m_Objects = new GameObject[5];
@@ -67,37 +68,40 @@ namespace TestProject.RuntimeTests
                 m_Objects[i].GetComponent<NetworkObject>().Despawn();
             }
 
-            var result = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForCondition(
-                    () => OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns == 5, result));
-            Assert.IsTrue(result.Result);
+            var result = new TimeoutHelper();
+            yield return WaitForConditionOrTimeOut(
+                    () => OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns == 5, result);
+            Assert.IsFalse(result.TimedOut);
         }
 
-        public override IEnumerator Setup()
+        protected override IEnumerator OnSetup()
         {
+            m_UseHost = false;
+
             for (var i = 0; i < 3; ++i)
             {
                 LogAssert.Expect(LogType.Exception, new Regex("I'm misbehaving"));
             }
             OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns = 0;
             OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns = 0;
-            yield return StartSomeClientsAndServerWithPlayers(false, NbClients, _ =>
-            {
-                m_Prefab = new GameObject();
-                var networkObject = m_Prefab.AddComponent<NetworkObject>();
-                m_Prefab.AddComponent<OnNetworkSpawnThrowsExceptionComponent>();
-                m_Prefab.AddComponent<OnNetworkDespawnThrowsExceptionComponent>();
-                MultiInstanceHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            yield return null;
+        }
 
-                var validNetworkPrefab = new NetworkPrefab();
-                validNetworkPrefab.Prefab = m_Prefab;
-                m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-                foreach (var client in m_ClientNetworkManagers)
-                {
-                    client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
-                }
-            });
+        protected override IEnumerator OnServerAndClientsConnected()
+        {
+            m_Prefab = new GameObject();
+            var networkObject = m_Prefab.AddComponent<NetworkObject>();
+            m_Prefab.AddComponent<OnNetworkSpawnThrowsExceptionComponent>();
+            m_Prefab.AddComponent<OnNetworkDespawnThrowsExceptionComponent>();
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+
+            m_ServerNetworkManager.NetworkConfig.ForceSamePrefabs = false;
+            m_ServerNetworkManager.AddNetworkPrefab(m_Prefab);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.ForceSamePrefabs = false;
+                client.AddNetworkPrefab(m_Prefab);
+            }
 
             for (var i = 0; i < 5; ++i)
             {
@@ -107,12 +111,12 @@ namespace TestProject.RuntimeTests
                 obj.GetComponent<NetworkObject>().Spawn();
             }
 
-            var result = new MultiInstanceHelpers.CoroutineResultWrapper<bool>();
-            yield return MultiInstanceHelpers.Run(
-                MultiInstanceHelpers.WaitForCondition(
-                    () => OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns == 5, result));
-            Assert.IsTrue(result.Result);
+            var result = new TimeoutHelper();
+            yield return WaitForConditionOrTimeOut(
+                () => OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns == 5, result);
+            Assert.IsFalse(result.TimedOut);
         }
-        protected override int NbClients => 1;
+
+        protected override int NumberOfClients => 1;
     }
 }
