@@ -15,7 +15,7 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerEventCallbacks : NetcodeIntegrationTest
     {
         private const string k_SceneToLoad = "EmptyScene";
-        protected override int NumberOfClients => 9;
+        protected override int NumberOfClients => 4;
         private Scene m_CurrentScene;
         private bool m_CanStartServerOrClients = false;
 
@@ -85,6 +85,17 @@ namespace TestProject.RuntimeTests
             return base.OnStartedServerAndClients();
         }
 
+        private bool ValidateSceneIsLoaded()
+        {
+            if (!NotificationTestShouldWait() && m_CurrentScene.IsValid() && m_CurrentScene.isLoaded)
+            {
+                if (ValidateCompletedNotifications())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         [UnityTest]
         public IEnumerator SceneEventCallbackNotifications()
@@ -92,15 +103,8 @@ namespace TestProject.RuntimeTests
             m_CanStartServerOrClients = true;
             yield return StartServerAndClients();
 
-            //////////////////////////////////////////
-            // Testing synchronize event notifications
-            var shouldWait = NotificationTestShouldWait();
-
-            while (shouldWait)
-            {
-                yield return new WaitForSeconds(0.01f);
-                shouldWait = NotificationTestShouldWait();
-            }
+            yield return WaitForConditionOrTimeOut(() => !NotificationTestShouldWait());
+            AssertOnTimeout($"Timed out waiting for client to synchronize!");
 
             // Reset for next test
             ResetNotificationInfo();
@@ -108,35 +112,23 @@ namespace TestProject.RuntimeTests
             //////////////////////////////////////////
             // Testing load event notifications
             Assert.That(m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive) == SceneEventProgressStatus.Started);
-            shouldWait = NotificationTestShouldWait() || !m_CurrentScene.IsValid() || !m_CurrentScene.isLoaded;
 
-            while (shouldWait)
-            {
-                yield return new WaitForSeconds(0.01f);
-                shouldWait = NotificationTestShouldWait() || !m_CurrentScene.IsValid() || !m_CurrentScene.isLoaded;
-                if (!shouldWait)
-                {
-                    shouldWait = !ValidateCompletedNotifications();
-                }
-            }
+            yield return WaitForConditionOrTimeOut(ValidateSceneIsLoaded);
+            AssertOnTimeout($"Timed out waiting for client to load the scene {k_SceneToLoad}!");
+
+            yield return s_DefaultWaitForTick;
 
             // Reset for next test
             ResetNotificationInfo();
-
             //////////////////////////////////////////
             // Testing unload event notifications
-            Assert.That(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene) == SceneEventProgressStatus.Started);
-            shouldWait = NotificationTestShouldWait() || m_CurrentScene.IsValid() || m_CurrentScene.isLoaded;
-            while (shouldWait)
-            {
-                yield return new WaitForSeconds(0.01f);
-                shouldWait = NotificationTestShouldWait() || m_CurrentScene.isLoaded;
-                if (!shouldWait)
-                {
-                    shouldWait = !ValidateCompletedNotifications();
-                }
-            }
-            yield break;
+            var unloadStatus = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
+            Assert.That(unloadStatus == SceneEventProgressStatus.Started, $"Unload scene failed to start with a status code of: {unloadStatus}");
+
+            yield return WaitForConditionOrTimeOut(() => (!NotificationTestShouldWait() && !m_CurrentScene.isLoaded) ? true : !ValidateCompletedNotifications());
+            AssertOnTimeout($"Timed out waiting for client to unload the scene {k_SceneToLoad}!");
+
+            yield return s_DefaultWaitForTick;
         }
 
 

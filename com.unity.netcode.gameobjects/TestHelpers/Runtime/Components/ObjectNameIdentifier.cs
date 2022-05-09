@@ -1,4 +1,3 @@
-
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     public class ObjectNameIdentifier : NetworkBehaviour
@@ -7,36 +6,45 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private ulong m_CurrentNetworkObjectId;
         private bool m_IsRegistered;
 
+        private const char k_TagInfoStart = '{';
+        private const char k_TagInfoStop = '}';
+
         /// <summary>
         /// Keep a reference to the assigned NetworkObject
         /// <see cref="OnDestroy"/>
         /// </summary>
         private NetworkObject m_NetworkObject;
+        private string m_OriginalName;
 
         public override void OnNetworkSpawn()
         {
             RegisterAndLabelNetworkObject();
         }
 
+
         protected void RegisterAndLabelNetworkObject()
         {
             if (!m_IsRegistered)
             {
+                if (string.IsNullOrEmpty(m_OriginalName))
+                {
+                    m_OriginalName = gameObject.name.Replace("(Clone)", "");
+                }
                 // This is required otherwise it will try to continue to update the NetworkBehaviour even if
                 // it has been destroyed.
                 m_NetworkObject = NetworkObject;
                 m_CurrentOwner = OwnerClientId;
                 m_CurrentNetworkObjectId = NetworkObjectId;
-                var objectOriginalName = gameObject.name.Replace("(Clone)", "");
+
                 var serverOrClient = IsServer ? "Server" : "Client";
                 if (NetworkObject.IsPlayerObject)
                 {
-                    gameObject.name = NetworkManager.LocalClientId == OwnerClientId ? $"{objectOriginalName}({OwnerClientId})-Local{objectOriginalName}" :
-                        $"{objectOriginalName}({OwnerClientId})-On{serverOrClient}({NetworkManager.LocalClientId})";
+                    gameObject.name = NetworkManager.LocalClientId == OwnerClientId ? $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}-Local{m_OriginalName}" :
+                        $"{m_OriginalName}-{k_TagInfoStart}{OwnerClientId}{k_TagInfoStop}- On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
                 }
                 else
                 {
-                    gameObject.name = $"{objectOriginalName}({NetworkObjectId})-On{serverOrClient}({NetworkManager.LocalClientId})";
+                    gameObject.name = $"{m_OriginalName}{k_TagInfoStart}{NetworkObjectId}{k_TagInfoStop}-On{serverOrClient}{k_TagInfoStart}{NetworkManager.LocalClientId}{k_TagInfoStop}";
                 }
 
                 // Don't add the player objects to the global list of NetworkObjects

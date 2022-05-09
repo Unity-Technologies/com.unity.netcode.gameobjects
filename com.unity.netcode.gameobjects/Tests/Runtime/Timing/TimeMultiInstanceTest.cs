@@ -145,6 +145,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on client and server side
             yield return WaitForClientsConnectedOrTimeOut();
+            AssertOnTimeout($"Timed-out waiting for all clients to connect!");
         }
 
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>
