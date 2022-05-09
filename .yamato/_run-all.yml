@@ -7,7 +7,7 @@ run_all_tests:
     - .yamato/_triggers.yml#badges_test_trigger
     - .yamato/mobile-build-and-test.yml#2021.2_Run_iOS_Player_With_Tests
     - .yamato/mobile-build-and-test.yml#2021.2_Run_Android_Player_With_Tests
-    - .yamato/_run-all.yml#all_project_tests_standalone
+    # - .yamato/_run-all.yml#all_project_tests_standalone
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
