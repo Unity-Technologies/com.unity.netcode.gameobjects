@@ -765,12 +765,7 @@ namespace Unity.Netcode
 #endif
             LocalClientId = ulong.MaxValue;
 
-            PendingClients.Clear();
-            m_ConnectedClients.Clear();
-            m_ConnectedClientsList.Clear();
-            m_ConnectedClientIds.Clear();
-            LocalClient = null;
-            NetworkObject.OrphanChildren.Clear();
+            ClearClients();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -860,6 +855,16 @@ namespace Unity.Netcode
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.Initialize(this);
+        }
+
+        private void ClearClients()
+        {
+            PendingClients.Clear();
+            m_ConnectedClients.Clear();
+            m_ConnectedClientsList.Clear();
+            m_ConnectedClientIds.Clear();
+            LocalClient = null;
+            NetworkObject.OrphanChildren.Clear();
         }
 
         /// <summary>
@@ -1301,6 +1306,8 @@ namespace Unity.Netcode
             IsListening = false;
             m_ShuttingDown = false;
             m_StopProcessingMessages = false;
+
+            ClearClients();
         }
 
         // INetworkUpdateSystem
