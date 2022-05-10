@@ -93,7 +93,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        protected void CleanUp()
+        private void CleanUp()
         {
             m_SendMessagesAllowed = false;
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
