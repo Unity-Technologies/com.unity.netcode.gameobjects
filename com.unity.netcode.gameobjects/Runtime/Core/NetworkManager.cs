@@ -367,10 +367,12 @@ namespace Unity.Netcode
         /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
         public delegate void ConnectionApprovedDelegate(bool createPlayerObject, uint? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
 
+        public delegate void ConnectionApprovalDelegate(byte[] payload, ulong clientId, ConnectionApprovedDelegate connectionApprovedCallback);
+
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public event Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
+        public ConnectionApprovalDelegate ConnectionApprovalCallback = null;
 
         internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action) => ConnectionApprovalCallback?.Invoke(payload, clientId, action);
 
