@@ -113,6 +113,10 @@ namespace Unity.Netcode.Components
                 m_TransitionHash = new int[layers];
                 m_AnimationHash = new int[layers];
                 m_LayerWeights = new float[layers];
+                if (IsServer)
+                {
+                    NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+                }
             }
 
             var parameters = m_Animator.parameters;
@@ -164,9 +168,50 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private void NetworkManager_OnClientConnectedCallback(ulong playerId)
+        {
+            ServerUpdateNewPlayer(playerId);
+        }
+
         public override void OnNetworkDespawn()
         {
             m_SendMessagesAllowed = false;
+        }
+
+        private void ServerUpdateNewPlayer(ulong playerId)
+        {
+            if (!IsServer)
+            {
+                Debug.LogError("Only the server can update newly joining players!");
+                return;
+            }
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
+            {
+                int stateHash;
+                float normalizedTime;
+                //For this we just really want to get the stateHash and normalizedTime
+                CheckAnimStateChanged(out stateHash, out normalizedTime, layer);
+                var animMsg = new AnimationMessage
+                {
+                    StateHash = stateHash,
+                    NormalizedTime = normalizedTime,
+                    Layer = layer,
+                    Weight = m_LayerWeights[layer]
+                };
+
+                m_ParameterWriter.Seek(0);
+                m_ParameterWriter.Truncate();
+
+                WriteParameters(m_ParameterWriter);
+                animMsg.Parameters = m_ParameterWriter.ToArray();
+
+                var clientRpcParams = new ClientRpcParams();
+                clientRpcParams.Send = new ClientRpcSendParams();
+                clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
+
+                // Server always send via client RPC
+                SendAnimStateClientRpc(animMsg, clientRpcParams);
+            }
         }
 
         private void FixedUpdate()

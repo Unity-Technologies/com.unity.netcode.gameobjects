@@ -20,7 +20,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         public override void OnNetworkSpawn()
         {
-            if (!IsClient || !IsOwner)
+            if (!IsOwner)
             {
                 enabled = false;
             }
@@ -28,14 +28,45 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private void Update()
         {
+            if (!IsSpawned)
             {
-                if (Input.GetKeyDown(KeyCode.C))
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                if (m_NetworkAnimator.OwnerAuthoritative && IsOwner)
                 {
-                    ToggleRotateAnimationServerRpc();
+                    ToggleRotateAnimation();
                 }
-                if (Input.GetKeyDown(KeyCode.Space))
+                else if (!m_NetworkAnimator.OwnerAuthoritative)
                 {
-                    PlayPulseAnimationServerRpc();
+                    if (IsServer && IsOwner)
+                    {
+                        ToggleRotateAnimation();
+                    }
+                    else
+                    {
+                        ToggleRotateAnimationServerRpc();
+                    }
+                }
+            }
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                if (m_NetworkAnimator.OwnerAuthoritative && IsOwner)
+                {
+                    PlayPulseAnimation();
+                }
+                else if (!m_NetworkAnimator.OwnerAuthoritative)
+                {
+                    if (IsServer && IsOwner)
+                    {
+                        PlayPulseAnimation();
+                    }
+                    else if (IsOwner)
+                    {
+                        PlayPulseAnimationServerRpc();
+                    }
                 }
             }
         }
@@ -52,15 +83,32 @@ namespace Tests.Manual.NetworkAnimatorTests
         }
 
         [ServerRpc]
-        public void ToggleRotateAnimationServerRpc()
+        public void ToggleRotateAnimationServerRpc(ServerRpcParams serverRpcParams = default)
         {
-            ToggleRotateAnimation();
+            // Since animator parameters update automatically, we only have to handle the case where it is server authoritative
+            // but we still only allow the owner of the object to dictate when it would like something updated (for this example/test)
+            if (!m_NetworkAnimator.OwnerAuthoritative && serverRpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                ToggleRotateAnimation();
+            }
         }
 
         [ServerRpc]
-        public void PlayPulseAnimationServerRpc()
+        public void PlayPulseAnimationServerRpc(ServerRpcParams serverRpcParams = default)
+        {
+            // Since animator parameters update automatically, we only have to handle the case where it is server authoritative
+            // but we still only allow the owner of the object to dictate when it would like something updated (for this example/test)
+            if (!m_NetworkAnimator.OwnerAuthoritative && serverRpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                PlayPulseAnimation();
+            }
+        }
+
+        [ClientRpc]
+        public void PlayPulseAnimationClientRpc(ClientRpcParams clientRpcParams = default)
         {
             PlayPulseAnimation();
         }
     }
 }
+

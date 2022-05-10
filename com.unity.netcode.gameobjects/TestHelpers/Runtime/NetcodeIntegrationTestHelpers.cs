@@ -469,8 +469,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // this feature only works with NetcodeIntegrationTest derived classes
             if (IsNetcodeIntegrationTestRunning)
             {
-                // Add the object identifier component
-                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                if (networkObject.GetComponent<ObjectNameIdentifier>() == null && networkObject.GetComponentInChildren<ObjectNameIdentifier>() == null)
+                {
+                    // Add the object identifier component
+                    networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                }
             }
         }
 
