@@ -13,6 +13,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed NetworkManager to cleanup connected client lists after stopping (#1945)
 - Fixed: NetworkHide followed by NetworkShow on the same frame works correctly (#1940)
 
+### Changed
+
+- NetworkManager.ConnectionApprovalCallback is now a delegate instead of an event. Adding a second one is forbidden and an error is generated if client code attempts it. (#1941)
+
 ## [1.0.0-pre.8] - 2022-04-27
 
 ### Changed
