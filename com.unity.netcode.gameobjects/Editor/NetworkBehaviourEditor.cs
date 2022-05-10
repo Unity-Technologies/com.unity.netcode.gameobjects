@@ -254,6 +254,39 @@ namespace Unity.Netcode.Editor
 
             // Now get the root parent transform to the current GameObject (or itself)
             var rootTransform = GetRootParentTransform(gameObject.transform);
+            var networkManager = rootTransform.GetComponent<NetworkManager>();
+            if (networkManager == null)
+            {
+                networkManager = rootTransform.GetComponentInChildren<NetworkManager>();
+            }
+
+            // If there is a NetworkManager, then notify the user that a NetworkManager cannot have NetworkBehaviour components
+            if (networkManager != null)
+            {
+                var networkBehaviours = networkManager.gameObject.GetComponents<NetworkBehaviour>();
+                var networkBehavioursChildren = networkManager.gameObject.GetComponentsInChildren<NetworkBehaviour>();
+                if (networkBehaviours.Length > 0 || networkBehavioursChildren.Length > 0)
+                {
+                    if (EditorUtility.DisplayDialog("NetworkBehaviour or NetworkManager Cannot Be Added", $"{nameof(NetworkManager)}s cannot have {nameof(NetworkBehaviour)} components added to the root parent or any of its children." +
+                        $" Would you like to remove the NetworkManager or NetworkBehaviour?", "NetworkManager", "NetworkBehaviour"))
+                    {
+                        DestroyImmediate(networkManager);
+                    }
+                    else
+                    {
+                        foreach (var networkBehaviour in networkBehaviours)
+                        {
+                            DestroyImmediate(networkBehaviour);
+                        }
+
+                        foreach (var networkBehaviour in networkBehaviours)
+                        {
+                            DestroyImmediate(networkBehaviour);
+                        }
+                    }
+                    return;
+                }
+            }
 
             // Otherwise, check to see if there is any NetworkObject from the root GameObject down to all children.
             // If not, notify the user that NetworkBehaviours require that the relative GameObject has a NetworkObject component.
