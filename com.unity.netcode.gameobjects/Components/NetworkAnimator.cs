@@ -93,14 +93,23 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public override void OnDestroy()
+        protected void CleanUp()
         {
-            if (m_CachedAnimatorParameters.IsCreated)
+            m_SendMessagesAllowed = false;
+            if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
                 m_CachedAnimatorParameters.Dispose();
             }
+            if (m_ParameterWriter.IsInitialized)
+            {
+                m_ParameterWriter.Dispose();
+            }
+        }
 
-            m_ParameterWriter.Dispose();
+        public override void OnDestroy()
+        {
+            CleanUp();
+            base.OnDestroy();
         }
 
         public override void OnNetworkSpawn()
@@ -113,10 +122,10 @@ namespace Unity.Netcode.Components
                 m_TransitionHash = new int[layers];
                 m_AnimationHash = new int[layers];
                 m_LayerWeights = new float[layers];
-                if (IsServer)
-                {
-                    NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
-                }
+            }
+            if (IsServer)
+            {
+                NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
             }
 
             var parameters = m_Animator.parameters;
@@ -175,7 +184,7 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkDespawn()
         {
-            m_SendMessagesAllowed = false;
+            CleanUp();
         }
 
         private void ServerUpdateNewPlayer(ulong playerId)
@@ -185,16 +194,23 @@ namespace Unity.Netcode.Components
                 Debug.LogError("Only the server can update newly joining players!");
                 return;
             }
+
+            if (playerId == NetworkManager.LocalClientId)
+            {
+                return;
+            }
+
+            var clientRpcParams = new ClientRpcParams();
+            clientRpcParams.Send = new ClientRpcSendParams();
+            clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
+
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
-                int stateHash;
-                float normalizedTime;
-                //For this we just really want to get the stateHash and normalizedTime
-                CheckAnimStateChanged(out stateHash, out normalizedTime, layer);
+                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
                 var animMsg = new AnimationMessage
                 {
-                    StateHash = stateHash,
-                    NormalizedTime = normalizedTime,
+                    StateHash = st.fullPathHash,
+                    NormalizedTime = st.normalizedTime,
                     Layer = layer,
                     Weight = m_LayerWeights[layer]
                 };
@@ -204,10 +220,6 @@ namespace Unity.Netcode.Components
 
                 WriteParameters(m_ParameterWriter);
                 animMsg.Parameters = m_ParameterWriter.ToArray();
-
-                var clientRpcParams = new ClientRpcParams();
-                clientRpcParams.Send = new ClientRpcSendParams();
-                clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
 
                 // Server always send via client RPC
                 SendAnimStateClientRpc(animMsg, clientRpcParams);

@@ -212,8 +212,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ProtocolType: 0
   m_MaxPacketQueueSize: 128
-  m_MaxPayloadSize: 6144
-  m_MaxSendQueueSize: 98304
+  m_MaxPayloadSize: 256000
+  m_MaxSendQueueSize: 4200000
   m_HeartbeatTimeoutMS: 500
   m_ConnectTimeoutMS: 1000
   m_MaxConnectAttempts: 60
@@ -274,7 +274,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 0}
   m_TrackSceneEvents: 0
-  m_LogSceneEventsToConsole: 0
 --- !u!4 &84683368
 Transform:
   m_ObjectHideFlags: 0
@@ -326,7 +325,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 17}
-  m_SizeDelta: {x: 500, y: 150}
+  m_SizeDelta: {x: 700, y: 40}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &146283180
 MonoBehaviour:
@@ -714,14 +713,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1543554891}
-  m_LocalRotation: {x: 0.17811073, y: -0, z: -0, w: 0.9840105}
-  m_LocalPosition: {x: 5.7, y: 56, z: -116}
+  m_LocalRotation: {x: 0.28182787, y: -0, z: -0, w: 0.959465}
+  m_LocalPosition: {x: 5.7, y: 90, z: -136}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
-  m_LocalEulerAnglesHint: {x: 20.519, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 32.739, y: 0, z: 0}
 --- !u!1 &1740491936
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,44 +6,39 @@ namespace TestProject.ManualTests
 {
     public class PlayerPositionOffset : NetworkBehaviour
     {
-        private static Vector3 s_Offset = Vector3.zero;
-        private static Vector3 s_OffsetAmount = Vector3.right * 45;
-
         [SerializeField]
         private Text m_ServerAuthText;
         [SerializeField]
         private Text m_OwnerAuthText;
 
 
-        private string m_OriginalServerAuthText;
-        private string m_OriginalOwnerAuthText;
-        private void Awake()
-        {
-            m_OriginalServerAuthText = m_ServerAuthText.text;
-            m_OriginalOwnerAuthText = m_OwnerAuthText.text;
-        }
+        private Vector3[] m_Positions = new Vector3[] { Vector3.right, Vector3.left, Vector3.forward, Vector3.back };
+        private static uint s_PositionIndex;
+        private const float k_Spacing = 64;
+        private static float s_Layers = 0;
 
         public override void OnNetworkSpawn()
         {
-            if (string.IsNullOrEmpty(m_OriginalServerAuthText))
-            {
-                m_OriginalServerAuthText = m_ServerAuthText.text;
-            }
-
-            if (string.IsNullOrEmpty(m_OriginalOwnerAuthText))
-            {
-                m_OriginalOwnerAuthText = m_OwnerAuthText.text;
-            }
-
             if (IsServer)
             {
-                transform.position = s_Offset;
-                s_Offset += s_OffsetAmount;
-                s_OffsetAmount *= -1.0f;
+                if (IsOwner)
+                {
+                    transform.position = Vector3.zero;
+                }
+                else
+                {
+                    if (s_PositionIndex == 0)
+                    {
+                        s_Layers++;
+                    }
+                    transform.position = m_Positions[s_PositionIndex] * s_Layers * k_Spacing;
+                    s_PositionIndex++;
+                    s_PositionIndex = (uint)(s_PositionIndex % m_Positions.Length);
+                }
             }
 
-            m_ServerAuthText.text = $"({NetworkManager.LocalClientId})-{m_OriginalServerAuthText}";
-            m_OwnerAuthText.text = $"({NetworkManager.LocalClientId})-{m_OriginalOwnerAuthText}";
+            m_ServerAuthText.text = $"ID-{OwnerClientId}";
+            m_OwnerAuthText.text = $"ID-{OwnerClientId}";
 
             base.OnNetworkSpawn();
         }
