@@ -73,21 +73,8 @@ namespace Unity.Netcode.Components
             internal fixed byte Value[4]; // this is a max size of 4 bytes
         }
 
-        /// <summary>
-        /// Used to track parameter state change in order to update the changed
-        /// parameters when the animator's layer has not changed
-        /// </summary>
-        private class ParameterState
-        {
-            public AnimatorControllerParameterType AnimatorControllerParameterType;
-            public bool CurrentStateBool;
-            public int CurrentStateInt;
-            public float CurrentStateFloat;
-        }
-
         // 128 bytes per Animator
         private FastBufferWriter m_ParameterWriter = new FastBufferWriter(k_MaxAnimationParams * sizeof(float), Allocator.Persistent);
-
 
         private NativeArray<AnimatorParamCache> m_CachedAnimatorParameters;
 
