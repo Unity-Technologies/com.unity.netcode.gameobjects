@@ -1,6 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 {% for project in projects -%}
+{% if project.has_tests == "true" -%}
 code_coverage_win_{{ project.name }}_{{ validation_editor }}:
   name: Code Coverage Report - Windows - {{ project.name }} - {{ validation_editor }}
   agent:
@@ -18,4 +19,5 @@ code_coverage_win_{{ project.name }}_{{ validation_editor }}:
         - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endif -%}
 {% endfor -%}
