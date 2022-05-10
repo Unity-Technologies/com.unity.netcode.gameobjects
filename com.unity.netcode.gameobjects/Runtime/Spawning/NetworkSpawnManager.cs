@@ -283,15 +283,15 @@ namespace Unity.Netcode
             }
         }
 
-        internal bool HasPrefab(bool isSceneObject, uint globalObjectIdHash)
+        internal bool HasPrefab(NetworkObject.SceneObject sceneObject)
         {
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !isSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.Header.IsSceneObject)
             {
-                if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
+                if (NetworkManager.PrefabHandler.ContainsHandler(sceneObject.Header.Hash))
                 {
                     return true;
                 }
-                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var networkPrefab))
+                if (NetworkManager.NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(sceneObject.Header.Hash, out var networkPrefab))
                 {
                     switch (networkPrefab.Override)
                     {
@@ -306,14 +306,14 @@ namespace Unity.Netcode
 
                 return false;
             }
-            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+            var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(sceneObject.Header.Hash, sceneObject.NetworkSceneHandle);
             return networkObject != null;
         }
 
         /// <summary>
         /// Should only run on the client
         /// </summary>
-        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, Vector3? position, Quaternion? rotation, bool isReparented = false)
+        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, int? networkSceneHandle, Vector3? position, Quaternion? rotation, bool isReparented = false)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -404,7 +404,7 @@ namespace Unity.Netcode
             }
             else
             {
-                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash);
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
 
                 if (networkObject == null)
                 {
@@ -486,6 +486,14 @@ namespace Unity.Netcode
             //  the current design banks on getting the network behaviour set and then only reading from it after the
             //  below initialization code. However cowardice compels me to hold off on moving this until that commit
             networkObject.IsSceneObject = sceneObject;
+
+            // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
+            // the NetworkObject since it uses the NetworkManager.Singleton when not set
+            if (networkObject.NetworkManagerOwner != NetworkManager)
+            {
+                networkObject.NetworkManagerOwner = NetworkManager;
+            }
+
             networkObject.NetworkObjectId = networkId;
 
             networkObject.DestroyWithScene = sceneObject || destroyWithScene;
@@ -552,9 +560,8 @@ namespace Unity.Netcode
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
         {
-            //Currently, if this is called and the clientId (destination) is the server's client Id, this case will be checked
-            // within the below Send function.  To avoid unwarranted allocation of a PooledNetworkBuffer placing this check here. [NSS]
-            if (NetworkManager.IsServer && clientId == NetworkManager.ServerClientId)
+            // If we are a host and sending to the host's client id, then we can skip sending ourselves the spawn message.
+            if (clientId == NetworkManager.ServerClientId)
             {
                 return;
             }
@@ -785,7 +792,8 @@ namespace Unity.Netcode
 
                         var message = new DestroyObjectMessage
                         {
-                            NetworkObjectId = networkObject.NetworkObjectId
+                            NetworkObjectId = networkObject.NetworkObjectId,
+                            DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true
                         };
                         var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                         foreach (var targetClientId in m_TargetClientIds)

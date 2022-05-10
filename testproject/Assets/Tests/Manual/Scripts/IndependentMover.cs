@@ -8,13 +8,21 @@ namespace TestProject.ManualTests
     /// </summary>
     public class IndependentMover : NetworkBehaviour
     {
+        public static bool EnableVerboseDebug;
         private Vector3 m_Direction;
         private Rigidbody m_Rigidbody;
 
+        private void VerboseDebug(string message)
+        {
+            if (EnableVerboseDebug)
+            {
+                Debug.Log(message);
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
-            Debug.Log($"{nameof(IndependentMover)} NID: {NetworkObjectId}");
+            VerboseDebug($"{nameof(IndependentMover)} NID: {NetworkObjectId}");
             m_Rigidbody = GetComponent<Rigidbody>();
             if (NetworkObject != null && m_Rigidbody != null)
             {
