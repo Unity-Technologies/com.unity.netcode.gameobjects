@@ -37,7 +37,7 @@ multiprocess_nightly:
 # branch is created or updated. Currently only netcode package tests are
 # enabled, since the others are missing test coverage and will fail CI.
 pull_request_trigger:
-  name: ⚡ Pull Request Trigger (master, develop, & release branches)
+  name: Pull Request Trigger (master, develop, & release branches)
   dependencies:
     - .yamato/project-standards.yml#standards_{{ projects.first.name }}
 {% for project in projects -%}
