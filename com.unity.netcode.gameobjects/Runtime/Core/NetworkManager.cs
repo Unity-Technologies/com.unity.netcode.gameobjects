@@ -372,7 +372,23 @@ namespace Unity.Netcode
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public ConnectionApprovalDelegate ConnectionApprovalCallback = null;
+        public ConnectionApprovalDelegate ConnectionApprovalCallback
+        {
+            get => m_ConnectionApprovalDelegate;
+            set
+            {
+                if (value != null && value.GetInvocationList().Length > 1)
+                {
+                    Debug.LogError($"Only one connection approval handler is supported in {nameof(ConnectionApprovalCallback)}. Rejecting further adds.");
+                }
+                else
+                {
+                    m_ConnectionApprovalDelegate = value;
+                }
+            }
+        }
+
+        private ConnectionApprovalDelegate m_ConnectionApprovalDelegate = null;
 
         internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action) => ConnectionApprovalCallback?.Invoke(payload, clientId, action);
 
