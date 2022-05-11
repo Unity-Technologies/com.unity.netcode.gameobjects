@@ -175,7 +175,7 @@ namespace Unity.Netcode.Editor.CodeGen
                                                     enumTypesSet.Add(underlyingType);
                                                 }
                                             }
-                                            else if(!underlyingType.Resolve().IsPrimitive)
+                                            else if (!underlyingType.Resolve().IsPrimitive)
                                             {
                                                 bool methodExists = false;
                                                 foreach (var method in m_FastBufferWriterType.Methods)
@@ -328,7 +328,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // C# (that attribute doesn't exist in Unity, but the static module constructor still works)
         // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.moduleinitializerattribute?view=net-5.0
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
-        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeReference> networkSerializableTypes, List<TypeReference> structTypes, List<TypeReference> enumTypes,  List<TypeReference> fixedStringTypes)
+        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeReference> networkSerializableTypes, List<TypeReference> structTypes, List<TypeReference> enumTypes, List<TypeReference> fixedStringTypes)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {

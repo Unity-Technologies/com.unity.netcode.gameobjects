@@ -406,7 +406,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     VerifyPositionAndLength(reader, writer.Length);
 
-                    T result = new T();
+                    var result = new T();
                     reader.ReadValueSafe(out result);
                     Assert.AreEqual(fixedStringValue, result);
 
