@@ -54,10 +54,33 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
 
-        // There are two possible ways for configuration data to be set
-        // 1. From a webapi
-        // 2. From a text file resource
-        ConfigureViaWebApi();
+        // There are three possible ways for configuration data to be set
+        // 1. From the command line
+        // 2. From a webapi
+        // 3. From a text file resource
+
+        if (Environment.GetCommandLineArgs().Contains(MultiprocessOrchestration.IsWorkerArg))
+        {
+            MultiprocessLogger.Log($"Configuring via Command Line Args {m_ConnectAddress} {Port}");
+            // This means we are configured via the command line, in a later PR
+            // There will be additional set up here and also a condition for the
+            // text file resource configuration
+            bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+            if (isClient)
+            {
+                m_IsClient = isClient;
+            }
+            ConfigurationType = ConfigurationType.CommandLine;
+            MultiprocessLogger.Log("starting netcode client");
+            bool startClientResult = NetworkManager.Singleton.StartClient();
+            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
+        }
+        else
+        {
+            ConfigureViaWebApi(SetConfigurationAndStartClient);
+        }
+
+        ExecuteStepInContext.InitializeAllSteps();
 
         if (Instance != null)
         {
@@ -69,18 +92,31 @@ public class TestCoordinator : NetworkBehaviour
         Instance = this;
     }
 
-    private async void ConfigureViaWebApi()
+    private string SetConfigurationAndStartClient(JobQueueItem job)
+    {
+        m_ConnectAddress = job.HostIp;
+        m_IsClient = true;
+        MultiprocessLogHandler.JobId = job.JobId;
+        ConfigurationType = ConfigurationType.Remote;
+        SetAddressAndPort();
+        
+        MultiprocessLogger.Log("starting netcode client");
+        bool startClientResult = NetworkManager.Singleton.StartClient();
+        MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
+        
+        return "";
+    }
+
+    private async void ConfigureViaWebApi(Func<JobQueueItem, string> setConfigurationAndStartClient)
     {
         var jobQueue = await ConfigurationTools.GetRemoteConfig();
         foreach (var job in jobQueue.JobQueueItems)
         {
             if (Rawgithash.Equals(job.GitHash))
             {
+                setConfigurationAndStartClient(job);
                 ConfigurationTools.ClaimJobQueueItem(job);
-                m_ConnectAddress = job.HostIp;
-                m_IsClient = true;
-                MultiprocessLogHandler.JobId = job.JobId;
-                ConfigurationType = ConfigurationType.Remote;
+                
                 break;
             }
             else
@@ -141,28 +177,16 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         MultiprocessLogger.Log("Start");
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
-        if (isClient)
-        {
-            m_IsClient = isClient;
-        }
-        if (m_IsClient)
-        {
-            SetAddressAndPort();
-
-            MultiprocessLogger.Log("starting netcode client");
-            bool startClientResult = NetworkManager.Singleton.StartClient();
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
-        }
-        MultiprocessLogger.Log("Initialize All Steps");
-        ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
     }
 
     public void Update()
     {
+        if (m_IsClient)
+        {
+            UnityEngine.Debug.Log($"Update isActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled} IsConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
+        }
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication();
