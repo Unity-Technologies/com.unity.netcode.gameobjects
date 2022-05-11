@@ -285,7 +285,8 @@ namespace Unity.Netcode
 
             var message = new DestroyObjectMessage
             {
-                NetworkObjectId = NetworkObjectId
+                NetworkObjectId = NetworkObjectId,
+                DestroyGameObject = true
             };
             // Send destroy call
             var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
