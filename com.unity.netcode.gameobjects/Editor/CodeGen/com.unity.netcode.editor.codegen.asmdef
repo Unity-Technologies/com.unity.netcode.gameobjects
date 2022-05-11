@@ -19,6 +19,12 @@
     ],
     "autoReferenced": false,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.nuget.mono-cecil",
+            "expression": "(0,1.11.4)",
+            "define": "CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES"
+        }
+    ],
     "noEngineReferences": false
 }

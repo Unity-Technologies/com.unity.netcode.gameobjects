@@ -1,6 +1,7 @@
 # see https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners for more information
 # Order is important; the last matching pattern takes the most precedence.
 
+* @Unity-Technologies/multiplayer-sdk
 Profiling/ @Unity-Technologies/multiplayer-tools
 Metrics/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-server

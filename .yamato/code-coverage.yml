@@ -1,8 +1,9 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 {% for project in projects -%}
-code_coverage_win_{{ project.name }}:
-  name: Code Coverage Report - Windows - {{ project.name }}
+{% if project.has_tests == "true" -%}
+code_coverage_win_{{ project.name }}_{{ validation_editor }}:
+  name: Code Coverage Report - Windows - {{ project.name }} - {{ validation_editor }}
   agent:
     type: Unity::VM
     image: package-ci/win10:stable
@@ -10,7 +11,7 @@ code_coverage_win_{{ project.name }}:
   commands:
     - pip install unity-downloader-cli --upgrade --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
-    - unity-downloader-cli -u trunk -c editor --wait --fast
+    - unity-downloader-cli -u {{ validation_editor }} -c editor --wait --fast
     - upm-ci package test -u .Editor --package-path com.unity.netcode.gameobjects --enable-code-coverage --code-coverage-options 'enableCyclomaticComplexity;generateAdditionalMetrics;generateHtmlReport;assemblyFilters:+Unity.Netcode.Editor,+Unity.Netcode.Runtime,+Unity.Netcode.Components'
   artifacts:
     logs:
@@ -18,4 +19,5 @@ code_coverage_win_{{ project.name }}:
         - "upm-ci~/test-results/**/*"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endif -%}
 {% endfor -%}

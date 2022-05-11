@@ -1,7 +1,7 @@
 {% metadata_file .yamato/project.metafile %}
 ---
 develop_nightly:
-  name: "[Nightly] Run All Tests"
+  name: "\U0001F319 [Nightly] Run All Tests"
   triggers:
     recurring:
     - branch: develop
@@ -10,11 +10,21 @@ develop_nightly:
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
-    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}
+    - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}_{{ validation_editor }}
 {% endfor -%}
 
+develop_weekly_trunk:
+  name: "\U0001F319 [Weekly] Run All Tests [Trunk]"
+  triggers:
+    recurring:
+    - branch: develop
+      frequency: weekly
+      rerun: always
+  dependencies:
+    - .yamato/_run-all.yml#run_all_tests_trunk
+
 multiprocess_nightly:
-  name: "[Nightly] Run Multiprocess Tests"
+  name: "\U0001F319 [Nightly] Run Multiprocess Tests"
   triggers:
     recurring:
     - branch: develop
@@ -55,7 +65,7 @@ pull_request_trigger:
 # Currently, we need to have a trigger to updated badges
 # Only package badges currently exist
 badges_test_trigger:
-  name: Badges Tests Trigger
+  name: ⚡ Badges Tests Trigger
   agent:
     type: Unity::VM
     image: package-ci/ubuntu:stable
@@ -77,9 +87,11 @@ badges_test_trigger:
     - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endif -%}
 {% for editor in project.test_editors -%}
+{% if editor != "trunk" -%}
 {% for platform in test_platforms -%}
     - .yamato/package-tests.yml#test_{{ project.name }}_{{ package.name }}_{{ editor }}_{{ platform.name }}
 {% endfor -%}
+{% endif -%}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}

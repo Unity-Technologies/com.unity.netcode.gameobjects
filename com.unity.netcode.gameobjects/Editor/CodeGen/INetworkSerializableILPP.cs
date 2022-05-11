@@ -119,6 +119,10 @@ namespace Unity.Netcode.Editor.CodeGen
                                     // Get the field type and its base type
                                     var fieldType = field.FieldType;
                                     var baseType = fieldType.Resolve().BaseType;
+                                    if (baseType == null)
+                                    {
+                                        continue;
+                                    }
                                     // This type stack is used for resolving NetworkVariableSerialization's T value
                                     // When looking at base types, we get the type definition rather than the
                                     // type reference... which means that we get the generic definition with an
