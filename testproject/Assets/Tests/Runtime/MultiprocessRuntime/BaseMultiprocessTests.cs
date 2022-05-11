@@ -87,8 +87,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 case UNetTransport unetTransport:
                     unetTransport.ConnectPort = int.Parse(TestCoordinator.Port);
                     unetTransport.ServerListenPort = int.Parse(TestCoordinator.Port);
-                    unetTransport.ConnectAddress = "0.0.0.0";
-                    MultiprocessLogger.Log($"Setting ConnectAddress to {unetTransport.ConnectAddress} port {unetTransport.ConnectPort} {unetTransport.ServerListenPort}");
+                    unetTransport.ConnectAddress = "127.0.0.1";
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {unetTransport.ConnectAddress} port {unetTransport.ConnectPort}, {unetTransport.ServerListenPort}");
 
                     break;
                 case UnityTransport unityTransport:

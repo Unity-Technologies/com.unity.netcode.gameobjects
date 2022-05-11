@@ -74,6 +74,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
                 !m_HasFired ||
+                m_UpdateCounter % 25 == 0 ||
                 !m_TransportString.Equals(transportString))
             {
                 m_HasFired = true;

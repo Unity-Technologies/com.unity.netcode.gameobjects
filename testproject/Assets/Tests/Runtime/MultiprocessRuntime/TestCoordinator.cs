@@ -54,34 +54,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
 
-        // There are three possible ways for configuration data to be set
-        // 1. From the command line
-        // 2. From a webapi
-        // 3. From a text file resource
-
-        if (Environment.GetCommandLineArgs().Contains(MultiprocessOrchestration.IsWorkerArg))
-        {
-            MultiprocessLogger.Log($"Configuring via Command Line Args {m_ConnectAddress} {Port}");
-            // This means we are configured via the command line, in a later PR
-            // There will be additional set up here and also a condition for the
-            // text file resource configuration
-            bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
-            if (isClient)
-            {
-                m_IsClient = isClient;
-            }
-            ConfigurationType = ConfigurationType.CommandLine;
-            MultiprocessLogger.Log("starting netcode client");
-            bool startClientResult = NetworkManager.Singleton.StartClient();
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
-        }
-        else
-        {
-            ConfigureViaWebApi(SetConfigurationAndStartClient);
-        }
-
-        ExecuteStepInContext.InitializeAllSteps();
-
+        
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -177,6 +150,35 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         MultiprocessLogger.Log("Start");
+        // There are three possible ways for configuration data to be set
+        // 1. From the command line
+        // 2. From a webapi
+        // 3. From a text file resource
+
+        if (Environment.GetCommandLineArgs().Contains(MultiprocessOrchestration.IsWorkerArg))
+        {
+            MultiprocessLogger.Log($"Configuring via Command Line Args {m_ConnectAddress} {Port}");
+            // This means we are configured via the command line, in a later PR
+            // There will be additional set up here and also a condition for the
+            // text file resource configuration
+            bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+            if (isClient)
+            {
+                m_IsClient = isClient;
+            }
+            ConfigurationType = ConfigurationType.CommandLine;
+            MultiprocessLogger.Log("starting netcode client");
+            bool startClientResult = NetworkManager.Singleton.StartClient();
+            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
+        }
+        else
+        {
+            ConfigureViaWebApi(SetConfigurationAndStartClient);
+        }
+
+        MultiprocessLogger.Log("InitializeAllSteps");
+        ExecuteStepInContext.InitializeAllSteps();
+
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
     }
@@ -185,7 +187,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         if (m_IsClient)
         {
-            UnityEngine.Debug.Log($"Update isActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled} IsConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
+            UnityEngine.Debug.Log($"{Time.time} Update isActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled} IsConnectedClient: {NetworkManager.Singleton.IsConnectedClient}");
         }
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
