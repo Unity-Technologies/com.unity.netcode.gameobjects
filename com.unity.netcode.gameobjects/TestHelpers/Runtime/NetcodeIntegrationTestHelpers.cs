@@ -262,12 +262,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Stops one single client and makes sure to cleanup any static variables in this helper
         /// </summary>
         /// <param name="clientToStop"></param>
-        public static void StopOneClient(NetworkManager clientToStop)
+        public static void StopOneClient(NetworkManager clientToStop, bool destroy = true)
         {
             clientToStop.Shutdown();
             s_Hooks.Remove(clientToStop);
-            Object.Destroy(clientToStop.gameObject);
-            NetworkManagerInstances.Remove(clientToStop);
+            if (destroy)
+            {
+                Object.Destroy(clientToStop.gameObject);
+                NetworkManagerInstances.Remove(clientToStop);
+            }
         }
 
         /// <summary>
@@ -279,6 +282,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             clientToStart.StartClient();
             s_Hooks[clientToStart] = new MultiInstanceHooks();
             clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            if (!NetworkManagerInstances.Contains(clientToStart))
+            {
+                NetworkManagerInstances.Add(clientToStart);
+            }
             // if set, then invoke this for the client
             RegisterHandlers(clientToStart);
         }

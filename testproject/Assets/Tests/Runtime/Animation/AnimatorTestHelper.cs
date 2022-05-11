@@ -43,6 +43,15 @@ namespace TestProject.RuntimeTests
             base.OnNetworkSpawn();
         }
 
+        public override void OnNetworkDespawn()
+        {
+            if (ClientSideInstances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                ClientSideInstances.Remove(NetworkManager.LocalClientId);
+            }
+            base.OnNetworkDespawn();
+        }
+
         public class ParameterValues
         {
             public float FloatValue;
