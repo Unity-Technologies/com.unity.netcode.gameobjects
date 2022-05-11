@@ -9,6 +9,15 @@ using Unity.Netcode.Components;
 
 namespace TestProject.RuntimeTests
 {
+    /// <summary>
+    /// Tests Various Features of The NetworkAnimator
+    /// !! NOTE !!
+    /// This test depends upon the following assets:
+    /// Assets\Tests\Animation\Resources\AnimatorObject.prefab
+    /// Assets\Tests\Manual\NetworkAnimatorTests\CubeAnimatorController.controller (referenced in AnimatorObject)
+    /// Possibly we could build this at runtime, but for now it uses the same animator controller as the manual
+    /// test does.
+    /// </summary>
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
@@ -75,6 +84,11 @@ namespace TestProject.RuntimeTests
             Owner
         }
 
+        /// <summary>
+        /// Verifies that parameters are synchronized with currently connected clients
+        /// when no transition or layer change has occurred.
+        /// </summary>
+        /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
         public IEnumerator ParameterUpdateTests([Values] AuthoritativeMode authoritativeMode)
         {
@@ -149,6 +163,10 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Verifies that triggers are synchronized with currently connected clients
+        /// </summary>
+        /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
         public IEnumerator TriggerUpdateTests([Values] AuthoritativeMode authoritativeMode)
         {
@@ -189,9 +207,15 @@ namespace TestProject.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
         }
 
+        /// <summary>
+        /// Verifies that late joining clients are synchronized to an
+        /// animator's state.
+        /// </summary>
+        /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
         public IEnumerator LateJoinSynchronizationTest([Values] AuthoritativeMode authoritativeMode)
         {
+            // Stop the 2nd client (will join after the animator's state is changed)
             NetcodeIntegrationTestHelpers.StopOneClient(m_ClientNetworkManagers[1], false);
 
             var networkAnimator = m_AnimationTestPrefab.GetComponent<NetworkAnimator>();
@@ -248,17 +272,21 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(authoritativeMode));
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
 
+            // Start the 2nd client to verify its local animator's state is synchronized to the changes
             NetcodeIntegrationTestHelpers.StartOneClient(m_ClientNetworkManagers[1]);
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[1].LocalClientId));
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the late joining client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
 
-            // Now check all of the triggers again to confirm the late joining client was synchronized
+            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
+            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+
+            // Now check that the late joining client and all other clients are synchronized to the trigger
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(authoritativeMode));
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
 
-            // Wait for the client side to update to the new parameter values
+            // Now check that the late joining client and all other clients are synchronized to the updated parameter values
             yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(authoritativeMode));
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
         }

@@ -155,17 +155,14 @@ namespace Unity.Netcode.Components
                         case AnimatorControllerParameterType.Float:
                             var value = m_Animator.GetFloat(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, value);
-
                             break;
                         case AnimatorControllerParameterType.Int:
                             var valueInt = m_Animator.GetInteger(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueInt);
-
                             break;
                         case AnimatorControllerParameterType.Bool:
                             var valueBool = m_Animator.GetBool(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueBool);
-
                             break;
                         case AnimatorControllerParameterType.Trigger:
                         default:
