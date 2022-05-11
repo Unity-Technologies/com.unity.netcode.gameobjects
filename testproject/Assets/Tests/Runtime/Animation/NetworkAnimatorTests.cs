@@ -146,10 +146,6 @@ namespace TestProject.RuntimeTests
             }
             foreach (var animatorTestHelper in AnimatorTestHelper.ClientSideInstances)
             {
-                if (!animatorTestHelper.Value.IsSpawned)
-                {
-                    continue;
-                }
                 if (authoritativeMode == AuthoritativeMode.Owner && animatorTestHelper.Value.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
                 {
                     continue;
@@ -159,7 +155,6 @@ namespace TestProject.RuntimeTests
                     return false;
                 }
             }
-
             return true;
         }
 

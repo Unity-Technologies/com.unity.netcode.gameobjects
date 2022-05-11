@@ -95,6 +95,10 @@ namespace Unity.Netcode.Components
 
         private void CleanUp()
         {
+            if (IsServer)
+            {
+                NetworkManager.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
+            }
             m_SendMessagesAllowed = false;
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
@@ -183,7 +187,7 @@ namespace Unity.Netcode.Components
         {
             CleanUp();
         }
-
+        private static byte[] s_EmptyArray = new byte[] { };
         private void ServerUpdateNewPlayer(ulong playerId)
         {
             if (!IsServer)
@@ -209,15 +213,19 @@ namespace Unity.Netcode.Components
                     StateHash = st.fullPathHash,
                     NormalizedTime = st.normalizedTime,
                     Layer = layer,
-                    Weight = m_LayerWeights[layer]
+                    Weight = m_LayerWeights[layer],
+                    Parameters = s_EmptyArray
                 };
 
-                m_ParameterWriter.Seek(0);
-                m_ParameterWriter.Truncate();
+                // We only need to send the parameters once
+                if (layer == 0)
+                {
+                    m_ParameterWriter.Seek(0);
+                    m_ParameterWriter.Truncate();
 
-                WriteParameters(m_ParameterWriter);
-                animMsg.Parameters = m_ParameterWriter.ToArray();
-
+                    WriteParameters(m_ParameterWriter);
+                    animMsg.Parameters = m_ParameterWriter.ToArray();
+                }
                 // Server always send via client RPC
                 SendAnimStateClientRpc(animMsg, clientRpcParams);
             }
@@ -244,15 +252,18 @@ namespace Unity.Netcode.Components
                     StateHash = stateHash,
                     NormalizedTime = normalizedTime,
                     Layer = layer,
-                    Weight = m_LayerWeights[layer]
+                    Weight = m_LayerWeights[layer],
+                    Parameters = s_EmptyArray
                 };
+                // We only need to send the parameters once
+                if (layer == 0)
+                {
+                    m_ParameterWriter.Seek(0);
+                    m_ParameterWriter.Truncate();
 
-                m_ParameterWriter.Seek(0);
-                m_ParameterWriter.Truncate();
-
-                WriteParameters(m_ParameterWriter);
-                animMsg.Parameters = m_ParameterWriter.ToArray();
-
+                    WriteParameters(m_ParameterWriter);
+                    animMsg.Parameters = m_ParameterWriter.ToArray();
+                }
 
                 if (!IsServer && OwnerAuthoritative)
                 {
@@ -458,7 +469,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [ServerRpc]
         private unsafe void SendAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
         {
             if (OwnerAuthoritative && OwnerClientId == serverRpcParams.Receive.SenderClientId)
@@ -510,7 +521,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ServerRpc(RequireOwnership = false)]
+        [ServerRpc]
         private void SendAnimTriggerServerRpc(AnimationTriggerMessage animSnapshot, ServerRpcParams serverRpcParams = default)
         {
             if (OwnerAuthoritative && OwnerClientId == serverRpcParams.Receive.SenderClientId)
@@ -568,13 +579,12 @@ namespace Unity.Netcode.Components
 
                 // Owner authoritative sends the update to the server
                 // the server then updates the remaining clients with the changes
-                if (OwnerAuthoritative && IsOwner && !IsServer)
+                if (!IsServer)
                 {
                     SendAnimTriggerServerRpc(animMsg);
                 }
                 else
                 {
-                    // Server authoritative, the server updates all of the clients
                     SendAnimTriggerClientRpc(animMsg);
                 }
             }

@@ -16,7 +16,7 @@ public class TriggerTest : StateMachineBehaviour
         }
         else
         {
-            Debug.LogWarning($"Client-{clientId} already triggered!");
+            Debug.LogError($"Client-{clientId} already triggered!");
         }
     }
 
