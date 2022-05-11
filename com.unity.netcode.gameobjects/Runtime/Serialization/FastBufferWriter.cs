@@ -716,38 +716,28 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Get the size required to write an unmanaged value
+        /// Get the write size for any general unmanaged value
+        /// The ForStructs value here makes this the lowest-priority overload so other versions
+        /// will be prioritized over this if they match
         /// </summary>
         /// <param name="value"></param>
+        /// <param name="unused"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<T>(in T value) where T : unmanaged
+        public static unsafe int GetWriteSize<T>(in T value, ForStructs unused = default) where T : unmanaged
         {
             return sizeof(T);
         }
 
-        public static int GetWriteSize(in FixedString32Bytes value)
-        {
-            return value.Length + sizeof(int);
-        }
-
-        public static int GetWriteSize(in FixedString64Bytes value)
-        {
-            return value.Length + sizeof(int);
-        }
-
-        public static int GetWriteSize(in FixedString128Bytes value)
-        {
-            return value.Length + sizeof(int);
-        }
-
-        public static int GetWriteSize(in FixedString512Bytes value)
-        {
-            return value.Length + sizeof(int);
-        }
-
-        public static int GetWriteSize(in FixedString4096Bytes value)
+        /// <summary>
+        /// Get the write size for a FixedString
+        /// </summary>
+        /// <param name="value"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static int GetWriteSize<T>(in T value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             return value.Length + sizeof(int);
         }
@@ -827,7 +817,7 @@ namespace Unity.Netcode
 
         }
 
-        public struct ForFixedStructs
+        public struct ForFixedStrings
         {
 
         }
@@ -867,59 +857,6 @@ namespace Unity.Netcode
         public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in bool value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(bool[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in byte value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(byte[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in sbyte value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(sbyte[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in char value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(char[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in decimal value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(decimal[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in double value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(double[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in float value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(float[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in int value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(int[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in uint value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(uint[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in long value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(long[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in ulong value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(ulong[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in short value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(short[] value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(in ushort value) => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue(ushort[] value) => WriteUnmanaged(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector2 value) => WriteUnmanaged(value);
@@ -1004,15 +941,21 @@ namespace Unity.Netcode
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void WriteValue<T>(in T value, ForFixedStructs unused = default)
+        public unsafe void WriteValue<T>(in T value, ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             WriteUnmanaged(value.Length);
-            WriteBytes(value.GetUnsafePtr(), value.Length);
+            // This avoids a copy on the string, which could be costly for FixedString4096Bytes
+            // Otherwise, GetUnsafePtr() is an impure function call and will result in a copy
+            // for `in` parameters.
+            fixed (T* ptr = &value)
+            {
+                WriteBytes(ptr->GetUnsafePtr(), value.Length);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForFixedStructs unused = default)
+        public void WriteValueSafe<T>(in T value, ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             if (!TryBeginWriteInternal(sizeof(int) + value.Length))

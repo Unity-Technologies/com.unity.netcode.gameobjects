@@ -2,11 +2,13 @@
     "name": "Unity.Netcode.Editor.CodeGen",
     "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "Unity.Collections"
     ],
     "includePlatforms": [
         "Editor"
     ],
+    "excludePlatforms": [],
     "allowUnsafeCode": true,
     "overrideReferences": true,
     "precompiledReferences": [
@@ -15,5 +17,8 @@
         "Mono.Cecil.Pdb.dll",
         "Mono.Cecil.Rocks.dll"
     ],
-    "autoReferenced": false
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

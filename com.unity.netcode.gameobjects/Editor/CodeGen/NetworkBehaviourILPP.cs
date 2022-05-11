@@ -610,6 +610,14 @@ namespace Unity.Netcode.Editor.CodeGen
                                 var resolvedConstraint = constraint.Resolve();
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+                                if (constraint.IsGenericInstance)
+                                {
+                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
+                                    {
+                                        resolvedConstraintName = constraint.FullName;
+                                    }
+                                }
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
                                     (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
                                     (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
@@ -740,6 +748,14 @@ namespace Unity.Netcode.Editor.CodeGen
                                 var resolvedConstraint = constraint.Resolve();
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+                                if (constraint.IsGenericInstance)
+                                {
+                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
+                                    {
+                                        resolvedConstraintName = constraint.FullName;
+                                    }
+                                }
 
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
                                     (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||

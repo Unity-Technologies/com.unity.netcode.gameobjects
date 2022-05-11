@@ -344,7 +344,7 @@ namespace Unity.Netcode.EditorTests
 
             var serializedValueSize = FastBufferWriter.GetWriteSize(fixedStringValue);
 
-            Assert.AreEqual(serializedValueSize, fixedStringValue.Length + sizeof(int));
+            Assert.AreEqual(fixedStringValue.Length + sizeof(int), serializedValueSize);
 
             var writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
             using (writer)
@@ -411,7 +411,7 @@ namespace Unity.Netcode.EditorTests
                 valueToTest += (i % 10).ToString();
             }
 
-            var fixedStringValue = new FixedString32Bytes(valueToTest);
+            var fixedStringValue = new FixedString64Bytes(valueToTest);
 
             RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
         }
@@ -431,7 +431,7 @@ namespace Unity.Netcode.EditorTests
                 valueToTest += (i % 10).ToString();
             }
 
-            var fixedStringValue = new FixedString32Bytes(valueToTest);
+            var fixedStringValue = new FixedString128Bytes(valueToTest);
 
             RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
         }
@@ -452,7 +452,7 @@ namespace Unity.Netcode.EditorTests
                 valueToTest += (i % 10).ToString();
             }
 
-            var fixedStringValue = new FixedString32Bytes(valueToTest);
+            var fixedStringValue = new FixedString512Bytes(valueToTest);
 
             RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
         }
@@ -474,7 +474,7 @@ namespace Unity.Netcode.EditorTests
                 valueToTest += (i % 10).ToString();
             }
 
-            var fixedStringValue = new FixedString32Bytes(valueToTest);
+            var fixedStringValue = new FixedString4096Bytes(valueToTest);
 
             RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
         }

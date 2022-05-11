@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -66,6 +67,19 @@ namespace Unity.Netcode
 
         internal static void ReadPrimitive<TForMethod>(FastBufferReader reader, out TForMethod value)
             where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
+        {
+            reader.ReadValueSafe(out value);
+        }
+
+        // Functions that serialize other types
+        internal static void WriteFixedString<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            writer.WriteValueSafe(value);
+        }
+
+        internal static void ReadFixedString<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             reader.ReadValueSafe(out value);
         }

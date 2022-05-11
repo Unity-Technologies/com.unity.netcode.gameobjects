@@ -6,6 +6,7 @@ using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
+using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
@@ -88,6 +89,9 @@ namespace Unity.Netcode.Editor.CodeGen
                         var structTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
+                        var fixedStringTypes = mainModule.GetTypes()
+                            .Where(t => t.Resolve().HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && t.HasInterface(m_INativeListBool_TypeRef.FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
+                            .ToList();
                         var enumTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().IsEnum && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
@@ -102,6 +106,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         var networkSerializableTypesSet = new HashSet<TypeReference>(networkSerializableTypes);
                         var structTypesSet = new HashSet<TypeReference>(structTypes);
                         var enumTypesSet = new HashSet<TypeReference>(enumTypes);
+                        var fixedStringTypesSet = new HashSet<TypeReference>(fixedStringTypes);
                         var typeStack = new List<TypeReference>();
                         foreach (var type in mainModule.GetTypes())
                         {
@@ -153,6 +158,13 @@ namespace Unity.Netcode.Editor.CodeGen
                                                 if (underlyingType.IsGenericInstance)
                                                 {
                                                     structTypesSet.Add(underlyingType);
+                                                }
+                                            }
+                                            else if (underlyingType.HasInterface(m_INativeListBool_TypeRef.FullName) && underlyingType.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName))
+                                            {
+                                                if (underlyingType.IsGenericInstance)
+                                                {
+                                                    fixedStringTypesSet.Add(underlyingType);
                                                 }
                                             }
 
@@ -213,7 +225,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         // Finally we add to the module initializer some code to initialize the delegates in
                         // NetworkVariableSerialization<T> for all necessary values of T, by calling initialization
                         // methods in NetworkVariableHelpers.
-                        CreateModuleInitializer(assemblyDefinition, networkSerializableTypesSet.ToList(), structTypesSet.ToList(), enumTypesSet.ToList());
+                        CreateModuleInitializer(assemblyDefinition, networkSerializableTypesSet.ToList(), structTypesSet.ToList(), enumTypesSet.ToList(), fixedStringTypesSet.ToList());
                     }
                     else
                     {
@@ -251,13 +263,17 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_InitializeDelegatesNetworkSerializable_MethodRef;
         private MethodReference m_InitializeDelegatesStruct_MethodRef;
         private MethodReference m_InitializeDelegatesEnum_MethodRef;
+        private MethodReference m_InitializeDelegatesFixedString_MethodRef;
 
         private TypeDefinition m_NetworkVariableSerializationType;
         private TypeDefinition m_FastBufferWriterType;
 
+        private TypeReference m_INativeListBool_TypeRef;
+
         private const string k_InitializeNetworkSerializableMethodName = nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable);
         private const string k_InitializeStructMethodName = nameof(NetworkVariableHelper.InitializeDelegatesStruct);
         private const string k_InitializeEnumMethodName = nameof(NetworkVariableHelper.InitializeDelegatesEnum);
+        private const string k_InitializeFixedStringMethodName = nameof(NetworkVariableHelper.InitializeDelegatesFixedString);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
@@ -276,10 +292,14 @@ namespace Unity.Netcode.Editor.CodeGen
                     case k_InitializeEnumMethodName:
                         m_InitializeDelegatesEnum_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
+                    case k_InitializeFixedStringMethodName:
+                        m_InitializeDelegatesFixedString_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        break;
                 }
             }
             m_NetworkVariableSerializationType = moduleDefinition.ImportReference(typeof(NetworkVariableSerialization<>)).Resolve();
             m_NetworkVariableSerializationType = moduleDefinition.ImportReference(typeof(FastBufferWriter)).Resolve();
+            m_INativeListBool_TypeRef = moduleDefinition.ImportReference(typeof(INativeList<bool>));
             return true;
         }
 
@@ -308,7 +328,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // C# (that attribute doesn't exist in Unity, but the static module constructor still works)
         // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.compilerservices.moduleinitializerattribute?view=net-5.0
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
-        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeReference> networkSerializableTypes, List<TypeReference> structTypes, List<TypeReference> enumTypes)
+        private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeReference> networkSerializableTypes, List<TypeReference> structTypes, List<TypeReference> enumTypes,  List<TypeReference> fixedStringTypes)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {
@@ -337,6 +357,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     foreach (var type in enumTypes)
                     {
                         var method = new GenericInstanceMethod(m_InitializeDelegatesEnum_MethodRef);
+                        method.GenericArguments.Add(type);
+                        instructions.Add(processor.Create(OpCodes.Call, method));
+                    }
+
+                    foreach (var type in fixedStringTypes)
+                    {
+                        var method = new GenericInstanceMethod(m_InitializeDelegatesFixedString_MethodRef);
                         method.GenericArguments.Add(type);
                         instructions.Add(processor.Create(OpCodes.Call, method));
                     }

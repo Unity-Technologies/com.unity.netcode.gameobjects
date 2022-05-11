@@ -22,6 +22,8 @@ namespace Unity.Netcode
         void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
         void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
         void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
+        void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes;
         void SerializeValue(ref Vector2 value);
         void SerializeValue(ref Vector2[] value);
         void SerializeValue(ref Vector3 value);
@@ -43,12 +45,6 @@ namespace Unity.Netcode
         void SerializeValue(ref Ray2D value);
         void SerializeValue(ref Ray2D[] value);
 
-        void SerializeValue(ref FixedString32Bytes value);
-        void SerializeValue(ref FixedString64Bytes value);
-        void SerializeValue(ref FixedString128Bytes value);
-        void SerializeValue(ref FixedString512Bytes value);
-        void SerializeValue(ref FixedString4096Bytes value);
-
         // Has to have a different name to avoid conflicting with "where T: unmananged"
         void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new();
 
@@ -61,6 +57,8 @@ namespace Unity.Netcode
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
         void SerializeValuePreChecked(ref Vector2 value);
         void SerializeValuePreChecked(ref Vector2[] value);
@@ -82,11 +80,5 @@ namespace Unity.Netcode
         void SerializeValuePreChecked(ref Ray[] value);
         void SerializeValuePreChecked(ref Ray2D value);
         void SerializeValuePreChecked(ref Ray2D[] value);
-
-        void SerializeValuePreChecked(ref FixedString32Bytes value);
-        void SerializeValuePreChecked(ref FixedString64Bytes value);
-        void SerializeValuePreChecked(ref FixedString128Bytes value);
-        void SerializeValuePreChecked(ref FixedString512Bytes value);
-        void SerializeValuePreChecked(ref FixedString4096Bytes value);
     }
 }

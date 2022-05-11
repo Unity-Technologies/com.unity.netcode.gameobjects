@@ -36,6 +36,9 @@ namespace Unity.Netcode
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValueSafe(value);
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Writer.WriteValue(value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Writer.WriteValue(value);
+        public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
+
         public void SerializeValue(ref Vector2 value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector2[] value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector3 value) => m_Writer.WriteValueSafe(value);
@@ -57,12 +60,6 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray2D value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Ray2D[] value) => m_Writer.WriteValueSafe(value);
 
-        public void SerializeValue(ref FixedString32Bytes value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref FixedString64Bytes value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref FixedString128Bytes value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref FixedString512Bytes value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref FixedString4096Bytes value) => m_Writer.WriteValueSafe(value);
-
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Writer.WriteNetworkSerializable(value);
@@ -82,6 +79,9 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValue(value);
+
         public void SerializeValuePreChecked(ref Vector2 value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector2[] value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector3 value) => m_Writer.WriteValue(value);
@@ -102,11 +102,5 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Ray[] value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Writer.WriteValue(value);
-
-        public void SerializeValuePreChecked(ref FixedString32Bytes value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref FixedString64Bytes value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref FixedString128Bytes value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref FixedString512Bytes value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref FixedString4096Bytes value) => m_Writer.WriteValue(value);
     }
 }
