@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+
+## [Unreleased]
+
 ### Added
 
 ### Changed
@@ -13,11 +16,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Hosting again after failing to host now works correctly
-- Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa. (#1947)
+- Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
 
+## [1.0.0-pre.9] - 2022-05-10
+
+### Fixed
+
+- Fixed Hosting again after failing to host now works correctly (#1938)
 - Fixed NetworkManager to cleanup connected client lists after stopping (#1945)
-- Fixed: NetworkHide followed by NetworkShow on the same frame works correctly (#1940)
+- Fixed NetworkHide followed by NetworkShow on the same frame works correctly (#1940)
 
 ### Changed
 
@@ -31,9 +38,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed requirement to register in-scene placed NetworkObjects with `NetworkManager` in order to respawn them.  In-scene placed NetworkObjects are now automatically tracked during runtime and no longer need to be registered as a NetworkPrefab.  (#1898)
 
 ### Removed
-- Removed `SIPTransport` (#1870)
 
-- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs).
+- Removed `SIPTransport` (#1870)
+- Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs) (#1912)
 
 ### Fixed
 - Fixed issue where `NetworkSceneManager` did not synchronize despawned in-scene placed NetworkObjects. (#1898)
