@@ -22,7 +22,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// determine how clients will load scenes
         /// </summary>
         internal static bool IsRunning { get; private set; }
-        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(4.0f);
+        protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(8.0f);
         protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
         /// <summary>
@@ -80,9 +80,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        protected int TotalClients => m_UseHost ? NumberOfClients + 1 : NumberOfClients;
+        protected int TotalClients => m_UseHost ? m_NumberOfClients + 1 : m_NumberOfClients;
 
         protected const uint k_DefaultTickRate = 30;
+
+        private int m_NumberOfClients;
         protected abstract int NumberOfClients { get; }
 
         /// <summary>
@@ -171,6 +173,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [OneTimeSetUp]
         public void OneTimeSetup()
         {
+            Application.runInBackground = true;
+            m_NumberOfClients = NumberOfClients;
             IsRunning = true;
             m_EnableVerboseDebug = OnSetVerboseDebug();
             IntegrationTestSceneHandler.VerboseDebugMode = m_EnableVerboseDebug;
@@ -255,6 +259,59 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreateServerAndClients(NumberOfClients);
         }
 
+        protected virtual void OnNewClientCreated(NetworkManager networkManager)
+        {
+
+        }
+
+        protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
+        {
+
+        }
+
+        private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
+        {
+            var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
+            if (addNetworkManager)
+            {
+                clientNetworkManagersList.Add(networkManager);
+            }
+            else
+            {
+                clientNetworkManagersList.Remove(networkManager);
+            }
+            m_ClientNetworkManagers = clientNetworkManagersList.ToArray();
+            m_NumberOfClients = clientNetworkManagersList.Count;
+        }
+
+        protected IEnumerator CreateAndStartNewClient()
+        {
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length);
+            networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+            OnNewClientCreated(networkManager);
+
+            NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
+            AddRemoveNetworkManager(networkManager, true);
+            // Wait for the new client to connect
+            yield return WaitForClientsConnectedOrTimeOut();
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                AddRemoveNetworkManager(networkManager, false);
+                Object.Destroy(networkManager.gameObject);
+            }
+            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
+
+            ClientNetworkManagerPostStart(networkManager);
+            OnNewClientCreated(networkManager);
+        }
+
+        protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
+        {
+            NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
+            AddRemoveNetworkManager(networkManager, false);
+            yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
+        }
+
         /// <summary>
         /// Creates the server and clients
         /// </summary>
@@ -322,30 +379,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return null;
         }
 
+        private void ClientNetworkManagerPostStart(NetworkManager networkManager)
+        {
+            networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
+            Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
+
+            // Get all player instances for the current client NetworkManager instance
+            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
+            // Add this player instance to each client player entry
+            foreach (var playerNetworkObject in clientPlayerClones)
+            {
+                // When the server is not the host this needs to be done
+                if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                {
+                    m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                }
+                if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(networkManager.LocalClientId))
+                {
+                    m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
+                }
+            }
+        }
+
         protected void ClientNetworkManagerPostStartInit()
         {
             // Creates a dictionary for all player instances client and server relative
             // This provides a simpler way to get a specific player instance relative to a client instance
             foreach (var networkManager in m_ClientNetworkManagers)
             {
-                networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
-                Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
-
-                // Get all player instances for the current client NetworkManager instance
-                var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
-                // Add this player instance to each client player entry
-                foreach (var playerNetworkObject in clientPlayerClones)
-                {
-                    // When the server is not the host this needs to be done
-                    if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
-                    {
-                        m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
-                    }
-                    if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(networkManager.LocalClientId))
-                    {
-                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
-                    }
-                }
+                ClientNetworkManagerPostStart(networkManager);
             }
         }
 

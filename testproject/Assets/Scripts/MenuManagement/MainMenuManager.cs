@@ -49,7 +49,7 @@ public class MenuManager<T> : MonoBehaviour where T : ISceneReference
     protected static void Initialize()
     {
         Application.runInBackground = true;
-        Application.targetFrameRate = 120;
+        Application.targetFrameRate = 60;
     }
 
 

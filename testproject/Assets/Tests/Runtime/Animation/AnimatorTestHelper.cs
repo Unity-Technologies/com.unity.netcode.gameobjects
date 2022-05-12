@@ -62,12 +62,18 @@ namespace TestProject.RuntimeTests
             {
                 if (printOutput)
                 {
-                    Debug.Log($"[ValuesMatch] Values to match {parameters}");
-                    Debug.Log($"[ValuesMatch] Current values: {FloatValue}, {IntValue}, {BoolValue}");
+                    Debug.Log($"[ValuesMatch] Current values: {ValuesToString()}");
+                    Debug.Log($"[ValuesMatch] Values to match {parameters.ValuesToString()}");
                 }
                 return parameters.BoolValue == BoolValue && parameters.FloatValue == FloatValue && parameters.IntValue == IntValue;
             }
+
+            public string ValuesToString()
+            {
+                return $"{FloatValue}, {IntValue}, {BoolValue}";
+            }
         }
+
 
         public ParameterValues GetParameterValues()
         {
@@ -83,7 +89,7 @@ namespace TestProject.RuntimeTests
 
         public void SetTrigger()
         {
-            m_NetworkAnimator.SetTrigger("TestTrigger");
+            m_Animator.SetTrigger("TestTrigger");
         }
     }
 }
