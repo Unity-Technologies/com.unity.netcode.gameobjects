@@ -54,12 +54,12 @@ namespace Unity.Netcode
 #endif
         }
 
-        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator allocator)
+        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator allocator, Allocator handleAllocator)
         {
             ReaderHandle* readerHandle = null;
             if (allocator == Allocator.None)
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), handleAllocator);
                 readerHandle->BufferPointer = buffer;
                 readerHandle->Position = offset;
             }
@@ -80,27 +80,6 @@ namespace Unity.Netcode
             return readerHandle;
         }
 
-        public static unsafe FastBufferReader CreatePersistentReaderFromBuffer(byte* buffer, int length)
-        {
-            ReaderHandle* readerHandle = null;
-            {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), Allocator.Persistent);
-                readerHandle->BufferPointer = buffer;
-                readerHandle->Position = 0;
-            }
-
-            readerHandle->Length = length;
-            readerHandle->Allocator = Allocator.Persistent;
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            readerHandle->AllowedReadMark = 0;
-            readerHandle->InBitwiseContext = false;
-#endif
-
-            FastBufferReader reader = new FastBufferReader();
-            reader.Handle = readerHandle;
-            return reader;
-        }
-
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
@@ -118,9 +97,10 @@ namespace Unity.Netcode
         /// <param name="allocator"></param>
         /// <param name="length"></param>
         /// <param name="offset"></param>
-        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator, handleAllocator);
         }
 
         /// <summary>
@@ -136,7 +116,8 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
             if (allocator == Allocator.None)
             {
@@ -144,7 +125,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator, handleAllocator);
             }
         }
 
@@ -161,7 +142,8 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
             if (allocator == Allocator.None)
             {
@@ -169,7 +151,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator, handleAllocator);
             }
         }
 
@@ -190,9 +172,10 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(buffer, length, offset, allocator);
+            Handle = CreateHandle(buffer, length, offset, allocator, handleAllocator);
         }
 
         /// <summary>
@@ -212,9 +195,10 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator, handleAllocator);
         }
 
         /// <summary>
@@ -236,9 +220,10 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
+        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator);
+            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator, handleAllocator);
         }
 
         /// <summary>
