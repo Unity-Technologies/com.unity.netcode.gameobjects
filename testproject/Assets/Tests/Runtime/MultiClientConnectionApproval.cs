@@ -173,7 +173,7 @@ namespace TestProject.RuntimeTests
         /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
         /// <param name="clientId">the client id being approved</param>
         /// <param name="callback">the callback invoked to handle approval</param>
-        private void ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
+        private void ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovalDecision decision)
         {
             string approvalToken = Encoding.ASCII.GetString(connectionData);
             var isApproved = approvalToken == m_ConnectionToken;
@@ -189,11 +189,14 @@ namespace TestProject.RuntimeTests
 
             if (m_PrefabOverrideGlobalObjectIdHash == 0)
             {
-                callback.Invoke(true, null, isApproved, null, null);
+                decision.CreatePlayerObject = true;
+                decision.Approved = isApproved;
             }
             else
             {
-                callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
+                decision.CreatePlayerObject = true;
+                decision.Approved = isApproved;
+                decision.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
         }
 

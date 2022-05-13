@@ -97,20 +97,21 @@ namespace Unity.Netcode
                 client.ConnectionState = PendingClient.State.PendingApproval;
             }
 
+            var decision = new NetworkManager.ConnectionApprovalDecision();
+
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
                 // Note: Delegate creation allocates.
                 // Note: ToArray() also allocates. :(
-                networkManager.InvokeConnectionApproval(ConnectionData, senderId,
-                    (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        var localCreatePlayerObject = createPlayerObject;
-                        networkManager.HandleApproval(senderId, localCreatePlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
+                networkManager.ConnectionApprovalCallback?.Invoke(ConnectionData, senderId, decision);
+
+                networkManager.HandleApproval(senderId, decision);
             }
             else
             {
-                networkManager.HandleApproval(senderId, networkManager.NetworkConfig.PlayerPrefab != null, null, true, null, null);
+                decision.Approved = true;
+                decision.CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null;
+                networkManager.HandleApproval(senderId, decision);
             }
         }
     }

@@ -154,7 +154,7 @@ namespace TestProject.ManualTests
         /// <param name="dataToken">key or password to get approval</param>
         /// <param name="clientId">client identifier being approved</param>
         /// <param name="aprovalCallback">callback that should be invoked once it is determined if client is approved or not</param>
-        private void ConnectionApprovalCallback(byte[] dataToken, ulong clientId, NetworkManager.ConnectionApprovedDelegate aprovalCallback)
+        private void ConnectionApprovalCallback(byte[] dataToken, ulong clientId, NetworkManager.ConnectionApprovalDecision decision)
         {
             string approvalToken = Encoding.ASCII.GetString(dataToken);
             var isTokenValid = approvalToken == m_ApprovalToken;
@@ -165,13 +165,16 @@ namespace TestProject.ManualTests
 
             if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
             {
-                aprovalCallback.Invoke(true, m_GlobalObjectIdHashOverride, isTokenValid, null, null);
+                decision.Approved = isTokenValid;
+                decision.PlayerPrefabHash = m_GlobalObjectIdHashOverride;
+                decision.CreatePlayerObject = true;
             }
             else
             {
-                aprovalCallback.Invoke(true, null, isTokenValid, null, null);
+                decision.Approved = isTokenValid;
+                decision.PlayerPrefabHash = null;
+                decision.CreatePlayerObject = true;
             }
-
 
             if (m_ConnectionMessageToDisplay)
             {

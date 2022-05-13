@@ -47,14 +47,16 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_IsValidated);
         }
 
-        private void NetworkManagerObject_ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
+        private void NetworkManagerObject_ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovalDecision decision)
         {
             var stringGuid = Encoding.UTF8.GetString(connectionData);
             if (m_ValidationToken.ToString() == stringGuid)
             {
                 m_IsValidated = true;
             }
-            callback(false, null, m_IsValidated, null, null);
+
+            decision.CreatePlayerObject = false;
+            decision.Approved = m_IsValidated;
         }
 
         [TearDown]

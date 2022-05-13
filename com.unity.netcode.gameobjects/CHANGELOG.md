@@ -12,6 +12,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- [breaking] Allow multiple Connection Approval handlers. 
+  `public delegate void ConnectionApprovalDelegate(byte[] payload, ulong clientId, ConnectionApprovalDecision decision);` now receives a `ConnectionApprovalDecision` class that must be filled, instead of calling a second callback. This allows having multiple Connection Approval handlers. (#1941)
+  
 ### Removed
 
 ### Fixed
