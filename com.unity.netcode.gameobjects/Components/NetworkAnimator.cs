@@ -84,10 +84,8 @@ namespace Unity.Netcode.Components
         private List<AnimationUpdate> m_SendAnimationUpdates = new List<AnimationUpdate>();
 
         /// <summary>
-        ///
+        /// Invoked when a server needs to forwarding an update to the animation state
         /// </summary>
-        /// <param name="animationMessage"></param>
-        /// <param name="clientRpcParams"></param>
         internal void SendAnimationUpdate(NetworkAnimator.AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
         {
             m_SendAnimationUpdates.Add(new AnimationUpdate() { ClientRpcParams = clientRpcParams, AnimationMessage = animationMessage });
@@ -101,6 +99,9 @@ namespace Unity.Netcode.Components
 
         private List<ParameterUpdate> m_SendParameterUpdates = new List<ParameterUpdate>();
 
+        /// <summary>
+        /// Invoked when a server needs to forwarding an update to the parameter state
+        /// </summary>
         internal void SendParameterUpdate(NetworkAnimator.ParametersUpdateMessage parametersUpdateMessage, ClientRpcParams clientRpcParams = default)
         {
             m_SendParameterUpdates.Add(new ParameterUpdate() { ClientRpcParams = clientRpcParams, ParametersUpdateMessage = parametersUpdateMessage });
@@ -113,6 +114,10 @@ namespace Unity.Netcode.Components
         }
 
         private List<TriggerUpdate> m_SendTriggerUpdates = new List<TriggerUpdate>();
+
+        /// <summary>
+        /// Invoked when a server needs to forward an update to a Trigger state
+        /// </summary>
         internal void SendTriggerUpdate(NetworkAnimator.AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
             m_SendTriggerUpdates.Add(new TriggerUpdate() { ClientRpcParams = clientRpcParams, AnimationTriggerMessage = animationTriggerMessage });
@@ -177,8 +182,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        //[Tooltip("When true the owner drives the animations and when false the server drives the animations.")]
-        //public bool OwnerAuthoritative;
         [SerializeField] private Animator m_Animator;
 
         public Animator Animator
@@ -433,17 +436,13 @@ namespace Unity.Netcode.Components
 
             if (!IsServer)
             {
-                VerboseDebug($"[SendParametersUpdate-Owner] Update sent to server.");
+                VerboseDebug($"[SendParametersUpdate-Owner] Update request sent to server.");
                 SendParametersUpdateServerRpc(parametersMessage);
-            }
-            else if (IsServer)
-            {
-                VerboseDebug($"[SendParametersUpdate-Server] Updating clients.");
-                SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
             }
             else
             {
-                VerboseDebug($"[{nameof(SendParametersUpdate)}] Entered but did nothing!", LogType.Warning);
+                VerboseDebug($"[SendParametersUpdate-Server] Updating clients.");
+                SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
             }
         }
 

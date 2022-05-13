@@ -193,7 +193,8 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
             AssertOnTimeout($"Timed out waiting for the client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
 
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(0.5f);
+
             // Set the trigger based on the type of test
             if (isClientOwner && networkAnimator.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
             {
@@ -204,6 +205,7 @@ namespace TestProject.RuntimeTests
                 AnimatorTestHelper.ServerSideInstance.SetTrigger();
             }
 
+            yield return new WaitForSeconds(0.5f);
             // Wait for all triggers to fire
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
             AssertOnTimeout($"Timed out waiting for all triggers to match!");
@@ -261,6 +263,7 @@ namespace TestProject.RuntimeTests
                 AnimatorTestHelper.ServerSideInstance.SetTrigger();
             }
 
+            yield return new WaitForSeconds(1.0f);
             // Wait for all triggers to fire
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
             AssertOnTimeout($"Timed out waiting for all triggers to match!");
