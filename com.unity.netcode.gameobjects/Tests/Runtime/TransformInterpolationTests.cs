@@ -57,11 +57,14 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 1;
 
-        private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
 
-        private NetworkObject m_AsNetworkObject;
+        private NetworkObject m_SpawnedAsNetworkObject;
         private NetworkObject m_SpawnedObjectOnClient;
+
+        private NetworkObject m_BaseAsNetworkObject;
+        private NetworkObject m_BaseOnClient;
+
 
         protected override void OnServerAndClientsCreated()
         {
@@ -74,41 +77,59 @@ namespace Unity.Netcode.RuntimeTests
         {
             var clientId = m_ClientNetworkManagers[0].LocalClientId;
             yield return WaitForConditionOrTimeOut(() => s_GlobalNetworkObjects.ContainsKey(clientId) &&
-            s_GlobalNetworkObjects[clientId].ContainsKey(m_AsNetworkObject.NetworkObjectId));
+            s_GlobalNetworkObjects[clientId].ContainsKey(m_BaseAsNetworkObject.NetworkObjectId) &&
+            s_GlobalNetworkObjects[clientId].ContainsKey(m_SpawnedAsNetworkObject.NetworkObjectId));
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_AsNetworkObject.NetworkObjectId}");
-            m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_AsNetworkObject.NetworkObjectId];
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for client side {nameof(NetworkObject)} ID of {m_SpawnedAsNetworkObject.NetworkObjectId}");
+
+            m_BaseOnClient = s_GlobalNetworkObjects[clientId][m_BaseAsNetworkObject.NetworkObjectId];
+            // make sure the objects are set with the right network manager
+            m_BaseOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+
+            m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_SpawnedAsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
             m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+
+
         }
 
         [UnityTest]
         public IEnumerator TransformInterpolationTest()
         {
-            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
-
             // create an object
             var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
             var baseObject = Object.Instantiate(m_PrefabToSpawn);
             baseObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             baseObject.GetComponent<NetworkObject>().Spawn();
 
-            m_AsNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            m_AsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_SpawnedAsNetworkObject = spawnedObject.GetComponent<NetworkObject>();
+            m_SpawnedAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
 
-            m_AsNetworkObject.TrySetParent(baseObject);
+            m_BaseAsNetworkObject = baseObject.GetComponent<NetworkObject>();
+            m_BaseAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
 
-            m_AsNetworkObject.Spawn();
+
+            m_SpawnedAsNetworkObject.TrySetParent(baseObject);
+
+            m_SpawnedAsNetworkObject.Spawn();
 
             yield return RefreshNetworkObjects();
 
-            m_AsNetworkObject.TrySetParent(baseObject);
+            m_SpawnedAsNetworkObject.TrySetParent(baseObject);
 
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
             spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
 
-            // Give two seconds for the object to settle
-            yield return new WaitForSeconds(2.0f);
+            const float maxPlacementError = 0.01f;
+
+            // Wait for the base object to place itself on both instances
+            while (m_BaseOnClient.transform.position.y < 1000 - maxPlacementError ||
+                   m_BaseOnClient.transform.position.y > 1000 + maxPlacementError ||
+                   baseObject.transform.position.y < 1000 - maxPlacementError ||
+                   baseObject.transform.position.y > 1000 + maxPlacementError)
+            {
+                yield return new WaitForSeconds(0.01f);
+            }
 
             m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 

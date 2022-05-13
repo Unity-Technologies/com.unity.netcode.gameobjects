@@ -89,8 +89,13 @@ namespace Unity.Netcode.RuntimeTests
                 // compares the two client times, only difference should be based on buffering.
                 m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
             }
+        }
 
+        protected override IEnumerator OnTearDown()
+        {
+            // Always "shutdown in a tear-down" otherwise you can cause all proceeding tests to fail
             ShutdownAndCleanUp();
+            yield return base.OnTearDown();
         }
 
         // This is from NetcodeIntegrationTest but we need a custom version of this to modifiy the config
@@ -140,6 +145,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on client and server side
             yield return WaitForClientsConnectedOrTimeOut();
+            AssertOnTimeout($"Timed-out waiting for all clients to connect!");
         }
 
         private readonly struct NetworkTimeState : IEquatable<NetworkTimeState>

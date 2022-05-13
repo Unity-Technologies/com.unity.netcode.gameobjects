@@ -1,8 +1,9 @@
 namespace Unity.Netcode
 {
-    internal struct DestroyObjectMessage : INetworkMessage
+    internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
         public ulong NetworkObjectId;
+        public bool DestroyGameObject;
 
         public void Serialize(FastBufferWriter writer)
         {
@@ -37,7 +38,7 @@ namespace Unity.Netcode
             }
 
             networkManager.NetworkMetrics.TrackObjectDestroyReceived(context.SenderId, networkObject, context.MessageSize);
-            networkManager.SpawnManager.OnDespawnObject(networkObject, true);
+            networkManager.SpawnManager.OnDespawnObject(networkObject, DestroyGameObject);
         }
     }
 }

@@ -52,6 +52,7 @@ namespace TestProject.RuntimeTests
             Assert.True(NetcodeIntegrationTestHelpers.Create(numClients, out NetworkManager server, out NetworkManager[] clients));
             m_Prefab = new GameObject("Object");
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
+            m_Prefab.AddComponent<NetworkObjectTestComponent>();
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -84,24 +85,9 @@ namespace TestProject.RuntimeTests
             serverNetworkObject.ChangeOwnership(clients[0].LocalClientId);
 
             // Wait until all objects have spawned.
-            const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
-            const int maxFrames = 240;
-            var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-            while (Object.FindObjectsOfType<NetworkObject>().Length != expectedNetworkObjects)
-            {
-                if (Time.frameCount > maxFrames)
-                {
-                    // This is here in the event a platform is running at a higher
-                    // frame rate than expected
-                    if (doubleCheckTime < Time.realtimeSinceStartup)
-                    {
-                        Assert.Fail("Did not successfully spawn all expected NetworkObjects");
-                        break;
-                    }
-                }
-                var nextFrameNumber = Time.frameCount + 1;
-                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-            }
+            var timeoutHelper = new TimeoutHelper();
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == numClients + 1);
+            Assert.False(timeoutHelper.TimedOut, "Did not successfully spawn all expected NetworkObjects");
         }
 
         [UnityTest]
