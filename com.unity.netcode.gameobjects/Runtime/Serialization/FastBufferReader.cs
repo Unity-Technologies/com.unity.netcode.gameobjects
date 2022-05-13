@@ -80,6 +80,27 @@ namespace Unity.Netcode
             return readerHandle;
         }
 
+        public static unsafe FastBufferReader CreatePersistentReaderFromBuffer(byte* buffer, int length)
+        {
+            ReaderHandle* readerHandle = null;
+            {
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), Allocator.Persistent);
+                readerHandle->BufferPointer = buffer;
+                readerHandle->Position = 0;
+            }
+
+            readerHandle->Length = length;
+            readerHandle->Allocator = Allocator.Persistent;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            readerHandle->AllowedReadMark = 0;
+            readerHandle->InBitwiseContext = false;
+#endif
+
+            FastBufferReader reader = new FastBufferReader();
+            reader.Handle = readerHandle;
+            return reader;
+        }
+
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
