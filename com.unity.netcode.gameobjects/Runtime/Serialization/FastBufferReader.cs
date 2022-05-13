@@ -116,8 +116,7 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
         {
             if (allocator == Allocator.None)
             {
@@ -125,7 +124,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator, handleAllocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator, Allocator.Temp);
             }
         }
 
@@ -142,8 +141,7 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
         {
             if (allocator == Allocator.None)
             {
@@ -151,7 +149,7 @@ namespace Unity.Netcode
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator, handleAllocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator, Allocator.Temp);
             }
         }
 
