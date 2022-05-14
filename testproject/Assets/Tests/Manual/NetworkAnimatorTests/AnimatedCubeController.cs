@@ -34,7 +34,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         internal void PlayPulseAnimation()
         {
-            m_Animator.SetTrigger("Pulse");
+            m_NetworkAnimator.SetTrigger("Pulse");
         }
     }
 }

@@ -11,6 +11,8 @@ namespace TestProject.RuntimeTests
 
         public readonly static Dictionary<ulong, AnimatorTestHelper> ClientSideInstances = new Dictionary<ulong, AnimatorTestHelper>();
 
+        public static bool IsTriggerTest;
+
         public static void Initialize()
         {
             ServerSideInstance = null;
@@ -28,6 +30,10 @@ namespace TestProject.RuntimeTests
 
         public override void OnNetworkSpawn()
         {
+            if (IsTriggerTest)
+            {
+                Debug.Log($"[AnimatorTestHelper][{IsServer}] {NetworkManager.name}");
+            }
             if (IsServer)
             {
                 ServerSideInstance = this;
@@ -87,9 +93,23 @@ namespace TestProject.RuntimeTests
             m_Animator.SetBool("TestBool", parameterValues.BoolValue);
         }
 
-        public void SetTrigger()
+        public bool GetCurrentTriggerState()
         {
-            m_Animator.SetTrigger("TestTrigger");
+            return m_Animator.GetBool("TestTrigger");
+        }
+
+        public void SetTrigger(string name = "TestTrigger")
+        {
+            //m_Animator.SetBool("TestTrigger", true);
+            //if (m_Animator.GetBool("TestTrigger"))
+
+            ////if (m_Animator.GetBool("TestTrigger"))
+            ////{
+            ////    Debug.Log($"{NetworkManager.name}: Already triggered!!");
+            ////    m_Animator.ResetTrigger("TestTrigger");
+            ////}
+            //Debug.Log($"Setting [{name}][{Animator.StringToHash(name)}]");
+            m_NetworkAnimator.SetTrigger(name);
         }
     }
 }

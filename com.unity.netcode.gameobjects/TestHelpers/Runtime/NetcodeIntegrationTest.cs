@@ -127,7 +127,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private NetworkManagerInstatiationMode m_NetworkManagerInstatiationMode;
 
-        protected bool m_EnableVerboseDebug { get; private set; }
+        protected bool m_EnableVerboseDebug { get; set; }
 
         /// <summary>
         /// Used to display the various integration test
@@ -300,8 +300,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Object.Destroy(networkManager.gameObject);
             }
             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
-
             ClientNetworkManagerPostStart(networkManager);
+            VerboseDebug($"[{networkManager.name}] Created and connected!");
             OnNewClientCreated(networkManager);
         }
 
