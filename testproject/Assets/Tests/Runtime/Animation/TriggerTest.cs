@@ -21,7 +21,7 @@ public class TriggerTest : StateMachineBehaviour
     {
         var networkObject = animator.GetComponent<NetworkObject>();
         var clientId = networkObject.NetworkManager.LocalClientId;
-        if(IsVerboseDebug)
+        if (IsVerboseDebug)
         {
             Debug.Log($"[{Iteration}][{s_EnteredCount}][STATE-ENTER][{clientId}] {networkObject.NetworkManager.name} state entered!");
             s_EnteredCount++;
