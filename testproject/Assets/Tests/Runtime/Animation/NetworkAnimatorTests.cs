@@ -2,7 +2,6 @@
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -19,31 +18,15 @@ namespace TestProject.RuntimeTests
     /// Possibly we could build this at runtime, but for now it uses the same animator controller as the manual
     /// test does.
     /// </summary>
-    [TestFixture(0)]
-    [TestFixture(1)]
-    [TestFixture(2)]
-    [TestFixture(3)]
-    [TestFixture(4)]
-    [TestFixture(5)]
-    [TestFixture(6)]
-    [TestFixture(7)]
-    [TestFixture(8)]
-    [TestFixture(9)]
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
-        private const string k_AnimatorObjectScene = "AnimationTestAsset";
-        private const string k_BaseScene = "UnitTestBaseScene";
 
         protected override int NumberOfClients => 1;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
         private AnimatorTestHelper.ParameterValues m_ParameterValues;
         private Object m_AnimatorObjectPrefab;
 
-        public NetworkAnimatorTests(int number)
-        {
-            TriggerTest.Iteration = number;
-        }
         protected override void OnOneTimeSetup()
         {
             m_AnimatorObjectPrefab = Resources.Load(k_AnimatorObjectName);
@@ -51,57 +34,21 @@ namespace TestProject.RuntimeTests
             base.OnOneTimeSetup();
         }
 
-        private Scene m_TempScene;
-        private Scene m_BaseScene;
-
         protected override IEnumerator OnSetup()
         {
-            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
-            //SceneManager.LoadSceneAsync(k_AnimatorObjectScene, LoadSceneMode.Additive);
-            //yield return WaitForConditionOrTimeOut(() => m_TempScene.IsValid() && m_TempScene.isLoaded);
-            //AssertOnTimeout("Timed out waiting for animator prefab object to be loaded and instantiated!");
-            //var sceneGameObjects = m_TempScene.GetRootGameObjects();
-            //var gameObject = sceneGameObjects.Where((c) => c.GetComponent<NetworkAnimator>() != null).First();
-            //Assert.NotNull(gameObject);
-
-
-
-            //var asyncOperation = SceneManager.UnloadSceneAsync(m_TempScene);
-            //yield return WaitForConditionOrTimeOut(() => asyncOperation.isDone);
-
-            //SceneManager.LoadSceneAsync(k_BaseScene, LoadSceneMode.Additive);
-            //yield return WaitForConditionOrTimeOut(() => m_BaseScene.IsValid() && m_BaseScene.isLoaded);
-            //AssertOnTimeout("Timed out waiting for animator prefab object to be loaded and instantiated!");
-            //NetcodeIntegrationTestHelpers.ScenesForServerToIgnore.Add(k_BaseScene);
             AnimatorTestHelper.Initialize();
             TriggerTest.Reset();
             yield return base.OnSetup();
-        }
-
-        private void SceneManager_sceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            if (scene.name == k_AnimatorObjectScene)
-            {
-                m_TempScene = scene;
-            }
-            else if (scene.name == k_BaseScene)
-            {
-                SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
-                m_BaseScene = scene;
-            }
         }
 
         protected override IEnumerator OnTearDown()
         {
             m_EnableVerboseDebug = false;
             yield return base.OnTearDown();
-            //var asyncOperation = SceneManager.UnloadSceneAsync(m_BaseScene);
-            //yield return WaitForConditionOrTimeOut(() => asyncOperation.isDone);
         }
 
         protected override void OnServerAndClientsCreated()
         {
-            //m_AnimationTestPrefab = Object.Instantiate(m_AnimatorObjectPrefab) as GameObject;
             var networkObject = (m_AnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -162,6 +109,8 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator ParameterUpdateTests([Values] OwnerShipMode ownerShipMode)
         {
+            VerboseDebug($" ++++++++++++++++++ Parameter Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
+
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(isClientOwner);
@@ -192,6 +141,7 @@ namespace TestProject.RuntimeTests
             // Wait for the client side to update to the new parameter values
             yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
+            VerboseDebug($" ------------------ Parameter Test [{ownerShipMode}] Stopping ------------------ ");
         }
 
 
@@ -214,11 +164,6 @@ namespace TestProject.RuntimeTests
                 }
                 if (!TriggerTest.ClientsThatTriggered.Contains(animatorTestHelper.Value.NetworkManager.LocalClientId))
                 {
-                    //if (animatorTestHelper.Value.GetCurrentTriggerState())
-                    //{
-                    //    Debug.Log($"[{animatorTestHelper.Value.name}] Current trigger state is true but has not entered the trigger test!");
-                    //    //continue;
-                    //}
                     return false;
                 }
             }
@@ -312,7 +257,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode)
         {
-            m_EnableVerboseDebug = true;
+            VerboseDebug($" ++++++++++++++++++ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
@@ -327,9 +272,6 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
 
-            // Let things run for a small period of time
-            yield return new WaitForSeconds(0.5f);
-
             // Set the trigger based on the type of test
             if (isClientOwner)
             {
@@ -340,7 +282,6 @@ namespace TestProject.RuntimeTests
                 AnimatorTestHelper.ServerSideInstance.SetTrigger();
             }
 
-            //yield return new WaitForSeconds(0.5f);
             // Wait for all triggers to fire
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
             AssertOnTimeout($"Timed out waiting for all triggers to match!");
@@ -359,8 +300,6 @@ namespace TestProject.RuntimeTests
                 AnimatorTestHelper.ServerSideInstance.UpdateParameters(m_ParameterValues);
             }
 
-            //yield return new WaitForSeconds(0.5f);
-
             // Wait for the client side to update to the new parameter values
             yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
@@ -376,12 +315,6 @@ namespace TestProject.RuntimeTests
             // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
             Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
 
-            //yield return new WaitForSeconds(0.5f);
-
-            // Now check that the late joining client and all other clients are synchronized to the updated parameter values
-            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
-            AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
-
             // Now check that the late joining client and all other clients are synchronized to the trigger
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
 
@@ -395,8 +328,13 @@ namespace TestProject.RuntimeTests
                 }
             }
             AssertOnTimeout($"Timed out waiting for the late joining client's triggers to match!{message}", s_GlobalTimeoutHelper);
+            // Now check that the late joining client and all other clients are synchronized to the updated parameter values
+            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
+            AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
+
             var newlyJoinedClient = m_ClientNetworkManagers[1];
             yield return StopOneClient(newlyJoinedClient);
+            VerboseDebug($" ------------------ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
     }
 }

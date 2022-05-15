@@ -151,7 +151,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 handler.Dispose();
             }
             ClientSceneHandlers.Clear();
-            ScenesForServerToIgnore.Clear();
         }
 
         /// <summary>
@@ -329,8 +328,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
 
-        internal static List<string> ScenesForServerToIgnore = new List<string>();
-
         /// <summary>
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
@@ -342,15 +339,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 return false;
             }
-
-            foreach(var sceneToIgnore in ScenesForServerToIgnore)
-            {
-                if (sceneName == sceneToIgnore)
-                {
-                    return false;
-                }
-            }
-
             return true;
         }
 
@@ -382,15 +370,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // with the clients.
                 networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
-            }
-            foreach(string sceneName in ScenesForServerToIgnore)
-            {
-                scene = SceneManager.GetSceneByName(sceneName);
-                if (scene.IsValid() && scene.isLoaded)
-                {
-                    networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
-                    networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
-                }
             }
         }
 

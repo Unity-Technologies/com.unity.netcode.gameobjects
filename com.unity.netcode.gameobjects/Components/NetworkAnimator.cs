@@ -18,6 +18,12 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void FlushMessages()
         {
+            foreach (var clientId in m_ClientsToSynchronize)
+            {
+                m_NetworkAnimator.ServerUpdateNewPlayer(clientId);
+            }
+            m_ClientsToSynchronize.Clear();
+
             foreach (var sendEntry in m_SendParameterUpdates)
             {
                 m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
@@ -37,30 +43,26 @@ namespace Unity.Netcode.Components
             {
                 case NetworkUpdateStage.PreUpdate:
                     {
+                        // Only the server forwards messages and synchronizes players
                         if (m_NetworkAnimator.NetworkManager.IsServer)
                         {
                             // Flush any pending messages
                             FlushMessages();
                         }
 
-                        // Apply any parameter updates
+                        // Everyone applies any parameters updated
                         foreach (var parameterUpdate in m_ProcessParameterUpdates)
                         {
                             m_NetworkAnimator.UpdateParameters(parameterUpdate);
                         }
                         m_ProcessParameterUpdates.Clear();
 
-                        // Owners check for changes
+                        // Only owners check for Animator changes
                         if (m_NetworkAnimator.IsOwner)
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
 
-                        foreach (var clientId in m_ClientsToSynchronize)
-                        {
-                            m_NetworkAnimator.ServerUpdateNewPlayer(clientId);
-                        }
-                        m_ClientsToSynchronize.Clear();
                         break;
                     }
             }
@@ -139,29 +141,13 @@ namespace Unity.Netcode.Components
 
         internal void DeregisterUpdate()
         {
-            //NetworkUpdateLoop.UnregisterAllNetworkUpdates(this);
             NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
-            //NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.FixedUpdate);
-            //if (m_NetworkAnimator.NetworkManager.IsServer)
-            //{
-            //    //NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
-            //    //NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.Update);
-            //    NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.PreLateUpdate);
-            //}
         }
 
         internal NetworkAnimatorStateChangeHandler(NetworkAnimator networkAnimator)
         {
             m_NetworkAnimator = networkAnimator;
             NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
-            //NetworkUpdateLoop.RegisterAllNetworkUpdates(this);
-            //NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.FixedUpdate);
-            //if (m_NetworkAnimator.NetworkManager.IsServer)
-            //{
-            //    ////NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
-            //    ////NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.Update);
-            //    NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreLateUpdate);
-            //}
         }
     }
 
@@ -261,6 +247,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+        //NSS-TODO: We will want to remove this most likely
         [HideInInspector]
         [SerializeField]
         private AnimationClip[] m_AnimationClips;
@@ -369,10 +356,6 @@ namespace Unity.Netcode.Components
                             var valueBool = m_Animator.GetBool(cacheParam.Hash);
                             UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueBool);
                             break;
-                        case AnimatorControllerParameterType.Trigger:
-                            var valueTriggerBool = m_Animator.GetBool(cacheParam.Hash);
-                            UnsafeUtility.WriteArrayElement(cacheParam.Value, 0, valueTriggerBool);
-                            break;
                         default:
                             break;
                     }
@@ -381,6 +364,53 @@ namespace Unity.Netcode.Components
                 m_CachedAnimatorParameters[i] = cacheParam;
             }
             m_NetworkAnimatorStateChangeHandler = new NetworkAnimatorStateChangeHandler(this);
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            CleanUp();
+        }
+
+        internal void ServerUpdateNewPlayer(ulong playerId)
+        {
+            var clientRpcParams = new ClientRpcParams();
+            clientRpcParams.Send = new ClientRpcSendParams();
+            clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
+
+            SendParametersUpdate(clientRpcParams);
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
+            {
+                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
+
+                if (st.normalizedTime >= 1.0f)
+                {
+                    continue;
+                }
+
+                // NOTE:
+                // When synchronizing, for now we will just complete the transition and
+                // synchronize the player to the next state being transitioned into
+                if (m_Animator.IsInTransition(layer))
+                {
+                    st = m_Animator.GetNextAnimatorStateInfo(layer);
+                }
+                var stateHash = st.fullPathHash;
+                var normalizedTime = st.normalizedTime;
+                var animMsg = new AnimationMessage
+                {
+                    StateHash = stateHash,
+                    NormalizedTime = normalizedTime,
+                    Layer = layer,
+                    Weight = m_LayerWeights[layer]
+                };
+                // Server always send via client RPC
+                SendAnimStateClientRpc(animMsg, clientRpcParams);
+            }
+        }
+
+        private void Server_OnClientConnectedCallback(ulong playerId)
+        {
+            m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
         }
 
         internal void CheckForAnimatorChanges()
@@ -412,14 +442,23 @@ namespace Unity.Netcode.Components
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
 
-                if (!m_Animator.HasState(layer, st.shortNameHash))
+                // When transitioning, we should use the transitions full path hash and normalized time
+                if (m_Animator.IsInTransition(layer))
                 {
-                    continue;
+                    AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
+                    stateHash = tt.fullPathHash;
+                    normalizedTime = st.normalizedTime; // This seems to work better than tt.normalizedTime??
                 }
-
-                if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
+                else
                 {
-                    continue;
+                    if (st.normalizedTime >= 1.0f)
+                    {
+                        continue;
+                    }
+                    if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
+                    {
+                        continue;
+                    }
                 }
 
                 var animMsg = new AnimationMessage
@@ -438,45 +477,6 @@ namespace Unity.Netcode.Components
                 {
                     SendAnimStateClientRpc(animMsg);
                 }
-            }
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            CleanUp();
-        }
-
-        private void Server_OnClientConnectedCallback(ulong playerId)
-        {
-            m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
-        }
-
-        internal void ServerUpdateNewPlayer(ulong playerId)
-        {
-            var clientRpcParams = new ClientRpcParams();
-            clientRpcParams.Send = new ClientRpcSendParams();
-            clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
-
-            SendParametersUpdate(clientRpcParams);
-
-            for (int layer = 0; layer < m_Animator.layerCount; layer++)
-            {
-                AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
-
-                if (st.normalizedTime >= 1.0f)
-                {
-                    continue;
-                }
-
-                var animMsg = new AnimationMessage
-                {
-                    StateHash = st.fullPathHash,
-                    NormalizedTime = st.normalizedTime,
-                    Layer = layer,
-                    Weight = m_LayerWeights[layer]
-                };
-                // Server always send via client RPC
-                SendAnimStateClientRpc(animMsg, clientRpcParams);
             }
         }
 
@@ -564,17 +564,6 @@ namespace Unity.Netcode.Components
                         break;
                     }
                 }
-                //else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterTriggerBool)
-                //{
-                //    var valueTriggerBool = m_Animator.GetBool(hash);
-                //    var currentValue = GetValue<bool>(ref cacheValue);
-                //    if (currentValue != valueTriggerBool && valueTriggerBool)
-                //    {
-                //        VerboseDebug($"[{name}][TRIGGER] {currentValue} != {valueTriggerBool} -- Updating");
-                //        shouldUpdate = true;
-                //        break;
-                //    }
-                //}
             }
             return shouldUpdate;
         }
@@ -664,22 +653,6 @@ namespace Unity.Netcode.Components
                         writer.WriteValueSafe(valueFloat);
                     }
                 }
-                //else
-                //if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterTriggerBool)
-                //{
-                //    var valueTriggerBool = m_Animator.GetBool(hash);
-                //    var currentValue = GetValue<bool>(ref cacheValue);
-                //    if (valueTriggerBool)
-                //    {
-                //        VerboseDebug($"[{name}][TRIGGER] {currentValue} != {valueTriggerBool} -- Writing");
-                //    }
-                //    fixed (void* value = cacheValue.Value)
-                //    {
-                //        UnsafeUtility.WriteArrayElement(value, 0, valueTriggerBool);
-                //        writer.WriteValueSafe(valueTriggerBool);
-                //    }
-                //    break;
-                //}
             }
         }
 
@@ -720,24 +693,6 @@ namespace Unity.Netcode.Components
                         UnsafeUtility.WriteArrayElement(value, 0, newFloatValue);
                     }
                 }
-                //else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterTriggerBool)
-                //{
-                //    reader.ReadValueSafe(out bool valueTriggerBool);
-                //    var currentValue = GetValue<bool>(ref cacheValue);
-                //    var animatorValue = m_Animator.GetBool(cacheValue.Hash);
-                //    if (valueTriggerBool && !animatorValue)
-                //    {
-                //        VerboseDebug($"[{NetworkManager.name}][TRIGGER][{cacheValue.Hash}] Current: {m_Animator.GetBool(hash)} | Current Cached: {currentValue} | New Value: {valueTriggerBool}");
-                //        m_Animator.SetBool(hash, valueTriggerBool);
-                //    }
-                //    if (currentValue != valueTriggerBool)
-                //    {
-                //        fixed (void* value = cacheValue.Value)
-                //        {
-                //            UnsafeUtility.WriteArrayElement(value, 0, valueTriggerBool);
-                //        }
-                //    }
-                //}
             }
         }
 
@@ -804,7 +759,6 @@ namespace Unity.Netcode.Components
             if (!IsOwner)
             {
                 m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
-                //UpdateParameters(parametersUpdate);
             }
         }
 
@@ -887,15 +841,6 @@ namespace Unity.Netcode.Components
                 VerboseDebug($"[{nameof(SendAnimTriggerClientRpc)}] {NetworkManager.name} received trigger value ({animationTriggerMessage.IsTriggerSet}).");
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
             }
-
-            //if (animSnapshot.Reset)
-            //{
-            //    m_Animator.ResetTrigger(animSnapshot.Hash);
-            //}
-            //else
-            //{
-            //    m_Animator.SetTrigger(animSnapshot.Hash);
-            //}
         }
 
         /// <summary>
@@ -925,18 +870,6 @@ namespace Unity.Netcode.Components
                 }
                 //  trigger the animation locally on the server...
                 m_Animator.SetBool(hash, setTrigger);
-                //if (reset)
-                //{
-                //    m_Animator.ResetTrigger(hash);
-                //}
-                //else
-                //{
-                //    m_Animator.SetTrigger(hash);
-                //}
-                //if (IsServer)
-                //{
-                //
-                //}
             }
         }
 
