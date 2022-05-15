@@ -100,15 +100,6 @@ namespace TestProject.RuntimeTests
 
         public void SetTrigger(string name = "TestTrigger")
         {
-            //m_Animator.SetBool("TestTrigger", true);
-            //if (m_Animator.GetBool("TestTrigger"))
-
-            ////if (m_Animator.GetBool("TestTrigger"))
-            ////{
-            ////    Debug.Log($"{NetworkManager.name}: Already triggered!!");
-            ////    m_Animator.ResetTrigger("TestTrigger");
-            ////}
-            //Debug.Log($"Setting [{name}][{Animator.StringToHash(name)}]");
             m_NetworkAnimator.SetTrigger(name);
         }
     }

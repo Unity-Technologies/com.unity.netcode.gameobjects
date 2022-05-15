@@ -81,7 +81,6 @@ public class TriggerTest : StateMachineBehaviour
         {
             ClientsThatResetTrigger.Add(clientId);
         }
-
     }
 
     // OnStateMove is called right after Animator.OnAnimatorMove()

@@ -172,7 +172,7 @@ namespace TestProject.RuntimeTests
 
         private bool WaitForClientsToInitialize()
         {
-            foreach(var networkManager in m_ClientNetworkManagers)
+            foreach (var networkManager in m_ClientNetworkManagers)
             {
                 var clientId = networkManager.LocalClientId;
                 if (!AnimatorTestHelper.ClientSideInstances.ContainsKey(clientId))

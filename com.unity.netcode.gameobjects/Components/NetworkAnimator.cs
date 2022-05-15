@@ -247,19 +247,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        //NSS-TODO: We will want to remove this most likely
-        [HideInInspector]
-        [SerializeField]
-        private AnimationClip[] m_AnimationClips;
-        private Dictionary<int, AnimationClip> m_AnimationClipTable = new Dictionary<int, AnimationClip>();
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            var animator = GetComponent<Animator>();
-            m_AnimationClips = UnityEditor.AnimationUtility.GetAnimationClips(gameObject);
-        }
-#endif
-
         private void CleanUp()
         {
             if (m_NetworkAnimatorStateChangeHandler != null)
@@ -312,12 +299,6 @@ namespace Unity.Netcode.Components
                         m_LayerWeights[layer] = layerWeightNow;
                     }
                 }
-            }
-
-            m_AnimationClipTable.Clear();
-            foreach (var clip in m_AnimationClips)
-            {
-                m_AnimationClipTable.Add(Animator.StringToHash(clip.name), clip);
             }
 
             var parameters = m_Animator.parameters;
@@ -436,8 +417,6 @@ namespace Unity.Netcode.Components
             float normalizedTime;
 
             // This sends updates only if a layer change or transition is happening
-            // TODO: This needs to be reviewed further to determine if this provides
-            // all information required.
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
