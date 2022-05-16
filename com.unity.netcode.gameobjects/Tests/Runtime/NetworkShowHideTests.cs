@@ -1,6 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -8,13 +8,46 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkShowHideTest : NetworkBehaviour
+    public class NetworkShowHideTestComponent : NetworkBehaviour
     {
 
     }
 
     public class ShowHideObject : NetworkBehaviour
     {
+        public static List<ShowHideObject> ClientTargetedNetworkObjects = new List<ShowHideObject>();
+        public static ulong ClientIdToTarget;
+
+        public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
+        {
+            foreach (var entry in ClientTargetedNetworkObjects)
+            {
+                if (entry.NetworkObjectId == networkObjectId)
+                {
+                    return entry.NetworkObject;
+                }
+            }
+            return null;
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (NetworkManager.LocalClientId == ClientIdToTarget)
+            {
+                ClientTargetedNetworkObjects.Add(this);
+            }
+            base.OnNetworkSpawn();
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (ClientTargetedNetworkObjects.Contains(this))
+            {
+                ClientTargetedNetworkObjects.Remove(this);
+            }
+            base.OnNetworkDespawn();
+        }
+
         public NetworkVariable<int> MyNetworkVariable;
 
         private void Start()
@@ -27,7 +60,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             Debug.Log($"Value changed from {before} to {after}");
         }
-
     }
 
     public class NetworkShowHideTests : NetcodeIntegrationTest
@@ -46,30 +78,17 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
-            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTest>();
+            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTestComponent>();
         }
 
         protected override void OnServerAndClientsCreated()
         {
-            m_PrefabToSpawn = PreparePrefab(typeof(ShowHideObject));
-        }
-
-        public GameObject PreparePrefab(Type type)
-        {
-            var prefabToSpawn = new GameObject();
-            prefabToSpawn.AddComponent(type);
-            var networkObjectPrefab = prefabToSpawn.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectPrefab);
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabToSpawn });
-            }
-            return prefabToSpawn;
+            m_PrefabToSpawn = CreateNetworkObjectPrefab("ShowHideObject");
+            m_PrefabToSpawn.AddComponent<ShowHideObject>();
         }
 
         // Check that the first client see them, or not, as expected
-        private IEnumerator CheckVisible(bool target)
+        private IEnumerator CheckVisible(bool isVisible)
         {
             int count = 0;
             do
@@ -83,21 +102,31 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail("timeout waiting for object to reach the expect visibility");
                     break;
                 }
-            } while (m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) != target ||
-                     m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) != target ||
-                     m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) != target ||
-                     m_Object1OnClient0.IsSpawned != target ||
-                     m_Object2OnClient0.IsSpawned != target ||
-                     m_Object3OnClient0.IsSpawned != target
+            } while (m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) != isVisible ||
+                     m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) != isVisible ||
+                     m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) != isVisible ||
+                     m_Object1OnClient0.IsSpawned != isVisible ||
+                     m_Object2OnClient0.IsSpawned != isVisible ||
+                     m_Object3OnClient0.IsSpawned != isVisible
                      );
 
-            Debug.Assert(m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) == target);
-            Debug.Assert(m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) == target);
-            Debug.Assert(m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) == target);
+            Debug.Assert(m_NetSpawnedObject1.IsNetworkVisibleTo(m_ClientId0) == isVisible);
+            Debug.Assert(m_NetSpawnedObject2.IsNetworkVisibleTo(m_ClientId0) == isVisible);
+            Debug.Assert(m_NetSpawnedObject3.IsNetworkVisibleTo(m_ClientId0) == isVisible);
 
-            Debug.Assert(m_Object1OnClient0.IsSpawned == target);
-            Debug.Assert(m_Object2OnClient0.IsSpawned == target);
-            Debug.Assert(m_Object3OnClient0.IsSpawned == target);
+            Debug.Assert(m_Object1OnClient0.IsSpawned == isVisible);
+            Debug.Assert(m_Object2OnClient0.IsSpawned == isVisible);
+            Debug.Assert(m_Object3OnClient0.IsSpawned == isVisible);
+
+            var clientNetworkManager = m_ClientNetworkManagers.Where((c) => c.LocalClientId == m_ClientId0).First();
+            if (isVisible)
+            {
+                Assert.True(ShowHideObject.ClientTargetedNetworkObjects.Count == 3, $"Client-{clientNetworkManager.LocalClientId} should have 3 instances visible but only has {ShowHideObject.ClientTargetedNetworkObjects.Count}!");
+            }
+            else
+            {
+                Assert.True(ShowHideObject.ClientTargetedNetworkObjects.Count == 0, $"Client-{clientNetworkManager.LocalClientId} should have no visible instances but still has {ShowHideObject.ClientTargetedNetworkObjects.Count}!");
+            }
         }
 
         // Set the 3 objects visibility
@@ -136,30 +165,19 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        private IEnumerator RefreshNetworkObjects()
+        private bool RefreshNetworkObjects()
         {
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject1.NetworkObjectId && x.IsSpawned,
-                    m_ClientNetworkManagers[0],
-                    serverClientPlayerResult);
-            m_Object1OnClient0 = serverClientPlayerResult.Result;
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject2.NetworkObjectId && x.IsSpawned,
-                    m_ClientNetworkManagers[0],
-                    serverClientPlayerResult);
-            m_Object2OnClient0 = serverClientPlayerResult.Result;
-            serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(
-                    x => x.NetworkObjectId == m_NetSpawnedObject3.NetworkObjectId && x.IsSpawned,
-                    m_ClientNetworkManagers[0],
-                    serverClientPlayerResult);
-            m_Object3OnClient0 = serverClientPlayerResult.Result;
-
-            // make sure the objects are set with the right network manager
-            m_Object1OnClient0.NetworkManagerOwner = m_ClientNetworkManagers[0];
-            m_Object2OnClient0.NetworkManagerOwner = m_ClientNetworkManagers[0];
-            m_Object3OnClient0.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            m_Object1OnClient0 = ShowHideObject.GetNetworkObjectById(m_NetSpawnedObject1.NetworkObjectId);
+            m_Object2OnClient0 = ShowHideObject.GetNetworkObjectById(m_NetSpawnedObject2.NetworkObjectId);
+            m_Object3OnClient0 = ShowHideObject.GetNetworkObjectById(m_NetSpawnedObject3.NetworkObjectId);
+            if (m_Object1OnClient0 == null || m_Object2OnClient0 == null || m_Object3OnClient0 == null)
+            {
+                return false;
+            }
+            Assert.True(m_Object1OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
+            Assert.True(m_Object2OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
+            Assert.True(m_Object3OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
+            return true;
         }
 
 
@@ -167,28 +185,23 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkShowHideTest()
         {
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientId0;
+
 
             // create 3 objects
-
-
-            var spawnedObject1 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var spawnedObject2 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var spawnedObject3 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
             m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
             m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
-            m_NetSpawnedObject1.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject2.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject3.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject1.Spawn();
-            m_NetSpawnedObject2.Spawn();
-            m_NetSpawnedObject3.Spawn();
-
 
             for (int mode = 0; mode < 2; mode++)
             {
                 // get the NetworkObject on a client instance
-                yield return RefreshNetworkObjects();
+                yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
+                AssertOnTimeout($"Could not refresh all NetworkObjects!");
 
                 // check object start visible
                 yield return CheckVisible(true);
@@ -207,7 +220,8 @@ namespace Unity.Netcode.RuntimeTests
 
                 // show them to that client
                 Show(mode == 0, true);
-                yield return RefreshNetworkObjects();
+                yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
+                AssertOnTimeout($"Could not refresh all NetworkObjects!");
 
                 // verify they become visible
                 yield return CheckVisible(true);
@@ -218,24 +232,21 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator NetworkShowHideQuickTest()
         {
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientId0;
 
-            var spawnedObject1 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var spawnedObject2 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
-            var spawnedObject3 = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
             m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
             m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
-            m_NetSpawnedObject1.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject2.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject3.NetworkManagerOwner = m_ServerNetworkManager;
-            m_NetSpawnedObject1.Spawn();
-            m_NetSpawnedObject2.Spawn();
-            m_NetSpawnedObject3.Spawn();
 
             for (int mode = 0; mode < 2; mode++)
             {
                 // get the NetworkObject on a client instance
-                yield return RefreshNetworkObjects();
+                yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
+                AssertOnTimeout($"Could not refresh all NetworkObjects!");
 
                 // check object start visible
                 yield return CheckVisible(true);
@@ -245,7 +256,8 @@ namespace Unity.Netcode.RuntimeTests
                 Show(mode == 0, true);
 
                 yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-                yield return RefreshNetworkObjects();
+                yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
+                AssertOnTimeout($"Could not refresh all NetworkObjects!");
                 yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
 
                 // verify they become visible
