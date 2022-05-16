@@ -12,6 +12,7 @@ namespace Unity.Netcode
     /// delegate type <see cref="NetworkSceneManager.SceneEventDelegate"/> uses this class to provide
     /// scene event status.<br/>
     /// <em>Note: This is only when <see cref="NetworkConfig.EnableSceneManagement"/> is enabled.</em><br/>
+    /// <em>*** Do not start new scene events within scene event notification callbacks.</em><br/>
     /// See also: <br/>
     /// <seealso cref="SceneEventType"/>
     /// </summary>
