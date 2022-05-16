@@ -753,7 +753,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanaged<T>(in T value) where T : unmanaged
+        internal unsafe void WriteUnmanaged<T>(in T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -762,7 +762,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanagedSafe<T>(in T value) where T : unmanaged
+        internal unsafe void WriteUnmanagedSafe<T>(in T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -772,7 +772,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
+        internal unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
         {
             WriteUnmanaged(value.Length);
             fixed (T* ptr = value)
@@ -782,7 +782,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
+        internal unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
         {
             WriteUnmanagedSafe(value.Length);
             fixed (T* ptr = value)

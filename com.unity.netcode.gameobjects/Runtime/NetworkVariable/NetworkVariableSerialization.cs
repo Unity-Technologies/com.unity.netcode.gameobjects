@@ -1,8 +1,132 @@
 using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using NUnit.Framework;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
+    interface INetworkVariableSerializer<T>
+    {
+        public void Write(FastBufferWriter writer, ref T value);
+        public void Read(FastBufferReader reader, out T value);
+    }
+
+    internal class UnmanagedTypeSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    {
+        public void Write(FastBufferWriter writer, ref T value)
+        {
+            writer.WriteUnmanagedSafe(value);
+        }
+        public void Read(FastBufferReader reader, out T value)
+        {
+            reader.ReadUnmanagedSafe(out value);
+        }
+    }
+
+    internal class FixedStringSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    {
+        internal delegate int GetLengthDelegate(ref T value);
+        internal delegate void SetLengthDelegate(ref T value, int length);
+        internal unsafe delegate byte* GetUnsafePtrDelegate(ref T value);
+
+        internal GetLengthDelegate GetLength;
+        internal SetLengthDelegate SetLength;
+        internal GetUnsafePtrDelegate GetUnsafePtr;
+
+        public unsafe void Write(FastBufferWriter writer, ref T value)
+        {
+            int length = GetLength(ref value);
+            byte* data = GetUnsafePtr(ref value);
+            writer.WriteUnmanagedSafe(length);
+            writer.WriteBytesSafe(data, length);
+        }
+        public unsafe void Read(FastBufferReader reader, out T value)
+        {
+            value = new T();
+            reader.ReadValueSafe(out int length);
+            SetLength(ref value, length);
+            reader.ReadBytesSafe(GetUnsafePtr(ref value), length);
+        }
+    }
+
+    internal class NetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    {
+        internal delegate void WriteValueDelegate(ref T value, BufferSerializer<BufferSerializerWriter> serializer);
+        internal delegate void ReadValueDelegate(ref T value, BufferSerializer<BufferSerializerReader> serializer);
+
+        internal WriteValueDelegate WriteValue;
+        internal ReadValueDelegate ReadValue;
+        public void Write(FastBufferWriter writer, ref T value)
+        {
+            var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+            WriteValue(ref value, bufferSerializer);
+        }
+        public void Read(FastBufferReader reader, out T value)
+        {
+            value = new T();
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+            ReadValue(ref value, bufferSerializer);
+        }
+    }
+
+    public class UserNetworkVariableSerializer<T> : INetworkVariableSerializer<T>
+    {
+        public delegate void WriteValueDelegate(FastBufferWriter writer, ref T value);
+        public delegate void ReadValueDelegate(FastBufferReader reader, out T value);
+
+        public static WriteValueDelegate WriteValue;
+        public static ReadValueDelegate ReadValue;
+
+        public void Write(FastBufferWriter writer, ref T value)
+        {
+            if (ReadValue == null || WriteValue == null)
+            {
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.WriteValue)} and {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+            }
+            WriteValue(writer, ref value);
+        }
+        public void Read(FastBufferReader reader, out T value)
+        {
+            if (ReadValue == null || WriteValue == null)
+            {
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.WriteValue)} and {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+            }
+            ReadValue(reader, out value);
+        }
+    }
+
+    internal static class NetworkVariableSerializationTypes
+    {
+        internal static readonly HashSet<Type> BaseSupportedTypes = new HashSet<Type>
+        {
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(char),
+            typeof(decimal),
+            typeof(double),
+            typeof(float),
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(short),
+            typeof(ushort),
+            typeof(Vector2),
+            typeof(Vector3),
+            typeof(Vector2Int),
+            typeof(Vector3Int),
+            typeof(Vector4),
+            typeof(Quaternion),
+            typeof(Color),
+            typeof(Color32),
+            typeof(Ray),
+            typeof(Ray2D)
+        };
+    }
+
     /// <summary>
     /// Support methods for reading/writing NetworkVariables
     /// Because there are multiple overloads of WriteValue/ReadValue based on different generic constraints,
@@ -19,165 +143,47 @@ namespace Unity.Netcode
     /// wants access to them has to inherit from this base class, thus enabling ILPP to find and initialize it.
     /// </summary>
     [Serializable]
-    public abstract class NetworkVariableSerialization<T> : NetworkVariableBase where T : unmanaged
+    public static class NetworkVariableSerialization<T> where T : unmanaged
     {
-        // Functions that know how to serialize INetworkSerializable
-        internal static void WriteNetworkSerializable<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged, INetworkSerializable
-        {
-            writer.WriteNetworkSerializable(value);
-        }
+        private static INetworkVariableSerializer<T> s_Serializer = GetSerializer();
 
-        internal static void ReadNetworkSerializable<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged, INetworkSerializable
+        private static INetworkVariableSerializer<T> GetSerializer()
         {
-            reader.ReadNetworkSerializable(out value);
-        }
-
-        // Functions that serialize structs
-        internal static void WriteStruct<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged, INetworkSerializeByMemcpy
-        {
-            writer.WriteValueSafe(value);
-        }
-        internal static void ReadStruct<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged, INetworkSerializeByMemcpy
-        {
-            reader.ReadValueSafe(out value);
-        }
-
-        // Functions that serialize enums
-        internal static void WriteEnum<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged, Enum
-        {
-            writer.WriteValueSafe(value);
-        }
-        internal static void ReadEnum<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged, Enum
-        {
-            reader.ReadValueSafe(out value);
-        }
-
-        // Functions that serialize other types
-        internal static void WritePrimitive<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
-        {
-            writer.WriteValueSafe(value);
-        }
-
-        internal static void ReadPrimitive<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
-        {
-            reader.ReadValueSafe(out value);
-        }
-
-        // Functions that serialize other types
-        internal static void WriteFixedString<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
-        {
-            writer.WriteValueSafe(value);
-        }
-
-        internal static void ReadFixedString<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
-        {
-            reader.ReadValueSafe(out value);
-        }
-
-        // Should never be reachable at runtime. All calls to this should be replaced with the correct
-        // call above by ILPP.
-        private static void WriteValue<TForMethod>(FastBufferWriter writer, in TForMethod value)
-            where TForMethod : unmanaged
-        {
-            if (value is INetworkSerializable)
+            if (NetworkVariableSerializationTypes.BaseSupportedTypes.Contains(typeof(T)))
             {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+                return new UnmanagedTypeSerializer<T>();
             }
-            else if (value is INetworkSerializeByMemcpy)
+            if (typeof(INetworkSerializeByMemcpy).IsAssignableFrom(typeof(T)))
             {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesStruct)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
+                return new UnmanagedTypeSerializer<T>();
             }
-            else if (value is Enum)
-            {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesEnum)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
-            }
-            else
-            {
-                throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
 
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                var writeMethod = (NetworkSerializableSerializer<T>.WriteValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.WriteValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerWriter)));
+                var readMethod = (NetworkSerializableSerializer<T>.ReadValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.ReadValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerReader)));
+                return new NetworkSerializableSerializer<T> { WriteValue = writeMethod, ReadValue = readMethod };
             }
-            NetworkVariableSerialization<TForMethod>.Write(writer, value);
+
+            if (typeof(IUTF8Bytes).IsAssignableFrom(typeof(T)) && typeof(INativeList<byte>).IsAssignableFrom(typeof(T)))
+            {
+                var getLength = (FixedStringSerializer<T>.GetLengthDelegate)Delegate.CreateDelegate(typeof(FixedStringSerializer<T>.GetLengthDelegate), null, typeof(T).GetMethod("get_" + nameof(INativeList<byte>.Length)));
+                var setLength = (FixedStringSerializer<T>.SetLengthDelegate)Delegate.CreateDelegate(typeof(FixedStringSerializer<T>.SetLengthDelegate), null, typeof(T).GetMethod("set_" + nameof(INativeList<byte>.Length)));
+                var getUnsafePtr = (FixedStringSerializer<T>.GetUnsafePtrDelegate)Delegate.CreateDelegate(typeof(FixedStringSerializer<T>.GetUnsafePtrDelegate), null, typeof(T).GetMethod(nameof(IUTF8Bytes.GetUnsafePtr)));
+                return new FixedStringSerializer<T> { GetLength = getLength, SetLength = setLength, GetUnsafePtr = getUnsafePtr };
+            }
+
+            return new UserNetworkVariableSerializer<T>();
         }
 
-        private static void ReadValue<TForMethod>(FastBufferReader reader, out TForMethod value)
-            where TForMethod : unmanaged
+        internal static void Write(FastBufferWriter writer, ref T value)
         {
-            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(TForMethod)))
-            {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
-            }
-            else if (typeof(INetworkSerializeByMemcpy).IsAssignableFrom(typeof(TForMethod)))
-            {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesStruct)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
-            }
-            else if (typeof(Enum).IsAssignableFrom(typeof(TForMethod)))
-            {
-                typeof(NetworkVariableHelper).GetMethod(nameof(NetworkVariableHelper.InitializeDelegatesEnum)).MakeGenericMethod(typeof(TForMethod)).Invoke(null, null);
-            }
-            else
-            {
-                throw new Exception($"Type {typeof(T).FullName} is not serializable - it must implement either INetworkSerializable or ISerializeByMemcpy");
-
-            }
-            NetworkVariableSerialization<TForMethod>.Read(reader, out value);
+            s_Serializer.Write(writer, ref value);
         }
 
-        protected internal delegate void WriteDelegate<TForMethod>(FastBufferWriter writer, in TForMethod value);
-
-        protected internal delegate void ReadDelegate<TForMethod>(FastBufferReader reader, out TForMethod value);
-
-        // These static delegates provide the right implementation for writing and reading a particular network variable type.
-        // For most types, these default to WriteValue() and ReadValue(), which perform simple memcpy operations.
-        //
-        // INetworkSerializableILPP will generate startup code that will set it to WriteNetworkSerializable()
-        // and ReadNetworkSerializable() for INetworkSerializable types, which will call NetworkSerialize().
-        //
-        // In the future we may be able to use this to provide packing implementations for floats and integers to optimize bandwidth usage.
-        //
-        // The reason this is done is to avoid runtime reflection and boxing in NetworkVariable - without this,
-        // NetworkVariable would need to do a `var is INetworkSerializable` check, and then cast to INetworkSerializable,
-        // *both* of which would cause a boxing allocation. Alternatively, NetworkVariable could have been split into
-        // NetworkVariable and NetworkSerializableVariable or something like that, which would have caused a poor
-        // user experience and an API that's easier to get wrong than right. This is a bit ugly on the implementation
-        // side, but it gets the best achievable user experience and performance.
-        private static WriteDelegate<T> s_Write = WriteValue;
-        private static ReadDelegate<T> s_Read = ReadValue;
-
-        protected static void Write(FastBufferWriter writer, in T value)
+        internal static void Read(FastBufferReader reader, out T value)
         {
-            s_Write(writer, value);
-        }
-
-        protected static void Read(FastBufferReader reader, out T value)
-        {
-            s_Read(reader, out value);
-        }
-
-        internal static void SetWriteDelegate(WriteDelegate<T> write)
-        {
-            s_Write = write;
-        }
-
-        internal static void SetReadDelegate(ReadDelegate<T> read)
-        {
-            s_Read = read;
-        }
-
-        protected NetworkVariableSerialization(
-            NetworkVariableReadPermission readPerm = DefaultReadPerm,
-            NetworkVariableWritePermission writePerm = DefaultWritePerm)
-            : base(readPerm, writePerm)
-        {
+            s_Serializer.Read(reader, out value);
         }
     }
 }

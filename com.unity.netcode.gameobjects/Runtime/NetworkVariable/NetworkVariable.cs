@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkVariable<T> : NetworkVariableSerialization<T> where T : unmanaged
+    public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
     {
         /// <summary>
         /// Delegate type for value changed event
@@ -102,7 +102,7 @@ namespace Unity.Netcode
             // would be stored in different fields
 
             T previousValue = m_InternalValue;
-            Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
 
             if (keepDirtyDelta)
             {
@@ -115,13 +115,13 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
-            Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
         }
 
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            Write(writer, m_InternalValue);
+            NetworkVariableSerialization<T>.Write(writer, ref m_InternalValue);
         }
     }
 }
