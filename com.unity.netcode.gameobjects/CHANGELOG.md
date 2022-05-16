@@ -15,8 +15,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 
 ### Fixed
-
-- Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
+- Fixed issue where one or more clients disconnecting during a scene event would make `LoadEventCompleted` or `UnloadEventCompleted` to wait until the `NetworkConfig.LoadSceneTimeOut` period before being triggered.
+- Fixed endless dialog boxes when adding a `NetworkBehaviour` to a `NetworkManager` or vice-versa (#1947)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
