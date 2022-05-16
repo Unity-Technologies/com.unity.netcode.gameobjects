@@ -24,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ConnectionApproval()
         {
-            NetworkManagerHelper.NetworkManagerObject.ConnectionApprovalCallback += NetworkManagerObject_ConnectionApprovalCallback;
+            NetworkManagerHelper.NetworkManagerObject.ConnectionApprovalHandler += NetworkManagerObject_ConnectionApprovalCallback;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.ConnectionApproval = true;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.PlayerPrefab = null;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(m_ValidationToken.ToString());
@@ -47,14 +47,22 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_IsValidated);
         }
 
-        private void NetworkManagerObject_ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
+        private NetworkManager.ConnectionApprovalResult NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var stringGuid = Encoding.UTF8.GetString(connectionData);
+            var decision = new NetworkManager.ConnectionApprovalResult();
+            var stringGuid = Encoding.UTF8.GetString(request.Payload);
             if (m_ValidationToken.ToString() == stringGuid)
             {
                 m_IsValidated = true;
             }
-            callback(false, null, m_IsValidated, null, null);
+
+            decision.Approved = m_IsValidated;
+            decision.CreatePlayerObject = false;
+            decision.Position = null;
+            decision.Rotation = null;
+            decision.PlayerPrefabHash = null;
+
+            return decision;
         }
 
         [TearDown]

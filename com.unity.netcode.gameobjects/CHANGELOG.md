@@ -12,11 +12,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- [breaking] `ConnectionApprovalCallback` is now `ConnectionApprovalHandler`. Receives a `ConnectionApprovalRequest`, and returns a `ConnectionApprovalResult`. By virtue of being a `Func<>`, there cannot be multiple handlers registered.
+
 ### Removed
 
 ### Fixed
 
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
+
+- Fixed issues when multiple Connection Approval callbacks were registered (#1941)
 
 ## [1.0.0-pre.9] - 2022-05-10
 

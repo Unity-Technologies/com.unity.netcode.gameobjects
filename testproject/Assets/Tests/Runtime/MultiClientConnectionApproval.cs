@@ -99,7 +99,7 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             server.NetworkConfig.ConnectionApproval = true;
-            server.ConnectionApprovalCallback += ConnectionApprovalCallback;
+            server.ConnectionApprovalHandler += ConnectionApprovalCallback;
             server.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
@@ -161,7 +161,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
+            server.ConnectionApprovalHandler -= ConnectionApprovalCallback;
             server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
@@ -173,9 +173,10 @@ namespace TestProject.RuntimeTests
         /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
         /// <param name="clientId">the client id being approved</param>
         /// <param name="callback">the callback invoked to handle approval</param>
-        private void ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
+        private NetworkManager.ConnectionApprovalResult ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            string approvalToken = Encoding.ASCII.GetString(connectionData);
+            var decision = new NetworkManager.ConnectionApprovalResult();
+            string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
 
             if (isApproved)
@@ -189,12 +190,22 @@ namespace TestProject.RuntimeTests
 
             if (m_PrefabOverrideGlobalObjectIdHash == 0)
             {
-                callback.Invoke(true, null, isApproved, null, null);
+                decision.CreatePlayerObject = true;
+                decision.Approved = isApproved;
+                decision.Position = null;
+                decision.Rotation = null;
+                decision.PlayerPrefabHash = null;
             }
             else
             {
-                callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
+                decision.CreatePlayerObject = true;
+                decision.Approved = isApproved;
+                decision.Position = null;
+                decision.Rotation = null;
+                decision.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
+
+            return decision;
         }
 
 
