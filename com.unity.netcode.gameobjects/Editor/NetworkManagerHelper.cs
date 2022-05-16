@@ -95,6 +95,53 @@ namespace Unity.Netcode.Editor
                     Singleton.CheckAndNotifyUserNetworkObjectRemoved(networkManager);
                 }
             }
+
+            var allNetworkObjects = Resources.FindObjectsOfTypeAll<NetworkObject>();
+            foreach (var networkObject in allNetworkObjects)
+            {
+                if (networkObject == null)
+                {
+                    // Can be null if a root is added
+                    continue;
+                }
+
+                bool hasParentObject = networkObject.GetComponentsInParent<NetworkObject>().Any(x => x != networkObject);
+
+                if (!hasParentObject)
+                {
+                    var children = networkObject.GetComponentsInChildren<NetworkObject>().Where(x => x != networkObject).ToArray();
+
+                    if (children.Length > 0)
+                    {
+                        DestroyChildNetworkObjects(children);
+                    }
+                }
+            }
+        }
+
+        private static void DestroyChildNetworkObjects(NetworkObject[] children)
+        {
+            if (!EditorApplication.isUpdating)
+            {
+                foreach (var child in children)
+                {
+                    Object.DestroyImmediate(child);
+
+                    if (!EditorApplication.isPlaying)
+                    {
+                        EditorUtility.DisplayDialog($"Removing {nameof(NetworkObject)}", NestedNetworkObjectNotAllowedMessage(), "OK");
+                    }
+                    else
+                    {
+                        Debug.LogError(NestedNetworkObjectNotAllowedMessage());
+                    }
+                }
+            }
+        }
+
+        private static string NestedNetworkObjectNotAllowedMessage()
+        {
+            return $"Nested {nameof(NetworkObject)} is not supported.";
         }
 
         /// <summary>
