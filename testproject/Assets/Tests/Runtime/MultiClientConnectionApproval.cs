@@ -99,7 +99,7 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             server.NetworkConfig.ConnectionApproval = true;
-            server.ConnectionApprovalHandler += ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback += ConnectionApprovalCallback;
             server.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
@@ -161,7 +161,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            server.ConnectionApprovalHandler -= ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
             server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
@@ -173,9 +173,9 @@ namespace TestProject.RuntimeTests
         /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
         /// <param name="clientId">the client id being approved</param>
         /// <param name="callback">the callback invoked to handle approval</param>
-        private NetworkManager.ConnectionApprovalResult ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
+        private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var decision = new NetworkManager.ConnectionApprovalResult();
+            var decision = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
 

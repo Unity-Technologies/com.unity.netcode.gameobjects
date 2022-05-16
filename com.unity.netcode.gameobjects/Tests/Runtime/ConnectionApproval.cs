@@ -24,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator ConnectionApproval()
         {
-            NetworkManagerHelper.NetworkManagerObject.ConnectionApprovalHandler += NetworkManagerObject_ConnectionApprovalCallback;
+            NetworkManagerHelper.NetworkManagerObject.ConnectionApprovalCallback += NetworkManagerObject_ConnectionApprovalCallback;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.ConnectionApproval = true;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.PlayerPrefab = null;
             NetworkManagerHelper.NetworkManagerObject.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(m_ValidationToken.ToString());
@@ -47,9 +47,9 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_IsValidated);
         }
 
-        private NetworkManager.ConnectionApprovalResult NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
+        private NetworkManager.ConnectionApprovalResponse NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var decision = new NetworkManager.ConnectionApprovalResult();
+            var decision = new NetworkManager.ConnectionApprovalResponse();
             var stringGuid = Encoding.UTF8.GetString(request.Payload);
             if (m_ValidationToken.ToString() == stringGuid)
             {

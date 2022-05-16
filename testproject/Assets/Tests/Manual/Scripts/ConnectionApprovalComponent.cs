@@ -65,7 +65,7 @@ namespace TestProject.ManualTests
 
             if (NetworkManager != null && NetworkManager.NetworkConfig.ConnectionApproval)
             {
-                NetworkManager.ConnectionApprovalHandler += ConnectionApprovalCallback;
+                NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;
 
                 if (m_ApprovalToken != string.Empty)
                 {
@@ -153,9 +153,9 @@ namespace TestProject.ManualTests
         /// </summary>
         /// <param name="request">The connection approval request</param>
         /// <returns>ConnectionApprovalResult with the approval decision, with parameters</returns>
-        private NetworkManager.ConnectionApprovalResult ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
+        private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var decision = new NetworkManager.ConnectionApprovalResult();
+            var decision = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isTokenValid = approvalToken == m_ApprovalToken;
             if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && request.ClientNetworkId != NetworkManager.LocalClientId)
