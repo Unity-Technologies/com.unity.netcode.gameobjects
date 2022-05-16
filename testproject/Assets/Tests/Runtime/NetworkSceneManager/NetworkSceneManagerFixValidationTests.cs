@@ -85,6 +85,7 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
+            // Apply a 500ms latency on packets (primarily for ClientDisconnectsDuringSeneLoadingValidation)
             var serverTransport = m_ServerNetworkManager.GetComponent<UnityTransport>();
             serverTransport.SetDebugSimulatorParameters(500, 0, 0);
 
@@ -107,7 +108,11 @@ namespace TestProject.RuntimeTests
         {
             if (sceneName == k_SceneToLoad)
             {
+                m_ServerNetworkManager.SceneManager.OnLoadEventCompleted -= SceneManager_OnLoadEventCompleted;
                 m_SceneLoadEventCompleted = true;
+
+                // Verify that the disconnected client is in the clients that timed out list
+                Assert.IsTrue(clientsTimedOut.Contains(m_FirstClientId), $"Client-id({m_FirstClientId}) was not found in the clients that timed out list that has a count of ({clientsTimedOut.Count}) entries!");
             }
         }
 
@@ -119,35 +124,51 @@ namespace TestProject.RuntimeTests
         public IEnumerator ClientDisconnectsDuringSeneLoadingValidation()
         {
             m_CanStart = true;
-            m_ServerNetworkManager.OnClientDisconnectCallback += M_ServerNetworkManager_OnClientDisconnectCallback;
             yield return StartServerAndClients();
+
+            // Do some preparation for the client we will be disconnecting.
             m_FirstClientId = m_ClientNetworkManagers[0].LocalClientId;
             if (m_ClientNetworkManagers[0].SceneManager.VerifySceneBeforeLoading != null)
             {
                 m_OriginalVerifyScene = m_ClientNetworkManagers[0].SceneManager.VerifySceneBeforeLoading;
             }
             m_ClientNetworkManagers[0].SceneManager.VerifySceneBeforeLoading = VerifySceneBeforeLoading;
+
+            // We use this to verify that the loading scene event doesn't take NetworkConfig.LoadSceneTimeOut to complete
             var timeEventStarted = Time.realtimeSinceStartup;
             var disconnectedClientName = m_ClientNetworkManagers[0].name;
 
+            // Start to load the scene
             m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
-
             yield return WaitForConditionOrTimeOut(() => m_SceneLoadEventCompleted);
-
             AssertOnTimeout("Timed out waiting for the load scene event to be completed!");
+
+            // Verify the client disconnected when it was just about to start the load event
             Assert.True(m_ClientDisconnectedOnLoad, $"{disconnectedClientName} did not disconnect!");
+
+            // Verify it didn't take as long as the NetworkConfig.LoadSceneTimeOut period to complete the event
             var timeToComplete = Time.realtimeSinceStartup - timeEventStarted;
             Assert.True(timeToComplete < m_ServerNetworkManager.NetworkConfig.LoadSceneTimeOut, "Server scene loading event timed out!");
+
+            // Verification that the disconnected client was in the timeout list is done in SceneManager_OnLoadEventCompleted
         }
 
         private NetworkSceneManager.VerifySceneBeforeLoadingDelegateHandler m_OriginalVerifyScene;
 
+        /// <summary>
+        /// The client that disconnects during the scene event will have this override that will:
+        /// - Set m_ClientDisconnectedOnLoad
+        /// - Stop/Disconnect the client
+        /// - Return false (i.e. don't load this scene) as we are simulating the client disconnected
+        /// right as the scene event started
+        /// </summary>
         private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             if (sceneName == k_SceneToLoad)
             {
                 m_ClientDisconnectedOnLoad = true;
                 NetcodeIntegrationTestHelpers.StopOneClient(m_ClientNetworkManagers[0]);
+                IntegrationTestSceneHandler.NetworkManagers.Remove(m_ClientNetworkManagers[0]);
                 return false;
             }
             if (m_OriginalVerifyScene != null)
@@ -155,14 +176,6 @@ namespace TestProject.RuntimeTests
                 return m_OriginalVerifyScene.Invoke(sceneIndex, sceneName, loadSceneMode);
             }
             return true;
-        }
-
-        private void M_ServerNetworkManager_OnClientDisconnectCallback(ulong clientId)
-        {
-            if (clientId == m_FirstClientId)
-            {
-                IntegrationTestSceneHandler.NetworkManagers.Remove(m_ClientNetworkManagers[0]);
-            }
         }
 
         protected override IEnumerator OnTearDown()

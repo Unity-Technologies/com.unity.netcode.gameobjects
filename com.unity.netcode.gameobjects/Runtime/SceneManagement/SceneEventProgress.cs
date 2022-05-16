@@ -105,10 +105,14 @@ namespace Unity.Netcode
 
         internal LoadSceneMode LoadSceneMode;
 
+        internal List<ulong> ClientsThatStartedSceneEvent;
+
         internal SceneEventProgress(NetworkManager networkManager, SceneEventProgressStatus status = SceneEventProgressStatus.Started)
         {
             if (status == SceneEventProgressStatus.Started)
             {
+                // Track the clients that were connected when we started this event
+                ClientsThatStartedSceneEvent = new List<ulong>(networkManager.ConnectedClientsIds);
                 m_NetworkManager = networkManager;
                 m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
                 TimeAtInitiation = Time.realtimeSinceStartup;

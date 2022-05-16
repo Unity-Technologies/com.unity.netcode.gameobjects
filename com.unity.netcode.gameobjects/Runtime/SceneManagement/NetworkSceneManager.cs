@@ -881,7 +881,7 @@ namespace Unity.Netcode
             sceneEventData.SceneEventType = sceneEventProgress.SceneEventType;
             sceneEventData.ClientsCompleted = sceneEventProgress.DoneClients;
             sceneEventData.LoadSceneMode = sceneEventProgress.LoadSceneMode;
-            sceneEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
+            sceneEventData.ClientsTimedOut = sceneEventProgress.ClientsThatStartedSceneEvent.Except(sceneEventProgress.DoneClients).ToList();
 
             var message = new SceneEventMessage
             {
