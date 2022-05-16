@@ -71,7 +71,12 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out value);
         }
 
-        // Functions that serialize other types
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
         internal static void WriteFixedString<TForMethod>(FastBufferWriter writer, in TForMethod value)
             where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
         {
