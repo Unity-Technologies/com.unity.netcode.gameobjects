@@ -157,7 +157,6 @@ namespace Unity.Netcode
         /// <b>Alternate Single Event Type Notification Registration Options</b><br/>
         /// To receive only a specific event type notification or a limited set of notifications you can alternately subscribe to
         /// each notification type individually via the following events:<br/>
-
         /// <list type="bullet">
         /// <item><term><see cref="OnLoad"/> Invoked only when a <see cref="SceneEventType.Load"/> event is being processed</term></item>
         /// <item><term><see cref="OnUnload"/> Invoked only when an <see cref="SceneEventType.Unload"/> event is being processed</term></item>
