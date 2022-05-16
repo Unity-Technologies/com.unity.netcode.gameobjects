@@ -68,7 +68,7 @@ namespace TestProject.ManualTests
                 m_SceneEventNotificationQueue = NetworkManager.gameObject.GetComponent<SceneEventNotificationQueue>();
             }
 
-            StartCoroutine("UpdateTextStatus");
+            StartCoroutine(UpdateTextStatus());
         }
 
         /// <summary>
