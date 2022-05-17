@@ -363,20 +363,42 @@ namespace Unity.Netcode.Components
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
 
-                if (st.normalizedTime >= 1.0f)
-                {
-                    continue;
-                }
-
+                var stateHash = st.fullPathHash;
+                var normalizedTime = st.normalizedTime;
+                var totalSpeed = st.speed * st.speedMultiplier;
+                var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
                 // NOTE:
                 // When synchronizing, for now we will just complete the transition and
                 // synchronize the player to the next state being transitioned into
                 if (m_Animator.IsInTransition(layer))
                 {
-                    st = m_Animator.GetNextAnimatorStateInfo(layer);
+                    var tt = m_Animator.GetAnimatorTransitionInfo(layer);
+                    var nextState = m_Animator.GetNextAnimatorStateInfo(layer);
+
+                    if (nextState.length > 0)
+                    {
+                        var nextStateTotalSpeed = nextState.speed * nextState.speedMultiplier;
+                        var nextStateAdjustedLength = nextState.length * nextStateTotalSpeed;
+                        // TODO: We need to get the transition curve for the target state as well as some
+                        // reasonable RTT estimate in order to get a more precise normalized synchronization time
+                        var transitionTime = Mathf.Min(tt.duration, tt.duration * tt.normalizedTime) * 0.5f;
+                        normalizedTime = Mathf.Min(1.0f, transitionTime > 0.0f ? transitionTime / nextStateAdjustedLength : 0.0f);
+                        // Leaving this here in the event we want to further improve upon the transition synchronization (it is useful info)
+                        //VerboseDebug($"TransitionTime ({transitionTime * 0.5f}) | NextStateTime ({normalizedTime * nextStateAdjustedLength}) - Normalized ({normalizedTime})");
+                    }
+                    else
+                    {
+                        normalizedTime = 0.0f;
+                    }
+
+                    stateHash = nextState.fullPathHash;
                 }
-                var stateHash = st.fullPathHash;
-                var normalizedTime = st.normalizedTime;
+                else
+                if (st.normalizedTime >= adjustedNormalizedMaxTime)
+                {
+                    continue;
+                }
+
                 var animMsg = new AnimationMessage
                 {
                     StateHash = stateHash,
@@ -420,24 +442,18 @@ namespace Unity.Netcode.Components
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
+                var totalSpeed = st.speed * st.speedMultiplier;
+                var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
 
-                // When transitioning, we should use the transitions full path hash and normalized time
-                if (m_Animator.IsInTransition(layer))
+                // determine if we have reached the end of our state time, if so we can skip
+                if (st.normalizedTime >= adjustedNormalizedMaxTime)
                 {
-                    AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
-                    stateHash = tt.fullPathHash;
-                    normalizedTime = st.normalizedTime; // This seems to work better than tt.normalizedTime??
+                    continue;
                 }
-                else
+
+                if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
                 {
-                    if (st.normalizedTime >= 1.0f)
-                    {
-                        continue;
-                    }
-                    if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
-                    {
-                        continue;
-                    }
+                    continue;
                 }
 
                 var animMsg = new AnimationMessage
@@ -774,7 +790,10 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            UpdateAnimationState(animSnapshot);
+            if (!IsOwner)
+            {
+                UpdateAnimationState(animSnapshot);
+            }
         }
 
         /// <summary>
@@ -879,7 +898,7 @@ namespace Unity.Netcode.Components
         {
             if (IsSpawned)
             {
-                if (NetworkManager.LogLevel == LogLevel.Normal)
+                if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
                     switch (logType)
                     {

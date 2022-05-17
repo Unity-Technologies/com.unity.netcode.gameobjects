@@ -32,9 +32,16 @@ namespace Tests.Manual.NetworkAnimatorTests
             m_Animator.SetBool("Rotate", m_Rotate);
         }
 
-        internal void PlayPulseAnimation()
+        internal void PlayPulseAnimation(bool useNetworkAnimator = true)
         {
-            m_NetworkAnimator.SetTrigger("Pulse");
+            if (useNetworkAnimator)
+            {
+                m_NetworkAnimator.SetTrigger("Pulse");
+            }
+            else
+            {
+                m_Animator.SetBool("Pulse", true);
+            }
         }
     }
 }
