@@ -765,12 +765,7 @@ namespace Unity.Netcode
 #endif
             LocalClientId = ulong.MaxValue;
 
-            PendingClients.Clear();
-            m_ConnectedClients.Clear();
-            m_ConnectedClientsList.Clear();
-            m_ConnectedClientIds.Clear();
-            LocalClient = null;
-            NetworkObject.OrphanChildren.Clear();
+            ClearClients();
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -860,6 +855,16 @@ namespace Unity.Netcode
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.Initialize(this);
+        }
+
+        private void ClearClients()
+        {
+            PendingClients.Clear();
+            m_ConnectedClients.Clear();
+            m_ConnectedClientsList.Clear();
+            m_ConnectedClientIds.Clear();
+            LocalClient = null;
+            NetworkObject.OrphanChildren.Clear();
         }
 
         /// <summary>
@@ -1175,6 +1180,8 @@ namespace Unity.Netcode
                 m_ShuttingDown = true;
                 m_StopProcessingMessages = discardMessageQueue;
             }
+
+            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
         }
 
         internal void ShutdownInternal()
@@ -1299,6 +1306,8 @@ namespace Unity.Netcode
             IsListening = false;
             m_ShuttingDown = false;
             m_StopProcessingMessages = false;
+
+            ClearClients();
         }
 
         // INetworkUpdateSystem
@@ -1829,7 +1838,7 @@ namespace Unity.Netcode
 
                 if (createPlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, position, rotation);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(false, playerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId, null, null, position, rotation);
                     SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false, true, ownerClientId, false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;

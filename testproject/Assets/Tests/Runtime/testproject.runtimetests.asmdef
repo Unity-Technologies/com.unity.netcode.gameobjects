@@ -6,7 +6,10 @@
         "Unity.Netcode.RuntimeTests",
         "TestProject.ManualTests",
         "TestProject",
-        "Unity.Netcode.TestHelpers.Runtime"
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Netcode.TestHelpers.Runtime",
+        "Unity.Collections"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"
@@ -16,6 +19,11 @@
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
+        },
+        {
+            "name": "com.unity.addressables",
+            "expression": "",
+            "define": "TESTPROJECT_USE_ADDRESSABLES"
         }
     ]
 }

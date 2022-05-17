@@ -273,9 +273,9 @@ namespace Unity.Netcode.RuntimeTests
     {
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>>();
+        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
 
-        public readonly NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>>();
+        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -365,6 +365,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for connection on client and server side
             yield return WaitForClientsConnectedOrTimeOut();
+            AssertOnTimeout($"Timed-out waiting for all clients to connect!");
 
             // These are the *SERVER VERSIONS* of the *CLIENT PLAYER 1 & 2*
             var result = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();

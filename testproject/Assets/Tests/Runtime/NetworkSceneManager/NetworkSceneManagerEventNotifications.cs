@@ -16,7 +16,7 @@ namespace TestProject.RuntimeTests
     {
         private const string k_InvalidSceneName = "SomeInvalidSceneName";
         private const string k_SceneToLoad = "EmptyScene";
-        protected override int NumberOfClients => 9;
+        protected override int NumberOfClients => 4;
         private string m_CurrentSceneName;
         private Scene m_CurrentScene;
         private LoadSceneMode m_LoadSceneMode;
@@ -83,7 +83,6 @@ namespace TestProject.RuntimeTests
                     {
                         Assert.AreEqual(sceneEvent.SceneName, m_CurrentSceneName);
                         Assert.IsTrue(ContainsClient(sceneEvent.ClientId));
-                        Assert.IsNotNull(sceneEvent.AsyncOperation);
                         break;
                     }
                 case SceneEventType.LoadComplete:
@@ -157,14 +156,14 @@ namespace TestProject.RuntimeTests
 
             // Wait for all clients to load the scene
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to load {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to load {m_CurrentSceneName}!");
 
             // Test unloading additive scenes and the associated event messaging and notification pipelines
             ResetWait();
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
 
             yield return WaitForConditionOrTimeOut(ConditionPassed);
-            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to unload {m_CurrentSceneName}");
+            AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!");
 
             // Check error status for trying to unloading something not loaded
             ResetWait();
@@ -173,8 +172,6 @@ namespace TestProject.RuntimeTests
             // Check error status for trying to load an invalid scene name
             LogAssert.Expect(LogType.Error, $"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive), SceneEventProgressStatus.InvalidSceneName);
-
-            ShutdownAndCleanUp();
         }
 
         /// <summary>

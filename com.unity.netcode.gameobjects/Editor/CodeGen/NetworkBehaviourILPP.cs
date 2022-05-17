@@ -607,9 +607,21 @@ namespace Unity.Netcode.Editor.CodeGen
                             var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
+#else
+                                var resolvedConstraint = constraint.ConstraintType.Resolve();
+#endif
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+                                if (constraint.IsGenericInstance)
+                                {
+                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
+                                    {
+                                        resolvedConstraintName = constraint.FullName;
+                                    }
+                                }
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
                                     (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
                                     (resolvedConstraint.Name == "ValueType" && !checkType.IsValueType))
@@ -737,9 +749,22 @@ namespace Unity.Netcode.Editor.CodeGen
                             var meetsConstraints = true;
                             foreach (var constraint in method.GenericParameters[0].Constraints)
                             {
+#if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
+#else
+                                var resolvedConstraint = constraint.ConstraintType.Resolve();
+#endif
+
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
+                                if (constraint.IsGenericInstance)
+                                {
+                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
+                                    {
+                                        resolvedConstraintName = constraint.FullName;
+                                    }
+                                }
 
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
                                     (resolvedConstraint.IsClass && !checkType.Resolve().IsSubclassOf(resolvedConstraintName)) ||
@@ -1133,7 +1158,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
+                        m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {nameof(INetworkSerializeByMemcpy)} or {nameof(INetworkSerializable)}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {typeof(ForceNetworkSerializeByMemcpy<>).Name}<{paramType}>, or you can create extension methods for {nameof(FastBufferReader)}.{nameof(FastBufferReader.ReadValueSafe)}(this {nameof(FastBufferReader)}, out {paramType}) and {nameof(FastBufferWriter)}.{nameof(FastBufferWriter.WriteValueSafe)}(this {nameof(FastBufferWriter)}, in {paramType}) to define serialization for this type.");
                         continue;
                     }
 
@@ -1447,7 +1472,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"Don't know how to serialize {paramType.Name} - implement {nameof(INetworkSerializable)}, tag memcpyable struct with {nameof(INetworkSerializeByMemcpy)}, or add an extension method for {nameof(FastBufferWriter)}.{k_WriteValueMethodName} to define serialization.");
+                    m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {nameof(INetworkSerializeByMemcpy)} or {nameof(INetworkSerializable)}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {typeof(ForceNetworkSerializeByMemcpy<>).Name}<{paramType}>, or you can create extension methods for {nameof(FastBufferReader)}.{nameof(FastBufferReader.ReadValueSafe)}(this {nameof(FastBufferReader)}, out {paramType}) and {nameof(FastBufferWriter)}.{nameof(FastBufferWriter.WriteValueSafe)}(this {nameof(FastBufferWriter)}, in {paramType}) to define serialization for this type.");
                     continue;
                 }
 
