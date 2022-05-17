@@ -395,9 +395,7 @@ namespace Unity.Netcode
             {
                 if (value != null && value.GetInvocationList().Length > 1)
                 {
-                    Debug.LogError(
-                        $"Only one connection approval handler is supported in {nameof(m_ConnectionApprovalCallback)}. Rejecting further adds.");
-                    throw (new InvalidOperationException());
+                    throw (new InvalidOperationException($"Only one connection approval handler is supported in {nameof(m_ConnectionApprovalCallback)}. Rejecting further adds."));
                 }
                 else
                 {
