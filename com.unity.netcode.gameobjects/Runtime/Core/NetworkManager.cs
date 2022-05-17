@@ -1881,10 +1881,10 @@ namespace Unity.Netcode
                     SpawnManager.SpawnNetworkObjectLocally(
                         networkObject,
                         SpawnManager.GetNetworkObjectId(),
-                        sceneObject:false,
-                        playerObject:true,
+                        sceneObject: false,
+                        playerObject: true,
                         ownerClientId,
-                        destroyWithScene:false);
+                        destroyWithScene: false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
