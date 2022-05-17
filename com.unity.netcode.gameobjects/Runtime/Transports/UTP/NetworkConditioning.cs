@@ -43,6 +43,11 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        void Start()
+        {
+            UpdateLiveParameters();
+        }
+
         public void UpdateLiveParameters()
         {
             var transport = GetComponent<UnityTransport>();
