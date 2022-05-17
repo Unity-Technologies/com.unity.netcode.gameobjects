@@ -206,12 +206,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
-        [HideInInspector] public bool RunInBackground = true;
+        [HideInInspector]
+        public bool RunInBackground = true;
 
         /// <summary>
         /// The log level to use
         /// </summary>
-        [HideInInspector] public LogLevel LogLevel = LogLevel.Normal;
+        [HideInInspector]
+        public LogLevel LogLevel = LogLevel.Normal;
 
         /// <summary>
         /// The singleton instance of the NetworkManager
@@ -358,7 +360,7 @@ namespace Unity.Netcode
         public event Action OnServerStarted = null;
 
         /// <summary>
-        /// Connection Approval Result
+        /// Connection Approval Response
         /// </summary>
         /// <param name="Approved">Whether or not the client was approved</param>
         /// <param name="CreatePlayerObject">If true, a player object will be created. Otherwise the client will have no object.</param>
@@ -378,7 +380,7 @@ namespace Unity.Netcode
         /// Connection Approval Request
         /// </summary>
         /// <param name="Payload">The connection data payload</param>
-        /// <param name="ClientNetworkId">The Client Network Id of the client we are about to approve</param>
+        /// <param name="ClientNetworkId">The Network Id of the client we are about to handle</param>
         public struct ConnectionApprovalRequest
         {
             public byte[] Payload;
@@ -386,7 +388,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// The callback to invoke during connection approval. Allows client code to decide to allow a client in or not
+        /// The callback to invoke during connection approval. Allows client code to decide whether or not to allow incoming client connection
         /// </summary>
         public Func<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
         {
@@ -395,7 +397,7 @@ namespace Unity.Netcode
             {
                 if (value != null && value.GetInvocationList().Length > 1)
                 {
-                    throw (new InvalidOperationException($"Only one connection approval handler is supported in {nameof(m_ConnectionApprovalCallback)}. Rejecting further adds."));
+                    throw new InvalidOperationException($"Only one {nameof(ConnectionApprovalCallback)} can be registered at a time.");
                 }
                 else
                 {
@@ -409,7 +411,8 @@ namespace Unity.Netcode
         /// <summary>
         /// The current NetworkConfig
         /// </summary>
-        [HideInInspector] public NetworkConfig NetworkConfig;
+        [HideInInspector]
+        public NetworkConfig NetworkConfig;
 
         /// <summary>
         /// The current host name we are connected to, used to validate certificate
@@ -1005,7 +1008,6 @@ namespace Unity.Netcode
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
                 var response = ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId });
-
                 if (!response.Approved)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -1019,9 +1021,11 @@ namespace Unity.Netcode
             }
             else
             {
-                var response = new ConnectionApprovalResponse();
-                response.Approved = true;
-                response.CreatePlayerObject = NetworkConfig.PlayerPrefab != null;
+                var response = new ConnectionApprovalResponse
+                {
+                    Approved = true,
+                    CreatePlayerObject = NetworkConfig.PlayerPrefab != null
+                };
                 HandleConnectionApproval(ServerClientId, response);
             }
 
@@ -1850,11 +1854,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
-        /// <param name="ownerClientId">client being approved</param>
-        /// <param name="decision">the decision to allow the player in or not, with its parameters</param>
-        internal void HandleConnectionApproval(ulong ownerClientId, ConnectionApprovalResponse decision)
+        /// <param name="ownerClientId">The Network Id of the client being approved</param>
+        /// <param name="response">The response to allow the player in or not, with its parameters</param>
+        internal void HandleConnectionApproval(ulong ownerClientId, ConnectionApprovalResponse response)
         {
-            if (decision.Approved)
+            if (response.Approved)
             {
                 // Inform new client it got approved
                 PendingClients.Remove(ownerClientId);
@@ -1864,14 +1868,23 @@ namespace Unity.Netcode
                 m_ConnectedClientsList.Add(client);
                 m_ConnectedClientIds.Add(client.ClientId);
 
-                if (decision.CreatePlayerObject)
+                if (response.CreatePlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(false,
-                        decision.PlayerPrefabHash ??
-                        NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash, ownerClientId,
-                        null, null, decision.Position, decision.Rotation);
-                    SpawnManager.SpawnNetworkObjectLocally(networkObject, SpawnManager.GetNetworkObjectId(), false,
-                        true, ownerClientId, false);
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(
+                        isSceneObject: false,
+                        response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash,
+                        ownerClientId,
+                        parentNetworkId: null,
+                        networkSceneHandle: null,
+                        response.Position,
+                        response.Rotation);
+                    SpawnManager.SpawnNetworkObjectLocally(
+                        networkObject,
+                        SpawnManager.GetNetworkObjectId(),
+                        sceneObject:false,
+                        playerObject:true,
+                        ownerClientId,
+                        destroyWithScene:false);
 
                     ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
@@ -1911,13 +1924,13 @@ namespace Unity.Netcode
                     InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
-                if (!decision.CreatePlayerObject || (decision.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
+                if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
                 {
                     return;
                 }
 
                 // Separating this into a contained function call for potential further future separation of when this notification is sent.
-                ApprovedPlayerSpawn(ownerClientId, decision.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
+                ApprovedPlayerSpawn(ownerClientId, response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash);
             }
             else
             {

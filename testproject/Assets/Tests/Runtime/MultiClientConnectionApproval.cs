@@ -99,7 +99,7 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             server.NetworkConfig.ConnectionApproval = true;
-            server.ConnectionApprovalCallback += ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback = ConnectionApprovalCallback;
             server.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
@@ -161,7 +161,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback = null;
             server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
@@ -175,7 +175,7 @@ namespace TestProject.RuntimeTests
         /// <param name="callback">the callback invoked to handle approval</param>
         private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var decision = new NetworkManager.ConnectionApprovalResponse();
+            var response = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
 
@@ -190,22 +190,22 @@ namespace TestProject.RuntimeTests
 
             if (m_PrefabOverrideGlobalObjectIdHash == 0)
             {
-                decision.CreatePlayerObject = true;
-                decision.Approved = isApproved;
-                decision.Position = null;
-                decision.Rotation = null;
-                decision.PlayerPrefabHash = null;
+                response.CreatePlayerObject = true;
+                response.Approved = isApproved;
+                response.Position = null;
+                response.Rotation = null;
+                response.PlayerPrefabHash = null;
             }
             else
             {
-                decision.CreatePlayerObject = true;
-                decision.Approved = isApproved;
-                decision.Position = null;
-                decision.Rotation = null;
-                decision.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
+                response.CreatePlayerObject = true;
+                response.Approved = isApproved;
+                response.Position = null;
+                response.Rotation = null;
+                response.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
 
-            return decision;
+            return response;
         }
 
 

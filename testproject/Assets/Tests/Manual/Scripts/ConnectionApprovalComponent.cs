@@ -155,7 +155,7 @@ namespace TestProject.ManualTests
         /// <returns>ConnectionApprovalResult with the approval decision, with parameters</returns>
         private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
-            var decision = new NetworkManager.ConnectionApprovalResponse();
+            var response = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isTokenValid = approvalToken == m_ApprovalToken;
             if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && request.ClientNetworkId != NetworkManager.LocalClientId)
@@ -165,19 +165,19 @@ namespace TestProject.ManualTests
 
             if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
             {
-                decision.Approved = isTokenValid;
-                decision.PlayerPrefabHash = m_GlobalObjectIdHashOverride;
-                decision.Position = null;
-                decision.Rotation = null;
-                decision.CreatePlayerObject = true;
+                response.Approved = isTokenValid;
+                response.PlayerPrefabHash = m_GlobalObjectIdHashOverride;
+                response.Position = null;
+                response.Rotation = null;
+                response.CreatePlayerObject = true;
             }
             else
             {
-                decision.Approved = isTokenValid;
-                decision.PlayerPrefabHash = null;
-                decision.Position = null;
-                decision.Rotation = null;
-                decision.CreatePlayerObject = true;
+                response.Approved = isTokenValid;
+                response.PlayerPrefabHash = null;
+                response.Position = null;
+                response.Rotation = null;
+                response.CreatePlayerObject = true;
             }
 
             if (m_ConnectionMessageToDisplay)
@@ -194,7 +194,7 @@ namespace TestProject.ManualTests
                 m_ConnectionMessageToDisplay.gameObject.SetActive(true);
             }
 
-            return decision;
+            return response;
         }
 
         /// <summary>
