@@ -733,7 +733,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfTypeReceived<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             var check = new MessageReceiveCheckWithResult { CheckType = typeof(T) };
@@ -761,7 +761,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="result">The result. If null, it will fail if the predicate is not met</param>
         /// <param name="timeout">The max time in seconds to wait for</param>
-        internal static IEnumerator WaitForMessageOfTypeHandled<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = 0.5f) where T : INetworkMessage
+        internal static IEnumerator WaitForMessageOfTypeHandled<T>(NetworkManager toBeReceivedBy, ResultWrapper<bool> result = null, float timeout = DefaultTimeout) where T : INetworkMessage
         {
             var hooks = s_Hooks[toBeReceivedBy];
             if (!hooks.HandleChecks.ContainsKey(typeof(T)))
