@@ -61,7 +61,7 @@ namespace Unity.Netcode
         internal List<ulong> DoneClients { get; } = new List<ulong>();
 
         /// <summary>
-        /// The local time when it the scene event was "roughly started"
+        /// The local time when the scene event was "roughly started"
         /// </summary>
         internal float TimeAtInitiation { get; }
 
