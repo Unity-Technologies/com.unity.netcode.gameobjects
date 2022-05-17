@@ -16,7 +16,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     public static class NetcodeIntegrationTestHelpers
     {
         public const int DefaultMinFrames = 1;
-        public const float DefaultTimeout = 2f;
+        public const float DefaultTimeout = 4f;
         private static List<NetworkManager> s_NetworkManagerInstances = new List<NetworkManager>();
         private static Dictionary<NetworkManager, MultiInstanceHooks> s_Hooks = new Dictionary<NetworkManager, MultiInstanceHooks>();
         private static bool s_IsStarted;
