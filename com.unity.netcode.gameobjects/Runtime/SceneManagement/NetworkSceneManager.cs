@@ -1105,6 +1105,7 @@ namespace Unity.Netcode
         /// </summary>
         internal void UnloadAdditivelyLoadedScenes(uint sceneEventId)
         {
+            var sceneEventData = SceneEventDataStore[sceneEventId];
             // Unload all additive scenes while making sure we don't try to unload the base scene ( loaded in single mode ).
             var currentActiveScene = SceneManager.GetActiveScene();
             foreach (var keyHandleEntry in ScenesLoaded)
@@ -1114,15 +1115,7 @@ namespace Unity.Netcode
                 {
                     var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value,
                         new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = EmptySceneUnloadedOperation });
-
-                    OnSceneEvent?.Invoke(new SceneEvent()
-                    {
-                        AsyncOperation = sceneUnload,
-                        SceneEventType = SceneEventType.Unload,
-                        SceneName = keyHandleEntry.Value.name,
-                        LoadSceneMode = LoadSceneMode.Additive, // The only scenes unloaded are scenes that were additively loaded
-                        ClientId = NetworkManager.ServerClientId
-                    });
+                    SceneUnloadEventHandler.RegisterScene(this, keyHandleEntry.Value, LoadSceneMode.Additive, sceneUnload);
                 }
             }
             // clear out our scenes loaded list
@@ -1174,12 +1167,14 @@ namespace Unity.Netcode
 
                 // Now Unload all currently additively loaded scenes
                 UnloadAdditivelyLoadedScenes(sceneEventId);
+
+                // Register the active scene for unload scene event notifications
+                SceneUnloadEventHandler.RegisterScene(this, SceneManager.GetActiveScene(), LoadSceneMode.Single);
             }
 
             // Now start loading the scene
             var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded };
             var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
-
             // If integration testing, IntegrationTestSceneHandler returns null
             if (sceneLoad == null)
             {
@@ -1204,6 +1199,87 @@ namespace Unity.Netcode
 
             //Return our scene progress instance
             return sceneEventProgress.Status;
+        }
+
+        /// <summary>
+        /// Helper class used to handle "odd ball" scene unload event notification scenarios
+        /// when scene switching.
+        /// </summary>
+        internal class SceneUnloadEventHandler
+        {
+            private static Dictionary<NetworkManager, List<SceneUnloadEventHandler>> s_Instances = new Dictionary<NetworkManager, List<SceneUnloadEventHandler>>();
+
+            internal static void RegisterScene(NetworkSceneManager networkSceneManager, Scene scene, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
+            {
+                var networkManager = networkSceneManager.m_NetworkManager;
+                if (!s_Instances.ContainsKey(networkManager))
+                {
+                    s_Instances.Add(networkManager, new List<SceneUnloadEventHandler>());
+                }
+                var clientId = networkManager.IsServer ? NetworkManager.ServerClientId : networkManager.LocalClientId;
+                s_Instances[networkManager].Add(new SceneUnloadEventHandler(networkSceneManager, scene, clientId, loadSceneMode, asyncOperation));
+            }
+
+            private static void SceneUnloadComplete(SceneUnloadEventHandler sceneUnloadEventHandler)
+            {
+                if (sceneUnloadEventHandler == null || sceneUnloadEventHandler.m_NetworkSceneManager == null || sceneUnloadEventHandler.m_NetworkSceneManager.m_NetworkManager == null)
+                {
+                    return;
+                }
+                var networkManager = sceneUnloadEventHandler.m_NetworkSceneManager.m_NetworkManager;
+                if (s_Instances.ContainsKey(networkManager))
+                {
+                    s_Instances[networkManager].Remove(sceneUnloadEventHandler);
+                    if (s_Instances[networkManager].Count == 0)
+                    {
+                        s_Instances.Remove(networkManager);
+                    }
+                }
+            }
+
+            private NetworkSceneManager m_NetworkSceneManager;
+            private AsyncOperation m_AsyncOperation;
+            private ulong m_ClientId;
+            private Scene m_Scene;
+
+            private void SceneUnloaded(Scene scene)
+            {
+                if (m_Scene.handle == scene.handle)
+                {
+                    m_NetworkSceneManager.OnSceneEvent?.Invoke(new SceneEvent()
+                    {
+                        AsyncOperation = m_AsyncOperation,
+                        SceneEventType = SceneEventType.UnloadComplete,
+                        SceneName = m_Scene.name,
+                        LoadSceneMode = LoadSceneMode.Single,
+                        ClientId = m_ClientId
+                    });
+                    m_NetworkSceneManager.OnUnloadComplete?.Invoke(m_ClientId, m_Scene.name);
+                    SceneManager.sceneUnloaded -= SceneUnloaded;
+                    SceneUnloadComplete(this);
+                }
+            }
+
+            private SceneUnloadEventHandler(NetworkSceneManager networkSceneManager, Scene scene, ulong clientId, LoadSceneMode loadSceneMode, AsyncOperation asyncOperation = null)
+            {
+                m_AsyncOperation = asyncOperation;
+                m_NetworkSceneManager = networkSceneManager;
+                m_ClientId = clientId;
+                m_Scene = scene;
+                SceneManager.sceneUnloaded += SceneUnloaded;
+
+                // Send the initial unload event notification
+                m_NetworkSceneManager.OnSceneEvent?.Invoke(new SceneEvent()
+                {
+                    AsyncOperation = m_AsyncOperation,
+                    SceneEventType = SceneEventType.Unload,
+                    SceneName = m_Scene.name,
+                    LoadSceneMode = loadSceneMode,
+                    ClientId = clientId
+                });
+
+                m_NetworkSceneManager.OnUnload?.Invoke(networkSceneManager.m_NetworkManager.LocalClientId, m_Scene.name, null);
+            }
         }
 
         /// <summary>
@@ -1240,6 +1316,10 @@ namespace Unity.Netcode
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
                 IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+
+                // Register the active scene for unload scene event notifications
+                SceneUnloadEventHandler.RegisterScene(this, SceneManager.GetActiveScene(), LoadSceneMode.Single);
+
             }
 
             var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode,
