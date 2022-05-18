@@ -18,7 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a scene in `LoadSceneMode.Single` mode.
+- Fixed issue where `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a new scene in `LoadSceneMode.Single` mode.
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
 
