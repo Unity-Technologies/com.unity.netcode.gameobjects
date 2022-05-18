@@ -7,12 +7,30 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    interface INetworkVariableSerializer<T>
+    /// <summary>
+    /// Interface used by NetworkVariables to serialize them
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal interface INetworkVariableSerializer<T>
     {
+        // Write has to be taken by ref here because of INetworkSerializable
+        // Open Instance Delegates (pointers to methods without an instance attached to them)
+        // require the first parameter passed to them (the instance) to be passed by ref.
+        // So foo.Bar() becomes BarDelegate(ref foo);
+        // Taking T as an in parameter like we do in other places would require making a copy
+        // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
         public void Read(FastBufferReader reader, out T value);
     }
 
+    /// <summary>
+    /// Basic serializer for unmanaged types.
+    /// This covers primitives, built-in unity types, and IForceSerializeByMemcpy
+    /// Since all of those ultimately end up calling WriteUnmanagedSafe, this simplifies things
+    /// by calling that directly - thus preventing us from having to have a specific T that meets
+    /// the specific constraints that the various generic WriteValue calls require.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class UnmanagedTypeSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
     {
         public void Write(FastBufferWriter writer, ref T value)
@@ -25,6 +43,18 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// Serializer for FixedStrings, which does the same thing FastBufferWriter/FastBufferReader do,
+    /// but is implemented to get the data it needs using open instance delegates that are passed in
+    /// via reflection. This prevents needing T to meet any interface requirements (which isn't achievable
+    /// without incurring GC allocs on every call to Write or Read - reflection + Open Instance Delegates
+    /// circumvent that.)
+    ///
+    /// Tests show that calling these delegates doesn't cause any GC allocations even though they're
+    /// obtained via reflection and Delegate.CreateDelegate() and called on types that, at compile time,
+    /// aren't known to actually contain those methods.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class FixedStringSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
     {
         internal delegate int GetLengthDelegate(ref T value);
@@ -51,6 +81,18 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// Serializer for INetworkSerializable types, which does the same thing
+    /// FastBufferWriter/FastBufferReader do, but is implemented to call the NetworkSerialize() method
+    /// via open instance delegates passed in via reflection. This prevents needing T to meet any interface
+    /// requirements (which isn't achievable without incurring GC allocs on every call to Write or Read -
+    /// reflection + Open Instance Delegates circumvent that.)
+    ///
+    /// Tests show that calling these delegates doesn't cause any GC allocations even though they're
+    /// obtained via reflection and Delegate.CreateDelegate() and called on types that, at compile time,
+    /// aren't known to actually contain those methods.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     internal class NetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
     {
         internal delegate void WriteValueDelegate(ref T value, BufferSerializer<BufferSerializerWriter> serializer);
@@ -71,29 +113,48 @@ namespace Unity.Netcode
         }
     }
 
-    public class UserNetworkVariableSerializer<T> : INetworkVariableSerializer<T>
+    /// <summary>
+    /// This class is used to register user serialization with NetworkVariables for types
+    /// that are serialized via user serialization, such as with FastBufferReader and FastBufferWriter
+    /// extension methods. Finding those methods isn't achievable efficiently at runtime, so this allows
+    /// users to tell NetworkVariable about those extension methods (or simply pass in a lambda)
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class UserNetworkVariableSerialization<T>
     {
-        public delegate void WriteValueDelegate(FastBufferWriter writer, ref T value);
+        public delegate void WriteValueDelegate(FastBufferWriter writer, in T value);
         public delegate void ReadValueDelegate(FastBufferReader reader, out T value);
 
         public static WriteValueDelegate WriteValue;
         public static ReadValueDelegate ReadValue;
+    }
 
+    /// <summary>
+    /// This class is instantiated for types that we can't determine ahead of time are serializable - types
+    /// that don't meet any of the constraints for methods that are available on FastBufferReader and
+    /// FastBufferWriter. These types may or may not be serializable through extension methods. To ensure
+    /// the user has time to pass in the delegates to UserNetworkVariableSerialization, the existence
+    /// of user serialization isn't checked until it's used, so if no serialization is provided, this
+    /// will throw an exception when an object containing the relevant NetworkVariable is spawned.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    internal class FallbackSerializer<T> : INetworkVariableSerializer<T>
+    {
         public void Write(FastBufferWriter writer, ref T value)
         {
-            if (ReadValue == null || WriteValue == null)
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.WriteValue)} and {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)} and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
-            WriteValue(writer, ref value);
+            UserNetworkVariableSerialization<T>.WriteValue(writer, value);
         }
         public void Read(FastBufferReader reader, out T value)
         {
-            if (ReadValue == null || WriteValue == null)
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.WriteValue)} and {nameof(UserNetworkVariableSerializer<T>)}.{nameof(UserNetworkVariableSerializer<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)} and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
-            ReadValue(reader, out value);
+            UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
         }
     }
 
@@ -130,17 +191,8 @@ namespace Unity.Netcode
     /// <summary>
     /// Support methods for reading/writing NetworkVariables
     /// Because there are multiple overloads of WriteValue/ReadValue based on different generic constraints,
-    /// but there's no way to achieve the same thing with a class, this includes various read/write delegates
-    /// based on which constraints are met by `T`. These constraints are set up by `NetworkVariableHelpers`,
-    /// which is invoked by code generated by ILPP during module load.
-    /// (As it turns out, IL has support for a module initializer that C# doesn't expose.)
-    /// This installs the correct delegate for each `T` to ensure that each type is serialized properly.
-    ///
-    /// Any type that inherits from `NetworkVariableSerialization<T>` will implicitly result in any `T`
-    /// passed to it being picked up and initialized by ILPP.
-    ///
-    /// The methods here, despite being static, are `protected` specifically to ensure that anything that
-    /// wants access to them has to inherit from this base class, thus enabling ILPP to find and initialize it.
+    /// but there's no way to achieve the same thing with a class, this sets up various read/write schemes
+    /// based on which constraints are met by `T` using reflection, which is done at module load time.
     /// </summary>
     [Serializable]
     public static class NetworkVariableSerialization<T> where T : unmanaged
@@ -173,7 +225,7 @@ namespace Unity.Netcode
                 return new FixedStringSerializer<T> { GetLength = getLength, SetLength = setLength, GetUnsafePtr = getUnsafePtr };
             }
 
-            return new UserNetworkVariableSerializer<T>();
+            return new FallbackSerializer<T>();
         }
 
         internal static void Write(FastBufferWriter writer, ref T value)
