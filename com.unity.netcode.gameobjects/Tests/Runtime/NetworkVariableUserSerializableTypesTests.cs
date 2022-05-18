@@ -1,12 +1,8 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
-using Random = UnityEngine.Random;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -37,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<MyTypeThree> NetworkVariable = new NetworkVariable<MyTypeThree>();
     }
 
-    static class NetworkVariableUserSerializableTypesTestsExtensionMethods
+    internal static class NetworkVariableUserSerializableTypesTestsExtensionMethods
     {
         public static void WriteValueSafe(this FastBufferWriter writer, in MyTypeTwo value)
         {
@@ -106,7 +102,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value = new MyTypeOne{i=20};
+            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value = new MyTypeOne { i = 20 };
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
@@ -130,7 +126,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value = new MyTypeTwo{i=20};
+            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value = new MyTypeTwo { i = 20 };
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
