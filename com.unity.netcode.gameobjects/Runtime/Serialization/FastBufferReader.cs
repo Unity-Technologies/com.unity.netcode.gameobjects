@@ -848,6 +848,12 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
 
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValue<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
