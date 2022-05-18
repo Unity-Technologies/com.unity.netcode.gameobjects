@@ -89,6 +89,12 @@ namespace Unity.Netcode.Editor.CodeGen
                         var structTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkSerializeByMemcpy_FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();
+                        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+                        // INativeList<bool> provides the Length property
+                        // IUTF8Bytes provides GetUnsafePtr()
+                        // Those two are necessary to serialize FixedStrings efficiently
+                        // - otherwise we'd just be memcpying the whole thing even if
+                        // most of it isn't used.
                         var fixedStringTypes = mainModule.GetTypes()
                             .Where(t => t.Resolve().HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && t.HasInterface(m_INativeListBool_TypeRef.FullName) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                             .ToList();

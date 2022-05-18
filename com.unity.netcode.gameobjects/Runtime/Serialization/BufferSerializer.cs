@@ -93,6 +93,12 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray2D value) => m_Implementation.SerializeValue(ref value);
         public void SerializeValue(ref Ray2D[] value) => m_Implementation.SerializeValue(ref value);
 
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
 
@@ -132,6 +138,12 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Ray2D value) => m_Implementation.SerializeValuePreChecked(ref value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Implementation.SerializeValuePreChecked(ref value);
 
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValuePreChecked(ref value);
     }
