@@ -11,13 +11,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 - Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab
 
+- Added `NetworkManager.RemoveNetworkPrefab(...)` to remove a prefab from the prefabs list (#1950)
+
 ### Changed
+
+- (API Breaking) `ConnectionApprovalCallback` is no longer an `event` and will not allow more than 1 handler registered at a time. Also, `ConnectionApprovalCallback` is now a `Func<>` taking `ConnectionApprovalRequest` in and returning `ConnectionApprovalResponse` back out (#1972)
 
 ### Removed
 
 ### Fixed
 
+- Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
+- `FixedString` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
