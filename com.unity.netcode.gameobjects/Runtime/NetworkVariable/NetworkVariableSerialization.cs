@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
@@ -66,6 +67,24 @@ namespace Unity.Netcode
 
         internal static void ReadPrimitive<TForMethod>(FastBufferReader reader, out TForMethod value)
             where TForMethod : unmanaged, IComparable, IConvertible, IComparable<TForMethod>, IEquatable<TForMethod>
+        {
+            reader.ReadValueSafe(out value);
+        }
+
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
+        internal static void WriteFixedString<TForMethod>(FastBufferWriter writer, in TForMethod value)
+            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            writer.WriteValueSafe(value);
+        }
+
+        internal static void ReadFixedString<TForMethod>(FastBufferReader reader, out TForMethod value)
+            where TForMethod : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             reader.ReadValueSafe(out value);
         }
