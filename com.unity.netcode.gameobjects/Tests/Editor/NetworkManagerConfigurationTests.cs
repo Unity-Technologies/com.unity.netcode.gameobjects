@@ -84,6 +84,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void NestedNetworkObjectPrefabCheck()
         {
+            // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
             networkManager.NetworkConfig = new NetworkConfig();
@@ -94,12 +95,16 @@ namespace Unity.Netcode.EditorTests
             // Set parent
             child.transform.SetParent(parent.transform);
 
+            // Make it a prefab, warning only applies to prefabs
             networkManager.AddNetworkPrefab(parent.gameObject);
 
+            // Mark scene as dirty to ensure OnValidate actually runs
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
 
+            // Force OnValidate
             networkManager.OnValidate();
 
+            // Expect a warning
             LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.NetworkPrefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
 
             // Clean up
