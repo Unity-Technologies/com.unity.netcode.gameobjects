@@ -97,8 +97,7 @@ namespace TestProject.RuntimeTests
 
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
         {
-            //VerboseDebug($"[SceneEvent] ClientId:{sceneEvent.ClientId} | EventType: {sceneEvent.SceneEventType}");
-            Debug.Log($"[SceneEvent] ClientId:{sceneEvent.ClientId} | EventType: {sceneEvent.SceneEventType}");
+            VerboseDebug($"[SceneEvent] ClientId:{sceneEvent.ClientId} | EventType: {sceneEvent.SceneEventType}");
             switch (sceneEvent.SceneEventType)
             {
                 // Validates that we sent the proper number of synchronize events to the clients

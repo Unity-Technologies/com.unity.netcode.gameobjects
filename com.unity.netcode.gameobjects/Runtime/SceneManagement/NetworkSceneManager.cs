@@ -329,8 +329,12 @@ namespace Unity.Netcode
         public VerifySceneBeforeLoadingDelegateHandler VerifySceneBeforeLoading;
 
         /// <summary>
-        ///  Proof of concept: Interface version that allows for the decoupling from
-        ///  the SceneManager's Load and Unload methods for testing purposes (potentially other future usage)
+        /// The SceneManagerHandler implementation
+        /// </summary>
+        internal ISceneManagerHandler SceneManagerHandler = new DefaultSceneManagerHandler();
+
+        /// <summary>
+        ///  The default SceneManagerHandler that interfaces between the SceneManager and NetworkSceneManager
         /// </summary>
         private class DefaultSceneManagerHandler : ISceneManagerHandler
         {
@@ -348,10 +352,6 @@ namespace Unity.Netcode
                 return operation;
             }
         }
-
-        internal ISceneManagerHandler SceneManagerHandler = new DefaultSceneManagerHandler();
-        /// End of Proof of Concept
-
 
         internal readonly Dictionary<Guid, SceneEventProgress> SceneEventProgressTracking = new Dictionary<Guid, SceneEventProgress>();
 
@@ -435,6 +435,8 @@ namespace Unity.Netcode
         /// </summary>
         public void Dispose()
         {
+            SceneUnloadEventHandler.Shutdown();
+
             foreach (var keypair in SceneEventDataStore)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -1235,15 +1237,38 @@ namespace Unity.Netcode
                 }
             }
 
+            /// <summary>
+            /// Called by NetworkSceneManager when it is disposing
+            /// </summary>
+            internal static void Shutdown()
+            {
+                foreach (var instanceEntry in s_Instances)
+                {
+                    foreach (var instance in instanceEntry.Value)
+                    {
+                        instance.OnShutdown();
+                    }
+                    instanceEntry.Value.Clear();
+                }
+                s_Instances.Clear();
+            }
+
             private NetworkSceneManager m_NetworkSceneManager;
             private AsyncOperation m_AsyncOperation;
             private LoadSceneMode m_LoadSceneMode;
             private ulong m_ClientId;
             private Scene m_Scene;
+            private bool m_ShuttingDown;
+
+            private void OnShutdown()
+            {
+                m_ShuttingDown = true;
+                SceneManager.sceneUnloaded -= SceneUnloaded;
+            }
 
             private void SceneUnloaded(Scene scene)
             {
-                if (m_Scene.handle == scene.handle)
+                if (m_Scene.handle == scene.handle && !m_ShuttingDown)
                 {
                     if (m_NetworkSceneManager != null && m_NetworkSceneManager.m_NetworkManager != null)
                     {
