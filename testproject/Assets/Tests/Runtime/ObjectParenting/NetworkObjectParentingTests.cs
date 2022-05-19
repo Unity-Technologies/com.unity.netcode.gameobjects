@@ -198,28 +198,39 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        private bool AllClientsSetCubeToPickupBackCube()
+        {
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                if (m_Cube_NetObjs[setIndex + 1].parent != m_Pickup_Back_NetObjs[setIndex + 1])
+                {
+                    return false;
+                }
+
+                if (m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject != m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>())
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         [UnityTest]
         public IEnumerator SetParentDirect()
         {
-            var waitForNetworkTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+            var timeoutHelper = new TimeoutHelper();
             // Server: Set/Cube -> Set/Pickup/Back/Cube
             m_Cube_NetObjs[0].parent = m_Pickup_Back_NetObjs[0];
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[0].GetComponent<NetworkObject>()));
 
-            yield return waitForNetworkTick;
-
             // Client[n]: Set/Cube -> Set/Pickup/Back/Cube
-            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
-            {
-                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1]));
-                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Pickup_Back_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
-            }
+            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(AllClientsSetCubeToPickupBackCube, timeoutHelper);
+            Assert.False(timeoutHelper.TimedOut, "TImed out waiting for Client[n]: Set/Cube -> Set/Pickup/Back/Cube");
 
             // Server: Set/Pickup/Back -> Root/Cube
             m_Cube_NetObjs[0].parent = null;
             Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
-
-            yield return waitForNetworkTick;
 
             bool CheckClientSideCubeForNull()
             {
@@ -233,7 +244,6 @@ namespace TestProject.RuntimeTests
                 }
                 return true;
             }
-            var timeoutHelper = new TimeoutHelper();
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(CheckClientSideCubeForNull, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, $"Timed out waiting for client parent to be null!");
 

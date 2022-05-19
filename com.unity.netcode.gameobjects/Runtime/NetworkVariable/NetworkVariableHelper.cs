@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -36,6 +37,11 @@ namespace Unity.Netcode
             NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WritePrimitive);
             NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadPrimitive);
         }
+        internal static void InitializeDelegatesFixedString<T>() where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            NetworkVariableSerialization<T>.SetWriteDelegate(NetworkVariableSerialization<T>.WriteFixedString);
+            NetworkVariableSerialization<T>.SetReadDelegate(NetworkVariableSerialization<T>.ReadFixedString);
+        }
 
         internal static void InitializeAllBaseDelegates()
         {
@@ -53,6 +59,12 @@ namespace Unity.Netcode
             InitializeDelegatesPrimitive<uint>();
             InitializeDelegatesPrimitive<long>();
             InitializeDelegatesPrimitive<ulong>();
+
+            InitializeDelegatesFixedString<FixedString32Bytes>();
+            InitializeDelegatesFixedString<FixedString64Bytes>();
+            InitializeDelegatesFixedString<FixedString128Bytes>();
+            InitializeDelegatesFixedString<FixedString512Bytes>();
+            InitializeDelegatesFixedString<FixedString4096Bytes>();
 
             // Built-in Unity types, serialized with specific overloads because they're structs without ISerializeByMemcpy attached
             NetworkVariableSerialization<Vector2>.SetWriteDelegate((FastBufferWriter writer, in Vector2 value) => { writer.WriteValueSafe(value); });
