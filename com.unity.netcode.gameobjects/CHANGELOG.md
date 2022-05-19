@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkManager.RemoveNetworkPrefab(...)` to remove a prefab from the prefabs list (#1950)
+
 ### Changed
 
 - (API Breaking) `ConnectionApprovalCallback` is no longer an `event` and will not allow more than 1 handler registered at a time. Also, `ConnectionApprovalCallback` is now a `Func<>` taking `ConnectionApprovalRequest` in and returning `ConnectionApprovalResponse` back out (#1972)
@@ -21,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a new scene in `LoadSceneMode.Single` mode. (#1975)
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
+- `FixedString` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
