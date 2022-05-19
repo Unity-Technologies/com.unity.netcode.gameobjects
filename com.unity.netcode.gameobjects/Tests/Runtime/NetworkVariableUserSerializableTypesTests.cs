@@ -10,15 +10,15 @@ namespace Unity.Netcode.RuntimeTests
 {
     public struct MyTypeOne
     {
-        public int i;
+        public int Value;
     }
     public struct MyTypeTwo
     {
-        public int i;
+        public int Value;
     }
     public struct MyTypeThree
     {
-        public int i;
+        public int Value;
     }
     public class WorkingUserNetworkVariableComponent : NetworkBehaviour
     {
@@ -37,13 +37,13 @@ namespace Unity.Netcode.RuntimeTests
     {
         public static void WriteValueSafe(this FastBufferWriter writer, in MyTypeTwo value)
         {
-            writer.WriteValueSafe(value.i);
+            writer.WriteValueSafe(value.Value);
         }
 
         public static void ReadValueSafe(this FastBufferReader reader, out MyTypeTwo value)
         {
             value = new MyTypeTwo();
-            reader.ReadValueSafe(out value.i);
+            reader.ReadValueSafe(out value.Value);
         }
     }
 
@@ -88,12 +88,12 @@ namespace Unity.Netcode.RuntimeTests
         {
             UserNetworkVariableSerialization<MyTypeOne>.WriteValue = (FastBufferWriter writer, in MyTypeOne value) =>
             {
-                writer.WriteValueSafe(value.i);
+                writer.WriteValueSafe(value.Value);
             };
             UserNetworkVariableSerialization<MyTypeOne>.ReadValue = (FastBufferReader reader, out MyTypeOne value) =>
             {
                 value = new MyTypeOne();
-                reader.ReadValueSafe(out value.i);
+                reader.ReadValueSafe(out value.Value);
             };
             var serverObject = Object.Instantiate(m_WorkingPrefab);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -102,15 +102,15 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value = new MyTypeOne { i = 20 };
+            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value = new MyTypeOne { Value = 20 };
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
 
             var clientObject = GetComponentForClient<WorkingUserNetworkVariableComponent>(m_ClientNetworkManagers[0].LocalClientId);
 
-            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value.i, clientObject.NetworkVariable.Value.i);
-            Assert.AreEqual(20, clientObject.NetworkVariable.Value.i);
+            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value.Value, clientObject.NetworkVariable.Value.Value);
+            Assert.AreEqual(20, clientObject.NetworkVariable.Value.Value);
         }
 
         [UnityTest]
@@ -126,15 +126,15 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value = new MyTypeTwo { i = 20 };
+            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value = new MyTypeTwo { Value = 20 };
 
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
 
             var clientObject = GetComponentForClient<WorkingUserNetworkVariableComponentUsingExtensionMethod>(m_ClientNetworkManagers[0].LocalClientId);
 
-            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value.i, clientObject.NetworkVariable.Value.i);
-            Assert.AreEqual(20, clientObject.NetworkVariable.Value.i);
+            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value.Value, clientObject.NetworkVariable.Value.Value);
+            Assert.AreEqual(20, clientObject.NetworkVariable.Value.Value);
         }
 
         [Test]
