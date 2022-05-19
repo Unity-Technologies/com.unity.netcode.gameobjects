@@ -9,6 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab
 
 ### Changed
 
