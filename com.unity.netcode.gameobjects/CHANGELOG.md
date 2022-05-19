@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab (#1969)
 - Added `NetworkManager.RemoveNetworkPrefab(...)` to remove a prefab from the prefabs list (#1950)
 
 ### Changed
