@@ -54,25 +54,25 @@ namespace Unity.Netcode
 #endif
         }
 
-        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator allocator, Allocator handleAllocator)
+        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator copyAllocator, Allocator internalAllocator)
         {
             ReaderHandle* readerHandle = null;
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), handleAllocator);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), internalAllocator);
                 readerHandle->BufferPointer = buffer;
                 readerHandle->Position = offset;
             }
             else
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), allocator);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), copyAllocator);
                 UnsafeUtility.MemCpy(readerHandle + 1, buffer + offset, length);
                 readerHandle->BufferPointer = (byte*)(readerHandle + 1);
                 readerHandle->Position = 0;
             }
 
             readerHandle->Length = length;
-            readerHandle->Allocator = allocator;
+            readerHandle->Allocator = copyAllocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             readerHandle->AllowedReadMark = 0;
             readerHandle->InBitwiseContext = false;
@@ -83,24 +83,26 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
-        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// Allocator.Temp so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name="allocator"></param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length"></param>
         /// <param name="offset"></param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator, handleAllocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
@@ -113,18 +115,18 @@ namespace Unity.Netcode
         /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0)
         {
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator, Allocator.Temp);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, copyAllocator, Allocator.Temp);
             }
         }
 
@@ -138,76 +140,80 @@ namespace Unity.Netcode
         /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
+        public unsafe FastBufferReader(byte[] buffer, Allocator copyAllocator, int length = -1, int offset = 0)
         {
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator, Allocator.Temp);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, copyAllocator, Allocator.Temp);
             }
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(byte* buffer, Allocator copyAllocator, int length, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(buffer, length, offset, allocator, handleAllocator);
+            Handle = CreateHandle(buffer, length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="writer">The writer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(FastBufferWriter writer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator, handleAllocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from another existing FastBufferReader. This is typically used when you
-        /// want to change the allocator that a reader is allocated to - for example, upgrading a Temp reader to
+        /// want to change the copyAllocator that a reader is allocated to - for example, upgrading a Temp reader to
         /// a Persistent one to be processed later.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
@@ -215,13 +221,13 @@ namespace Unity.Netcode
         /// stored anywhere in heap memory).
         /// </summary>
         /// <param name="reader">The reader to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        /// <param name="handleAllocator">The allocator to use for allocating a new reader handle</param>
-        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0, Allocator handleAllocator = Allocator.Temp)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(FastBufferReader reader, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator, handleAllocator);
+            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
