@@ -220,6 +220,14 @@ namespace Unity.Netcode.EditorTests
             {
                 RunTestWithWriteType(new Vector3((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
             }
+            else if (testType == typeof(Vector2Int))
+            {
+                RunTestWithWriteType(new Vector2Int((int)random.NextDouble(), (int)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                RunTestWithWriteType(new Vector3Int((int)random.NextDouble(), (int)random.NextDouble(), (int)random.NextDouble()), writeType);
+            }
             else if (testType == typeof(Vector4))
             {
                 RunTestWithWriteType(new Vector4((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
@@ -493,6 +501,22 @@ namespace Unity.Netcode.EditorTests
                     new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
                     new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
                     new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                }, writeType);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                RunTypeTestLocal(new[]{
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                }, writeType);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                RunTypeTestLocal(new[]{
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
                 }, writeType);
             }
             else if (testType == typeof(Vector4))

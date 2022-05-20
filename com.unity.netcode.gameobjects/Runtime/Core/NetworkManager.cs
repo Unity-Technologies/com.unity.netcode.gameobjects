@@ -424,7 +424,7 @@ namespace Unity.Netcode
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        internal void OnValidate()
         {
             if (NetworkConfig == null)
             {
@@ -573,6 +573,47 @@ namespace Unity.Netcode
                     return;
                 }
                 DeferredMessageManager.ProcessTriggers(IDeferredMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
+            }
+        }
+
+        /// <summary>
+        /// Remove a prefab from the prefab list.
+        /// As with AddNetworkPrefab, this is specific to the client it's called on -
+        /// calling it on the server does not automatically remove anything on any of the
+        /// client processes.
+        ///
+        /// Like AddNetworkPrefab, when NetworkConfig.ForceSamePrefabs is enabled,
+        /// this cannot be called after connecting.
+        /// </summary>
+        /// <param name="prefab"></param>
+        public void RemoveNetworkPrefab(GameObject prefab)
+        {
+            if (IsListening && NetworkConfig.ForceSamePrefabs)
+            {
+                throw new Exception($"Prefabs cannot be removed after starting {nameof(NetworkManager)} when {nameof(NetworkConfig.ForceSamePrefabs)} is enabled.");
+            }
+
+            var globalObjectIdHash = prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+            for (var i = 0; i < NetworkConfig.NetworkPrefabs.Count; ++i)
+            {
+                if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash == globalObjectIdHash)
+                {
+                    NetworkConfig.NetworkPrefabs.RemoveAt(i);
+                    break;
+                }
+            }
+            if (PrefabHandler.ContainsHandler(globalObjectIdHash))
+            {
+                PrefabHandler.RemoveHandler(globalObjectIdHash);
+            }
+            if (NetworkConfig.NetworkPrefabOverrideLinks.TryGetValue(globalObjectIdHash, out var targetPrefab))
+            {
+                NetworkConfig.NetworkPrefabOverrideLinks.Remove(globalObjectIdHash);
+                var targetHash = targetPrefab.Prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                if (NetworkConfig.OverrideToNetworkPrefab.ContainsKey(targetHash))
+                {
+                    NetworkConfig.OverrideToNetworkPrefab.Remove(targetHash);
+                }
             }
         }
 
