@@ -55,6 +55,10 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// To be called on instances that are checking values or moving the objects
+        /// </summary>
+        /// <param name="duration">how long to let the test run</param>
         public void StartTest(float duration)
         {
             m_StartTime = Time.realtimeSinceStartup;
@@ -183,7 +187,6 @@ namespace Unity.Netcode.RuntimeTests
             // Test that interpolation works correctly for 10 seconds
             // Increasing this duration gives you the opportunity to go check in the Editor how the objects are setup
             // and how they move
-
             var timeoutHelper = new TimeoutHelper(11.0f);
             yield return WaitForConditionOrTimeOut(() => !clientSideTestComponent.IsTesting, timeoutHelper);
             AssertOnTimeout("Timed out waiting for the test to complete!", timeoutHelper);
