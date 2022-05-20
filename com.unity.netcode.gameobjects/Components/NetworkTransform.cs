@@ -722,13 +722,13 @@ namespace Unity.Netcode.Components
 
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
-            m_PositionXInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_PositionYInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_PositionZInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_RotationInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleXInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleYInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleZInterpolator.m_MaxInterpolationBound = maxInterpolationBound;
+            m_PositionXInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionYInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionZInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleXInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleYInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleZInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
         private void Awake()

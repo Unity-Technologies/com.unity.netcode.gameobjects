@@ -10,7 +10,7 @@ namespace Unity.Netcode
     /// </summary>
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
-        internal float m_MaxInterpolationBound = 3.0f;
+        internal float MaxInterpolationBound = 3.0f;
         private struct BufferedItem
         {
             public T Item;
@@ -204,7 +204,7 @@ namespace Unity.Netcode
                         t = 0.0f;
                     }
 
-                    if (t > m_MaxInterpolationBound) // max extrapolation
+                    if (t > MaxInterpolationBound) // max extrapolation
                     {
                         // TODO this causes issues with teleport, investigate
                         t = 1.0f;
