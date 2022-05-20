@@ -18,11 +18,11 @@ public class UIController : MonoBehaviour
     private void Awake()
     {
 #if ENABLE_RELAY_SERVICE
-        if (Transport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
-        {
-            HideButtons();
-            JoinCode.SetActive(false);
-        }
+        // if (Transport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        // {
+        //     HideButtons();
+        //     JoinCode.SetActive(false);
+        // }
 #endif
     }
 
