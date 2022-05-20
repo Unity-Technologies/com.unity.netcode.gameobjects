@@ -33,11 +33,7 @@ namespace Unity.Netcode.RuntimeTests
             // Move the nested object on the server
             if (IsMoving)
             {
-                var y = Time.realtimeSinceStartup;
-                while (y > 10.0f)
-                {
-                    y -= 10.0f;
-                }
+                var y = Time.realtimeSinceStartup % 10.0f;
 
                 // change the space between local and global every second
                 GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
@@ -119,6 +115,7 @@ namespace Unity.Netcode.RuntimeTests
 
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
             spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
+            spawnedObject.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
 
             const float maxPlacementError = 0.01f;
 
@@ -131,6 +128,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.01f);
             }
 
+            m_SpawnedObjectOnClient.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
             m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 
             // Test that interpolation works correctly for 10 seconds
