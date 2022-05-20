@@ -10,9 +10,64 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class TransformInterpolationObject : NetworkBehaviour
     {
-        public bool CheckPosition;
-        public bool IsMoving;
+
         public bool IsFixed;
+
+        private float m_StartTime;
+        private float m_StopTime;
+        private bool m_IsMoving;
+        private bool m_CheckPosition;
+        private float m_TimeDelta
+        {
+            get
+            {
+                return Time.realtimeSinceStartup - m_StartTime;
+            }
+        }
+
+        // [NSS] Just set this to true to see the timing for both server and client
+        private bool m_DebugInfo = false;
+
+        public bool IsTesting
+        {
+            get
+            {
+                if (m_DebugInfo)
+                {
+                    var isTesting = m_StopTime > Time.realtimeSinceStartup;
+                    if (isTesting)
+                    {
+                        if (m_CheckPosition)
+                        {
+                            Debug.Log($"[Client-Side][{m_StopTime}][{Time.realtimeSinceStartup}]--[{m_TimeDelta}]");
+                        }
+                        else if (m_IsMoving)
+                        {
+                            Debug.Log($"[Server-Side][{m_StopTime}][{Time.realtimeSinceStartup}]--[{m_TimeDelta}]");
+                        }
+                    }
+                    return isTesting;
+                }
+                else
+                {
+                    return m_StopTime > Time.realtimeSinceStartup;
+                }
+            }
+        }
+
+        public void StartTest(float duration)
+        {
+            m_StartTime = Time.realtimeSinceStartup;
+            m_StopTime = Time.realtimeSinceStartup + duration;
+            if (IsServer)
+            {
+                m_IsMoving = true;
+            }
+            else
+            {
+                m_CheckPosition = true;
+            }
+        }
 
         private void Update()
         {
@@ -22,7 +77,7 @@ namespace Unity.Netcode.RuntimeTests
             const float maxRoundingError = 0.01f;
 
             // Check the position of the nested object on the client
-            if (CheckPosition)
+            if (m_CheckPosition && IsTesting)
             {
                 if (transform.position.y < -maxRoundingError || transform.position.y > 100.0f + maxRoundingError)
                 {
@@ -30,19 +85,12 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            // Move the nested object on the server
-            if (IsMoving)
+            if (m_IsMoving && IsTesting)            // Move the nested object on the server
             {
-                var y = Time.realtimeSinceStartup;
-                while (y > 10.0f)
-                {
-                    y -= 10.0f;
-                }
-
                 // change the space between local and global every second
-                GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
+                GetComponent<NetworkTransform>().InLocalSpace = ((int)m_TimeDelta % 2 == 0);
 
-                transform.position = new Vector3(0.0f, y * 10, 0.0f);
+                transform.position = new Vector3(0.0f, m_TimeDelta * 10, 0.0f);
             }
 
             // On the server, make sure to keep the parent object at a fixed position
@@ -89,8 +137,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_SpawnedAsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
             m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
-
-
         }
 
         [UnityTest]
@@ -118,7 +164,8 @@ namespace Unity.Netcode.RuntimeTests
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);
 
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
-            spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
+            var serverSideTestComponent = spawnedObject.GetComponent<TransformInterpolationObject>();
+            serverSideTestComponent.StartTest(10.0f);
 
             const float maxPlacementError = 0.01f;
 
@@ -130,13 +177,16 @@ namespace Unity.Netcode.RuntimeTests
             {
                 yield return new WaitForSeconds(0.01f);
             }
-
-            m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
+            var clientSideTestComponent = m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>();
+            clientSideTestComponent.StartTest(10.0f);
 
             // Test that interpolation works correctly for 10 seconds
             // Increasing this duration gives you the opportunity to go check in the Editor how the objects are setup
             // and how they move
-            yield return new WaitForSeconds(10.0f);
+
+            var timeoutHelper = new TimeoutHelper(11.0f);
+            yield return WaitForConditionOrTimeOut(() => !clientSideTestComponent.IsTesting, timeoutHelper);
+            AssertOnTimeout("Timed out waiting for the test to complete!", timeoutHelper);
         }
     }
 }
