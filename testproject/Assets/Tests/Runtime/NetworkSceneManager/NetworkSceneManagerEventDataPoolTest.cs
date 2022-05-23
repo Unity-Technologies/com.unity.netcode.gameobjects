@@ -364,6 +364,11 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Unloads the remaining scenes at the end of the test.
+        /// If there is an assertion before, the NetcodeIntegrationTest.ShutdownAndCleanUp
+        /// called during tear down unloads any remaining scenes.
+        /// </summary>
         private IEnumerator UnloadAllScenes()
         {
             if (m_ScenesLoaded.Count > 0)
