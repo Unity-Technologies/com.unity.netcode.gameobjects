@@ -383,8 +383,6 @@ namespace Unity.Netcode.Components
                         // reasonable RTT estimate in order to get a more precise normalized synchronization time
                         var transitionTime = Mathf.Min(tt.duration, tt.duration * tt.normalizedTime) * 0.5f;
                         normalizedTime = Mathf.Min(1.0f, transitionTime > 0.0f ? transitionTime / nextStateAdjustedLength : 0.0f);
-                        // Leaving this here in the event we want to further improve upon the transition synchronization (it is useful info)
-                        //VerboseDebug($"TransitionTime ({transitionTime * 0.5f}) | NextStateTime ({normalizedTime * nextStateAdjustedLength}) - Normalized ({normalizedTime})");
                     }
                     else
                     {
@@ -489,12 +487,10 @@ namespace Unity.Netcode.Components
 
             if (!IsServer)
             {
-                VerboseDebug($"[SendParametersUpdate-Owner] Update request sent to server.");
                 SendParametersUpdateServerRpc(parametersMessage);
             }
             else
             {
-                VerboseDebug($"[SendParametersUpdate-Server] Updating clients.");
                 if (sendDirect)
                 {
                     SendParametersUpdateClientRpc(parametersMessage, clientRpcParams);
@@ -532,7 +528,6 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<int>(ref cacheValue);
                     if (currentValue != valueInt)
                     {
-                        VerboseDebug($"[{name}][INT] {currentValue} != {valueInt}");
                         shouldUpdate = true;
                         break;
                     }
@@ -543,7 +538,6 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<bool>(ref cacheValue);
                     if (currentValue != valueBool)
                     {
-                        VerboseDebug($"[{name}][BOOL] {currentValue} != {valueBool} -- Updating");
                         shouldUpdate = true;
                         break;
                     }
@@ -554,7 +548,6 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<float>(ref cacheValue);
                     if (currentValue != valueFloat)
                     {
-                        VerboseDebug($"[{name}][FLOAT] {currentValue} != {valueFloat} -- Updating");
                         shouldUpdate = true;
                         break;
                     }
@@ -728,10 +721,8 @@ namespace Unity.Netcode.Components
         {
             if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
             {
-                VerboseDebug($"[{nameof(SendParametersUpdateServerRpc)}] Received update from non-owner! (Ignoring)");
                 return;
             }
-            VerboseDebug($"[{nameof(SendParametersUpdateServerRpc)}] Received update! (Processing)");
             UpdateParameters(parametersUpdate);
             if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
             {
@@ -766,10 +757,8 @@ namespace Unity.Netcode.Components
         {
             if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
             {
-                VerboseDebug($"[{nameof(SendAnimStateServerRpc)}] Received update from non-owner! (Ignoring)");
                 return;
             }
-            VerboseDebug($"[{nameof(SendAnimStateServerRpc)}] Received update! (Processing)");
 
             UpdateAnimationState(animSnapshot);
             if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
@@ -805,10 +794,8 @@ namespace Unity.Netcode.Components
         {
             if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
             {
-                VerboseDebug($"[{nameof(SendAnimTriggerServerRpc)}] Received update from non-owner! (Ignoring)");
                 return;
             }
-            VerboseDebug($"[{nameof(SendAnimTriggerServerRpc)}] Received update! (Processing)");
 
             //  trigger the animation locally on the server...
             m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
@@ -836,7 +823,6 @@ namespace Unity.Netcode.Components
         {
             if (!IsOwner)
             {
-                VerboseDebug($"[{nameof(SendAnimTriggerClientRpc)}] {NetworkManager.name} received trigger value ({animationTriggerMessage.IsTriggerSet}).");
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
             }
         }
@@ -885,41 +871,6 @@ namespace Unity.Netcode.Components
         public void ResetTrigger(int hash)
         {
             SetTrigger(hash, false);
-        }
-
-        private enum LogType
-        {
-            Normal,
-            Warning,
-            Error
-        }
-
-        private void VerboseDebug(string msg, LogType logType = LogType.Normal)
-        {
-            if (IsSpawned)
-            {
-                if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    switch (logType)
-                    {
-                        case LogType.Normal:
-                            {
-                                NetworkLog.LogInfo(msg);
-                                break;
-                            }
-                        case LogType.Warning:
-                            {
-                                NetworkLog.LogWarning(msg);
-                                break;
-                            }
-                        case LogType.Error:
-                            {
-                                NetworkLog.LogError(msg);
-                                break;
-                            }
-                    }
-                }
-            }
         }
     }
 }
