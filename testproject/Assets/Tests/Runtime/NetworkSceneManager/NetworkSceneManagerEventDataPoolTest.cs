@@ -336,12 +336,14 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.OnUnloadComplete += SceneManager_OnUnloadComplete;
             }
 
-            yield return UnloadAllScenes(true);
+            yield return UnloadAllScenes();
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.SceneManager.OnUnloadComplete -= SceneManager_OnUnloadComplete;
             }
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+
+            yield return s_DefaultWaitForTick;
         }
 
         private string m_SceneBeingUnloaded;
@@ -362,7 +364,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        private IEnumerator UnloadAllScenes(bool shouldCheckClients = false)
+        private IEnumerator UnloadAllScenes()
         {
             if (m_ScenesLoaded.Count > 0)
             {
@@ -382,11 +384,6 @@ namespace TestProject.RuntimeTests
                 m_ScenesLoaded.Clear();
             }
             yield return null;
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            yield return UnloadAllScenes();
         }
     }
 }
