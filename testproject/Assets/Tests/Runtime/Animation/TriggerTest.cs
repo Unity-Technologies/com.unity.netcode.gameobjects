@@ -20,6 +20,10 @@ public class TriggerTest : StateMachineBehaviour
     override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         var networkObject = animator.GetComponent<NetworkObject>();
+        if (networkObject == null || networkObject.NetworkManager == null)
+        {
+            return;
+        }
         var clientId = networkObject.NetworkManager.LocalClientId;
         if (IsVerboseDebug)
         {

@@ -45,6 +45,14 @@ namespace Tests.Manual.NetworkAnimatorTests
                     controller.PlayPulseAnimation(false);
                 }
             }
+
+            if (Input.GetKeyDown(KeyCode.T))
+            {
+                foreach (var controller in m_Controllers)
+                {
+                    controller.TestAnimator();
+                }
+            }
         }
     }
 }
