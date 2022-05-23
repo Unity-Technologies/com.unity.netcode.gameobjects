@@ -20,7 +20,7 @@ namespace Unity.Netcode.Components
         {
             foreach (var clientId in m_ClientsToSynchronize)
             {
-                m_NetworkAnimator.ServerUpdateNewPlayer(clientId);
+                m_NetworkAnimator.ServerSynchronizeNewPlayer(clientId);
             }
             m_ClientsToSynchronize.Clear();
 
@@ -276,6 +276,13 @@ namespace Unity.Netcode.Components
             base.OnDestroy();
         }
 
+
+        private List<int> m_ParametersToUpdate;
+
+        private List<ulong> m_ClientSendList;
+        private ClientRpcParams m_ClientRpcParams;
+
+
         public override void OnNetworkSpawn()
         {
             if (IsOwner || IsServer)
@@ -299,11 +306,19 @@ namespace Unity.Netcode.Components
                         m_LayerWeights[layer] = layerWeightNow;
                     }
                 }
+
+                if (IsServer)
+                {
+                    m_ClientSendList = new List<ulong>(128);
+                    m_ClientRpcParams = new ClientRpcParams();
+                    m_ClientRpcParams.Send = new ClientRpcSendParams();
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                }
             }
 
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
-
+            m_ParametersToUpdate = new List<int>(parameters.Length);
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
@@ -352,13 +367,21 @@ namespace Unity.Netcode.Components
             CleanUp();
         }
 
-        internal void ServerUpdateNewPlayer(ulong playerId)
+        /// <summary>
+        /// Synchronizes newly joined players
+        /// </summary>
+        internal void ServerSynchronizeNewPlayer(ulong playerId)
         {
-            var clientRpcParams = new ClientRpcParams();
-            clientRpcParams.Send = new ClientRpcSendParams();
-            clientRpcParams.Send.TargetClientIds = new List<ulong>() { playerId };
-
-            SendParametersUpdate(clientRpcParams);
+            m_ClientSendList.Clear();
+            m_ClientSendList.Add(playerId);
+            m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+            // With synchronization we send all parameters
+            m_ParametersToUpdate.Clear();
+            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
+            {
+                m_ParametersToUpdate.Add(i);
+            }
+            SendParametersUpdate(m_ClientRpcParams);
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
@@ -405,7 +428,7 @@ namespace Unity.Netcode.Components
                     Weight = m_LayerWeights[layer]
                 };
                 // Server always send via client RPC
-                SendAnimStateClientRpc(animMsg, clientRpcParams);
+                SendAnimStateClientRpc(animMsg, m_ClientRpcParams);
             }
         }
 
@@ -420,9 +443,7 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-            // TODO: This could return (or build) a list of parameter hash values
-            // that could be used to reduce the message size down to just the
-            // parameters that changed as opposed to sending all of them
+
             if (CheckParametersChanged())
             {
                 SendParametersUpdate();
@@ -502,6 +523,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Helper function to get the cached value
+        /// </summary>
         unsafe private T GetValue<T>(ref AnimatorParamCache animatorParamCache)
         {
             T currentValue;
@@ -514,10 +538,12 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Checks if any of the Animator's parameters have changed
+        /// If so, it fills out m_ParametersToUpdate with the indices of the parameters
+        /// that have changed.  Returns true if any parameters changed.
         /// </summary>
         unsafe private bool CheckParametersChanged()
         {
-            bool shouldUpdate = false;
+            m_ParametersToUpdate.Clear();
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
             {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
@@ -528,8 +554,8 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<int>(ref cacheValue);
                     if (currentValue != valueInt)
                     {
-                        shouldUpdate = true;
-                        break;
+                        m_ParametersToUpdate.Add(i);
+                        continue;
                     }
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
@@ -538,8 +564,8 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<bool>(ref cacheValue);
                     if (currentValue != valueBool)
                     {
-                        shouldUpdate = true;
-                        break;
+                        m_ParametersToUpdate.Add(i);
+                        continue;
                     }
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
@@ -548,12 +574,12 @@ namespace Unity.Netcode.Components
                     var currentValue = GetValue<float>(ref cacheValue);
                     if (currentValue != valueFloat)
                     {
-                        shouldUpdate = true;
-                        break;
+                        m_ParametersToUpdate.Add(i);
+                        continue;
                     }
                 }
             }
-            return shouldUpdate;
+            return m_ParametersToUpdate.Count > 0;
         }
 
         /// <summary>
@@ -604,14 +630,18 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Writes all of the Animator's parameters
+        /// This uses the m_ParametersToUpdate list to write out only
+        /// the parameters that have changed
         /// </summary>
         private unsafe void WriteParameters(FastBufferWriter writer, bool sendCacheState)
         {
-            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
+            // Write how many parameter entries we are going to write
+            BytePacker.WriteValuePacked(writer, (uint)m_ParametersToUpdate.Count);
+            foreach(var parameterIndex in m_ParametersToUpdate)
             {
-                ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
+                ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), parameterIndex);
                 var hash = cacheValue.Hash;
-
+                BytePacker.WriteValuePacked(writer, (uint)parameterIndex);
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     var valueInt = m_Animator.GetInteger(hash);
@@ -628,7 +658,7 @@ namespace Unity.Netcode.Components
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueBool);
-                        writer.WriteValueSafe(valueBool);
+                        BytePacker.WriteValuePacked(writer, valueBool);
                     }
                 }
                 else
@@ -638,22 +668,25 @@ namespace Unity.Netcode.Components
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, valueFloat);
-                        writer.WriteValueSafe(valueFloat);
+                        BytePacker.WriteValuePacked(writer, valueFloat);
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Applies all of the Animator's parameters
+        /// Reads all parameters that were updated and applies the values
         /// </summary>
         private unsafe void ReadParameters(FastBufferReader reader)
         {
-            for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
-            {
-                ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
-                var hash = cacheValue.Hash;
+            ByteUnpacker.ReadValuePacked(reader, out uint totalParametersToRead);
+            var totalParametersRead = 0;
 
+            while (totalParametersRead < totalParametersToRead)
+            {
+                ByteUnpacker.ReadValuePacked(reader, out uint parameterIndex);
+                ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), (int)parameterIndex);
+                var hash = cacheValue.Hash;
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
                     ByteUnpacker.ReadValuePacked(reader, out uint newValue);
@@ -665,7 +698,7 @@ namespace Unity.Netcode.Components
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterBool)
                 {
-                    reader.ReadValueSafe(out bool newBoolValue);
+                    ByteUnpacker.ReadValuePacked(reader, out bool newBoolValue);
                     m_Animator.SetBool(hash, newBoolValue);
                     fixed (void* value = cacheValue.Value)
                     {
@@ -674,13 +707,14 @@ namespace Unity.Netcode.Components
                 }
                 else if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterFloat)
                 {
-                    reader.ReadValueSafe(out float newFloatValue);
+                    ByteUnpacker.ReadValuePacked(reader, out float newFloatValue);
                     m_Animator.SetFloat(hash, newFloatValue);
                     fixed (void* value = cacheValue.Value)
                     {
                         UnsafeUtility.WriteArrayElement(value, 0, newFloatValue);
                     }
                 }
+                totalParametersRead++;
             }
         }
 
@@ -726,13 +760,12 @@ namespace Unity.Netcode.Components
             UpdateParameters(parametersUpdate);
             if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
             {
-                var clientRpcParams = new ClientRpcParams();
-                clientRpcParams.Send = new ClientRpcSendParams();
-                var clientIds = new List<ulong>(NetworkManager.ConnectedClientsIds);
-                clientIds.Remove(serverRpcParams.Receive.SenderClientId);
-                clientIds.Remove(NetworkManager.ServerClientId);
-                clientRpcParams.Send.TargetClientIds = clientIds;
-                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, clientRpcParams);
+                m_ClientSendList.Clear();
+                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
             }
         }
 
@@ -763,13 +796,12 @@ namespace Unity.Netcode.Components
             UpdateAnimationState(animSnapshot);
             if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
             {
-                var clientRpcParams = new ClientRpcParams();
-                clientRpcParams.Send = new ClientRpcSendParams();
-                var clientIds = new List<ulong>(NetworkManager.ConnectedClientsIds);
-                clientIds.Remove(serverRpcParams.Receive.SenderClientId);
-                clientIds.Remove(NetworkManager.ServerClientId);
-                clientRpcParams.Send.TargetClientIds = clientIds;
-                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot, clientRpcParams);
+                m_ClientSendList.Clear();
+                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot, m_ClientRpcParams);
             }
         }
 
@@ -802,13 +834,12 @@ namespace Unity.Netcode.Components
 
             if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
             {
-                var clientRpcParams = new ClientRpcParams();
-                clientRpcParams.Send = new ClientRpcSendParams();
-                var clientIds = new List<ulong>(NetworkManager.ConnectedClientsIds);
-                clientIds.Remove(serverRpcParams.Receive.SenderClientId);
-                clientIds.Remove(NetworkManager.ServerClientId);
-                clientRpcParams.Send.TargetClientIds = clientIds;
-                m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage);
+                m_ClientSendList.Clear();
+                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage, m_ClientRpcParams);
             }
         }
 
