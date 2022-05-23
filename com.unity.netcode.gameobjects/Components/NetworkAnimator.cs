@@ -637,7 +637,7 @@ namespace Unity.Netcode.Components
         {
             // Write how many parameter entries we are going to write
             BytePacker.WriteValuePacked(writer, (uint)m_ParametersToUpdate.Count);
-            foreach(var parameterIndex in m_ParametersToUpdate)
+            foreach (var parameterIndex in m_ParametersToUpdate)
             {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), parameterIndex);
                 var hash = cacheValue.Hash;
