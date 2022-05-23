@@ -891,7 +891,7 @@ namespace Unity.Netcode
             sceneEventData.SceneEventType = sceneEventProgress.SceneEventType;
             sceneEventData.ClientsCompleted = sceneEventProgress.DoneClients;
             sceneEventData.LoadSceneMode = sceneEventProgress.LoadSceneMode;
-            sceneEventData.ClientsTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList();
+            sceneEventData.ClientsTimedOut = sceneEventProgress.ClientsThatStartedSceneEvent.Except(sceneEventProgress.DoneClients).ToList();
 
             var message = new SceneEventMessage
             {
@@ -1052,6 +1052,12 @@ namespace Unity.Netcode
         /// </summary>
         private void OnSceneUnloaded(uint sceneEventId)
         {
+            // If we are shutdown or about to shutdown, then ignore this event
+            if (!m_NetworkManager.IsListening || m_NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
             var sceneEventData = SceneEventDataStore[sceneEventId];
             // First thing we do, if we are a server, is to send the unload scene event.
             if (m_NetworkManager.IsServer)
@@ -1257,13 +1263,18 @@ namespace Unity.Netcode
             OnLoad?.Invoke(m_NetworkManager.LocalClientId, sceneName, sceneEventData.LoadSceneMode, sceneLoad);
         }
 
-
         /// <summary>
         /// Client and Server:
         /// Generic on scene loaded callback method to be called upon a scene loading
         /// </summary>
         private void OnSceneLoaded(uint sceneEventId)
         {
+            // If we are shutdown or about to shutdown, then ignore this event
+            if (!m_NetworkManager.IsListening || m_NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
             var sceneEventData = SceneEventDataStore[sceneEventId];
             var nextScene = GetAndAddNewlyLoadedSceneByName(SceneNameFromHash(sceneEventData.SceneHash));
             if (!nextScene.isLoaded || !nextScene.IsValid())
