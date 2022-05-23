@@ -22,8 +22,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
-- `FixedString`, `Vector2Int`, and `Vector3Int` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
-- Generic types that inherit from NetworkBehaviour no longer cause crashes at compile time. (#1976)
+- Fixed a regression in serialization support - `FixedString`, `Vector2Int`, and `Vector3Int` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
+- Fixed generic types that inherit from NetworkBehaviour causing crashes at compile time. (#1976)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
