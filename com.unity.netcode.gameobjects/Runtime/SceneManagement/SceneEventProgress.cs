@@ -61,9 +61,9 @@ namespace Unity.Netcode
         internal List<ulong> DoneClients { get; } = new List<ulong>();
 
         /// <summary>
-        /// The NetworkTime at the moment the scene switch was initiated by the server.
+        /// The local time when the scene event was "roughly started"
         /// </summary>
-        internal NetworkTime TimeAtInitiation { get; }
+        internal float TimeAtInitiation { get; }
 
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
@@ -105,22 +105,40 @@ namespace Unity.Netcode
 
         internal LoadSceneMode LoadSceneMode;
 
+        internal List<ulong> ClientsThatStartedSceneEvent;
+
         internal SceneEventProgress(NetworkManager networkManager, SceneEventProgressStatus status = SceneEventProgressStatus.Started)
         {
             if (status == SceneEventProgressStatus.Started)
             {
+                // Track the clients that were connected when we started this event
+                ClientsThatStartedSceneEvent = new List<ulong>(networkManager.ConnectedClientsIds);
                 m_NetworkManager = networkManager;
                 m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
-                TimeAtInitiation = networkManager.LocalTime;
+                TimeAtInitiation = Time.realtimeSinceStartup;
             }
             Status = status;
         }
 
+        /// <summary>
+        /// Coroutine that checks to see if the scene event is complete every network tick period.
+        /// This will handle completing the scene event when one or more client(s) disconnect(s)
+        /// during a scene event and if it does not complete within the scene loading time out period
+        /// it will time out the scene event.
+        /// </summary>
         internal IEnumerator TimeOutSceneEventProgress()
         {
-            yield return new WaitForSecondsRealtime(m_NetworkManager.NetworkConfig.LoadSceneTimeOut);
-            TimedOut = true;
-            CheckCompletion();
+            var waitForNetworkTick = new WaitForSeconds(1.0f / m_NetworkManager.NetworkConfig.TickRate);
+            while (!TimedOut && !IsCompleted)
+            {
+                yield return waitForNetworkTick;
+
+                CheckCompletion();
+                if (!IsCompleted)
+                {
+                    TimedOut = TimeAtInitiation - Time.realtimeSinceStartup >= m_NetworkManager.NetworkConfig.LoadSceneTimeOut;
+                }
+            }
         }
 
         internal void AddClientAsDone(ulong clientId)

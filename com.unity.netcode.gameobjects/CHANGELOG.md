@@ -20,11 +20,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 
 ### Fixed
-
 - Fixed `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a new scene in `LoadSceneMode.Single` mode. (#1975)
+- Fixed issue where one or more clients disconnecting during a scene event would cause `LoadEventCompleted` or `UnloadEventCompleted` to wait until the `NetworkConfig.LoadSceneTimeOut` period before being triggered. (#1973)
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
-- Fixed endless dialog boxes when adding a NetworkBehaviour to a NetworkManager or vice-versa (#1947)
 - `FixedString` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
+- Fixed endless dialog boxes when adding a `NetworkBehaviour` to a `NetworkManager` or vice-versa. (#1947)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
