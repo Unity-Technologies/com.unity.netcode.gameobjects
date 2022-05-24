@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
@@ -23,10 +21,8 @@ using Unity.Netcode.Transports.UTP;
 /// on which to execute client tests. We use netcode as both a test framework and as the target of our performance tests.
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
-public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
+public class TestCoordinator : NetworkBehaviour
 {
-    public event PropertyChangedEventHandler PropertyChanged;
-
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
     public const float MaxWaitTimeoutSec = 20;
@@ -57,7 +53,6 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
             if (m_ConfigurationType != value)
             {
                 m_ConfigurationType = value;
-                NotifyPropertyChanged();
             }
         }
     }
@@ -65,11 +60,7 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
     public static string Port = "3076";
     private bool m_IsClient;
 
-    private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
+    
     private void SetConfigurationTypeAndConnect(ConfigurationType type)
     {
         ConfigurationType = type;
@@ -82,7 +73,6 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
     {
         this.enabled = false;
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-        this.PropertyChanged += ConfigurationTypeChangedCallback;
 
         s_ProcessId = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Awake {s_ProcessId}");
@@ -250,12 +240,6 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
         }
 
         base.OnDestroy();
-    }
-
-    public void ConfigurationTypeChangedCallback(object sender, PropertyChangedEventArgs e)
-    {
-        MultiprocessLogger.Log($"Property Changed: {e}");
-        
     }
 
     // Once we are connected, we can run the update method
