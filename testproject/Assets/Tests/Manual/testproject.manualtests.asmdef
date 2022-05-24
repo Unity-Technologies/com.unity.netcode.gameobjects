@@ -4,6 +4,7 @@
     "references": [
         "TestProject",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Components"
+        "Unity.Netcode.Components",
+        "Unity.Collections"
     ]
 }

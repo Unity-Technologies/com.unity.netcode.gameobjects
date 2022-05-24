@@ -22,6 +22,8 @@ namespace TestProject.ManualTests
         [SerializeField]
         private float m_AutoSwitchTimeOut = 60;
 
+        public bool DisconnectClientUponLoadScene;
+
         private void Awake()
         {
             ExitingNow = false;
@@ -69,7 +71,7 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkSpawn()
         {
-            if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && NetworkManager.Singleton.IsServer)
+            if (IsServer)
             {
                 if (m_SwitchSceneButtonObject)
                 {
@@ -78,9 +80,19 @@ namespace TestProject.ManualTests
             }
             else
             {
+                if (DisconnectClientUponLoadScene)
+                {
+                    NetworkManager.SceneManager.OnLoad += SceneManager_OnLoad;
+                }
                 m_SwitchSceneButtonObject.SetActive(false);
             }
             base.OnNetworkSpawn();
+        }
+
+        private void SceneManager_OnLoad(ulong clientId, string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, AsyncOperation asyncOperation)
+        {
+            NetworkManager.SceneManager.OnLoad -= SceneManager_OnLoad;
+            NetworkManager.Shutdown();
         }
 
         private IEnumerator AutoSwitch()
@@ -105,4 +117,29 @@ namespace TestProject.ManualTests
             }
         }
     }
+
+    //public class DisconnectClientWhenLoadingNewScene : MonoBehaviour
+    //{
+    //    private NetworkManager m_NetworkManager;
+
+    //    public DisconnectClientWhenLoadingNewScene(NetworkManager networkManager)
+    //    {
+    //        m_NetworkManager = networkManager;
+    //        m_NetworkManager.SceneManager.OnLoad += SceneManager_OnLoad;
+
+    //    }
+
+    //    private void SceneManager_OnLoad(ulong clientId, string sceneName, UnityEngine.SceneManagement.LoadSceneMode loadSceneMode, AsyncOperation asyncOperation)
+    //    {
+    //        StartCoroutine
+    //    }
+
+    //    private IEnumerator ShutdownClient()
+    //    {
+    //        if (!m_NetworkManager.ShutdownInProgress)
+    //        {
+    //            m_NetworkManager.Shutdown();
+    //        }
+    //    }
+    //}
 }
