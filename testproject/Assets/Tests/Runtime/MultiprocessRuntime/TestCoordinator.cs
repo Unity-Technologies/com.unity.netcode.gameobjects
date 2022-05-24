@@ -70,7 +70,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Awake()
     {
-        this.enabled = false;
+        enabled = false;
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
         s_ProcessId = Process.GetCurrentProcess().Id;
@@ -245,7 +245,7 @@ public class TestCoordinator : NetworkBehaviour
     public void OnClientConnectedCallback(ulong clientId)
     {
         MultiprocessLogger.Log("Client start callback, enabling behavior");
-        this.enabled = true;
+        enabled = true;
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
