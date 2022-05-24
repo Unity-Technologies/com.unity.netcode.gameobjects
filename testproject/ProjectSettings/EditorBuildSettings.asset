@@ -6,9 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Tests/Manual/ParentingTests/InSceneNetworkObjectParenting.unity
-    guid: f112d7c4abed6c34ca1287cf5ff15b9c
-  - enabled: 1
     path: Assets/MainMenu.unity
     guid: 21c7fd68cda9dd9488fc0cc01f885e39
   - enabled: 1
@@ -101,6 +98,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObject.unity
     guid: 136692aa47cd577499d03a2b0dabbf28
+  - enabled: 1
+    path: Assets/Tests/Manual/InSceneObjectParentingTests/InSceneNetworkObjectParenting.unity
+    guid: f112d7c4abed6c34ca1287cf5ff15b9c
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}

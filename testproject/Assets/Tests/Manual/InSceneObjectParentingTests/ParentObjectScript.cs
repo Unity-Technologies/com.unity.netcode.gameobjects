@@ -7,34 +7,16 @@ namespace TestProject.ManualTests
     {
         private void Update()
         {
-            if(IsSpawned)
+            if (IsSpawned)
             {
 
                 if (Input.GetKeyDown(KeyCode.G))
                 {
-                    //if(IsServer)
-                    //{
-                    //    PickUpItem(NetworkManager.LocalClient.PlayerObject);
-                    //}
-                    //else
-                    //{
-                    //    OtherPickupItemServerRpc(true);
-                    //}
-
-                    OtherPickupItemServerRpc(NetworkManager.LocalClientId);
-
+                   PickupItemServerRpc();
                 }
                 if (Input.GetKeyDown(KeyCode.D))
                 {
-                    //if(IsServer)
-                    //{
-                    //    DropItem(NetworkManager.LocalClient.PlayerObject);
-                    //}
-                    //else
-                    //{
-                    //    OtherDropItemServerRpc(true);
-                    //}
-                    OtherDropItemServerRpc(NetworkManager.LocalClientId);
+                    DropItemServerRpc();
                 }
             }
         }
@@ -93,20 +75,20 @@ namespace TestProject.ManualTests
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void OtherPickupItemServerRpc(ulong clientId)
+        public void PickupItemServerRpc(ServerRpcParams serverRpcParams = default)
         {
-            if (NetworkManager.ConnectedClients.ContainsKey(clientId))
+            if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {
-                PickUpItem(NetworkManager.ConnectedClients[clientId].PlayerObject);
+                PickUpItem(NetworkManager.ConnectedClients[serverRpcParams.Receive.SenderClientId].PlayerObject);
             }
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void OtherDropItemServerRpc(ulong clientId)
+        public void DropItemServerRpc(ServerRpcParams serverRpcParams = default)
         {
-            if (NetworkManager.ConnectedClients.ContainsKey(clientId))
+            if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {
-                DropItem(NetworkManager.ConnectedClients[clientId].PlayerObject);
+                DropItem(NetworkManager.ConnectedClients[serverRpcParams.Receive.SenderClientId].PlayerObject);
             }
         }
     }
