@@ -52,7 +52,7 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
     public ConfigurationType ConfigurationType
     {
         get { return m_ConfigurationType; }
-        set
+        private set
         {
             if (m_ConfigurationType != value)
             {
@@ -68,6 +68,14 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
     private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private void SetConfigurationTypeAndConnect(ConfigurationType type)
+    {
+        ConfigurationType = type;
+        SetAddressAndPort();
+        bool startClientResult = NetworkManager.Singleton.StartClient();
+        MultiprocessLogger.Log($"Starting client");
     }
 
     public void Awake()
@@ -87,7 +95,7 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
         if (isClient)
         {
             m_IsClient = isClient;
-            ConfigurationType = ConfigurationType.CommandLine;
+            SetConfigurationTypeAndConnect(ConfigurationType.CommandLine);
         }
 
         if (ConfigurationType == ConfigurationType.Unknown)
@@ -119,7 +127,7 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
                 m_ConnectAddress = job.HostIp;
                 m_IsClient = true;
                 MultiprocessLogHandler.JobId = job.JobId;
-                ConfigurationType = ConfigurationType.Remote;
+                SetConfigurationTypeAndConnect(ConfigurationType.Remote);
                 break;
             }
             else
@@ -247,9 +255,7 @@ public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
     public void ConfigurationTypeChangedCallback(object sender, PropertyChangedEventArgs e)
     {
         MultiprocessLogger.Log($"Property Changed: {e}");
-        SetAddressAndPort();
-        bool startClientResult = NetworkManager.Singleton.StartClient();
-        MultiprocessLogger.Log($"Starting client");
+        
     }
 
     // Once we are connected, we can run the update method
