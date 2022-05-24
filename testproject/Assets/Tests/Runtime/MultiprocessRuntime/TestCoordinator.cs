@@ -60,7 +60,6 @@ public class TestCoordinator : NetworkBehaviour
     public static string Port = "3076";
     private bool m_IsClient;
 
-    
     private void SetConfigurationTypeAndConnect(ConfigurationType type)
     {
         ConfigurationType = type;
