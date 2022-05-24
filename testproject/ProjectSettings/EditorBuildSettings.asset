@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Tests/Manual/ParentingTests/InSceneNetworkObjectParenting.unity
+    guid: f112d7c4abed6c34ca1287cf5ff15b9c
+  - enabled: 1
     path: Assets/MainMenu.unity
     guid: 21c7fd68cda9dd9488fc0cc01f885e39
   - enabled: 1
