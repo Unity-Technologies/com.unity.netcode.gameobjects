@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
@@ -21,8 +23,10 @@ using Unity.Netcode.Transports.UTP;
 /// on which to execute client tests. We use netcode as both a test framework and as the target of our performance tests.
 /// </summary>
 [RequireComponent(typeof(NetworkObject))]
-public class TestCoordinator : NetworkBehaviour
+public class TestCoordinator : NetworkBehaviour, INotifyPropertyChanged
 {
+    public event PropertyChangedEventHandler PropertyChanged;
+
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
     public const float MaxWaitTimeoutSec = 20;
@@ -50,15 +54,28 @@ public class TestCoordinator : NetworkBehaviour
         get { return m_ConfigurationType; }
         set
         {
-            m_ConfigurationType = value;
+            if (m_ConfigurationType != value)
+            {
+                m_ConfigurationType = value;
+                NotifyPropertyChanged();
+            }
         }
     }
     private string m_ConnectAddress = "127.0.0.1";
     public static string Port = "3076";
     private bool m_IsClient;
 
+    private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
     public void Awake()
     {
+        this.enabled = false;
+        NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+        this.PropertyChanged += ConfigurationTypeChangedCallback;
+
         s_ProcessId = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
@@ -72,7 +89,13 @@ public class TestCoordinator : NetworkBehaviour
             m_IsClient = isClient;
             ConfigurationType = ConfigurationType.CommandLine;
         }
-        ConfigureViaWebApi();
+
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi");
+            ConfigureViaWebApi();
+            MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
+        }
 
         if (Instance != null)
         {
@@ -86,6 +109,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private async void ConfigureViaWebApi()
     {
+        MultiprocessLogger.Log($"ConfigureViaWebApi - start");
         var jobQueue = await ConfigurationTools.GetRemoteConfig();
         foreach (var job in jobQueue.JobQueueItems)
         {
@@ -103,6 +127,7 @@ public class TestCoordinator : NetworkBehaviour
                 MultiprocessLogger.Log($"No match between {Rawgithash} and {job.GitHash}");
             }
         }
+        MultiprocessLogger.Log($"ConfigureViaWebApi - end {ConfigurationType}");
     }
 
     private void ReadGitHashFile()
@@ -157,7 +182,6 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         MultiprocessLogger.Log("Start");
-
         MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
@@ -167,16 +191,6 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Update()
     {
-        if (ConfigurationType != ConfigurationType.Unknown &&
-            m_IsClient &&
-            !NetworkManager.Singleton.IsClient)
-        {
-            SetAddressAndPort();
-            MultiprocessLogger.Log("starting netcode client");
-            bool startClientResult = NetworkManager.Singleton.StartClient();
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient} {startClientResult}");
-        }
-
         if (Time.time - m_TimeSinceLastKeepAlive > PerTestTimeoutSec)
         {
             QuitApplication();
@@ -228,6 +242,21 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         base.OnDestroy();
+    }
+
+    public void ConfigurationTypeChangedCallback(object sender, PropertyChangedEventArgs e)
+    {
+        MultiprocessLogger.Log($"Property Changed: {e}");
+        SetAddressAndPort();
+        bool startClientResult = NetworkManager.Singleton.StartClient();
+        MultiprocessLogger.Log($"Starting client");
+    }
+
+    // Once we are connected, we can run the update method
+    public void OnClientConnectedCallback(ulong clientId)
+    {
+        MultiprocessLogger.Log("Client start callback, enabling behavior");
+        this.enabled = true;
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
