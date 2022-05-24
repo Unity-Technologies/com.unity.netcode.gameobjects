@@ -959,7 +959,7 @@ namespace Unity.Netcode
                 // NetworkObject instance.
                 if (Header.IsSceneObject)
                 {
-                    reader.ReadValue(out NetworkSceneHandle);
+                    reader.ReadValueSafe(out NetworkSceneHandle);
                 }
             }
         }
