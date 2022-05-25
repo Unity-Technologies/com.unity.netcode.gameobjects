@@ -20,6 +20,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 
 ### Fixed
+- Fixed `NetworkAnimator` issue where it was only synchronizing parameters if the layer or state changed or was transitioning between states. (#1946)
+- Fixed `NetworkAnimator` issue where when it did detect a parameter had changed it would send all parameters as opposed to only the parameters that changed. (#1946)
+- Fixed `NetworkAnimator` issue where it was not always disposing the `NativeArray` that is allocated when spawned. (#1946)
+- Fixed `NetworkAnimator` issue where it was not taking the animation speed or state speed multiplier into consideration. (#1946)
+- Fixed `NetworkAnimator` issue where it was not properly synchronizing late joining clients if they joined while `Animator` was transitioning between states. (#1946)
+- Fixed `NetworkAnimator` issue where the server was not relaying changes to non-owner clients when a client was the owner. (#1946)
 - Fixed issue where one or more clients disconnecting during a scene event would cause `LoadEventCompleted` or `UnloadEventCompleted` to wait until the `NetworkConfig.LoadSceneTimeOut` period before being triggered. (#1973)
 - Fixed issues when multiple `ConnectionApprovalCallback`s were registered (#1972)
 - `FixedString` types can now be used in NetworkVariables and RPCs again without requiring a `ForceNetworkSerializeByMemcpy<>` wrapper (#1961)
