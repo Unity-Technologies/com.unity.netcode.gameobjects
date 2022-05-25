@@ -246,6 +246,7 @@ namespace TestProject.RuntimeTests
 
             m_CurrentSceneName = scene.name;
 
+            // Waits for the m_ServerNetworkManager to be ready to unload the next scene
             bool WaitForSceneUnload()
             {
                 var result = m_ServerNetworkManager.SceneManager.UnloadScene(scene);
