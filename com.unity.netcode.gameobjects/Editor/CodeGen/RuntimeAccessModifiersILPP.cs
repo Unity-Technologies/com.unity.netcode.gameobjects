@@ -52,9 +52,6 @@ namespace Unity.Netcode.Editor.CodeGen
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
-                        case nameof(NetworkVariableHelper):
-                            ProcessNetworkVariableHelper(typeDefinition);
-                            break;
                         case nameof(__RpcParams):
                             typeDefinition.IsPublic = true;
                             break;
@@ -99,25 +96,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
                 {
                     fieldDefinition.IsPublic = true;
-                }
-            }
-        }
-
-        private void ProcessNetworkVariableHelper(TypeDefinition typeDefinition)
-        {
-            foreach (var methodDefinition in typeDefinition.Methods)
-            {
-                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesEnum))
-                {
-                    methodDefinition.IsPublic = true;
-                }
-                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesStruct))
-                {
-                    methodDefinition.IsPublic = true;
-                }
-                if (methodDefinition.Name == nameof(NetworkVariableHelper.InitializeDelegatesNetworkSerializable))
-                {
-                    methodDefinition.IsPublic = true;
                 }
             }
         }

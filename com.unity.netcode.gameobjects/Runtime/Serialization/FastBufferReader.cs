@@ -682,7 +682,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -691,7 +691,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -700,7 +700,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanaged(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -712,7 +712,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanagedSafe(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
