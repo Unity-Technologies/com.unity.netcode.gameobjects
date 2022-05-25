@@ -54,6 +54,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         internal NetworkManager NetworkManager;
 
+        internal string NetworkManagerName;
+
         /// <summary>
         /// Used to control when clients should attempt to fake-load a scene
         /// Note: Unit/Integration tests that only use <see cref="NetcodeIntegrationTestHelpers"/>
@@ -172,7 +174,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
-            if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded)
+            if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded && !queuedSceneJob.Scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
             {
                 SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
             }
@@ -211,7 +213,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             while (QueuedSceneJobs.Count != 0)
             {
                 CurrentQueuedSceneJob = QueuedSceneJobs.Dequeue();
-                VerboseDebug($"[ITSH-START] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
+                VerboseDebug($"[ITSH-START] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManagerName} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
                 if (CurrentQueuedSceneJob.JobType == QueuedSceneJob.JobTypes.Loading)
                 {
                     yield return ProcessLoadingSceneJob(CurrentQueuedSceneJob);
@@ -220,7 +222,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     yield return ProcessUnloadingSceneJob(CurrentQueuedSceneJob);
                 }
-                VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManager.name} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
+                VerboseDebug($"[ITSH-STOP] {CurrentQueuedSceneJob.IntegrationTestSceneHandler.NetworkManagerName} processing {CurrentQueuedSceneJob.JobType} for scene {CurrentQueuedSceneJob.SceneName}.");
             }
             SceneJobProcessor = null;
             yield break;
@@ -357,6 +359,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             networkManager.SceneManager.OverrideGetAndAddNewlyLoadedSceneByName = GetAndAddNewlyLoadedSceneByName;
             NetworkManagers.Add(networkManager);
+            NetworkManagerName = networkManager.name;
             if (s_WaitForSeconds == null)
             {
                 s_WaitForSeconds = new WaitForSeconds(1.0f / networkManager.NetworkConfig.TickRate);

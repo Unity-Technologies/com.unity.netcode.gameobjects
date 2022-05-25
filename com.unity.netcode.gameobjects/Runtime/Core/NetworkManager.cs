@@ -424,7 +424,7 @@ namespace Unity.Netcode
         internal static event Action OnSingletonReady;
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        internal void OnValidate()
         {
             if (NetworkConfig == null)
             {
