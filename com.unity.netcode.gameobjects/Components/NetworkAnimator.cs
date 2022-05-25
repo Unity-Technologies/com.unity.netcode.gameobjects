@@ -247,7 +247,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void CleanUp()
+        private void Cleanup()
         {
             if (m_NetworkAnimatorStateChangeHandler != null)
             {
@@ -257,7 +257,7 @@ namespace Unity.Netcode.Components
 
             if (IsServer)
             {
-                NetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
+                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             }
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
@@ -272,7 +272,7 @@ namespace Unity.Netcode.Components
 
         public override void OnDestroy()
         {
-            CleanUp();
+            Cleanup();
             base.OnDestroy();
         }
 
@@ -294,7 +294,7 @@ namespace Unity.Netcode.Components
 
                 if (IsServer)
                 {
-                    NetworkManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+                    NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
                 }
 
                 // Store off our current layer weights
@@ -364,7 +364,7 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkDespawn()
         {
-            CleanUp();
+            Cleanup();
         }
 
         /// <summary>
@@ -432,7 +432,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void Server_OnClientConnectedCallback(ulong playerId)
+        private void OnClientConnectedCallback(ulong playerId)
         {
             m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
         }
@@ -585,7 +585,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Checks if any of the Animator's states have changed
         /// </summary>
-        unsafe private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
+        private unsafe bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
         {
             stateHash = 0;
             normalizedTime = 0;
