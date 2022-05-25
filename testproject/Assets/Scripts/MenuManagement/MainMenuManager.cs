@@ -2,13 +2,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// Main Menu Manager only accepts types of MenuReference
 /// </summary>
 public class MainMenuManager : MenuManager<MenuReference>
 {
-
+#if UNITY_EDITOR
+    [InitializeOnEnterPlayMode]
+    public static void OnEnterPlaymodeInEditor(EnterPlayModeOptions options)
+    {
+        Initialize();
+    }
+#endif
 }
 
 
@@ -37,8 +46,16 @@ public class MenuManager<T> : MonoBehaviour where T : ISceneReference
     protected Dictionary<string, T> m_SceneMenuReferencesByDisplayName = new Dictionary<string, T>();
 
 
+    protected static void Initialize()
+    {
+        Application.runInBackground = true;
+        Application.targetFrameRate = 60;
+    }
+
+
     private void Awake()
     {
+        Initialize();
         Screen.SetResolution(HorizontalResolution, VerticalResolution, false);
     }
 

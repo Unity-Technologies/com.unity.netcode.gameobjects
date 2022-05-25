@@ -169,17 +169,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        public static NetworkManager CreateServer()
+        private static void AddUnityTransport(NetworkManager networkManager)
         {
-            // Create gameObject
-            var go = new GameObject("NetworkManager - Server");
-
-            // Create networkManager component
-            var server = go.AddComponent<NetworkManager>();
-            NetworkManagerInstances.Insert(0, server);
-
             // Create transport
-            var unityTransport = go.AddComponent<UnityTransport>();
+            var unityTransport = networkManager.gameObject.AddComponent<UnityTransport>();
             // We need to increase this buffer size for tests that spawn a bunch of things
             unityTransport.MaxPayloadSize = 256000;
             unityTransport.MaxSendQueueSize = 1024 * 1024;
@@ -189,11 +182,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             unityTransport.ConnectTimeoutMS = 500;
 
             // Set the NetworkConfig
-            server.NetworkConfig = new NetworkConfig()
+            networkManager.NetworkConfig = new NetworkConfig()
             {
                 // Set transport
                 NetworkTransport = unityTransport
             };
+        }
+
+        public static NetworkManager CreateServer()
+        {
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Server");
+
+            // Create networkManager component
+            var server = go.AddComponent<NetworkManager>();
+            NetworkManagerInstances.Insert(0, server);
+            AddUnityTransport(server);
             return server;
         }
 
@@ -227,6 +231,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        internal static NetworkManager CreateNewClient(int identifier)
+        {
+            // Create gameObject
+            var go = new GameObject("NetworkManager - Client - " + identifier);
+            // Create networkManager component
+            var networkManager = go.AddComponent<NetworkManager>();
+            AddUnityTransport(networkManager);
+            return networkManager;
+        }
+
+
         /// <summary>
         /// Used to add a client to the already existing list of clients
         /// </summary>
@@ -235,23 +250,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
         {
             clients = new NetworkManager[clientCount];
-            var activeSceneName = SceneManager.GetActiveScene().name;
             for (int i = 0; i < clientCount; i++)
             {
-                // Create gameObject
-                var go = new GameObject("NetworkManager - Client - " + i);
                 // Create networkManager component
-                clients[i] = go.AddComponent<NetworkManager>();
-
-                // Create transport
-                var unityTransport = go.AddComponent<UnityTransport>();
-
-                // Set the NetworkConfig
-                clients[i].NetworkConfig = new NetworkConfig()
-                {
-                    // Set transport
-                    NetworkTransport = unityTransport
-                };
+                clients[i] = CreateNewClient(i);
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -262,12 +264,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Stops one single client and makes sure to cleanup any static variables in this helper
         /// </summary>
         /// <param name="clientToStop"></param>
-        public static void StopOneClient(NetworkManager clientToStop)
+        public static void StopOneClient(NetworkManager clientToStop, bool destroy = true)
         {
             clientToStop.Shutdown();
             s_Hooks.Remove(clientToStop);
-            Object.Destroy(clientToStop.gameObject);
-            NetworkManagerInstances.Remove(clientToStop);
+            if (destroy)
+            {
+                Object.Destroy(clientToStop.gameObject);
+                NetworkManagerInstances.Remove(clientToStop);
+            }
         }
 
         /// <summary>
@@ -279,6 +284,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             clientToStart.StartClient();
             s_Hooks[clientToStart] = new MultiInstanceHooks();
             clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            if (!NetworkManagerInstances.Contains(clientToStart))
+            {
+                NetworkManagerInstances.Add(clientToStart);
+            }
             // if set, then invoke this for the client
             RegisterHandlers(clientToStart);
         }
@@ -469,8 +478,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // this feature only works with NetcodeIntegrationTest derived classes
             if (IsNetcodeIntegrationTestRunning)
             {
-                // Add the object identifier component
-                networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                if (networkObject.GetComponent<ObjectNameIdentifier>() == null && networkObject.GetComponentInChildren<ObjectNameIdentifier>() == null)
+                {
+                    // Add the object identifier component
+                    networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                }
             }
         }
 
