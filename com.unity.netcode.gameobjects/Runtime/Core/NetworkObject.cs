@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
@@ -180,10 +181,56 @@ namespace Unity.Netcode
             return Observers.Contains(clientId);
         }
 
+        /// <summary>
+        ///  In the event the scene of origin gets unloaded, we keep
+        ///  the most important part to uniquely identify in-scene
+        ///  placed NetworkObjects
+        /// </summary>
+        internal int SceneOriginHandle = 0;
+
+        private Scene m_SceneOrigin;
+        /// <summary>
+        /// The scene where the NetworkObject was first instantiated
+        /// Note: Primarily for in-scene placed NetworkObjects
+        /// We need to keep track of the original scene of origin for
+        /// the NetworkObject in order to be able to uniquely identify it
+        /// using the scene of origin's handle.
+        /// </summary>
+        internal Scene SceneOrigin
+        {
+            get
+            {
+                return m_SceneOrigin;
+            }
+
+            set
+            {
+                if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
+                {
+                    m_SceneOrigin = value;
+                    SceneOriginHandle = value.handle;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to return the correct scene handle
+        /// </summary>
+        /// <returns>scene handle to associate this NetworkObject with</returns>
+        internal int GetSceneOriginHandle()
+        {
+            return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
+        }
+
         private void Awake()
         {
             SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
         }
+
+
+
+
 
         /// <summary>
         /// Shows a previously hidden <see cref="NetworkObject"/> to a client
@@ -909,7 +956,7 @@ namespace Unity.Netcode
                 // sizes for dynamically spawned NetworkObjects.
                 if (Header.IsSceneObject)
                 {
-                    writer.WriteValue(OwnerObject.gameObject.scene.handle);
+                    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);

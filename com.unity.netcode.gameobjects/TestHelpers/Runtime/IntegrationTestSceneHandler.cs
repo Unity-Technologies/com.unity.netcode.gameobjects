@@ -147,7 +147,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
-            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.gameObject.scene.handle == scene.handle);
+            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && (c.gameObject.scene.handle == scene.handle || c.GetSceneOriginHandle() == scene.handle));
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.NetworkManagerOwner != networkManager)
@@ -322,7 +322,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     var skip = false;
                     foreach (var networkManager in NetworkManagers)
                     {
-                        if (NetworkManager.LocalClientId == networkManager.LocalClientId)
+                        if (NetworkManager.LocalClientId == networkManager.LocalClientId || !networkManager.IsListening)
                         {
                             continue;
                         }

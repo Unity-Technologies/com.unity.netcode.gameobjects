@@ -1913,10 +1913,9 @@ namespace Unity.Netcode
             foreach (var networkObjectInstance in networkObjects)
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
-                var sceneHandle = networkObjectInstance.gameObject.scene.handle;
+                var sceneHandle = networkObjectInstance.GetSceneOriginHandle();
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
-                    sceneHandle == sceneToFilterBy.handle)
+                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && sceneHandle == sceneToFilterBy.handle)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {
@@ -1925,6 +1924,12 @@ namespace Unity.Netcode
 
                     if (!ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneHandle))
                     {
+                        if (sceneToFilterBy.name == "InSceneNetworkObject")
+                        {
+                            Debug.Log($"[{m_NetworkManager.name}] Adding {networkObjectInstance.name}-{globalObjectIdHash} to scene handle {sceneHandle}");
+                            var matchingEntry = ServerSceneHandleToClientSceneHandle.Where((c) => c.Value == sceneHandle).FirstOrDefault();
+                            Debug.Log($"[{m_NetworkManager.name}] Server Scene Map {matchingEntry.Key} mapped to client scene {matchingEntry.Value}");
+                        }
                         ScenePlacedObjects[globalObjectIdHash].Add(sceneHandle, networkObjectInstance);
                     }
                     else

@@ -388,7 +388,6 @@ namespace Unity.Netcode
             writer.WriteValueSafe(ScenesToSynchronize.ToArray());
             writer.WriteValueSafe(SceneHandlesToSynchronize.ToArray());
 
-
             // Store our current position in the stream to come back and say how much data we have written
             var positionStart = writer.Position;
 
@@ -405,7 +404,7 @@ namespace Unity.Netcode
             {
                 var noStart = writer.Position;
                 var sceneObject = m_NetworkObjectsSync[i].GetMessageSceneObject(TargetClientId);
-                writer.WriteValueSafe(m_NetworkObjectsSync[i].gameObject.scene.handle);
+                writer.WriteValueSafe(m_NetworkObjectsSync[i].GetSceneOriginHandle());
                 sceneObject.Serialize(writer);
                 var noStop = writer.Position;
                 totalBytes += (int)(noStop - noStart);
@@ -418,7 +417,7 @@ namespace Unity.Netcode
             {
                 var noStart = writer.Position;
                 var sceneObject = m_DespawnedInSceneObjectsSync[i].GetMessageSceneObject(TargetClientId);
-                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].gameObject.scene.handle);
+                writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
                 var noStop = writer.Position;
                 totalBytes += (int)(noStop - noStart);
@@ -753,8 +752,8 @@ namespace Unity.Netcode
                             if (m_NetworkManager.SceneManager.ScenesLoaded.ContainsKey(localSceneHandle))
                             {
                                 var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
-                                var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.gameObject.scene == objectRelativeScene &&
-                                c.gameObject.scene.handle == localSceneHandle && (c.IsSceneObject != false)).ToList();
+                                var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) =>
+                                c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                                 foreach (var inSceneObject in inSceneNetworkObjects)
                                 {
@@ -789,9 +788,9 @@ namespace Unity.Netcode
                             m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
                         }
 
-                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].gameObject.scene.handle))
+                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
                         {
-                            m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].gameObject.scene.handle, sceneRelativeNetworkObjects[globalObjectIdHash]);
+                            m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle(), sceneRelativeNetworkObjects[globalObjectIdHash]);
                         }
 
                     }
