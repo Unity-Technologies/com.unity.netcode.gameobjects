@@ -1,3 +1,4 @@
+using System;
 namespace Unity.Netcode.TestHelpers.Runtime
 {
     public class ObjectNameIdentifier : NetworkBehaviour
@@ -13,6 +14,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Keep a reference to the assigned NetworkObject
         /// <see cref="OnDestroy"/>
         /// </summary>
+        [NonSerialized]
         private NetworkObject m_NetworkObject;
         private string m_OriginalName;
 
