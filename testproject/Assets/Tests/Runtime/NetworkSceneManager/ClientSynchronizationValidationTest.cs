@@ -39,7 +39,7 @@ namespace TestProject.RuntimeTests
         {
             // Because despawning a client will cause it to shutdown and clean everything in the
             // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients with despawned in-scene placed NetworkObjects.
+            // we test synchronizing late joining clients.
             // So, we prevent the automatic starting of the server and clients, remove the client we
             // will be targeting to join late from the m_ClientNetworkManagers array, start the server
             // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
@@ -118,7 +118,7 @@ namespace TestProject.RuntimeTests
             {
                 Assert.IsFalse(m_ValidSceneEventCount[k_SecondSceneToSkip] > 0, $"Client still loaded the invalidated scene {k_SecondSceneToSkip}!");
                 Assert.IsTrue(m_ValidSceneEventCount[k_FirstSceneToLoad] == 1, $"Client did not load and process the validated scene {k_FirstSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_FirstSceneToLoad]})");
-                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToLoad] == 1, $"Client did not load and process the validated scene {k_ThirdSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_FirstSceneToLoad]})");
+                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToLoad] == 1, $"Client did not load and process the validated scene {k_ThirdSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_ThirdSceneToLoad]})");
             }
 
             private void ClientSceneManager_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)

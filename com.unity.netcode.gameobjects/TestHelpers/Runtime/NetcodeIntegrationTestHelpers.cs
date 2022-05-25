@@ -327,10 +327,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Application.targetFrameRate = s_OriginalTargetFrameRate;
         }
 
-        internal delegate bool ServerVerifySceneIsValidForClientsToLoadDelegateHandler(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode);
-
-        internal static ServerVerifySceneIsValidForClientsToLoadDelegateHandler ServerVerifySceneIsValidForClientsToLoad;
-
         /// <summary>
         /// We want to exclude the TestRunner scene on the host-server side so it won't try to tell clients to
         /// synchronize to this scene when they connect
@@ -342,7 +338,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 return false;
             }
-            return ServerVerifySceneIsValidForClientsToLoad != null ? ServerVerifySceneIsValidForClientsToLoad(sceneIndex, sceneName, loadSceneMode) : true;
+            return true;
         }
 
         /// <summary>

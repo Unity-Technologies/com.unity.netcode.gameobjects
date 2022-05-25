@@ -19,11 +19,6 @@ namespace TestProject.RuntimeTests
         private Scene m_ServerSideSceneLoaded;
         private bool m_CanStartServerAndClients;
 
-        protected override bool OnSetVerboseDebug()
-        {
-            return false;
-        }
-
         protected override IEnumerator OnSetup()
         {
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
@@ -117,7 +112,7 @@ namespace TestProject.RuntimeTests
         {
             // Because despawning a client will cause it to shutdown and clean everything in the
             // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients with despawned in-scene placed NetworkObjects.
+            // we test synchronizing late joining clients.
             // So, we prevent the automatic starting of the server and clients, remove the client we
             // will be targeting to join late from the m_ClientNetworkManagers array, start the server
             // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
