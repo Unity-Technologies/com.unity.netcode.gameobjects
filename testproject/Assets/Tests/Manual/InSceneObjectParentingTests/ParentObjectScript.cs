@@ -9,7 +9,6 @@ namespace TestProject.ManualTests
         {
             if (IsSpawned)
             {
-
                 if (Input.GetKeyDown(KeyCode.G))
                 {
                    PickupItemServerRpc();
