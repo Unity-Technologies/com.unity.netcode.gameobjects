@@ -260,6 +260,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        /// <summary>
         /// Stops one single client and makes sure to cleanup any static variables in this helper
         /// </summary>
         /// <param name="clientToStop"></param>
