@@ -21,7 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where a fast buffer reader overflow could happen when synchronizing a late joining player to a game session where in-scene placed NetworkObjects have been parented.
+- Fixed issue where late joining clients would get a soft synchronization error if any in-scene placed NetworkObjects were parented under another `NetworkObject`. (#1985)
 - Fixed issue where `NetworkBehaviourReference` would throw a type cast exception if using `NetworkBehaviourReference.TryGet` and the component type was not found. (#1984)
 - Fixed `NetworkSceneManager` was not sending scene event notifications for the currently active scene and any additively loaded scenes when loading a new scene in `LoadSceneMode.Single` mode. (#1975)
 - Fixed issue where one or more clients disconnecting during a scene event would cause `LoadEventCompleted` or `UnloadEventCompleted` to wait until the `NetworkConfig.LoadSceneTimeOut` period before being triggered. (#1973)
