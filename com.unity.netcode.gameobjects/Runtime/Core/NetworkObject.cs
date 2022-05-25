@@ -215,10 +215,15 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Helper method to return the correct scene handle
+        /// Note: Do not use this within NetworkSpawnManager.SpawnNetworkObjectLocallyCommon
         /// </summary>
-        /// <returns>scene handle to associate this NetworkObject with</returns>
         internal int GetSceneOriginHandle()
         {
+            // Sanity check to make sure nothing
+            if (SceneOriginHandle == 0 && IsSpawned)
+            {
+                throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
+            }
             return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
         }
 
@@ -227,10 +232,6 @@ namespace Unity.Netcode
             SetCachedParent(transform.parent);
             SceneOrigin = gameObject.scene;
         }
-
-
-
-
 
         /// <summary>
         /// Shows a previously hidden <see cref="NetworkObject"/> to a client

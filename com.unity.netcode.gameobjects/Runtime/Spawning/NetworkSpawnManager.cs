@@ -480,9 +480,9 @@ namespace Unity.Netcode
             networkObject.IsSpawned = true;
             networkObject.IsSceneObject = sceneObject;
 
-            // For in-scene placed NetworkObjects, we always check to make sure our scene of origin
-            // is properly set.
-            if (networkObject.IsSceneObject != false && networkObject.GetSceneOriginHandle() == 0)
+            // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
+            // Note: Always check SceneOriginHandle directly at this specific location.
+            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle == 0)
             {
                 networkObject.SceneOrigin = networkObject.gameObject.scene;
             }

@@ -1546,6 +1546,13 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
 
+                // NetworkSceneManager does not synchronize scenes that are not loaded by NetworkSceneManager
+                // unless the scene in question is the currently active scene.
+                if (!ScenesLoaded.ContainsKey(scene.handle) && activeScene.handle != scene.handle)
+                {
+                    continue;
+                }
+
                 var sceneHash = SceneHashFromNameOrPath(scene.path);
 
                 // This would depend upon whether we are additive or not
@@ -1563,7 +1570,6 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
-
                 sceneEventData.AddSceneToSynchronize(sceneHash, scene.handle);
             }
 
@@ -2033,9 +2039,7 @@ namespace Unity.Netcode
                     {
                         if (sceneToFilterBy.name == "InSceneNetworkObject")
                         {
-                            Debug.Log($"[{m_NetworkManager.name}] Adding {networkObjectInstance.name}-{globalObjectIdHash} to scene handle {sceneHandle}");
                             var matchingEntry = ServerSceneHandleToClientSceneHandle.Where((c) => c.Value == sceneHandle).FirstOrDefault();
-                            Debug.Log($"[{m_NetworkManager.name}] Server Scene Map {matchingEntry.Key} mapped to client scene {matchingEntry.Value}");
                         }
                         ScenePlacedObjects[globalObjectIdHash].Add(sceneHandle, networkObjectInstance);
                     }

@@ -151,11 +151,8 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => firstClientInSceneObjectInstance.transform.parent != null && firstClientInSceneObjectInstance.transform.parent == clientSideServerPlayer.transform);
             AssertOnTimeout($"Timed out waiting for the client-side id ({m_ClientNetworkManagers[0].LocalClientId}) server player transform to be set on the client-side in-scene object!");
-
             // Now late join a client
             NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
-            Debug.Break();
-            yield return new WaitForSeconds(1.0f);
             yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
             AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
 
