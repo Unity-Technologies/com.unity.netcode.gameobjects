@@ -57,6 +57,9 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(testNetworkBehaviour, testNetworkBehaviour.RpcReceivedBehaviour);
         }
 
+
+
+
         [UnityTest]
         public IEnumerator TestRpcImplicitNetworkBehaviour()
         {
@@ -147,6 +150,46 @@ namespace Unity.Netcode.RuntimeTests
         {
             //Create, instantiate, and host
             NetworkManagerHelper.StartNetworkManager(out _);
+        }
+    }
+
+    /// <summary>
+    /// Integration tests for NetworkBehaviourReference
+    /// </summary>
+    public class NetworkBehaviourReferenceIntegrationTests : NetcodeIntegrationTest
+    {
+        protected override int NumberOfClients => 1;
+
+        internal class FakeMissingComponent : NetworkBehaviour
+        {
+
+        }
+
+        internal class TestAddedComponent : NetworkBehaviour
+        {
+
+        }
+
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.AddComponent<TestAddedComponent>();
+            base.OnCreatePlayerPrefab();
+        }
+
+        /// <summary>
+        /// This test validates that if a component does not exist the NetworkBehaviourReference will not throw an
+        /// invalid cast exception.
+        /// (It is a full integration test to assure the NetworkObjects are spawned)
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestTryGetWithAndWithOutExistingComponent()
+        {
+            var networkBehaviourReference = new NetworkBehaviourReference(m_ClientNetworkManagers[0].LocalClient.PlayerObject.GetComponent<TestAddedComponent>());
+            var missingComponent = (FakeMissingComponent)null;
+            var testBehaviour = (TestAddedComponent)null;
+            Assert.IsFalse(networkBehaviourReference.TryGet(out missingComponent));
+            Assert.IsTrue(networkBehaviourReference.TryGet(out testBehaviour));
+            yield return null;
         }
     }
 }
