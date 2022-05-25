@@ -1521,6 +1521,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Used for integration testing, due to the complexities of having all clients loading scenes
+        /// this is needed to "filter" out the scenes not loaded by NetworkSceneManager
+        /// (i.e. we don't want a late joining player to load all of the other client scenes)
+        /// </summary>
+        internal Func<Scene, bool> ExcludeSceneFromSychronization;
+
+        /// <summary>
         /// Server Side:
         /// This is used for players that have just had their connection approved and will assure they are synchronized
         /// properly if they are late joining
@@ -1548,7 +1555,7 @@ namespace Unity.Netcode
 
                 // NetworkSceneManager does not synchronize scenes that are not loaded by NetworkSceneManager
                 // unless the scene in question is the currently active scene.
-                if (!ScenesLoaded.ContainsKey(scene.handle) && activeScene.handle != scene.handle)
+                if (ExcludeSceneFromSychronization != null && !ExcludeSceneFromSychronization(scene))
                 {
                     continue;
                 }

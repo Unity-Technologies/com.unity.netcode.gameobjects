@@ -11,7 +11,7 @@ namespace TestProject.ManualTests
             {
                 if (Input.GetKeyDown(KeyCode.G))
                 {
-                   PickupItemServerRpc();
+                    PickupItemServerRpc();
                 }
                 if (Input.GetKeyDown(KeyCode.D))
                 {

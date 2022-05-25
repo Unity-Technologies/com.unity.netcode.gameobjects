@@ -352,12 +352,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             throw new Exception($"Failed to find any loaded scene named {sceneName}!");
         }
 
+        private bool ExcludeSceneFromSynchronizationCheck(Scene scene)
+        {
+            if (!NetworkManager.SceneManager.ScenesLoaded.ContainsKey(scene.handle) && SceneManager.GetActiveScene().handle != scene.handle)
+            {
+                return false;
+            }
+            return true;
+        }
+
         /// <summary>
         /// Constructor now must take NetworkManager
         /// </summary>
         public IntegrationTestSceneHandler(NetworkManager networkManager)
         {
             networkManager.SceneManager.OverrideGetAndAddNewlyLoadedSceneByName = GetAndAddNewlyLoadedSceneByName;
+            networkManager.SceneManager.ExcludeSceneFromSychronization = ExcludeSceneFromSynchronizationCheck;
             NetworkManagers.Add(networkManager);
             NetworkManagerName = networkManager.name;
             if (s_WaitForSeconds == null)
