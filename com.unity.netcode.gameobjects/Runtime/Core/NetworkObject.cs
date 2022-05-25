@@ -205,6 +205,8 @@ namespace Unity.Netcode
 
             set
             {
+                // The scene origin should only be set once.
+                // Once set, it should never change.
                 if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
                 {
                     m_SceneOrigin = value;
