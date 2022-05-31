@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -20,11 +21,59 @@ namespace Unity.Netcode.RuntimeTests
     {
         public int Value;
     }
-    public class WorkingUserNetworkVariableComponent : NetworkBehaviour
+
+    /// <summary>
+    /// Used to help track instances of any child derived class
+    /// </summary>
+    public class WorkingUserNetworkVariableComponentBase : NetworkBehaviour
+    {
+        private static Dictionary<ulong, WorkingUserNetworkVariableComponentBase> s_Instances = new Dictionary<ulong, WorkingUserNetworkVariableComponentBase>();
+
+        internal static T GetRelativeInstance<T>(ulong clientId) where T : NetworkBehaviour
+        {
+            if (s_Instances.ContainsKey(clientId))
+            {
+                return s_Instances[clientId] as T;
+            }
+            return null;
+        }
+
+        public static void Reset()
+        {
+            s_Instances.Clear();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (!s_Instances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                s_Instances.Add(NetworkManager.LocalClientId, this);
+            }
+            else
+            {
+                Debug.LogWarning($"{name} is spawned but client id {NetworkManager.LocalClientId} instance already exists!");
+            }
+        }
+
+        public override void OnNetworkDespawn()
+        {
+            if (s_Instances.ContainsKey(NetworkManager.LocalClientId))
+            {
+                s_Instances.Remove(NetworkManager.LocalClientId);
+            }
+            else
+            {
+                Debug.LogWarning($"{name} is was never spawned but client id {NetworkManager.LocalClientId} is trying to despawn it!");
+            }
+        }
+    }
+
+    public class WorkingUserNetworkVariableComponent : WorkingUserNetworkVariableComponentBase
     {
         public NetworkVariable<MyTypeOne> NetworkVariable = new NetworkVariable<MyTypeOne>();
     }
-    public class WorkingUserNetworkVariableComponentUsingExtensionMethod : NetworkBehaviour
+
+    public class WorkingUserNetworkVariableComponentUsingExtensionMethod : WorkingUserNetworkVariableComponentBase
     {
         public NetworkVariable<MyTypeTwo> NetworkVariable = new NetworkVariable<MyTypeTwo>();
     }
@@ -60,6 +109,12 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_ExtensionMethodPrefab;
         private GameObject m_NonWorkingPrefab;
 
+        protected override IEnumerator OnSetup()
+        {
+            WorkingUserNetworkVariableComponentBase.Reset();
+            return base.OnSetup();
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_WorkingPrefab = CreateNetworkObjectPrefab($"[{nameof(NetworkVariableUserSerializableTypesTests)}.{nameof(m_WorkingPrefab)}]");
@@ -70,17 +125,10 @@ namespace Unity.Netcode.RuntimeTests
             m_NonWorkingPrefab.AddComponent<NonWorkingUserNetworkVariableComponent>();
         }
 
-        private T GetComponentForClient<T>(ulong clientId) where T : NetworkBehaviour
+        private bool CheckForClientInstance<T>() where T : WorkingUserNetworkVariableComponentBase
         {
-            foreach (var component in Object.FindObjectsOfType<T>())
-            {
-                if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
-                {
-                    return component;
-                }
-            }
-
-            return null;
+            var instance = WorkingUserNetworkVariableComponentBase.GetRelativeInstance<T>(m_ClientNetworkManagers[0].LocalClientId);
+            return instance != null && instance.IsSpawned;
         }
 
         [UnityTest]
@@ -95,22 +143,28 @@ namespace Unity.Netcode.RuntimeTests
                 value = new MyTypeOne();
                 reader.ReadValueSafe(out value.Value);
             };
-            var serverObject = Object.Instantiate(m_WorkingPrefab);
+
+            var serverObject = SpawnObject(m_WorkingPrefab, m_ServerNetworkManager);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            serverNetworkObject.Spawn();
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+            // Wait for the client instance to be spawned, which removes the need to check for two NetworkVariableDeltaMessages
+            yield return WaitForConditionOrTimeOut(() => CheckForClientInstance<WorkingUserNetworkVariableComponent>());
+            AssertOnTimeout($"Timed out waiting for the client side object to spawn!");
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value = new MyTypeOne { Value = 20 };
+            // Get server and client instances of the test component
+            var clientInstance = WorkingUserNetworkVariableComponentBase.GetRelativeInstance<WorkingUserNetworkVariableComponent>(m_ClientNetworkManagers[0].LocalClientId);
+            var serverInstance = serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>();
 
+            // Set the server side value
+            serverInstance.NetworkVariable.Value = new MyTypeOne { Value = 20 };
+
+            // Wait for the NetworkVariableDeltaMessage
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
 
-            var clientObject = GetComponentForClient<WorkingUserNetworkVariableComponent>(m_ClientNetworkManagers[0].LocalClientId);
-
-            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value.Value, clientObject.NetworkVariable.Value.Value);
-            Assert.AreEqual(20, clientObject.NetworkVariable.Value.Value);
+            // Wait for the client side value to be updated to the server side value (can take an additional frame)
+            yield return WaitForConditionOrTimeOut(() => clientInstance.NetworkVariable.Value.Value == serverInstance.NetworkVariable.Value.Value);
+            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponent>().NetworkVariable.Value.Value, clientInstance.NetworkVariable.Value.Value);
+            Assert.AreEqual(20, clientInstance.NetworkVariable.Value.Value);
         }
 
         [UnityTest]
@@ -119,22 +173,27 @@ namespace Unity.Netcode.RuntimeTests
             UserNetworkVariableSerialization<MyTypeTwo>.WriteValue = NetworkVariableUserSerializableTypesTestsExtensionMethods.WriteValueSafe;
             UserNetworkVariableSerialization<MyTypeTwo>.ReadValue = NetworkVariableUserSerializableTypesTestsExtensionMethods.ReadValueSafe;
 
-            var serverObject = Object.Instantiate(m_ExtensionMethodPrefab);
+            var serverObject = SpawnObject(m_ExtensionMethodPrefab, m_ServerNetworkManager);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            serverNetworkObject.Spawn();
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+            // Wait for the client instance to be spawned, which removes the need to check for two NetworkVariableDeltaMessages
+            yield return WaitForConditionOrTimeOut(() => CheckForClientInstance<WorkingUserNetworkVariableComponentUsingExtensionMethod>());
+            AssertOnTimeout($"Timed out waiting for the client side object to spawn!");
 
-            serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value = new MyTypeTwo { Value = 20 };
+            // Get server and client instances of the test component
+            var clientInstance = WorkingUserNetworkVariableComponentBase.GetRelativeInstance<WorkingUserNetworkVariableComponentUsingExtensionMethod>(m_ClientNetworkManagers[0].LocalClientId);
+            var serverInstance = serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>();
+            // Set the server side value
+            serverInstance.NetworkVariable.Value = new MyTypeTwo { Value = 20 };
 
+            // Wait for the NetworkVariableDeltaMessage
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<NetworkVariableDeltaMessage>(m_ClientNetworkManagers[0]);
 
-            var clientObject = GetComponentForClient<WorkingUserNetworkVariableComponentUsingExtensionMethod>(m_ClientNetworkManagers[0].LocalClientId);
-
-            Assert.AreEqual(serverNetworkObject.GetComponent<WorkingUserNetworkVariableComponentUsingExtensionMethod>().NetworkVariable.Value.Value, clientObject.NetworkVariable.Value.Value);
-            Assert.AreEqual(20, clientObject.NetworkVariable.Value.Value);
+            // Wait for the client side value to be updated to the server side value (can take an additional frame)
+            yield return WaitForConditionOrTimeOut(() => clientInstance.NetworkVariable.Value.Value == serverInstance.NetworkVariable.Value.Value);
+            AssertOnTimeout($"Timed out waiting for the client side object's value ({clientInstance.NetworkVariable.Value.Value}) to equal the server side objects value ({serverInstance.NetworkVariable.Value.Value})!");
+            Assert.AreEqual(serverInstance.NetworkVariable.Value.Value, clientInstance.NetworkVariable.Value.Value);
+            Assert.AreEqual(20, clientInstance.NetworkVariable.Value.Value);
         }
 
         [Test]
