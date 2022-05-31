@@ -72,7 +72,11 @@ namespace Unity.Netcode
             }
 
             readerHandle->Length = length;
-            readerHandle->Allocator = copyAllocator;
+
+            // If the copyAllocator provided is Allocator.None, there is a chance that the internalAllocator was provided
+            // When we dispose, we are really only interested in disposing and Allocator.Persistent and Allocator.TempJob
+            // as Allocator.Temp and Allocator.None would do nothing. Therefore, make sure we dispose the readerHandle with the right Allocator label
+            readerHandle->Allocator = copyAllocator == Allocator.None ? internalAllocator : copyAllocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             readerHandle->AllowedReadMark = 0;
             readerHandle->InBitwiseContext = false;
