@@ -25,8 +25,13 @@ public class CommandLineProcessor
     private string m_SceneToLoad;
     private Dictionary<string, string> m_CommandLineArguments = new Dictionary<string, string>();
     private ConnectionModeScript m_ConnectionModeScript;
+
+    public string TransportAddress;
+    public string TransportPort;
+
     public CommandLineProcessor(string[] args)
     {
+        Debug.Log("CommandLineProcessor constructor called");
         try
         {
             if (s_Singleton != null)
@@ -54,7 +59,7 @@ public class CommandLineProcessor
                 m_CommandLineArguments.Add(arg, value);
             }
         }
-
+        
         ProcessCommandLine();
     }
 
@@ -78,6 +83,7 @@ public class CommandLineProcessor
 
     public void ProcessCommandLine()
     {
+        
         if (m_CommandLineArguments.Count > 0)
         {
             if (m_CommandLineArguments.TryGetValue("-s", out string sceneToLoad))
@@ -90,6 +96,13 @@ public class CommandLineProcessor
                 }
             }
 
+            if (m_CommandLineArguments.TryGetValue("-transport", out string transportName))
+            {
+                Debug.Log($"Setting transport to {transportName}");
+                SetTransport(transportName);
+                m_CommandLineArguments.Remove("-transport");
+            }
+
             if (m_CommandLineArguments.TryGetValue("-ip", out string ipValue))
             {
                 SetTransportAddress(ipValue);
@@ -98,6 +111,7 @@ public class CommandLineProcessor
 
             if (m_CommandLineArguments.TryGetValue("-p", out string port))
             {
+                TransportPort = port;
                 SetPort(ushort.Parse(port));
                 m_CommandLineArguments.Remove("-p");
             }
@@ -110,6 +124,7 @@ public class CommandLineProcessor
 
             if (m_CommandLineArguments.TryGetValue("-m", out string netcodeValue))
             {
+                Debug.Log($"Starting {netcodeValue}");
                 switch (netcodeValue)
                 {
                     case "server":
@@ -197,8 +212,44 @@ public class CommandLineProcessor
         }
     }
 
+    private void SetTransport(string transportName)
+    {
+        if (transportName.Equals("utp", StringComparison.CurrentCultureIgnoreCase))
+        {
+            AddUnityTransport(NetworkManager.Singleton);
+        }
+#if UNITY_UNET_PRESENT
+        else if (transportName.Equals("unet", StringComparison.CurrentCultureIgnoreCase))
+        {
+            // Do nothing, this is the default
+        }
+#endif
+
+    }
+
+    private static void AddUnityTransport(NetworkManager networkManager)
+    {
+        // Create transport
+        var unityTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+        // We need to increase this buffer size for tests that spawn a bunch of things
+        unityTransport.MaxPayloadSize = 256000;
+        unityTransport.MaxSendQueueSize = 1024 * 1024;
+
+        // Allow 4 connection attempts that each will time out after 500ms
+        unityTransport.MaxConnectAttempts = 4;
+        unityTransport.ConnectTimeoutMS = 500;
+
+        // Set the NetworkConfig
+        networkManager.NetworkConfig = new NetworkConfig()
+        {
+            // Set transport
+            NetworkTransport = unityTransport
+        };
+    }
+
     private void SetTransportAddress(string address)
     {
+        TransportAddress = address;
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
@@ -221,6 +272,7 @@ public class CommandLineProcessor
 
     private void SetPort(ushort port)
     {
+        
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
