@@ -235,7 +235,10 @@ Tests when launched locally will simply create new OS processes for each worker 
 ![](readme-ressources/OrchestrationOverview.jpg)
 *Note that this diagram is still WIP for the CI part*
 ### Bokken orchestration
-todo
+Bokken Orchestration can be performed with the support of the following tool:
+[Multiplayer Multiprocess Test Tools](https://github.cds.internal.unity3d.com/unity/multiplayer-multiprocess-test-tools)
+[Documentation](https://backstage.corp.unity3d.com/catalog/default/component/multiplayer-multiprocess-test-tools/docs/)
+
 ### CI
 todo
 #### Performance report dashboards
@@ -255,6 +258,7 @@ Currently (as off May 31st 2022) the MultiprocessTestPlayer can be configured vi
 For example, this means that command line configuration is not available on Android.
 
 #### Setting the transport address
+Default Values on Client: 127.0.0.1, 3076
 In order to set the transport address for either the server/host or the client, the options of "-ip" and "-p" can be used.  For example:
 
     -ip 127.0.0.1 -p 3076
@@ -262,11 +266,11 @@ In order to set the transport address for either the server/host or the client, 
 These options can be passed when starting the client, for example, in order to let it know where the host is to connect to.
 
 #### Setting the transport
+Default Values: UNET
 The default transport is UNET but this can be switched to UTP by using 
 
     -transport utp
 	
-
 
 # Future considerations
 - Integrate with local MultiInstance tests?
