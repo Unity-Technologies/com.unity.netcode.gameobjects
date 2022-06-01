@@ -63,9 +63,7 @@ public class TestCoordinator : NetworkBehaviour
     private void SetConfigurationTypeAndConnect(ConfigurationType type)
     {
         ConfigurationType = type;
-        
         SetAddressAndPort();
-        
         bool startClientResult = NetworkManager.Singleton.StartClient();
         MultiprocessLogger.Log($"Starting client");
     }

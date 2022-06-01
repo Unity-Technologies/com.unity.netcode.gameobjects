@@ -59,7 +59,6 @@ public class CommandLineProcessor
                 m_CommandLineArguments.Add(arg, value);
             }
         }
-        
         ProcessCommandLine();
     }
 
@@ -83,7 +82,6 @@ public class CommandLineProcessor
 
     public void ProcessCommandLine()
     {
-        
         if (m_CommandLineArguments.Count > 0)
         {
             if (m_CommandLineArguments.TryGetValue("-s", out string sceneToLoad))
@@ -272,7 +270,6 @@ public class CommandLineProcessor
 
     private void SetPort(ushort port)
     {
-        
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         switch (transport)
         {
