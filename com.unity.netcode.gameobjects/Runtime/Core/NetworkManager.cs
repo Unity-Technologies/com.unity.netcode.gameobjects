@@ -360,6 +360,16 @@ namespace Unity.Netcode
         public event Action OnServerStarted = null;
 
         /// <summary>
+        /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
+        /// </summary>
+        /// <remarks>
+        /// A failure of the transport is always followed by the <see cref="NetworkManager"/> shutting down. Recovering
+        /// from a transport failure would normally entail reconfiguring the transport (e.g. re-authenticating, or
+        /// recreating a new service allocation depending on the transport) and restarting the client/server/host.
+        /// </remarks>
+        public event Action OnTransportFailure = null;
+
+        /// <summary>
         /// Connection Approval Response
         /// </summary>
         /// <param name="Approved">Whether or not the client was approved</param>
@@ -975,6 +985,7 @@ namespace Unity.Netcode
             else
             {
                 Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                OnTransportFailure?.Invoke();
                 Shutdown();
             }
 
@@ -1002,6 +1013,7 @@ namespace Unity.Netcode
             if (!NetworkConfig.NetworkTransport.StartClient())
             {
                 Debug.LogError($"Client is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                OnTransportFailure?.Invoke();
                 Shutdown();
                 return false;
             }
@@ -1034,6 +1046,7 @@ namespace Unity.Netcode
             if (!NetworkConfig.NetworkTransport.StartServer())
             {
                 Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                OnTransportFailure?.Invoke();
                 Shutdown();
                 return false;
             }

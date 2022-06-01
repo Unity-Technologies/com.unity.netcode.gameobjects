@@ -31,18 +31,25 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Validate that if the NetworkTransport fails to start the NetworkManager
-        /// will not continue the startup process and will shut itself down.
+        /// will not continue the startup process and will shut itself down. Also
+        /// validate that the OnTransportFailure callback will be invoked.
         /// </summary>
         /// <param name="testClient">if true it will test the client side</param>
         [UnityTest]
         public IEnumerator DoesNotStartWhenTransportFails([Values] bool testClient)
         {
+            // Callback verifying it gets invoked.
+            bool callbackInvoked = false;
+            Action onTransportFailure = () => { callbackInvoked = true; };
+
             // The error message we should expect
             var messageToCheck = "";
+
             if (!testClient)
             {
                 Object.DestroyImmediate(m_ServerNetworkManager.NetworkConfig.NetworkTransport);
                 m_ServerNetworkManager.NetworkConfig.NetworkTransport = m_ServerNetworkManager.gameObject.AddComponent<FailedTransport>();
+                m_ServerNetworkManager.OnTransportFailure += onTransportFailure;
                 m_ServerNetworkManager.NetworkConfig.NetworkTransport.Initialize(m_ServerNetworkManager);
                 // The error message we should expect
                 messageToCheck = $"Server is shutting down due to network transport start failure of {m_ServerNetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!";
@@ -53,6 +60,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     Object.DestroyImmediate(client.NetworkConfig.NetworkTransport);
                     client.NetworkConfig.NetworkTransport = client.gameObject.AddComponent<FailedTransport>();
+                    client.OnTransportFailure += onTransportFailure;
                     client.NetworkConfig.NetworkTransport.Initialize(m_ServerNetworkManager);
                 }
                 // The error message we should expect
@@ -62,7 +70,7 @@ namespace Unity.Netcode.RuntimeTests
             // Trap for the nested NetworkManager exception
             LogAssert.Expect(LogType.Error, messageToCheck);
             m_CanStartServerAndClients = true;
-            // Due to other errors, we must not send clients if testing the server-host side
+            // Due to other errors, we must not start clients if testing the server-host side
             // We can test both server and client(s) when testing client-side only
             if (testClient)
             {
@@ -80,6 +88,8 @@ namespace Unity.Netcode.RuntimeTests
                 yield return s_DefaultWaitForTick;
                 Assert.False(m_ServerNetworkManager.IsListening);
             }
+
+            Assert.True(callbackInvoked, "OnTransportFailure callback wasn't invoked.");
         }
     }
 
