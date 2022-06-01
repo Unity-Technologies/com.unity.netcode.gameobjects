@@ -247,6 +247,27 @@ The test coordinator in client mode will automatically try to connect to a serve
 Test methods are executed twice. Once in "registration" mode, to have all the steps register themselves using a unique ID. This ID is deterministic between client and server processes, so that when a server calls a step during actual test execution, the clients have the same ID associated with the same lambda.
 During test execution, the main node's step will call an RPC on clients to trigger their pre-registered lambda. The main node's step will then yield until it receives a "client done" RPC from all clients. The main node's test will then be able to continue execution to the next step.
 
+## The MultiprocessTestPlayer
+The MultiprocessTestPlayer, which is built by the sub-menu items under "Netcode" -> "Multiprocess Test", supports many workflows and configurations.
+
+### Command Line
+Currently (as off May 31st 2022) the MultiprocessTestPlayer can be configured via the command line on all platforms that support parsing of command line arguments in the C# layer.
+For example, this means that command line configuration is not available on Android.
+
+#### Setting the transport address
+In order to set the transport address for either the server/host or the client, the options of "-ip" and "-p" can be used.  For example:
+
+    -ip 127.0.0.1 -p 3076
+	
+These options can be passed when starting the client, for example, in order to let it know where the host is to connect to.
+
+#### Setting the transport
+The default transport is UNET but this can be switched to UTP by using 
+
+    -transport utp
+	
+
+
 # Future considerations
 - Integrate with local MultiInstance tests?
 - Have ExecuteStepInContext a game facing feature for sequencing client-server actions?
