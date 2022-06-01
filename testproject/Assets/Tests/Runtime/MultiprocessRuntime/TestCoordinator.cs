@@ -121,6 +121,13 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
         }
 
+
+        // if we've tried all the configuration types and none of them are correct then we should throw an exception
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
+        }
+
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
