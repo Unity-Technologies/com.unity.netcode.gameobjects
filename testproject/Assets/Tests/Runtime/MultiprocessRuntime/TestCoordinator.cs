@@ -110,7 +110,7 @@ public class TestCoordinator : NetworkBehaviour
         // Configuration via configuration file - all platform support but set at build time
         if (ConfigurationType == ConfigurationType.Unknown)
         {
-
+            //TODO: For next PR
         }
 
         // configuration via WebApi - works on all platforms and is set at run time
