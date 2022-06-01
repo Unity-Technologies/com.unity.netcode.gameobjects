@@ -259,6 +259,7 @@ For example, this means that command line configuration is not available on Andr
 
 #### Setting the transport address
 Default Values on Client: 127.0.0.1, 3076
+
 In order to set the transport address for either the server/host or the client, the options of "-ip" and "-p" can be used.  For example:
 
     -ip 127.0.0.1 -p 3076
@@ -267,6 +268,7 @@ These options can be passed when starting the client, for example, in order to l
 
 #### Setting the transport
 Default Values: UNET
+
 The default transport is UNET but this can be switched to UTP by using 
 
     -transport utp
