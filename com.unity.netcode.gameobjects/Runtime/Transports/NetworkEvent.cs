@@ -21,6 +21,11 @@ namespace Unity.Netcode
         Disconnect,
 
         /// <summary>
+        /// Transport has encountered an unrecoverable failure
+        /// </summary>
+        TransportFailure,
+
+        /// <summary>
         /// No new event
         /// </summary>
         Nothing

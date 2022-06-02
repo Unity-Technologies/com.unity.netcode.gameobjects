@@ -1643,6 +1643,12 @@ namespace Unity.Netcode
                     s_TransportDisconnect.End();
 #endif
                     break;
+
+                case NetworkEvent.TransportFailure:
+                    Debug.LogError($"Shutting down due to network transport failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown(true);
+                    break;
             }
         }
 

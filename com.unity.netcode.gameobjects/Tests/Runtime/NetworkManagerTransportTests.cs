@@ -3,141 +3,148 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using NUnit.Framework;
-using Unity.Netcode.TestHelpers.Runtime;
-using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host)]
-    [TestFixture(HostOrServer.Server)]
-    public class NetworkManagerTransportTests : NetcodeIntegrationTest
+    public class NetworkManagerTransportTests
     {
-        protected override int NumberOfClients => 1;
-
-        private bool m_CanStartServerAndClients = false;
-
-        public NetworkManagerTransportTests(HostOrServer hostOrServer) : base(hostOrServer) { }
-
-        protected override IEnumerator OnSetup()
+        [Test]
+        public void ClientDoesNotStartWhenTransportFails()
         {
-            m_CanStartServerAndClients = false;
-            return base.OnSetup();
-        }
-
-        protected override bool CanStartServerAndClients()
-        {
-            return m_CanStartServerAndClients;
-        }
-
-        /// <summary>
-        /// Validate that if the NetworkTransport fails to start the NetworkManager
-        /// will not continue the startup process and will shut itself down. Also
-        /// validate that the OnTransportFailure callback will be invoked.
-        /// </summary>
-        /// <param name="testClient">if true it will test the client side</param>
-        [UnityTest]
-        public IEnumerator DoesNotStartWhenTransportFails([Values] bool testClient)
-        {
-            // Callback verifying it gets invoked.
             bool callbackInvoked = false;
             Action onTransportFailure = () => { callbackInvoked = true; };
 
-            // The error message we should expect
-            var messageToCheck = "";
+            var manager = new GameObject().AddComponent<NetworkManager>();
+            manager.OnTransportFailure += onTransportFailure;
 
-            if (!testClient)
+            var transport = manager.gameObject.AddComponent<FailedTransport>();
+            transport.FailOnStart = true;
+
+            manager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            LogAssert.Expect(LogType.Error, $"Client is shutting down due to network transport start failure of {transport.GetType().Name}!");
+
+            Assert.False(manager.StartClient());
+            Assert.False(manager.IsListening);
+            Assert.False(manager.IsConnectedClient);
+
+            Assert.True(callbackInvoked);
+        }
+
+        [Test]
+        public void HostDoesNotStartWhenTransportFails()
+        {
+            bool callbackInvoked = false;
+            Action onTransportFailure = () => { callbackInvoked = true; };
+
+            var manager = new GameObject().AddComponent<NetworkManager>();
+            manager.OnTransportFailure += onTransportFailure;
+
+            var transport = manager.gameObject.AddComponent<FailedTransport>();
+            transport.FailOnStart = true;
+
+            manager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            LogAssert.Expect(LogType.Error, $"Server is shutting down due to network transport start failure of {transport.GetType().Name}!");
+
+            Assert.False(manager.StartHost());
+            Assert.False(manager.IsListening);
+
+            Assert.True(callbackInvoked);
+        }
+
+        [Test]
+        public void ServerDoesNotStartWhenTransportFails()
+        {
+            bool callbackInvoked = false;
+            Action onTransportFailure = () => { callbackInvoked = true; };
+
+            var manager = new GameObject().AddComponent<NetworkManager>();
+            manager.OnTransportFailure += onTransportFailure;
+
+            var transport = manager.gameObject.AddComponent<FailedTransport>();
+            transport.FailOnStart = true;
+
+            manager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            LogAssert.Expect(LogType.Error, $"Server is shutting down due to network transport start failure of {transport.GetType().Name}!");
+
+            Assert.False(manager.StartServer());
+            Assert.False(manager.IsListening);
+
+            Assert.True(callbackInvoked);
+        }
+
+        [UnityTest]
+        public IEnumerator ShutsDownWhenTransportFails()
+        {
+            bool callbackInvoked = false;
+            Action onTransportFailure = () => { callbackInvoked = true; };
+
+            var manager = new GameObject().AddComponent<NetworkManager>();
+            manager.OnTransportFailure += onTransportFailure;
+
+            var transport = manager.gameObject.AddComponent<FailedTransport>();
+            transport.FailOnNextPoll = true;
+
+            manager.NetworkConfig = new NetworkConfig() { NetworkTransport = transport };
+
+            Assert.True(manager.StartServer());
+            Assert.True(manager.IsListening);
+
+            LogAssert.Expect(LogType.Error, $"Shutting down due to network transport failure of {transport.GetType().Name}!");
+
+            // Need two updates to actually shut down. First one to see the transport failing, which
+            // marks the NetworkManager as shutting down. Second one where actual shutdown occurs.
+            yield return null;
+            yield return null;
+
+            Assert.False(manager.IsListening);
+            Assert.True(callbackInvoked);
+        }
+
+        /// <summary>
+        /// Does nothing but simulate a transport that can fail at startup and/or when polling events.
+        /// </summary>
+        public class FailedTransport : TestingNetworkTransport
+        {
+            public bool FailOnStart = false;
+            public bool FailOnNextPoll = false;
+
+            public override bool StartClient() => !FailOnStart;
+
+            public override bool StartServer() => !FailOnStart;
+
+            public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
             {
-                Object.DestroyImmediate(m_ServerNetworkManager.NetworkConfig.NetworkTransport);
-                m_ServerNetworkManager.NetworkConfig.NetworkTransport = m_ServerNetworkManager.gameObject.AddComponent<FailedTransport>();
-                m_ServerNetworkManager.OnTransportFailure += onTransportFailure;
-                m_ServerNetworkManager.NetworkConfig.NetworkTransport.Initialize(m_ServerNetworkManager);
-                // The error message we should expect
-                messageToCheck = $"Server is shutting down due to network transport start failure of {m_ServerNetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!";
-            }
-            else
-            {
-                foreach (var client in m_ClientNetworkManagers)
+                clientId = 0;
+                payload = new ArraySegment<byte>();
+                receiveTime = 0;
+
+                if (FailOnNextPoll)
                 {
-                    Object.DestroyImmediate(client.NetworkConfig.NetworkTransport);
-                    client.NetworkConfig.NetworkTransport = client.gameObject.AddComponent<FailedTransport>();
-                    client.OnTransportFailure += onTransportFailure;
-                    client.NetworkConfig.NetworkTransport.Initialize(m_ServerNetworkManager);
+                    FailOnNextPoll = false;
+                    return NetworkEvent.TransportFailure;
                 }
-                // The error message we should expect
-                messageToCheck = $"Client is shutting down due to network transport start failure of {m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport.GetType().Name}!";
-            }
-
-            // Trap for the nested NetworkManager exception
-            LogAssert.Expect(LogType.Error, messageToCheck);
-            m_CanStartServerAndClients = true;
-            // Due to other errors, we must not start clients if testing the server-host side
-            // We can test both server and client(s) when testing client-side only
-            if (testClient)
-            {
-                NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers);
-                yield return s_DefaultWaitForTick;
-                foreach (var client in m_ClientNetworkManagers)
+                else
                 {
-                    Assert.False(client.IsListening);
-                    Assert.False(client.IsConnectedClient);
+                    return NetworkEvent.Nothing;
                 }
             }
-            else
-            {
-                NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, new NetworkManager[] { });
-                yield return s_DefaultWaitForTick;
-                Assert.False(m_ServerNetworkManager.IsListening);
-            }
 
-            Assert.True(callbackInvoked, "OnTransportFailure callback wasn't invoked.");
-        }
-    }
+            public override ulong ServerClientId => 0;
 
-    /// <summary>
-    /// Does nothing but simulate a transport that failed to start
-    /// </summary>
-    public class FailedTransport : TestingNetworkTransport
-    {
-        public override void Shutdown()
-        {
-        }
+            public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery) {}
 
-        public override ulong ServerClientId => 0;
+            public override void Initialize(NetworkManager networkManager = null) {}
 
-        public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
-        {
-            clientId = 0;
-            payload = new ArraySegment<byte>();
-            receiveTime = 0;
-            return NetworkEvent.Nothing;
-        }
-        public override bool StartClient()
-        {
-            // Simulate failure, always return false
-            return false;
-        }
-        public override bool StartServer()
-        {
-            // Simulate failure, always return false
-            return false;
-        }
-        public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
-        {
-        }
+            public override void Shutdown() {}
 
-        public override void DisconnectRemoteClient(ulong clientId)
-        {
-        }
+            public override ulong GetCurrentRtt(ulong clientId) => 0;
 
-        public override void Initialize(NetworkManager networkManager = null)
-        {
-        }
-        public override ulong GetCurrentRtt(ulong clientId)
-        {
-            return 0;
-        }
-        public override void DisconnectLocalClient()
-        {
+            public override void DisconnectRemoteClient(ulong clientId) {}
+
+            public override void DisconnectLocalClient() {}
         }
     }
 }
