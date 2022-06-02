@@ -10,8 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added a new `OnTransportFailure` callback to `NetworkManager`. This callback is invoked when the manager's `NetworkTransport` encounters an unrecoverable error. Transport failures also cause the `NetworkManager` to shut down. Currently, this is only used by `UnityTransport` to signal a timeout of its connection to the Unity Relay servers.
-- Added `NetworkEvent.TransportFailure`, which can be used by implementations of `NetworkTransport` to signal to `NetworkManager` that an unrecoverable error was encountered.
+- Added a new `OnTransportFailure` callback to `NetworkManager`. This callback is invoked when the manager's `NetworkTransport` encounters an unrecoverable error. Transport failures also cause the `NetworkManager` to shut down. Currently, this is only used by `UnityTransport` to signal a timeout of its connection to the Unity Relay servers. (#1994)
+- Added `NetworkEvent.TransportFailure`, which can be used by implementations of `NetworkTransport` to signal to `NetworkManager` that an unrecoverable error was encountered. (#1994)
 - Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab (#1969)
 - Added `NetworkManager.RemoveNetworkPrefab(...)` to remove a prefab from the prefabs list (#1950)
 
