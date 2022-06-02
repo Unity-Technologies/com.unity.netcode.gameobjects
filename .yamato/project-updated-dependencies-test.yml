@@ -36,7 +36,7 @@ dependency_test_trigger_{{ projects.first.name }}:
   name: Project {{ projects.first.name }} Dependency Tests Trigger
   agent:
     type: Unity::VM
-    image: package-ci/ubuntu:stable
+    image: package-ci/ubuntu:v3.5.0
     flavor: b1.small
   commands:
     - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
