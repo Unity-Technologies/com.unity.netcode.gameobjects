@@ -265,6 +265,90 @@ namespace Unity.Netcode
         {
             return hash == GetConfig();
         }
+
+        internal void InitializePrefabs()
+        {
+            // Always clear our prefab override links before building
+            NetworkPrefabOverrideLinks.Clear();
+            OverrideToNetworkPrefab.Clear();
+            // This is used to remove entries not needed or invalid
+            var removeEmptyPrefabs = new List<int>();
+
+            // Build the NetworkPrefabOverrideLinks dictionary
+            for (int i = 0; i < NetworkPrefabs.Count; i++)
+            {
+                var sourcePrefabGlobalObjectIdHash = (uint)0;
+                var targetPrefabGlobalObjectIdHash = (uint)0;
+                if (!NetworkPrefabs[i].Validate(out sourcePrefabGlobalObjectIdHash, out targetPrefabGlobalObjectIdHash, i))
+                {
+                    removeEmptyPrefabs.Add(i);
+                    continue;
+                }
+
+                if (!AddPrefabRegistration(NetworkPrefabs[i], sourcePrefabGlobalObjectIdHash, targetPrefabGlobalObjectIdHash))
+                {
+                    removeEmptyPrefabs.Add(i);
+                    continue;
+                }
+            }
+
+            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
+            // Iterate backwards so indices don't shift as we remove
+            for (int i = removeEmptyPrefabs.Count - 1; i >= 0; i--)
+            {
+                NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
+            }
+
+            removeEmptyPrefabs.Clear();
+        }
+
+        internal bool AddPrefabRegistration(NetworkPrefab networkPrefab, uint sourcePrefabGlobalObjectIdHash, uint targetPrefabGlobalObjectIdHash)
+        {
+            // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
+            if (!NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
+            {
+                if (networkPrefab.Override == NetworkPrefabOverride.None)
+                {
+                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                }
+                else
+                {
+                    if (!OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
+                    {
+                        switch (networkPrefab.Override)
+                        {
+                            case NetworkPrefabOverride.Prefab:
+                                {
+                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                                }
+                                break;
+                            case NetworkPrefabOverride.Hash:
+                                {
+                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                                }
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+                        // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
+                        Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {targetPrefabGlobalObjectIdHash}! Removing entry from list!");
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+                // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
+                Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {sourcePrefabGlobalObjectIdHash}! Removing entry from list!");
+                return false;
+            }
+            return true;
+        }
     }
 }
 
