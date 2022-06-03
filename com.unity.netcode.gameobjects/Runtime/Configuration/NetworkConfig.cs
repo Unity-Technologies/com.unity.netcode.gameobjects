@@ -305,48 +305,46 @@ namespace Unity.Netcode
         internal bool AddPrefabRegistration(NetworkPrefab networkPrefab, uint sourcePrefabGlobalObjectIdHash, uint targetPrefabGlobalObjectIdHash)
         {
             // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
-            if (!NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
-            {
-                if (networkPrefab.Override == NetworkPrefabOverride.None)
-                {
-                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                }
-                else
-                {
-                    if (!OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
-                    {
-                        switch (networkPrefab.Override)
-                        {
-                            case NetworkPrefabOverride.Prefab:
-                                {
-                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                                }
-                                break;
-                            case NetworkPrefabOverride.Hash:
-                                {
-                                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                                }
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-                        // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                        Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {targetPrefabGlobalObjectIdHash}! Removing entry from list!");
-                        return false;
-                    }
-                }
-            }
-            else
+            if (NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
             {
                 var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+
                 // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
                 Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {sourcePrefabGlobalObjectIdHash}! Removing entry from list!");
                 return false;
             }
+
+            if (networkPrefab.Override == NetworkPrefabOverride.None)
+            {
+                NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                return true;
+            }
+
+            if (OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
+            {
+                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
+
+                // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
+                Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {targetPrefabGlobalObjectIdHash}! Removing entry from list!");
+                return false;
+            }
+
+            switch (networkPrefab.Override)
+            {
+                case NetworkPrefabOverride.Prefab:
+                {
+                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                }
+                    break;
+                case NetworkPrefabOverride.Hash:
+                {
+                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
+                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
+                }
+                    break;
+            }
+
             return true;
         }
     }
