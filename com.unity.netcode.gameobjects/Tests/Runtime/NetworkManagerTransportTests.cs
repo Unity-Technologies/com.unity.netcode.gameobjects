@@ -134,17 +134,27 @@ namespace Unity.Netcode.RuntimeTests
 
             public override ulong ServerClientId => 0;
 
-            public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery) {}
+            public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
+            {
+            }
 
-            public override void Initialize(NetworkManager networkManager = null) {}
+            public override void Initialize(NetworkManager networkManager = null)
+            {
+            }
 
-            public override void Shutdown() {}
+            public override void Shutdown()
+            {
+            }
 
             public override ulong GetCurrentRtt(ulong clientId) => 0;
 
-            public override void DisconnectRemoteClient(ulong clientId) {}
+            public override void DisconnectRemoteClient(ulong clientId)
+            {
+            }
 
-            public override void DisconnectLocalClient() {}
+            public override void DisconnectLocalClient()
+            {
+            }
         }
     }
 }
