@@ -174,7 +174,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
-            if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded)
+            if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded && !queuedSceneJob.Scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
             {
                 SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
             }

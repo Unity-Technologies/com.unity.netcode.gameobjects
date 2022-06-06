@@ -17,10 +17,6 @@ namespace TestProject.ManualTests
         [SerializeField]
         private bool m_TrackSceneEvents;
 
-        [Tooltip("When enabled, this will log all messages to the console.")]
-        [SerializeField]
-        private bool m_LogSceneEventsToConsole;
-
         private bool m_ClientMode = true;
         private Rect m_Stats;
         private string m_LastStatsDump;
@@ -38,15 +34,14 @@ namespace TestProject.ManualTests
             if (m_ClientServerToggle != null)
             {
                 m_ClientServerToggleText = m_ClientServerToggle.GetComponentInChildren<Text>();
-            }
-
-            if (NetworkManager && NetworkManager.IsListening && !NetworkManager.IsServer)
-            {
-                m_ClientServerToggle.SetActive(true);
-            }
-            else
-            {
-                m_ClientServerToggle.SetActive(false);
+                if (NetworkManager && NetworkManager.IsListening && !NetworkManager.IsServer)
+                {
+                    m_ClientServerToggle.SetActive(true);
+                }
+                else
+                {
+                    m_ClientServerToggle.SetActive(false);
+                }
             }
         }
 
@@ -59,7 +54,10 @@ namespace TestProject.ManualTests
             }
             else
             {
-                m_ClientServerToggle.SetActive(true);
+                if (m_ClientServerToggle != null)
+                {
+                    m_ClientServerToggle.SetActive(true);
+                }
                 UpdateButton();
             }
 
@@ -121,7 +119,7 @@ namespace TestProject.ManualTests
             if (NetworkManager && NetworkManager.IsListening)
             {
                 var width = 0.25f * Screen.width;
-                var height = 0.50f * Screen.height;
+                var height = m_TrackSceneEvents ? 0.50f * Screen.height : 0.15f * Screen.height;
                 m_Stats = new Rect(5, 10, width, height);
                 GUI.TextArea(m_Stats, m_LastStatsDump);
             }
@@ -180,6 +178,7 @@ namespace TestProject.ManualTests
                     if (m_ClientMode)
                     {
                         m_LastStatsDump = m_IsServer ? "Server Stats" : "Client Stats";
+                        m_LastStatsDump += $" RIB: {Application.runInBackground} TFPS: {Application.targetFrameRate}";
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
                         m_LastStatsDump += "\n";
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";

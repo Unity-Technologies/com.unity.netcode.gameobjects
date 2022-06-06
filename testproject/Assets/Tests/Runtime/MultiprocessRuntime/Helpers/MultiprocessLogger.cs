@@ -28,6 +28,18 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
     public class MultiprocessLogHandler : ILogHandler
     {
+        public static long JobId;
+        static MultiprocessLogHandler()
+        {
+            if (JobId == 0)
+            {
+                string sJobId = Environment.GetEnvironmentVariable("YAMATO_JOB_ID");
+                if (!long.TryParse(sJobId, out JobId))
+                {
+                    JobId = -2;
+                }
+            }
+        }
         public void LogException(Exception exception, UnityEngine.Object context)
         {
             Debug.unityLogger.LogException(exception, context);

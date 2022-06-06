@@ -9,6 +9,7 @@
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.Netcode.TestHelpers.Runtime",
+        "Unity.Netcode.Components",
         "Unity.Collections"
     ],
     "optionalUnityReferences": [
