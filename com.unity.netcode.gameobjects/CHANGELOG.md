@@ -8,12 +8,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
-### Fixed
-
-- Fixed NetworkVariables wrapping enum types throwing runtime exceptions about not being supported. (#1999)
-
-## [1.0.0-pre.10]
-
 ### Added
 
 - Added test to ensure a warning occurs when nesting NetworkObjects in a NetworkPrefab (#1969)
