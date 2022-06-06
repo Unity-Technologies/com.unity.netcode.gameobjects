@@ -173,9 +173,8 @@ namespace TestProject.RuntimeTests
         /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
         /// <param name="clientId">the client id being approved</param>
         /// <param name="callback">the callback invoked to handle approval</param>
-        private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
+        private void ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            var response = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
 
@@ -204,8 +203,6 @@ namespace TestProject.RuntimeTests
                 response.Rotation = null;
                 response.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
-
-            return response;
         }
 
 
