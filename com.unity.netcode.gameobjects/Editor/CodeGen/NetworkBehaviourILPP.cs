@@ -609,17 +609,19 @@ namespace Unity.Netcode.Editor.CodeGen
                             {
 #if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
+                                var constraintTypeRef = constraint;
 #else
                                 var resolvedConstraint = constraint.ConstraintType.Resolve();
+                                var constraintTypeRef = constraint.ConstraintType;
 #endif
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
-                                if (constraint.IsGenericInstance)
+                                if (constraintTypeRef.IsGenericInstance)
                                 {
-                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    var genericConstraint = (GenericInstanceType)constraintTypeRef;
                                     if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
                                     {
-                                        resolvedConstraintName = constraint.FullName;
+                                        resolvedConstraintName = constraintTypeRef.FullName;
                                     }
                                 }
                                 if ((resolvedConstraint.IsInterface && !checkType.HasInterface(resolvedConstraintName)) ||
@@ -751,18 +753,20 @@ namespace Unity.Netcode.Editor.CodeGen
                             {
 #if CECIL_CONSTRAINTS_ARE_TYPE_REFERENCES
                                 var resolvedConstraint = constraint.Resolve();
+                                var constraintTypeRef = constraint;
 #else
                                 var resolvedConstraint = constraint.ConstraintType.Resolve();
+                                var constraintTypeRef = constraint.ConstraintType;
 #endif
 
 
                                 var resolvedConstraintName = resolvedConstraint.FullNameWithGenericParameters(new[] { method.GenericParameters[0] }, new[] { checkType });
-                                if (constraint.IsGenericInstance)
+                                if (constraintTypeRef.IsGenericInstance)
                                 {
-                                    var genericConstraint = (GenericInstanceType)constraint;
+                                    var genericConstraint = (GenericInstanceType)constraintTypeRef;
                                     if (genericConstraint.HasGenericArguments && genericConstraint.GenericArguments[0].Resolve() != null)
                                     {
-                                        resolvedConstraintName = constraint.FullName;
+                                        resolvedConstraintName = constraintTypeRef.FullName;
                                     }
                                 }
 
