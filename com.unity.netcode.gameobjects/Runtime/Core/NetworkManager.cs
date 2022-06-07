@@ -369,7 +369,7 @@ namespace Unity.Netcode
         /// <param name="PlayerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
         /// <param name="Position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="Rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        /// <param name="Pending">If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion.</param>
+        /// <param name="Pending">If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.</param>
         public class ConnectionApprovalResponse
         {
             public bool Approved;
