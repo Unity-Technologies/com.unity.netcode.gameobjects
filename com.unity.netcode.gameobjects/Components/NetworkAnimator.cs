@@ -58,11 +58,10 @@ namespace Unity.Netcode.Components
                         m_ProcessParameterUpdates.Clear();
 
                         // Only owners check for Animator changes
-                        if (m_NetworkAnimator.IsOwner)
+                        if (m_NetworkAnimator.IsOwner && !m_NetworkAnimator.IsServerAuthoritative || m_NetworkAnimator.IsServerAuthoritative && m_NetworkAnimator.NetworkManager.IsServer)
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
-
                         break;
                     }
             }
@@ -209,6 +208,40 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [SerializeField]
+        private bool m_IsServerAuthoritative;
+
+        /// <summary>
+        /// When set to true, the NetworkAnimator will operate in server authoritative mode.
+        /// The default is owner authoritative, also known as "client authoritative".
+        /// </summary>
+        public bool IsServerAuthoritative
+        {
+            get
+            {
+                return m_IsServerAuthoritative;
+            }
+            set
+            {
+                if (!IsSpawned )
+                {
+                    m_IsServerAuthoritative = value;
+                }
+                else if (IsSpawned && IsServer)
+                {
+                    m_IsServerAuthoritative = value;
+                    m_ServerAuthoritativeMode.Value = value;
+                }
+            }
+        }
+
+        private NetworkVariable<bool> m_ServerAuthoritativeMode = new NetworkVariable<bool>();
+
+        private void OnServerAuthoritativeModeChanged(bool previous, bool next)
+        {
+            m_IsServerAuthoritative = next;
+        }
+
         // Animators only support up to 32 params
         private const int k_MaxAnimationParams = 32;
 
@@ -276,12 +309,9 @@ namespace Unity.Netcode.Components
             base.OnDestroy();
         }
 
-
         private List<int> m_ParametersToUpdate;
-
         private List<ulong> m_ClientSendList;
         private ClientRpcParams m_ClientRpcParams;
-
 
         public override void OnNetworkSpawn()
         {
@@ -295,6 +325,7 @@ namespace Unity.Netcode.Components
                 if (IsServer)
                 {
                     NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                    m_ServerAuthoritativeMode.Value = m_IsServerAuthoritative;
                 }
 
                 // Store off our current layer weights
@@ -314,6 +345,11 @@ namespace Unity.Netcode.Components
                     m_ClientRpcParams.Send = new ClientRpcSendParams();
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                 }
+            }
+
+            if (!IsServer)
+            {
+                m_ServerAuthoritativeMode.OnValueChanged = OnServerAuthoritativeModeChanged;
             }
 
             var parameters = m_Animator.parameters;
@@ -439,7 +475,7 @@ namespace Unity.Netcode.Components
 
         internal void CheckForAnimatorChanges()
         {
-            if (!IsOwner)
+            if (!IsOwner && !IsServerAuthoritative || m_IsServerAuthoritative && !IsServer)
             {
                 return;
             }
@@ -753,19 +789,26 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private unsafe void SendParametersUpdateServerRpc(ParametersUpdateMessage parametersUpdate, ServerRpcParams serverRpcParams = default)
         {
-            if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+            if (IsServerAuthoritative)
             {
-                return;
+                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate);
             }
-            UpdateParameters(parametersUpdate);
-            if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+            else
             {
-                m_ClientSendList.Clear();
-                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                m_ClientSendList.Remove(NetworkManager.ServerClientId);
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
+                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+                {
+                    return;
+                }
+                UpdateParameters(parametersUpdate);
+                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                {
+                    m_ClientSendList.Clear();
+                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                    m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
+                }
             }
         }
 
@@ -775,7 +818,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal unsafe void SendParametersUpdateClientRpc(ParametersUpdateMessage parametersUpdate, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsOwner)
+            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
             {
                 m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
             }
@@ -788,20 +831,26 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private unsafe void SendAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
         {
-            if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+            if (IsServerAuthoritative)
             {
-                return;
+                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot);
             }
-
-            UpdateAnimationState(animSnapshot);
-            if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+            else
             {
-                m_ClientSendList.Clear();
-                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                m_ClientSendList.Remove(NetworkManager.ServerClientId);
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot, m_ClientRpcParams);
+                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+                {
+                    return;
+                }
+                UpdateAnimationState(animSnapshot);
+                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                {
+                    m_ClientSendList.Clear();
+                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                    m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot, m_ClientRpcParams);
+                }
             }
         }
 
@@ -811,7 +860,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsOwner)
+            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
             {
                 UpdateAnimationState(animSnapshot);
             }
@@ -824,23 +873,30 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SendAnimTriggerServerRpc(AnimationTriggerMessage animationTriggerMessage, ServerRpcParams serverRpcParams = default)
         {
-            if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+            if (IsServerAuthoritative)
             {
-                return;
+                m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage);
+            }
+            else
+            {
+                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+                {
+                    return;
+                }
+                //  trigger the animation locally on the server...
+                m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
+
+                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                {
+                    m_ClientSendList.Clear();
+                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                    m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage, m_ClientRpcParams);
+                }
             }
 
-            //  trigger the animation locally on the server...
-            m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
-
-            if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
-            {
-                m_ClientSendList.Clear();
-                m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                m_ClientSendList.Remove(NetworkManager.ServerClientId);
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage, m_ClientRpcParams);
-            }
         }
 
         /// <summary>
@@ -852,7 +908,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsOwner)
+            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
             {
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
             }
@@ -872,7 +928,7 @@ namespace Unity.Netcode.Components
         /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
-            if (IsOwner)
+            if (IsOwner && !IsServerAuthoritative || IsServer && IsServerAuthoritative)
             {
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
                 if (IsServer)
