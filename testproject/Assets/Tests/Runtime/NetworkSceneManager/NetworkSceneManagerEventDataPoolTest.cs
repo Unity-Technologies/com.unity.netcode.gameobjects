@@ -246,9 +246,24 @@ namespace TestProject.RuntimeTests
 
             m_CurrentSceneName = scene.name;
 
-            var result = m_ServerNetworkManager.SceneManager.UnloadScene(scene);
-            Assert.True(result == SceneEventProgressStatus.Started, $"UnloadScene did not start and returned {result}!");
-
+            // Waits for the m_ServerNetworkManager to be ready to unload the next scene
+            bool WaitForSceneUnload()
+            {
+                var result = m_ServerNetworkManager.SceneManager.UnloadScene(scene);
+                if (result == SceneEventProgressStatus.SceneEventInProgress)
+                {
+                    return false;
+                }
+                else if (result == SceneEventProgressStatus.Started || result == SceneEventProgressStatus.SceneNotLoaded)
+                {
+                    return true;
+                }
+                else
+                {
+                    throw new Exception($"Encountered the following unload scene status during scene unloading: {result}!");
+                }
+            }
+            yield return WaitForConditionOrTimeOut(WaitForSceneUnload);
             yield return WaitForConditionOrTimeOut(() => !scene.isLoaded);
             AssertOnTimeout($"Timed out waiting for server-side scene to unload scene {m_CurrentSceneName}!");
 
@@ -382,11 +397,6 @@ namespace TestProject.RuntimeTests
                 m_ScenesLoaded.Clear();
             }
             yield return null;
-        }
-
-        protected override IEnumerator OnTearDown()
-        {
-            yield return UnloadAllScenes();
         }
     }
 }
