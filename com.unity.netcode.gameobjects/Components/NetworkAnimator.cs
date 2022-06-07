@@ -208,12 +208,14 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [Tooltip("When enabled, the NetworkAnimator will operate in server authoritative mode.")]
         [SerializeField]
         private bool m_IsServerAuthoritative;
 
         /// <summary>
-        /// When set to true, the NetworkAnimator will operate in server authoritative mode.
-        /// The default is owner authoritative, also known as "client authoritative".
+        /// Server-Side Only:
+        /// Can be used to switch between server and owner authoritative modes during runtime.
+        /// Note: Only when the associated NetworkObject is spawned.
         /// </summary>
         public bool IsServerAuthoritative
         {
