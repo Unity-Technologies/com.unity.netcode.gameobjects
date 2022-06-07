@@ -1048,12 +1048,7 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            var succeeded = ClientBindAndConnect();
-            if (!succeeded)
-            {
-                Shutdown();
-            }
-            return succeeded;
+            return ClientBindAndConnect();
         }
 
         public override bool StartServer()
@@ -1063,23 +1058,12 @@ namespace Unity.Netcode.Transports.UTP
                 return false;
             }
 
-            bool succeeded;
             switch (m_ProtocolType)
             {
                 case ProtocolType.UnityTransport:
-                    succeeded = ServerBindAndListen(ConnectionData.ListenEndPoint);
-                    if (!succeeded)
-                    {
-                        Shutdown();
-                    }
-                    return succeeded;
+                    return ServerBindAndListen(ConnectionData.ListenEndPoint);
                 case ProtocolType.RelayUnityTransport:
-                    succeeded = StartRelayServer();
-                    if (!succeeded)
-                    {
-                        Shutdown();
-                    }
-                    return succeeded;
+                    return StartRelayServer();
                 default:
                     return false;
             }
@@ -1123,20 +1107,20 @@ namespace Unity.Netcode.Transports.UTP
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             maxFrameTimeMS = 100;
-/*#if MULTIPLAYER_TOOLS
-            var networkConditioningComponent = GetComponent<NetworkConditioning>();
+#if MULTIPLAYER_TOOLS
+            var networkConditioningComponent = GetComponent<NetworkSimulator>();
             if (networkConditioningComponent != null)
             {
                 m_NetworkSettings.WithSimulatorStageParameters(
                     300,
                     NetworkParameterConstants.MTU,
                     ApplyMode.AllPackets,
-                    packetDelayMs: networkConditioningComponent.ConnectionType.PacketDelayMs,
-                    packetJitterMs: networkConditioningComponent.ConnectionType.PacketJitterMs,
-                    packetDropPercentage: networkConditioningComponent.ConnectionType.PacketLossPercent
+                    packetDelayMs: networkConditioningComponent.NetworkTypeConfiguration.PacketDelayMs,
+                    packetJitterMs: networkConditioningComponent.NetworkTypeConfiguration.PacketJitterMs,
+                    packetDropPercentage: networkConditioningComponent.NetworkTypeConfiguration.PacketLossPercent
                 );
             }
-#endif*/
+#endif
 #endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
@@ -1148,53 +1132,69 @@ namespace Unity.Netcode.Transports.UTP
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
-            unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage)
 #if (UNITY_EDITOR || DEVELOPMENT_BUILD) && MULTIPLAYER_TOOLS
-                    ,typeof(SimulatorPipelineStage)
+            if (networkConditioningComponent != null)
+            {
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(NetworkMetricsPipelineStage)
+                );
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(UnreliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(NetworkMetricsPipelineStage)
+                );
+                reliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(ReliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(NetworkMetricsPipelineStage)
+                );
+            }
+            else
+#endif
+            {
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
-#endif
-            );
-
-            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                );
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage)
-#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && MULTIPLAYER_TOOLS
-                    ,typeof(SimulatorPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
-#endif
-            );
-
-            reliableSequencedPipeline = driver.CreatePipeline(
+                );
+                reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
-#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && MULTIPLAYER_TOOLS
-                    ,typeof(SimulatorPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
-#endif
-            );
+                );
+            }
         }
 
-        public void RefreshSimulationPipelineParameters(NetworkConditioningPreset preset)
+        public void RefreshSimulationPipelineParameters(NetworkTypeConfiguration configuration)
         {
             var simulatorPipeStageId = NetworkPipelineStageCollection.GetStageId(typeof(SimulatorPipelineStage));
 
-            UpdatePipelineParameter(m_ReliableSequencedPipeline, simulatorPipeStageId, preset);
-            UpdatePipelineParameter(m_UnreliableFragmentedPipeline, simulatorPipeStageId, preset);
-            UpdatePipelineParameter(m_UnreliableSequencedFragmentedPipeline, simulatorPipeStageId, preset);
+            UpdatePipelineParameter(m_ReliableSequencedPipeline, simulatorPipeStageId, configuration);
+            UpdatePipelineParameter(m_UnreliableFragmentedPipeline, simulatorPipeStageId, configuration);
+            UpdatePipelineParameter(m_UnreliableSequencedFragmentedPipeline, simulatorPipeStageId, configuration);
         }
 
-        unsafe void UpdatePipelineParameter(NetworkPipeline pipe, NetworkPipelineStageId stageId, NetworkConditioningPreset preset)
+        unsafe void UpdatePipelineParameter(
+            NetworkPipeline pipeline,
+            NetworkPipelineStageId stageId,
+            NetworkTypeConfiguration configuration)
         {
-            var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipe, stageId);
-            parameter->PacketDelayMs = preset.PacketDelayMs;
-            parameter->PacketJitterMs = preset.PacketJitterMs;
-            parameter->PacketDropPercentage = preset.PacketLossPercent;
+            var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
+            parameter->PacketDelayMs = configuration.PacketDelayMs;
+            parameter->PacketJitterMs = configuration.PacketJitterMs;
+            parameter->PacketDropPercentage = configuration.PacketLossPercent;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------

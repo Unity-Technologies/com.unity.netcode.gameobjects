@@ -1,6 +1,7 @@
 ﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkConditioningEditor.uss" />
+    <Style src="project://database/Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkTypeEditor.uss" />
     <ui:DropdownField name="PresetDropdown" label="Connection Type" />
+    <uie:ObjectField name="CustomPresetValue" label="Custom Preset" />
     <ui:VisualElement class="slider-with-value">
         <ui:SliderInt name="PacketDelaySlider" label="Packet Delay (ms)" low-value="0" high-value="9999" />
         <uie:IntegerField name="PacketDelayField" />
