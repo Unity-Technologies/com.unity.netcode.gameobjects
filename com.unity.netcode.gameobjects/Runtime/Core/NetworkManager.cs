@@ -60,6 +60,8 @@ namespace Unity.Netcode
 
         private NetworkPrefabHandler m_PrefabHandler;
 
+        internal Dictionary<ulong, ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, ConnectionApprovalResponse>();
+
         public NetworkPrefabHandler PrefabHandler
         {
             get
@@ -367,13 +369,15 @@ namespace Unity.Netcode
         /// <param name="PlayerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
         /// <param name="Position">The position to spawn the client at. If null, the prefab position is used.</param>
         /// <param name="Rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        public struct ConnectionApprovalResponse
+        /// <param name="Pending">If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.</param>
+        public class ConnectionApprovalResponse
         {
             public bool Approved;
             public bool CreatePlayerObject;
             public uint? PlayerPrefabHash;
             public Vector3? Position;
             public Quaternion? Rotation;
+            public bool Pending;
         }
 
         /// <summary>
@@ -390,7 +394,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The callback to invoke during connection approval. Allows client code to decide whether or not to allow incoming client connection
         /// </summary>
-        public Func<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
+        public Action<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
         {
             get => m_ConnectionApprovalCallback;
             set
@@ -406,7 +410,7 @@ namespace Unity.Netcode
             }
         }
 
-        private Func<ConnectionApprovalRequest, ConnectionApprovalResponse> m_ConnectionApprovalCallback;
+        private Action<ConnectionApprovalRequest, ConnectionApprovalResponse> m_ConnectionApprovalCallback;
 
         /// <summary>
         /// The current NetworkConfig
@@ -941,6 +945,7 @@ namespace Unity.Netcode
             m_ConnectedClientIds.Clear();
             LocalClient = null;
             NetworkObject.OrphanChildren.Clear();
+            ClientsToApprove.Clear();
         }
 
         /// <summary>
@@ -1048,7 +1053,8 @@ namespace Unity.Netcode
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
-                var response = ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId });
+                var response = new ConnectionApprovalResponse();
+                ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
                 if (!response.Approved)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -1403,12 +1409,51 @@ namespace Unity.Netcode
             }
         }
 
+        private void ProcessPendingApprovals()
+        {
+            List<ulong> senders = null;
+
+            foreach (var responsePair in ClientsToApprove)
+            {
+                var response = responsePair.Value;
+                var senderId = responsePair.Key;
+
+                if (!response.Pending)
+                {
+                    try
+                    {
+                        HandleConnectionApproval(senderId, response);
+
+                        if (senders == null)
+                        {
+                            senders = new List<ulong>();
+                        }
+                        senders.Add(senderId);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
+
+            if (senders != null)
+            {
+                foreach (var sender in senders)
+                {
+                    ClientsToApprove.Remove(sender);
+                }
+            }
+        }
+
         private void OnNetworkEarlyUpdate()
         {
             if (!IsListening)
             {
                 return;
             }
+
+            ProcessPendingApprovals();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.Begin();
