@@ -379,6 +379,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Animator: {fileID: 6515743261518512780}
+  m_IsServerAuthoritative: 0
 --- !u!114 &-8876216387850298050
 MonoBehaviour:
   m_ObjectHideFlags: 0
