@@ -72,10 +72,6 @@ namespace TestProject.RuntimeTests
             }
             foreach (var animatorTestHelper in AnimatorTestHelper.ClientSideInstances)
             {
-                //if (ownerShipMode == OwnerShipMode.ClientOwner && animatorTestHelper.Value.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
-                //{
-                //    continue;
-                //}
                 var clientParameters = animatorTestHelper.Value.GetParameterValues();
                 if (!clientParameters.ValuesMatch(m_ParameterValues, debugInfo))
                 {
