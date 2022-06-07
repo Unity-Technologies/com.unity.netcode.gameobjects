@@ -223,7 +223,7 @@ namespace Unity.Netcode.Components
             }
             set
             {
-                if (!IsSpawned )
+                if (!IsSpawned)
                 {
                     m_IsServerAuthoritative = value;
                 }

@@ -70,7 +70,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             m_Rotate = !m_Rotate;
             if (m_NetworkAnimator.IsServerAuthoritative)
             {
-                if(!IsServer && IsOwner)
+                if (!IsServer && IsOwner)
                 {
                     ToggleRotateAnimationServerRpc(m_Rotate);
                 }
