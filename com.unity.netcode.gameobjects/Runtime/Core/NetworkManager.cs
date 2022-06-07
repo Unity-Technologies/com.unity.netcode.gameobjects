@@ -1051,7 +1051,7 @@ namespace Unity.Netcode
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
-                ConnectionApprovalResponse response = new ConnectionApprovalResponse();
+                var response = new ConnectionApprovalResponse();
                 ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
                 if (!response.Approved)
                 {
@@ -1439,12 +1439,12 @@ namespace Unity.Netcode
 
         private void OnNetworkEarlyUpdate()
         {
-            ProcessPendingApprovals();
-
             if (!IsListening)
             {
                 return;
             }
+
+            ProcessPendingApprovals();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.Begin();

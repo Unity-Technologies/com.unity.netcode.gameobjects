@@ -19,15 +19,18 @@ namespace TestProject.RuntimeTests
 
         private GameObject m_PlayerPrefab;
         private GameObject m_PlayerPrefabOverride;
+        private bool m_DelayedApproval;
+        private List<NetworkManager.ConnectionApprovalResponse> m_ResponseToSet = new List<NetworkManager.ConnectionApprovalResponse>();
 
         /// <summary>
         /// Tests connection approval and connection approval failure
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator ConnectionApproval()
+        public IEnumerator ConnectionApproval([Values(true, false)] bool delayedApproval)
         {
             m_ConnectionToken = "ThisIsTheRightPassword";
+            m_DelayedApproval = delayedApproval;
             return ConnectionApprovalHandler(3, 1);
         }
 
@@ -130,6 +133,22 @@ namespace TestProject.RuntimeTests
                 Assert.Fail("Failed to start instances");
             }
 
+            if (m_DelayedApproval)
+            {
+                // This is necessary so that clients gets the time to attempt connecting and fill the pending approval responses
+                var nextFrameNumber = Time.frameCount + 10;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+                foreach (var response in m_ResponseToSet)
+                {
+                    // perform delayed approval
+                    // The response class has already been filled, when created in ConnectionApprovalCallback()
+                    yield return new WaitForSeconds(0.2f);
+                    response.Pending = false;
+                }
+                m_ResponseToSet.Clear();
+            }
+
             // [Client-Side] Wait for a connection to the server
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clientsAdjustedList.ToArray(), null, 512);
 
@@ -177,6 +196,12 @@ namespace TestProject.RuntimeTests
         {
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
+
+            if (m_DelayedApproval)
+            {
+                response.Pending = true;
+                m_ResponseToSet.Add(response);
+            }
 
             if (isApproved)
             {
