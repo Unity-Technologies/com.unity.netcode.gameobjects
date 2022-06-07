@@ -5,7 +5,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+#if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
+#endif
 using Unity.Netcode.Transports.UTP;
 
 
@@ -84,6 +86,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"transport is {transport}");
             switch (transport)
             {
+#if UNITY_UNET_PRESENT
                 case UNetTransport unetTransport:
                     unetTransport.ConnectPort = int.Parse(TestCoordinator.Port);
                     unetTransport.ServerListenPort = int.Parse(TestCoordinator.Port);
@@ -91,6 +94,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"Setting ConnectAddress to {unetTransport.ConnectAddress} port {unetTransport.ConnectPort}, {unetTransport.ServerListenPort}");
 
                     break;
+#endif
                 case UnityTransport unityTransport:
                     unityTransport.ConnectionData.ServerListenAddress = "0.0.0.0";
                     MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {unityTransport.ConnectionData.ServerListenAddress}");
