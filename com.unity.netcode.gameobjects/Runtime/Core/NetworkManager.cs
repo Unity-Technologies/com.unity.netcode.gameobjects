@@ -1420,13 +1420,20 @@ namespace Unity.Netcode
 
                 if (!response.Pending)
                 {
-                    HandleConnectionApproval(senderId, response);
-
-                    if (senders == null)
+                    try
                     {
-                        senders = new List<ulong>();
+                        HandleConnectionApproval(senderId, response);
+
+                        if (senders == null)
+                        {
+                            senders = new List<ulong>();
+                        }
+                        senders.Add(senderId);
                     }
-                    senders.Add(senderId);
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
 
