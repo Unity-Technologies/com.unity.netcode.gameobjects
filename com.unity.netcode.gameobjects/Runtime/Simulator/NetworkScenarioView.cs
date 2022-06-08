@@ -45,7 +45,7 @@ namespace Unity.Netcode.Simulator
             }
             else
             {
-                var scenario = m_Scenarios.First(x => x.GetType().Name == changeEvent.newValue);
+                var scenario = m_Scenarios.First(x => x.Name == changeEvent.newValue);
                 var instance = Activator.CreateInstance(scenario);
                 m_NetworkSimulator.NetworkSimulatorScenario = instance as INetworkSimulatorScenario;
             }
