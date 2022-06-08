@@ -1,11 +1,39 @@
 ﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <ui:DropdownField name="PresetDropdown" label="Connection Type" />
     <uie:ObjectField name="CustomPresetValue" label="Custom Preset" />
-    <ui:SliderInt name="PacketDelaySlider" label="Packet Delay (ms)" low-value="0" high-value="9999" show-input-field="true" />
-    <ui:SliderInt name="PacketJitterSlider" label="Packet Jitter (ms)" low-value="0" high-value="999" show-input-field="true" />
-    <ui:SliderInt name="PacketLossIntervalSlider" label="Packet Loss Interval (ms)" low-value="0" high-value="9999" show-input-field="true" />
-    <ui:SliderInt name="PacketLossPercentSlider" label="Packet Loss (%)" low-value="0" high-value="100" show-input-field="true" />
-    <ui:SliderInt name="PacketDuplicationPercentSlider" label="Packet Duplication (%)" low-value="0" high-value="100" show-input-field="true" />
-    <ui:SliderInt name="PacketFuzzFactorSlider" label="Packet Fuzz (%)" low-value="0" high-value="100" show-input-field="true" />
-    <ui:SliderInt name="PacketFuzzOffsetSlider" label="Packet Fuzz Offset" low-value="0" high-value="100" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketDelaySlider"
+            label="Packet Delay (ms)"
+            tooltip="Configure the time by which packets will be delayed in milliseconds."
+            low-value="0" high-value="9999" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketJitterSlider"
+            label="Packet Jitter (ms)"
+            tooltip="Configure the time by which packets deviate from the average delay, in milliseconds."
+            low-value="0" high-value="999" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketLossIntervalSlider"
+            label="Packet Loss Interval (ms)"
+            tooltip="Configure a fixed interval at which to drop packets from the connection."
+            low-value="0" high-value="9999" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketLossPercentSlider"
+            label="Packet Loss (%)"
+            tooltip="Configure the percentage of packets that will be dropped from the connection."
+            low-value="0" high-value="100" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketDuplicationPercentSlider"
+            label="Packet Duplication (%)"
+            tooltip="Configure the percentage of packets that will duplicated."
+            low-value="0" high-value="100" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketFuzzFactorSlider"
+            label="Packet Fuzz (%)"
+            tooltip="Configure the percentage of packets that will have the same percentage of their bits flipped."
+            low-value="0" high-value="100" show-input-field="true" />
+    <ui:SliderInt
+            name="PacketFuzzOffsetSlider"
+            label="Packet Fuzz Offset"
+            tooltip="Configure an offset for where in the packet the algorithm will start flipping bits."
+            low-value="0" high-value="100" show-input-field="true" />
 </ui:UXML>
