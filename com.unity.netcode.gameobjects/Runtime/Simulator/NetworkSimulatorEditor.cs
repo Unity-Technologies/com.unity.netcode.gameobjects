@@ -1,22 +1,23 @@
 ﻿using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace Unity.Netcode.Transports.UTP
+namespace Unity.Netcode.Simulator
 {
     [CustomEditor(typeof(NetworkSimulator))]
     public class NetworkSimulatorEditor : Editor
     {
-        NetworkSimulator m_NetworkConditioning;
+        NetworkSimulator m_NetworkSimulator;
 
         VisualElement m_Inspector;
 
         public override VisualElement CreateInspectorGUI()
         {
-            m_NetworkConditioning = target as NetworkSimulator;
+            m_NetworkSimulator = target as NetworkSimulator;
 
             m_Inspector = new VisualElement();
             m_Inspector.Add(new NetworkEventsView(new NoOpNetworkEventsApi()));
-            m_Inspector.Add(new NetworkTypeView(m_NetworkConditioning));
+            m_Inspector.Add(new NetworkTypeView(m_NetworkSimulator));
+            m_Inspector.Add(new NetworkScenarioView(m_NetworkSimulator));
 
             return m_Inspector;
         }

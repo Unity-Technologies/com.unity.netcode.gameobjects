@@ -1,4 +1,4 @@
-﻿namespace Unity.Netcode.Transports.UTP
+﻿namespace Unity.Netcode.Simulator
 {
     public class NetworkTypePresets
     {

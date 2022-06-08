@@ -4,11 +4,11 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.Netcode.Transports.UTP
+namespace Unity.Netcode.Simulator
 {
     public class NetworkTypeView : VisualElement
     {
-        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkTypeView.uxml";
+        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Simulator/NetworkTypeView.uxml";
         const string Custom = nameof(Custom);
 
         readonly NetworkSimulator m_NetworkSimulator;
@@ -17,7 +17,11 @@ namespace Unity.Netcode.Transports.UTP
         ObjectField CustomPresetValue => this.Q<ObjectField>(nameof(CustomPresetValue));
         SliderInt PacketDelaySlider => this.Q<SliderInt>(nameof(PacketDelaySlider));
         SliderInt PacketJitterSlider => this.Q<SliderInt>(nameof(PacketJitterSlider));
-        SliderInt PacketLossSlider => this.Q<SliderInt>(nameof(PacketLossSlider));
+        SliderInt PacketLossIntervalSlider => this.Q<SliderInt>(nameof(PacketLossIntervalSlider));
+        SliderInt PacketLossPercentSlider => this.Q<SliderInt>(nameof(PacketLossPercentSlider));
+        SliderInt PacketDuplicationPercentSlider => this.Q<SliderInt>(nameof(PacketDuplicationPercentSlider));
+        SliderInt PacketFuzzFactorSlider => this.Q<SliderInt>(nameof(PacketFuzzFactorSlider));
+        SliderInt PacketFuzzOffsetSlider => this.Q<SliderInt>(nameof(PacketFuzzOffsetSlider));
 
         bool m_CustomSelected;
 
@@ -45,23 +49,17 @@ namespace Unity.Netcode.Transports.UTP
             {
                 CustomPresetValue.value = m_NetworkSimulator.NetworkTypeConfiguration;
             }
-
-            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(evt =>
-            {
-                m_NetworkSimulator.NetworkTypeConfiguration = evt.newValue as NetworkTypeConfiguration;
-                UpdateEnabled();
-                UpdatePacketDelay(m_NetworkSimulator.NetworkTypeConfiguration.PacketDelayMs);
-                UpdatePacketJitter(m_NetworkSimulator.NetworkTypeConfiguration.PacketJitterMs);
-                UpdatePacketLoss(m_NetworkSimulator.NetworkTypeConfiguration.PacketLossPercent);
-            });
+            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChanged);
 
             PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDelay(change.newValue));
             PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketJitter(change.newValue));
-            PacketLossSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLoss(change.newValue));
+            PacketLossIntervalSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossInterval(change.newValue));
+            PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossPercent(change.newValue));
+            PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDuplicationPercent(change.newValue));
+            PacketFuzzFactorSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketFuzzFactor(change.newValue));
+            PacketFuzzOffsetSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketFuzzOffset(change.newValue));
 
-            UpdatePacketDelay(m_NetworkSimulator.NetworkTypeConfiguration.PacketDelayMs);
-            UpdatePacketJitter(m_NetworkSimulator.NetworkTypeConfiguration.PacketJitterMs);
-            UpdatePacketLoss(m_NetworkSimulator.NetworkTypeConfiguration.PacketLossPercent);
+            UpdateSliders(m_NetworkSimulator.NetworkTypeConfiguration);
 
             UpdateEnabled();
         }
@@ -80,7 +78,11 @@ namespace Unity.Netcode.Transports.UTP
 
             PacketDelaySlider.SetEnabled(HasCustomValue);
             PacketJitterSlider.SetEnabled(HasCustomValue);
-            PacketLossSlider.SetEnabled(HasCustomValue);
+            PacketLossIntervalSlider.SetEnabled(HasCustomValue);
+            PacketLossPercentSlider.SetEnabled(HasCustomValue);
+            PacketDuplicationPercentSlider.SetEnabled(HasCustomValue);
+            PacketFuzzFactorSlider.SetEnabled(HasCustomValue);
+            PacketFuzzOffsetSlider.SetEnabled(HasCustomValue);
         }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
@@ -95,13 +97,31 @@ namespace Unity.Netcode.Transports.UTP
 
                 var preset = NetworkTypePresets.Values.First(x => x.Name == changeEvent.newValue);
 
-                UpdatePacketDelay(preset.PacketDelayMs);
-                UpdatePacketJitter(preset.PacketJitterMs);
-                UpdatePacketLoss(preset.PacketLossPercent);
+                UpdateSliders(preset);
             }
 
             UpdateEnabled();
             UpdateLiveIfPlaying();
+        }
+
+        void OnCustomPresetChanged(ChangeEvent<Object> evt)
+        {
+            m_NetworkSimulator.NetworkTypeConfiguration = evt.newValue as NetworkTypeConfiguration;
+
+            UpdateEnabled();
+
+            UpdateSliders(m_NetworkSimulator.NetworkTypeConfiguration);
+        }
+
+        void UpdateSliders(NetworkTypeConfiguration configuration)
+        {
+            UpdatePacketDelay(configuration.PacketDelayMs);
+            UpdatePacketJitter(configuration.PacketJitterMs);
+            UpdatePacketLossInterval(configuration.PacketLossInterval);
+            UpdatePacketLossPercent(configuration.PacketLossPercent);
+            UpdatePacketDuplicationPercent(configuration.PacketDuplicationPercent);
+            UpdatePacketFuzzFactor(configuration.PacketFuzzFactor);
+            UpdatePacketFuzzOffset(configuration.PacketFuzzOffset);
         }
 
         void UpdatePacketDelay(int value)
@@ -122,11 +142,47 @@ namespace Unity.Netcode.Transports.UTP
             UpdateLiveIfPlaying();
         }
 
-        void UpdatePacketLoss(int value)
+        void UpdatePacketLossInterval(int value)
         {
-            PacketLossSlider.SetValueWithoutNotify(value);
+            PacketLossIntervalSlider.SetValueWithoutNotify(value);
+
+            m_NetworkSimulator.NetworkTypeConfiguration.PacketLossInterval = value;
+
+            UpdateLiveIfPlaying();
+        }
+
+        void UpdatePacketLossPercent(int value)
+        {
+            PacketLossPercentSlider.SetValueWithoutNotify(value);
 
             m_NetworkSimulator.NetworkTypeConfiguration.PacketLossPercent = value;
+
+            UpdateLiveIfPlaying();
+        }
+
+        void UpdatePacketDuplicationPercent(int value)
+        {
+            PacketDuplicationPercentSlider.SetValueWithoutNotify(value);
+
+            m_NetworkSimulator.NetworkTypeConfiguration.PacketDuplicationPercent = value;
+
+            UpdateLiveIfPlaying();
+        }
+
+        void UpdatePacketFuzzFactor(int value)
+        {
+            PacketFuzzFactorSlider.SetValueWithoutNotify(value);
+
+            m_NetworkSimulator.NetworkTypeConfiguration.PacketFuzzFactor = value;
+
+            UpdateLiveIfPlaying();
+        }
+
+        void UpdatePacketFuzzOffset(int value)
+        {
+            PacketFuzzOffsetSlider.SetValueWithoutNotify(value);
+
+            m_NetworkSimulator.NetworkTypeConfiguration.PacketFuzzOffset = value;
 
             UpdateLiveIfPlaying();
         }

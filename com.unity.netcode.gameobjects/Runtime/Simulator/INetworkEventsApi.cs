@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Unity.Netcode.Transports.UTP
+namespace Unity.Netcode.Simulator
 {
     public interface INetworkEventsApi
     {
@@ -11,7 +11,7 @@ namespace Unity.Netcode.Transports.UTP
 
         void TriggerLagSpike(TimeSpan duration);
 
-        void TriggerChangeNetworkType(NetworkTypeConfiguration newNetworkType);
+        void ChangeNetworkType(NetworkTypeConfiguration newNetworkType);
     }
 
     public class NoOpNetworkEventsApi : INetworkEventsApi
@@ -31,7 +31,7 @@ namespace Unity.Netcode.Transports.UTP
             Debug.Log($"Triggering lag spike for {duration.Milliseconds} ms.");
         }
 
-        public void TriggerChangeNetworkType(NetworkTypeConfiguration newNetworkType)
+        public void ChangeNetworkType(NetworkTypeConfiguration newNetworkType)
         {
             Debug.Log($"Changing network type to {newNetworkType.Name}.");
         }
