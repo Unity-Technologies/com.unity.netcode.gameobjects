@@ -1,7 +1,0 @@
-﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:DropdownField name="PresetDropdown" label="Connection Type" />
-    <uie:ObjectField name="CustomPresetValue" label="Custom Preset" />
-    <ui:SliderInt name="PacketDelaySlider" label="Packet Delay (ms)" low-value="0" high-value="9999" show-input-field="true" />
-    <ui:SliderInt name="PacketJitterSlider" label="Packet Jitter (ms)" low-value="0" high-value="999" show-input-field="true" />
-    <ui:SliderInt name="PacketLossSlider" label="Packet Loss (%)" low-value="0" high-value="100" show-input-field="true" />
-</ui:UXML>
