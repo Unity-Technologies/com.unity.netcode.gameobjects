@@ -58,7 +58,7 @@ namespace Unity.Netcode.Components
                         m_ProcessParameterUpdates.Clear();
 
                         // Only owners check for Animator changes
-                        if (m_NetworkAnimator.IsOwner && !m_NetworkAnimator.IsServerAuthoritative || m_NetworkAnimator.IsServerAuthoritative && m_NetworkAnimator.NetworkManager.IsServer)
+                        if (m_NetworkAnimator.IsOwner && !m_NetworkAnimator.IsServerAuthoritative() || m_NetworkAnimator.IsServerAuthoritative() && m_NetworkAnimator.NetworkManager.IsServer)
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
@@ -208,40 +208,17 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [Tooltip("When enabled, the NetworkAnimator will operate in server authoritative mode.")]
-        [SerializeField]
-        private bool m_IsServerAuthoritative;
-
-        /// <summary>
-        /// Server-Side Only:
-        /// Can be used to switch between server and owner authoritative modes during runtime.
-        /// Note: Only when the associated NetworkObject is spawned.
-        /// </summary>
-        public bool IsServerAuthoritative
+        internal bool IsServerAuthoritative()
         {
-            get
-            {
-                return m_IsServerAuthoritative;
-            }
-            set
-            {
-                if (!IsSpawned)
-                {
-                    m_IsServerAuthoritative = value;
-                }
-                else if (IsSpawned && IsServer)
-                {
-                    m_IsServerAuthoritative = value;
-                    m_ServerAuthoritativeMode.Value = value;
-                }
-            }
+            return OnIsServerAuthoritative();
         }
 
-        private NetworkVariable<bool> m_ServerAuthoritativeMode = new NetworkVariable<bool>();
-
-        private void OnServerAuthoritativeModeChanged(bool previous, bool next)
+        /// <summary>
+        /// Override this method and return false to switch to owner authoritative mode
+        /// </summary>
+        protected virtual bool OnIsServerAuthoritative()
         {
-            m_IsServerAuthoritative = next;
+            return true;
         }
 
         // Animators only support up to 32 params
@@ -327,7 +304,6 @@ namespace Unity.Netcode.Components
                 if (IsServer)
                 {
                     NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                    m_ServerAuthoritativeMode.Value = m_IsServerAuthoritative;
                 }
 
                 // Store off our current layer weights
@@ -347,11 +323,6 @@ namespace Unity.Netcode.Components
                     m_ClientRpcParams.Send = new ClientRpcSendParams();
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                 }
-            }
-
-            if (!IsServer)
-            {
-                m_ServerAuthoritativeMode.OnValueChanged = OnServerAuthoritativeModeChanged;
             }
 
             var parameters = m_Animator.parameters;
@@ -477,7 +448,7 @@ namespace Unity.Netcode.Components
 
         internal void CheckForAnimatorChanges()
         {
-            if (!IsOwner && !IsServerAuthoritative || m_IsServerAuthoritative && !IsServer)
+            if (!IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && !IsServer)
             {
                 return;
             }
@@ -785,13 +756,13 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Sever-side animator parameter update request
+        /// Server-side animator parameter update request
         /// The server sets its local parameters and then forwards the message to the remaining clients
         /// </summary>
         [ServerRpc]
         private unsafe void SendParametersUpdateServerRpc(ParametersUpdateMessage parametersUpdate, ServerRpcParams serverRpcParams = default)
         {
-            if (IsServerAuthoritative)
+            if (IsServerAuthoritative())
             {
                 m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate);
             }
@@ -820,20 +791,21 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal unsafe void SendParametersUpdateClientRpc(ParametersUpdateMessage parametersUpdate, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
+            var isServerAuthoritative = IsServerAuthoritative();
+            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
                 m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
             }
         }
 
         /// <summary>
-        /// Sever-side animation state update request
+        /// Server-side animation state update request
         /// The server sets its local state and then forwards the message to the remaining clients
         /// </summary>
         [ServerRpc]
         private unsafe void SendAnimStateServerRpc(AnimationMessage animSnapshot, ServerRpcParams serverRpcParams = default)
         {
-            if (IsServerAuthoritative)
+            if (IsServerAuthoritative())
             {
                 m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot);
             }
@@ -862,20 +834,21 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
+            var isServerAuthoritative = IsServerAuthoritative();
+            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
                 UpdateAnimationState(animSnapshot);
             }
         }
 
         /// <summary>
-        /// Sever-side trigger state update request
+        /// Server-side trigger state update request
         /// The server sets its local state and then forwards the message to the remaining clients
         /// </summary>
         [ServerRpc]
         private void SendAnimTriggerServerRpc(AnimationTriggerMessage animationTriggerMessage, ServerRpcParams serverRpcParams = default)
         {
-            if (IsServerAuthoritative)
+            if (IsServerAuthoritative())
             {
                 m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage);
             }
@@ -910,7 +883,8 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
-            if (!IsServerAuthoritative && !IsOwner || IsServerAuthoritative)
+            var isServerAuthoritative = IsServerAuthoritative();
+            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
             }
@@ -930,7 +904,8 @@ namespace Unity.Netcode.Components
         /// <param name="reset">If true, resets the trigger</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
-            if (IsOwner && !IsServerAuthoritative || IsServer && IsServerAuthoritative)
+            var isServerAuthoritative = IsServerAuthoritative();
+            if (IsOwner && !isServerAuthoritative || IsServer && isServerAuthoritative)
             {
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
                 if (IsServer)

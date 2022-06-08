@@ -12,12 +12,24 @@ namespace Tests.Manual.NetworkAnimatorTests
         private Animator m_Animator;
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
-
+        private bool m_IsServerAuthoritative = true;
 
         private void Awake()
         {
             m_Animator = GetComponent<Animator>();
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
+            if (m_NetworkAnimator == null)
+            {
+                m_NetworkAnimator = GetComponent<OwnerNetworkAnimator>();
+                if (m_NetworkAnimator != null)
+                {
+                    m_IsServerAuthoritative = false;
+                }
+                else
+                {
+                    throw new System.Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
+                }
+            }
             m_Rotate = m_Animator.GetBool("Rotate");
         }
 
@@ -28,7 +40,6 @@ namespace Tests.Manual.NetworkAnimatorTests
                 enabled = false;
             }
         }
-
 
         private bool HasAuthority()
         {
@@ -41,7 +52,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private bool IsServerAuthority()
         {
-            if (IsServer && m_NetworkAnimator.IsServerAuthoritative)
+            if (IsServer && m_IsServerAuthoritative)
             {
                 return true;
             }
@@ -50,7 +61,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         private bool IsOwnerAuthority()
         {
-            if (IsOwner && m_NetworkAnimator.IsServerAuthoritative)
+            if (IsOwner && !m_IsServerAuthoritative)
             {
                 return true;
             }
@@ -68,7 +79,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         internal void ToggleRotateAnimation()
         {
             m_Rotate = !m_Rotate;
-            if (m_NetworkAnimator.IsServerAuthoritative)
+            if (m_IsServerAuthoritative)
             {
                 if (!IsServer && IsOwner)
                 {
@@ -93,7 +104,7 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         internal void PlayPulseAnimation()
         {
-            if (m_NetworkAnimator.IsServerAuthoritative)
+            if (m_IsServerAuthoritative)
             {
                 if (!IsServer && IsOwner)
                 {
