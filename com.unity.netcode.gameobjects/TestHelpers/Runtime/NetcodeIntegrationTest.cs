@@ -288,6 +288,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            // Notification that the new client (NetworkManager) has been created
+            // in the event any modifications need to be made before starting the client
             OnNewClientCreated(networkManager);
 
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
