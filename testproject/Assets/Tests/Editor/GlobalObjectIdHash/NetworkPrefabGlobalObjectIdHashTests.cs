@@ -32,6 +32,10 @@ namespace TestProject.EditorTests
             yield return null;
         }
 
+        // TODO(jesseo): Not really sure what this test is supposed to be verifying... but maybe it can be done more programmatically now?
+        // Issue: Shouldn't need a static checked in scene - Shouldn't even need NetworkManager
+        // Issue: The saved scene is already only unique prefabs - are we supposed to be testing that duplicates are culled?
+        // Issue: We're iterating over a dictionary and verifying that each key is unique... Dictionary already guarantees this?
         [Test]
         public void VerifyUniquenessOfNetworkPrefabs()
         {
@@ -40,11 +44,12 @@ namespace TestProject.EditorTests
             var networkManager = networkManagerObject.GetComponent<NetworkManager>();
             Assert.That(networkManager, Is.Not.Null);
             Assert.That(networkManager.NetworkConfig, Is.Not.Null);
-            Assert.That(networkManager.NetworkConfig.NetworkPrefabs, Is.Not.Null);
-            Assert.That(networkManager.NetworkConfig.NetworkPrefabs.Count, Is.GreaterThan(1));
+            Assert.That(networkManager.NetworkConfig.Prefabs, Is.Not.Null);
+            networkManager.NetworkConfig.Prefabs.Initialize(false);
+            Assert.That(networkManager.NetworkConfig.Prefabs.Prefabs.Count, Is.GreaterThan(1));
 
             var hashSet = new HashSet<uint>();
-            foreach (var networkPrefab in networkManager.NetworkConfig.NetworkPrefabOverrideLinks)
+            foreach (var networkPrefab in networkManager.NetworkConfig.Prefabs.NetworkPrefabOverrideLinks)
             {
                 var idHash = networkPrefab.Key;
                 Assert.That(idHash, Is.Not.EqualTo(0));

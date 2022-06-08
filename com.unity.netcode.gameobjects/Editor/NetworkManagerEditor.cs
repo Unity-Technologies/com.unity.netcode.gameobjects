@@ -36,8 +36,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_NetworkIdRecycleDelayProperty;
         private SerializedProperty m_RpcHashSizeProperty;
         private SerializedProperty m_LoadSceneTimeOutProperty;
-
-        private ReorderableList m_NetworkPrefabsList;
+        private SerializedProperty m_PrefabsList;
 
         private NetworkManager m_NetworkManager;
         private bool m_Initialized;
@@ -102,7 +101,9 @@ namespace Unity.Netcode.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-
+            m_PrefabsList = m_NetworkConfigProperty
+                .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
+                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsList));
 
             ReloadTransports();
         }
@@ -128,76 +129,9 @@ namespace Unity.Netcode.Editor
             m_NetworkIdRecycleDelayProperty = m_NetworkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
             m_RpcHashSizeProperty = m_NetworkConfigProperty.FindPropertyRelative("RpcHashSize");
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
-        }
-
-        private void OnEnable()
-        {
-            m_NetworkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty(nameof(NetworkManager.NetworkConfig)).FindPropertyRelative(nameof(NetworkConfig.NetworkPrefabs)), true, true, true, true);
-            m_NetworkPrefabsList.elementHeightCallback = index =>
-            {
-                var networkOverrideInt = 0;
-                if (m_NetworkPrefabsList.count > 0)
-                {
-                    var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-                    var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
-                    networkOverrideInt = networkOverrideProp.enumValueIndex;
-                }
-
-                return 8 + (networkOverrideInt == 0 ? EditorGUIUtility.singleLineHeight : (EditorGUIUtility.singleLineHeight * 2) + 5);
-            };
-            m_NetworkPrefabsList.drawElementCallback = (rect, index, isActive, isFocused) =>
-            {
-                rect.y += 5;
-
-                var networkPrefab = m_NetworkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-                var networkPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Prefab));
-                var networkSourceHashProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourceHashToOverride));
-                var networkSourcePrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.SourcePrefabToOverride));
-                var networkTargetPrefabProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.OverridingTargetPrefab));
-                var networkOverrideProp = networkPrefab.FindPropertyRelative(nameof(NetworkPrefab.Override));
-                var networkOverrideInt = networkOverrideProp.enumValueIndex;
-                var networkOverrideEnum = (NetworkPrefabOverride)networkOverrideInt;
-                EditorGUI.LabelField(new Rect(rect.x + rect.width - 70, rect.y, 60, EditorGUIUtility.singleLineHeight), "Override");
-                if (networkOverrideEnum == NetworkPrefabOverride.None)
-                {
-                    if (EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), false))
-                    {
-                        networkOverrideProp.enumValueIndex = (int)NetworkPrefabOverride.Prefab;
-                    }
-                }
-                else
-                {
-                    if (!EditorGUI.Toggle(new Rect(rect.x + rect.width - 15, rect.y, 10, EditorGUIUtility.singleLineHeight), true))
-                    {
-                        networkOverrideProp.enumValueIndex = 0;
-                        networkOverrideEnum = NetworkPrefabOverride.None;
-                    }
-                }
-
-                if (networkOverrideEnum == NetworkPrefabOverride.None)
-                {
-                    EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width - 80, EditorGUIUtility.singleLineHeight), networkPrefabProp, GUIContent.none);
-                }
-                else
-                {
-                    networkOverrideProp.enumValueIndex = GUI.Toolbar(new Rect(rect.x, rect.y, 100, EditorGUIUtility.singleLineHeight), networkOverrideInt - 1, new[] { "Prefab", "Hash" }) + 1;
-
-                    if (networkOverrideEnum == NetworkPrefabOverride.Prefab)
-                    {
-                        EditorGUI.PropertyField(new Rect(rect.x + 110, rect.y, rect.width - 190, EditorGUIUtility.singleLineHeight), networkSourcePrefabProp, GUIContent.none);
-                    }
-                    else
-                    {
-                        EditorGUI.PropertyField(new Rect(rect.x + 110, rect.y, rect.width - 190, EditorGUIUtility.singleLineHeight), networkSourceHashProp, GUIContent.none);
-                    }
-
-                    rect.y += EditorGUIUtility.singleLineHeight + 5;
-
-                    EditorGUI.LabelField(new Rect(rect.x, rect.y, 100, EditorGUIUtility.singleLineHeight), "Overriding Prefab");
-                    EditorGUI.PropertyField(new Rect(rect.x + 110, rect.y, rect.width - 110, EditorGUIUtility.singleLineHeight), networkTargetPrefabProp, GUIContent.none);
-                }
-            };
-            m_NetworkPrefabsList.drawHeaderCallback = rect => EditorGUI.LabelField(rect, "NetworkPrefabs");
+            m_PrefabsList = m_NetworkConfigProperty
+                .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
+                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsList));
         }
 
         public override void OnInspectorGUI()
@@ -231,7 +165,22 @@ namespace Unity.Netcode.Editor
                 EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
                 EditorGUILayout.Space();
 
-                m_NetworkPrefabsList.DoLayoutList();
+                if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
+                {
+                    EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
+                    if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
+                    {
+                        var networkPrefabs = m_NetworkManager.NetworkConfig._MigrateNetworkPrefabs();
+                        string path = $"Assets/NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset";
+                        Debug.Log("Saving migrated Network Prefabs List to " + path);
+                        AssetDatabase.CreateAsset(networkPrefabs, path);
+                        EditorUtility.SetDirty(m_NetworkManager);
+                    }
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(m_PrefabsList);
+                }
                 EditorGUILayout.Space();
 
                 EditorGUILayout.LabelField("General", EditorStyles.boldLabel);

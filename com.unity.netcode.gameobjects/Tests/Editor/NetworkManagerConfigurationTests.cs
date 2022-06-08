@@ -105,7 +105,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.NetworkPrefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);

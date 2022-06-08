@@ -10,31 +10,17 @@ namespace Unity.Netcode.RuntimeTests
     public class NetworkObjectNetworkClientOwnedObjectsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-        private NetworkPrefab m_NetworkPrefab;
+        private GameObject m_NetworkObject;
+
         protected override void OnServerAndClientsCreated()
         {
-            // create prefab
-            var gameObject = new GameObject("ClientOwnedObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            m_NetworkPrefab = (new NetworkPrefab()
-            {
-                Prefab = gameObject
-            });
-
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
-
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
-            }
+            m_NetworkObject = CreateNetworkObjectPrefab("ClientOwnedObject");
         }
 
         [UnityTest]
         public IEnumerator ChangeOwnershipOwnedObjectsAddTest()
         {
-            NetworkObject serverObject = Object.Instantiate(m_NetworkPrefab.Prefab).GetComponent<NetworkObject>();
+            NetworkObject serverObject = m_NetworkObject.GetComponent<NetworkObject>();
             serverObject.NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.Spawn();
 

@@ -53,10 +53,10 @@ namespace TestProject.RuntimeTests
             networkObject.NetworkManagerOwner = m_ServerNetworkManager;
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var networkPrefab = new NetworkPrefab() { Prefab = networkObject.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             }
             networkObject.name = "AnimTest";
             base.OnServerAndClientsCreated();
@@ -246,7 +246,7 @@ namespace TestProject.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
-            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
         }
 
         /// <summary>

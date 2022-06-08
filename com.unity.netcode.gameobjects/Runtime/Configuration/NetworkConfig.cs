@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
@@ -30,21 +31,8 @@ namespace Unity.Netcode
         [Tooltip("When set, NetworkManager will automatically create and spawn the assigned player prefab. This can be overridden by adding it to the NetworkPrefabs list and selecting override.")]
         public GameObject PlayerPrefab;
 
-        /// <summary>
-        /// A list of prefabs that can be dynamically spawned.
-        /// </summary>
         [SerializeField]
-        [Tooltip("The prefabs that can be spawned across the network")]
-        internal List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
-
-        /// <summary>
-        /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
-        /// Generated at runtime and OnValidate
-        /// </summary>
-        internal Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
-
-        internal Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
-
+        public NetworkPrefabs Prefabs = new NetworkPrefabs();
 
         /// <summary>
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
@@ -231,7 +219,7 @@ namespace Unity.Netcode
 
                 if (ForceSamePrefabs)
                 {
-                    var sortedDictionary = NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
+                    var sortedDictionary = Prefabs.NetworkPrefabOverrideLinks.OrderBy(x => x.Key);
                     foreach (var sortedEntry in sortedDictionary)
 
                     {
@@ -268,85 +256,82 @@ namespace Unity.Netcode
 
         internal void InitializePrefabs()
         {
-            // Always clear our prefab override links before building
-            NetworkPrefabOverrideLinks.Clear();
-            OverrideToNetworkPrefab.Clear();
-            // This is used to remove entries not needed or invalid
-            var removeEmptyPrefabs = new List<int>();
-
-            // Build the NetworkPrefabOverrideLinks dictionary
-            for (int i = 0; i < NetworkPrefabs.Count; i++)
+            if (HasOldPrefabList())
             {
-                var sourcePrefabGlobalObjectIdHash = (uint)0;
-                var targetPrefabGlobalObjectIdHash = (uint)0;
-                if (!NetworkPrefabs[i].Validate(out sourcePrefabGlobalObjectIdHash, out targetPrefabGlobalObjectIdHash, i))
-                {
-                    removeEmptyPrefabs.Add(i);
-                    continue;
-                }
-
-                if (!AddPrefabRegistration(NetworkPrefabs[i], sourcePrefabGlobalObjectIdHash, targetPrefabGlobalObjectIdHash))
-                {
-                    removeEmptyPrefabs.Add(i);
-                    continue;
-                }
+                _MigrateNetworkPrefabs();
             }
 
-            // Clear out anything that is invalid or not used (for invalid entries we already logged warnings to the user earlier)
-            // Iterate backwards so indices don't shift as we remove
-            for (int i = removeEmptyPrefabs.Count - 1; i >= 0; i--)
-            {
-                NetworkPrefabs.RemoveAt(removeEmptyPrefabs[i]);
-            }
-
-            removeEmptyPrefabs.Clear();
+            Prefabs.Initialize();
         }
 
-        internal bool AddPrefabRegistration(NetworkPrefab networkPrefab, uint sourcePrefabGlobalObjectIdHash, uint targetPrefabGlobalObjectIdHash)
+        #region Legacy Network Prefab List
+
+        [NonSerialized]
+        private bool m_DidWarnOldPrefabList = false;
+
+        private void WarnOldPrefabList()
         {
-            // Assign the appropriate GlobalObjectIdHash to the appropriate NetworkPrefab
-            if (NetworkPrefabOverrideLinks.ContainsKey(sourcePrefabGlobalObjectIdHash))
+            if (!m_DidWarnOldPrefabList)
             {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
-                // This should never happen, but in the case it somehow does log an error and remove the duplicate entry
-                Debug.LogError($"{nameof(NetworkPrefab)} ({networkObject.name}) has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} source entry value of: {sourcePrefabGlobalObjectIdHash}! Removing entry from list!");
-                return false;
+                Debug.LogWarning("Using Legacy Network Prefab List. Consider Migrating.");
+                m_DidWarnOldPrefabList = true;
             }
-
-            if (networkPrefab.Override == NetworkPrefabOverride.None)
-            {
-                NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                return true;
-            }
-
-            if (OverrideToNetworkPrefab.ContainsKey(targetPrefabGlobalObjectIdHash))
-            {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
-                // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {targetPrefabGlobalObjectIdHash}! Removing entry from list!");
-                return false;
-            }
-
-            switch (networkPrefab.Override)
-            {
-                case NetworkPrefabOverride.Prefab:
-                {
-                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                }
-                    break;
-                case NetworkPrefabOverride.Hash:
-                {
-                    NetworkPrefabOverrideLinks.Add(sourcePrefabGlobalObjectIdHash, networkPrefab);
-                    OverrideToNetworkPrefab.Add(targetPrefabGlobalObjectIdHash, sourcePrefabGlobalObjectIdHash);
-                }
-                    break;
-            }
-
-            return true;
         }
+
+        /// <summary>
+        /// Returns true if the old List&lt;NetworkPrefab&gt; serialized data is present.
+        /// </summary>
+        /// <remarks>
+        /// Internal use only to help migrate projects. <seealso cref="_MigrateNetworkPrefabs"/></remarks>
+        internal bool HasOldPrefabList()
+        {
+            return m_OldPrefabList?.Count > 0;
+        }
+
+        /// <summary>
+        /// Migrate the old format List&lt;NetworkPrefab&gt; prefab registration to the new NetworkPrefabsList ScriptableObject.
+        /// </summary>
+        /// <remarks>
+        /// OnAfterDeserialize cannot instantiate new objects (e.g. NetworkPrefabsList SO) since it executes in a thread, so we have to do it later.
+        /// Since NetworkConfig isn't a Unity.Object it doesn't get an Awake callback, so we have to do this in NetworkManager and expose this API.
+        /// </remarks>
+        internal NetworkPrefabsList _MigrateNetworkPrefabs()
+        {
+            if (m_OldPrefabList == null || m_OldPrefabList.Count == 0)
+            {
+                return null;
+            }
+
+            if (Prefabs == null)
+            {
+                throw new Exception("Prefabs field is null.");
+            }
+
+            if (Prefabs.NetworkPrefabsList != null)
+            {
+                throw new InvalidOperationException("Cannot migrate old NetworkPrefabs when new list already exists.");
+            }
+
+            Prefabs.NetworkPrefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+
+            if (m_OldPrefabList?.Count > 0)
+            {
+                // Migrate legacy types/fields
+                foreach (var networkPrefab in m_OldPrefabList)
+                {
+                    Prefabs.NetworkPrefabsList.List.Add(networkPrefab);
+                }
+            }
+
+            m_OldPrefabList = null;
+            return Prefabs.NetworkPrefabsList;
+        }
+
+        [FormerlySerializedAs("NetworkPrefabs")]
+        [SerializeField]
+        private List<NetworkPrefab> m_OldPrefabList;
+
+        #endregion
     }
 }
 
