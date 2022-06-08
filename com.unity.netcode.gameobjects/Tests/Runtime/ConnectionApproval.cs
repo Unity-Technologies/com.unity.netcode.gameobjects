@@ -47,9 +47,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_IsValidated);
         }
 
-        private NetworkManager.ConnectionApprovalResponse NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
+        private void NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            var response = new NetworkManager.ConnectionApprovalResponse();
             var stringGuid = Encoding.UTF8.GetString(request.Payload);
             if (m_ValidationToken.ToString() == stringGuid)
             {
@@ -61,8 +60,6 @@ namespace Unity.Netcode.RuntimeTests
             response.Position = null;
             response.Rotation = null;
             response.PlayerPrefabHash = null;
-
-            return response;
         }
 
         [TearDown]
