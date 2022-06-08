@@ -6,25 +6,22 @@ using UnityEngine.UIElements;
 
 namespace Unity.Netcode.Transports.UTP
 {
-    public class NetworkTypeEditor : VisualElement
+    public class NetworkTypeView : VisualElement
     {
-        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkTypeEditor.uxml";
+        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Transports/UTP/NetworkTypeView.uxml";
         const string Custom = nameof(Custom);
 
-        NetworkSimulator m_NetworkSimulator;
+        readonly NetworkSimulator m_NetworkSimulator;
 
         DropdownField PresetDropdown => this.Q<DropdownField>(nameof(PresetDropdown));
         ObjectField CustomPresetValue => this.Q<ObjectField>(nameof(CustomPresetValue));
         SliderInt PacketDelaySlider => this.Q<SliderInt>(nameof(PacketDelaySlider));
-        IntegerField PacketDelayField => this.Q<IntegerField>(nameof(PacketDelayField));
         SliderInt PacketJitterSlider => this.Q<SliderInt>(nameof(PacketJitterSlider));
-        IntegerField PacketJitterField => this.Q<IntegerField>(nameof(PacketJitterField));
         SliderInt PacketLossSlider => this.Q<SliderInt>(nameof(PacketLossSlider));
-        IntegerField PacketLossField => this.Q<IntegerField>(nameof(PacketLossField));
 
         bool m_CustomSelected;
 
-        public NetworkTypeEditor(NetworkSimulator networkSimulator)
+        public NetworkTypeView(NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
             if (m_NetworkSimulator.NetworkTypeConfiguration == null)
@@ -59,11 +56,8 @@ namespace Unity.Netcode.Transports.UTP
             });
 
             PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDelay(change.newValue));
-            PacketDelayField.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDelay(change.newValue));
             PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketJitter(change.newValue));
-            PacketJitterField.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketJitter(change.newValue));
             PacketLossSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLoss(change.newValue));
-            PacketLossField.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLoss(change.newValue));
 
             UpdatePacketDelay(m_NetworkSimulator.NetworkTypeConfiguration.PacketDelayMs);
             UpdatePacketJitter(m_NetworkSimulator.NetworkTypeConfiguration.PacketJitterMs);
@@ -85,13 +79,8 @@ namespace Unity.Netcode.Transports.UTP
                 : new StyleEnum<DisplayStyle>(DisplayStyle.None);
 
             PacketDelaySlider.SetEnabled(HasCustomValue);
-            PacketDelayField.SetEnabled(HasCustomValue);
-
             PacketJitterSlider.SetEnabled(HasCustomValue);
-            PacketJitterField.SetEnabled(HasCustomValue);
-
             PacketLossSlider.SetEnabled(HasCustomValue);
-            PacketLossField.SetEnabled(HasCustomValue);
         }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
@@ -118,25 +107,28 @@ namespace Unity.Netcode.Transports.UTP
         void UpdatePacketDelay(int value)
         {
             PacketDelaySlider.SetValueWithoutNotify(value);
-            PacketDelayField.SetValueWithoutNotify(value);
 
             m_NetworkSimulator.NetworkTypeConfiguration.PacketDelayMs = value;
+
+            UpdateLiveIfPlaying();
         }
 
         void UpdatePacketJitter(int value)
         {
             PacketJitterSlider.SetValueWithoutNotify(value);
-            PacketJitterField.SetValueWithoutNotify(value);
 
             m_NetworkSimulator.NetworkTypeConfiguration.PacketJitterMs = value;
+
+            UpdateLiveIfPlaying();
         }
 
         void UpdatePacketLoss(int value)
         {
             PacketLossSlider.SetValueWithoutNotify(value);
-            PacketLossField.SetValueWithoutNotify(value);
 
             m_NetworkSimulator.NetworkTypeConfiguration.PacketLossPercent = value;
+
+            UpdateLiveIfPlaying();
         }
 
         void UpdateLiveIfPlaying()
