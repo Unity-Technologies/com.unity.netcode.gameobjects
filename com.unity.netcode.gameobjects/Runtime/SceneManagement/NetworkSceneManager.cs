@@ -2044,10 +2044,6 @@ namespace Unity.Netcode
 
                     if (!ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneHandle))
                     {
-                        if (sceneToFilterBy.name == "InSceneNetworkObject")
-                        {
-                            var matchingEntry = ServerSceneHandleToClientSceneHandle.Where((c) => c.Value == sceneHandle).FirstOrDefault();
-                        }
                         ScenePlacedObjects[globalObjectIdHash].Add(sceneHandle, networkObjectInstance);
                     }
                     else
