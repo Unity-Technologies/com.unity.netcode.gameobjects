@@ -243,6 +243,15 @@ namespace Unity.Netcode.Transports.UTP
             PacketDropRate = 0
         };
 
+        private struct PacketLossCache
+        {
+            public int PacketsReceived;
+            public int PacketsDropped;
+            public float PacketLoss;
+        };
+
+        private PacketLossCache m_PacketLossCache = new PacketLossCache();
+
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
@@ -839,11 +848,22 @@ namespace Unity.Netcode.Transports.UTP
             {
                 var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
 
-                var packetReceived = (float)sharedContext->stats.PacketsReceived;
-                var packetDropped = (float)sharedContext->stats.PacketsDropped;
-                var packetLoss = packetReceived > 0 ? packetDropped / packetReceived : 0;
+                var packetReceivedDelta = (float)(sharedContext->stats.PacketsReceived - m_PacketLossCache.PacketsReceived);
+                var packetDroppedDelta = (float)(sharedContext->stats.PacketsDropped - m_PacketLossCache.PacketsDropped);
 
-                return packetLoss;
+                // There can be multiple update happening in a single frame where no packets have transitioned
+                // In those situation we want to return the last packet loss value instead of 0 to avoid invalid swings
+                if (packetDroppedDelta == 0 && packetReceivedDelta == 0)
+                {
+                    return m_PacketLossCache.PacketLoss;
+                }
+
+                m_PacketLossCache.PacketsReceived = sharedContext->stats.PacketsReceived;
+                m_PacketLossCache.PacketsDropped = sharedContext->stats.PacketsDropped;
+
+                m_PacketLossCache.PacketLoss = packetReceivedDelta > 0 ? packetDroppedDelta / packetReceivedDelta : 0;
+
+                return m_PacketLossCache.PacketLoss;
             }
         }
 
