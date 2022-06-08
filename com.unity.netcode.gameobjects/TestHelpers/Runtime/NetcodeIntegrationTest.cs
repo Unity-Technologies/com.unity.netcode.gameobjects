@@ -302,7 +302,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
             ClientNetworkManagerPostStart(networkManager);
             VerboseDebug($"[{networkManager.name}] Created and connected!");
-            OnNewClientCreated(networkManager);
         }
 
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
