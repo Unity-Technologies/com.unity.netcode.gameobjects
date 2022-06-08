@@ -901,7 +901,7 @@ namespace Unity.Netcode.Components
 
         /// <inheritdoc cref="SetTrigger(string)" />
         /// <param name="hash">The hash for the trigger to activate</param>
-        /// <param name="reset">If true, resets the trigger</param>
+        /// <param name="setTrigger">sets (true) or resets (false) the trigger. The default is to set it (true).</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
             var isServerAuthoritative = IsServerAuthoritative();
