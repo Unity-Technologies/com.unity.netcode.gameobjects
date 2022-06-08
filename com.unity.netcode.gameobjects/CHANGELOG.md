@@ -34,6 +34,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkAnimator` issue where it was not taking the animation speed or state speed multiplier into consideration. (#1946)
 - Fixed `NetworkAnimator` issue where it was not properly synchronizing late joining clients if they joined while `Animator` was transitioning between states. (#1946)
 - Fixed `NetworkAnimator` issue where the server was not relaying changes to non-owner clients when a client was the owner. (#1946)
+- Fixed issue where `PacketLoss` would return the packet loss over a connection lifetime instead of a single frame. (#2004)
 
 ## [1.0.0-pre.9] - 2022-05-10
 
