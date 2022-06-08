@@ -853,7 +853,7 @@ namespace Unity.Netcode.Transports.UTP
 
                 // There can be multiple update happening in a single frame where no packets have transitioned
                 // In those situation we want to return the last packet loss value instead of 0 to avoid invalid swings
-                if(packetDroppedDelta == 0 && packetReceivedDelta == 0)
+                if (packetDroppedDelta == 0 && packetReceivedDelta == 0)
                 {
                     return m_PacketLossCache.PacketLoss;
                 }
