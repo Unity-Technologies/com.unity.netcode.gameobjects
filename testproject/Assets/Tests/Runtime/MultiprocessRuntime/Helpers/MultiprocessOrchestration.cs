@@ -117,7 +117,7 @@ public class MultiprocessOrchestration
                 case RuntimePlatform.WindowsEditor:
                     workerProcess.StartInfo.FileName = $"{buildPath}.exe";
                     //extraArgs += "-popupwindow -screen-width 100 -screen-height 100";
-                    extraArgs += "-batchmode -nographics";
+                    extraArgs += "-popupwindow";
                     break;
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.LinuxEditor:

@@ -5,6 +5,11 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
+#if UNITY_UNET_PRESENT
+using Unity.Netcode.Transports.UNET;
+#endif
+using Unity.Netcode.Transports.UTP;
+
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -77,6 +82,29 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 SceneManager.SetActiveScene(scene);
             }
 
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+            MultiprocessLogger.Log($"transport is {transport}");
+            switch (transport)
+            {
+#if UNITY_UNET_PRESENT
+                case UNetTransport unetTransport:
+                    unetTransport.ConnectPort = int.Parse(TestCoordinator.Port);
+                    unetTransport.ServerListenPort = int.Parse(TestCoordinator.Port);
+                    unetTransport.ConnectAddress = "127.0.0.1";
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {unetTransport.ConnectAddress} port {unetTransport.ConnectPort}, {unetTransport.ServerListenPort}");
+
+                    break;
+#endif
+                case UnityTransport unityTransport:
+                    unityTransport.ConnectionData.ServerListenAddress = "0.0.0.0";
+                    MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {unityTransport.ConnectionData.ServerListenAddress}");
+                    break;
+                default:
+                    MultiprocessLogger.LogError($"The transport {transport} has no case");
+                    break;
+            }
+
+            MultiprocessLogger.Log("Starting Host");
             NetworkManager.Singleton.StartHost();
 
             // Use scene verification to make sure we don't try to get clients to synchronize the TestRunner scene

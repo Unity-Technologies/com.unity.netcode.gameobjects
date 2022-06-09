@@ -696,7 +696,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -705,7 +705,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -714,7 +714,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanaged(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -726,7 +726,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanagedSafe(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -737,6 +737,26 @@ namespace Unity.Netcode
                 ReadBytesSafe(bytes, sizeInBytes);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
@@ -761,26 +781,6 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
@@ -788,6 +788,14 @@ namespace Unity.Netcode
         public void ReadValue(out Vector3 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2Int value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2Int[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3Int value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3Int[] value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector4 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -822,6 +830,14 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2Int value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2Int[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3Int value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3Int[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4 value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
@@ -845,5 +861,31 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Ray2D value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
+
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValue<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanaged(out int length);
+            value = new T();
+            value.Length = length;
+            ReadBytes(value.GetUnsafePtr(), length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafe<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value = new T();
+            value.Length = length;
+            ReadBytesSafe(value.GetUnsafePtr(), length);
+        }
     }
 }

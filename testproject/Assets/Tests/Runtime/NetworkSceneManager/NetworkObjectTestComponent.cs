@@ -42,7 +42,7 @@ namespace TestProject.RuntimeTests
             // We do this so the ObjectNameIdentifier has a chance to label it properly
             if (IsSpawned && !m_HasNotifiedSpawned)
             {
-                Debug.Log($"{NetworkManager.name} spawned {gameObject.name}.");
+                Debug.Log($"{NetworkManager.name} spawned {gameObject.name} with scene origin handle {gameObject.scene.handle}.");
                 m_HasNotifiedSpawned = true;
             }
         }

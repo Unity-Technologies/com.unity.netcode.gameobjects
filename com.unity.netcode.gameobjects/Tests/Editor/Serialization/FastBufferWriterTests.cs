@@ -257,8 +257,9 @@ namespace Unity.Netcode.EditorTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {
@@ -270,8 +271,9 @@ namespace Unity.Netcode.EditorTests
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3), typeof(Vector4),
-                typeof(Quaternion), typeof(Color), typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {
@@ -334,6 +336,147 @@ namespace Unity.Netcode.EditorTests
                 var underlyingArray = writer.ToArray();
                 VerifyCheckBytes(underlyingArray, serializedValueSize + offset);
             }
+        }
+
+        public unsafe void RunFixedStringTest<T>(T fixedStringValue, int numBytesWritten, WriteType writeType) where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            fixedStringValue.Length = numBytesWritten;
+
+            var serializedValueSize = FastBufferWriter.GetWriteSize(fixedStringValue);
+
+            Assert.AreEqual(fixedStringValue.Length + sizeof(int), serializedValueSize);
+
+            var writer = new FastBufferWriter(serializedValueSize + 3, Allocator.Temp);
+            using (writer)
+            {
+                var offset = 0;
+                switch (writeType)
+                {
+                    case WriteType.WriteDirect:
+                        Assert.IsTrue(writer.TryBeginWrite(serializedValueSize + 2), "Writer denied write permission");
+                        writer.WriteValue(fixedStringValue);
+                        break;
+                    case WriteType.WriteSafe:
+                        writer.WriteValueSafe(fixedStringValue);
+                        break;
+
+                }
+
+                VerifyPositionAndLength(writer, serializedValueSize + offset);
+                WriteCheckBytes(writer, serializedValueSize + offset);
+
+                int* sizeValue = (int*)(writer.GetUnsafePtr() + offset);
+                Assert.AreEqual(fixedStringValue.Length, *sizeValue);
+
+                byte* underlyingByteArray = writer.GetUnsafePtr() + sizeof(int) + offset;
+                for (var i = 0; i < fixedStringValue.Length; ++i)
+                {
+                    Assert.AreEqual(fixedStringValue[i], underlyingByteArray[i]);
+                }
+
+                var underlyingArray = writer.ToArray();
+                VerifyCheckBytes(underlyingArray, serializedValueSize + offset);
+            }
+        }
+
+        [TestCase(3, WriteType.WriteDirect)]
+        [TestCase(5, WriteType.WriteSafe)]
+        [TestCase(16, WriteType.WriteDirect)]
+        [TestCase(29, WriteType.WriteSafe)]
+        public void WhenWritingFixedString32Bytes_ValueIsWrittenCorrectly(int numBytesWritten, WriteType writeType)
+        {
+            // Repeats 01234567890123456789...
+            string valueToTest = "";
+            for (var i = 0; i < 29; ++i)
+            {
+                valueToTest += (i % 10).ToString();
+            }
+
+            var fixedStringValue = new FixedString32Bytes(valueToTest);
+
+            RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
+        }
+
+        [TestCase(3, WriteType.WriteDirect)]
+        [TestCase(5, WriteType.WriteSafe)]
+        [TestCase(16, WriteType.WriteDirect)]
+        [TestCase(29, WriteType.WriteSafe)]
+        [TestCase(61, WriteType.WriteSafe)]
+        public void WhenWritingFixedString64Bytes_ValueIsWrittenCorrectly(int numBytesWritten, WriteType writeType)
+        {
+            // Repeats 01234567890123456789...
+            string valueToTest = "";
+            for (var i = 0; i < 61; ++i)
+            {
+                valueToTest += (i % 10).ToString();
+            }
+
+            var fixedStringValue = new FixedString64Bytes(valueToTest);
+
+            RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
+        }
+
+        [TestCase(3, WriteType.WriteDirect)]
+        [TestCase(5, WriteType.WriteSafe)]
+        [TestCase(16, WriteType.WriteDirect)]
+        [TestCase(29, WriteType.WriteSafe)]
+        [TestCase(61, WriteType.WriteSafe)]
+        [TestCase(125, WriteType.WriteSafe)]
+        public void WhenWritingFixedString128Bytes_ValueIsWrittenCorrectly(int numBytesWritten, WriteType writeType)
+        {
+            // Repeats 01234567890123456789...
+            string valueToTest = "";
+            for (var i = 0; i < 125; ++i)
+            {
+                valueToTest += (i % 10).ToString();
+            }
+
+            var fixedStringValue = new FixedString128Bytes(valueToTest);
+
+            RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
+        }
+
+        [TestCase(3, WriteType.WriteDirect)]
+        [TestCase(5, WriteType.WriteSafe)]
+        [TestCase(16, WriteType.WriteDirect)]
+        [TestCase(29, WriteType.WriteSafe)]
+        [TestCase(61, WriteType.WriteSafe)]
+        [TestCase(125, WriteType.WriteSafe)]
+        [TestCase(509, WriteType.WriteSafe)]
+        public void WhenWritingFixedString512Bytes_ValueIsWrittenCorrectly(int numBytesWritten, WriteType writeType)
+        {
+            // Repeats 01234567890123456789...
+            string valueToTest = "";
+            for (var i = 0; i < 509; ++i)
+            {
+                valueToTest += (i % 10).ToString();
+            }
+
+            var fixedStringValue = new FixedString512Bytes(valueToTest);
+
+            RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
+        }
+
+        [TestCase(3, WriteType.WriteDirect)]
+        [TestCase(5, WriteType.WriteSafe)]
+        [TestCase(16, WriteType.WriteDirect)]
+        [TestCase(29, WriteType.WriteSafe)]
+        [TestCase(61, WriteType.WriteSafe)]
+        [TestCase(125, WriteType.WriteSafe)]
+        [TestCase(509, WriteType.WriteSafe)]
+        [TestCase(4093, WriteType.WriteSafe)]
+        public void WhenWritingFixedString4096Bytes_ValueIsWrittenCorrectly(int numBytesWritten, WriteType writeType)
+        {
+            // Repeats 01234567890123456789...
+            string valueToTest = "";
+            for (var i = 0; i < 4093; ++i)
+            {
+                valueToTest += (i % 10).ToString();
+            }
+
+            var fixedStringValue = new FixedString4096Bytes(valueToTest);
+
+            RunFixedStringTest(fixedStringValue, numBytesWritten, writeType);
         }
 
         [TestCase(1, 0)]
