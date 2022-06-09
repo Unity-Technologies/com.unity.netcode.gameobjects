@@ -966,10 +966,7 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkSettings
                 .WithFragmentationStageParameters(
-                    payloadCapacity: fragmentationCapacity)
-                .WithNetworkConfigParameters(
-                    receiveQueueCapacity: m_MaxPacketQueueSize,
-                    sendQueueCapacity: m_MaxPacketQueueSize);
+                    payloadCapacity: fragmentationCapacity);
 #endif
         }
 
@@ -1096,6 +1093,8 @@ namespace Unity.Netcode.Transports.UTP
             m_ServerClientId = 0;
         }
 
+        bool m_SimulatorInitialized;
+
         public void CreateDriver(
             UnityTransport transport,
             out NetworkDriver driver,
@@ -1104,82 +1103,57 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline reliableSequencedPipeline)
         {
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-            var maxFrameTimeMS = 0;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            maxFrameTimeMS = 100;
-#if MULTIPLAYER_TOOLS
-            var networkConditioningComponent = GetComponent<NetworkSimulator>();
-            if (networkConditioningComponent != null)
-            {
-                m_NetworkSettings.WithSimulatorStageParameters(
-                    300,
-                    NetworkParameterConstants.MTU,
-                    ApplyMode.AllPackets,
-                    packetDelayMs: networkConditioningComponent.NetworkTypeConfiguration.PacketDelayMs,
-                    packetJitterMs: networkConditioningComponent.NetworkTypeConfiguration.PacketJitterMs,
-                    packetDropPercentage: networkConditioningComponent.NetworkTypeConfiguration.PacketLossPercent
-                );
-            }
-#endif
-#endif
+            var configuration = GetComponent<NetworkSimulator>()?.NetworkTypeConfiguration;
+            m_NetworkSettings.WithSimulatorStageParameters(
+                300,
+                NetworkParameterConstants.MTU,
+                ApplyMode.AllPackets,
+                packetDelayMs: configuration?.PacketDelayMs ?? 0,
+                packetJitterMs: configuration?.PacketJitterMs ?? 0,
+                packetDropInterval: configuration?.PacketLossInterval ?? 0,
+                packetDropPercentage: configuration?.PacketLossPercent ?? 0,
+                packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0,
+                fuzzFactor: configuration?.PacketFuzzFactor ?? 0,
+                fuzzOffset: configuration?.PacketFuzzOffset ?? 0
+            );
+
+            m_SimulatorInitialized = true;
 
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
-                maxFrameTimeMS: maxFrameTimeMS);
+                maxFrameTimeMS: 100);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
-#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && MULTIPLAYER_TOOLS
-            if (networkConditioningComponent != null)
-            {
-                unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(NetworkMetricsPipelineStage)
-                );
-                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(UnreliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(NetworkMetricsPipelineStage)
-                );
-                reliableSequencedPipeline = driver.CreatePipeline(
-                    typeof(ReliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(NetworkMetricsPipelineStage)
-                );
-            }
-            else
-#endif
-            {
-                unreliableFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                    typeof(FragmentationPipelineStage),
-                    typeof(UnreliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-                reliableSequencedPipeline = driver.CreatePipeline(
-                    typeof(ReliableSequencedPipelineStage)
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
-#endif
-                );
-            }
+            unreliableFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage),
+                typeof(SimulatorPipelineStage),
+                typeof(NetworkMetricsPipelineStage)
+            );
+            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage),
+                typeof(UnreliableSequencedPipelineStage),
+                typeof(SimulatorPipelineStage),
+                typeof(NetworkMetricsPipelineStage)
+            );
+            reliableSequencedPipeline = driver.CreatePipeline(
+                typeof(ReliableSequencedPipelineStage),
+                typeof(SimulatorPipelineStage),
+                typeof(NetworkMetricsPipelineStage)
+            );
         }
 
         public void RefreshSimulationPipelineParameters(NetworkTypeConfiguration configuration)
         {
+            if (!m_SimulatorInitialized)
+            {
+                return;
+            }
+
             var simulatorPipeStageId = NetworkPipelineStageCollection.GetStageId(typeof(SimulatorPipelineStage));
 
             UpdatePipelineParameter(m_ReliableSequencedPipeline, simulatorPipeStageId, configuration);
@@ -1195,7 +1169,11 @@ namespace Unity.Netcode.Transports.UTP
             var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
             parameter->PacketDelayMs = configuration.PacketDelayMs;
             parameter->PacketJitterMs = configuration.PacketJitterMs;
+            parameter->PacketDropInterval = configuration.PacketLossInterval;
             parameter->PacketDropPercentage = configuration.PacketLossPercent;
+            parameter->PacketDuplicationPercentage = configuration.PacketDuplicationPercent;
+            parameter->FuzzFactor = configuration.PacketFuzzFactor;
+            parameter->FuzzOffset = configuration.PacketFuzzOffset;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
