@@ -267,7 +267,7 @@ namespace Unity.Netcode.RuntimeTests
                 }
             }
 
-            protected override bool OnIsServerAuthoritatitive()
+            protected override bool OnIsServerAuthoritative()
             {
                 return false;
             }
