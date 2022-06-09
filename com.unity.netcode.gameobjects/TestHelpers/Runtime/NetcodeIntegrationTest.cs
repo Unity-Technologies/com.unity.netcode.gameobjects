@@ -411,6 +411,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 ClientNetworkManagerPostStart(networkManager);
             }
+            if (m_UseHost)
+            {
+                var clientSideServerPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                foreach (var playerNetworkObject in clientSideServerPlayerClones)
+                {
+                    // When the server is not the host this needs to be done
+                    if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                    {
+                        m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                    }
+                    if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(m_ServerNetworkManager.LocalClientId))
+                    {
+                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                    }
+                }
+            }
         }
 
         /// <summary>
