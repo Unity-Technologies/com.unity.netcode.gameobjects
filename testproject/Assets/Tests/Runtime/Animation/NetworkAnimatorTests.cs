@@ -21,16 +21,23 @@ namespace TestProject.RuntimeTests
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
+        private const string k_OwnerAnimatorObjectName = "OwnerAnimatorObject";
 
         protected override int NumberOfClients => 1;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
+        private GameObject m_AnimationOwnerTestPrefab => m_OwnerAnimatorObjectPrefab ? m_OwnerAnimatorObjectPrefab as GameObject : null;
+
         private AnimatorTestHelper.ParameterValues m_ParameterValues;
         private Object m_AnimatorObjectPrefab;
+        private Object m_OwnerAnimatorObjectPrefab;
 
         protected override void OnOneTimeSetup()
         {
             m_AnimatorObjectPrefab = Resources.Load(k_AnimatorObjectName);
-            Assert.NotNull(m_AnimatorObjectPrefab, $"Failed to load resource AnimatorObject");
+            Assert.NotNull(m_AnimatorObjectPrefab, $"Failed to load resource {k_AnimatorObjectName}");
+            m_OwnerAnimatorObjectPrefab = Resources.Load(k_OwnerAnimatorObjectName);
+            Assert.NotNull(m_OwnerAnimatorObjectPrefab, $"Failed to load resource {k_OwnerAnimatorObjectName}");
+
             base.OnOneTimeSetup();
         }
 
@@ -49,35 +56,40 @@ namespace TestProject.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            var networkObject = (m_AnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var networkPrefab = new NetworkPrefab() { Prefab = networkObject.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            // Server authority prefab
+            var networkObjectServer = (m_AnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
+            networkObjectServer.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectServer.name = "ServerAuthority";
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectServer);
+            var networkAnimatorServerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectServer.gameObject };
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
+
+            // Owner authority prefab
+            var networkObjectOwner = (m_OwnerAnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
+            networkObjectOwner.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectOwner.name = "OwnerAuthority";
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOwner);
+            var networkAnimatorOwnerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectOwner.gameObject };
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
+
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
+                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
             }
-            networkObject.name = "AnimTest";
+
             base.OnServerAndClientsCreated();
         }
 
-        private bool ClientSideValuesMatch(OwnerShipMode ownerShipMode, bool debugInfo = false)
+        private bool ParameterValuesMatch(OwnerShipMode ownerShipMode, AuthoritativeMode authoritativeMode, bool debugInfo = false)
         {
-            if (ownerShipMode == OwnerShipMode.ClientOwner)
+            var serverParameters = AnimatorTestHelper.ServerSideInstance.GetParameterValues();
+            if (!serverParameters.ValuesMatch(m_ParameterValues, debugInfo))
             {
-                var serverParameters = AnimatorTestHelper.ServerSideInstance.GetParameterValues();
-                if (!serverParameters.ValuesMatch(m_ParameterValues, debugInfo))
-                {
-                    return false;
-                }
+                return false;
             }
             foreach (var animatorTestHelper in AnimatorTestHelper.ClientSideInstances)
             {
-                if (ownerShipMode == OwnerShipMode.ClientOwner && animatorTestHelper.Value.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
-                {
-                    continue;
-                }
                 var clientParameters = animatorTestHelper.Value.GetParameterValues();
                 if (!clientParameters.ValuesMatch(m_ParameterValues, debugInfo))
                 {
@@ -94,11 +106,34 @@ namespace TestProject.RuntimeTests
             ClientOwner
         }
 
-        private GameObject SpawnPrefab(bool isClientOwner)
+        public enum AuthoritativeMode
         {
-            Assert.NotNull(m_AnimatorObjectPrefab);
+            ServerAuth,
+            OwnerAuth
+        }
+
+        private GameObject SpawnPrefab(bool isClientOwner, AuthoritativeMode authoritativeMode)
+        {
             var networkManager = isClientOwner ? m_ClientNetworkManagers[0] : m_ServerNetworkManager;
-            return SpawnObject(m_AnimatorObjectPrefab as GameObject, networkManager);
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                Assert.NotNull(m_AnimatorObjectPrefab);
+                return SpawnObject(m_AnimatorObjectPrefab as GameObject, networkManager);
+            }
+            else
+            {
+                Assert.NotNull(m_OwnerAnimatorObjectPrefab);
+                return SpawnObject(m_OwnerAnimatorObjectPrefab as GameObject, networkManager);
+            }
+        }
+
+        private string GetNetworkAnimatorName(AuthoritativeMode authoritativeMode)
+        {
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                return m_AnimationTestPrefab.name;
+            }
+            return m_AnimationOwnerTestPrefab.name;
         }
 
         /// <summary>
@@ -107,39 +142,38 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
-        public IEnumerator ParameterUpdateTests([Values] OwnerShipMode ownerShipMode)
+        public IEnumerator ParameterUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             VerboseDebug($" ++++++++++++++++++ Parameter Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
 
-            bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
             // Spawn our test animator object
-            var objectInstance = SpawnPrefab(isClientOwner);
-
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Create new parameter values
             m_ParameterValues = new AnimatorTestHelper.ParameterValues() { FloatValue = 1.0f, IntValue = 5, BoolValue = true };
 
-            if (isClientOwner)
+            if (authoritativeMode == AuthoritativeMode.OwnerAuth)
             {
-                // Set the new parameter values
-                AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId].UpdateParameters(m_ParameterValues);
+                var objectToUpdate = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+                // Set the new parameter values via the owner
+                objectToUpdate.UpdateParameters(m_ParameterValues);
             }
             else
             {
-                // Set the new parameter values
+                // Set the new parameter values via the server
                 AnimatorTestHelper.ServerSideInstance.UpdateParameters(m_ParameterValues);
             }
 
             // Wait for the client side to update to the new parameter values
-            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
+            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
             VerboseDebug($" ------------------ Parameter Test [{ownerShipMode}] Stopping ------------------ ");
         }
@@ -193,23 +227,28 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
-        public IEnumerator TriggerUpdateTests([Values] OwnerShipMode ownerShipMode)
+        public IEnumerator TriggerUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             VerboseDebug($" ++++++++++++++++++ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
-            bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
+
             // Spawn our test animator object
-            var objectInstance = SpawnPrefab(isClientOwner);
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
-            var animatorTestHelper = isClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
+            }
+
             if (m_EnableVerboseDebug)
             {
                 var retryTrigger = true;
@@ -247,6 +286,8 @@ namespace TestProject.RuntimeTests
         {
             var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
             networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
+            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
         }
 
         /// <summary>
@@ -255,30 +296,35 @@ namespace TestProject.RuntimeTests
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
-        public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode)
+        public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             VerboseDebug($" ++++++++++++++++++ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
+
             // Spawn our test animator object
-            var objectInstance = SpawnPrefab(isClientOwner);
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
+
 
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Set the trigger based on the type of test
-            if (isClientOwner)
+            if (authoritativeMode == AuthoritativeMode.OwnerAuth)
             {
-                AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId].SetTrigger();
+                var objectToUpdate = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+                // Set the animation trigger via the owner
+                objectToUpdate.SetTrigger();
             }
             else
             {
+                // Set the animation trigger via the server
                 AnimatorTestHelper.ServerSideInstance.SetTrigger();
             }
 
@@ -289,10 +335,11 @@ namespace TestProject.RuntimeTests
             // Create new parameter values
             m_ParameterValues = new AnimatorTestHelper.ParameterValues() { FloatValue = 1.0f, IntValue = 5, BoolValue = true };
 
-            if (isClientOwner)
+            if (authoritativeMode == AuthoritativeMode.OwnerAuth)
             {
+                var objectToUpdate = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
                 // Set the new parameter values
-                AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId].UpdateParameters(m_ParameterValues);
+                objectToUpdate.UpdateParameters(m_ParameterValues);
             }
             else
             {
@@ -301,7 +348,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for the client side to update to the new parameter values
-            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
+            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
             yield return CreateAndStartNewClient();
@@ -310,7 +357,7 @@ namespace TestProject.RuntimeTests
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {m_AnimationTestPrefab.name} to be spawned!");
+            AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
             Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
@@ -329,7 +376,7 @@ namespace TestProject.RuntimeTests
             }
             AssertOnTimeout($"Timed out waiting for the late joining client's triggers to match!{message}", s_GlobalTimeoutHelper);
             // Now check that the late joining client and all other clients are synchronized to the updated parameter values
-            yield return WaitForConditionOrTimeOut(() => ClientSideValuesMatch(ownerShipMode, m_EnableVerboseDebug));
+            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
             var newlyJoinedClient = m_ClientNetworkManagers[1];
