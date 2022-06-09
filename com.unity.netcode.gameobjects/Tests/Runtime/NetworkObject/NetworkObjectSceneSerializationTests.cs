@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
 
                         invalidNetworkObjects.Add(gameObject);
 
-                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe((int)networkObject.GetSceneOriginHandle());
                         // Serialize the invalid NetworkObject
                         var sceneObject = networkObject.GetMessageSceneObject(0);
                         var prePosition = writer.Position;
@@ -85,7 +85,7 @@ namespace Unity.Netcode.RuntimeTests
 
                         networkObjectsToTest.Add(gameObject);
 
-                        writer.WriteValueSafe((int)networkObject.gameObject.scene.handle);
+                        writer.WriteValueSafe(networkObject.GetSceneOriginHandle());
 
                         // Handle populating the scenes loaded list
                         var scene = networkObject.gameObject.scene;
@@ -96,13 +96,13 @@ namespace Unity.Netcode.RuntimeTests
                             NetworkManagerHelper.NetworkManagerObject.SceneManager.ScenesLoaded
                                 .Add(scene.handle, scene);
                         }
-
+                        var handle = networkObject.GetSceneOriginHandle();
                         // Since this is a unit test, we will fake the server to client handle lookup by just adding the same handle key and value
                         if (!NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle
-                            .ContainsKey(networkObject.gameObject.scene.handle))
+                            .ContainsKey(handle))
                         {
                             NetworkManagerHelper.NetworkManagerObject.SceneManager.ServerSceneHandleToClientSceneHandle
-                                .Add(networkObject.gameObject.scene.handle, networkObject.gameObject.scene.handle);
+                                .Add(handle, handle);
                         }
 
                         // Serialize the valid NetworkObject

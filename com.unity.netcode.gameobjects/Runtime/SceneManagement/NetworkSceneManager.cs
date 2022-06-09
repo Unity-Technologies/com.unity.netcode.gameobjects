@@ -1521,6 +1521,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Used for integration testing, due to the complexities of having all clients loading scenes
+        /// this is needed to "filter" out the scenes not loaded by NetworkSceneManager
+        /// (i.e. we don't want a late joining player to load all of the other client scenes)
+        /// </summary>
+        internal Func<Scene, bool> ExcludeSceneFromSychronization;
+
+        /// <summary>
         /// Server Side:
         /// This is used for players that have just had their connection approved and will assure they are synchronized
         /// properly if they are late joining
@@ -1546,6 +1553,13 @@ namespace Unity.Netcode
             {
                 var scene = SceneManager.GetSceneAt(i);
 
+                // NetworkSceneManager does not synchronize scenes that are not loaded by NetworkSceneManager
+                // unless the scene in question is the currently active scene.
+                if (ExcludeSceneFromSychronization != null && !ExcludeSceneFromSychronization(scene))
+                {
+                    continue;
+                }
+
                 var sceneHash = SceneHashFromNameOrPath(scene.path);
 
                 // This would depend upon whether we are additive or not
@@ -1563,7 +1577,6 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
-
                 sceneEventData.AddSceneToSynchronize(sceneHash, scene.handle);
             }
 
@@ -2020,10 +2033,9 @@ namespace Unity.Netcode
             foreach (var networkObjectInstance in networkObjects)
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
-                var sceneHandle = networkObjectInstance.gameObject.scene.handle;
+                var sceneHandle = networkObjectInstance.GetSceneOriginHandle();
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && networkObjectInstance.gameObject.scene == sceneToFilterBy &&
-                    sceneHandle == sceneToFilterBy.handle)
+                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && sceneHandle == sceneToFilterBy.handle)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {

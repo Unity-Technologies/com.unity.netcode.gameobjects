@@ -943,10 +943,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Override this and return false to follow the owner authoritative
-        /// Otherwise, it defaults to server authoritative
+        /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
-        protected virtual bool OnIsServerAuthoritatitive()
+        protected virtual bool OnIsServerAuthoritative()
         {
             return true;
         }
@@ -956,7 +955,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool IsServerAuthoritative()
         {
-            return OnIsServerAuthoritatitive();
+            return OnIsServerAuthoritative();
         }
     }
 }
