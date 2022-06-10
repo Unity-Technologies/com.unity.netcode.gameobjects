@@ -140,6 +140,51 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// Validates that when a NetworkObject is despawned but not destroyed
+        /// and then re-spawned that the observer list is cleared
+        /// </summary>
+        [UnityTest]
+        public IEnumerator DespawnRespawnObserverTest()
+        {
+            var nonObservers = new List<ulong>();
+            m_ServerRpcObserverObject.ResetTest();
+            // Wait for all clients to report they have spawned an instance of our test prefab
+            yield return WaitForConditionOrTimeOut(m_ServerRpcObserverObject.AllClientsSpawned);
+
+            m_ServerRpcObserverObject.ObserverMessageClientRpc();
+
+            yield return WaitForConditionOrTimeOut(m_ServerRpcObserverObject.AllObserversReceivedRPC);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive message!\n" +
+                $"Clients that received the message:{m_ServerRpcObserverObject.GetClientIdsAsString()}");
+            Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
+
+            m_ServerRpcObserverObject.NetworkObject.Despawn(false);
+
+            Assert.True(m_ServerRpcObserverObject.NetworkObject.Observers.Count == 0, $"Despawned {m_ServerRpcObserverObject.name} but it still has {m_ServerRpcObserverObject.NetworkObject.Observers.Count} observers!");
+
+            for(int i = 4; i < NumberOfClients; i++)
+            {
+                nonObservers.Add(m_ClientNetworkManagers[i].LocalClientId);
+                m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[i].LocalClientId);
+            }
+
+            yield return s_DefaultWaitForTick;
+            m_ServerRpcObserverObject.ResetTest();
+            m_ServerRpcObserverObject.NetworkObject.Spawn();
+            m_ServerRpcObserverObject.ObserverMessageClientRpc();
+            yield return WaitForConditionOrTimeOut(m_ServerRpcObserverObject.AllObserversReceivedRPC);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive message!\n" +
+                $"Clients that received the message:{m_ServerRpcObserverObject.GetClientIdsAsString()}");
+            Assert.False(m_ServerRpcObserverObject.NonObserversReceivedRPC(nonObservers), $"Non-observers ({m_ServerRpcObserverObject.GetClientIdsAsString(nonObservers)}) received the RPC message!");
+
+            // Always verify the host received the RPC
+            if (m_UseHost)
+            {
+                Assert.True(m_ServerRpcObserverObject.HostReceivedMessage, $"Host failed to receive the ClientRpc with the following observers: {m_ServerRpcObserverObject.GetClientIdsAsString()}!");
+            }
+        }
+
         protected override IEnumerator OnTearDown()
         {
             // Make sure to dispose of the native array
