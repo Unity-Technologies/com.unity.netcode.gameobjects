@@ -163,7 +163,7 @@ namespace TestProject.RuntimeTests
 
             Assert.True(m_ServerRpcObserverObject.NetworkObject.Observers.Count == 0, $"Despawned {m_ServerRpcObserverObject.name} but it still has {m_ServerRpcObserverObject.NetworkObject.Observers.Count} observers!");
 
-            for(int i = 4; i < NumberOfClients; i++)
+            for (int i = 4; i < NumberOfClients; i++)
             {
                 nonObservers.Add(m_ClientNetworkManagers[i].LocalClientId);
                 m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[i].LocalClientId);
