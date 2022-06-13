@@ -10,7 +10,9 @@ develop_nightly:
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
+{% if project.has_tests == "true" -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}_{{ validation_editor }}
+{% endif -%}
 {% endfor -%}
 
 develop_weekly_trunk:
