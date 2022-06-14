@@ -168,6 +168,23 @@ namespace Unity.Netcode.RuntimeTests
             Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out while waiting for client side despawns! (2nd pass)");
         }
 
+        [Test]
+        public void DynamicallySpawnedNoSceneOriginException()
+        {
+            var gameObject = new GameObject();
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.IsSpawned = true;
+            networkObject.SceneOriginHandle = 0;
+            networkObject.IsSceneObject = false;
+            // This validates invoking GetSceneOriginHandle will not throw an exception for a dynamically spawned NetworkObject
+            // when the scene of origin handle is zero
+            var sceneOriginHandle = networkObject.GetSceneOriginHandle();
+
+            // This validates that GetSceneOriginHandle will return the GameObject's scene handle that should be the currently active scene
+            var activeSceneHandle = UnityEngine.SceneManagement.SceneManager.GetActiveScene().handle;
+            Assert.IsTrue(sceneOriginHandle == activeSceneHandle, $"{nameof(NetworkObject)} should have returned the active scene handle of {activeSceneHandle} but returned {sceneOriginHandle}");
+        }
+
         private class TrackOnSpawnFunctions : NetworkBehaviour
         {
             public int OnNetworkSpawnCalledCount { get; private set; }
