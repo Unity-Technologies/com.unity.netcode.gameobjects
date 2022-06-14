@@ -10,7 +10,9 @@ develop_nightly:
   dependencies:
     - .yamato/_run-all.yml#run_all_tests
 {% for project in projects -%}
+{% if project.has_tests == "true" -%}
     - .yamato/code-coverage.yml#code_coverage_win_{{ project.name }}_{{ validation_editor }}
+{% endif -%}
 {% endfor -%}
 
 develop_weekly_trunk:
@@ -43,7 +45,7 @@ pull_request_trigger:
 {% for project in projects -%}
 {% for package in project.packages -%}
 {% if project.validate == "true" -%}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endif -%}
 {% endfor -%}
 {% for platform in test_platforms -%}
@@ -84,7 +86,7 @@ badges_test_trigger:
 {% for project in projects -%}
 {% for package in project.packages -%}
 {% if project.validate == "true" -%}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
 {% endif -%}
 {% for editor in project.test_editors -%}
 {% if editor != "trunk" -%}
