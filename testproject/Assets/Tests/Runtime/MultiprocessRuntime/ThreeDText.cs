@@ -1,7 +1,4 @@
 using UnityEngine;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
