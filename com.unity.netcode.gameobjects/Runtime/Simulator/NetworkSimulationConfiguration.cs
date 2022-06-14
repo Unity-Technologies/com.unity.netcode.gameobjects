@@ -73,15 +73,15 @@ namespace Unity.Netcode
         /// <param name="packetFuzzOffset"></param>
         /// <returns>A valid simulation configuration.</returns>
         public static NetworkSimulationConfiguration Create(
-            string name,
-            string description,
-            int packetDelayMs,
-            int packetJitterMs,
-            int packetLossInterval,
-            int packetLossPercent,
-            int packetDuplicationPercent,
-            int packetFuzzFactor,
-            int packetFuzzOffset)
+            string name = "",
+            string description = "",
+            int packetDelayMs = 0,
+            int packetJitterMs = 0,
+            int packetLossInterval = 0,
+            int packetLossPercent = 0,
+            int packetDuplicationPercent = 0,
+            int packetFuzzFactor = 0,
+            int packetFuzzOffset = 0)
         {
             var configuration = CreateInstance<NetworkSimulationConfiguration>();
 

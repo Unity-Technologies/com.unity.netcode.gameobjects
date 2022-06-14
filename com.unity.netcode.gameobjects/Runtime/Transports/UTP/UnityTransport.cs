@@ -220,6 +220,29 @@ namespace Unity.Netcode.Transports.UTP
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        [Serializable]
+        public struct SimulatorParameters
+        {
+            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketDelayMS;
+
+            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketJitterMS;
+
+            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
+            [SerializeField]
+            public int PacketDropRate;
+        }
+
+        public SimulatorParameters DebugSimulator = new SimulatorParameters
+        {
+            PacketDelayMS = 0,
+            PacketJitterMS = 0,
+            PacketDropRate = 0
+        };
+
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
         private NetworkSettings m_NetworkSettings;
@@ -487,6 +510,26 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
+        }
+
+        /// <summary>Set the parameters for the debug simulator.</summary>
+        /// <param name="packetDelay">Packet delay in milliseconds.</param>
+        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
+        /// <param name="dropRate">Packet drop percentage.</param>
+        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
+        {
+            if (m_Driver.IsCreated)
+            {
+                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
+                return;
+            }
+
+            DebugSimulator = new SimulatorParameters
+            {
+                PacketDelayMS = packetDelay,
+                PacketJitterMS = packetJitter,
+                PacketDropRate = dropRate
+            };
         }
 
         private bool StartRelayServer()
@@ -1065,10 +1108,10 @@ namespace Unity.Netcode.Transports.UTP
                 300,
                 NetworkParameterConstants.MTU,
                 ApplyMode.AllPackets,
-                packetDelayMs: configuration?.PacketDelayMs ?? 0,
-                packetJitterMs: configuration?.PacketJitterMs ?? 0,
+                packetDelayMs: configuration?.PacketDelayMs ?? DebugSimulator.PacketDelayMS,
+                packetJitterMs: configuration?.PacketJitterMs ?? DebugSimulator.PacketJitterMS,
                 packetDropInterval: configuration?.PacketLossInterval ?? 0,
-                packetDropPercentage: configuration?.PacketLossPercent ?? 0,
+                packetDropPercentage: configuration?.PacketLossPercent ?? DebugSimulator.PacketDropRate,
                 packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0,
                 fuzzFactor: configuration?.PacketFuzzFactor ?? 0,
                 fuzzOffset: configuration?.PacketFuzzOffset ?? 0
