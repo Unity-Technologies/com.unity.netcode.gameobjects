@@ -14,5 +14,12 @@
         "LinuxStandalone64",
         "WindowsStandalone32",
         "WindowsStandalone64"
+    ],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        }
     ]
 }
