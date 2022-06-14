@@ -1132,6 +1132,19 @@ namespace Unity.Netcode.Transports.UTP
             parameter->FuzzOffset = configuration.PacketFuzzOffset;
         }
 
+        internal SimulatorUtility.Parameters GetSimulatorParameters()
+        {
+            var simulatorPipeStageId = NetworkPipelineStageCollection.GetStageId(typeof(SimulatorPipelineStage));
+
+            SimulatorUtility.Parameters parameters;
+            unsafe
+            {
+                parameters = *m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(m_ReliableSequencedPipeline, simulatorPipeStageId);
+            }
+
+            return parameters;
+        }
+
         // -------------- Utility Types -------------------------------------------------------------------------------
 
 

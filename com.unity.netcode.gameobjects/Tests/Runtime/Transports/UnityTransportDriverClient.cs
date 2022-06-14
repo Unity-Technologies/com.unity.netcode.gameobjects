@@ -65,7 +65,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void Connect()
         {
-            var endpoint = NetworkEndPoint.LoopbackIpv4;
+            var endpoint = NetworkEndpoint.LoopbackIpv4;
             endpoint.Port = 7777;
 
             m_Connection = m_Driver.Connect(endpoint);

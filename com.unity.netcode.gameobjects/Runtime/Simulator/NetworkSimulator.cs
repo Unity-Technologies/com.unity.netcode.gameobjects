@@ -19,19 +19,12 @@ namespace Unity.Netcode
             }
         }
 
-        private UnityTransport m_Transport;
-
-        public void Start()
-        {
-            m_Transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as UnityTransport;
-            UpdateLiveParameters();
-        }
-
         public void UpdateLiveParameters()
         {
-            if (m_Transport != null)
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as UnityTransport;
+            if (transport != null)
             {
-                m_Transport.RefreshSimulationPipelineParameters(SimulationConfiguration);
+                transport.RefreshSimulationPipelineParameters(SimulationConfiguration);
             }
         }
     }

@@ -27,7 +27,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
-            clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
+            //clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
 
             base.OnServerAndClientsCreated();
         }
