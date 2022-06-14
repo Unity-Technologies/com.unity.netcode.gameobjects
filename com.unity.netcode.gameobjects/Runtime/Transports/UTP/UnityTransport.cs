@@ -5,7 +5,6 @@ using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
-using Unity.Netcode.Simulator;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
@@ -36,7 +35,7 @@ namespace Unity.Netcode.Transports.UTP
         private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
         private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
         private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
-        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
+        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndPoint Arguments.";
 
         public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
         {
@@ -203,7 +202,7 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
+            private static NetworkEndpoint ParseNetworkEndPoint(string ip, ushort port)
             {
                 if (!NetworkEndpoint.TryParse(ip, port, out var endpoint))
                 {
@@ -214,35 +213,12 @@ namespace Unity.Netcode.Transports.UTP
                 return endpoint;
             }
 
-            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint => ParseNetworkEndPoint(Address, Port);
 
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndPoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
-
-        [Serializable]
-        public struct SimulatorParameters
-        {
-            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
-            [SerializeField]
-            public int PacketDelayMS;
-
-            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
-            [SerializeField]
-            public int PacketJitterMS;
-
-            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
-            [SerializeField]
-            public int PacketDropRate;
-        }
-
-        public SimulatorParameters DebugSimulator = new SimulatorParameters
-        {
-            PacketDelayMS = 0,
-            PacketJitterMS = 0,
-            PacketDropRate = 0
-        };
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -511,26 +487,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
-        }
-
-        /// <summary>Set the parameters for the debug simulator.</summary>
-        /// <param name="packetDelay">Packet delay in milliseconds.</param>
-        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
-        /// <param name="dropRate">Packet drop percentage.</param>
-        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
-        {
-            if (m_Driver.IsCreated)
-            {
-                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
-                return;
-            }
-
-            DebugSimulator = new SimulatorParameters
-            {
-                PacketDelayMS = packetDelay,
-                PacketJitterMS = packetJitter,
-                PacketDropRate = dropRate
-            };
         }
 
         private bool StartRelayServer()

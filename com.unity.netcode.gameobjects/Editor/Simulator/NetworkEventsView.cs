@@ -2,11 +2,11 @@
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode.Editor
 {
     public class NetworkEventsView : VisualElement
     {
-        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Simulator/NetworkEventsView.uxml";
+        const string UXML = "Packages/com.unity.netcode.gameobjects/Editor/Simulator/NetworkEventsView.uxml";
 
         Button DisconnectButton => this.Q<Button>(nameof(DisconnectButton));
         Button ReconnectButton => this.Q<Button>(nameof(ReconnectButton));

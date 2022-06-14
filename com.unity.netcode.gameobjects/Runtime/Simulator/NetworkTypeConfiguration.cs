@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode
 {
     [CreateAssetMenu(
         fileName = nameof(NetworkTypeConfiguration),

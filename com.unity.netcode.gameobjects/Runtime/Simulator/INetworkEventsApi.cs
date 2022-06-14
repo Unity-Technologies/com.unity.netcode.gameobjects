@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode
 {
     public interface INetworkEventsApi
     {
