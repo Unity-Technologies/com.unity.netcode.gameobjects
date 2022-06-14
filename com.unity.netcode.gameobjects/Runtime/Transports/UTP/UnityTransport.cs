@@ -221,6 +221,10 @@ namespace Unity.Netcode.Transports.UTP
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        public bool IsDisabledBySimulator { get; private set; } = false;
+#endif
+
         [Serializable]
         public struct SimulatorParameters
         {
@@ -705,6 +709,13 @@ namespace Unity.Netcode.Transports.UTP
 
         private void Update()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (IsDisabledBySimulator)
+            {
+                return;
+            }
+#endif
+
             if (m_Driver.IsCreated)
             {
                 foreach (var kvp in m_SendQueue)
@@ -1174,6 +1185,16 @@ namespace Unity.Netcode.Transports.UTP
             parameter->PacketDuplicationPercentage = configuration.PacketDuplicationPercent;
             parameter->FuzzFactor = configuration.PacketFuzzFactor;
             parameter->FuzzOffset = configuration.PacketFuzzOffset;
+        }
+
+        public void TriggerDisconnect()
+        {
+            IsDisabledBySimulator = true;
+        }
+
+        public void TriggerReconnect()
+        {
+            IsDisabledBySimulator = false;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
