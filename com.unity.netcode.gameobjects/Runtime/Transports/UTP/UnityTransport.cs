@@ -1060,7 +1060,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 
-            var configuration = GetComponent<NetworkSimulator>()?.NetworkTypeConfiguration;
+            var configuration = GetComponent<NetworkSimulator>()?.SimulationConfiguration;
             m_NetworkSettings.WithSimulatorStageParameters(
                 300,
                 NetworkParameterConstants.MTU,
@@ -1103,7 +1103,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
-        public void RefreshSimulationPipelineParameters(NetworkTypeConfiguration configuration)
+        public void RefreshSimulationPipelineParameters(NetworkSimulationConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
             {
@@ -1120,7 +1120,7 @@ namespace Unity.Netcode.Transports.UTP
         unsafe void UpdatePipelineParameter(
             NetworkPipeline pipeline,
             NetworkPipelineStageId stageId,
-            NetworkTypeConfiguration configuration)
+            NetworkSimulationConfiguration configuration)
         {
             var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
             parameter->PacketDelayMs = configuration.PacketDelayMs;

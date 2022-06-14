@@ -11,7 +11,7 @@ namespace Unity.Netcode
 
         void TriggerLagSpike(TimeSpan duration);
 
-        void ChangeNetworkType(NetworkTypeConfiguration newNetworkType);
+        void ChangeNetworkType(NetworkSimulationConfiguration newNetworkSimulation);
     }
 
     public class NoOpNetworkEventsApi : INetworkEventsApi
@@ -31,9 +31,9 @@ namespace Unity.Netcode
             Debug.Log($"Triggering lag spike for {duration.Milliseconds} ms.");
         }
 
-        public void ChangeNetworkType(NetworkTypeConfiguration newNetworkType)
+        public void ChangeNetworkType(NetworkSimulationConfiguration newNetworkSimulation)
         {
-            Debug.Log($"Changing network type to {newNetworkType.Name}.");
+            Debug.Log($"Changing network type to {newNetworkSimulation.Name}.");
         }
     }
 }

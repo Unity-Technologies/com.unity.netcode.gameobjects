@@ -7,17 +7,32 @@ namespace Unity.Netcode
     public class NetworkSimulator : MonoBehaviour
     {
         [field: SerializeField]
-        public NetworkTypeConfiguration NetworkTypeConfiguration { get; set; }
+        private NetworkSimulationConfiguration m_simulationConfiguration;
+
+        public NetworkSimulationConfiguration SimulationConfiguration
+        {
+            get => m_simulationConfiguration;
+            set
+            {
+                m_simulationConfiguration = value;
+                UpdateLiveParameters();
+            }
+        }
+
+        private UnityTransport m_Transport;
+
+        public void Start()
+        {
+            m_Transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as UnityTransport;
+            UpdateLiveParameters();
+        }
 
         public void UpdateLiveParameters()
         {
-            var transport = GetComponent<UnityTransport>();
-            transport.RefreshSimulationPipelineParameters(NetworkTypeConfiguration);
-        }
-
-        public void OnValidate()
-        {
-            Debug.Log("Value has changed");
+            if (m_Transport != null)
+            {
+                m_Transport.RefreshSimulationPipelineParameters(SimulationConfiguration);
+            }
         }
     }
 }
