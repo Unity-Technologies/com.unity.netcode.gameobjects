@@ -221,9 +221,7 @@ namespace Unity.Netcode.Transports.UTP
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         public bool IsDisabledBySimulator { get; private set; } = false;
-#endif
 
         [Serializable]
         public struct SimulatorParameters
@@ -709,12 +707,10 @@ namespace Unity.Netcode.Transports.UTP
 
         private void Update()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (IsDisabledBySimulator)
             {
                 return;
             }
-#endif
 
             if (m_Driver.IsCreated)
             {
