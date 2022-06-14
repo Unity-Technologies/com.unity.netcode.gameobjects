@@ -147,7 +147,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private static void ProcessInSceneObjects(Scene scene, NetworkManager networkManager)
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
-            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.gameObject.scene.handle == scene.handle);
+            var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.NetworkManagerOwner != networkManager)
@@ -322,7 +322,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     var skip = false;
                     foreach (var networkManager in NetworkManagers)
                     {
-                        if (NetworkManager.LocalClientId == networkManager.LocalClientId)
+                        if (NetworkManager.LocalClientId == networkManager.LocalClientId || !networkManager.IsListening)
                         {
                             continue;
                         }
@@ -352,12 +352,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
             throw new Exception($"Failed to find any loaded scene named {sceneName}!");
         }
 
+        private bool ExcludeSceneFromSynchronizationCheck(Scene scene)
+        {
+            if (!NetworkManager.SceneManager.ScenesLoaded.ContainsKey(scene.handle) && SceneManager.GetActiveScene().handle != scene.handle)
+            {
+                return false;
+            }
+            return true;
+        }
+
         /// <summary>
         /// Constructor now must take NetworkManager
         /// </summary>
         public IntegrationTestSceneHandler(NetworkManager networkManager)
         {
             networkManager.SceneManager.OverrideGetAndAddNewlyLoadedSceneByName = GetAndAddNewlyLoadedSceneByName;
+            networkManager.SceneManager.ExcludeSceneFromSychronization = ExcludeSceneFromSynchronizationCheck;
             NetworkManagers.Add(networkManager);
             NetworkManagerName = networkManager.name;
             if (s_WaitForSeconds == null)

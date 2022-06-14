@@ -67,6 +67,10 @@ namespace TestProject.ManualTests
             if (sceneEvent.SceneEventType == SceneEventType.Load || sceneEvent.SceneEventType == SceneEventType.LoadComplete)
             {
                 sceneEventMsg += $" | { sceneEvent.LoadSceneMode}";
+                if (sceneEvent.Scene.IsValid() && sceneEvent.SceneEventType == SceneEventType.LoadComplete)
+                {
+                    sceneEventMsg += $" | SHID: {sceneEvent.Scene.handle}";
+                }
             }
 
             if (sceneEvent.SceneEventType == SceneEventType.UnloadEventCompleted || sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)

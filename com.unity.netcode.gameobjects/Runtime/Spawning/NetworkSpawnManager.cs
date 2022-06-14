@@ -477,15 +477,15 @@ namespace Unity.Netcode
                 return;
             }
 
-            // this initialization really should be at the bottom of the function
             networkObject.IsSpawned = true;
-
-            // this initialization really should be at the top of this function. If and when we break the
-            //  NetworkVariable dependency on NetworkBehaviour, this otherwise creates problems because
-            //  SetNetworkVariableData above calls InitializeVariables, and the 'baked out' data isn't ready there;
-            //  the current design banks on getting the network behaviour set and then only reading from it after the
-            //  below initialization code. However cowardice compels me to hold off on moving this until that commit
             networkObject.IsSceneObject = sceneObject;
+
+            // Always check to make sure our scene of origin is properly set for in-scene placed NetworkObjects
+            // Note: Always check SceneOriginHandle directly at this specific location.
+            if (networkObject.IsSceneObject != false && networkObject.SceneOriginHandle == 0)
+            {
+                networkObject.SceneOrigin = networkObject.gameObject.scene;
+            }
 
             // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
             // the NetworkObject since it uses the NetworkManager.Singleton when not set
@@ -810,6 +810,9 @@ namespace Unity.Netcode
             {
                 SpawnedObjectsList.Remove(networkObject);
             }
+
+            // Always clear out the observers list when despawned
+            networkObject.Observers.Clear();
 
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)

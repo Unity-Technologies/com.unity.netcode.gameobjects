@@ -43,6 +43,7 @@ projects:
     test_editors:
       - 2020.3
       - 2021.3
+      - 2022.2
       - trunk
   - name: minimalproject
     path: minimalproject
