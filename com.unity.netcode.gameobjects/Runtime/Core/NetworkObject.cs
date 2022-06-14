@@ -221,8 +221,7 @@ namespace Unity.Netcode
         /// </summary>
         internal int GetSceneOriginHandle()
         {
-            // Sanity check to make sure nothing
-            if (SceneOriginHandle == 0 && IsSpawned)
+            if (SceneOriginHandle == 0 && IsSpawned && IsSceneObject != false)
             {
                 throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
             }
