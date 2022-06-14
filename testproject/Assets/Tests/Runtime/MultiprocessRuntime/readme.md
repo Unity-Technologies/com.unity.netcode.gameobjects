@@ -254,7 +254,7 @@ During test execution, the main node's step will call an RPC on clients to trigg
 The MultiprocessTestPlayer, which is built by the sub-menu items under "Netcode" -> "Multiprocess Test", supports many workflows and configurations.
 
 ### Command Line
-Currently (as off May 31st 2022) the MultiprocessTestPlayer can be configured via the command line on all platforms that support parsing of command line arguments in the C# layer.
+Currently the MultiprocessTestPlayer can be configured via the command line on all platforms that support parsing of command line arguments in the C# layer.
 For example, this means that command line configuration is not available on Android.
 
 #### Setting the transport address
