@@ -20,6 +20,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Removed
 
 ### Fixed
+- Fixed issue where dynamically spawned `NetworkObject`s could throw an exception if the scene of origin handle was zero (0) and the `NetworkObject` was already spawned. (#2017)
 - Fixed issue where `NetworkObject.Observers` was not being cleared when despawned. (#2009)
 - Fixed `NetworkAnimator` could not run in the server authoritative mode. (#2003)
 - Fixed issue where late joining clients would get a soft synchronization error if any in-scene placed NetworkObjects were parented under another `NetworkObject`. (#1985)
