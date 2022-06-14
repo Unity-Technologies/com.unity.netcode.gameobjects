@@ -36,7 +36,7 @@ namespace TestProject.RuntimeTests
             var unityTransport = m_NetworkManagerGameObject.AddComponent<UnityTransport>();
 
             var prefabs = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            prefabs.Prefabs.Add(new NetworkPrefab { Prefab = m_DDOL_ObjectToSpawn });
+            prefabs.List.Add(new NetworkPrefab { Prefab = m_DDOL_ObjectToSpawn });
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
