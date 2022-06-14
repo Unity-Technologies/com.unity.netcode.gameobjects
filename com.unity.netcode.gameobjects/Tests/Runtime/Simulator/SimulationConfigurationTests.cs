@@ -46,6 +46,57 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(newValue, simulatorParameters.FuzzFactor);
             Assert.AreEqual(newValue, simulatorParameters.FuzzOffset);
 
+            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
+            NetcodeIntegrationTestHelpers.Destroy();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator GivenNetworkSimulator_WhenSimulatorConfigurationIsCreated_ThenSimulatorParamsUpdated()
+        {
+            int value = new System.Random().Next(1, 99);
+            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
+
+            var gameObject = new GameObject("NetworkSimulator");
+            var networkSimulator = gameObject.AddComponent<NetworkSimulator>();
+
+            networkSimulator.SimulationConfiguration = NetworkSimulationConfiguration.Create(
+                name: "Test Config",
+                description:"Test Config Description",
+                packetDelayMs: value,
+                packetJitterMs: value,
+                packetLossInterval: value,
+                packetLossPercent: value,
+                packetDuplicationPercent: value,
+                packetFuzzFactor: value,
+                packetFuzzOffset: value);
+
+            NetcodeIntegrationTestHelpers.Start(false, server, clients);
+
+            networkSimulator.SimulationConfiguration.PacketDelayMs = value;
+            networkSimulator.SimulationConfiguration.PacketJitterMs = value;
+            networkSimulator.SimulationConfiguration.PacketLossInterval = value;
+            networkSimulator.SimulationConfiguration.PacketLossPercent = value;
+            networkSimulator.SimulationConfiguration.PacketDuplicationPercent = value;
+            networkSimulator.SimulationConfiguration.PacketFuzzFactor = value;
+            networkSimulator.SimulationConfiguration.PacketFuzzOffset = value;
+
+            networkSimulator.UpdateLiveParameters();
+
+            var transport = (UnityTransport)NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+
+            var simulatorParameters = transport.GetSimulatorParameters();
+
+            Assert.AreEqual(value, simulatorParameters.PacketDelayMs);
+            Assert.AreEqual(value, simulatorParameters.PacketJitterMs);
+            Assert.AreEqual(value, simulatorParameters.PacketDropInterval);
+            Assert.AreEqual(value, simulatorParameters.PacketDropPercentage);
+            Assert.AreEqual(value, simulatorParameters.PacketDuplicationPercentage);
+            Assert.AreEqual(value, simulatorParameters.FuzzFactor);
+            Assert.AreEqual(value, simulatorParameters.FuzzOffset);
+
+            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
+            NetcodeIntegrationTestHelpers.Destroy();
             yield return null;
         }
 
