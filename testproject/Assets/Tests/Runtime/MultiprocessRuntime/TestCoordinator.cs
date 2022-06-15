@@ -59,7 +59,7 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
     private string m_ConnectAddress = "127.0.0.1";
-    public static string Port = "3076";
+    public static string Port = "7777";
     private bool m_IsClient;
 
     private void SetConfigurationTypeAndConnect(ConfigurationType type)
@@ -127,7 +127,7 @@ public class TestCoordinator : NetworkBehaviour
         // if we've tried all the configuration types and none of them are correct then we should throw an exception
         if (ConfigurationType == ConfigurationType.Unknown)
         {
-            throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
+            // throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
         }
 
         if (Instance != null)
