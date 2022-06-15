@@ -127,7 +127,7 @@ public class TestCoordinator : NetworkBehaviour
         // if we've tried all the configuration types and none of them are correct then we should throw an exception
         if (ConfigurationType == ConfigurationType.Unknown)
         {
-            throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
+            // throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
         }
 
         if (Instance != null)
