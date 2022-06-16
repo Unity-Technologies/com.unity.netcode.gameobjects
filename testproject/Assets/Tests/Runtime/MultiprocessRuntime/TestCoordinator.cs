@@ -124,10 +124,10 @@ public class TestCoordinator : NetworkBehaviour
         }
 
 
-        // if we've tried all the configuration types and none of them are correct then we should throw an exception
+        // if we've tried all the configuration types and none of them are correct then we should log it and just go with the default values
         if (ConfigurationType == ConfigurationType.Unknown)
         {
-            // throw new Exception("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
+            MultiprocessLogger.Log("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
         }
 
         if (Instance != null)
