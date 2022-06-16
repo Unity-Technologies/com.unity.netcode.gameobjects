@@ -220,6 +220,8 @@ namespace Unity.Netcode.Transports.UTP
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        public bool IsDisabledBySimulator { get; private set; } = false;
+
         [Serializable]
         public struct SimulatorParameters
         {
@@ -704,6 +706,11 @@ namespace Unity.Netcode.Transports.UTP
 
         private void Update()
         {
+            if (IsDisabledBySimulator)
+            {
+                return;
+            }
+
             if (m_Driver.IsCreated)
             {
                 foreach (var kvp in m_SendQueue)
@@ -1186,6 +1193,16 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             return parameters;
+        }
+
+        public void TriggerDisconnect()
+        {
+            IsDisabledBySimulator = true;
+        }
+
+        public void TriggerReconnect()
+        {
+            IsDisabledBySimulator = false;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 ﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
     <ui:VisualElement style="display: flex; flex-direction: row;">
         <ui:Button name="DisconnectButton" text="Disconnect" />
-        <ui:Button name="ReconnectButton" text="Reconnect" />
     </ui:VisualElement>
 
     <ui:VisualElement style="display: flex; flex-direction: row;">
