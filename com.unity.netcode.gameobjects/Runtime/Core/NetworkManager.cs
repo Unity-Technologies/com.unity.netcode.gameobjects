@@ -341,7 +341,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
 
-
+        /// <summary>
+        /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
+        /// </summary>
         public bool ShutdownInProgress { get { return m_ShuttingDown; } }
 
         /// <summary>
