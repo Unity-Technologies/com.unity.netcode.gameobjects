@@ -62,6 +62,9 @@ namespace Unity.Netcode
 
         internal Dictionary<ulong, ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, ConnectionApprovalResponse>();
 
+        /// <summary>
+        /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
+        /// </summary>
         public NetworkPrefabHandler PrefabHandler
         {
             get
