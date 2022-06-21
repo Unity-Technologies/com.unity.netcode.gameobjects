@@ -811,6 +811,9 @@ namespace Unity.Netcode
                 SpawnedObjectsList.Remove(networkObject);
             }
 
+            // Always clear out the observers list when despawned
+            networkObject.Observers.Clear();
+
             var gobj = networkObject.gameObject;
             if (destroyGameObject && gobj != null)
             {

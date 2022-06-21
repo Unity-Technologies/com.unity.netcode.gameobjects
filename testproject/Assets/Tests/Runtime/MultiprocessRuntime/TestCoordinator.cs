@@ -59,7 +59,7 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
     private string m_ConnectAddress = "127.0.0.1";
-    public static string Port = "3076";
+    public static string Port = "7777";
     private bool m_IsClient;
 
     private void SetConfigurationTypeAndConnect(ConfigurationType type)
@@ -79,21 +79,55 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
 
-        // There are two possible ways for configuration data to be set
-        // 1. From a webapi
-        // 2. From a text file resource
+        // Configuration via command line (supported for many but not all platforms)
         bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
         if (isClient)
         {
+            MultiprocessLogger.Log("Setting up via command line - client");
             m_IsClient = isClient;
+            var cli = new CommandLineProcessor(Environment.GetCommandLineArgs());
+            if (Environment.GetCommandLineArgs().Any(value => value == "-ip"))
+            {
+                m_ConnectAddress = cli.TransportAddress;
+            }
+            if (Environment.GetCommandLineArgs().Any(value => value == "-p"))
+            {
+                Port = cli.TransportPort;
+            }
             SetConfigurationTypeAndConnect(ConfigurationType.CommandLine);
         }
 
         if (ConfigurationType == ConfigurationType.Unknown)
         {
+            bool isHost = Environment.GetCommandLineArgs().Any(value => value == "host");
+            if (isHost)
+            {
+                MultiprocessLogger.Log("Setting up via command line - host");
+                var cli = new CommandLineProcessor(Environment.GetCommandLineArgs());
+                ConfigurationType = ConfigurationType.CommandLine;
+            }
+        }
+
+
+        // Configuration via configuration file - all platform support but set at build time
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            //TODO: For next PR
+        }
+
+        // configuration via WebApi - works on all platforms and is set at run time
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
             MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi");
             ConfigureViaWebApi();
             MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
+        }
+
+
+        // if we've tried all the configuration types and none of them are correct then we should log it and just go with the default values
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            MultiprocessLogger.Log("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
         }
 
         if (Instance != null)

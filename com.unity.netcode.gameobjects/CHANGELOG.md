@@ -17,12 +17,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.1.0. (#2025)
 - (API Breaking) `ConnectionApprovalCallback` is no longer an `event` and will not allow more than 1 handler registered at a time. Also, `ConnectionApprovalCallback` is now a `Func<>` taking `ConnectionApprovalRequest` in and returning `ConnectionApprovalResponse` back out (#1972)
 
 ### Removed
 
 ### Fixed
-
+- Fixed issue where dynamically spawned `NetworkObject`s could throw an exception if the scene of origin handle was zero (0) and the `NetworkObject` was already spawned. (#2017)
+- Fixed issue where `NetworkObject.Observers` was not being cleared when despawned. (#2009)
 - Fixed `NetworkAnimator` could not run in the server authoritative mode. (#2003)
 - Fixed issue where late joining clients would get a soft synchronization error if any in-scene placed NetworkObjects were parented under another `NetworkObject`. (#1985)
 - Fixed issue where `NetworkBehaviourReference` would throw a type cast exception if using `NetworkBehaviourReference.TryGet` and the component type was not found. (#1984)

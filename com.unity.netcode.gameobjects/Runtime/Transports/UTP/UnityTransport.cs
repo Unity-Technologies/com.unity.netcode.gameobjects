@@ -1137,6 +1137,8 @@ namespace Unity.Netcode.Transports.UTP
 
             DisposeInternals();
 
+            m_ReliableReceiveQueues.Clear();
+
             // We must reset this to zero because UTP actually re-uses clientIds if there is a clean disconnect
             m_ServerClientId = 0;
         }

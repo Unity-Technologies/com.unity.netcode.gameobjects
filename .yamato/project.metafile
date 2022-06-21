@@ -43,6 +43,7 @@ projects:
     test_editors:
       - 2020.3
       - 2021.3
+      - 2022.2
       - trunk
   - name: minimalproject
     path: minimalproject
@@ -61,6 +62,7 @@ projects:
     has_tests: true
     test_editors:
       - 2021.3
+      - 2022.2
       - trunk
 
 # Scripting backends used by Standalone Playmode Tests

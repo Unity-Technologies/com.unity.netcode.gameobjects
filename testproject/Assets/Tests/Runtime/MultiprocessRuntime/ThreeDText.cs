@@ -1,7 +1,4 @@
 using UnityEngine;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -83,7 +80,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled} {testCoordinator.ConfigurationType}\n" +
                     $"Transport: {transportString}\n" +
                     $"{CommandLineArguments}\n" +
-                    $"IsHost: {NetworkManager.Singleton.IsHost} IsClient: {NetworkManager.Singleton.IsClient}\n" +
+                    $"IsHost: {NetworkManager.Singleton.IsHost} IsClient: {NetworkManager.Singleton.IsClient} {NetworkManager.Singleton.IsConnectedClient}\n" +
                     $"{m_UpdateCounter}\n";
             }
         }
