@@ -244,6 +244,8 @@ namespace Unity.Netcode.Editor
         /// does not already have a NetworkObject component.  If not it will notify
         /// the user that NetworkBehaviours require a NetworkObject.
         /// </summary>
+        /// <param name="gameObject"><see cref="GameObject"/> to start checking for a <see cref="NetworkObject"/></param>
+        /// <param name="networkObjectRemoved">used internally</param>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
             // If there are no NetworkBehaviours or no gameObject, then exit early
