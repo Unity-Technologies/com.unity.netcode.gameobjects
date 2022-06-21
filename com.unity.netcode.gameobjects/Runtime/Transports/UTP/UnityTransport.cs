@@ -82,15 +82,34 @@ namespace Unity.Netcode.Transports.UTP
             Connected,
         }
 
+        /// <summary>
+        /// The default maximum (receive) packet queue size
+        /// </summary>
         public const int InitialMaxPacketQueueSize = 128;
+
+        /// <summary>
+        /// The default maximum payload size
+        /// </summary>
         public const int InitialMaxPayloadSize = 6 * 1024;
+
+        /// <summary>
+        /// The default maximum send queue size
+        /// </summary>
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
+
+        /// <summary>
+        /// The global <see cref="INetworkStreamDriverConstructor"/> implementation
+        /// </summary>
         public static INetworkStreamDriverConstructor s_DriverConstructor;
 #pragma warning restore IDE1006 // Naming Styles
+
+        /// <summary>
+        /// Returns either the global <see cref="INetworkStreamDriverConstructor"/> implementation or the current <see cref="UnityTransport"/> instance
+        /// </summary>
         public INetworkStreamDriverConstructor DriverConstructor => s_DriverConstructor ?? this;
 
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
@@ -218,6 +237,11 @@ namespace Unity.Netcode.Transports.UTP
             public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
+        /// <summary>
+        /// The connection (address) data for this <see cref="UnityTransport"/> instance.
+        /// This is where you can change IP Address, Port, or server's listen address.
+        /// <see cref="ConnectionAddressData"/>
+        /// </summary>
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
         [Serializable]
@@ -236,6 +260,12 @@ namespace Unity.Netcode.Transports.UTP
             public int PacketDropRate;
         }
 
+        /// <summary>
+        /// Can be used to simulate poor network conditions such as:
+        /// - packet delay/latency
+        /// - packet jitter (variances in latency, see: https://en.wikipedia.org/wiki/Jitter)
+        /// - packet drop rate (packet loss)
+        /// </summary>
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
             PacketDelayMS = 0,
