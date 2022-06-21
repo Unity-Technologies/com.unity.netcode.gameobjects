@@ -79,6 +79,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a network update system to be executed in all network update stages.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to register for all network updates</param>
         public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
@@ -90,6 +91,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a network update system to be executed in a specific network update stage.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to register for all network updates</param>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> being registered for the <see cref="INetworkUpdateSystem"/> implementation</param>
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             var sysSet = s_UpdateSystem_Sets[updateStage];
@@ -120,6 +123,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Unregisters a network update system from all network update stages.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to deregister from all network updates</param>
         public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
@@ -131,6 +135,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Unregisters a network update system from a specific network update stage.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to deregister from all network updates</param>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> to be deregistered from the <see cref="INetworkUpdateSystem"/> implementation</param>
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             var sysSet = s_UpdateSystem_Sets[updateStage];
