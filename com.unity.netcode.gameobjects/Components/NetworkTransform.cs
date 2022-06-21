@@ -15,7 +15,16 @@ namespace Unity.Netcode.Components
     public class NetworkTransform : NetworkBehaviour
     {
         public const float PositionThresholdDefault = 0.001f;
+        /// <summary>
+        /// The default rotation angle threshold value.
+        /// Any changes above this threshold will be replicated
+        /// </summary>
         public const float RotAngleThresholdDefault = 0.01f;
+
+        /// <summary>
+        /// The default scale threshold value.
+        /// Any changes above this threshold will be replicated
+        /// </summary>
         public const float ScaleThresholdDefault = 0.01f;
 
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
@@ -248,11 +257,25 @@ namespace Unity.Netcode.Components
         public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
         public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
 
+        /// <summary>
+        /// The current position threshold value
+        /// Any changes to the position that exceeds the current threshold value will be replicated
+        /// </summary>
         public float PositionThreshold = PositionThresholdDefault;
 
+        /// <summary>
+        /// The current rotation threshold value
+        /// Any changes to the rotation that exceeds the current threshold value will be replicated
+        /// Minimum Value: 0.001
+        /// Maximum Value: 360.0
+        /// </summary>
         [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
 
+        /// <summary>
+        /// The current scale threshold value
+        /// Any changes to the scale that exceeds the current threshold value will be replicated
+        /// </summary>
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -265,6 +288,10 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
         private bool m_LastInterpolateLocal = false; // was the last frame local
 
+        /// <summary>
+        /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
+        /// Note: can be changed during runtime.
+        /// </summary>
         public bool Interpolate = true;
         private bool m_LastInterpolate = true; // was the last frame interpolated
 
