@@ -231,6 +231,9 @@ namespace Unity.Netcode
 
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
+        /// <summary>
+        /// The <see cref="NetworkSceneManager"/> instance created after starting the <see cref="NetworkManager"/>
+        /// </summary>
         public NetworkSceneManager SceneManager { get; private set; }
 
         public const ulong ServerClientId = 0;
