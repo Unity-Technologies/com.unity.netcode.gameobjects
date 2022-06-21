@@ -959,6 +959,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a server
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in server mode successfully.</returns>
         public bool StartServer()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -997,6 +998,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a client
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
         public bool StartClient()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1029,6 +1031,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a Host
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
         public bool StartHost()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
