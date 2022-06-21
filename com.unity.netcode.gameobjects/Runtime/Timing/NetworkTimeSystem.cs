@@ -36,7 +36,15 @@ namespace Unity.Netcode
         /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
         /// </summary>
         public double AdjustmentRatio { get; set; }
+
+        /// <summary>
+        /// The current local time with the local time offset applied
+        /// </summary>
         public double LocalTime => m_TimeSec + m_CurrentLocalTimeOffset;
+
+        /// <summary>
+        /// The current server time with the server time offset applied
+        /// </summary>
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
         internal double LastSyncedServerTimeSec { get; private set; }
