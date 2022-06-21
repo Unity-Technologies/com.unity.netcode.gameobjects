@@ -1180,20 +1180,11 @@ namespace Unity.Netcode.Transports.UTP
             parameter->PacketDuplicationPercentage = configuration.PacketDuplicationPercent;
             parameter->FuzzFactor = configuration.PacketFuzzFactor;
             parameter->FuzzOffset = configuration.PacketFuzzOffset;
+
+            m_NetworkSettings.AddRawParameterStruct(ref *parameter);
         }
 
-        internal SimulatorUtility.Parameters GetSimulatorParameters()
-        {
-            var simulatorPipeStageId = NetworkPipelineStageCollection.GetStageId(typeof(SimulatorPipelineStage));
-
-            SimulatorUtility.Parameters parameters;
-            unsafe
-            {
-                parameters = *m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(m_ReliableSequencedPipeline, simulatorPipeStageId);
-            }
-
-            return parameters;
-        }
+        internal SimulatorUtility.Parameters GetSimulatorParameters() => m_NetworkSettings.GetSimulatorStageParameters();
 
         public void TriggerDisconnect()
         {

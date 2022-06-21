@@ -50,11 +50,15 @@ namespace Unity.Netcode
         [field: SerializeField]
         public int PacketDuplicationPercent { get; set; }
 
-        // TODO: Clear up what this do
+        /// <summary>
+        /// Value for the percentage of how much of a packet should be fuzzed.
+        /// </summary>
         [field: SerializeField]
         public int PacketFuzzFactor { get; set; }
 
-        // TODO: Clear up what this do
+        /// <summary>
+        /// Value for where to start fuzzing the packet. To be used with <see cref="PacketFuzzFactor"/>.
+        /// </summary>
         [field: SerializeField]
         public int PacketFuzzOffset { get; set; }
 
