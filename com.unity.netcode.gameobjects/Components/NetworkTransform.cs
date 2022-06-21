@@ -945,6 +945,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
+        /// <returns>(<see cref="true"/> or <see cref="false"/>) where when false it runs as owner-client authoritative</returns>
         protected virtual bool OnIsServerAuthoritative()
         {
             return true;
