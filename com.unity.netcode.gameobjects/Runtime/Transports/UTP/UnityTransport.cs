@@ -722,7 +722,6 @@ namespace Unity.Netcode.Transports.UTP
 
                 m_Driver.ScheduleUpdate().Complete();
 
-#if UTP_RELAY_STATUS_AVAILABLE
                 if (m_ProtocolType == ProtocolType.RelayUnityTransport && m_Driver.GetRelayConnectionStatus() == RelayConnectionStatus.AllocationInvalid)
                 {
                     Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
@@ -731,7 +730,6 @@ namespace Unity.Netcode.Transports.UTP
                     InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, Time.realtimeSinceStartup);
                     return;
                 }
-#endif
 
                 while (AcceptConnection() && m_Driver.IsCreated)
                 {
