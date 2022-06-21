@@ -1,21 +1,31 @@
 ﻿using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode
 {
     [RequireComponent(typeof(UnityTransport))]
     public class NetworkSimulator : MonoBehaviour
     {
         [field: SerializeField]
-        public NetworkTypeConfiguration NetworkTypeConfiguration { get; set; }
+        private NetworkSimulationConfiguration m_simulationConfiguration;
 
-        [field: SerializeField]
-        public INetworkSimulatorScenario NetworkSimulatorScenario { get; set; }
+        public NetworkSimulationConfiguration SimulationConfiguration
+        {
+            get => m_simulationConfiguration;
+            set
+            {
+                m_simulationConfiguration = value;
+                UpdateLiveParameters();
+            }
+        }
 
         public void UpdateLiveParameters()
         {
-            var transport = GetComponent<UnityTransport>();
-            transport.RefreshSimulationPipelineParameters(NetworkTypeConfiguration);
+            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as UnityTransport;
+            if (transport != null)
+            {
+                transport.RefreshSimulationPipelineParameters(SimulationConfiguration);
+            }
         }
     }
 }

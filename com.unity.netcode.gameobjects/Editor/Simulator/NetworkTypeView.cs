@@ -4,11 +4,11 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode.Editor
 {
     public class NetworkTypeView : VisualElement
     {
-        const string UXML = "Packages/com.unity.netcode.gameobjects/Runtime/Simulator/NetworkTypeView.uxml";
+        const string UXML = "Packages/com.unity.netcode.gameobjects/Editor/Simulator/NetworkTypeView.uxml";
         const string Custom = nameof(Custom);
 
         readonly NetworkSimulator m_NetworkSimulator;
@@ -28,9 +28,9 @@ namespace Unity.Netcode.Simulator
         public NetworkTypeView(NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
-            if (m_NetworkSimulator.NetworkTypeConfiguration == null)
+            if (m_NetworkSimulator.SimulationConfiguration == null)
             {
-                m_NetworkSimulator.NetworkTypeConfiguration = NetworkTypePresets.None;
+                m_NetworkSimulator.SimulationConfiguration = NetworkTypePresets.None;
             }
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
@@ -41,13 +41,13 @@ namespace Unity.Netcode.Simulator
             PresetDropdown.choices = presets;
             PresetDropdown.index = HasCustomValue
                     ? PresetDropdown.choices.IndexOf(Custom)
-                    : PresetDropdown.choices.IndexOf(m_NetworkSimulator.NetworkTypeConfiguration.Name);
+                    : PresetDropdown.choices.IndexOf(m_NetworkSimulator.SimulationConfiguration.Name);
             PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
 
-            CustomPresetValue.objectType = typeof(NetworkTypeConfiguration);
+            CustomPresetValue.objectType = typeof(NetworkSimulationConfiguration);
             if (HasCustomValue)
             {
-                CustomPresetValue.value = m_NetworkSimulator.NetworkTypeConfiguration;
+                CustomPresetValue.value = m_NetworkSimulator.SimulationConfiguration;
             }
             CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChanged);
 
@@ -59,16 +59,16 @@ namespace Unity.Netcode.Simulator
             PacketFuzzFactorSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketFuzzFactor(change.newValue));
             PacketFuzzOffsetSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketFuzzOffset(change.newValue));
 
-            UpdateSliders(m_NetworkSimulator.NetworkTypeConfiguration);
+            UpdateSliders(m_NetworkSimulator.SimulationConfiguration);
 
             UpdateEnabled();
         }
 
-        bool HasValue => m_NetworkSimulator.NetworkTypeConfiguration != null;
+        bool HasValue => m_NetworkSimulator.SimulationConfiguration != null;
 
         bool HasCustomValue => HasValue
                                && NetworkTypePresets.Values.All(
-                                x => x.Name != m_NetworkSimulator.NetworkTypeConfiguration.Name);
+                                x => x.Name != m_NetworkSimulator.SimulationConfiguration.Name);
 
         void UpdateEnabled()
         {
@@ -106,14 +106,14 @@ namespace Unity.Netcode.Simulator
 
         void OnCustomPresetChanged(ChangeEvent<Object> evt)
         {
-            m_NetworkSimulator.NetworkTypeConfiguration = evt.newValue as NetworkTypeConfiguration;
+            m_NetworkSimulator.SimulationConfiguration = evt.newValue as NetworkSimulationConfiguration;
 
             UpdateEnabled();
 
-            UpdateSliders(m_NetworkSimulator.NetworkTypeConfiguration);
+            UpdateSliders(m_NetworkSimulator.SimulationConfiguration);
         }
 
-        void UpdateSliders(NetworkTypeConfiguration configuration)
+        void UpdateSliders(NetworkSimulationConfiguration configuration)
         {
             UpdatePacketDelay(configuration.PacketDelayMs);
             UpdatePacketJitter(configuration.PacketJitterMs);
@@ -128,7 +128,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketDelaySlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketDelayMs = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketDelayMs = value;
 
             UpdateLiveIfPlaying();
         }
@@ -137,7 +137,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketJitterSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketJitterMs = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketJitterMs = value;
 
             UpdateLiveIfPlaying();
         }
@@ -146,7 +146,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketLossIntervalSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketLossInterval = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketLossInterval = value;
 
             UpdateLiveIfPlaying();
         }
@@ -155,7 +155,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketLossPercentSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketLossPercent = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketLossPercent = value;
 
             UpdateLiveIfPlaying();
         }
@@ -164,7 +164,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketDuplicationPercentSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketDuplicationPercent = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketDuplicationPercent = value;
 
             UpdateLiveIfPlaying();
         }
@@ -173,7 +173,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketFuzzFactorSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketFuzzFactor = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketFuzzFactor = value;
 
             UpdateLiveIfPlaying();
         }
@@ -182,7 +182,7 @@ namespace Unity.Netcode.Simulator
         {
             PacketFuzzOffsetSlider.SetValueWithoutNotify(value);
 
-            m_NetworkSimulator.NetworkTypeConfiguration.PacketFuzzOffset = value;
+            m_NetworkSimulator.SimulationConfiguration.PacketFuzzOffset = value;
 
             UpdateLiveIfPlaying();
         }

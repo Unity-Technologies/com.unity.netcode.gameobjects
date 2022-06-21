@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace Unity.Netcode.Simulator
+namespace Unity.Netcode
 {
     public interface INetworkSimulatorScenario
     {

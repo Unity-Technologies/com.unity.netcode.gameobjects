@@ -5,7 +5,6 @@ using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
-using Unity.Netcode.Simulator;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
@@ -36,7 +35,7 @@ namespace Unity.Netcode.Transports.UTP
         private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
         private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
         private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
-        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
+        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndPoint Arguments.";
 
         public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
         {
@@ -203,7 +202,7 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
+            private static NetworkEndpoint ParseNetworkEndPoint(string ip, ushort port)
             {
                 if (!NetworkEndpoint.TryParse(ip, port, out var endpoint))
                 {
@@ -214,9 +213,9 @@ namespace Unity.Netcode.Transports.UTP
                 return endpoint;
             }
 
-            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint => ParseNetworkEndPoint(Address, Port);
 
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndPoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
@@ -1111,15 +1110,15 @@ namespace Unity.Netcode.Transports.UTP
         {
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 
-            var configuration = GetComponent<NetworkSimulator>()?.NetworkTypeConfiguration;
+            var configuration = GetComponent<NetworkSimulator>()?.SimulationConfiguration;
             m_NetworkSettings.WithSimulatorStageParameters(
                 300,
                 NetworkParameterConstants.MTU,
                 ApplyMode.AllPackets,
-                packetDelayMs: configuration?.PacketDelayMs ?? 0,
-                packetJitterMs: configuration?.PacketJitterMs ?? 0,
+                packetDelayMs: configuration?.PacketDelayMs ?? DebugSimulator.PacketDelayMS,
+                packetJitterMs: configuration?.PacketJitterMs ?? DebugSimulator.PacketJitterMS,
                 packetDropInterval: configuration?.PacketLossInterval ?? 0,
-                packetDropPercentage: configuration?.PacketLossPercent ?? 0,
+                packetDropPercentage: configuration?.PacketLossPercent ?? DebugSimulator.PacketDropRate,
                 packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0,
                 fuzzFactor: configuration?.PacketFuzzFactor ?? 0,
                 fuzzOffset: configuration?.PacketFuzzOffset ?? 0
@@ -1154,7 +1153,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
-        public void RefreshSimulationPipelineParameters(NetworkTypeConfiguration configuration)
+        public void RefreshSimulationPipelineParameters(NetworkSimulationConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
             {
@@ -1171,7 +1170,7 @@ namespace Unity.Netcode.Transports.UTP
         unsafe void UpdatePipelineParameter(
             NetworkPipeline pipeline,
             NetworkPipelineStageId stageId,
-            NetworkTypeConfiguration configuration)
+            NetworkSimulationConfiguration configuration)
         {
             var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
             parameter->PacketDelayMs = configuration.PacketDelayMs;
@@ -1181,7 +1180,11 @@ namespace Unity.Netcode.Transports.UTP
             parameter->PacketDuplicationPercentage = configuration.PacketDuplicationPercent;
             parameter->FuzzFactor = configuration.PacketFuzzFactor;
             parameter->FuzzOffset = configuration.PacketFuzzOffset;
+
+            m_NetworkSettings.AddRawParameterStruct(ref *parameter);
         }
+
+        internal SimulatorUtility.Parameters GetSimulatorParameters() => m_NetworkSettings.GetSimulatorStageParameters();
 
         public void TriggerDisconnect()
         {
