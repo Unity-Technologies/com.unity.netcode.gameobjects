@@ -16,16 +16,42 @@ namespace Unity.Netcode
 
     /// <summary>
     /// Defines network update stages being executed by the network update loop.
+    /// For more details on update execution orders:
+    /// https://docs.unity3d.com/Manual/ExecutionOrder.html
     /// </summary>
     public enum NetworkUpdateStage : byte
     {
-        Unset = 0, // Default
+        /// <summary>
+        /// Default value
+        /// </summary>
+        Unset = 0,
+        /// <summary>
+        /// Very first initialization update
+        /// </summary>
         Initialization = 1,
+        /// <summary>
+        /// Invoked before Fixed update
+        /// </summary>
         EarlyUpdate = 2,
+        /// <summary>
+        /// Fixed Update (i.e. state machine, physics, animations, etc)
+        /// </summary>
         FixedUpdate = 3,
+        /// <summary>
+        /// Updated before the Monobehaviour.Update for all components is invoked
+        /// </summary>
         PreUpdate = 4,
+        /// <summary>
+        /// Updated when the Monobehaviour.Update for all components is invoked
+        /// </summary>
         Update = 5,
+        /// <summary>
+        /// Updated before the Monobehaviour.LateUpdate for all components is invoked
+        /// </summary>
         PreLateUpdate = 6,
+        /// <summary>
+        /// Updated after the Monobehaviour.LateUpdate for all components is invoked
+        /// </summary>
         PostLateUpdate = 7
     }
 
