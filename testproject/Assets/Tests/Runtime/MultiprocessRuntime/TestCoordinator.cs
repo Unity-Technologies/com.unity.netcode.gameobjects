@@ -27,7 +27,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 60;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
