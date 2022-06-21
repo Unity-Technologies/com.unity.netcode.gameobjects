@@ -11,8 +11,8 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class SimulationConfigurationTests
     {
-        [UnityTest]
-        public IEnumerator GivenSimulationConfiguration_WhenUpdatedAtRuntime_ThenSimulatorParamsUpdated()
+        [Test]
+        public void GivenSimulationConfiguration_WhenUpdatedAtRuntime_ThenSimulatorParamsUpdated()
         {
             int newValue = new System.Random().Next(1, 99);
             NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
@@ -48,11 +48,10 @@ namespace Unity.Netcode.RuntimeTests
 
             NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
             NetcodeIntegrationTestHelpers.Destroy();
-            yield return null;
         }
 
-        [UnityTest]
-        public IEnumerator GivenNetworkSimulator_WhenSimulatorConfigurationIsCreated_ThenSimulatorParamsUpdated()
+        [Test]
+        public void GivenNetworkSimulator_WhenSimulatorConfigurationIsCreated_ThenSimulatorParamsUpdated()
         {
             int value = new System.Random().Next(1, 99);
             NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
@@ -97,7 +96,6 @@ namespace Unity.Netcode.RuntimeTests
 
             NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
             NetcodeIntegrationTestHelpers.Destroy();
-            yield return null;
         }
 
     }
