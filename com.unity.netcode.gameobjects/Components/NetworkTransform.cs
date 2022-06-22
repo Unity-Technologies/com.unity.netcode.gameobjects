@@ -253,9 +253,42 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
-        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
+        /// <summary>
+        /// Whether or not x component of position will be replicated
+        /// </summary>
+        public bool SyncPositionX = true;
+        /// <summary>
+        /// Whether or not y component of position will be replicated
+        /// </summary>
+        public bool SyncPositionY = true;
+        /// <summary>
+        /// Whether or not z component of position will be replicated
+        /// </summary>
+        public bool SyncPositionZ = true;
+        /// <summary>
+        /// Whether or not x component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleX = true;
+        /// <summary>
+        /// Whether or not y component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleY = true;
+        /// <summary>
+        /// Whether or not z component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleZ = true;
+        /// <summary>
+        /// Whether or not x component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleX = true;
+        /// <summary>
+        /// Whether or not y component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleY = true;
+        /// <summary>
+        /// Whether or not z component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleZ = true;
 
         /// <summary>
         /// The current position threshold value
