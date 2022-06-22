@@ -9,7 +9,6 @@ using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using Unity.Netcode.Transports.UTP;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
@@ -17,17 +16,23 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     public class PacketLossMetricsTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
-        private readonly int m_PacketLossRate = 25;
-        private int m_DropInterval = 5;
+
+        const int PacketLossRate = 25;
+        const int PacketLossInterval = 5;
 
         public PacketLossMetricsTests()
             : base(HostOrServer.Server)
-        {}
+        {
+        }
 
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
-            clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
+            clientTransport.UpdateSimulationPipelineParameters(
+                NetworkSimulatorConfiguration.Create(
+                    Guid.NewGuid().ToString(),
+                    packetLossPercent: PacketLossRate,
+                    packetLossInterval: PacketLossInterval));
 
             base.OnServerAndClientsCreated();
         }
@@ -39,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 NetworkMetricTypes.PacketLoss,
                 metric => metric == 0.0d);
 
-            for (int i = 0; i < 1000; ++i)
+            for (var i = 0; i < 1000; ++i)
             {
                 using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
                 {
@@ -57,13 +62,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketLossAsClient()
         {
-            double packetLossRate = m_PacketLossRate/100d;
+            var packetLossRate = PacketLossRate / 100d;
             var clientNetworkManager = m_ClientNetworkManagers[0];
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
                 NetworkMetricTypes.PacketLoss,
                 metric => Math.Abs(metric - packetLossRate) < Double.Epsilon);
 
-            for (int i = 0; i < 1000; ++i)
+            for (var i = 0; i < 1000; ++i)
             {
                 using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
                 {
