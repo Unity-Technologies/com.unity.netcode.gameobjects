@@ -234,8 +234,14 @@ namespace Unity.Netcode.Transports.UTP
                 return endpoint;
             }
 
+            /// <summary>
+            /// Endpoint (IP address and port) clients will connect to.
+            /// </summary>
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
+            /// <summary>
+            /// Endpoint (IP address and port) server will listen/bind on.
+            /// </summary>
             public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
