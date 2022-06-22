@@ -813,8 +813,8 @@ namespace Unity.Netcode
         // if and when we have different systems for where it is expected that orphans survive across ticks,
         //   then this warning will remind us that we need to revamp the system because then we can no longer simply
         //   spawn the orphan without its parent (at least, not when its transform is set to local coords mode)
-        //   - because then you’ll have children popping at the wrong location not having their parent’s global position to root them
-        //   - and then they’ll pop to the correct location after they get the parent, and that would be not good
+        //   - because then you'll have children popping at the wrong location not having their parent's global position to root them
+        //   - and then they'll pop to the correct location after they get the parent, and that would be not good
         internal static void VerifyParentingStatus()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

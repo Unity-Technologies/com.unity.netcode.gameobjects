@@ -8,6 +8,7 @@ namespace Unity.Netcode
     /// Solves for incoming values that are jittered
     /// Partially solves for message loss. Unclamped lerping helps hide this, but not completely
     /// </summary>
+    /// <typeparam name="T">The type of interpolated value</typeparam>
     public abstract class BufferedLinearInterpolator<T> where T : struct
     {
         internal float MaxInterpolationBound = 3.0f;
@@ -24,7 +25,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// There’s two factors affecting interpolation: buffering (set in NetworkManager’s NetworkTimeSystem) and interpolation time, which is the amount of time it’ll take to reach the target. This is to affect the second one.
+        /// There's two factors affecting interpolation: buffering (set in NetworkManager's NetworkTimeSystem) and interpolation time, which is the amount of time it'll take to reach the target. This is to affect the second one.
         /// </summary>
         public float MaximumInterpolationTime = 0.1f;
 
@@ -73,7 +74,7 @@ namespace Unity.Netcode
         private bool InvalidState => m_Buffer.Count == 0 && m_LifetimeConsumedCount == 0;
 
         /// <summary>
-        /// Resets Interpolator to initial state
+        /// Resets interpolator to initial state
         /// </summary>
         public void Clear()
         {
@@ -85,6 +86,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Teleports current interpolation value to targetValue.
         /// </summary>
+        /// <param name="targetValue">The target value to teleport instantly</param>
+        /// <param name="serverTime">The current server time</param>
         public void ResetTo(T targetValue, double serverTime)
         {
             m_LifetimeConsumedCount = 1;
@@ -222,6 +225,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Add measurements to be used during interpolation. These will be buffered before being made available to be displayed as "latest value".
         /// </summary>
+        /// <param name="newMeasurement">The new measurement value to use</param>
+        /// <param name="sentTime">The time to record for measurement</param>
         public void AddMeasurement(T newMeasurement, double sentTime)
         {
             m_NbItemsReceivedThisFrame++;
@@ -259,10 +264,19 @@ namespace Unity.Netcode
         /// <summary>
         /// Method to override and adapted to the generic type. This assumes interpolation for that value will be clamped.
         /// </summary>
+        /// <param name="start">The start value (min)</param>
+        /// <param name="end">The end value (max)</param>
+        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
+        /// <returns>The interpolated value</returns>
         protected abstract T Interpolate(T start, T end, float time);
+
         /// <summary>
         /// Method to override and adapted to the generic type. This assumes interpolation for that value will not be clamped.
         /// </summary>
+        /// <param name="start">The start value (min)</param>
+        /// <param name="end">The end value (max)</param>
+        /// <param name="time">The time value used to interpolate between start and end values (pos)</param>
+        /// <returns>The interpolated value</returns>
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
 
