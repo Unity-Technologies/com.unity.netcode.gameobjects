@@ -448,6 +448,9 @@ namespace Unity.Netcode
             OnListChanged?.Invoke(listEvent);
         }
 
+        /// <summary>
+        /// This is actually unused left-over from a previous interface
+        /// </summary>
         public int LastModifiedTick
         {
             get

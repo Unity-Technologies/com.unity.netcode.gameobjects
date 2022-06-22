@@ -12,6 +12,9 @@ namespace Unity.Netcode
         /// </summary>
         internal const NetworkDelivery Delivery = NetworkDelivery.ReliableFragmentedSequenced;
 
+        /// <summary>
+        /// Maintains a link to the associated NetworkBehaviour
+        /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
 
         public void Initialize(NetworkBehaviour networkBehaviour)

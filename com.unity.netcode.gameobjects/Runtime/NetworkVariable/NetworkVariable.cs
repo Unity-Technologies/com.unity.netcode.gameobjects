@@ -31,6 +31,9 @@ namespace Unity.Netcode
             m_InternalValue = value;
         }
 
+        /// <summary>
+        /// The internal value of the NetworkVariable
+        /// </summary>
         [SerializeField]
         private protected T m_InternalValue;
 
