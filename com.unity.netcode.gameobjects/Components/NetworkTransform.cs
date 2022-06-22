@@ -776,6 +776,13 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Will set the maximum interpolation boundary for the interpolators of this <see cref="NetworkTransform"/> instance.
+        /// This value roughly translates to the maximum value of 't' in <see cref="Mathf.Lerp(float, float, float)"/> and
+        /// <see cref="Mathf.LerpUnclamped(float, float, float)"/> for all transform elements being monitored by
+        /// <see cref="NetworkTransform"/> (i.e. Position, Rotation, and Scale)
+        /// </summary>
+        /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
             m_PositionXInterpolator.MaxInterpolationBound = maxInterpolationBound;
