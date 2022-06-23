@@ -948,7 +948,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         [ObsoleteAttribute("This method has been deprecated. Please use OnIsServerAuthoritative instead.", true)]
         protected virtual bool OnIsServerAuthoritatitive(){
-            return true;
+            return OnIsServerAuthoritative();
         }
 
         /// <summary>
