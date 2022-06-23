@@ -3,6 +3,10 @@ using Unity.Profiling;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Provides discretized time.
+    /// This is useful for games that require ticks happening at regular interval on the server and clients.
+    /// </summary>
     public class NetworkTickSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -68,6 +72,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
+        /// <param name="localTimeSec">The local time in seconds</param>
+        /// <param name="serverTimeSec">The server time in seconds</param>
         /// </summary>
         public void UpdateTick(double localTimeSec, double serverTimeSec)
         {

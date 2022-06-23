@@ -192,6 +192,7 @@ namespace Unity.Netcode
     /// but there's no way to achieve the same thing with a class, this sets up various read/write schemes
     /// based on which constraints are met by `T` using reflection, which is done at module load time.
     /// </summary>
+    /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
     [Serializable]
     public static class NetworkVariableSerialization<T> where T : unmanaged
     {

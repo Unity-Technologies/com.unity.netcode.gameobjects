@@ -69,9 +69,18 @@ namespace Unity.Netcode.Transports.UTP
 
     public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
+        /// <summary>
+        /// Enum type stating the type of protocol
+        /// </summary>
         public enum ProtocolType
         {
+            /// <summary>
+            /// Unity Transport Protocol
+            /// </summary>
             UnityTransport,
+            /// <summary>
+            /// Unity Transport Protocol over Relay
+            /// </summary>
             RelayUnityTransport,
         }
 
@@ -206,17 +215,29 @@ namespace Unity.Netcode.Transports.UTP
             set => m_DisconnectTimeoutMS = value;
         }
 
+        /// <summary>
+        /// Structure to store the address to connect to
+        /// </summary>
         [Serializable]
         public struct ConnectionAddressData
         {
+            /// <summary>
+            /// IP address of the server (address to which clients will connect to).
+            /// </summary>
             [Tooltip("IP address of the server (address to which clients will connect to).")]
             [SerializeField]
             public string Address;
 
+            /// <summary>
+            /// UDP port of the server.
+            /// </summary>
             [Tooltip("UDP port of the server.")]
             [SerializeField]
             public ushort Port;
 
+            /// <summary>
+            /// IP address the server will listen on. If not provided, will use 'Address'.
+            /// </summary>
             [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
             [SerializeField]
             public string ServerListenAddress;
@@ -232,8 +253,14 @@ namespace Unity.Netcode.Transports.UTP
                 return endpoint;
             }
 
+            /// <summary>
+            /// Endpoint (IP address and port) clients will connect to.
+            /// </summary>
             public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
+            /// <summary>
+            /// Endpoint (IP address and port) server will listen/bind on.
+            /// </summary>
             public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
@@ -244,17 +271,29 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        /// <summary>
+        /// Parameters for the Network Simulator
+        /// </summary>
         [Serializable]
         public struct SimulatorParameters
         {
+            /// <summary>
+            /// Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.
+            /// </summary>
             [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
             [SerializeField]
             public int PacketDelayMS;
 
+            /// <summary>
+            /// Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.
+            /// </summary>
             [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
             [SerializeField]
             public int PacketJitterMS;
 
+            /// <summary>
+            /// Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.
+            /// </summary>
             [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
             [SerializeField]
             public int PacketDropRate;
