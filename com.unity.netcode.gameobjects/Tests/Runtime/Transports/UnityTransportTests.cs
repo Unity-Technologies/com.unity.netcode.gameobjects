@@ -350,7 +350,8 @@ namespace Unity.Netcode.RuntimeTests
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
 
-            m_Server.SetDebugSimulatorParameters(0, 0, 100);
+            m_Server.UpdateSimulationPipelineParameters(
+                NetworkSimulatorConfiguration.Create(Guid.NewGuid().ToString(), packetLossPercent: 100));
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -377,7 +378,8 @@ namespace Unity.Netcode.RuntimeTests
             InitializeTransport(out m_Server, out m_ServerEvents);
             InitializeTransport(out m_Client1, out m_Client1Events);
 
-            m_Server.SetDebugSimulatorParameters(simulatedRtt, 0, 0);
+            m_Server.UpdateSimulationPipelineParameters(
+                NetworkSimulatorConfiguration.Create(Guid.NewGuid().ToString(), packetDelayMs: simulatedRtt));
 
             m_Server.StartServer();
             m_Client1.StartClient();

@@ -187,6 +187,9 @@ namespace Unity.Netcode.Transports.UTP
             set => m_DisconnectTimeoutMS = value;
         }
 
+        NetworkSettings m_NetworkSettings;
+        internal NetworkSettings NetworkSettings => m_NetworkSettings;
+
         [Serializable]
         public struct ConnectionAddressData
         {
@@ -222,32 +225,8 @@ namespace Unity.Netcode.Transports.UTP
 
         public bool IsDisabledBySimulator { get; private set; } = false;
 
-        [Serializable]
-        public struct SimulatorParameters
-        {
-            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
-            [SerializeField]
-            public int PacketDelayMS;
-
-            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
-            [SerializeField]
-            public int PacketJitterMS;
-
-            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
-            [SerializeField]
-            public int PacketDropRate;
-        }
-
-        public SimulatorParameters DebugSimulator = new SimulatorParameters
-        {
-            PacketDelayMS = 0,
-            PacketJitterMS = 0,
-            PacketDropRate = 0
-        };
-
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
-        private NetworkSettings m_NetworkSettings;
         private ulong m_ServerClientId;
 
         private NetworkPipeline m_UnreliableFragmentedPipeline;
@@ -512,26 +491,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
-        }
-
-        /// <summary>Set the parameters for the debug simulator.</summary>
-        /// <param name="packetDelay">Packet delay in milliseconds.</param>
-        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
-        /// <param name="dropRate">Packet drop percentage.</param>
-        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
-        {
-            if (m_Driver.IsCreated)
-            {
-                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
-                return;
-            }
-
-            DebugSimulator = new SimulatorParameters
-            {
-                PacketDelayMS = packetDelay,
-                PacketJitterMS = packetJitter,
-                PacketDropRate = dropRate
-            };
         }
 
         private bool StartRelayServer()
@@ -1110,19 +1069,16 @@ namespace Unity.Netcode.Transports.UTP
         {
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 
-            var configuration = GetComponent<NetworkSimulator>()?.SimulationConfiguration;
+            var configuration = GetComponent<NetworkSimulator>()?.SimulatorConfiguration;
             m_NetworkSettings.WithSimulatorStageParameters(
                 300,
                 NetworkParameterConstants.MTU,
                 ApplyMode.AllPackets,
-                packetDelayMs: configuration?.PacketDelayMs ?? DebugSimulator.PacketDelayMS,
-                packetJitterMs: configuration?.PacketJitterMs ?? DebugSimulator.PacketJitterMS,
+                packetDelayMs: configuration?.PacketDelayMs ?? 0,
+                packetJitterMs: configuration?.PacketJitterMs ?? 0,
                 packetDropInterval: configuration?.PacketLossInterval ?? 0,
-                packetDropPercentage: configuration?.PacketLossPercent ?? DebugSimulator.PacketDropRate,
-                packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0,
-                fuzzFactor: configuration?.PacketFuzzFactor ?? 0,
-                fuzzOffset: configuration?.PacketFuzzOffset ?? 0
-            );
+                packetDropPercentage: configuration?.PacketLossPercent ?? 0,
+                packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0);
 
             m_SimulatorInitialized = true;
 
@@ -1153,7 +1109,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
-        public void RefreshSimulationPipelineParameters(NetworkSimulationConfiguration configuration)
+        public void UpdateSimulationPipelineParameters(NetworkSimulatorConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
             {
@@ -1170,7 +1126,7 @@ namespace Unity.Netcode.Transports.UTP
         unsafe void UpdatePipelineParameter(
             NetworkPipeline pipeline,
             NetworkPipelineStageId stageId,
-            NetworkSimulationConfiguration configuration)
+            NetworkSimulatorConfiguration configuration)
         {
             var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
             parameter->PacketDelayMs = configuration.PacketDelayMs;
@@ -1178,13 +1134,9 @@ namespace Unity.Netcode.Transports.UTP
             parameter->PacketDropInterval = configuration.PacketLossInterval;
             parameter->PacketDropPercentage = configuration.PacketLossPercent;
             parameter->PacketDuplicationPercentage = configuration.PacketDuplicationPercent;
-            parameter->FuzzFactor = configuration.PacketFuzzFactor;
-            parameter->FuzzOffset = configuration.PacketFuzzOffset;
 
             m_NetworkSettings.AddRawParameterStruct(ref *parameter);
         }
-
-        internal SimulatorUtility.Parameters GetSimulatorParameters() => m_NetworkSettings.GetSimulatorStageParameters();
 
         public void TriggerDisconnect()
         {

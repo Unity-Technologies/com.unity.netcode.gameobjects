@@ -26,14 +26,4 @@
             label="Packet Duplication (%)"
             tooltip="Configure the percentage of packets that will duplicated."
             low-value="0" high-value="100" show-input-field="true" />
-    <ui:SliderInt
-            name="PacketFuzzFactorSlider"
-            label="Packet Fuzz (%)"
-            tooltip="Configure the percentage of packets that will have the same percentage of their bits flipped."
-            low-value="0" high-value="100" show-input-field="true" />
-    <ui:SliderInt
-            name="PacketFuzzOffsetSlider"
-            label="Packet Fuzz Offset"
-            tooltip="Configure an offset for where in the packet the algorithm will start flipping bits."
-            low-value="0" high-value="100" show-input-field="true" />
 </ui:UXML>

@@ -3,9 +3,9 @@
 namespace Unity.Netcode
 {
     [CreateAssetMenu(
-        fileName = nameof(NetworkSimulationConfiguration),
-        menuName = "Multiplayer/" + nameof(NetworkSimulationConfiguration))]
-    public class NetworkSimulationConfiguration : ScriptableObject
+        fileName = nameof(NetworkSimulatorConfiguration),
+        menuName = "Multiplayer/" + nameof(NetworkSimulatorConfiguration))]
+    public class NetworkSimulatorConfiguration : ScriptableObject
     {
         /// <summary>
         /// Network simulation configuration name.
@@ -51,19 +51,6 @@ namespace Unity.Netcode
         public int PacketDuplicationPercent { get; set; }
 
         /// <summary>
-        /// Value for the percentage of how much of a packet should be fuzzed.
-        /// </summary>
-        [field: SerializeField]
-        public int PacketFuzzFactor { get; set; }
-
-        /// <summary>
-        /// Value for where to start fuzzing the packet. To be used with <see cref="PacketFuzzFactor"/>.
-        /// </summary>
-        [field: SerializeField]
-        public int PacketFuzzOffset { get; set; }
-
-        // TODO: Is the description required here?
-        /// <summary>
         /// Utility function to create a configuration at runtime.
         /// </summary>
         /// <param name="name">Name of the configuration.</param>
@@ -73,21 +60,18 @@ namespace Unity.Netcode
         /// <param name="packetLossInterval">Value for the packet loss interval.</param>
         /// <param name="packetLossPercent">Value for the packet loss percentage.</param>
         /// <param name="packetDuplicationPercent">Value for the packet duplication percentage.</param>
-        /// <param name="packetFuzzFactor"></param>
         /// <param name="packetFuzzOffset"></param>
         /// <returns>A valid simulation configuration.</returns>
-        public static NetworkSimulationConfiguration Create(
-            string name = "",
+        public static NetworkSimulatorConfiguration Create(
+            string name,
             string description = "",
             int packetDelayMs = 0,
             int packetJitterMs = 0,
             int packetLossInterval = 0,
             int packetLossPercent = 0,
-            int packetDuplicationPercent = 0,
-            int packetFuzzFactor = 0,
-            int packetFuzzOffset = 0)
+            int packetDuplicationPercent = 0)
         {
-            var configuration = CreateInstance<NetworkSimulationConfiguration>();
+            var configuration = CreateInstance<NetworkSimulatorConfiguration>();
 
             configuration.Name = name;
             configuration.Description = description;
@@ -96,8 +80,6 @@ namespace Unity.Netcode
             configuration.PacketLossInterval = packetLossInterval;
             configuration.PacketLossPercent = packetLossPercent;
             configuration.PacketDuplicationPercent = packetDuplicationPercent;
-            configuration.PacketFuzzFactor = packetFuzzFactor;
-            configuration.PacketFuzzOffset = packetFuzzOffset;
 
             return configuration;
         }
