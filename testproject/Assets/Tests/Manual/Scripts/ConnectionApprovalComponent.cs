@@ -152,9 +152,12 @@ namespace TestProject.ManualTests
         /// Invoked only on the server, this will handle the various connection approval combinations
         /// </summary>
         /// <param name="request">The connection approval request</param>
-        /// <returns>ConnectionApprovalResult with the approval decision, with parameters</returns>
-        private void ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        /// <returns>ConnectionApprovalResponse with the approval decision, with parameters</returns>
+        private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
+
+            NetworkManager.ConnectionApprovalResponse response = new NetworkManager.ConnectionApprovalResponse();
+
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isTokenValid = approvalToken == m_ApprovalToken;
             if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && request.ClientNetworkId != NetworkManager.LocalClientId)
@@ -192,6 +195,7 @@ namespace TestProject.ManualTests
 
                 m_ConnectionMessageToDisplay.gameObject.SetActive(true);
             }
+            return response;
         }
 
         /// <summary>

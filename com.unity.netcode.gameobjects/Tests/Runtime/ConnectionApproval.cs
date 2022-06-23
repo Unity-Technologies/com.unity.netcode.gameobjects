@@ -47,19 +47,32 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_IsValidated);
         }
 
-        private void NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        private NetworkManager.ConnectionApprovalResponse NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
+
+            //NetworkManager.ConnectionApprovalResponse response = new  NetworkManager.ConnectionApprovalResponse();
             var stringGuid = Encoding.UTF8.GetString(request.Payload);
             if (m_ValidationToken.ToString() == stringGuid)
             {
                 m_IsValidated = true;
             }
 
-            response.Approved = m_IsValidated;
-            response.CreatePlayerObject = false;
-            response.Position = null;
-            response.Rotation = null;
-            response.PlayerPrefabHash = null;
+
+            return new NetworkManager.ConnectionApprovalResponse{
+                Approved = m_IsValidated,
+                CreatePlayerObject = false,
+                Position = null,
+                Rotation = null,
+                PlayerPrefabHash = null
+            };
+
+            //response.Approved = m_IsValidated;
+            //response.CreatePlayerObject = false;
+            //response.Position = null;
+            //response.Rotation = null;
+            //response.PlayerPrefabHash = null;
+
+            //return response;
         }
 
         [TearDown]

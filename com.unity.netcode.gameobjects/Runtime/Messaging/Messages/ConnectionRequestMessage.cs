@@ -101,15 +101,16 @@ namespace Unity.Netcode
             {
                 // Note: Delegate creation allocates.
                 // Note: ToArray() also allocates. :(
-                var response = new NetworkManager.ConnectionApprovalResponse();
-                networkManager.ClientsToApprove[senderId] = response;
+                //var response = new NetworkManager.ConnectionApprovalResponse();
+                //networkManager.ClientsToApprove[senderId] = response;
 
-                networkManager.ConnectionApprovalCallback(
+                networkManager.ClientsToApprove[senderId] = networkManager.ConnectionApprovalCallback(
                     new NetworkManager.ConnectionApprovalRequest
                     {
                         Payload = ConnectionData,
                         ClientNetworkId = senderId
-                    }, response);
+                    }
+                );
             }
             else
             {

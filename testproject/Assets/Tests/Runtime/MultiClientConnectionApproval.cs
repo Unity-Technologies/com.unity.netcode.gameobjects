@@ -189,11 +189,11 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Delegate handler for the connection approval callback
         /// </summary>
-        /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
-        /// <param name="clientId">the client id being approved</param>
-        /// <param name="callback">the callback invoked to handle approval</param>
-        private void ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        /// <param name="request">the NetworkManager.ConnectionApprovalRequest for the current client that is being approved/rejected</param>
+        /// <returns>the connenction approval response.</param>
+        private NetworkManager.ConnectionApprovalResponse ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request)
         {
+            NetworkManager.ConnectionApprovalResponse response = new NetworkManager.ConnectionApprovalResponse();
             string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
 
@@ -228,6 +228,7 @@ namespace TestProject.RuntimeTests
                 response.Rotation = null;
                 response.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
+            return response;
         }
 
 
