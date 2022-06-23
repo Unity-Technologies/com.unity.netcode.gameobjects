@@ -282,14 +282,49 @@ namespace Unity.Netcode
         public void WriteValueBitPacked<T>(FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
 
+        /// <summary>
+        /// Maximum serializable value for a BitPacked ushort (minimum for unsigned is 0)
+        /// </summary>
         public const ushort BitPackedUshortMax = (1 << 15) - 1;
+
+        /// <summary>
+        /// Maximum serializable value for a BitPacked short
+        /// </summary>
         public const short BitPackedShortMax = (1 << 14) - 1;
+
+        /// <summary>
+        /// Minimum serializable value size for a BitPacked ushort
+        /// </summary>
         public const short BitPackedShortMin = -(1 << 14);
+
+        /// <summary>
+        /// Maximum serializable value for a BitPacked uint (minimum for unsigned is 0)
+        /// </summary>
         public const uint BitPackedUintMax = (1 << 30) - 1;
+
+        /// <summary>
+        /// Maximum serializable value for a BitPacked int
+        /// </summary>
         public const int BitPackedIntMax = (1 << 29) - 1;
+
+        /// <summary>
+        /// Minimum serializable value size for a BitPacked int
+        /// </summary>
         public const int BitPackedIntMin = -(1 << 29);
+
+        /// <summary>
+        /// Maximum serializable value for a BitPacked ulong (minimum for unsigned is 0)
+        /// </summary>
         public const ulong BitPackedULongMax = (1L << 61) - 1;
+
+        /// <summary>
+        /// Maximum serializable value for a BitPacked long
+        /// </summary>
         public const long BitPackedLongMax = (1L << 60) - 1;
+
+        /// <summary>
+        /// Minimum serializable value size for a BitPacked long
+        /// </summary>
         public const long BitPackedLongMin = -(1L << 60);
 
         /// <summary>

@@ -738,127 +738,522 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Read a NetworkSerializable value
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        /// <summary>
+        /// Read a NetworkSerializable array
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
+        /// <summary>
+        /// Read a NetworkSerializable value
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        /// <summary>
+        /// Read a NetworkSerializable array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
+
+        /// <summary>
+        /// Read a struct
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a struct array
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
 
+        /// <summary>
+        /// Read a struct
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a struct array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
+        /// <summary>
+        /// Read a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a primitive value array (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
 
+        /// <summary>
+        /// Read a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
 
+        /// <summary>
+        /// Read an enum value
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read an enum array
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
+        /// <summary>
+        /// Read an enum value
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 
+        /// <summary>
+        /// Read an enum array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
+        /// <summary>
+        /// Read a Vector2
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector2 array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector3
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector3 array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector2Int
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2Int value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector2Int array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2Int[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector3Int
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3Int value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector3Int array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3Int[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector4
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Vector4
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Quaternion
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Quaternion value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Quaternion array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Quaternion[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Color
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Color value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Color array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Color[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Color32
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Color32 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Color32 array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Color32[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Ray
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Ray array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Ray2D
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a Ray2D array
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
 
+
+        /// <summary>
+        /// Read a Vector2
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector2 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector3
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector3 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector2Int
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector2Int value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector2Int array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector2Int[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector3Int
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3Int value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector3Int array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3Int[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector4
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Vector4 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Quaternion
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Quaternion value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Quaternion array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Quaternion[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Color
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Color value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Collor array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Color[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Color32
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Color32 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Color32 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Color32[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Ray
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Ray array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Ray2D
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a Ray2D array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
 
@@ -868,6 +1263,17 @@ namespace Unity.Netcode
         // Those two are necessary to serialize FixedStrings efficiently
         // - otherwise we'd just be memcpying the whole thing even if
         // most of it isn't used.
+
+        /// <summary>
+        /// Read a FixedString value.
+        /// This method is a little difficult to use, since you have to know the size of the string before
+        /// reading it, but is useful when the string is a known, fixed size. Note that the size of the
+        /// string is also encoded, so the size to call TryBeginRead on is actually the fixed size (in bytes)
+        /// plus sizeof(int)
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValue<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
@@ -878,6 +1284,16 @@ namespace Unity.Netcode
             ReadBytes(value.GetUnsafePtr(), length);
         }
 
+
+        /// <summary>
+        /// Read a FixedString value.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe void ReadValueSafe<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
