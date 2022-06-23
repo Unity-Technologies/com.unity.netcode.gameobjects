@@ -224,7 +224,6 @@ namespace Unity.Netcode.Transports.UTP
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
         public bool IsDisabledBySimulator { get; private set; } = false;
-        public bool IsSimulatingLagSpike { get; private set; } = false;
 
         private State m_State = State.Disconnected;
         private NetworkDriver m_Driver;
@@ -667,38 +666,6 @@ namespace Unity.Netcode.Transports.UTP
         private void Update()
         {
             if (IsDisabledBySimulator)
-            {
-                // Flush all send queue items
-                foreach (var queueItem in m_SendQueue)
-                {
-                    queueItem.Value.Consume(queueItem.Value.Length);
-                }
-
-                // Flush all connection requests
-                while (m_Driver.IsCreated)
-                {
-                    var connection = m_Driver.Accept();
-
-                    if (connection == default)
-                    {
-                        break;
-                    }
-                }
-
-                // Flush all incoming events
-                while (m_Driver.IsCreated)
-                {
-                    var eventType = m_Driver.PopEvent(out var _, out var __, out var ___);
-                    if (eventType == TransportNetworkEvent.Type.Empty)
-                    {
-                        break;
-                    }
-                }
-
-                return;
-            }
-
-            if (IsSimulatingLagSpike)
             {
                 return;
             }
@@ -1179,16 +1146,6 @@ namespace Unity.Netcode.Transports.UTP
         public void TriggerReconnect()
         {
             IsDisabledBySimulator = false;
-        }
-
-        public void TriggerLagSpikeStart()
-        {
-            IsSimulatingLagSpike = true;
-        }
-
-        public void TriggerLagSpikeEnd()
-        {
-            IsSimulatingLagSpike = false;
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------

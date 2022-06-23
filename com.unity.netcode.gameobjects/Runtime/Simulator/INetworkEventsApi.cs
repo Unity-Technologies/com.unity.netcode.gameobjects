@@ -74,11 +74,11 @@ namespace Unity.Netcode
         {
             Task.Run(async () =>
             {
-                m_UnityTransport.TriggerLagSpikeStart();
+                TriggerDisconnect();
 
                 await Task.Delay(duration);
 
-                m_UnityTransport.TriggerLagSpikeEnd();
+                TriggerReconnect();
             });
         }
 
