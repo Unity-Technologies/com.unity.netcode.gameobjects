@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.Components
 {
@@ -705,8 +704,6 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            Debug.DrawLine(newState.Position, newState.Position + Vector3.up + Vector3.left, Color.green, 10, false);
-
             if (Interpolate)
             {
                 AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal));
@@ -716,8 +713,18 @@ namespace Unity.Netcode.Components
             if (m_CachedNetworkManager.LogLevel == LogLevel.Developer)
             {
                 var pos = new Vector3(newState.PositionX, newState.PositionY, newState.PositionZ);
-                Debug.DrawLine(pos, pos + Vector3.up + Vector3.left * Random.Range(0.5f, 2f), Color.green, k_DebugDrawLineTime, false);
             }
+        }
+
+        public void SetMaxInterpolationBound(float maxInterpolationBound)
+        {
+            m_PositionXInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionYInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionZInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleXInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleYInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleZInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
         private void Awake()
@@ -936,10 +943,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Override this and return false to follow the owner authoritative
-        /// Otherwise, it defaults to server authoritative
+        /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
-        protected virtual bool OnIsServerAuthoritatitive()
+        protected virtual bool OnIsServerAuthoritative()
         {
             return true;
         }
@@ -949,7 +955,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool IsServerAuthoritative()
         {
-            return OnIsServerAuthoritatitive();
+            return OnIsServerAuthoritative();
         }
     }
 }

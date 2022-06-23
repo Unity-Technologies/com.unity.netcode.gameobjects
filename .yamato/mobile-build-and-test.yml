@@ -1,5 +1,11 @@
-2021.2_Build_Android_player:
-  name: 2021.2 Build Android player
+{% metadata_file .yamato/project.metafile %}
+---
+
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+build_{{ project.name }}_tests_{{ editor }}_android:
+  name: Build {{ project.name }} Tests - {{ editor }} - Android
   agent:
       type: Unity::VM
       image: desktop/android-execution-r19:v0.1.1-860408
@@ -8,10 +14,10 @@
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - python .yamato/disable-burst-if-requested.py --project-path testproject --platform Android
-    - unity-downloader-cli -u 2021.2 -c editor -c Android -w --fast
+    - unity-downloader-cli -u {{ editor }} -c editor -c Android -w --fast
     - |
        set UTR_VERSION=0.12.0
-       utr.bat --artifacts_path=artifacts --timeout=1800 --testproject=testproject --editor-location=.Editor --suite=playmode --platform=android --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
+       utr.bat --artifacts_path=artifacts --timeout=1800 --testproject={{ project.name }} --editor-location=.Editor --suite=playmode --platform=android --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     logs:
       paths:
@@ -28,20 +34,27 @@
   variables:
     CI: true
     ENABLE_BURST_COMPILATION: False
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
 
-2021.2_Build_iOS_player:
-  name: 2021.2 Build iOS player
+
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+build_{{ project.name }}_tests_{{ editor }}_iOS:
+  name: Build {{ project.name }} Tests - {{ editor }} - iOS
   agent:
     type: Unity::VM::osx
-    image: mobile/macos-10.15-testing:stable
+    image: mobile/ios-macos-11:stable
     flavor: b1.large
   commands:
     - pip install unity-downloader-cli --index-url https://artifactory.prd.it.unity3d.com/artifactory/api/pypi/pypi/simple
-    - unity-downloader-cli -u 2021.2 -c editor -c iOS -w --fast
+    - unity-downloader-cli -u {{ editor }} -c editor -c iOS -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
     - chmod +x ./utr
     - export UTR_VERSION=0.12.0
-    - ./utr --artifacts_path=artifacts --timeout=1800 --testproject=testproject --editor-location=.Editor --suite=playmode --platform=iOS --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr --artifacts_path=artifacts --timeout=1800 --testproject={{ project.name }} --editor-location=.Editor --suite=playmode --platform=iOS --build-only --player-save-path=build/players --extra-editor-arg=-batchmode --extra-editor-arg=-nographics --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     logs:
       paths:
@@ -55,18 +68,24 @@
       - build/test-results/**
       - artifacts/**
       - build/players/**
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
 
 
-2021.2_Run_iOS_Player_With_Tests:
-  name: 2021.2 Run iOS player with tests
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+run_{{ project.name }}_tests_{{ editor }}_iOS:
+  name: Run {{ project.name }} Tests - {{ editor }} - iOS
   agent:
       type: Unity::mobile::iPhone
       model: SE
-      image: mobile/macos-10.15-testing:stable
+      image: mobile/ios-macos-11:stable
       flavor: b1.medium
   # Set a dependency on the build job
   dependencies:
-    - .yamato/mobile-build-and-test.yml#2021.2_Build_iOS_player
+    - .yamato/mobile-build-and-test.yml#build_{{ project.name }}_tests_{{ editor }}_iOS
   commands:
     # Download standalone UnityTestRunner
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr --output utr
@@ -74,7 +93,7 @@
     - chmod +x ./utr
     # Run the test build on the device
     - export UTR_VERSION=0.12.0
-    - ./utr -artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
+    - ./utr -artifacts_path=artifacts --testproject={{ project.name }} --editor-location=.Editor --reruncount=2 --suite=playmode --platform=iOS --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   artifacts:
     logs:
       paths:
@@ -88,9 +107,16 @@
       - build/test-results/**
       - artifacts/**
       - build/players/**
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+
     
-2021.2_Run_Android_Player_With_Tests:
-  name: 2021.2 Run Android player with tests
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+run_{{ project.name }}_tests_{{ editor }}_android:
+  name: Run {{ project.name }} Tests - {{ editor }} - Android
   agent:
       type: Unity::mobile::shield
       image: mobile/android-execution-r19:stable
@@ -99,7 +125,7 @@
   skip_checkout: true
   # Set a dependency on the build job
   dependencies:
-    - .yamato/mobile-build-and-test.yml#2021.2_Build_Android_player
+    - .yamato/mobile-build-and-test.yml#build_{{ project.name }}_tests_{{ editor }}_android
   commands:
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr.bat --output utr.bat
     - |
@@ -107,7 +133,7 @@
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe connect %BOKKEN_DEVICE_IP%
        start %ANDROID_SDK_ROOT%\platform-tools\adb.exe devices
        set UTR_VERSION=0.12.0
-       ./utr --artifacts_path=artifacts --testproject=testproject --editor-location=.Editor --reruncount=2 --suite=playmode --platform=android --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
+       ./utr --artifacts_path=artifacts --testproject={{ project.name }} --editor-location=.Editor --reruncount=2 --suite=playmode --platform=android --player-connection-ip=%BOKKEN_HOST_IP% --player-load-path=build/players --testfilter=Unity.Netcode.RuntimeTests
   # Set uploadable artifact paths
   artifacts:
     logs:
@@ -122,3 +148,6 @@
       - build/test-results/**
       - artifacts/**
       - build/players/**
+{% endfor -%}
+{% endif -%}
+{% endfor -%}

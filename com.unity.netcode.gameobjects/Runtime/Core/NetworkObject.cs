@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
@@ -180,9 +181,57 @@ namespace Unity.Netcode
             return Observers.Contains(clientId);
         }
 
+        /// <summary>
+        ///  In the event the scene of origin gets unloaded, we keep
+        ///  the most important part to uniquely identify in-scene
+        ///  placed NetworkObjects
+        /// </summary>
+        internal int SceneOriginHandle = 0;
+
+        private Scene m_SceneOrigin;
+        /// <summary>
+        /// The scene where the NetworkObject was first instantiated
+        /// Note: Primarily for in-scene placed NetworkObjects
+        /// We need to keep track of the original scene of origin for
+        /// the NetworkObject in order to be able to uniquely identify it
+        /// using the scene of origin's handle.
+        /// </summary>
+        internal Scene SceneOrigin
+        {
+            get
+            {
+                return m_SceneOrigin;
+            }
+
+            set
+            {
+                // The scene origin should only be set once.
+                // Once set, it should never change.
+                if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
+                {
+                    m_SceneOrigin = value;
+                    SceneOriginHandle = value.handle;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to return the correct scene handle
+        /// Note: Do not use this within NetworkSpawnManager.SpawnNetworkObjectLocallyCommon
+        /// </summary>
+        internal int GetSceneOriginHandle()
+        {
+            if (SceneOriginHandle == 0 && IsSpawned && IsSceneObject != false)
+            {
+                throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
+            }
+            return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
+        }
+
         private void Awake()
         {
             SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
         }
 
         /// <summary>
@@ -909,7 +958,7 @@ namespace Unity.Netcode
                 // sizes for dynamically spawned NetworkObjects.
                 if (Header.IsSceneObject)
                 {
-                    writer.WriteValue(OwnerObject.gameObject.scene.handle);
+                    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
@@ -959,7 +1008,7 @@ namespace Unity.Netcode
                 // NetworkObject instance.
                 if (Header.IsSceneObject)
                 {
-                    reader.ReadValue(out NetworkSceneHandle);
+                    reader.ReadValueSafe(out NetworkSceneHandle);
                 }
             }
         }

@@ -54,25 +54,29 @@ namespace Unity.Netcode
 #endif
         }
 
-        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator allocator)
+        private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator copyAllocator, Allocator internalAllocator)
         {
             ReaderHandle* readerHandle = null;
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), Allocator.Temp);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), internalAllocator);
                 readerHandle->BufferPointer = buffer;
                 readerHandle->Position = offset;
             }
             else
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), allocator);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), copyAllocator);
                 UnsafeUtility.MemCpy(readerHandle + 1, buffer + offset, length);
                 readerHandle->BufferPointer = (byte*)(readerHandle + 1);
                 readerHandle->Position = 0;
             }
 
             readerHandle->Length = length;
-            readerHandle->Allocator = allocator;
+
+            // If the copyAllocator provided is Allocator.None, there is a chance that the internalAllocator was provided
+            // When we dispose, we are really only interested in disposing Allocator.Persistent and Allocator.TempJob
+            // as disposing Allocator.Temp and Allocator.None would do nothing. Therefore, make sure we dispose the readerHandle with the right Allocator label
+            readerHandle->Allocator = copyAllocator == Allocator.None ? internalAllocator : copyAllocator;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             readerHandle->AllowedReadMark = 0;
             readerHandle->InBitwiseContext = false;
@@ -83,23 +87,26 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
-        /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
+        /// Allocator.Temp so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="buffer"></param>
-        /// <param name="allocator"></param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length"></param>
         /// <param name="offset"></param>
-        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(NativeArray<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, allocator);
+            Handle = CreateHandle((byte*)buffer.GetUnsafePtr(), length == -1 ? buffer.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
@@ -112,18 +119,18 @@ namespace Unity.Netcode
         /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator allocator, int length = -1, int offset = 0)
+        public unsafe FastBufferReader(ArraySegment<byte> buffer, Allocator copyAllocator, int length = -1, int offset = 0)
         {
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
             fixed (byte* data = buffer.Array)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Count : length, offset, copyAllocator, Allocator.Temp);
             }
         }
 
@@ -137,74 +144,80 @@ namespace Unity.Netcode
         /// and ensure the FastBufferReader isn't used outside that block.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(byte[] buffer, Allocator allocator, int length = -1, int offset = 0)
+        public unsafe FastBufferReader(byte[] buffer, Allocator copyAllocator, int length = -1, int offset = 0)
         {
-            if (allocator == Allocator.None)
+            if (copyAllocator == Allocator.None)
             {
                 throw new NotSupportedException("Allocator.None cannot be used with managed source buffers.");
             }
             fixed (byte* data = buffer)
             {
-                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, allocator);
+                Handle = CreateHandle(data, length == -1 ? buffer.Length : length, offset, copyAllocator, Allocator.Temp);
             }
         }
 
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="buffer">The buffer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(byte* buffer, Allocator allocator, int length, int offset = 0)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(byte* buffer, Allocator copyAllocator, int length, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(buffer, length, offset, allocator);
+            Handle = CreateHandle(buffer, length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory).
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
+        /// should manually call Dispose() when it is no longer needed.
         /// </summary>
         /// <param name="writer">The writer to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(FastBufferWriter writer, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(FastBufferWriter writer, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, allocator);
+            Handle = CreateHandle(writer.GetUnsafePtr(), length == -1 ? writer.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
         /// Create a FastBufferReader from another existing FastBufferReader. This is typically used when you
-        /// want to change the allocator that a reader is allocated to - for example, upgrading a Temp reader to
+        /// want to change the copyAllocator that a reader is allocated to - for example, upgrading a Temp reader to
         /// a Persistent one to be processed later.
         ///
-        /// A new buffer will be created using the given allocator and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the allocator passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
@@ -212,12 +225,13 @@ namespace Unity.Netcode
         /// stored anywhere in heap memory).
         /// </summary>
         /// <param name="reader">The reader to copy from</param>
-        /// <param name="allocator">The allocator to use</param>
+        /// <param name="copyAllocator">The allocator type used for internal data when copying an existing buffer if other than Allocator.None is specified, that memory will be owned by this FastBufferReader instance</param>
         /// <param name="length">The number of bytes to copy (all if this is -1)</param>
         /// <param name="offset">The offset of the buffer to start copying from</param>
-        public unsafe FastBufferReader(FastBufferReader reader, Allocator allocator, int length = -1, int offset = 0)
+        /// <param name="internalAllocator">The allocator type used for internal data when this reader points directly at a buffer owned by someone else</param>
+        public unsafe FastBufferReader(FastBufferReader reader, Allocator copyAllocator, int length = -1, int offset = 0, Allocator internalAllocator = Allocator.Temp)
         {
-            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, allocator);
+            Handle = CreateHandle(reader.GetUnsafePtr(), length == -1 ? reader.Length : length, offset, copyAllocator, internalAllocator);
         }
 
         /// <summary>
@@ -682,7 +696,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -691,7 +705,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -700,7 +714,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanaged<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanaged(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -712,7 +726,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
+        internal unsafe void ReadUnmanagedSafe<T>(out T[] value) where T : unmanaged
         {
             ReadUnmanagedSafe(out int sizeInTs);
             int sizeInBytes = sizeInTs * sizeof(T);
@@ -723,6 +737,26 @@ namespace Unity.Netcode
                 ReadBytesSafe(bytes, sizeInBytes);
             }
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
@@ -747,26 +781,6 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
@@ -774,6 +788,14 @@ namespace Unity.Netcode
         public void ReadValue(out Vector3 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2Int value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector2Int[] value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3Int value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out Vector3Int[] value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector4 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -808,6 +830,14 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2Int value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector2Int[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3Int value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out Vector3Int[] value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4 value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
@@ -831,5 +861,31 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Ray2D value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
+
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValue<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanaged(out int length);
+            value = new T();
+            value.Length = length;
+            ReadBytes(value.GetUnsafePtr(), length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafe<T>(out T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value = new T();
+            value.Length = length;
+            ReadBytesSafe(value.GetUnsafePtr(), length);
+        }
     }
 }

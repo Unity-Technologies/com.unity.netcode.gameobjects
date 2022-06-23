@@ -271,11 +271,18 @@ namespace Unity.Netcode.RuntimeTests
 
     public class NetworkVariableTest : NetworkBehaviour
     {
+        public enum SomeEnum
+        {
+            A,
+            B,
+            C
+        }
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
+        public readonly NetworkVariable<SomeEnum> TheEnum = new NetworkVariable<SomeEnum>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
-        public readonly NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>> TheLargeList = new NetworkList<ForceNetworkSerializeByMemcpy<FixedString128Bytes>>();
+        public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
 
-        public readonly NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>> FixedString32 = new NetworkVariable<ForceNetworkSerializeByMemcpy<FixedString32Bytes>>();
+        public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
 
         private void ListChanged(NetworkListEvent<int> e)
         {
@@ -598,11 +605,28 @@ namespace Unity.Netcode.RuntimeTests
             bool VerifyStructure()
             {
                 return m_Player1OnClient1.TheStruct.Value.SomeBool == m_Player1OnServer.TheStruct.Value.SomeBool &&
-                    m_Player1OnClient1.TheStruct.Value.SomeInt == m_Player1OnServer.TheStruct.Value.SomeInt;
+                       m_Player1OnClient1.TheStruct.Value.SomeInt == m_Player1OnServer.TheStruct.Value.SomeInt;
             }
 
             m_Player1OnServer.TheStruct.Value = new TestStruct() { SomeInt = k_TestUInt, SomeBool = false };
             m_Player1OnServer.TheStruct.SetDirty(true);
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            yield return WaitForConditionOrTimeOut(VerifyStructure);
+        }
+
+        [UnityTest]
+        public IEnumerator TestNetworkVariableEnum([Values(true, false)] bool useHost)
+        {
+            yield return InitializeServerAndClients(useHost);
+
+            bool VerifyStructure()
+            {
+                return m_Player1OnClient1.TheEnum.Value == NetworkVariableTest.SomeEnum.C;
+            }
+
+            m_Player1OnServer.TheEnum.Value = NetworkVariableTest.SomeEnum.C;
+            m_Player1OnServer.TheEnum.SetDirty(true);
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(VerifyStructure);

@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   SceneToReference: {fileID: 102900000, guid: f88da8bb8d07e11418eaad6524d5cc12, type: 3}
   m_IncludedScenes: []
-  m_DisplayName: NetworkAnimator
+  m_DisplayName: NetworkAnimator Test
   m_ReferencedScenes:
-  - NetworkTransformEnhancementsScene
+  - NetworkAnimatorEnhancement

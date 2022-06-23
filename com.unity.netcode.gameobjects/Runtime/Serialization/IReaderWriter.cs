@@ -1,4 +1,5 @@
 using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -21,10 +22,16 @@ namespace Unity.Netcode
         void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
         void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
         void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new();
+        void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes;
         void SerializeValue(ref Vector2 value);
         void SerializeValue(ref Vector2[] value);
         void SerializeValue(ref Vector3 value);
         void SerializeValue(ref Vector3[] value);
+        void SerializeValue(ref Vector2Int value);
+        void SerializeValue(ref Vector2Int[] value);
+        void SerializeValue(ref Vector3Int value);
+        void SerializeValue(ref Vector3Int[] value);
         void SerializeValue(ref Vector4 value);
         void SerializeValue(ref Vector4[] value);
         void SerializeValue(ref Quaternion value);
@@ -50,11 +57,17 @@ namespace Unity.Netcode
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
+        void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
         void SerializeValuePreChecked(ref Vector2 value);
         void SerializeValuePreChecked(ref Vector2[] value);
         void SerializeValuePreChecked(ref Vector3 value);
         void SerializeValuePreChecked(ref Vector3[] value);
+        void SerializeValuePreChecked(ref Vector2Int value);
+        void SerializeValuePreChecked(ref Vector2Int[] value);
+        void SerializeValuePreChecked(ref Vector3Int value);
+        void SerializeValuePreChecked(ref Vector3Int[] value);
         void SerializeValuePreChecked(ref Vector4 value);
         void SerializeValuePreChecked(ref Vector4[] value);
         void SerializeValuePreChecked(ref Quaternion value);

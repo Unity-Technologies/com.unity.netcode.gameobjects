@@ -19,15 +19,18 @@ namespace TestProject.RuntimeTests
 
         private GameObject m_PlayerPrefab;
         private GameObject m_PlayerPrefabOverride;
+        private bool m_DelayedApproval;
+        private List<NetworkManager.ConnectionApprovalResponse> m_ResponseToSet = new List<NetworkManager.ConnectionApprovalResponse>();
 
         /// <summary>
         /// Tests connection approval and connection approval failure
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator ConnectionApproval()
+        public IEnumerator ConnectionApproval([Values(true, false)] bool delayedApproval)
         {
             m_ConnectionToken = "ThisIsTheRightPassword";
+            m_DelayedApproval = delayedApproval;
             return ConnectionApprovalHandler(3, 1);
         }
 
@@ -99,7 +102,7 @@ namespace TestProject.RuntimeTests
             // [Host-Side] Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             server.NetworkConfig.ConnectionApproval = true;
-            server.ConnectionApprovalCallback += ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback = ConnectionApprovalCallback;
             server.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(m_ConnectionToken);
 
             // [Client-Side] Get all of the RpcQueueManualTests instances relative to each client
@@ -128,6 +131,22 @@ namespace TestProject.RuntimeTests
             if (!NetcodeIntegrationTestHelpers.Start(true, server, clients))
             {
                 Assert.Fail("Failed to start instances");
+            }
+
+            if (m_DelayedApproval)
+            {
+                // This is necessary so that clients gets the time to attempt connecting and fill the pending approval responses
+                var nextFrameNumber = Time.frameCount + 10;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+                foreach (var response in m_ResponseToSet)
+                {
+                    // perform delayed approval
+                    // The response class has already been filled, when created in ConnectionApprovalCallback()
+                    yield return new WaitForSeconds(0.2f);
+                    response.Pending = false;
+                }
+                m_ResponseToSet.Clear();
             }
 
             // [Client-Side] Wait for a connection to the server
@@ -161,7 +180,7 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            server.ConnectionApprovalCallback -= ConnectionApprovalCallback;
+            server.ConnectionApprovalCallback = null;
             server.Shutdown();
 
             Debug.Log($"Total frames updated = {Time.frameCount - startFrameCount} within {Time.realtimeSinceStartup - startTime} seconds.");
@@ -173,10 +192,16 @@ namespace TestProject.RuntimeTests
         /// <param name="connectionData">the NetworkConfig.ConnectionData sent from the client being approved</param>
         /// <param name="clientId">the client id being approved</param>
         /// <param name="callback">the callback invoked to handle approval</param>
-        private void ConnectionApprovalCallback(byte[] connectionData, ulong clientId, NetworkManager.ConnectionApprovedDelegate callback)
+        private void ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            string approvalToken = Encoding.ASCII.GetString(connectionData);
+            string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isApproved = approvalToken == m_ConnectionToken;
+
+            if (m_DelayedApproval)
+            {
+                response.Pending = true;
+                m_ResponseToSet.Add(response);
+            }
 
             if (isApproved)
             {
@@ -189,11 +214,19 @@ namespace TestProject.RuntimeTests
 
             if (m_PrefabOverrideGlobalObjectIdHash == 0)
             {
-                callback.Invoke(true, null, isApproved, null, null);
+                response.CreatePlayerObject = true;
+                response.Approved = isApproved;
+                response.Position = null;
+                response.Rotation = null;
+                response.PlayerPrefabHash = null;
             }
             else
             {
-                callback.Invoke(true, m_PrefabOverrideGlobalObjectIdHash, isApproved, null, null);
+                response.CreatePlayerObject = true;
+                response.Approved = isApproved;
+                response.Position = null;
+                response.Rotation = null;
+                response.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
             }
         }
 

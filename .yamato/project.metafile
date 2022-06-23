@@ -1,4 +1,5 @@
 validation_editor: 2020.3
+mobile_validation_editor: 2021.3
 
 # Platforms that will be tested. The first entry in this array will also
 # be used for validation
@@ -43,6 +44,7 @@ projects:
     test_editors:
       - 2020.3
       - 2021.3
+      - 2022.2
       - trunk
   - name: minimalproject
     path: minimalproject
@@ -61,6 +63,7 @@ projects:
     has_tests: true
     test_editors:
       - 2021.3
+      - 2022.2
       - trunk
 
 # Scripting backends used by Standalone Playmode Tests

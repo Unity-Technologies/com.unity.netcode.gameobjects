@@ -18,7 +18,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         protected override int NumberOfClients => 1;
         private readonly int m_PacketLossRate = 25;
-        private int m_DropInterval = 5;
+        private readonly int m_PacketLossRangeDelta = 5;
 
         public PacketLossMetricsTests()
             : base(HostOrServer.Server)
@@ -57,11 +57,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketLossAsClient()
         {
-            double packetLossRate = m_PacketLossRate/100d;
+            double packetLossRateMinRange = (m_PacketLossRate-m_PacketLossRangeDelta) / 100d;
+            double packetLossRateMaxrange = (m_PacketLossRate + m_PacketLossRangeDelta) / 100d;
             var clientNetworkManager = m_ClientNetworkManagers[0];
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
                 NetworkMetricTypes.PacketLoss,
-                metric => Math.Abs(metric - packetLossRate) < Double.Epsilon);
+                metric => packetLossRateMinRange <= metric && metric <= packetLossRateMaxrange);
 
             for (int i = 0; i < 1000; ++i)
             {
@@ -75,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             yield return waitForPacketLossMetric.WaitForMetricsReceived();
 
             var packetLossValue = waitForPacketLossMetric.AssertMetricValueHaveBeenFound();
-            Assert.AreEqual(packetLossRate, packetLossValue);
+            Assert.That(packetLossValue, Is.InRange(packetLossRateMinRange, packetLossRateMaxrange));
         }
     }
 }

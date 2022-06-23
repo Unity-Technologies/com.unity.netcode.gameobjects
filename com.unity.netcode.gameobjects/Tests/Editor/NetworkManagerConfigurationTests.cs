@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.Editor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
@@ -77,6 +79,38 @@ namespace Unity.Netcode.EditorTests
 
             // Clean up
             Object.DestroyImmediate(gameObject);
+        }
+
+        [Test]
+        public void NestedNetworkObjectPrefabCheck()
+        {
+            // Setup
+            var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig();
+
+            var parent = new GameObject("Parent").AddComponent<NetworkObject>();
+            var child = new GameObject("Child").AddComponent<NetworkObject>();
+
+            // Set parent
+            child.transform.SetParent(parent.transform);
+
+            // Make it a prefab, warning only applies to prefabs
+            networkManager.AddNetworkPrefab(parent.gameObject);
+
+            // Mark scene as dirty to ensure OnValidate actually runs
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+
+            // Force OnValidate
+            networkManager.OnValidate();
+
+            // Expect a warning
+            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.NetworkPrefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+
+            // Clean up
+            Object.DestroyImmediate(networkManagerObject);
+            Object.DestroyImmediate(parent);
+
         }
     }
 }

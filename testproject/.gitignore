@@ -73,3 +73,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/BuildInfo.json.meta
 
 InitTestScene*
+
+boot.config
+SceneTemplateSettings.json
+*BurstAotSettings*.json

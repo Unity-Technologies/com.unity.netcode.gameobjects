@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Unity.Netcode;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.MultiprocessRuntimeTests;
+#if UNITY_UNET_PRESENT
+using Unity.Netcode.Transports.UNET;
+#endif
+using Unity.Netcode.Transports.UTP;
 
 /// <summary>
 /// TestCoordinator
@@ -37,9 +42,94 @@ public class TestCoordinator : NetworkBehaviour
     public static List<ulong> AllClientIdsWithResults => Instance.m_TestResultsLocal.Keys.ToList();
     public static List<ulong> AllClientIdsExceptMine => NetworkManager.Singleton.ConnectedClients.Keys.ToList().FindAll(client => client != NetworkManager.Singleton.LocalClientId);
 
-    private void Awake()
+    // Multimachine support
+    private static int s_ProcessId;
+    public static string Rawgithash;
+
+    private ConfigurationType m_ConfigurationType;
+    public ConfigurationType ConfigurationType
     {
-        MultiprocessLogger.Log("Awake");
+        get { return m_ConfigurationType; }
+        private set
+        {
+            if (m_ConfigurationType != value)
+            {
+                m_ConfigurationType = value;
+            }
+        }
+    }
+    private string m_ConnectAddress = "127.0.0.1";
+    public static string Port = "7777";
+    private bool m_IsClient;
+
+    private void SetConfigurationTypeAndConnect(ConfigurationType type)
+    {
+        ConfigurationType = type;
+        SetAddressAndPort();
+        bool startClientResult = NetworkManager.Singleton.StartClient();
+        MultiprocessLogger.Log($"Starting client");
+    }
+
+    public void Awake()
+    {
+        enabled = false;
+        NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+
+        s_ProcessId = Process.GetCurrentProcess().Id;
+        MultiprocessLogger.Log($"Awake {s_ProcessId}");
+        ReadGitHashFile();
+
+        // Configuration via command line (supported for many but not all platforms)
+        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
+        if (isClient)
+        {
+            MultiprocessLogger.Log("Setting up via command line - client");
+            m_IsClient = isClient;
+            var cli = new CommandLineProcessor(Environment.GetCommandLineArgs());
+            if (Environment.GetCommandLineArgs().Any(value => value == "-ip"))
+            {
+                m_ConnectAddress = cli.TransportAddress;
+            }
+            if (Environment.GetCommandLineArgs().Any(value => value == "-p"))
+            {
+                Port = cli.TransportPort;
+            }
+            SetConfigurationTypeAndConnect(ConfigurationType.CommandLine);
+        }
+
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            bool isHost = Environment.GetCommandLineArgs().Any(value => value == "host");
+            if (isHost)
+            {
+                MultiprocessLogger.Log("Setting up via command line - host");
+                var cli = new CommandLineProcessor(Environment.GetCommandLineArgs());
+                ConfigurationType = ConfigurationType.CommandLine;
+            }
+        }
+
+
+        // Configuration via configuration file - all platform support but set at build time
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            //TODO: For next PR
+        }
+
+        // configuration via WebApi - works on all platforms and is set at run time
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi");
+            ConfigureViaWebApi();
+            MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
+        }
+
+
+        // if we've tried all the configuration types and none of them are correct then we should log it and just go with the default values
+        if (ConfigurationType == ConfigurationType.Unknown)
+        {
+            MultiprocessLogger.Log("Unable to determine configuration for NetworkManager via commandline, webapi or config file");
+        }
+
         if (Instance != null)
         {
             MultiprocessLogger.LogError("Multiple test coordinator, destroying this instance");
@@ -50,22 +140,88 @@ public class TestCoordinator : NetworkBehaviour
         Instance = this;
     }
 
+    private async void ConfigureViaWebApi()
+    {
+        MultiprocessLogger.Log($"ConfigureViaWebApi - start");
+        var jobQueue = await ConfigurationTools.GetRemoteConfig();
+        foreach (var job in jobQueue.JobQueueItems)
+        {
+            if (Rawgithash.Equals(job.GitHash))
+            {
+                ConfigurationTools.ClaimJobQueueItem(job);
+                m_ConnectAddress = job.HostIp;
+                m_IsClient = true;
+                MultiprocessLogHandler.JobId = job.JobId;
+                SetConfigurationTypeAndConnect(ConfigurationType.Remote);
+                break;
+            }
+            else
+            {
+                MultiprocessLogger.Log($"No match between {Rawgithash} and {job.GitHash}");
+            }
+        }
+        MultiprocessLogger.Log($"ConfigureViaWebApi - end {ConfigurationType}");
+    }
+
+    private void ReadGitHashFile()
+    {
+        try
+        {
+            var githash_resource = Resources.Load<TextAsset>("Text/githash");
+            if (githash_resource != null)
+            {
+                Rawgithash = githash_resource.ToString();
+                if (!string.IsNullOrEmpty(Rawgithash))
+                {
+                    Rawgithash = Rawgithash.Trim();
+                    MultiprocessLogger.Log($"Rawgithash is {Rawgithash}");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            MultiprocessLogger.Log($"Exception getting githash resource file: {e.Message}");
+        }
+    }
+
+    private void SetAddressAndPort()
+    {
+        MultiprocessLogger.Log($"SetAddressAndPort - {Port} {m_ConnectAddress} {m_IsClient} ");
+        var ushortport = ushort.Parse(Port);
+        var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
+        MultiprocessLogger.Log($"transport is {transport}");
+        switch (transport)
+        {
+#if UNITY_UNET_PRESENT
+            case UNetTransport unetTransport:
+                unetTransport.ConnectPort = ushortport;
+                unetTransport.ServerListenPort = ushortport;
+                if (m_IsClient)
+                {
+                    MultiprocessLogger.Log($"Setting ConnectAddress to {m_ConnectAddress} port {ushortport} isClient: {m_IsClient}");
+                    unetTransport.ConnectAddress = m_ConnectAddress;
+                }
+                break;
+#endif
+            case UnityTransport unityTransport:
+                MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {ushortport}, isClient: {m_IsClient}, Address {m_ConnectAddress}");
+                unityTransport.ConnectionData.Port = ushortport;
+                unityTransport.ConnectionData.Address = m_ConnectAddress;
+                break;
+            default:
+                MultiprocessLogger.LogError($"The transport {transport} has no case");
+                break;
+        }
+    }
+
     public void Start()
     {
         MultiprocessLogger.Log("Start");
-        bool isClient = Environment.GetCommandLineArgs().Any(value => value == MultiprocessOrchestration.IsWorkerArg);
-        if (isClient)
-        {
-            MultiprocessLogger.Log("starting netcode client");
-            NetworkManager.Singleton.StartClient();
-            MultiprocessLogger.Log($"started netcode client {NetworkManager.Singleton.IsConnectedClient}");
-        }
         MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
         MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
-        MultiprocessLogger.Log($"NetworkManager.NetworkConfig.NetworkTransport.name {NetworkManager.NetworkConfig.NetworkTransport.name}");
     }
 
     public void Update()
@@ -121,6 +277,13 @@ public class TestCoordinator : NetworkBehaviour
         }
 
         base.OnDestroy();
+    }
+
+    // Once we are connected, we can run the update method
+    public void OnClientConnectedCallback(ulong clientId)
+    {
+        MultiprocessLogger.Log("Client start callback, enabling behavior");
+        enabled = true;
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
