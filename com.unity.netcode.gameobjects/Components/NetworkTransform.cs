@@ -947,9 +947,10 @@ namespace Unity.Netcode.Components
         /// Please override <see cref="OnIsServerAuthoritative"/> instead (typo in this method's name).
         /// Do not use this method as of v1.0.0.pre-10
         /// </summary>
-        [Obsolete("Method OnIsServerAuthoritatitive has been deprecated. Use OnIsServerAuthoritative instead (UnityUpgradable)", true)]
-        protected virtual bool OnIsServerAuthoritatitive(){
-            return OnIsServerAuthoritative();
+        [System.Obsolete("Method OnIsServerAuthoritatitive has been deprecated. Use OnIsServerAuthoritative instead (UnityUpgradable)", true)]
+        [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+        protected bool OnIsServerAuthoritatitive(){
+            throw new NotSupportedException("OnIsServerAuthoritatitive method has been deprecated.");
         }
 
         /// <summary>
