@@ -252,8 +252,14 @@ namespace Unity.Netcode.Transports.UTP
         private NetworkPipeline m_UnreliableSequencedFragmentedPipeline;
         private NetworkPipeline m_ReliableSequencedPipeline;
 
+        /// <summary>
+        /// The client id used to represent the server.
+        /// </summary>
         public override ulong ServerClientId => m_ServerClientId;
 
+        /// <summary>
+        /// The current ProtocolType used by the transport
+        /// </summary>
         public ProtocolType Protocol => m_ProtocolType;
 
         private RelayServerData m_RelayServerData;
@@ -419,6 +425,14 @@ namespace Unity.Netcode.Transports.UTP
             m_ProtocolType = inProtocol;
         }
 
+        /// <summary>Set the relay server data for the server.</summary>
+        /// <param name="ipv4Address">IP address of the relay server.</param>
+        /// <param name="port">UDP port of the relay server.</param>
+        /// <param name="allocationIdBytes">Allocation ID as a byte array.</param>
+        /// <param name="keyBytes">Allocation key as a byte array.</param>
+        /// <param name="connectionDataBytes">Connection data as a byte array.</param>
+        /// <param name="hostConnectionDataBytes">The HostConnectionData as a byte array.</param>
+        /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
         public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
             RelayConnectionData hostConnectionData;
@@ -480,6 +494,9 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
+        /// <param name="ipv4Address">The remote IP address</param>
+        /// <param name="port">The remote port</param>
+        /// <param name="listenAddress">The local listen address</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
         {
             ConnectionData = new ConnectionAddressData
@@ -495,6 +512,8 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
+        /// <param name="endPoint">The remote end point</param>
+        /// <param name="listenEndPoint">The local listen endpoint</param>
         public void SetConnectionData(NetworkEndPoint endPoint, NetworkEndPoint listenEndPoint = default)
         {
             string serverAddress = endPoint.Address.Split(':')[0];
@@ -887,6 +906,9 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>
+        /// Disconnects the local client from the remote
+        /// </summary>
         public override void DisconnectLocalClient()
         {
             if (m_State == State.Connected)
@@ -911,6 +933,10 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>
+        /// Disconnects a remote client from the server
+        /// </summary>
+        /// <param name="clientId">The client to disconnect</param>
         public override void DisconnectRemoteClient(ulong clientId)
         {
             Debug.Assert(m_State == State.Listening, "DisconnectRemoteClient should be called on a listening server");
@@ -930,6 +956,11 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>
+        /// Gets the current RTT for a specific client
+        /// </summary>
+        /// <param name="clientId">The client RTT to get</param>
+        /// <returns>The RTT</returns>
         public override ulong GetCurrentRtt(ulong clientId)
         {
             // We don't know if this is getting called from inside NGO (which presumably knows to
@@ -950,6 +981,10 @@ namespace Unity.Netcode.Transports.UTP
             return (ulong)ExtractRtt(ParseClientId(clientId));
         }
 
+        /// <summary>
+        /// Initializes the transport
+        /// </summary>
+        /// <param name="networkManager">The NetworkManager that initialized and owns the transport</param>
         public override void Initialize(NetworkManager networkManager = null)
         {
             Debug.Assert(sizeof(ulong) == UnsafeUtility.SizeOf<NetworkConnection>(), "Netcode connection id size does not match UTP connection id size");
@@ -971,6 +1006,13 @@ namespace Unity.Netcode.Transports.UTP
 #endif
         }
 
+        /// <summary>
+        /// Polls for incoming events, with an extra output parameter to report the precise time the event was received.
+        /// </summary>
+        /// <param name="clientId">The clientId this event is for</param>
+        /// <param name="payload">The incoming data payload</param>
+        /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
+        /// <returns>Returns the event type</returns>
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
             clientId = default;
@@ -979,6 +1021,12 @@ namespace Unity.Netcode.Transports.UTP
             return NetcodeNetworkEvent.Nothing;
         }
 
+        /// <summary>
+        /// Send a payload to the specified clientId, data and channelName.
+        /// </summary>
+        /// <param name="clientId">The clientId to send to</param>
+        /// <param name="payload">The data to send</param>
+        /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
             if (payload.Count > m_MaxPayloadSize)
@@ -1040,6 +1088,9 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>
+        /// Connects client to the server
+        /// </summary>
         public override bool StartClient()
         {
             if (m_Driver.IsCreated)
@@ -1055,6 +1106,9 @@ namespace Unity.Netcode.Transports.UTP
             return succeeded;
         }
 
+        /// <summary>
+        /// Starts to listening for incoming clients
+        /// </summary>
         public override bool StartServer()
         {
             if (m_Driver.IsCreated)
@@ -1084,6 +1138,9 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>
+        /// Shuts down the transport
+        /// </summary>
         public override void Shutdown()
         {
             if (!m_Driver.IsCreated)
@@ -1121,6 +1178,14 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
+        /// <summary>
+        /// Creates the internal NetworkDriver
+        /// </summary>
+        /// <param name="transport">The owner transport</param>
+        /// <param name="driver">The driver</param>
+        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
+        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
+        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,

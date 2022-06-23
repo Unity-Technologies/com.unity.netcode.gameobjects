@@ -225,10 +225,16 @@ namespace Unity.Netcode
 
         internal IDeferredMessageManager DeferredMessageManager { get; private set; }
 
+        /// <summary>
+        /// Gets the CustomMessagingManager for this NetworkManager
+        /// </summary>
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
         public NetworkSceneManager SceneManager { get; private set; }
 
+        /// <summary>
+        /// The client id used to represent the server
+        /// </summary>
         public const ulong ServerClientId = 0;
 
         /// <summary>
