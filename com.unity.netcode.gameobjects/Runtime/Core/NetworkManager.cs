@@ -404,7 +404,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The callback to invoke during connection approval. Allows client code to decide whether or not to allow incoming client connection
         /// </summary>
-        public Action<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
+        public Func<ConnectionApprovalRequest, ConnectionApprovalResponse> ConnectionApprovalCallback
         {
             get => m_ConnectionApprovalCallback;
             set
@@ -420,7 +420,7 @@ namespace Unity.Netcode
             }
         }
 
-        private Action<ConnectionApprovalRequest, ConnectionApprovalResponse> m_ConnectionApprovalCallback;
+        private Func<ConnectionApprovalRequest, ConnectionApprovalResponse> m_ConnectionApprovalCallback;
 
         /// <summary>
         /// The current NetworkConfig
@@ -1066,8 +1066,7 @@ namespace Unity.Netcode
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
-                var response = new ConnectionApprovalResponse();
-                ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
+                var response = ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId });
                 if (!response.Approved)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
