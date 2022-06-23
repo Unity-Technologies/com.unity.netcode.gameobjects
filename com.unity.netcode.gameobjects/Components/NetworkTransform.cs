@@ -942,6 +942,15 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
+
+        /// <summary>
+        /// Please override <see cref="OnIsServerAuthoritative"/> instead.
+        /// </summary>
+        [ObsoleteAttribute("This method has been deprecated. Please use OnIsServerAuthoritative instead.", true)]
+        protected virtual bool OnIsServerAuthoritatitive(){
+            return true;
+        }
+
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
