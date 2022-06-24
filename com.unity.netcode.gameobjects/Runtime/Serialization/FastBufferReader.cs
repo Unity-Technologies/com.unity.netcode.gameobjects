@@ -87,15 +87,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a NativeArray.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
@@ -162,15 +162,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from an existing byte buffer.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
@@ -187,15 +187,15 @@ namespace Unity.Netcode
         /// <summary>
         /// Create a FastBufferReader from a FastBufferWriter.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
         /// the context in which it was created (it should neither be returned from that function nor
-        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"> param is explicitly set
+        /// stored anywhere in heap memory). This is true, unless the <param name="internalAllocator"></param> param is explicitly set
         /// to i.e.: Allocator.Persistent in which case it would allow the internal data to Persist for longer, but the caller
         /// should manually call Dispose() when it is no longer needed.
         /// </summary>
@@ -214,10 +214,10 @@ namespace Unity.Netcode
         /// want to change the copyAllocator that a reader is allocated to - for example, upgrading a Temp reader to
         /// a Persistent one to be processed later.
         ///
-        /// A new buffer will be created using the given <param name="copyAllocator"> and the value will be copied in.
+        /// A new buffer will be created using the given <param name="copyAllocator"></param> and the value will be copied in.
         /// FastBufferReader will then own the data.
         ///
-        /// The exception to this is when the <param name="copyAllocator"> passed in is Allocator.None. In this scenario,
+        /// The exception to this is when the <param name="copyAllocator"></param> passed in is Allocator.None. In this scenario,
         /// ownership of the data remains with the caller and the reader will point at it directly.
         /// When created with Allocator.None, FastBufferReader will allocate some internal data using
         /// Allocator.Temp, so it should be treated as if it's a ref struct and not allowed to outlive
