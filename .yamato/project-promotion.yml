@@ -69,6 +69,22 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
 {% endfor -%}
 {% endfor -%}
 
+promotion_audit_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}:
+  name : Promotion Audit - XML Validation {{ project.name }} - Package {{ package.name }} - {{ validation_editor }} on {{ test_platforms.first.name }}
+  agent:
+    type: {{ test_platforms.first.type }}
+    image: {{ test_platforms.first.image }}
+    flavor: {{ test_platforms.first.flavor}}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - upm-ci package test -u {{ validation_editor }} --package-path {{ package.path }} --type promotion-audit --import-samples
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
