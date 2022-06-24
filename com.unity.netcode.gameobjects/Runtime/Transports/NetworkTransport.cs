@@ -64,11 +64,13 @@ namespace Unity.Netcode
         /// <summary>
         /// Connects client to the server
         /// </summary>
+        /// <returns>Returns success or failure</returns>
         public abstract bool StartClient();
 
         /// <summary>
         /// Starts to listening for incoming clients
         /// </summary>
+        /// <returns>Returns success or failure</returns>
         public abstract bool StartServer();
 
         /// <summary>
