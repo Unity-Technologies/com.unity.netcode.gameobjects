@@ -26,8 +26,15 @@ namespace Unity.Netcode
         public SpawnStateException(string message, Exception inner) : base(message, inner) { }
     }
 
+    /// <summary>
+    /// Exception thrown when a channel is invalid
+    /// </summary>
     public class InvalidChannelException : Exception
     {
+        /// <summary>
+        /// Constructs a InvalidChannelException with a message
+        /// </summary>
+        /// <param name="message">The exception message</param>
         public InvalidChannelException(string message) : base(message) { }
     }
 }
