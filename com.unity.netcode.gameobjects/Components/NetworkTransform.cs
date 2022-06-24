@@ -921,6 +921,10 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Teleports the transform to the given values without interpolating
         /// </summary>
+        /// <param name="newPosition"></param> new position to move to.
+        /// <param name="newRotation"></param> new rotation to rotate to.
+        /// <param name="newScale">new scale to scale to.</param>
+        /// <exception cref="Exception"></exception>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)
