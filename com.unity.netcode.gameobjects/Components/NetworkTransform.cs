@@ -5,29 +5,46 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A component for syncing transforms
+    /// A component for syncing transforms.
     /// NetworkTransform will read the underlying transform and replicate it to clients.
-    /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform
+    /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
-        public const float PositionThresholdDefault = 0.001f;
         /// <summary>
-        /// The default rotation angle threshold value.
-        /// Any changes above this threshold will be replicated
+        /// The default position change threshold value.
+        /// Any changes above this threshold will be replicated.
+        /// </summary>
+        public const float PositionThresholdDefault = 0.001f;
+
+        /// <summary>
+        /// The default rotation angle change threshold value.
+        /// Any changes above this threshold will be replicated.
         /// </summary>
         public const float RotAngleThresholdDefault = 0.01f;
 
         /// <summary>
-        /// The default scale threshold value.
-        /// Any changes above this threshold will be replicated
+        /// The default scale change threshold value.
+        /// Any changes above this threshold will be replicated.
         /// </summary>
         public const float ScaleThresholdDefault = 0.01f;
 
+        /// <summary>
+        /// The handler delegate type that takes client requested changes and returns resulting changes handled by the server.
+        /// </summary>
+        /// <param name="pos">The position requested by the client.</param>
+        /// <param name="rot">The rotation requested by the client.</param>
+        /// <param name="scale">The scale requested by the client.</param>
+        /// <returns>The resulting position, rotation and scale changes after handling.</returns>
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
+
+        /// <summary>
+        /// The handler that gets invoked when server receives a change from a client.
+        /// This handler would be useful for server to modify pos/rot/scale before applying client's request.
+        /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
         internal struct NetworkTransformState : INetworkSerializable
@@ -917,8 +934,7 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
-            // server has received this RPC request to move change transform.  Give the server a chance to modify or
-            //  even reject the move
+            // server has received this RPC request to move change transform. give the server a chance to modify or even reject the move
             if (OnClientRequestChange != null)
             {
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
@@ -929,7 +945,7 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
 
-        // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
+        // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         protected virtual void Update()
         {
