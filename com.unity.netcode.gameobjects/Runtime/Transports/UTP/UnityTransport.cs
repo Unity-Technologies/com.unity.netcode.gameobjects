@@ -24,6 +24,9 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline reliableSequencedPipeline);
     }
 
+    /// <summary>
+    /// Helper utility class to convert <see cref="Networking.Transport"/> error codes to human readable error messages.
+    /// </summary>
     public static class ErrorUtilities
     {
         private const string k_NetworkSuccess = "Success";
@@ -37,6 +40,12 @@ namespace Unity.Netcode.Transports.UTP
         private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
         private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
 
+        /// <summary>
+        /// Convert error code to human readable error message.
+        /// </summary>
+        /// <param name="error">Status code of the error</param>
+        /// <param name="connectionId">Subject connection ID of the error</param>
+        /// <returns>Human readable error message.</returns>
         public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
         {
             switch (error)
