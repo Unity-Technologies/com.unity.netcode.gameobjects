@@ -282,11 +282,13 @@ namespace Unity.Netcode
 
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
+        /// <inheritdoc />
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
             return Mathf.LerpUnclamped(start, end, time);
         }
 
+        /// <inheritdoc />
         protected override float Interpolate(float start, float end, float time)
         {
             return Mathf.Lerp(start, end, time);
@@ -295,11 +297,13 @@ namespace Unity.Netcode
 
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+        /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
         }
 
+        /// <inheritdoc />
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
             return Quaternion.SlerpUnclamped(start, end, time);
