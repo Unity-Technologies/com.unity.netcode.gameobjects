@@ -7,10 +7,14 @@ using UnityEngine.PlayerLoop;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Defines the required interface of a network update system being executed by the network update loop.
+    /// Defines the required interface of a network update system being executed by the <see cref="NetworkUpdateLoop"/>.
     /// </summary>
     public interface INetworkUpdateSystem
     {
+        /// <summary>
+        /// The update method that is being executed in the context of related <see cref="NetworkUpdateStage"/>.
+        /// </summary>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> that is being executed.</param>
         void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 

@@ -1448,10 +1448,7 @@ namespace Unity.Netcode
             ClearClients();
         }
 
-        /// <summary>
-        /// Implementation of <see cref="INetworkUpdateSystem"/> interface.
-        /// </summary>
-        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> that is being executed.</param>
+        /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
