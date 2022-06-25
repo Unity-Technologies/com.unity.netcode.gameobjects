@@ -1,13 +1,13 @@
 ﻿using Unity.Netcode.Transports.UTP;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
     [RequireComponent(typeof(UnityTransport))]
     public class NetworkSimulator : MonoBehaviour
     {
-        private NetworkSimulatorConfiguration m_SimulatorConfiguration;
+        [SerializeField]
+        NetworkSimulatorConfiguration m_SimulatorConfiguration;
 
         public NetworkSimulatorConfiguration SimulatorConfiguration
         {

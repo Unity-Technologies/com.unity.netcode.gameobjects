@@ -28,7 +28,7 @@ namespace Unity.Netcode.Editor
             m_NetworkSimulator = networkSimulator;
             if (m_NetworkSimulator.SimulatorConfiguration == null)
             {
-                m_NetworkSimulator.SimulatorConfiguration = NetworkTypePresets.None;
+                SetSimulatorConfiguration(NetworkTypePresets.None);
             }
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
@@ -38,8 +38,8 @@ namespace Unity.Netcode.Editor
 
             PresetDropdown.choices = presets;
             PresetDropdown.index = HasCustomValue
-                    ? PresetDropdown.choices.IndexOf(Custom)
-                    : PresetDropdown.choices.IndexOf(m_NetworkSimulator.SimulatorConfiguration.Name);
+                ? PresetDropdown.choices.IndexOf(Custom)
+                : PresetDropdown.choices.IndexOf(m_NetworkSimulator.SimulatorConfiguration.Name);
             PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
 
             CustomPresetValue.objectType = typeof(NetworkSimulatorConfiguration);
@@ -62,9 +62,12 @@ namespace Unity.Netcode.Editor
 
         bool HasValue => m_NetworkSimulator.SimulatorConfiguration != null;
 
-        bool HasCustomValue => HasValue
-                               && NetworkTypePresets.Values.All(
-                                x => x.Name != m_NetworkSimulator.SimulatorConfiguration.Name);
+        bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName);
+        
+        bool SimulatorConfigurationMatchesPresetName(NetworkSimulatorConfiguration configuration)
+        {
+            return configuration.Name == m_NetworkSimulator.SimulatorConfiguration.Name;
+        }
 
         void UpdateEnabled()
         {
@@ -90,7 +93,7 @@ namespace Unity.Netcode.Editor
                 m_CustomSelected = false;
 
                 var preset = NetworkTypePresets.Values.First(x => x.Name == changeEvent.newValue);
-
+                SetSimulatorConfiguration(preset);
                 UpdateSliders(preset);
             }
 
@@ -100,7 +103,8 @@ namespace Unity.Netcode.Editor
 
         void OnCustomPresetChanged(ChangeEvent<Object> evt)
         {
-            m_NetworkSimulator.SimulatorConfiguration = evt.newValue as NetworkSimulatorConfiguration;
+            var configuration = evt.newValue as NetworkSimulatorConfiguration;
+            SetSimulatorConfiguration(configuration);
 
             UpdateEnabled();
 
@@ -167,6 +171,12 @@ namespace Unity.Netcode.Editor
             {
                 m_NetworkSimulator.UpdateLiveParameters();
             }
+        }
+        
+        void SetSimulatorConfiguration(NetworkSimulatorConfiguration configuration)
+        {
+            m_NetworkSimulator.SimulatorConfiguration = configuration;
+            EditorUtility.SetDirty(m_NetworkSimulator);
         }
     }
 }
