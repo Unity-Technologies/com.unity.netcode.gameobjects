@@ -120,12 +120,28 @@ namespace Unity.Netcode
             serializer.SerializeValue(ref m_NetworkObjectId);
         }
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObjectReference"/> to <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkObjectRef">The <see cref="NetworkObjectReference"/> to convert from.</param>
         public static implicit operator NetworkObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef);
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObject"/> to <see cref="NetworkObjectReference"/>.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to convert from.</param>
         public static implicit operator NetworkObjectReference(NetworkObject networkObject) => new NetworkObjectReference(networkObject);
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObjectReference"/> to <see cref="GameObject"/>.
+        /// </summary>
+        /// <param name="networkObjectRef">The <see cref="NetworkObjectReference"/> to convert from.</param>
         public static implicit operator GameObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef).gameObject;
 
+        /// <summary>
+        /// Implicitly convert <see cref="GameObject"/> to <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> to convert from.</param>
         public static implicit operator NetworkObjectReference(GameObject gameObject) => new NetworkObjectReference(gameObject);
     }
 }
