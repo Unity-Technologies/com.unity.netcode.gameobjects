@@ -16,8 +16,8 @@ namespace Unity.Netcode
 
     /// <summary>
     /// Defines network update stages being executed by the network update loop.
-    /// For more details on update execution orders:
-    /// https://docs.unity3d.com/Manual/ExecutionOrder.html
+    /// See for more details on update stages:
+    /// https://docs.unity3d.com/ScriptReference/PlayerLoop.Initialization.html
     /// </summary>
     public enum NetworkUpdateStage : byte
     {

@@ -1184,6 +1184,9 @@ namespace Unity.Netcode
             return true;
         }
 
+        /// <summary>
+        /// Set this NetworkManager instance as the static NetworkManager singleton
+        /// </summary>
         public void SetSingleton()
         {
             Singleton = this;
@@ -1445,7 +1448,10 @@ namespace Unity.Netcode
             ClearClients();
         }
 
-        // INetworkUpdateSystem
+        /// <summary>
+        /// Implementation of <see cref="INetworkUpdateSystem"/> interface.
+        /// </summary>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> that is being executed.</param>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
