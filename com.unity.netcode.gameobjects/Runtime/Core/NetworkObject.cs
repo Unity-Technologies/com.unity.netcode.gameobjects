@@ -541,16 +541,34 @@ namespace Unity.Netcode
             m_LatestParent = latestParent;
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
             if (!AutoObjectParentSync)
