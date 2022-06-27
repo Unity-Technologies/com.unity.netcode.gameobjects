@@ -21,6 +21,11 @@ namespace Unity.Netcode
 
         public void UpdateLiveParameters()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             var transport = NetworkManager.Singleton.NetworkConfig?.NetworkTransport as UnityTransport;
             if (transport != null)
             {

@@ -1,0 +1,26 @@
+#+title: Network Simulator (NetSim)
+
+* Getting Started
+
+** Installation
+1. Checkout NGO (com.unity.netcode.gameobjects) with the branch "experimental/network-simulator".
+2. Checkout UTP (com.unity.transport) with the branch "experimental/network-simulator".
+3. Checkout the latest version of Boss Room (com.unity.multiplayer.samples.coop).
+4. Change Boss Room's manifest.json to point to the checked out versions of NGO and UTP.
+
+** Configuration
+1. Open Boss Room's "Startup" scene.
+2. Find the NetworkManager gameobject. Open the foldout to find the UTP gameobject with a UnityTransport component attached.
+3. Click on "Add Component" on the UTP gameobject and select "Network Simulator".
+4. Save the scene and start the game.
+
+Usage
+- Ideally, run two instances of the Boss Room project with the network simulator enabled to see the best results.
+- Click on "Disable Connection" to ignore all sent and received data until "Re-enable connection" is clicked.
+- Lag Spike does exactly the same thing, but re-enables the connection after the specified amount of time.
+- Change the connection type to any of the presets to observe impacts of the network condition on the game.
+- To create a custom preset and change the individual network parameters: In your project's asset folder, right click and select Create->ScriptableObject->NetworkSimulatorConfiguration. Select "Custom" as a connection type on the Network Simulator, and drag the created custom scriptable object into the new input field. Individual parameters are now editable and are saved to the scriptable object.
+- Scenarios are currently not implemented.
+
+Note:
+- This can be used on other project than Boss Room as well.
