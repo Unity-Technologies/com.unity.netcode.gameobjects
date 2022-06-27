@@ -151,6 +151,8 @@ namespace Unity.Netcode.Editor
             }
         }
 
+
+        /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             if (!m_Initialized)
@@ -230,6 +232,11 @@ namespace Unity.Netcode.Editor
 
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
 
+        /// <summary>
+        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// </summary>
+        /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
+        /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
         public static Transform GetRootParentTransform(Transform transform)
         {
             if (transform.parent == null || transform.parent == transform)
