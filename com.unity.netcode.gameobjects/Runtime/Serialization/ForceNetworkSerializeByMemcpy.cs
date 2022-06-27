@@ -14,6 +14,10 @@ namespace Unity.Netcode
         /// </summary>
         public T Value;
 
+        /// <summary>
+        /// The default constructor for <see cref="ForceNetworkSerializeByMemcpy{T}"/>
+        /// </summary>
+        /// <param name="value">sets the initial value of type `T`</param>
         public ForceNetworkSerializeByMemcpy(T value)
         {
             Value = value;

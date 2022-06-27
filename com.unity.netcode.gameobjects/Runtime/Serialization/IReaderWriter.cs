@@ -284,6 +284,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
@@ -293,6 +294,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T>;
 
@@ -302,6 +304,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
@@ -311,6 +314,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum;
 
@@ -320,6 +324,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
@@ -329,6 +334,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read/write</param>
         void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy;
 
@@ -338,6 +344,7 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
