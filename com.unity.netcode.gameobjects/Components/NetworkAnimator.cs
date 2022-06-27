@@ -37,6 +37,7 @@ namespace Unity.Netcode.Components
             m_SendTriggerUpdates.Clear();
         }
 
+        /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)

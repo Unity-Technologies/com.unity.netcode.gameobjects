@@ -5,20 +5,46 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// A component for syncing transforms
+    /// A component for syncing transforms.
     /// NetworkTransform will read the underlying transform and replicate it to clients.
-    /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform
+    /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
+        /// <summary>
+        /// The default position change threshold value.
+        /// Any changes above this threshold will be replicated.
+        /// </summary>
         public const float PositionThresholdDefault = 0.001f;
+
+        /// <summary>
+        /// The default rotation angle change threshold value.
+        /// Any changes above this threshold will be replicated.
+        /// </summary>
         public const float RotAngleThresholdDefault = 0.01f;
+
+        /// <summary>
+        /// The default scale change threshold value.
+        /// Any changes above this threshold will be replicated.
+        /// </summary>
         public const float ScaleThresholdDefault = 0.01f;
 
+        /// <summary>
+        /// The handler delegate type that takes client requested changes and returns resulting changes handled by the server.
+        /// </summary>
+        /// <param name="pos">The position requested by the client.</param>
+        /// <param name="rot">The rotation requested by the client.</param>
+        /// <param name="scale">The scale requested by the client.</param>
+        /// <returns>The resulting position, rotation and scale changes after handling.</returns>
         public delegate (Vector3 pos, Quaternion rotOut, Vector3 scale) OnClientRequestChangeDelegate(Vector3 pos, Quaternion rot, Vector3 scale);
+
+        /// <summary>
+        /// The handler that gets invoked when server receives a change from a client.
+        /// This handler would be useful for server to modify pos/rot/scale before applying client's request.
+        /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
         internal struct NetworkTransformState : INetworkSerializable
@@ -244,15 +270,62 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public bool SyncPositionX = true, SyncPositionY = true, SyncPositionZ = true;
-        public bool SyncRotAngleX = true, SyncRotAngleY = true, SyncRotAngleZ = true;
-        public bool SyncScaleX = true, SyncScaleY = true, SyncScaleZ = true;
+        /// <summary>
+        /// Whether or not x component of position will be replicated
+        /// </summary>
+        public bool SyncPositionX = true;
+        /// <summary>
+        /// Whether or not y component of position will be replicated
+        /// </summary>
+        public bool SyncPositionY = true;
+        /// <summary>
+        /// Whether or not z component of position will be replicated
+        /// </summary>
+        public bool SyncPositionZ = true;
+        /// <summary>
+        /// Whether or not x component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleX = true;
+        /// <summary>
+        /// Whether or not y component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleY = true;
+        /// <summary>
+        /// Whether or not z component of rotation will be replicated
+        /// </summary>
+        public bool SyncRotAngleZ = true;
+        /// <summary>
+        /// Whether or not x component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleX = true;
+        /// <summary>
+        /// Whether or not y component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleY = true;
+        /// <summary>
+        /// Whether or not z component of scale will be replicated
+        /// </summary>
+        public bool SyncScaleZ = true;
 
+        /// <summary>
+        /// The current position threshold value
+        /// Any changes to the position that exceeds the current threshold value will be replicated
+        /// </summary>
         public float PositionThreshold = PositionThresholdDefault;
 
+        /// <summary>
+        /// The current rotation threshold value
+        /// Any changes to the rotation that exceeds the current threshold value will be replicated
+        /// Minimum Value: 0.001
+        /// Maximum Value: 360.0
+        /// </summary>
         [Range(0.001f, 360.0f)]
         public float RotAngleThreshold = RotAngleThresholdDefault;
 
+        /// <summary>
+        /// The current scale threshold value
+        /// Any changes to the scale that exceeds the current threshold value will be replicated
+        /// </summary>
         public float ScaleThreshold = ScaleThresholdDefault;
 
         /// <summary>
@@ -265,6 +338,10 @@ namespace Unity.Netcode.Components
         public bool InLocalSpace = false;
         private bool m_LastInterpolateLocal = false; // was the last frame local
 
+        /// <summary>
+        /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
+        /// Note: can be changed during runtime.
+        /// </summary>
         public bool Interpolate = true;
         private bool m_LastInterpolate = true; // was the last frame interpolated
 
@@ -276,7 +353,17 @@ namespace Unity.Netcode.Components
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
         public bool CanCommitToTransform { get; protected set; }
+
+        /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
+        /// was instantiated on the server side or not.
+        /// </summary>
         protected bool m_CachedIsServer;
+
+        /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
+        /// this <see cref="NetworkBehaviour"/> derived class instance.
+        /// </summary>
         protected NetworkManager m_CachedNetworkManager;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
@@ -716,6 +803,13 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Will set the maximum interpolation boundary for the interpolators of this <see cref="NetworkTransform"/> instance.
+        /// This value roughly translates to the maximum value of 't' in <see cref="Mathf.Lerp(float, float, float)"/> and
+        /// <see cref="Mathf.LerpUnclamped(float, float, float)"/> for all transform elements being monitored by
+        /// <see cref="NetworkTransform"/> (i.e. Position, Rotation, and Scale)
+        /// </summary>
+        /// <param name="maxInterpolationBound">Maximum time boundary that can be used in a frame when interpolating between two values</param>
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
             m_PositionXInterpolator.MaxInterpolationBound = maxInterpolationBound;
@@ -750,6 +844,8 @@ namespace Unity.Netcode.Components
             }
         }
 
+
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
@@ -773,16 +869,19 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
             Initialize();
         }
 
+        /// <inheritdoc/>
         public override void OnLostOwnership()
         {
             Initialize();
@@ -850,8 +949,7 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
-            // server has received this RPC request to move change transform.  Give the server a chance to modify or
-            //  even reject the move
+            // server has received this RPC request to move change transform. give the server a chance to modify or even reject the move
             if (OnClientRequestChange != null)
             {
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
@@ -862,8 +960,9 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
 
-        // todo this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
+        // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
+        /// <inheritdoc/>
         protected virtual void Update()
         {
             if (!IsSpawned)
@@ -921,6 +1020,10 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Teleports the transform to the given values without interpolating
         /// </summary>
+        /// <param name="newPosition"></param> new position to move to.
+        /// <param name="newRotation"></param> new rotation to rotate to.
+        /// <param name="newScale">new scale to scale to.</param>
+        /// <exception cref="Exception"></exception>
         public void Teleport(Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
         {
             if (!CanCommitToTransform)
@@ -945,6 +1048,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Override this method and return false to switch to owner authoritative mode
         /// </summary>
+        /// <returns>(<see cref="true"/> or <see cref="false"/>) where when false it runs as owner-client authoritative</returns>
         protected virtual bool OnIsServerAuthoritative()
         {
             return true;

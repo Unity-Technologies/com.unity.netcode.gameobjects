@@ -935,7 +935,7 @@ namespace Unity.Netcode
         /// Unloads an additively loaded scene.  If you want to unload a <see cref="LoadSceneMode.Single"/> mode loaded scene load another <see cref="LoadSceneMode.Single"/> scene.
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via the <see cref="OnSceneEvent"/>
         /// </summary>
-        /// <param name="sceneName">scene name to unload</param>
+        /// <param name="scene"></param>
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus UnloadScene(Scene scene)
         {
@@ -1134,6 +1134,7 @@ namespace Unity.Netcode
         /// When applicable, the <see cref="AsyncOperation"/> is delivered within the <see cref="SceneEvent"/> via <see cref="OnSceneEvent"/>
         /// </summary>
         /// <param name="sceneName">the name of the scene to be loaded</param>
+        /// <param name="loadSceneMode">how the scene will be loaded (single or additive mode)</param>
         /// <returns><see cref="SceneEventProgressStatus"/> (<see cref="SceneEventProgressStatus.Started"/> means it was successful)</returns>
         public SceneEventProgressStatus LoadScene(string sceneName, LoadSceneMode loadSceneMode)
         {

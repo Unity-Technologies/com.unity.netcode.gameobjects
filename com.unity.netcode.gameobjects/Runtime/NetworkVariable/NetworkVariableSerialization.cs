@@ -120,10 +120,28 @@ namespace Unity.Netcode
     /// <typeparam name="T"></typeparam>
     public class UserNetworkVariableSerialization<T>
     {
+        /// <summary>
+        /// The write value delegate handler definition
+        /// </summary>
+        /// <param name="writer">The <see cref="FastBufferWriter"/> to write the value of type `T`</param>
+        /// <param name="value">The value of type `T` to be written</param>
         public delegate void WriteValueDelegate(FastBufferWriter writer, in T value);
+
+        /// <summary>
+        /// The read value delegate handler definition
+        /// </summary>
+        /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
+        /// <param name="value">The value of type `T` to be read</param>
         public delegate void ReadValueDelegate(FastBufferReader reader, out T value);
 
+        /// <summary>
+        /// The <see cref="WriteValueDelegate"/> delegate handler declaration
+        /// </summary>
         public static WriteValueDelegate WriteValue;
+
+        /// <summary>
+        /// The <see cref="ReadValueDelegate"/> delegate handler declaration
+        /// </summary>
         public static ReadValueDelegate ReadValue;
     }
 
@@ -192,6 +210,7 @@ namespace Unity.Netcode
     /// but there's no way to achieve the same thing with a class, this sets up various read/write schemes
     /// based on which constraints are met by `T` using reflection, which is done at module load time.
     /// </summary>
+    /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
     [Serializable]
     public static class NetworkVariableSerialization<T> where T : unmanaged
     {
