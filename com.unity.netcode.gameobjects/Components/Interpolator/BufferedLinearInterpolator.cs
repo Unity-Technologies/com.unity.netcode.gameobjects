@@ -155,6 +155,7 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
         /// Convenience version of 'Update' mainly for testing
         ///  the reason we don't want to always call this version is so that on the calling side we can compute
         ///  the renderTime once for the many things being interpolated (and the many interpolators per object)
