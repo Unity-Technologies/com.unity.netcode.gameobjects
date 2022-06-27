@@ -13,28 +13,49 @@ namespace Unity.Netcode.Editor
 
         readonly NetworkScenario m_NetworkScenario;
         readonly List<Type> m_Scenarios;
+        readonly SerializedProperty m_NetworkScenarioProperty;
+        readonly List<string> m_Choices;
 
-        DropdownField PresetDropdown => this.Q<DropdownField>(nameof(PresetDropdown));
+        DropdownField ScenarioDropdown => this.Q<DropdownField>(nameof(ScenarioDropdown));
 
-        public NetworkScenarioView(NetworkScenario networkScenario)
+        public NetworkScenarioView(SerializedProperty networkScenarioProperty, NetworkScenario networkScenario)
         {
             m_NetworkScenario = networkScenario;
+            m_NetworkScenarioProperty = networkScenarioProperty;
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
 
+            Undo.undoRedoPerformed += UndoRedoPerformed;
+            RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
+
             m_Scenarios = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(x => x.GetTypes())
-                .Where(x => x.GetInterfaces().Contains(typeof(INetworkSimulatorScenario)))
+                .Where(TypeIsValidNetworkScenario)
                 .ToList();
 
-            var choices = new List<string> { None };
-            choices.AddRange(m_Scenarios.Select(x => x.Name));
+            m_Choices = new() { None };
+            m_Choices.AddRange(m_Scenarios.Select(x => x.Name));
 
-            PresetDropdown.choices = choices;
-            PresetDropdown.index = m_NetworkScenario.NetworkSimulatorScenario == null
+            ScenarioDropdown.choices = m_Choices;
+            ScenarioDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            UpdateScenarioDropdown();
+        }
+
+        void OnDetachedFromPanel(DetachFromPanelEvent evt)
+        {
+            Undo.undoRedoPerformed -= UndoRedoPerformed;
+        }
+
+        void UndoRedoPerformed()
+        {
+            UpdateScenarioDropdown();
+        }
+
+        void UpdateScenarioDropdown()
+        {
+            ScenarioDropdown.index = m_NetworkScenario.NetworkSimulatorScenario == null
                 ? 0
-                : choices.IndexOf(m_NetworkScenario.NetworkSimulatorScenario.GetType().Name);
-            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+                : m_Choices.IndexOf(m_NetworkScenario.NetworkSimulatorScenario.GetType().Name);
         }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
@@ -42,13 +63,18 @@ namespace Unity.Netcode.Editor
             if (changeEvent.newValue == None)
             {
                 m_NetworkScenario.NetworkSimulatorScenario = null;
+                return;
             }
-            else
-            {
-                var scenario = m_Scenarios.First(x => x.Name == changeEvent.newValue);
-                var instance = Activator.CreateInstance(scenario);
-                m_NetworkScenario.NetworkSimulatorScenario = instance as INetworkSimulatorScenario;
-            }
+
+            var scenario = m_Scenarios.First(x => x.Name == changeEvent.newValue);
+            var instance = Activator.CreateInstance(scenario);
+            m_NetworkScenarioProperty.managedReferenceValue = (INetworkSimulatorScenario)instance;
+            m_NetworkScenarioProperty.serializedObject.ApplyModifiedProperties();
+        }
+
+        bool TypeIsValidNetworkScenario(Type type)
+        {
+            return type.IsClass && type.IsAbstract == false && typeof(INetworkSimulatorScenario).IsAssignableFrom(type);
         }
     }
 }
