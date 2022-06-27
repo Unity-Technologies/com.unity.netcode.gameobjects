@@ -11,31 +11,36 @@
 
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
     [RequireComponent(typeof(UnityTransport))]
     public class NetworkSimulator : MonoBehaviour
     {
-        [field: SerializeField]
-        private NetworkSimulationConfiguration m_simulationConfiguration;
+        private NetworkSimulatorConfiguration m_SimulatorConfiguration;
 
-        public NetworkSimulationConfiguration SimulationConfiguration
+        public NetworkSimulatorConfiguration SimulatorConfiguration
         {
-            get => m_simulationConfiguration;
+            get => m_SimulatorConfiguration;
             set
             {
-                m_simulationConfiguration = value;
+                m_SimulatorConfiguration = value;
                 UpdateLiveParameters();
             }
         }
 
         public void UpdateLiveParameters()
         {
-            var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport as UnityTransport;
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
+            var transport = NetworkManager.Singleton.NetworkConfig?.NetworkTransport as UnityTransport;
             if (transport != null)
             {
-                transport.RefreshSimulationPipelineParameters(SimulationConfiguration);
+                transport.UpdateSimulationPipelineParameters(SimulatorConfiguration);
             }
         }
     }
