@@ -578,7 +578,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The value to read/write</param>
+        /// <param name="unused">An unused parameter that can be used for enabling overload resolution for fixed strings</param>
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValuePreChecked(ref value);
     }
