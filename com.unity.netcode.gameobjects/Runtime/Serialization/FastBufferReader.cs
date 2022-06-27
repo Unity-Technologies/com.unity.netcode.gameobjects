@@ -9,6 +9,8 @@ namespace Unity.Netcode
     /// <summary>
     /// Optimized class used for reading values from a byte stream
     /// <seealso cref="FastBufferWriter"/>
+    /// <seealso cref="BytePacker"/>
+    /// <seealso cref="ByteUnpacker"/>
     /// </summary>
     public struct FastBufferReader : IDisposable
     {

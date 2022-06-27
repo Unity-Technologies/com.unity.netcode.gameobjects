@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Optimized class used for writing values into a byte stream
+    /// <seealso cref="FastBufferReader"/>
+    /// <seealso cref="BytePacker"/>
+    /// <seealso cref="ByteUnpacker"/>
+    /// </summary>
     public struct FastBufferWriter : IDisposable
     {
         internal struct WriterHandle
@@ -108,7 +114,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Frees the allocated buffer
+        /// <see cref="IDisposable"/> implementation that frees the allocated buffer
         /// </summary>
         public unsafe void Dispose()
         {
@@ -267,7 +273,8 @@ namespace Unity.Netcode
         /// operations in release builds. Instead, attempting to write past the marked position in release builds
         /// will write to random memory and cause undefined behavior, likely including instability and crashes.
         /// </summary>
-        /// <param name="value">The value you want to write</param>
+        /// <typeparam name="T">The value type to write</typeparam>
+        /// <param name="value">The value of the type `T` you want to write</param>
         /// <returns>True if the write is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
