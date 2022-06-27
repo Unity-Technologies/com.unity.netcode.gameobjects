@@ -155,13 +155,13 @@ namespace Unity.Netcode
             }
         }
 
-        /// <summary>
         /// Convenience version of 'Update' mainly for testing
         ///  the reason we don't want to always call this version is so that on the calling side we can compute
         ///  the renderTime once for the many things being interpolated (and the many interpolators per object)
         /// </summary>
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
+        /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, NetworkTime serverTime)
         {
             return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
@@ -173,6 +173,7 @@ namespace Unity.Netcode
         /// <param name="deltaTime">time since last call</param>
         /// <param name="renderTime">our current time</param>
         /// <param name="serverTime">current server time</param>
+        /// <returns>The newly interpolated value of type 'T'</returns>
         public T Update(float deltaTime, double renderTime, double serverTime)
         {
             TryConsumeFromBuffer(renderTime, serverTime);
@@ -256,6 +257,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets latest value from the interpolator. This is updated every update as time goes by.
         /// </summary>
+        /// <returns>The current interpolated value of type 'T'</returns>
         public T GetInterpolatedValue()
         {
             return m_CurrentInterpValue;
@@ -280,6 +282,10 @@ namespace Unity.Netcode
         protected abstract T InterpolateUnclamped(T start, T end, float time);
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// This is a buffered linear interpolator for a <see cref="float"/> type value
+    /// </remarks>
     public class BufferedLinearInterpolatorFloat : BufferedLinearInterpolator<float>
     {
         /// <inheritdoc />
@@ -295,6 +301,10 @@ namespace Unity.Netcode
         }
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// This is a buffered linear interpolator for a <see cref="Quaternion"/> type value
+    /// </remarks>
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
         /// <inheritdoc />

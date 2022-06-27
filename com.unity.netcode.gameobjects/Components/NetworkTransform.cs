@@ -353,7 +353,17 @@ namespace Unity.Netcode.Components
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
         public bool CanCommitToTransform { get; protected set; }
+
+        /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
+        /// was instantiated on the server side or not.
+        /// </summary>
         protected bool m_CachedIsServer;
+
+        /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
+        /// this <see cref="NetworkBehaviour"/> derived class instance.
+        /// </summary>
         protected NetworkManager m_CachedNetworkManager;
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
@@ -834,6 +844,8 @@ namespace Unity.Netcode.Components
             }
         }
 
+
+        /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
@@ -857,16 +869,19 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
+        /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
             Initialize();
         }
 
+        /// <inheritdoc/>
         public override void OnLostOwnership()
         {
             Initialize();
@@ -947,6 +962,7 @@ namespace Unity.Netcode.Components
 
         // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
+        /// <inheritdoc/>
         protected virtual void Update()
         {
             if (!IsSpawned)
