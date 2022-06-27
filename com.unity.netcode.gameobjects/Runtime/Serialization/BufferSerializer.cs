@@ -268,14 +268,14 @@ namespace Unity.Netcode
         // INativeList<bool> provides the Length property
         // IUTF8Bytes provides GetUnsafePtr()
         // Those two are necessary to serialize FixedStrings efficiently
-        // - otherwise we'd just be memcpying the whole thing even if
+        // - otherwise we'd just be memcpy'ing the whole thing even if
         // most of it isn't used.
         /// <summary>
         /// Read or write a FixedString value
         /// </summary>
-        /// <param name="value">The value to read/write</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of FixedStrings</param>
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Implementation.SerializeValue(ref value);
 
@@ -283,8 +283,8 @@ namespace Unity.Netcode
         /// Read or write a NetworkSerializable value.
         /// SerializeValue() is the preferred method to do this - this is provided for backward compatibility only.
         /// </summary>
-        /// <param name="value">The value to read/write</param>
         /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new() => m_Implementation.SerializeNetworkSerializable(ref value);
 
         /// <summary>
@@ -325,7 +325,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The network serializable type</typeparam>
         /// <param name="value">The value to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
@@ -334,7 +336,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The network serializable types in an array</typeparam>
         /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of primitives</param>
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
@@ -343,7 +347,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of enums</param>
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
@@ -352,7 +358,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The network serializable types in an array</typeparam>
         /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of enums</param>
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
@@ -361,7 +369,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <typeparam name="T">The network serializable type</typeparam>
+        /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of structs</param>
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
@@ -370,7 +380,9 @@ namespace Unity.Netcode
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
         /// </summary>
+        /// <typeparam name="T">The network serializable types in an array</typeparam>
         /// <param name="value">The values to read/write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution of structs</param>
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Implementation.SerializeValuePreChecked(ref value);
 
         /// <summary>
