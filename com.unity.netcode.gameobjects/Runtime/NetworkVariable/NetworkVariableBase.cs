@@ -36,6 +36,12 @@ namespace Unity.Netcode
         /// </summary>
         public const NetworkVariableWritePermission DefaultWritePerm = NetworkVariableWritePermission.Server;
 
+        /// <summary>
+        /// The default constructor for <see cref="NetworkVariableBase"/> that can be used to create a
+        /// custom NetworkVariable.
+        /// </summary>
+        /// <param name="readPerm">the <see cref="NetworkVariableReadPermission"/> access settings</param>
+        /// <param name="writePerm">the <see cref="NetworkVariableWritePermission"/> access settings</param>
         protected NetworkVariableBase(
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -44,6 +50,10 @@ namespace Unity.Netcode
             WritePerm = writePerm;
         }
 
+        /// <summary>
+        /// The <see cref="m_IsDirty"/> property is used to determine if the
+        /// value of the `NetworkVariable` has changed.
+        /// </summary>
         private protected bool m_IsDirty;
 
         /// <summary>
@@ -155,6 +165,9 @@ namespace Unity.Netcode
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
         public abstract void ReadDelta(FastBufferReader reader, bool keepDirtyDelta);
 
+        /// <summary>
+        /// Virtual <see cref="IDisposable"/> implementation
+        /// </summary>
         public virtual void Dispose()
         {
         }
