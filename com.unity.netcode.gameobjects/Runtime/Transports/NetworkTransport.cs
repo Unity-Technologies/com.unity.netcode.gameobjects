@@ -45,7 +45,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Send a payload to the specified clientId, data and channelName.
+        /// Send a payload to the specified clientId, data and networkDelivery.
         /// </summary>
         /// <param name="clientId">The clientId to send to</param>
         /// <param name="payload">The data to send</param>
