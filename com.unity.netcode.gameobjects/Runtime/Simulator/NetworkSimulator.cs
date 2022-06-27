@@ -7,7 +7,7 @@ namespace Unity.Netcode
     public class NetworkSimulator : MonoBehaviour
     {
         [SerializeField]
-        NetworkSimulatorConfiguration m_SimulatorConfiguration;
+        internal NetworkSimulatorConfiguration m_SimulatorConfiguration;
 
         public NetworkSimulatorConfiguration SimulatorConfiguration
         {

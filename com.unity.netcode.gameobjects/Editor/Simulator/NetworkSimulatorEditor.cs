@@ -20,7 +20,8 @@ namespace Unity.Netcode.Editor
             m_Inspector.Add(new NetworkEventsView(
                 new NetworkEventsApi(m_NetworkSimulator, m_NetworkSimulator.GetComponent<UnityTransport>())));
 
-            m_Inspector.Add(new NetworkTypeView(m_NetworkSimulator));
+            var simulatorConfigurationProperty = serializedObject.FindProperty(nameof(NetworkSimulator.m_SimulatorConfiguration));
+            m_Inspector.Add(new NetworkTypeView(simulatorConfigurationProperty, m_NetworkSimulator));
 
             return m_Inspector;
         }
