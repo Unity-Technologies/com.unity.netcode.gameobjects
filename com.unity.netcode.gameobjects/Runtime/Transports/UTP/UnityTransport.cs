@@ -16,6 +16,14 @@ namespace Unity.Netcode.Transports.UTP
     /// </summary>
     public interface INetworkStreamDriverConstructor
     {
+        /// <summary>
+        /// Creates the internal NetworkDriver
+        /// </summary>
+        /// <param name="transport">The owner transport</param>
+        /// <param name="driver">The driver</param>
+        /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
+        /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
+        /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
         void CreateDriver(
             UnityTransport transport,
             out NetworkDriver driver,
@@ -76,6 +84,10 @@ namespace Unity.Netcode.Transports.UTP
         }
     }
 
+    /// <summary>
+    /// The Netcode for GameObjects NetworkTransport for UnityTransport.
+    /// Note: This is highly recommended to use over UNet.
+    /// </summary>
     public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         /// <summary>
@@ -1197,7 +1209,12 @@ namespace Unity.Netcode.Transports.UTP
 
         /// <summary>
         /// Connects client to the server
+        /// Note:
+        /// When this method returns false it could mean:
+        /// - You are trying to start a client that is already started
+        /// - It failed during the initial port binding when attempting to begin to connect
         /// </summary>
+        /// <returns>true if the client was started and false if it failed to start the client</returns>
         public override bool StartClient()
         {
             if (m_Driver.IsCreated)
@@ -1215,7 +1232,12 @@ namespace Unity.Netcode.Transports.UTP
 
         /// <summary>
         /// Starts to listening for incoming clients
+        /// Note:
+        /// When this method returns false it could mean:
+        /// - You are trying to start a client that is already started
+        /// - It failed during the initial port binding when attempting to begin to connect
         /// </summary>
+        /// <returns>true if the server was started and false if it failed to start the server</returns>
         public override bool StartServer()
         {
             if (m_Driver.IsCreated)

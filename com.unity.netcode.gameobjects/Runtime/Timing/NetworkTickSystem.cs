@@ -72,9 +72,9 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
+        /// </summary>
         /// <param name="localTimeSec">The local time in seconds</param>
         /// <param name="serverTimeSec">The server time in seconds</param>
-        /// </summary>
         public void UpdateTick(double localTimeSec, double serverTimeSec)
         {
             // store old local tick to know how many fixed ticks passed

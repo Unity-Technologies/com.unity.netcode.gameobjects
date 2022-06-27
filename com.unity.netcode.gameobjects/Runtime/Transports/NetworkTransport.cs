@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The generic transport class all Netcode for GameObjects network transport implementations
+    /// derive from.  Use this class to add a custom transport.
+    /// <seealso cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
+    /// </summary>
     public abstract class NetworkTransport : MonoBehaviour
     {
         /// <summary>
