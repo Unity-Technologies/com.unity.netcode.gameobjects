@@ -25,8 +25,15 @@ namespace Unity.Netcode
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
 
+        /// <summary>
+        /// Constructor method for <see cref="NetworkList"/>
+        /// </summary>
         public NetworkList() { }
 
+        /// <inheritdoc/>
+        /// <param name="values"></param>
+        /// <param name="readPerm"></param>
+        /// <param name="writePerm"></param>
         public NetworkList(IEnumerable<T> values = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -460,6 +467,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Overridden <see cref="IDisposable"/> implementation.
+        /// CAUTION: If you derive from this class and override the <see cref="Dispose"/> method,
+        /// you **must** always invoke the base.Dispose() method!
+        /// </summary>
         public override void Dispose()
         {
             m_List.Dispose();
