@@ -6,6 +6,10 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Optimized class used for reading values from a byte stream
+    /// <seealso cref="FastBufferWriter"/>
+    /// </summary>
     public struct FastBufferReader : IDisposable
     {
         internal struct ReaderHandle
@@ -235,7 +239,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Frees the allocated buffer
+        /// <see cref="IDisposable"/> implementation that frees the allocated buffer
         /// </summary>
         public unsafe void Dispose()
         {
@@ -335,6 +339,7 @@ namespace Unity.Netcode
         /// for performance reasons, since the point of using TryBeginRead is to avoid bounds checking in the following
         /// operations in release builds.
         /// </summary>
+        /// <typeparam name="T">the type `T` of the value you are trying to read</typeparam>
         /// <param name="value">The value you want to read</param>
         /// <returns>True if the read is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
@@ -364,7 +369,7 @@ namespace Unity.Netcode
         /// Differs from TryBeginRead only in that it won't ever move the AllowedReadMark backward.
         /// </summary>
         /// <param name="bytes"></param>
-        /// <returns></returns>
+        /// <returns>true upon success</returns>
         /// <exception cref="InvalidOperationException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe bool TryBeginReadInternal(int bytes)
@@ -393,7 +398,7 @@ namespace Unity.Netcode
         /// Returns an array representation of the underlying byte buffer.
         /// !!Allocates a new array!!
         /// </summary>
-        /// <returns></returns>
+        /// <returns>byte array</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte[] ToArray()
         {
@@ -408,7 +413,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a direct pointer to the underlying buffer
         /// </summary>
-        /// <returns></returns>
+        /// <returns><see cref="byte"/> pointer</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtr()
         {
@@ -418,7 +423,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a direct pointer to the underlying buffer at the current read position
         /// </summary>
-        /// <returns></returns>
+        /// <returns><see cref="byte"/> pointer</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public unsafe byte* GetUnsafePtrAtCurrentPosition()
         {
@@ -428,8 +433,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Read an INetworkSerializable
         /// </summary>
-        /// <param name="value">INetworkSerializable instance</param>
         /// <typeparam name="T"></typeparam>
+        /// <param name="value">INetworkSerializable instance</param>
         /// <exception cref="NotImplementedException"></exception>
         public void ReadNetworkSerializable<T>(out T value) where T : INetworkSerializable, new()
         {
@@ -442,7 +447,7 @@ namespace Unity.Netcode
         /// Read an array of INetworkSerializables
         /// </summary>
         /// <param name="value">INetworkSerializable instance</param>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
         /// <exception cref="NotImplementedException"></exception>
         public void ReadNetworkSerializable<T>(out T[] value) where T : INetworkSerializable, new()
         {
@@ -537,7 +542,7 @@ namespace Unity.Netcode
         /// <param name="value">Value to read</param>
         /// <param name="bytesToRead">Number of bytes</param>
         /// <param name="offsetBytes">Offset into the value to write the bytes</param>
-        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="T">the type value to read the value into</typeparam>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="OverflowException"></exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -741,18 +746,18 @@ namespace Unity.Netcode
         /// <summary>
         /// Read a NetworkSerializable value
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
         /// <summary>
         /// Read a NetworkSerializable array
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
@@ -762,9 +767,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
@@ -774,9 +779,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
@@ -784,18 +789,18 @@ namespace Unity.Netcode
         /// <summary>
         /// Read a struct
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
 
         /// <summary>
         /// Read a struct array
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
 
@@ -805,9 +810,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
@@ -817,9 +822,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
 
@@ -828,9 +833,9 @@ namespace Unity.Netcode
         /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
         /// on values that are not primitives.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
 
@@ -839,9 +844,9 @@ namespace Unity.Netcode
         /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
         /// on values that are not primitives.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
 
@@ -853,9 +858,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
 
@@ -867,18 +872,18 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
 
         /// <summary>
         /// Read an enum value
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
 
@@ -898,9 +903,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The value to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
@@ -910,9 +915,9 @@ namespace Unity.Netcode
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
         /// for multiple reads at once by calling TryBeginRead.
         /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 

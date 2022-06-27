@@ -4,6 +4,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Byte Unpacking Helper Class
+    /// Use this class to unpack values during deserialization for values that were packed.
+    /// <seealso cref="BytePacker"/> to pack unpacked values
+    /// </summary>
     public static class ByteUnpacker
     {
 
