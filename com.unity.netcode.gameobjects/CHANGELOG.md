@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Changed version to 1.0.0.
+- Changed version to 1.0.0. (#2046)
 
 ## [1.0.0-pre.10] - 2022-06-21
 
