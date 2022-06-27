@@ -20,7 +20,7 @@ namespace Unity.Netcode.SampleScenarios
     public class RandomlySwitchConnectionType : NetworkSimulatorScenarioTask
     {
         [field: SerializeField]
-        float ChangeInterval { get; set; }
+        float ChangeInterval { get; set; } = 5f;
             
         protected override async Task Run(INetworkEventsApi networkEventsApi, CancellationToken cancellationToken)
         {
@@ -34,7 +34,7 @@ namespace Unity.Netcode.SampleScenarios
             }
         }
     }
-        
+
     [UsedImplicitly]
     public class CycleThroughConnectionPresets : INetworkSimulatorScenarioUpdateHandler
     {
@@ -45,44 +45,41 @@ namespace Unity.Netcode.SampleScenarios
             public string Name;
             public float Duration;
         }
-            
-        [field: SerializeReference]
-        NetworkTypeByTime[] NetworkTypeByTimeList { get; set; }
-    
+
         INetworkEventsApi m_NetworkEventsApi;
-        NetworkTypeByTime m_CurrentType;
-        int m_CurrentIndex;
         float m_TimeElapsed;
+        int m_CurrentIndex;
+
+        [field: SerializeReference]
+        NetworkTypeByTime[] NetworkTypeByTimeList { get; set; } =
+        {
+            new() { Name = nameof(NetworkTypePresets.None), Duration = 0 },
+            new() { Name = nameof(NetworkTypePresets.HomeBroadband), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile2G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile2_5G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile2_75G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile3G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile3_5G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile3_75G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile4G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile4_5G), Duration = 5f },
+            new() { Name = nameof(NetworkTypePresets.Mobile5G), Duration = 5f }
+        };
+
+        NetworkTypeByTime CurrentType => NetworkTypeByTimeList[CurrentIndex];
     
         int CurrentIndex
         {
             get => m_CurrentIndex;
-            set => m_CurrentIndex = value < NetworkTypeByTimeList.Length ? value : 0;
+            set => m_CurrentIndex = value >= NetworkTypeByTimeList.Length
+                ? value % NetworkTypeByTimeList.Length
+                : value;
         }
     
-        public CycleThroughConnectionPresets()
-        {
-            NetworkTypeByTimeList = new NetworkTypeByTime[]
-            {
-                new() { Name = nameof(NetworkTypePresets.None), Duration = 0 },
-                new() { Name = nameof(NetworkTypePresets.HomeBroadband), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile2G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile2_5G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile2_75G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile3G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile3_5G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile3_75G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile4G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile4_5G), Duration = 1 },
-                new() { Name = nameof(NetworkTypePresets.Mobile5G), Duration = 1 },
-            };
-        }
-            
         public void Start(INetworkEventsApi networkEventsApi)
         {
             m_NetworkEventsApi = networkEventsApi;
-            var connectionType = FindNextConnectionType();
-            m_NetworkEventsApi.ChangeNetworkType(connectionType);
+            IterateConnectionType();
         }
             
         public void Dispose()
@@ -92,27 +89,25 @@ namespace Unity.Netcode.SampleScenarios
         public void Update(float deltaTime)
         {
             m_TimeElapsed += deltaTime;
-            if (m_TimeElapsed < m_CurrentType.Duration)
+            if (m_TimeElapsed < CurrentType.Duration)
             {
                 return;
             }
     
-            m_TimeElapsed -= m_CurrentType.Duration;
-    
-            var connectionType = FindNextConnectionType();
-            m_NetworkEventsApi.ChangeNetworkType(connectionType);
-            Debug.Log($"Changed to: {connectionType.Name}");
+            m_TimeElapsed -= CurrentType.Duration;
+            IterateConnectionType();
         }
         
-        NetworkSimulatorConfiguration FindNextConnectionType()
+        void IterateConnectionType()
         {
-            do
+            while (CurrentType.Duration == 0)
             {
-                m_CurrentType = NetworkTypeByTimeList[++CurrentIndex];
+                CurrentIndex++;
             }
-            while (m_CurrentType.Duration == 0);
     
-            return NetworkTypePresets.Values[CurrentIndex];
+            var connectionType = NetworkTypePresets.Values[CurrentIndex++];
+            m_NetworkEventsApi.ChangeNetworkType(connectionType);
+            Debug.Log($"Changed to: {connectionType.Name}");
         }
     }
 }

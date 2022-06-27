@@ -24,15 +24,16 @@ namespace Unity.Netcode.Editor
             m_NetworkScenarioProperty = networkScenarioProperty;
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
+            
+            // Using IMGUIContainer since the PropertyField doesn't properly support SerializedReferences until Unity 2022.1
+            // Source: https://forum.unity.com/threads/propertyfields-dont-work-properly-with-serializereference-fields.796725/
+            var scenarioParameters = new IMGUIContainer(OnScenarioParametersGUIHandler);
+            Add(scenarioParameters);
 
             Undo.undoRedoPerformed += UndoRedoPerformed;
             RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
 
-            m_Scenarios = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(x => x.GetTypes())
-                .Where(TypeIsValidNetworkScenario)
-                .ToList();
-
+            m_Scenarios = FindScenarios();
             m_Choices = new() { None };
             m_Choices.AddRange(m_Scenarios.Select(x => x.Name));
 
@@ -51,11 +52,17 @@ namespace Unity.Netcode.Editor
             UpdateScenarioDropdown();
         }
 
-        void UpdateScenarioDropdown()
+        void OnScenarioParametersGUIHandler()
         {
-            ScenarioDropdown.index = m_NetworkScenario.NetworkSimulatorScenario == null
-                ? 0
-                : m_Choices.IndexOf(m_NetworkScenario.NetworkSimulatorScenario.GetType().Name);
+            m_NetworkScenarioProperty.serializedObject.Update();
+
+            EditorGUI.BeginChangeCheck();
+            EditorGUILayout.PropertyField(m_NetworkScenarioProperty, true);
+            
+            if (EditorGUI.EndChangeCheck())
+            {
+                m_NetworkScenarioProperty.serializedObject.ApplyModifiedProperties();
+            }
         }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
@@ -72,9 +79,21 @@ namespace Unity.Netcode.Editor
             m_NetworkScenarioProperty.serializedObject.ApplyModifiedProperties();
         }
 
+        void UpdateScenarioDropdown()
+        {
+            ScenarioDropdown.index = m_NetworkScenario.NetworkSimulatorScenario == null
+                ? 0
+                : m_Choices.IndexOf(m_NetworkScenario.NetworkSimulatorScenario.GetType().Name);
+        }
+
         bool TypeIsValidNetworkScenario(Type type)
         {
             return type.IsClass && type.IsAbstract == false && typeof(INetworkSimulatorScenario).IsAssignableFrom(type);
         }
+
+        List<Type> FindScenarios() => AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(x => x.GetTypes())
+            .Where(TypeIsValidNetworkScenario)
+            .ToList();
     }
 }

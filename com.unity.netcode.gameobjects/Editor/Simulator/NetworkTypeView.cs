@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.ComponentModel;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -31,6 +32,7 @@ namespace Unity.Netcode.Editor
             m_SerializedProperty.serializedObject.Update();
 
             Undo.undoRedoPerformed += UndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged += NetworkSimulatorOnPropertyChanged;
             RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
 
             if (m_NetworkSimulator.SimulatorConfiguration == null)
@@ -59,12 +61,19 @@ namespace Unity.Netcode.Editor
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
             UpdateEnabled();
         }
+        
         void OnDetachedFromPanel(DetachFromPanelEvent evt)
         {
             Undo.undoRedoPerformed -= UndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged -= NetworkSimulatorOnPropertyChanged;
         }
 
         void UndoRedoPerformed()
+        {
+            UpdatePresetDropdown();
+        }
+
+        void NetworkSimulatorOnPropertyChanged(object sender, PropertyChangedEventArgs _)
         {
             UpdatePresetDropdown();
         }

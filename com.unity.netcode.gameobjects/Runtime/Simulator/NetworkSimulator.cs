@@ -1,4 +1,4 @@
-﻿// NetSim Implementation compilation boilerplate
+// NetSim Implementation compilation boilerplate
 // All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
@@ -9,20 +9,26 @@
 
 
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
     [RequireComponent(typeof(UnityTransport))]
-    public class NetworkSimulator : MonoBehaviour
+    public class NetworkSimulator : MonoBehaviour, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        
         [SerializeField]
         internal NetworkSimulatorConfiguration m_SimulatorConfiguration;
         
         INetworkEventsApi m_NetworkEventsApi;
 
         internal INetworkEventsApi NetworkEventsApi => m_NetworkEventsApi ??= new NoOpNetworkEventsApi();
+        
+        internal bool IsInitialized { get; private set; }
 
         public NetworkSimulatorConfiguration SimulatorConfiguration
         {
@@ -31,6 +37,7 @@ namespace Unity.Netcode
             {
                 m_SimulatorConfiguration = value;
                 UpdateLiveParameters();
+                OnPropertyChanged();
             }
         }
 
@@ -54,6 +61,12 @@ namespace Unity.Netcode
         {
             var unityTransport = GetComponent<UnityTransport>();
             m_NetworkEventsApi = new NetworkEventsApi(this, unityTransport);
+            IsInitialized = true;
+        }
+
+        void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
