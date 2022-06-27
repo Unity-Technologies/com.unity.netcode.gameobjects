@@ -150,8 +150,16 @@ namespace Unity.Netcode
         /// </summary>
         public bool EnableNetworkLogs = true;
 
+        /// <summary>
+        /// The number of RTT samples that is kept as an average for calculations
+        /// </summary>
         public const int RttAverageSamples = 5; // number of RTT to keep an average of (plus one)
+
+        /// <summary>
+        /// The number of slots used for RTT calculations. This is the maximum amount of in-flight messages
+        /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
+
         /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>

@@ -3,6 +3,9 @@ using Unity.Profiling;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// An helper class that helps NetworkManager update NetworkBehaviours and replicate them down to connected clients.
+    /// </summary>
     public class NetworkBehaviourUpdater
     {
         private HashSet<NetworkObject> m_Touched = new HashSet<NetworkObject>();

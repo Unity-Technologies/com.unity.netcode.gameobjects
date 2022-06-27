@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The generic transport class all Netcode for GameObjects network transport implementations
+    /// derive from.  Use this class to add a custom transport.
+    /// <seealso cref="Transports.UTP.UnityTransport"> for an example of how a transport is integrated</seealso>
+    /// </summary>
     public abstract class NetworkTransport : MonoBehaviour
     {
         /// <summary>
@@ -45,7 +50,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Send a payload to the specified clientId, data and channelName.
+        /// Send a payload to the specified clientId, data and networkDelivery.
         /// </summary>
         /// <param name="clientId">The clientId to send to</param>
         /// <param name="payload">The data to send</param>
@@ -64,11 +69,13 @@ namespace Unity.Netcode
         /// <summary>
         /// Connects client to the server
         /// </summary>
+        /// <returns>Returns success or failure</returns>
         public abstract bool StartClient();
 
         /// <summary>
         /// Starts to listening for incoming clients
         /// </summary>
+        /// <returns>Returns success or failure</returns>
         public abstract bool StartServer();
 
         /// <summary>

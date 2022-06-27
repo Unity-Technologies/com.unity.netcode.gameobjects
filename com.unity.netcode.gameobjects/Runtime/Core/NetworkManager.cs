@@ -62,6 +62,9 @@ namespace Unity.Netcode
 
         internal Dictionary<ulong, ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, ConnectionApprovalResponse>();
 
+        /// <summary>
+        /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
+        /// </summary>
         public NetworkPrefabHandler PrefabHandler
         {
             get
@@ -197,12 +200,25 @@ namespace Unity.Netcode
             return gameObject;
         }
 
+        /// <summary>
+        /// Accessor for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
+        /// Prefer the use of the LocalTime and ServerTime properties
+        /// </summary>
         public NetworkTimeSystem NetworkTimeSystem { get; private set; }
 
+        /// <summary>
+        /// Accessor for the <see cref="NetworkTickSystem"/> of the NetworkManager.
+        /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
 
+        /// <summary>
+        /// The local <see cref="NetworkTime"/>
+        /// </summary>
         public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
 
+        /// <summary>
+        /// The <see cref="NetworkTime"/> on the server
+        /// </summary>
         public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
 
         /// <summary>
@@ -229,10 +245,19 @@ namespace Unity.Netcode
 
         internal IDeferredMessageManager DeferredMessageManager { get; private set; }
 
+        /// <summary>
+        /// Gets the CustomMessagingManager for this NetworkManager
+        /// </summary>
         public CustomMessagingManager CustomMessagingManager { get; private set; }
 
+        /// <summary>
+        /// The <see cref="NetworkSceneManager"/> instance created after starting the <see cref="NetworkManager"/>
+        /// </summary>
         public NetworkSceneManager SceneManager { get; private set; }
 
+        /// <summary>
+        /// The client id used to represent the server
+        /// </summary>
         public const ulong ServerClientId = 0;
 
         /// <summary>
@@ -341,7 +366,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
 
-
+        /// <summary>
+        /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
+        /// </summary>
         public bool ShutdownInProgress { get { return m_ShuttingDown; } }
 
         /// <summary>
@@ -374,30 +401,46 @@ namespace Unity.Netcode
         /// <summary>
         /// Connection Approval Response
         /// </summary>
-        /// <param name="Approved">Whether or not the client was approved</param>
-        /// <param name="CreatePlayerObject">If true, a player object will be created. Otherwise the client will have no object.</param>
-        /// <param name="PlayerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
-        /// <param name="Position">The position to spawn the client at. If null, the prefab position is used.</param>
-        /// <param name="Rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
-        /// <param name="Pending">If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.</param>
         public class ConnectionApprovalResponse
         {
+            /// <summary>
+            /// Whether or not the client was approved
+            /// </summary>
             public bool Approved;
+            /// <summary>
+            /// If true, a player object will be created. Otherwise the client will have no object.
+            /// </summary>
             public bool CreatePlayerObject;
+            /// <summary>
+            /// The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.
+            /// </summary>
             public uint? PlayerPrefabHash;
+            /// <summary>
+            /// The position to spawn the client at. If null, the prefab position is used.
+            /// </summary>
             public Vector3? Position;
+            /// <summary>
+            /// The rotation to spawn the client with. If null, the prefab position is used.
+            /// </summary>
             public Quaternion? Rotation;
+            /// <summary>
+            /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
+            /// </summary>
             public bool Pending;
         }
 
         /// <summary>
         /// Connection Approval Request
         /// </summary>
-        /// <param name="Payload">The connection data payload</param>
-        /// <param name="ClientNetworkId">The Network Id of the client we are about to handle</param>
         public struct ConnectionApprovalRequest
         {
+            /// <summary>
+            /// The connection data payload
+            /// </summary>
             public byte[] Payload;
+            /// <summary>
+            /// The Network Id of the client we are about to handle
+            /// </summary>
             public ulong ClientNetworkId;
         }
 
@@ -961,6 +1004,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a server
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in server mode successfully.</returns>
         public bool StartServer()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1000,6 +1044,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a client
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
         public bool StartClient()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1033,6 +1078,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Starts a Host
         /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
         public bool StartHost()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1144,6 +1190,9 @@ namespace Unity.Netcode
             return true;
         }
 
+        /// <summary>
+        /// Set this NetworkManager instance as the static NetworkManager singleton
+        /// </summary>
         public void SetSingleton()
         {
             Singleton = this;
@@ -1405,7 +1454,7 @@ namespace Unity.Netcode
             ClearClients();
         }
 
-        // INetworkUpdateSystem
+        /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
