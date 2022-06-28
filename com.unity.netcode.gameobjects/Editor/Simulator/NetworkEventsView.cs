@@ -19,6 +19,7 @@ namespace Unity.Netcode.Editor
             m_NetworkEventsApi = networkEventsApi;
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
 
+            RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
             DisconnectButton.RegisterCallback<MouseUpEvent>(OnDisconnectMouseUp);
             LagSpikeButton.RegisterCallback<MouseUpEvent>(OnLagSpikeMouseUp);
             LagSpikeDurationSlider.RegisterCallback<ChangeEvent<int>>(OnLagSpikeChange);
@@ -26,6 +27,12 @@ namespace Unity.Netcode.Editor
 
             EditorApplication.update += OnEditorUpdate;
         }
+
+        void OnDetachedFromPanel(DetachFromPanelEvent evt)
+        {
+            EditorApplication.update -= OnEditorUpdate;
+        }
+        
         void OnLagSpikeChange(ChangeEvent<int> evt)
         {
             LagSpikeButton.SetEnabled(evt.newValue != 0);
