@@ -9,9 +9,9 @@
 
 #if UNITY_MP_TOOLS_NETSIM_ENABLED
 
+using System;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
