@@ -146,6 +146,7 @@ namespace Unity.Netcode
             m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
             m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
             m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
+            NetworkLog.LogInfo($"Registering message type {m_HighMessageType}[{messageWithHandler.MessageType.Name}] {messageWithHandler.Handler.Method.Module.Name} {messageWithHandler.Handler.Method.Name} {messageWithHandler.Handler.Method.Module.Assembly.Location}");
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
