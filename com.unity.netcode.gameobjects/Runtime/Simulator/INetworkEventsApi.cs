@@ -7,7 +7,6 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
 
 using System;
 using System.Threading.Tasks;
@@ -60,29 +59,43 @@ namespace Unity.Netcode
 
     public class NetworkEventsApi : INetworkEventsApi
     {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
         readonly NetworkSimulator m_NetworkSimulator;
         readonly UnityTransport m_UnityTransport;
+#endif
 
         public NetworkEventsApi(NetworkSimulator networkSimulator, UnityTransport unityTransport)
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             m_NetworkSimulator = networkSimulator;
             m_UnityTransport = unityTransport;
+#endif
         }
 
-        public bool IsDisabledBySimulator => m_UnityTransport.IsDisabledBySimulator;
+        public bool IsDisabledBySimulator
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
+            => m_UnityTransport.IsDisabledBySimulator;
+#else
+            => false;
+#endif
 
         public void TriggerDisconnect()
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             m_UnityTransport.TriggerDisconnect();
+#endif
         }
 
         public void TriggerReconnect()
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             m_UnityTransport.TriggerReconnect();
+#endif
         }
 
         public void TriggerLagSpike(TimeSpan duration)
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             Task.Run(async () =>
             {
                 TriggerDisconnect();
@@ -91,13 +104,14 @@ namespace Unity.Netcode
 
                 TriggerReconnect();
             });
+#endif
         }
 
         public void ChangeNetworkType(NetworkSimulatorConfiguration newNetworkSimulatorConfiguration)
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             m_NetworkSimulator.SimulatorConfiguration = newNetworkSimulatorConfiguration;
+#endif
         }
     }
 }
-
-#endif

@@ -7,8 +7,6 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
-
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -96,5 +94,3 @@ namespace Unity.Netcode
         }
     }
 }
-
-#endif

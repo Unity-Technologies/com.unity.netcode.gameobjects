@@ -7,7 +7,6 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
 
 using System;
 using Unity.Netcode.Transports.UTP;
@@ -33,6 +32,7 @@ namespace Unity.Netcode
 
         public void UpdateLiveParameters()
         {
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             if (!Application.isPlaying)
             {
                 return;
@@ -43,8 +43,7 @@ namespace Unity.Netcode
             {
                 transport.UpdateSimulationPipelineParameters(SimulatorConfiguration);
             }
+#endif
         }
     }
 }
-
-#endif
