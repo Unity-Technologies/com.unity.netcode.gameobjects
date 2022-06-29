@@ -21,6 +21,9 @@ public class MultiprocessOrchestration
     }
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;
+    public static string PathToDll { get; private set; }
+    public static List<Process> ProcessList = new List<Process>();
+    private static FileInfo s_Localip_fileinfo;
 
     private static DirectoryInfo initMultiprocessDirinfo()
     {
@@ -39,12 +42,21 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
+        s_Localip_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "localip"));
+
         return s_MultiprocessDirInfo;
     }
 
     static MultiprocessOrchestration()
     {
         initMultiprocessDirinfo();
+        MultiprocessLogger.Log($" userprofile: {s_MultiprocessDirInfo.FullName} localipfile: {s_Localip_fileinfo}");
+        var rootdir_FileInfo = new FileInfo(Path.Combine(MultiprocessDirInfo.FullName, "rootdir"));
+        if (rootdir_FileInfo.Exists)
+        {
+            var rootDirText = (File.ReadAllText(rootdir_FileInfo.FullName)).Trim();
+            PathToDll = Path.Combine(rootDirText, "multiplayer-multiprocess-test-tools/BokkenForNetcode/ProvisionBokkenMachines/bin/Debug/netcoreapp3.1/osx-x64", "ProvisionBokkenMachines.dll");
+        }
     }
 
     /// <summary>
@@ -184,5 +196,73 @@ public class MultiprocessOrchestration
         }
 
         s_Processes.Clear();
+    }
+
+    public static string[] GetRemotePlatformList()
+    {
+        // "default-win:test-win,default-mac:test-mac"
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        if (encodedPlatformList == null)
+        {
+            MultiprocessLogger.Log($"MP_PLATFORM_LIST is null!");
+            return null;
+        }
+        else
+        {
+            MultiprocessLogger.Log($"MP_PLATFORM_LIST is: {encodedPlatformList}");
+        }
+        string[] separated = encodedPlatformList.Split(',');
+        return separated;
+    }
+
+    public static List<FileInfo> GetRemoteMachineList()
+    {
+        var machineJson = new List<FileInfo>();
+        foreach (var f in MultiprocessDirInfo.GetFiles("*.json"))
+        {
+            if (f.Name.Equals("remoteConfig.json"))
+            {
+                continue;
+            }
+            else
+            {
+                machineJson.Add(f);
+            }
+        }
+        return machineJson;
+    }
+
+    public static Process StartWorkersOnRemoteNodes(FileInfo machine)
+    {
+        string command = $" --command launch " +
+                $"--input-path {machine.FullName} ";
+
+        var workerProcess = new Process();
+
+        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{PathToDll} {command} ";
+        try
+        {
+            var newProcessStarted = workerProcess.Start();
+
+            if (!newProcessStarted)
+            {
+                throw new Exception("Failed to start worker process!");
+            }
+        }
+        catch (Win32Exception e)
+        {
+            MultiprocessLogger.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+            throw;
+        }
+
+
+        ProcessList.Add(workerProcess);
+
+        MultiprocessLogger.Log($"Execute Command: {command} End");
+        return workerProcess;
     }
 }

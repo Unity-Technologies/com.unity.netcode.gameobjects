@@ -22,6 +22,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     [MultiprocessTests]
     public abstract class BaseMultiprocessTests
     {
+        protected string[] platformList { get; set; }
+
+        protected int GetWorkerCount()
+        {
+            platformList = MultiprocessOrchestration.GetRemotePlatformList();
+
+            if (platformList == null)
+            {
+                m_LaunchRemotely = false;
+            }
+            else
+            {
+                m_LaunchRemotely = true;
+            }
+            return platformList == null ? WorkerCount : platformList.Length;
+        }
+        protected bool m_LaunchRemotely;
         private bool m_HasSceneLoaded = false;
         // TODO: Remove UTR check once we have Multiprocess tests fully working
         protected bool IgnoreMultiprocessTests => MultiprocessOrchestration.ShouldIgnoreUTRTests();
@@ -30,7 +47,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
-        /// TODO there's a good chance this will be re-factored with something fancier once we start integrating with bokken
+        /// Note: If using remote workers, the woorker count will come from the environment variable 
         /// </summary>
         protected abstract int WorkerCount { get; }
 
@@ -149,20 +166,26 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
-            if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
+            if (!m_LaunchRemotely)
             {
-                var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
-                for (int i = 1; i <= numProcessesToCreate; i++)
+                if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
                 {
-                    MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
-                    string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
-                    MultiprocessLogger.Log($"logPath to new process is {logPath}");
-                    MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
+                    for (int i = 1; i <= numProcessesToCreate; i++)
+                    {
+                        MultiprocessLogger.Log($"Spawning testplayer {i} since connected client count is {NetworkManager.Singleton.ConnectedClients.Count} is less than {WorkerCount} and Number of spawned external players is {MultiprocessOrchestration.ActiveWorkerCount()} ");
+                        string logPath = MultiprocessOrchestration.StartWorkerNode(); // will automatically start built player as clients
+                        MultiprocessLogger.Log($"logPath to new process is {logPath}");
+                        MultiprocessLogger.Log($"Active Worker Count {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+                    }
                 }
             }
-            else
+            else if (m_LaunchRemotely)
             {
-                MultiprocessLogger.Log($"No need to spawn a new test player as there are already existing processes {MultiprocessOrchestration.ActiveWorkerCount()} and connected clients {NetworkManager.Singleton.ConnectedClients.Count}");
+                if (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
+                {
+
+                }
             }
 
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
