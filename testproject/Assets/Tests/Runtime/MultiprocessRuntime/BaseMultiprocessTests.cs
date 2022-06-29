@@ -184,7 +184,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
                 {
-
+                    var machines = MultiprocessOrchestration.GetRemoteMachineList();
+                    foreach (var machine in machines)
+                    {
+                        MultiprocessLogger.Log($"Would launch on {machine.Name} too get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
+                        MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine);
+                    }
                 }
             }
 
