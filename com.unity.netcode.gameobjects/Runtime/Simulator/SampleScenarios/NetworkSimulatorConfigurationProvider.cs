@@ -30,7 +30,7 @@ namespace Unity.Netcode.SampleScenarios
         {
             AssertNetworkSimulatorIsNotNull();
 
-            var networkTypeConfiguration = NetworkTypePresets.Values.FirstOrDefault(configuration => configuration.name == presetName);
+            var networkTypeConfiguration = NetworkTypePresets.Values.FirstOrDefault(configuration => configuration.Name == presetName);
             if (networkTypeConfiguration == null)
             {
                 Debug.LogWarning($"No preset found for the provided name: \"{presetName}\"");

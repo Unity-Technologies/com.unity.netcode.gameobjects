@@ -1,4 +1,4 @@
-﻿// NetSim Implementation compilation boilerplate
+// NetSim Implementation compilation boilerplate
 // All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
