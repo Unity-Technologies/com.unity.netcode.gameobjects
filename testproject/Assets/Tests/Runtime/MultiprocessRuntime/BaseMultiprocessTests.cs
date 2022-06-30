@@ -157,7 +157,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log("m_HasSceneLoaded");
             var startTime = Time.time;
 
-            MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()} and connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
+            MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()}" +
+                $" and connected client count is {NetworkManager.Singleton.ConnectedClients.Count} " +
+                $" and WorkerCount is {GetWorkerCount()} " +
+                $" and LaunchRemotely is {m_LaunchRemotely}");
             if (MultiprocessOrchestration.ActiveWorkerCount() + 1 < NetworkManager.Singleton.ConnectedClients.Count)
             {
                 MultiprocessLogger.Log("Is this a bad state?");
