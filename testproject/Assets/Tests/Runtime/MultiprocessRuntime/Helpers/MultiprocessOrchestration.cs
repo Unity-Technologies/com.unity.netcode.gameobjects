@@ -52,10 +52,16 @@ public class MultiprocessOrchestration
         initMultiprocessDirinfo();
         MultiprocessLogger.Log($" userprofile: {s_MultiprocessDirInfo.FullName} localipfile: {s_Localip_fileinfo}");
         var rootdir_FileInfo = new FileInfo(Path.Combine(MultiprocessDirInfo.FullName, "rootdir"));
+        MultiprocessLogger.Log($"Checking for the existence of {rootdir_FileInfo.FullName}");
         if (rootdir_FileInfo.Exists)
         {
             var rootDirText = (File.ReadAllText(rootdir_FileInfo.FullName)).Trim();
             PathToDll = Path.Combine(rootDirText, "multiplayer-multiprocess-test-tools/BokkenForNetcode/ProvisionBokkenMachines/bin/Debug/netcoreapp3.1/osx-x64", "ProvisionBokkenMachines.dll");
+        }
+        else
+        {
+            MultiprocessLogger.Log("PathToDll cannot be set as rootDir doesn't exist");
+            PathToDll = "unknown";
         }
     }
 
@@ -262,7 +268,7 @@ public class MultiprocessOrchestration
 
         ProcessList.Add(workerProcess);
 
-        MultiprocessLogger.Log($"Execute Command: {command} End");
+        MultiprocessLogger.Log($"Execute Command: {PathToDll} {command} End");
         return workerProcess;
     }
 }
