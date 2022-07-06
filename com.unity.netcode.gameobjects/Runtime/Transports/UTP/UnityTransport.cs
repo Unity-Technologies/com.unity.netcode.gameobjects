@@ -1,3 +1,12 @@
+// NetSim Implementation compilation boilerplate
+// All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
+// as any discrepancies are likely to result in build failures
+// ---------------------------------------------------------------------------------------------------------------------
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE))
+    #define UNITY_MP_TOOLS_NETSIM_ENABLED
+#endif
+// ---------------------------------------------------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -1069,6 +1078,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
             var configuration = GetComponent<NetworkSimulator>()?.SimulatorConfiguration;
             m_NetworkSettings.WithSimulatorStageParameters(
                 300,
@@ -1081,6 +1091,7 @@ namespace Unity.Netcode.Transports.UTP
                 packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0);
 
             m_SimulatorInitialized = true;
+#endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
@@ -1109,6 +1120,7 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
         public void UpdateSimulationPipelineParameters(NetworkSimulatorConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
@@ -1137,6 +1149,8 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkSettings.AddRawParameterStruct(ref *parameter);
         }
+
+#endif
 
         public void TriggerDisconnect()
         {
