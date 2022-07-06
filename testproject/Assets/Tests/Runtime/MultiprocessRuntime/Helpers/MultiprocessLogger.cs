@@ -62,7 +62,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 testName = "unknown";
             }
 
-            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG({DateTime.Now:T}) : {testName} : {format}", args);
+            Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG({DateTime.Now:T}) : {testName} : {format}", args);
         }
     }
 }
