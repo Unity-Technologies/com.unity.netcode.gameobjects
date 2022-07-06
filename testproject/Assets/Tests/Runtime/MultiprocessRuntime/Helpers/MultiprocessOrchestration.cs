@@ -204,19 +204,24 @@ public class MultiprocessOrchestration
         s_Processes.Clear();
     }
 
+    public static bool IsRemoteOperationEnabled()
+    {
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        if (encodedPlatformList != null && encodedPlatformList.Split(',').Length > 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public static string[] GetRemotePlatformList()
     {
         // "default-win:test-win,default-mac:test-mac"
-        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
-        if (encodedPlatformList == null)
+        if (!IsRemoteOperationEnabled())
         {
-            MultiprocessLogger.Log($"MP_PLATFORM_LIST is null!");
             return null;
         }
-        else
-        {
-            MultiprocessLogger.Log($"MP_PLATFORM_LIST is: {encodedPlatformList}");
-        }
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
         string[] separated = encodedPlatformList.Split(',');
         return separated;
     }

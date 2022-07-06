@@ -29,15 +29,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         protected int GetWorkerCount()
         {
             platformList = MultiprocessOrchestration.GetRemotePlatformList();
-
-            if (platformList == null)
-            {
-                m_LaunchRemotely = false;
-            }
-            else
-            {
-                m_LaunchRemotely = true;
-            }
             return platformList == null ? WorkerCount : platformList.Length;
         }
         protected bool m_LaunchRemotely;
@@ -150,14 +141,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiprocessLogger.Log("NetworkManager.Singleton != null");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiprocessLogger.Log("m_HasSceneLoaded");
             var startTime = Time.time;
+            m_LaunchRemotely = MultiprocessOrchestration.IsRemoteOperationEnabled();
 
             MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()}" +
                 $" and connected client count is {NetworkManager.Singleton.ConnectedClients.Count} " +
