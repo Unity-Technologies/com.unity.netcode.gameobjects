@@ -150,13 +150,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         public virtual IEnumerator Setup()
         {
             yield return new WaitUntil(() => NetworkManager.Singleton != null);
-            MultiprocessLogger.Log("NetworkManager.Singleton != null");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsServer");
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
-            MultiprocessLogger.Log("NetworkManager.Singleton.IsListening");
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            MultiprocessLogger.Log("m_HasSceneLoaded");
+            
             var startTime = Time.time;
 
             MultiprocessLogger.Log($"Active Worker Count is {MultiprocessOrchestration.ActiveWorkerCount()}" +
@@ -193,6 +190,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
+                        ConfigurationTools.PostJobQueueItem(TestCoordinator.Rawgithash);
                         MultiprocessLogger.Log($"Would launch on {machine.Name} too get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                         launchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                     }

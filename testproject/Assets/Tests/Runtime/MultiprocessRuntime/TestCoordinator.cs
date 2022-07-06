@@ -123,7 +123,6 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
         }
 
-
         // if we've tried all the configuration types and none of them are correct then we should log it and just go with the default values
         if (ConfigurationType == ConfigurationType.Unknown)
         {
