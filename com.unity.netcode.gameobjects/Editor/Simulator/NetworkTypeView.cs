@@ -25,15 +25,16 @@ namespace Unity.Netcode.Editor
         readonly SerializedProperty m_SerializedProperty;
         bool m_CustomSelected;
 
+        bool HasValue => m_NetworkSimulator.SimulatorConfiguration != null;
+
+        bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName) == false;
+
         public NetworkTypeView(SerializedProperty serializedProperty, NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
             m_SerializedProperty = serializedProperty;
             m_SerializedProperty.serializedObject.Update();
 
-            Undo.undoRedoPerformed += UndoRedoPerformed;
-            m_NetworkSimulator.PropertyChanged += NetworkSimulatorOnPropertyChanged;
-            RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
 
             if (m_NetworkSimulator.SimulatorConfiguration == null)
             {
@@ -43,7 +44,6 @@ namespace Unity.Netcode.Editor
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
 
             UpdatePresetDropdown();
-            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
             CustomPresetValue.objectType = typeof(NetworkSimulatorConfiguration);
 
             if (HasCustomValue)
@@ -51,29 +51,70 @@ namespace Unity.Netcode.Editor
                 CustomPresetValue.value = m_NetworkSimulator.SimulatorConfiguration;
             }
 
-            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChanged);
-            PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDelay(change.newValue));
-            PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketJitter(change.newValue));
-            PacketLossIntervalSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossInterval(change.newValue));
-            PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossPercent(change.newValue));
-            PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDuplicationPercent(change.newValue));
-
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
             UpdateEnabled();
+            
+            this.AddEventLifecycle(OnAttach, OnDetach);
         }
-        
-        void OnDetachedFromPanel(DetachFromPanelEvent evt)
+        void OnAttach(AttachToPanelEvent evt)
         {
-            Undo.undoRedoPerformed -= UndoRedoPerformed;
-            m_NetworkSimulator.PropertyChanged -= NetworkSimulatorOnPropertyChanged;
+            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChange);
+            PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(OnPackageDelayChange);
+            PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(OnPacketJitterChanged);
+            PacketLossIntervalSlider.RegisterCallback<ChangeEvent<int>>(OnPacketLossIntervalChange);
+            PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
+            PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
+            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
+            Undo.undoRedoPerformed += OnUndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged += OnNetworkSimulatorPropertyChanged;
         }
 
-        void UndoRedoPerformed()
+        void OnDetach(DetachFromPanelEvent evt)
+        {
+            CustomPresetValue.UnregisterCallback<ChangeEvent<Object>>(OnCustomPresetChange);
+            PacketDelaySlider.UnregisterCallback<ChangeEvent<int>>(OnPackageDelayChange);
+            PacketJitterSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketJitterChanged);
+            PacketLossIntervalSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketLossIntervalChange);
+            PacketLossPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
+            PacketDuplicationPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
+            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
+            Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged -= OnNetworkSimulatorPropertyChanged;
+        }
+
+        void OnPackageDelayChange(ChangeEvent<int> change)
+        {
+            UpdatePacketDelay(change.newValue);
+        }
+
+        void OnPacketJitterChanged(ChangeEvent<int> change)
+        {
+            UpdatePacketJitter(change.newValue);
+        }
+
+        void OnPacketLossIntervalChange(ChangeEvent<int> change)
+        {
+            UpdatePacketLossInterval(change.newValue);
+        }
+
+        void OnPacketLossPercentChange(ChangeEvent<int> change)
+        {
+            UpdatePacketLossPercent(change.newValue);
+        }
+
+        void OnPacketDuplicationChange(ChangeEvent<int> change)
+        {
+            UpdatePacketDuplicationPercent(change.newValue);
+        }
+
+        void OnUndoRedoPerformed()
         {
             UpdatePresetDropdown();
         }
 
-        void NetworkSimulatorOnPropertyChanged(object sender, PropertyChangedEventArgs _)
+        void OnNetworkSimulatorPropertyChanged(object sender, PropertyChangedEventArgs _)
         {
             UpdatePresetDropdown();
         }
@@ -89,27 +130,11 @@ namespace Unity.Netcode.Editor
                 : PresetDropdown.choices.IndexOf(m_NetworkSimulator.SimulatorConfiguration.Name);
         }
 
-        bool HasValue => m_NetworkSimulator.SimulatorConfiguration != null;
-
-        bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName) == false;
-
         bool SimulatorConfigurationMatchesPresetName(NetworkSimulatorConfiguration configuration)
         {
             return configuration.Name == m_NetworkSimulator.SimulatorConfiguration.Name;
         }
 
-        void UpdateEnabled()
-        {
-            CustomPresetValue.style.display = HasCustomValue || m_CustomSelected
-                ? new StyleEnum<DisplayStyle>(StyleKeyword.Auto)
-                : new StyleEnum<DisplayStyle>(DisplayStyle.None);
-
-            PacketDelaySlider.SetEnabled(HasCustomValue);
-            PacketJitterSlider.SetEnabled(HasCustomValue);
-            PacketLossIntervalSlider.SetEnabled(HasCustomValue);
-            PacketLossPercentSlider.SetEnabled(HasCustomValue);
-            PacketDuplicationPercentSlider.SetEnabled(HasCustomValue);
-        }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
         {
@@ -130,7 +155,7 @@ namespace Unity.Netcode.Editor
             UpdateLiveIfPlaying();
         }
 
-        void OnCustomPresetChanged(ChangeEvent<Object> evt)
+        void OnCustomPresetChange(ChangeEvent<Object> evt)
         {
             var configuration = evt.newValue as NetworkSimulatorConfiguration;
             SetSimulatorConfiguration(configuration);
@@ -138,6 +163,19 @@ namespace Unity.Netcode.Editor
             UpdateEnabled();
 
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
+        }
+
+        void UpdateEnabled()
+        {
+            CustomPresetValue.style.display = HasCustomValue || m_CustomSelected
+                ? new StyleEnum<DisplayStyle>(StyleKeyword.Auto)
+                : new StyleEnum<DisplayStyle>(DisplayStyle.None);
+
+            PacketDelaySlider.SetEnabled(HasCustomValue);
+            PacketJitterSlider.SetEnabled(HasCustomValue);
+            PacketLossIntervalSlider.SetEnabled(HasCustomValue);
+            PacketLossPercentSlider.SetEnabled(HasCustomValue);
+            PacketDuplicationPercentSlider.SetEnabled(HasCustomValue);
         }
 
         void UpdateSliders(NetworkSimulatorConfiguration configuration)

@@ -30,20 +30,27 @@ namespace Unity.Netcode.Editor
             var scenarioParameters = new IMGUIContainer(OnScenarioParametersGUIHandler);
             Add(scenarioParameters);
 
-            Undo.undoRedoPerformed += UndoRedoPerformed;
-            RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
-
             m_Scenarios = FindScenarios();
             m_Choices = new() { None };
             m_Choices.AddRange(m_Scenarios.Select(x => x.Name));
 
             ScenarioDropdown.choices = m_Choices;
-            ScenarioDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
             UpdateScenarioDropdown();
+            
+            this.AddEventLifecycle(OnAttach, OnDetach);
+        }
+        
+        void OnAttach(AttachToPanelEvent evt)
+        {
+            ScenarioDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
+            Undo.undoRedoPerformed += UndoRedoPerformed;
         }
 
-        void OnDetachedFromPanel(DetachFromPanelEvent evt)
+        void OnDetach(DetachFromPanelEvent evt)
         {
+            ScenarioDropdown.UnregisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
             Undo.undoRedoPerformed -= UndoRedoPerformed;
         }
 
