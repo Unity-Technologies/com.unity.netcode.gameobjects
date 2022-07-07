@@ -11,6 +11,7 @@ namespace Unity.Netcode
 {
     public class NetworkTypePresets
     {
+        const string k_NoNetworkDescription = "Effectively no network. Offline simulation.";
         const string k_BroadbandDescription = "Typical of desktop and console platforms (and generally speaking most mobile players too).";
         const string k_PoorMobileDescription = "Extremely poor connection, completely unsuitable for synchronous multiplayer gaming due to exceptionally high ping. Turn based games may work.";
         const string k_MediumMobileDescription = "This is the minimum supported mobile connection for synchronous gameplay. Expect high pings, jitter, stuttering and packet loss.";
@@ -83,6 +84,18 @@ namespace Unity.Netcode
 #else
             = null;
 #endif
+        public static readonly NetworkSimulatorConfiguration TotalPacketLoss
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
+            = NetworkSimulatorConfiguration.Create("100% Packet Loss", k_NoNetworkDescription, 0, 0, 0, 100, 0);
+#else
+            = null;
+#endif
+        public static readonly NetworkSimulatorConfiguration DSL
+#if UNITY_MP_TOOLS_NETSIM_ENABLED
+            = NetworkSimulatorConfiguration.Create("DSL", k_BroadbandDescription, 5, 5, 1, 0, 0);
+#else
+            = null;
+#endif
 
         public static NetworkSimulatorConfiguration[] Values = new[]
         {
@@ -97,6 +110,8 @@ namespace Unity.Netcode
             Mobile4G,
             Mobile4_5G,
             Mobile5G,
+            TotalPacketLoss,
+            DSL
         };
     }
 }
