@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe33301cff3297408098670edcadb5d, type: 3}
+  m_Name: Mobile 5G ['20]
+  m_EditorClassIdentifier: 
+  <Name>k__BackingField: Mobile 5G ['20]
+  <Description>k__BackingField: In many places, expect this to be 'as good as' or
+    'better than' home broadband.
+  <PacketDelayMs>k__BackingField: 1
+  <PacketJitterMs>k__BackingField: 10
+  <PacketLossInterval>k__BackingField: 1
+  <PacketLossPercent>k__BackingField: 0
+  <PacketDuplicationPercent>k__BackingField: 0

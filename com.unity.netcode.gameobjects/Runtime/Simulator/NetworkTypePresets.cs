@@ -7,11 +7,13 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
+using System.IO;
+
 namespace Unity.Netcode
 {
     public class NetworkTypePresets
     {
-        const string k_ScriptableObjectsPath = "Assets/Resources/{0}.asset";
+        const string k_ScriptableObjectsPath = "Packages/com.unity.netcode.gameobjects/Runtime/Simulator/Presets/";
         const string k_BroadbandDescription = "Typical of desktop and console platforms (and generally speaking most mobile players too).";
         const string k_PoorMobileDescription = "Extremely poor connection, completely unsuitable for synchronous multiplayer gaming due to exceptionally high ping. Turn based games may work.";
         const string k_MediumMobileDescription = "This is the minimum supported mobile connection for synchronous gameplay. Expect high pings, jitter, stuttering and packet loss.";
@@ -61,11 +63,15 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
         static NetworkTypePresets()
         {
-            // TODO: Create Default Scriptable Objects in a proper place
             foreach (var configuration in Values)
             {
-                var path = string.Format(k_ScriptableObjectsPath, configuration.Name);
+                var path = $"{k_ScriptableObjectsPath}/{configuration.Name}.asset";
                 var assetDoesntExists = string.IsNullOrEmpty(UnityEditor.AssetDatabase.AssetPathToGUID(path));
+
+                if (Directory.Exists(k_ScriptableObjectsPath) == false)
+                {
+                    Directory.CreateDirectory(k_ScriptableObjectsPath);
+                }
                 
                 if (configuration is NetworkSimulatorConfigurationObject scriptableObject && assetDoesntExists)
                 {
