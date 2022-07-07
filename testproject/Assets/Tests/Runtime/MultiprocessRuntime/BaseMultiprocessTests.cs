@@ -25,6 +25,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public abstract class BaseMultiprocessTests
     {
         protected string[] platformList { get; set; }
+        private List<Process> m_LaunchProcessList = new List<Process>();
 
         protected int GetWorkerCount()
         {
@@ -171,6 +172,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (!m_LaunchRemotely)
             {
+                MultiprocessLogger.Log("UnitySetup on host - m_LaunchRemotely is false");
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
                 {
                     var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
@@ -185,17 +187,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
             else if (m_LaunchRemotely)
             {
-                var launchProcessList = new List<Process>();
+                MultiprocessLogger.Log($"UnitySetup on host - m_LaunchRemotely is true GetWorkerCount:{GetWorkerCount()} NetworkManager.Singleton.ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
+                
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
                 {
+                    MultiprocessLogger.Log("Connected Client Count is less than Worker Count so try starting");
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
                         MultiprocessLogger.Log("Server is posting JobQueueItem");
                         ConfigurationTools.PostJobQueueItem(TestCoordinator.Rawgithash);
                         MultiprocessLogger.Log($"Start Worker on Remote Node : {machine.Name} to get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
-                        launchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
+                        m_LaunchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                     }
+                }
+                else
+                {
+                    MultiprocessLogger.Log("Connected client Count matches Worker Count");
                 }
             }
 
