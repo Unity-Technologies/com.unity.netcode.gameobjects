@@ -64,6 +64,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             MultiprocessLogger.Log("Running SetupTestSuite - OneTimeSetup");
             MultiprocessOrchestration.IsPerformanceTest = IsPerformanceTest;
+            MultiprocessOrchestration.IsHost = true;
             if (IgnoreMultiprocessTests)
             {
                 Assert.Ignore("Ignoring tests under UTR. For testing, include the \"-bypassIgnoreUTR\" command line parameter.");
@@ -190,8 +191,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
+                        MultiprocessLogger.Log("Server is posting JobQueueItem");
                         ConfigurationTools.PostJobQueueItem(TestCoordinator.Rawgithash);
-                        MultiprocessLogger.Log($"Would launch on {machine.Name} too get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
+                        MultiprocessLogger.Log($"Start Worker on Remote Node : {machine.Name} to get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                         launchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                     }
                 }
@@ -268,7 +270,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
                     SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
                     MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
-                
             }
         }
     }

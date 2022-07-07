@@ -11,6 +11,7 @@ using Debug = UnityEngine.Debug;
 
 public class MultiprocessOrchestration
 {
+    public static bool IsHost = false;
     public static bool IsPerformanceTest;
     public const string IsWorkerArg = "-isWorker";
     private static DirectoryInfo s_MultiprocessDirInfo;
