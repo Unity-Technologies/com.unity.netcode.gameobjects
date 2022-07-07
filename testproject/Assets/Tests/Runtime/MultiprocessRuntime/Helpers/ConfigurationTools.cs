@@ -26,9 +26,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var theList = new JobQueueItemArray();
             using var client = new HttpClient();
             var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            MultiprocessLogger.Log("ConfigurationTools - GetRemoteConfig - calling GetAsync");
             var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
                 HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
+            MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {response}");
             var content = await response.Content.ReadAsStringAsync();
+            MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {content}");
             JsonUtility.FromJsonOverwrite(content, theList);
             return theList;
         }

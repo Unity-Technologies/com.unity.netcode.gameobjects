@@ -201,6 +201,16 @@ public class MultiprocessOrchestration
         s_Processes.Clear();
     }
 
+    public static bool IsRemoteOperationEnabled()
+    {
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        if (encodedPlatformList != null && encodedPlatformList.Split(',').Length > 1)
+        {
+            return true;
+        }
+        return false;
+    }
+
     public static string[] GetRemotePlatformList()
     {
         // "default-win:test-win,default-mac:test-mac"
@@ -233,6 +243,45 @@ public class MultiprocessOrchestration
             }
         }
         return machineJson;
+    }
+
+    public static Process GetMPLogs(FileInfo machine)
+    {
+        return CallBokkenApi(machine.FullName, "GetMPLogs");
+    }
+
+    public static Process CallBokkenApi(string machineFilePath, string BokkenApiCommand)
+    {
+        string command = $" --command {BokkenApiCommand} " +
+                $"--input-path {machineFilePath} ";
+
+        var workerProcess = new Process();
+
+        workerProcess.StartInfo.FileName = Path.Combine("dotnet");
+        workerProcess.StartInfo.UseShellExecute = false;
+        workerProcess.StartInfo.RedirectStandardError = true;
+        workerProcess.StartInfo.RedirectStandardOutput = true;
+        workerProcess.StartInfo.Arguments = $"{PathToDll} {command} ";
+        try
+        {
+            var newProcessStarted = workerProcess.Start();
+
+            if (!newProcessStarted)
+            {
+                throw new Exception("Failed to start worker process!");
+            }
+        }
+        catch (Win32Exception e)
+        {
+            MultiprocessLogger.LogError($"Error starting bokken process, {e.Message} {e.Data} {e.ErrorCode}");
+            throw;
+        }
+
+
+        ProcessList.Add(workerProcess);
+
+        MultiprocessLogger.Log($"Execute Command: {PathToDll} {command} End");
+        return workerProcess;
     }
 
     public static Process StartWorkersOnRemoteNodes(FileInfo machine)

@@ -228,6 +228,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"TeardownSuite");
             if (!IgnoreMultiprocessTests)
             {
+                if (MultiprocessOrchestration.IsRemoteOperationEnabled())
+                {
+                    var machines = MultiprocessOrchestration.GetRemoteMachineList();
+                    foreach (var machine in machines)
+                    {
+                        MultiprocessOrchestration.GetMPLogs(machine);
+                    }
+                }
                 MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
                 MultiprocessOrchestration.ShutdownAllProcesses();
                 MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
