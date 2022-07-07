@@ -250,9 +250,9 @@ public class MultiprocessOrchestration
         return CallBokkenApi(machine.FullName, "GetMPLogs");
     }
 
-    public static Process CallBokkenApi(string machineFilePath, string BokkenApiCommand)
+    public static Process CallBokkenApi(string machineFilePath, string bokkenApiCommand)
     {
-        string command = $" --command {BokkenApiCommand} " +
+        string command = $" --command {bokkenApiCommand} " +
                 $"--input-path {machineFilePath} ";
 
         var workerProcess = new Process();

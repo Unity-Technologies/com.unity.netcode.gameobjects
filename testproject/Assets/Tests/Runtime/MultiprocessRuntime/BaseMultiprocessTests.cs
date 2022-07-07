@@ -215,11 +215,23 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         [TearDown]
         public virtual void Teardown()
         {
-            MultiprocessLogger.Log("Running teardown");
+            MultiprocessLogger.Log("1 of 5 Running teardown");
+            TestContext t1 = TestContext.CurrentContext;
+            var t2 = TestContext.CurrentTestExecutionContext;
+            TimeSpan duration = DateTime.UtcNow.Subtract(t2.StartTime);
+            MultiprocessLogger.Log($"2 of 5 Running tearDown t1.Result.Outcome {t1.Result.Outcome} {t2.CurrentResult.FullName}");
+            if (!t1.Result.Outcome.ToString().Equals("Passed"))
+            {
+                MultiprocessLogger.Log($"3 of 5 {t1.Result.Message} {t1.Result.StackTrace}");
+            }
+            MultiprocessLogger.Log($"4 of 5 TearDown t2.CurrentResult.FullName {t2.CurrentResult.FullName} " +
+                $" t2.CurrentResult.ResultState {t2.CurrentResult.ResultState} start: {t2.StartTime.ToLongTimeString()} end: {DateTime.UtcNow.ToLongTimeString()} duration: {duration.TotalSeconds}");
+
             if (!IgnoreMultiprocessTests)
             {
                 TestCoordinator.Instance.TestRunTeardown();
             }
+            MultiprocessLogger.Log("5 of 5");
         }
 
         [OneTimeTearDown]
@@ -233,13 +245,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
+                        MultiprocessLogger.Log($"TeardownSuite - GetMPLogs");
                         MultiprocessOrchestration.GetMPLogs(machine);
                     }
                 }
-                MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
-                MultiprocessOrchestration.ShutdownAllProcesses();
                 MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
                 NetworkManager.Singleton.Shutdown();
+                MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
+                MultiprocessOrchestration.ShutdownAllProcesses();
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
                 MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
                 MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
