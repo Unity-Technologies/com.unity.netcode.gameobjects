@@ -205,7 +205,7 @@ public class MultiprocessOrchestration
     public static bool IsRemoteOperationEnabled()
     {
         string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
-        if (encodedPlatformList != null && encodedPlatformList.Split(',').Length > 1)
+        if (encodedPlatformList != null)
         {
             return true;
         }
