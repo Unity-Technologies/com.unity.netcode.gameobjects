@@ -215,7 +215,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log("Start");
+        MultiprocessLogger.Log($"Start - ishost {NetworkManager.Singleton.IsHost} and isclient {NetworkManager.Singleton.IsClient}");
         MultiprocessLogger.Log("Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
@@ -290,7 +290,7 @@ public class TestCoordinator : NetworkBehaviour
         if (clientId == NetworkManager.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here
-            MultiprocessLogger.Log($"received disconnect from {clientId}, quitting");
+            MultiprocessLogger.Log($"received disconnect from {clientId}, quitting isclient: {NetworkManager.Singleton.IsClient}");
             QuitApplication();
         }
     }

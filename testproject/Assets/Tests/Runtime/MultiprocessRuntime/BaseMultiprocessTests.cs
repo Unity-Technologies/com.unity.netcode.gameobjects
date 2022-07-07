@@ -245,24 +245,30 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
-                        MultiprocessLogger.Log($"TeardownSuite - GetMPLogs");
+                        MultiprocessLogger.Log($"TeardownSuite - GetMPLogs {machine.Name}");
                         MultiprocessOrchestration.GetMPLogs(machine);
                     }
                 }
-                MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
-                NetworkManager.Singleton.Shutdown();
-                MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
-                MultiprocessOrchestration.ShutdownAllProcesses();
-                Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
-                MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
-                if (m_OriginalActiveScene.IsValid())
+                else
                 {
-                    SceneManager.SetActiveScene(m_OriginalActiveScene);
+                    MultiprocessLogger.Log($"TeardownSuite - IsRemoteOperationEnabled is false");
                 }
-                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
-                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                
+                    MultiprocessLogger.Log($"TeardownSuite - NetworkManager.Singleton.Shutdown");
+                    NetworkManager.Singleton.Shutdown();
+                    MultiprocessLogger.Log($"TeardownSuite - ShutdownAllProcesses");
+                    MultiprocessOrchestration.ShutdownAllProcesses();
+                    Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
+                    MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+                    MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+                    if (m_OriginalActiveScene.IsValid())
+                    {
+                        SceneManager.SetActiveScene(m_OriginalActiveScene);
+                    }
+                    MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                    SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                    MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                
             }
         }
     }
