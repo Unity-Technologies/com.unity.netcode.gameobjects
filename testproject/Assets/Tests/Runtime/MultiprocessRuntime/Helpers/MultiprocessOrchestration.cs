@@ -20,7 +20,7 @@ public class MultiprocessOrchestration
         private set => s_MultiprocessDirInfo = value;
         get => s_MultiprocessDirInfo != null ? s_MultiprocessDirInfo : initMultiprocessDirinfo();
     }
-    private static List<Process> s_Processes = new List<Process>();
+    private static List<Process> s_LocalTestprojectProcesses = new List<Process>();
     private static int s_TotalProcessCounter = 0;
     public static string PathToDll { get; private set; }
     public static List<Process> ProcessList = new List<Process>();
@@ -72,18 +72,18 @@ public class MultiprocessOrchestration
         return Environment.GetCommandLineArgs().Contains("-automated") && !Environment.GetCommandLineArgs().Contains("-bypassIgnoreUTR");
     }
 
-    public static int ActiveWorkerCount()
+    public static int ActiveLocalTestprojectCount()
     {
         int activeWorkerCount = 0;
-        if (s_Processes == null)
+        if (s_LocalTestprojectProcesses == null)
         {
             return activeWorkerCount;
         }
 
-        if (s_Processes.Count > 0)
+        if (s_LocalTestprojectProcesses.Count > 0)
         {
-            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
-            foreach (var p in s_Processes)
+            MultiprocessLogger.Log($"s_Processes.Count is {s_LocalTestprojectProcesses.Count}");
+            foreach (var p in s_LocalTestprojectProcesses)
             {
                 if ((p != null) && (!p.HasExited))
                 {
@@ -96,21 +96,21 @@ public class MultiprocessOrchestration
 
     public static string StartWorkerNode()
     {
-        if (s_Processes == null)
+        if (s_LocalTestprojectProcesses == null)
         {
-            s_Processes = new List<Process>();
+            s_LocalTestprojectProcesses = new List<Process>();
         }
 
         var workerProcess = new Process();
         s_TotalProcessCounter++;
-        if (s_Processes.Count > 0)
+        if (s_LocalTestprojectProcesses.Count > 0)
         {
             string message = "";
-            foreach (var p in s_Processes)
+            foreach (var p in s_LocalTestprojectProcesses)
             {
                 message += $" {p.Id} {p.HasExited} {p.StartTime} ";
             }
-            MultiprocessLogger.Log($"Current process count {s_Processes.Count} with data {message}");
+            MultiprocessLogger.Log($"Current process count {s_LocalTestprojectProcesses.Count} with data {message}");
         }
 
         //TODO this should be replaced eventually by proper orchestration for all supported platforms
@@ -160,13 +160,13 @@ public class MultiprocessOrchestration
 
         try
         {
-            MultiprocessLogger.Log($"Attempting to start new process, current process count: {s_Processes.Count} with arguments {workerProcess.StartInfo.Arguments}");
+            MultiprocessLogger.Log($"Attempting to start new process, current process count: {s_LocalTestprojectProcesses.Count} with arguments {workerProcess.StartInfo.Arguments}");
             var newProcessStarted = workerProcess.Start();
             if (!newProcessStarted)
             {
                 throw new Exception("Failed to start worker process!");
             }
-            s_Processes.Add(workerProcess);
+            s_LocalTestprojectProcesses.Add(workerProcess);
         }
         catch (Win32Exception e)
         {
@@ -176,10 +176,10 @@ public class MultiprocessOrchestration
         return logPath;
     }
 
-    public static void ShutdownAllProcesses()
+    public static void ShutdownAllLocalTestprojectProcesses()
     {
         MultiprocessLogger.Log("Shutting down all processes..");
-        foreach (var process in s_Processes)
+        foreach (var process in s_LocalTestprojectProcesses)
         {
             MultiprocessLogger.Log($"Shutting down process {process.Id} with state {process.HasExited}");
             try
@@ -199,7 +199,7 @@ public class MultiprocessOrchestration
             }
         }
 
-        s_Processes.Clear();
+        s_LocalTestprojectProcesses.Clear();
     }
 
     public static bool IsRemoteOperationEnabled()
