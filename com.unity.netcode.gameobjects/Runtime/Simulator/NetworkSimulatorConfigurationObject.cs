@@ -3,17 +3,18 @@
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
 #if UNITY_EDITOR || ((DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE))
-    #define UNITY_MP_TOOLS_NETSIM_ENABLED
+#define UNITY_MP_TOOLS_NETSIM_ENABLED
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-using System;
 using UnityEngine;
 
 namespace Unity.Netcode
 {
-    [Serializable]
-    public class NetworkSimulatorConfiguration : INetworkSimulatorConfiguration
+    [CreateAssetMenu(
+        fileName = nameof(NetworkSimulatorConfigurationObject),
+        menuName = "Multiplayer/" + nameof(NetworkSimulatorConfigurationObject))]
+    public class NetworkSimulatorConfigurationObject : ScriptableObject, INetworkSimulatorConfiguration
     {
         /// <summary>
         /// Network simulation configuration name.
@@ -70,7 +71,7 @@ namespace Unity.Netcode
         /// <param name="packetDuplicationPercent">Value for the packet duplication percentage.</param>
         /// <param name="packetFuzzOffset"></param>
         /// <returns>A valid simulation configuration.</returns>
-        public static NetworkSimulatorConfiguration Create(
+        public static NetworkSimulatorConfigurationObject Create(
             string name,
             string description = "",
             int packetDelayMs = 0,
@@ -79,17 +80,16 @@ namespace Unity.Netcode
             int packetLossPercent = 0,
             int packetDuplicationPercent = 0)
         {
-            var configuration = new NetworkSimulatorConfiguration
-            {
-                Name = name,
-                Description = description,
-                PacketDelayMs = packetDelayMs,
-                PacketJitterMs = packetJitterMs,
-                PacketLossInterval = packetLossInterval,
-                PacketLossPercent = packetLossPercent,
-                PacketDuplicationPercent = packetDuplicationPercent
-            };
+            var configuration = CreateInstance<NetworkSimulatorConfigurationObject>();
 
+            configuration.Name = name;
+            configuration.Description = description;
+            configuration.PacketDelayMs = packetDelayMs;
+            configuration.PacketJitterMs = packetJitterMs;
+            configuration.PacketLossInterval = packetLossInterval;
+            configuration.PacketLossPercent = packetLossPercent;
+            configuration.PacketDuplicationPercent = packetDuplicationPercent;
+            
             return configuration;
         }
     }

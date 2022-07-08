@@ -7,12 +7,12 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-
-using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
@@ -20,9 +20,12 @@ namespace Unity.Netcode
     public class NetworkSimulator : MonoBehaviour, INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
-        
+
         [SerializeField]
-        internal NetworkSimulatorConfiguration m_SimulatorConfiguration;
+        internal Object m_Configuration;
+
+        [SerializeReference, HideInInspector]
+        internal INetworkSimulatorConfiguration m_ConfigurationReference = new NetworkSimulatorConfiguration();
         
         INetworkEventsApi m_NetworkEventsApi;
 
@@ -30,12 +33,22 @@ namespace Unity.Netcode
         
         internal bool IsInitialized { get; private set; }
 
-        public NetworkSimulatorConfiguration SimulatorConfiguration
+        public INetworkSimulatorConfiguration SimulatorConfiguration
         {
-            get => m_SimulatorConfiguration;
+            get => m_Configuration != null
+                ? m_Configuration as INetworkSimulatorConfiguration
+                : m_ConfigurationReference;
             set
             {
-                m_SimulatorConfiguration = value;
+                if (value is Object networkTypeConfigurationObject)
+                {
+                    m_Configuration = networkTypeConfigurationObject;
+                }
+                else
+                {
+                    m_ConfigurationReference = value;
+                }
+                
                 UpdateLiveParameters();
                 OnPropertyChanged();
             }
