@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.ComponentModel;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -21,17 +22,22 @@ namespace Unity.Netcode.Editor
         SliderInt PacketLossPercentSlider => this.Q<SliderInt>(nameof(PacketLossPercentSlider));
         SliderInt PacketDuplicationPercentSlider => this.Q<SliderInt>(nameof(PacketDuplicationPercentSlider));
 
-        readonly SerializedProperty m_SerializedProperty;
+        readonly SerializedObject m_SerializedObject;
+        readonly SerializedProperty m_ConfigurationObject;
+        readonly SerializedProperty m_ConfigurationReference;
         bool m_CustomSelected;
 
-        public NetworkTypeView(SerializedProperty serializedProperty, NetworkSimulator networkSimulator)
+        bool HasValue => m_NetworkSimulator.SimulatorConfiguration != null;
+
+        bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName) == false;
+
+        public NetworkTypeView(SerializedObject serializedObject, NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
-            m_SerializedProperty = serializedProperty;
-            m_SerializedProperty.serializedObject.Update();
-
-            Undo.undoRedoPerformed += UndoRedoPerformed;
-            RegisterCallback<DetachFromPanelEvent>(OnDetachedFromPanel);
+            m_SerializedObject = serializedObject;
+            m_ConfigurationObject = m_SerializedObject.FindProperty(nameof(NetworkSimulator.m_Configuration));
+            m_ConfigurationReference = m_SerializedObject.FindProperty(nameof(NetworkSimulator.m_ConfigurationReference));
+            m_SerializedObject.Update();
 
             if (m_NetworkSimulator.SimulatorConfiguration == null)
             {
@@ -40,66 +46,107 @@ namespace Unity.Netcode.Editor
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
 
+            CustomPresetSetup();
+
+            this.AddEventLifecycle(OnAttach, OnDetach);
+        }
+
+        void OnAttach(AttachToPanelEvent evt)
+        {
             UpdatePresetDropdown();
-            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
-            CustomPresetValue.objectType = typeof(NetworkSimulatorConfiguration);
-
-            if (HasCustomValue)
-            {
-                CustomPresetValue.value = m_NetworkSimulator.SimulatorConfiguration;
-            }
-
-            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChanged);
-            PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDelay(change.newValue));
-            PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketJitter(change.newValue));
-            PacketLossIntervalSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossInterval(change.newValue));
-            PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketLossPercent(change.newValue));
-            PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(change => UpdatePacketDuplicationPercent(change.newValue));
-
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
             UpdateEnabled();
-        }
-        void OnDetachedFromPanel(DetachFromPanelEvent evt)
-        {
-            Undo.undoRedoPerformed -= UndoRedoPerformed;
+            
+            CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChange);
+            PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(OnPackageDelayChange);
+            PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(OnPacketJitterChanged);
+            PacketLossIntervalSlider.RegisterCallback<ChangeEvent<int>>(OnPacketLossIntervalChange);
+            PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
+            PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
+            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
+            Undo.undoRedoPerformed += OnUndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged += OnNetworkSimulatorPropertyChanged;
         }
 
-        void UndoRedoPerformed()
+        void OnDetach(DetachFromPanelEvent evt)
+        {
+            CustomPresetValue.UnregisterCallback<ChangeEvent<Object>>(OnCustomPresetChange);
+            PacketDelaySlider.UnregisterCallback<ChangeEvent<int>>(OnPackageDelayChange);
+            PacketJitterSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketJitterChanged);
+            PacketLossIntervalSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketLossIntervalChange);
+            PacketLossPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
+            PacketDuplicationPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
+            PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
+            
+            Undo.undoRedoPerformed -= OnUndoRedoPerformed;
+            m_NetworkSimulator.PropertyChanged -= OnNetworkSimulatorPropertyChanged;
+        }
+
+        void OnPackageDelayChange(ChangeEvent<int> change)
+        {
+            UpdatePacketDelay(change.newValue);
+        }
+
+        void OnPacketJitterChanged(ChangeEvent<int> change)
+        {
+            UpdatePacketJitter(change.newValue);
+        }
+
+        void OnPacketLossIntervalChange(ChangeEvent<int> change)
+        {
+            UpdatePacketLossInterval(change.newValue);
+        }
+
+        void OnPacketLossPercentChange(ChangeEvent<int> change)
+        {
+            UpdatePacketLossPercent(change.newValue);
+        }
+
+        void OnPacketDuplicationChange(ChangeEvent<int> change)
+        {
+            UpdatePacketDuplicationPercent(change.newValue);
+        }
+
+        void OnUndoRedoPerformed()
         {
             UpdatePresetDropdown();
+        }
+
+        void OnNetworkSimulatorPropertyChanged(object sender, PropertyChangedEventArgs _)
+        {
+            UpdatePresetDropdown();
+            UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
+        }
+
+        void CustomPresetSetup()
+        {
+            CustomPresetValue.objectType = typeof(INetworkSimulatorConfiguration);
+
+            if (HasCustomValue && m_NetworkSimulator.SimulatorConfiguration is Object configurationObject)
+            {
+                CustomPresetValue.value = configurationObject;
+            }
         }
 
         void UpdatePresetDropdown()
         {
             var presets = NetworkTypePresets.Values.Select(x => x.Name).ToList();
             presets.Add(Custom);
-
+            
+            var configurationName = m_NetworkSimulator.SimulatorConfiguration != null
+                ? m_NetworkSimulator.SimulatorConfiguration.Name
+                : string.Empty;
+            
             PresetDropdown.choices = presets;
             PresetDropdown.index = HasCustomValue
                 ? PresetDropdown.choices.IndexOf(Custom)
-                : PresetDropdown.choices.IndexOf(m_NetworkSimulator.SimulatorConfiguration.Name);
+                : PresetDropdown.choices.IndexOf(configurationName);
         }
 
-        bool HasValue => m_NetworkSimulator.SimulatorConfiguration != null;
-
-        bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName) == false;
-
-        bool SimulatorConfigurationMatchesPresetName(NetworkSimulatorConfiguration configuration)
+        bool SimulatorConfigurationMatchesPresetName(INetworkSimulatorConfiguration configuration)
         {
             return configuration.Name == m_NetworkSimulator.SimulatorConfiguration.Name;
-        }
-
-        void UpdateEnabled()
-        {
-            CustomPresetValue.style.display = HasCustomValue || m_CustomSelected
-                ? new StyleEnum<DisplayStyle>(StyleKeyword.Auto)
-                : new StyleEnum<DisplayStyle>(DisplayStyle.None);
-
-            PacketDelaySlider.SetEnabled(HasCustomValue);
-            PacketJitterSlider.SetEnabled(HasCustomValue);
-            PacketLossIntervalSlider.SetEnabled(HasCustomValue);
-            PacketLossPercentSlider.SetEnabled(HasCustomValue);
-            PacketDuplicationPercentSlider.SetEnabled(HasCustomValue);
         }
 
         void OnPresetSelected(ChangeEvent<string> changeEvent)
@@ -121,17 +168,28 @@ namespace Unity.Netcode.Editor
             UpdateLiveIfPlaying();
         }
 
-        void OnCustomPresetChanged(ChangeEvent<Object> evt)
+        void OnCustomPresetChange(ChangeEvent<Object> evt)
         {
-            var configuration = evt.newValue as NetworkSimulatorConfiguration;
+            var configuration = evt.newValue as INetworkSimulatorConfiguration;
             SetSimulatorConfiguration(configuration);
-
             UpdateEnabled();
-
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
         }
 
-        void UpdateSliders(NetworkSimulatorConfiguration configuration)
+        void UpdateEnabled()
+        {
+            CustomPresetValue.style.display = HasCustomValue || m_CustomSelected
+                ? new (StyleKeyword.Auto)
+                : new (DisplayStyle.None);
+
+            PacketDelaySlider.SetEnabled(HasCustomValue);
+            PacketJitterSlider.SetEnabled(HasCustomValue);
+            PacketLossIntervalSlider.SetEnabled(HasCustomValue);
+            PacketLossPercentSlider.SetEnabled(HasCustomValue);
+            PacketDuplicationPercentSlider.SetEnabled(HasCustomValue);
+        }
+
+        void UpdateSliders(INetworkSimulatorConfiguration configuration)
         {
             UpdatePacketDelay(configuration.PacketDelayMs);
             UpdatePacketJitter(configuration.PacketJitterMs);
@@ -193,10 +251,17 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        void SetSimulatorConfiguration(NetworkSimulatorConfiguration configuration)
+        void SetSimulatorConfiguration(INetworkSimulatorConfiguration configuration)
         {
-            m_SerializedProperty.objectReferenceValue = configuration;
-            m_SerializedProperty.serializedObject.ApplyModifiedProperties();
+            if (configuration is Object configurationObject)
+            {
+                m_ConfigurationObject.objectReferenceValue = configurationObject;
+            }
+            else
+            {
+                m_ConfigurationReference.managedReferenceValue = configuration;
+            }
+            m_SerializedObject.ApplyModifiedProperties();
         }
     }
 }

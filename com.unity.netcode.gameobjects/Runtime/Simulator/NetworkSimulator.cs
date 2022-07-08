@@ -1,4 +1,4 @@
-﻿// NetSim Implementation compilation boilerplate
+// NetSim Implementation compilation boilerplate
 // All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
@@ -7,26 +7,50 @@
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-
-using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
     [RequireComponent(typeof(UnityTransport))]
-    public class NetworkSimulator : MonoBehaviour
+    public class NetworkSimulator : MonoBehaviour, INotifyPropertyChanged
     {
-        [SerializeField]
-        internal NetworkSimulatorConfiguration m_SimulatorConfiguration;
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        public NetworkSimulatorConfiguration SimulatorConfiguration
+        [SerializeField]
+        internal Object m_Configuration;
+
+        [SerializeReference, HideInInspector]
+        internal INetworkSimulatorConfiguration m_ConfigurationReference = new NetworkSimulatorConfiguration();
+        
+        INetworkEventsApi m_NetworkEventsApi;
+
+        internal INetworkEventsApi NetworkEventsApi => m_NetworkEventsApi ??= new NoOpNetworkEventsApi();
+        
+        internal bool IsInitialized { get; private set; }
+
+        public INetworkSimulatorConfiguration SimulatorConfiguration
         {
-            get => m_SimulatorConfiguration;
+            get => m_Configuration != null
+                ? m_Configuration as INetworkSimulatorConfiguration
+                : m_ConfigurationReference;
             set
             {
-                m_SimulatorConfiguration = value;
+                if (value is Object networkTypeConfigurationObject)
+                {
+                    m_Configuration = networkTypeConfigurationObject;
+                }
+                else
+                {
+                    m_ConfigurationReference = value;
+                }
+                
                 UpdateLiveParameters();
+                OnPropertyChanged();
             }
         }
 
@@ -44,6 +68,18 @@ namespace Unity.Netcode
                 transport.UpdateSimulationPipelineParameters(SimulatorConfiguration);
             }
 #endif
+        }
+
+        void Start()
+        {
+            var unityTransport = GetComponent<UnityTransport>();
+            m_NetworkEventsApi = new NetworkEventsApi(this, unityTransport);
+            IsInitialized = true;
+        }
+
+        void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

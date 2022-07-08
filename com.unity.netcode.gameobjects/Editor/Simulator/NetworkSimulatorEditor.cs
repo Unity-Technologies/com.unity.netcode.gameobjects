@@ -1,5 +1,4 @@
-﻿using Unity.Netcode.Transports.UTP;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine.UIElements;
 
 namespace Unity.Netcode.Editor
@@ -13,16 +12,12 @@ namespace Unity.Netcode.Editor
 
         public override VisualElement CreateInspectorGUI()
         {
-            m_NetworkSimulator = target as NetworkSimulator;
-
+            m_NetworkSimulator = (NetworkSimulator)target;
+            
             m_Inspector = new VisualElement();
-
-            m_Inspector.Add(new NetworkEventsView(
-                new NetworkEventsApi(m_NetworkSimulator, m_NetworkSimulator.GetComponent<UnityTransport>())));
-
-            var simulatorConfigurationProperty = serializedObject.FindProperty(nameof(NetworkSimulator.m_SimulatorConfiguration));
-            m_Inspector.Add(new NetworkTypeView(simulatorConfigurationProperty, m_NetworkSimulator));
-
+            m_Inspector.Add(new NetworkEventsView(m_NetworkSimulator.NetworkEventsApi));
+            m_Inspector.Add(new NetworkTypeView(serializedObject, m_NetworkSimulator));
+            
             return m_Inspector;
         }
     }

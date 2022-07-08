@@ -1121,7 +1121,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
 #if UNITY_MP_TOOLS_NETSIM_ENABLED
-        public void UpdateSimulationPipelineParameters(NetworkSimulatorConfiguration configuration)
+        public void UpdateSimulationPipelineParameters(INetworkSimulatorConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
             {
@@ -1138,7 +1138,7 @@ namespace Unity.Netcode.Transports.UTP
         unsafe void UpdatePipelineParameter(
             NetworkPipeline pipeline,
             NetworkPipelineStageId stageId,
-            NetworkSimulatorConfiguration configuration)
+            INetworkSimulatorConfiguration configuration)
         {
             var parameter = m_Driver.GetWriteablePipelineParameter<SimulatorUtility.Parameters>(pipeline, stageId);
             parameter->PacketDelayMs = configuration.PacketDelayMs;

@@ -97,8 +97,7 @@ namespace Unity.Netcode
             = null;
 #endif
 
-        public static NetworkSimulatorConfiguration[] Values = new[]
-        {
+        public static NetworkSimulatorConfiguration[] Values = {
             None,
             HomeBroadband,
             Mobile2G,

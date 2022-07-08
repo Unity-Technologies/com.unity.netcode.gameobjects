@@ -1,5 +1,4 @@
 using UnityEditor;
-using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Unity.Netcode.Editor
@@ -7,17 +6,18 @@ namespace Unity.Netcode.Editor
     [CustomEditor(typeof(NetworkScenario))]
     public class NetworkScenarioEditor : UnityEditor.Editor
     {
-        private NetworkScenario m_NetworkScenario;
+        NetworkScenario m_NetworkScenario;
 
-        private VisualElement m_Inspector;
+        VisualElement m_Inspector;
 
         public override VisualElement CreateInspectorGUI()
         {
-            m_NetworkScenario = target as NetworkScenario;
+            m_NetworkScenario = (NetworkScenario)target;
 
             m_Inspector = new VisualElement();
-            m_Inspector.Add(new NetworkEventsView(new NoOpNetworkEventsApi()));
-            m_Inspector.Add(new NetworkScenarioView(m_NetworkScenario));
+            
+            var networkScenarioProperty = serializedObject.FindProperty(nameof(m_NetworkScenario.m_NetworkSimulatorScenario));
+            m_Inspector.Add(new NetworkScenarioView(networkScenarioProperty, m_NetworkScenario));
 
             return m_Inspector;
         }
