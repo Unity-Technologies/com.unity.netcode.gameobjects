@@ -207,6 +207,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
 
+            MultiprocessLogger.Log($"DEBUG: ConnectedClient Count: {NetworkManager.Singleton.ConnectedClients.Count} WorkerCount: {WorkerCount}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count <= WorkerCount)
             {
