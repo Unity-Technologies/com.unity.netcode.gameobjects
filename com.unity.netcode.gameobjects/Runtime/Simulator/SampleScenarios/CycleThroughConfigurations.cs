@@ -10,7 +10,7 @@ namespace Unity.Netcode.SampleScenarios
         [Serializable]
         public class NetworkTypeByTime
         {
-            public NetworkSimulatorConfigurationObject m_ConfigurationObject;
+            public NetworkSimulatorConfigurationObject Configuration;
             public float Duration;
         }
 
@@ -55,7 +55,7 @@ namespace Unity.Netcode.SampleScenarios
         void IterateConnectionType()
         {
             m_CurrentType = NetworkTypeByTimeList[CurrentIndex++];
-            var connectionType = m_CurrentType.m_ConfigurationObject;
+            var connectionType = m_CurrentType.Configuration;
             m_NetworkEventsApi.ChangeNetworkType(connectionType);
             Debug.Log($"Changed to: {connectionType.Name}");
         }
