@@ -272,7 +272,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void OnEnable()
     {
-        MultiprocessLogger.Log("OnEnable - Setting OnClientDisconnectCallback");
+        MultiprocessLogger.Log($"OnEnable - Setting OnClientDisconnectCallback {IsClient} {m_IsClient}");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 
@@ -296,6 +296,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private static void OnClientDisconnectCallback(ulong clientId)
     {
+        MultiprocessLogger.Log($"Host/Server/Client {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsClient}");
         if (clientId == NetworkManager.ServerClientId || clientId == NetworkManager.Singleton.LocalClientId)
         {
             // if disconnect callback is for me or for server, quit, we're done here

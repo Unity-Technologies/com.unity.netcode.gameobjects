@@ -246,6 +246,11 @@ public class MultiprocessOrchestration
         return machineJson;
     }
 
+    public static Process KillRemotePlayer(FileInfo machine)
+    {
+        return CallBokkenApi(machine.FullName, "killmptplayer");
+    }
+
     public static Process GetMPLogs(FileInfo machine)
     {
         return CallBokkenApi(machine.FullName, "GetMPLogs");
