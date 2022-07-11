@@ -59,7 +59,7 @@ public class TestCoordinator : NetworkBehaviour
         }
     }
     private string m_ConnectAddress = "127.0.0.1";
-    public static string Port = "7777";
+    public static string Port = "3076";
     private bool m_IsClient;
 
     private void SetConfigurationTypeAndConnect(ConfigurationType type)

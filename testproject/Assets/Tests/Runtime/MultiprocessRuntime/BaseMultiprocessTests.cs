@@ -124,7 +124,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 #endif
                 case UnityTransport unityTransport:
                     unityTransport.ConnectionData.ServerListenAddress = "0.0.0.0";
-                    MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {unityTransport.ConnectionData.ServerListenAddress}");
+                    unityTransport.ConnectionData.Port = ushort.Parse(TestCoordinator.Port);
+                    MultiprocessLogger.Log($"Setting unityTransport.ConnectionData.Port {unityTransport.ConnectionData.ServerListenAddress}:{unityTransport.ConnectionData.Port}");
                     break;
                 default:
                     MultiprocessLogger.LogError($"The transport {transport} has no case");
