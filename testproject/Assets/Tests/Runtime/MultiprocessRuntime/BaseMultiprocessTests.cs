@@ -173,7 +173,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                 }
             }
-            else if (m_LaunchRemotely)
+            else
             {
                 var launchProcessList = new List<Process>();
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
