@@ -26,9 +26,14 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected string[] platformList { get; set; }
         private List<Process> m_LaunchProcessList = new List<Process>();
+        private int m_WorkerCount;
 
         protected int GetWorkerCount()
         {
+            if (m_WorkerCount > 0)
+            {
+                return m_WorkerCount;
+            }
             platformList = MultiprocessOrchestration.GetRemotePlatformList();
 
             if (platformList == null)
@@ -39,7 +44,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 m_LaunchRemotely = true;
             }
-            return platformList == null ? WorkerCount : platformList.Length;
+            m_WorkerCount = platformList == null ? WorkerCount : platformList.Length;
+            return m_WorkerCount;
         }
         protected bool m_LaunchRemotely;
         private bool m_HasSceneLoaded = false;
@@ -191,7 +197,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     var machines = MultiprocessOrchestration.GetRemoteMachineList();
                     foreach (var machine in machines)
                     {
-                        MultiprocessLogger.Log("Server is posting JobQueueItem");
+                        MultiprocessLogger.Log($"Server is posting JobQueueItem {TestCoordinator.Rawgithash}");
                         ConfigurationTools.PostJobQueueItem(TestCoordinator.Rawgithash);
                         MultiprocessLogger.Log($"Start Worker on Remote Node : {machine.Name} to get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                         m_LaunchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));

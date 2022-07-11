@@ -150,17 +150,19 @@ public class TestCoordinator : NetworkBehaviour
 
     private async void ConfigureViaWebApi()
     {
-        MultiprocessLogger.Log($"ConfigureViaWebApi - start");
+        MultiprocessLogger.Log($"ConfigureViaWebApi - start {Rawgithash}");
         var jobQueue = await ConfigurationTools.GetRemoteConfig();
         foreach (var job in jobQueue.JobQueueItems)
         {
             if (Rawgithash.Equals(job.GitHash))
             {
+                MultiprocessLogger.Log($"Job match between {Rawgithash} and {job.GitHash} - claiming job");
                 ConfigurationTools.ClaimJobQueueItem(job);
                 m_ConnectAddress = job.HostIp;
                 m_IsClient = true;
                 MultiprocessLogHandler.JobId = job.JobId;
                 SetConfigurationTypeAndConnect(ConfigurationType.Remote);
+                MultiprocessLogger.Log($"Job match between {Rawgithash} and {job.GitHash} - job claimed");
                 break;
             }
             else
