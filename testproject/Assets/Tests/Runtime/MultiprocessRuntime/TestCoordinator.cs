@@ -27,7 +27,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 30;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -285,14 +285,14 @@ public class TestCoordinator : NetworkBehaviour
             MultiprocessLogger.Log("OnDisable - Removing OnClientDisconnectCallback");
             NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
-
         base.OnDestroy();
     }
 
     // Once we are connected, we can run the update method
     public void OnClientConnectedCallback(ulong clientId)
     {
-        MultiprocessLogger.Log("Client start callback, enabling behavior");
+        MultiprocessLogger.Log($"Host/Server/Client {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsClient}");
+        MultiprocessLogger.Log($"OnClientConnectedCallback - Enabling behavior {clientId}");
         enabled = true;
     }
 

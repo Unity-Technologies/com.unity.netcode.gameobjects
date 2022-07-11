@@ -164,7 +164,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             
             var startTime = Time.time;
 
-            MultiprocessLogger.Log($"" +
+            MultiprocessLogger.Log($"Host: " +
                 $" and connected client count is {NetworkManager.Singleton.ConnectedClients.Count} " +
                 $" and WorkerCount is {GetWorkerCount()} " +
                 $" and LaunchRemotely is {m_LaunchRemotely}");
@@ -174,7 +174,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             // then any subsequent calls to Setup if there are already workers it will skip this step
             if (!m_LaunchRemotely)
             {
-                MultiprocessLogger.Log("UnitySetup on host - m_LaunchRemotely is false");
+                MultiprocessLogger.Log("Host: UnitySetup on host - m_LaunchRemotely is false");
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < WorkerCount)
                 {
                     var numProcessesToCreate = WorkerCount - (NetworkManager.Singleton.ConnectedClients.Count - 1);
