@@ -256,9 +256,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     foreach (var machine in machines)
                     {
                         MultiprocessLogger.Log($"TeardownSuite - KillMPTPlayer {machine.Name}");
-                        MultiprocessOrchestration.KillRemotePlayer(machine);
+                        m_LaunchProcessList.Add(MultiprocessOrchestration.KillRemotePlayer(machine));
+                        MultiprocessLogger.Log($"TeardownSuite - KillMPTPlayer {machine.Name} - Wait For Exit");
+                        m_LaunchProcessList[m_LaunchProcessList.Count - 1].WaitForExit();
                         MultiprocessLogger.Log($"TeardownSuite - GetMPLogs {machine.Name}");
-                        MultiprocessOrchestration.GetMPLogs(machine);
+                        m_LaunchProcessList.Add(MultiprocessOrchestration.GetMPLogs(machine));
+                        MultiprocessLogger.Log($"TeardownSuite - GetMPLogs {machine.Name} - Wait For Exit");
+                        m_LaunchProcessList[m_LaunchProcessList.Count - 1].WaitForExit();
                     }
                 }
                 else
