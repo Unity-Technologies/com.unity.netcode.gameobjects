@@ -72,11 +72,12 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Awake()
     {
+        // Set enabled to false and only enable when we know our configuration
         enabled = false;
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
         s_ProcessId = Process.GetCurrentProcess().Id;
-        MultiprocessLogger.Log($"Awake {s_ProcessId}");
+        MultiprocessLogger.Log($"Awake {s_ProcessId} {ConfigurationTools.GetLocalIPAddress()}");
         ReadGitHashFile();
 
         if (!MultiprocessOrchestration.IsHost)
@@ -124,14 +125,6 @@ public class TestCoordinator : NetworkBehaviour
                 ConfigureViaWebApi();
                 MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
             }
-
-            // if we've tried all the configuration types and none of them are correct then we should log it and just go with the default values
-            if (ConfigurationType == ConfigurationType.Unknown)
-            {
-                MultiprocessLogger.Log("Unable to determine configuration for NetworkManager via commandline, webapi or config file, assuming host");
-                ConfigurationType = ConfigurationType.Host;
-                MultiprocessOrchestration.IsHost = true;
-            }
         }
         else
         {
@@ -152,6 +145,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         MultiprocessLogger.Log($"ConfigureViaWebApi - start {Rawgithash}");
         var jobQueue = await ConfigurationTools.GetRemoteConfig();
+        MultiprocessLogger.Log($"ConfigureViaWebApi - GetRemoteConfig completed");
         foreach (var job in jobQueue.JobQueueItems)
         {
             if (Rawgithash.Equals(job.GitHash))
@@ -275,6 +269,7 @@ public class TestCoordinator : NetworkBehaviour
     public void OnEnable()
     {
         MultiprocessLogger.Log($"OnEnable - Setting OnClientDisconnectCallback {IsClient} {m_IsClient}");
+        MultiprocessLogger.Log($"TestCoordinator enabled - NetworkManager singlton set? {NetworkManager.Singleton != null}");
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
     }
 

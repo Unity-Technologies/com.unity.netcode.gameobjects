@@ -182,7 +182,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
             }
 
-            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {methods} : {testName} : {format}", args);
+            UnityEngine.Debug.LogFormat(logType, LogOption.NoStacktrace, context, $"MPLOG ({DateTime.Now:T}) : {MultiprocessOrchestration.IsHost} : {methods} : {testName} : {format}", args);
             if (!args[0].ToString().Contains("POST call")) // If we have to log that the logging system is acting up, don't post that as it would just make a never ending cycle
             {
                 var webLog = new WebLog();
