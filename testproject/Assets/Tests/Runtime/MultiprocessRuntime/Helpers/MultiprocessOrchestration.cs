@@ -24,6 +24,7 @@ public class MultiprocessOrchestration
     private static int s_TotalProcessCounter = 0;
     public static string PathToDll { get; private set; }
     public static List<Process> ProcessList = new List<Process>();
+    private static FileInfo s_Localip_fileinfo;
 
     private static DirectoryInfo initMultiprocessDirinfo()
     {
@@ -42,6 +43,7 @@ public class MultiprocessOrchestration
         {
             MultiprocessDirInfo.Create();
         }
+        s_Localip_fileinfo = new FileInfo(Path.Combine(s_MultiprocessDirInfo.FullName, "localip"));
 
         return s_MultiprocessDirInfo;
     }
@@ -49,6 +51,7 @@ public class MultiprocessOrchestration
     static MultiprocessOrchestration()
     {
         initMultiprocessDirinfo();
+        MultiprocessLogger.Log($" userprofile: {s_MultiprocessDirInfo.FullName} localipfile: {s_Localip_fileinfo}");
         var rootdir_FileInfo = new FileInfo(Path.Combine(MultiprocessDirInfo.FullName, "rootdir"));
         MultiprocessLogger.Log($"Checking for the existence of {rootdir_FileInfo.FullName}");
         if (rootdir_FileInfo.Exists)
@@ -212,23 +215,6 @@ public class MultiprocessOrchestration
         return false;
     }
 
-    public static string[] GetRemotePlatformList()
-    {
-        // "default-win:test-win,default-mac:test-mac"
-        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
-        if (encodedPlatformList == null)
-        {
-            MultiprocessLogger.Log($"MP_PLATFORM_LIST is null!");
-            return null;
-        }
-        else
-        {
-            MultiprocessLogger.Log($"MP_PLATFORM_LIST is: {encodedPlatformList}");
-        }
-        string[] separated = encodedPlatformList.Split(',');
-        return separated;
-    }
-
     public static List<FileInfo> GetRemoteMachineList()
     {
         var machineJson = new List<FileInfo>();
@@ -322,5 +308,17 @@ public class MultiprocessOrchestration
 
         MultiprocessLogger.Log($"Execute Command: {PathToDll} {command} End");
         return workerProcess;
+    }
+
+    public static string[] GetRemotePlatformList()
+    {
+        // "default-win:test-win,default-mac:test-mac"
+        if (!IsRemoteOperationEnabled())
+        {
+            return null;
+        }
+        string encodedPlatformList = Environment.GetEnvironmentVariable("MP_PLATFORM_LIST");
+        string[] separated = encodedPlatformList.Split(',');
+        return separated;
     }
 }

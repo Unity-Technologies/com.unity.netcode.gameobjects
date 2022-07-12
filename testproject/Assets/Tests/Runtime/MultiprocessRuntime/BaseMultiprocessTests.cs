@@ -26,26 +26,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     {
         protected string[] platformList { get; set; }
         private List<Process> m_LaunchProcessList = new List<Process>();
-        private int m_WorkerCount;
 
         protected int GetWorkerCount()
         {
-            if (m_WorkerCount > 0)
-            {
-                return m_WorkerCount;
-            }
             platformList = MultiprocessOrchestration.GetRemotePlatformList();
-
-            if (platformList == null)
-            {
-                m_LaunchRemotely = false;
-            }
-            else
-            {
-                m_LaunchRemotely = true;
-            }
-            m_WorkerCount = platformList == null ? WorkerCount : platformList.Length;
-            return m_WorkerCount;
+            return platformList == null ? WorkerCount : platformList.Length;
         }
         protected bool m_LaunchRemotely;
         private bool m_HasSceneLoaded = false;
@@ -56,7 +41,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         /// <summary>
         /// Implement this to specify the amount of workers to spawn from your main test runner
-        /// Note: If using remote workers, the woorker count will come from the environment variable 
+        /// Note: If using remote workers, the woorker count will come from the environment variable
         /// </summary>
         protected abstract int WorkerCount { get; }
 
@@ -162,14 +147,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsServer);
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
-            
+
             var startTime = Time.time;
+            m_LaunchRemotely = MultiprocessOrchestration.IsRemoteOperationEnabled();
 
             MultiprocessLogger.Log($"Host: " +
                 $" and connected client count is {NetworkManager.Singleton.ConnectedClients.Count} " +
                 $" and WorkerCount is {GetWorkerCount()} " +
                 $" and LaunchRemotely is {m_LaunchRemotely}");
-            
+
             // Moved this out of OnSceneLoaded as OnSceneLoaded is a callback from the SceneManager and just wanted to avoid creating
             // processes from within the same callstack/context as the SceneManager.  This will instantiate up to the WorkerCount and
             // then any subsequent calls to Setup if there are already workers it will skip this step
@@ -188,10 +174,10 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     }
                 }
             }
-            else if (m_LaunchRemotely)
+            else
             {
                 MultiprocessLogger.Log($"UnitySetup on host - m_LaunchRemotely is true GetWorkerCount:{GetWorkerCount()} NetworkManager.Singleton.ConnectedClients.Count: {NetworkManager.Singleton.ConnectedClients.Count}");
-                
+
                 if (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
                 {
                     MultiprocessLogger.Log("Connected Client Count is less than Worker Count so try starting");
