@@ -11,6 +11,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
     public class TestCoordinatorTests : BaseMultiprocessTests
     {
         private int m_WorkerCount;
+        //TODO: Figure out how manage local workercounts vs. remote worker counts
+        // Since remote worker counts should not be changed within the test
+        // and is not supported due to performance and stability reasons
         protected override int WorkerCount => m_WorkerCount;
 
         protected override bool IsPerformanceTest => false;
@@ -43,10 +46,11 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
         {
             // Sanity check for TestCoordinator
             // Call the method
+            MultiprocessLogger.Log("CheckTestCoordinator - Calling ExecuteSimpleCoordinatorTest");
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteSimpleCoordinatorTest);
 
             var nbResults = 0;
-            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
+            for (int i = 0; i < GetWorkerCount(); i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
@@ -54,7 +58,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.Greater(result, 0f);
                 nbResults++;
             }
-            Assert.That(nbResults, Is.EqualTo(WorkerCount));
+            Assert.That(nbResults, Is.EqualTo(GetWorkerCount()));
         }
 
         [UnityTest]
@@ -63,7 +67,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             TestCoordinator.Instance.InvokeFromMethodActionRpc(ExecuteWithArgs, 99);
             var nbResults = 0;
 
-            for (int i = 0; i < WorkerCount; i++) // wait and test for the two clients
+            for (int i = 0; i < GetWorkerCount(); i++) // wait and test for the two clients
             {
                 yield return new WaitUntil(TestCoordinator.ResultIsSet());
 
@@ -71,7 +75,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 Assert.That(result, Is.EqualTo(99));
                 nbResults++;
             }
-            Assert.That(nbResults, Is.EqualTo(WorkerCount));
+            Assert.That(nbResults, Is.EqualTo(GetWorkerCount()));
         }
     }
 }

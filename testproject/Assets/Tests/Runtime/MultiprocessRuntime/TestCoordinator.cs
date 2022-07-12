@@ -286,7 +286,7 @@ public class TestCoordinator : NetworkBehaviour
     // Once we are connected, we can run the update method
     public void OnClientConnectedCallback(ulong clientId)
     {
-        MultiprocessLogger.Log($"Host/Server/Client {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsClient}");
+        MultiprocessLogger.Log($"OnClientConnectedCallback - Host/Server/Client {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsClient}");
         MultiprocessLogger.Log($"OnClientConnectedCallback - Enabling behavior {clientId}");
         enabled = true;
     }
