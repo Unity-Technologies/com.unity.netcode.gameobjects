@@ -430,6 +430,10 @@ public class TestCoordinator : NetworkBehaviour
     public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         MultiprocessLogger.Log($"AmIHost: {NetworkManager.Singleton.IsHost} received RPC from server, client side triggering action ID {actionId}");
+        foreach (var action in ExecuteStepInContext.AllActions)
+        {
+            MultiprocessLogger.Log($"From client AllActions: {action.Key}");
+        }
         try
         {
             ExecuteStepInContext.AllActions[actionId].Invoke(args);
