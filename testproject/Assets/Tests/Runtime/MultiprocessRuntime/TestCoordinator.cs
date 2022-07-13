@@ -220,12 +220,11 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log($"Start - ishost {NetworkManager.Singleton.IsHost} and isclient {NetworkManager.Singleton.IsClient}");
-        MultiprocessLogger.Log("Initialize All Steps");
+        MultiprocessLogger.Log($"Start - ishost {NetworkManager.Singleton.IsHost} and isclient {NetworkManager.Singleton.IsClient} - Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-        MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
+        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()} " + 
+        $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
     }
 
     public void Update()
@@ -430,10 +429,6 @@ public class TestCoordinator : NetworkBehaviour
     public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         MultiprocessLogger.Log($"AmIHost: {NetworkManager.Singleton.IsHost} received RPC from server, client side triggering action ID {actionId}");
-        foreach (var action in ExecuteStepInContext.AllActions)
-        {
-            MultiprocessLogger.Log($"From client AllActions: {action.Key}");
-        }
         try
         {
             ExecuteStepInContext.AllActions[actionId].Invoke(args);

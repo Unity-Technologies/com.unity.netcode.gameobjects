@@ -183,7 +183,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
         m_NetworkManager = networkManager; // todo test using this for multiinstance tests too?
 
         var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
-        MultiprocessLogger.Log($"IsHost: {NetworkManager.Singleton.IsHost} calledMethod {callerMethod.Module} {callerMethod.Name}");
+        // MultiprocessLogger.Log($"IsHost: {NetworkManager.Singleton.IsHost} calledMethod {callerMethod.Module} {callerMethod.Name}");
         var methodId = GetMethodIdentifier(callerMethod); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction. This will return a generated class name which should be unique
         if (!s_MethodIdCounter.ContainsKey(methodId))
         {
