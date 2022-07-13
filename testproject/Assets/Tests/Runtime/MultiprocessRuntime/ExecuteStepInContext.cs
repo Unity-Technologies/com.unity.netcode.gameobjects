@@ -9,6 +9,7 @@ using NUnit.Framework;
 using NUnit.Framework.Interfaces;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Unity.Netcode.MultiprocessRuntimeTests;
 using Debug = UnityEngine.Debug;
 
 /// <summary>
@@ -182,7 +183,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
         m_NetworkManager = networkManager; // todo test using this for multiinstance tests too?
 
         var callerMethod = new StackFrame(1).GetMethod(); // one skip frame for current method
-
+        MultiprocessLogger.Log($"IsHost: {NetworkManager.Singleton.IsHost} calledMethod {callerMethod.Module} {callerMethod.Name}");
         var methodId = GetMethodIdentifier(callerMethod); // assumes called from IEnumerator MoveNext, which should be the case since we're a CustomYieldInstruction. This will return a generated class name which should be unique
         if (!s_MethodIdCounter.ContainsKey(methodId))
         {
@@ -207,6 +208,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
             {
                 if (networkManager.IsServer)
                 {
+                    MultiprocessLogger.Log($"from server TriggerActionIdClientRPC: {currentActionId}");
                     TestCoordinator.Instance.TriggerActionIdClientRpc(currentActionId, paramToPass, m_IgnoreTimeoutException,
                         clientRpcParams: new ClientRpcParams
                         {
