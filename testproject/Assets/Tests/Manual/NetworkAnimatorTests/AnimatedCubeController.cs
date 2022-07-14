@@ -13,25 +13,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
         private bool m_IsServerAuthoritative = true;
-
-        private void Awake()
-        {
-            m_Animator = GetComponent<Animator>();
-            m_NetworkAnimator = GetComponent<NetworkAnimator>();
-            if (m_NetworkAnimator == null)
-            {
-                m_NetworkAnimator = GetComponent<OwnerNetworkAnimator>();
-                if (m_NetworkAnimator != null)
-                {
-                    m_IsServerAuthoritative = false;
-                }
-                else
-                {
-                    throw new System.Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
-                }
-            }
-            m_Rotate = m_Animator.GetBool("Rotate");
-        }
+        public bool IsServerAuthoritative => m_IsServerAuthoritative;
 
         public override void OnNetworkSpawn()
         {
@@ -39,6 +21,26 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 enabled = false;
             }
+            m_Animator = GetComponent<Animator>();
+            m_NetworkAnimator = GetComponent<OwnerNetworkAnimator>();
+            if (m_NetworkAnimator == null)
+            {
+                m_NetworkAnimator = GetComponent<NetworkAnimator>();
+                if (m_NetworkAnimator != null)
+                {
+                    m_IsServerAuthoritative = true;
+                }
+                else
+                {
+                    throw new System.Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
+                }
+            }
+            else
+            {
+                m_IsServerAuthoritative = false;
+            }
+            m_Rotate = m_Animator.GetBool("Rotate");
+
         }
 
         private bool HasAuthority()
