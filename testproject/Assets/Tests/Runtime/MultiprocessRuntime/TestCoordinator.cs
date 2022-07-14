@@ -74,7 +74,7 @@ public class TestCoordinator : NetworkBehaviour
     {
         // Set enabled to false and only enable when we know our configuration
         enabled = false;
-        MultiprocessLogger.Log($"Initialize All Steps... start");
+        MultiprocessLogger.Log($"Initialize All Steps... start version 14.7.2022.1242");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
 
