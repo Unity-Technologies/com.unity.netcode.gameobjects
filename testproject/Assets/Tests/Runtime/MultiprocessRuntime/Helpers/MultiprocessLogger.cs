@@ -131,6 +131,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (TestCoordinator.Instance == null ||
                 TestCoordinator.Instance.ConfigurationType == ConfigurationType.ResourceFile ||
+                TestCoordinator.Instance.ConfigurationType == ConfigurationType.Remote ||
                 TestCoordinator.Instance.ConfigurationType == ConfigurationType.Unknown)
             {
                 testName = " - unknown -";
@@ -168,7 +169,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             for (int i = 3; i < st.FrameCount; i++)
             {
                 string methodName = st.GetFrame(i).GetMethod().Name;
-                if (methodName.Contains("MoveNext") || methodName.Contains("Invoke"))
+                if (methodName.Contains("MoveNext") || methodName.Contains("Invoke") || methodName.Contains("Handle") || methodName.Contains(".ctor"))
                 {
                     maxFrame++;
                 }

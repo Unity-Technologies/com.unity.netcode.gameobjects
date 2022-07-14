@@ -431,6 +431,16 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"AmIHost: {NetworkManager.Singleton.IsHost} received RPC from server, client side triggering action ID {actionId}");
         try
         {
+            MultiprocessLogger.Log($"ActionId: {actionId}");
+            ExecuteStepInContext val;
+            if (!ExecuteStepInContext.AllActions.TryGetValue(actionId, out val))
+            {
+                MultiprocessLogger.Log($"Trying to get {actionId} from AllActions and it was not found");
+                foreach (var dictElement in ExecuteStepInContext.AllActions)
+                {
+                    MultiprocessLogger.Log($"Trying to get {actionId} from AllActions and it was not found {dictElement.Key}");
+                }
+            }
             ExecuteStepInContext.AllActions[actionId].Invoke(args);
         }
         catch (Exception e)

@@ -201,7 +201,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
         }
         else
         {
-            MultiprocessLogger.Log($"Not Registering: {currentActionId}");
+            MultiprocessLogger.Log($"Not Registering, m_IsRegistering {m_IsRegistering}: {currentActionId}");
             if (shouldExecuteLocally)
             {
                 m_StepToExecute.Invoke(paramToPass);
