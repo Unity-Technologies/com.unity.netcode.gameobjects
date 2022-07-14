@@ -74,7 +74,6 @@ public class TestCoordinator : NetworkBehaviour
     {
         // Set enabled to false and only enable when we know our configuration
         enabled = false;
-        ExecuteStepInContext.InitializeAllSteps();
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
         s_ProcessId = Process.GetCurrentProcess().Id;
@@ -222,7 +221,7 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         MultiprocessLogger.Log($"Start - ishost {NetworkManager.Singleton.IsHost} and isclient {NetworkManager.Singleton.IsClient}");
-        
+        ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
         MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()} " + 
         $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
@@ -434,7 +433,7 @@ public class TestCoordinator : NetworkBehaviour
         {
             MultiprocessLogger.Log($"ActionId: {actionId}");
             ExecuteStepInContext val;
-            if (!ExecuteStepInContext.AllActions.TryGetValue(actionId, out val))
+            while (!ExecuteStepInContext.AllActions.TryGetValue(actionId, out val))
             {
                 MultiprocessLogger.Log($"Trying to get {actionId} from AllActions and it was not found, {ExecuteStepInContext.AllActions.Count}");
                 foreach (var key in ExecuteStepInContext.AllActions.Keys)
