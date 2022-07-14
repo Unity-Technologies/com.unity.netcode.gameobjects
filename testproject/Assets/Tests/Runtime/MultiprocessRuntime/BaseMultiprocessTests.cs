@@ -148,6 +148,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new WaitUntil(() => NetworkManager.Singleton.IsListening);
             yield return new WaitUntil(() => m_HasSceneLoaded == true);
 
+            MultiprocessLogger.Log(MultiprocessLogHandler.ReportQueue());
+            MultiprocessLogHandler.Flush();
+
             var startTime = Time.time;
             m_LaunchRemotely = MultiprocessOrchestration.IsRemoteOperationEnabled();
 
@@ -186,6 +189,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                     {
                         MultiprocessLogger.Log($"Server is posting JobQueueItem {TestCoordinator.Rawgithash}");
                         ConfigurationTools.PostJobQueueItem(TestCoordinator.Rawgithash);
+                        MultiprocessLogger.Log($"Server is posting JobQueueItem {TestCoordinator.Rawgithash} ... done");
                         MultiprocessLogger.Log($"Start Worker on Remote Node : {machine.Name} to get worker count to {GetWorkerCount()} from {NetworkManager.Singleton.ConnectedClients.Count - 1}");
                         m_LaunchProcessList.Add(MultiprocessOrchestration.StartWorkersOnRemoteNodes(machine));
                     }
@@ -197,6 +201,8 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             MultiprocessLogger.Log($"DEBUG: ConnectedClient Count: {NetworkManager.Singleton.ConnectedClients.Count} WorkerCount: {GetWorkerCount()}");
+            var lastProcess = m_LaunchProcessList[m_LaunchProcessList.Count - 1];
+            MultiprocessLogger.Log($"DEBUG: Lastprocess HasExited: {lastProcess.HasExited}");
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
             {
@@ -204,7 +210,9 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
-                    MultiprocessLogger.Log($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
+                    MultiprocessLogger.Log($"DEBUG: {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
+                    MultiprocessLogger.Log($"DEBUG: Lastprocess HasExited: {lastProcess.HasExited}");
+                    //TODO: If we have failed to start one or more processes we should do a retry at this point before giving up
                     throw new Exception($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
                 }
             }
