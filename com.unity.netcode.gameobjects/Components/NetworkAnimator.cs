@@ -268,10 +268,7 @@ namespace Unity.Netcode.Components
                 m_NetworkAnimatorStateChangeHandler = null;
             }
 
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-            }
+            NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
