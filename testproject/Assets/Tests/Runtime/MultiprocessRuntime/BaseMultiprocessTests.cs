@@ -220,6 +220,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             MultiprocessLogger.Log($"Connected client count is {NetworkManager.Singleton.ConnectedClients.Count}");
         }
 
+        [UnityTearDown]
+        public virtual IEnumerator UnityTearDown()
+        {
+            yield return new WaitForSeconds(0.2f);
+            MultiprocessLogger.Log($"m_LaunchProcessList: {m_LaunchProcessList.Count}");
+            foreach (var launchProcess in m_LaunchProcessList)
+            {
+                MultiprocessLogger.Log($"Launched Proocess: HasExited: {launchProcess.HasExited}");
+            }
+        }
 
         [TearDown]
         public virtual void Teardown()
