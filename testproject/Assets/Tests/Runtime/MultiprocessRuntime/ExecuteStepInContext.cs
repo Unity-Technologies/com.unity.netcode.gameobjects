@@ -195,7 +195,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
         if (m_IsRegistering)
         {
-            MultiprocessLogger.Log($"Registering: {currentActionId}");
+            // MultiprocessLogger.Log($"Registering: {currentActionId}");
             Assert.That(AllActions, Does.Not.Contain(currentActionId)); // sanity check
             AllActions[currentActionId] = this;
         }
