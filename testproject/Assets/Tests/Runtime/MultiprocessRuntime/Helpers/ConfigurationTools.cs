@@ -21,19 +21,32 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             s_Localip_fileinfo = new FileInfo(Path.Combine(MultiprocessOrchestration.MultiprocessDirInfo.FullName, "localip"));
         }
 
-        public static async Task<JobQueueItemArray> GetRemoteConfig()
+        public static async Task<JobQueueItemArray> GetRemoteConfig(int count = 0)
         {
-            var theList = new JobQueueItemArray();
-            using var client = new HttpClient();
-            var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            MultiprocessLogger.Log("ConfigurationTools - GetRemoteConfig - calling GetAsync");
-            var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
-                HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
-            MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {response}");
-            var content = await response.Content.ReadAsStringAsync();
-            MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {content}");
-            JsonUtility.FromJsonOverwrite(content, theList);
-            return theList;
+            try
+            {
+                var theList = new JobQueueItemArray();
+                using var client = new HttpClient();
+                var cancelAfterDelay = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                MultiprocessLogger.Log("ConfigurationTools - GetRemoteConfig - calling GetAsync");
+                var response = await client.GetAsync("https://multiprocess-log-event-manager.cds.internal.unity3d.com/api/JobWithFile",
+                    HttpCompletionOption.ResponseHeadersRead, cancelAfterDelay.Token).ConfigureAwait(false);
+                MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {response}");
+                var content = await response.Content.ReadAsStringAsync();
+                MultiprocessLogger.Log($"ConfigurationTools - GetRemoteConfig - calling GetAsync complete {content}");
+                JsonUtility.FromJsonOverwrite(content, theList);
+                return theList;
+            }
+            catch (Exception e)
+            {
+                MultiprocessLogger.Log($"GetRemoteConfig - Exception - {e.Message}");
+                if (count < 5)
+                {
+                    var t = GetRemoteConfig(count++);
+                    return t.Result;
+                }
+            }
+            return null;
         }
 
         public static async void CompleteJobQueueItem(JobQueueItem item)

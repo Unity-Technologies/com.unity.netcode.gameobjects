@@ -127,7 +127,7 @@ public class TestCoordinator : NetworkBehaviour
             {
                 MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi");
                 ConfigureViaWebApi();
-                MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed");
+                MultiprocessLogger.Log($"Awake {s_ProcessId} - Calling ConfigureViewWebApi completed {ConfigurationType}");
             }
         }
         else
