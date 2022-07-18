@@ -470,6 +470,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
         /// </summary>
+        /// <param name="parentNetworkObject">the new <see cref="NetworkObject"/> parent</param>
         public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
         private bool m_VarInit = false;
@@ -751,6 +752,11 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
+        /// <summary>
+        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to.
+        /// NOTE:  If you override this, you will want to always invoke this base class version of this
+        /// <see cref="OnDestroy"/> method!!
+        /// </summary>
         public virtual void OnDestroy()
         {
             // this seems odd to do here, but in fact especially in tests we can find ourselves

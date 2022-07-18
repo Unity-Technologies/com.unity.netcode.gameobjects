@@ -63,7 +63,11 @@ promote_{{ project.name }}_{{ package.name }}_dry_run:
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
     - .yamato/project-publish.yml#publish_{{ project.name }}_{{ package.name }}
-    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-promotion.yml#promotion_validate_{{ project.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
 
 {% endfor -%}
 {% endif -%}

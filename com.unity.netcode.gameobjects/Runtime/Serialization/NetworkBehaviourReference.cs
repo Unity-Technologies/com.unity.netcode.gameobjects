@@ -96,8 +96,18 @@ namespace Unity.Netcode
             serializer.SerializeValue(ref m_NetworkBehaviourId);
         }
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkBehaviourReference"/> to <see cref="NetworkBehaviour"/>.
+        /// </summary>
+        /// <param name="networkBehaviourRef">The <see cref="NetworkBehaviourReference"/> to convert from.</param>
+        /// <returns>The <see cref="NetworkBehaviour"/> this class is holding a reference to</returns>
         public static implicit operator NetworkBehaviour(NetworkBehaviourReference networkBehaviourRef) => GetInternal(networkBehaviourRef);
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkBehaviour"/> to <see cref="NetworkBehaviourReference"/>.
+        /// </summary>
+        /// <param name="networkBehaviour">The <see cref="NetworkBehaviour"/> to convert from.</param>
+        /// <returns>The <see cref="NetworkBehaviourReference"/> created from the <see cref="NetworkBehaviour"/> passed in as a parameter</returns>
         public static implicit operator NetworkBehaviourReference(NetworkBehaviour networkBehaviour) => new NetworkBehaviourReference(networkBehaviour);
     }
 }

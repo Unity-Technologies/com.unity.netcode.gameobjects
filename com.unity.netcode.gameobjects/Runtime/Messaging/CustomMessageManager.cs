@@ -193,6 +193,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Sends a named message to all clients
         /// </summary>
+        /// <param name="messageName">The message name to send</param>
         /// <param name="messageStream">The message stream containing the data</param>
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public void SendNamedMessageToAll(string messageName, FastBufferWriter messageStream, NetworkDelivery networkDelivery = NetworkDelivery.ReliableSequenced)

@@ -4,14 +4,26 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Byte Unpacking Helper Class
+    /// Use this class to unpack values during deserialization for values that were packed.
+    /// <seealso cref="BytePacker"/> to pack unpacked values
+    /// </summary>
     public static class ByteUnpacker
     {
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValuePacked<T>(FastBufferReader reader, out T value) where T: unmanaged => reader.ReadValueSafe(out value);
 #else
+        /// <summary>
+        /// Read a packed enum value
+        /// </summary>
+        /// <param name="reader">The reader to read from</param>
+        /// <param name="value">The value that's read</param>
+        /// <typeparam name="TEnum">Type of enum to read</typeparam>
+        /// <exception cref="InvalidOperationException">Throws InvalidOperationException if an enum somehow ends up not being the size of a byte, short, int, or long (which should be impossible)</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe void ReadValuePacked<TEnum>(FastBufferReader reader, out TEnum value) where TEnum : unmanaged, Enum
         {
@@ -302,7 +314,7 @@ namespace Unity.Netcode
 #endif
 
 #if UNITY_NETCODE_DEBUG_NO_PACKING
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueBitPacked<T>(FastBufferReader reader, T value) where T: unmanaged => reader.ReadValueSafe(out value);
 #else

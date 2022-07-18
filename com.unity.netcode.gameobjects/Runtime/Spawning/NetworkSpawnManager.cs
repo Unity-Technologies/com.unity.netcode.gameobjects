@@ -126,6 +126,7 @@ namespace Unity.Netcode
         /// Returns a list of all NetworkObjects that belong to a client.
         /// </summary>
         /// <param name="clientId">the client's id  <see cref="NetworkManager.LocalClientId"/></param>
+        /// <returns>returns the list of <see cref="NetworkObject"/>s owned by the client</returns>
         public List<NetworkObject> GetClientOwnedObjects(ulong clientId)
         {
             if (!OwnershipToObjectsTable.ContainsKey(clientId))
@@ -172,9 +173,11 @@ namespace Unity.Netcode
             return GetPlayerNetworkObject(NetworkManager.LocalClientId);
         }
 
+
         /// <summary>
         /// Returns the player object with a given clientId or null if one does not exist. This is only valid server side.
         /// </summary>
+        /// <param name="clientId">the client identifier of the player</param>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
