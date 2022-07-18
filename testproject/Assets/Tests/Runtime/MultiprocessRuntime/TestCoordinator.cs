@@ -165,6 +165,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void ReadGitHashFile()
     {
+        Rawgithash = "uninitialized";
         try
         {
             var githash_resource = Resources.Load<TextAsset>("Text/githash");
