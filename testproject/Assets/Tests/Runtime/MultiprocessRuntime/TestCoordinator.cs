@@ -217,12 +217,9 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log("Start");
-        MultiprocessLogger.Log("Initialize All Steps");
+        MultiprocessLogger.Log("Start - Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
         MultiprocessLogger.Log($"Initialize All Steps... done");
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-        MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
     }
 
     public void Update()
@@ -425,6 +422,7 @@ public class TestCoordinator : NetworkBehaviour
     public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         MultiprocessLogger.Log($"received RPC from server, client side triggering action ID {actionId}");
+        WriteLogServerRpc($"received RPC from server, client side triggering action ID {actionId} {ExecuteStepInContext.AllActions.Count}");
         try
         {
             ExecuteStepInContext.AllActions[actionId].Invoke(args);
@@ -519,6 +517,12 @@ public class TestCoordinator : NetworkBehaviour
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteLogServerRpc(string logMessage, ServerRpcParams receiveParams = default)
+    {
+        MultiprocessLogger.Log($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {logMessage}");
     }
 }
 
