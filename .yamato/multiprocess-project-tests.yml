@@ -16,7 +16,7 @@ singlenode_multiprocess_test_testproject_{{ editor }}_{{ platform.name }}:
 {% if editor != "trunk" %}
     - unity-downloader-cli -u {{ editor }} -c editor -w --fast
     - curl -s https://artifactory.prd.it.unity3d.com/artifactory/unity-tools-local/utr-standalone/utr{% if platform.name == "win" %}.bat --output utr.bat{% endif %}{% if platform.name != "win" %} --output utr && chmod +x ./utr{% endif %}
-    - {{ platform.editorpath }} -projectpath testproject -batchmode -nographics -quit -logfile BuildMultiprocessTestPlayer.log -executeMethod Unity.Netcode.MultiprocessRuntimeTests.BuildMultiprocessTestPlayer.BuildRelease
+    - {{ platform.editorpath }} -projectpath testproject -batchmode -quit -logfile BuildMultiprocessTestPlayer.log -executeMethod Unity.Netcode.MultiprocessRuntimeTests.BuildMultiprocessTestPlayer.BuildRelease
 {% if platform.name == "mac" %}    -  sudo codesign --force --deep --sign - ./testproject/Builds/MultiprocessTests/MultiprocessTestPlayer.app{% endif %}
     - {{ platform.utr }} --suite=playmode --testproject=testproject --editor-location=.Editor --testfilter=Unity.Netcode.MultiprocessRuntimeTests --extra-editor-arg=-bypassIgnoreUTR
 {% endif %}
