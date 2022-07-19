@@ -75,9 +75,8 @@ public class TestCoordinator : NetworkBehaviour
         enabled = false;
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
-        MultiprocessLogger.Log("Start - Initialize All Steps");
+        MultiprocessLogger.Log("Awake - Initialize All Steps");
         ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
 
         s_ProcessId = Process.GetCurrentProcess().Id;
         ReadGitHashFile();
@@ -281,9 +280,9 @@ public class TestCoordinator : NetworkBehaviour
     // Once we are connected, we can run the update method
     public void OnClientConnectedCallback(ulong clientId)
     {
-        MultiprocessLogger.Log($"Client start callback, enabling behavior if needed, enabled: {enabled} clientId: {clientId} {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient} IsRegistering:{ExecuteStepInContext.IsRegistering}");
         if (enabled == false)
         {
+            MultiprocessLogger.Log($"OnClientConnectedCallback enabling behavior clientId: {clientId} {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient} IsRegistering:{ExecuteStepInContext.IsRegistering}");
             enabled = true;
         }
     }
