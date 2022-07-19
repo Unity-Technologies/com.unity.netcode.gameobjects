@@ -30,8 +30,12 @@ namespace Unity.Netcode.RuntimeTests
             return null;
         }
 
+        public NetworkList<int> MyNetworkList = new NetworkList<int>();
+
         public override void OnNetworkSpawn()
         {
+            MyNetworkList.OnListChanged += Changed;
+
             if (NetworkManager.LocalClientId == ClientIdToTarget)
             {
                 ClientTargetedNetworkObjects.Add(this);
@@ -46,14 +50,6 @@ namespace Unity.Netcode.RuntimeTests
                 ClientTargetedNetworkObjects.Remove(this);
             }
             base.OnNetworkDespawn();
-        }
-
-        public NetworkList<int> MyNetworkList;
-
-        private void Start()
-        {
-            MyNetworkList = new NetworkList<int>();
-            MyNetworkList.OnListChanged += Changed;
         }
 
         public void Changed(NetworkListEvent<int> listEvent)
