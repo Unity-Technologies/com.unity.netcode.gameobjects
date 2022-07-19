@@ -76,7 +76,6 @@ public class TestCoordinator : NetworkBehaviour
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
         s_ProcessId = Process.GetCurrentProcess().Id;
-        MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
 
         // Configuration via command line (supported for many but not all platforms)
