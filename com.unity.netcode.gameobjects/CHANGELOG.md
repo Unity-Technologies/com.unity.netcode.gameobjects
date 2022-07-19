@@ -14,6 +14,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed NetworkLists not populating on client. NetworkList now uses the most recent list as opposed to the list at the end of previous frame, when sending full updates to dynamically spawned NetworkObject. The difference in behaviour is required as scene management spawns those objects at a different time in the frame, relative to updates. (#2062)
 
+- Fixed NetworkList Value event on the server. PreviousValue is now set correctly when a new value is set through property setter. (#2067)
+
 ## [1.0.0] - 2022-06-27
 
 ### Changed

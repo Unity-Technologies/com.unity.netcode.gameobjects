@@ -452,13 +452,15 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
+                var previousValue = m_List[index];
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
                 {
                     Type = NetworkListEvent<T>.EventType.Value,
                     Index = index,
-                    Value = value
+                    Value = value,
+                    PreviousValue = previousValue
                 };
 
                 HandleAddListEvent(listEvent);
