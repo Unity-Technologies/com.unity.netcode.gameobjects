@@ -219,7 +219,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        
+        MultiprocessLogger.Log($"TestCoordinator - Start");
     }
 
     public void Update()
