@@ -813,6 +813,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("This test is unstable")]
         public IEnumerator WhenAMessageIsDeferredForMoreThanTheConfiguredTime_ItIsRemoved([Values(1, 2, 3)] int timeout)
         {
             RegisterClientPrefabs();
