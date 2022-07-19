@@ -151,6 +151,8 @@ namespace Unity.Netcode.Editor
             }
         }
 
+
+        /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             if (!m_Initialized)
@@ -230,6 +232,11 @@ namespace Unity.Netcode.Editor
 
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
 
+        /// <summary>
+        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// </summary>
+        /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
+        /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
         public static Transform GetRootParentTransform(Transform transform)
         {
             if (transform.parent == null || transform.parent == transform)
@@ -244,6 +251,8 @@ namespace Unity.Netcode.Editor
         /// does not already have a NetworkObject component.  If not it will notify
         /// the user that NetworkBehaviours require a NetworkObject.
         /// </summary>
+        /// <param name="gameObject"><see cref="GameObject"/> to start checking for a <see cref="NetworkObject"/></param>
+        /// <param name="networkObjectRemoved">used internally</param>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
             // If there are no NetworkBehaviours or no gameObject, then exit early

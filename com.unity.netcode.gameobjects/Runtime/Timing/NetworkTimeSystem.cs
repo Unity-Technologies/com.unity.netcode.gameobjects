@@ -36,12 +36,27 @@ namespace Unity.Netcode
         /// Gets or sets the ratio at which the NetworkTimeSystem speeds up or slows down time.
         /// </summary>
         public double AdjustmentRatio { get; set; }
+
+        /// <summary>
+        /// The current local time with the local time offset applied
+        /// </summary>
         public double LocalTime => m_TimeSec + m_CurrentLocalTimeOffset;
+
+        /// <summary>
+        /// The current server time with the server time offset applied
+        /// </summary>
         public double ServerTime => m_TimeSec + m_CurrentServerTimeOffset;
 
         internal double LastSyncedServerTimeSec { get; private set; }
         internal double LastSyncedRttSec { get; private set; }
 
+        /// <summary>
+        /// The constructor class for <see cref="NetworkTickSystem"/>
+        /// </summary>
+        /// <param name="localBufferSec">The amount of time, in seconds, the server should buffer incoming client messages.</param>
+        /// <param name="serverBufferSec">The amount of the time in seconds the client should buffer incoming messages from the server.</param>
+        /// <param name="hardResetThresholdSec">The threshold, in seconds, used to force a hard catchup of network time.</param>
+        /// <param name="adjustmentRatio">The ratio at which the NetworkTimeSystem speeds up or slows down time.</param>
         public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
         {
             LocalBufferSec = localBufferSec;

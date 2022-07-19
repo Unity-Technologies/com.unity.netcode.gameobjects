@@ -541,16 +541,34 @@ namespace Unity.Netcode
             m_LatestParent = latestParent;
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
             if (!AutoObjectParentSync)
@@ -813,8 +831,8 @@ namespace Unity.Netcode
         // if and when we have different systems for where it is expected that orphans survive across ticks,
         //   then this warning will remind us that we need to revamp the system because then we can no longer simply
         //   spawn the orphan without its parent (at least, not when its transform is set to local coords mode)
-        //   - because then you’ll have children popping at the wrong location not having their parent’s global position to root them
-        //   - and then they’ll pop to the correct location after they get the parent, and that would be not good
+        //   - because then you'll have children popping at the wrong location not having their parent's global position to root them
+        //   - and then they'll pop to the correct location after they get the parent, and that would be not good
         internal static void VerifyParentingStatus()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

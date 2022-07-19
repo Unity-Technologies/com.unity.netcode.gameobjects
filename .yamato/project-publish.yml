@@ -38,7 +38,7 @@ publish_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
     - .yamato/project-publish.yml#publish_{{ project.name }}_{{ package.name }}_dry_run
 
 publish_{{ project.name }}_{{ package.name }}_dry_run:
@@ -56,7 +56,11 @@ publish_{{ project.name }}_{{ package.name }}_dry_run:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
 
 {% endfor -%}
 {% endif -%}

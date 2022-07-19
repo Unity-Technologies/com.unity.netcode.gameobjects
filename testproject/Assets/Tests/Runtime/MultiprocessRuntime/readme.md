@@ -198,13 +198,13 @@ Note that performance tests should be run from external processes (not from edit
 ### Multiple processes orchestration
 
 Test code and host code execute in the same process: When writing play mode tests, Unity will start a unity environment for that test, including game loop, scene, object hierarchy, all that fun stuff. This means the test itself has access to everything other unity scripts would have access to. At test startup, the test will ask unity to switch scene to MultiprocessTestScene containing a GameObject already placed in that scene called TestCoordinator . The test will callStartHost that will listen for connections, still all in the same process.
-Once that’s done, that same test will then spawn new client processes. These clients will also start with that MultiprocessTestScene  loaded at startup, also containing a TestCoordinator . These client side TestCoordinators will detect they are clients (using command line arg) and instead of calling StartHost  will call StartClient . This is where new code to specify the IP to connect to would stand (the lines I sent you).
+Once that's done, that same test will then spawn new client processes. These clients will also start with that MultiprocessTestScene  loaded at startup, also containing a TestCoordinator . These client side TestCoordinators will detect they are clients (using command line arg) and instead of calling StartHost  will call StartClient . This is where new code to specify the IP to connect to would stand (the lines I sent you).
 A good way I could have clarified that code is to separate TestCoordinator into TestCoordinatorClient and TestCoordinatorServer thinking of it. Right now TestCoordinator code does both.
 Once the connection is established (tests yield wait for connection in  Setup code), then the tests can start sending RPCs to each other.
-The test (that’s server side) will call multiple TriggerActionIdClientRpc . This will trigger these actions on all clients. The clients execute their test code, then answer back with ClientFinishedServerRpc.
+The test (that's server side) will call multiple TriggerActionIdClientRpc . This will trigger these actions on all clients. The clients execute their test code, then answer back with ClientFinishedServerRpc.
 Once all the tests are done exchanging commands, a final RPC CloseRemoteClientRpc is called to tell the clients they are done.
 If that RPC fails to send for some reason, clients also have a keep alive that tells them to self destroy when it expires.
-If you look at the “how it’s done” section in the multiprocess readme.md testproject/Assets/Tests/Runtime/MultiprocessRuntime/readme.md there’s a few drawings to explain that flow.
+If you look at the “how it's done” section in the multiprocess readme.md testproject/Assets/Tests/Runtime/MultiprocessRuntime/readme.md there's a few drawings to explain that flow.
 
 So:
 Editor
