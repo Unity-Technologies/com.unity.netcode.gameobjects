@@ -83,6 +83,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     internal static void InitializeAllSteps()
     {
+        MultiprocessLoger.Log("InitializeAllSteps - Start");
         // registering magically all context based steps
         IsRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
@@ -147,6 +148,7 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
         IsRegistering = false;
         HasRegistered = true;
+        MultiprocessLoger.Log("InitializeAllSteps - Done");
     }
 
     /// <summary>
@@ -196,9 +198,11 @@ public class ExecuteStepInContext : CustomYieldInstruction
         {
             Assert.That(AllActions, Does.Not.Contain(currentActionId)); // sanity check
             AllActions[currentActionId] = this;
+            MultiprocessLoger.Log($"InitializeAllSteps - Registering {currentActionId}");
         }
         else
         {
+            MultiprocessLoger.Log($"InitializeAllSteps - Not Registering {currentActionId}");
             if (shouldExecuteLocally)
             {
                 m_StepToExecute.Invoke(paramToPass);
