@@ -280,8 +280,11 @@ public class TestCoordinator : NetworkBehaviour
     // Once we are connected, we can run the update method
     public void OnClientConnectedCallback(ulong clientId)
     {
-        MultiprocessLogger.Log("Client start callback, enabling behavior");
-        enabled = true;
+        MultiprocessLogger.Log($"Client start callback, enabling behavior if needed, current state is {enabled} {clientId} {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient}");
+        if (enabled == false)
+        {
+            enabled = true;
+        }
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
