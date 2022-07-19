@@ -15,46 +15,36 @@ namespace Unity.Netcode.RuntimeTests
 
     public class ListChangedObject : NetworkBehaviour
     {
-        public static List<ListChangedObject> ClientTargetedNetworkObjects = new List<ListChangedObject>();
-        public static ulong ClientIdToTarget;
-
-        public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
-        {
-            foreach (var entry in ClientTargetedNetworkObjects)
-            {
-                if (entry.NetworkObjectId == networkObjectId)
-                {
-                    return entry.NetworkObject;
-                }
-            }
-            return null;
-        }
+        public int ExpectedPreviousValue = 0;
+        public int ExpectedValue = 0;
+        public bool AddDone = false;
 
         public NetworkList<int> MyNetworkList = new NetworkList<int>();
 
         public override void OnNetworkSpawn()
         {
             MyNetworkList.OnListChanged += Changed;
-
-            if (NetworkManager.LocalClientId == ClientIdToTarget)
-            {
-                ClientTargetedNetworkObjects.Add(this);
-            }
             base.OnNetworkSpawn();
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            if (ClientTargetedNetworkObjects.Contains(this))
-            {
-                ClientTargetedNetworkObjects.Remove(this);
-            }
-            base.OnNetworkDespawn();
         }
 
         public void Changed(NetworkListEvent<int> listEvent)
         {
-            Debug.Log($"listEvent.Type is {listEvent.Type}");
+            if (listEvent.Type == NetworkListEvent<int>.EventType.Value)
+            {
+                if (listEvent.PreviousValue != ExpectedPreviousValue)
+                {
+                    Debug.Log($"Expected previous value mismatch {listEvent.PreviousValue} versus {ExpectedPreviousValue}");
+                    Debug.Assert(listEvent.PreviousValue == ExpectedPreviousValue);
+                }
+
+                if (listEvent.Value != ExpectedValue)
+                {
+                    Debug.Log($"Expected value mismatch {listEvent.Value} versus {ExpectedValue}");
+                    Debug.Assert(listEvent.Value == ExpectedValue);
+                }
+
+                AddDone = true;
+            }
         }
     }
 
@@ -66,16 +56,6 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_PrefabToSpawn;
 
         private NetworkObject m_NetSpawnedObject1;
-        private NetworkObject m_NetSpawnedObject2;
-        private NetworkObject m_NetSpawnedObject3;
-        private NetworkObject m_Object1OnClient0;
-        private NetworkObject m_Object2OnClient0;
-        private NetworkObject m_Object3OnClient0;
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            var networkTransform = m_PlayerPrefab.AddComponent<NetworkListChangedTestComponent>();
-        }
 
         protected override void OnServerAndClientsCreated()
         {
@@ -83,45 +63,23 @@ namespace Unity.Netcode.RuntimeTests
             m_PrefabToSpawn.AddComponent<ListChangedObject>();
         }
 
-        private bool RefreshNetworkObjects()
-        {
-            m_Object1OnClient0 = ListChangedObject.GetNetworkObjectById(m_NetSpawnedObject1.NetworkObjectId);
-            m_Object2OnClient0 = ListChangedObject.GetNetworkObjectById(m_NetSpawnedObject2.NetworkObjectId);
-            m_Object3OnClient0 = ListChangedObject.GetNetworkObjectById(m_NetSpawnedObject3.NetworkObjectId);
-            if (m_Object1OnClient0 == null || m_Object2OnClient0 == null || m_Object3OnClient0 == null)
-            {
-                return false;
-            }
-            Assert.True(m_Object1OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
-            Assert.True(m_Object2OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
-            Assert.True(m_Object3OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
-            return true;
-        }
-
-
         [UnityTest]
         public IEnumerator NetworkListChangedTest()
         {
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
-            ListChangedObject.ClientTargetedNetworkObjects.Clear();
-            ListChangedObject.ClientIdToTarget = m_ClientId0;
 
             // create 3 objects
             var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
-            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
-            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
-            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
-            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
-
-            // get the NetworkObject on a client instance
-            yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
-            AssertOnTimeout($"Could not refresh all NetworkObjects!");
 
             m_NetSpawnedObject1.GetComponent<ListChangedObject>().MyNetworkList.Add(42);
+            m_NetSpawnedObject1.GetComponent<ListChangedObject>().ExpectedPreviousValue = 42;
+            m_NetSpawnedObject1.GetComponent<ListChangedObject>().ExpectedValue = 44;
             m_NetSpawnedObject1.GetComponent<ListChangedObject>().MyNetworkList[0] = 44;
 
-            // todo
+            Debug.Assert(m_NetSpawnedObject1.GetComponent<ListChangedObject>().AddDone);
+
+            return null;
         }
     }
 }
