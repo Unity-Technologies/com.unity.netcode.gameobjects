@@ -122,10 +122,26 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
-            for (int i = 0; i < m_ListAtLastReset.Length; i++)
+            // The listAtLastReset mechanism was put in place to deal with duplicate adds
+            // upon initial spawn. However, it causes issues with in-scene placed objects
+            // due to difference in spawn order. In order to address this, we pick the right
+            // list based on the type of object.
+            bool isSceneObject = m_NetworkBehaviour.NetworkObject.IsSceneObject != false;
+            if (isSceneObject)
             {
-                NetworkVariableSerialization<T>.Write(writer, ref m_ListAtLastReset.ElementAt(i));
+                writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
+                for (int i = 0; i < m_ListAtLastReset.Length; i++)
+                {
+                    NetworkVariableSerialization<T>.Write(writer, ref m_ListAtLastReset.ElementAt(i));
+                }
+            }
+            else
+            {
+                writer.WriteValueSafe((ushort)m_List.Length);
+                for (int i = 0; i < m_List.Length; i++)
+                {
+                    NetworkVariableSerialization<T>.Write(writer, ref m_List.ElementAt(i));
+                }
             }
         }
 
