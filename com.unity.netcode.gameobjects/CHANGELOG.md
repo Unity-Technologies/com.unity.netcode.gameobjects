@@ -8,11 +8,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 ### Added
 
+
 ### Changed
+
 
 ### Removed
 
+
 ### Fixed
+
+- Fixed issue where NetworkAnimator was not synchronizing late joining clients with states at the end of their animation loop. [#2072]
 - Fixed issue where NetworkAnimator was not unsubscribing from OnClientConnectedCallback when despawned. [#2071]
 
 ## [1.0.0-pre.10] - 2022-06-21
