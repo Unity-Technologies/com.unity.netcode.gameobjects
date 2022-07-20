@@ -194,7 +194,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void SetAddressAndPort()
     {
-        MultiprocessLogger.Log($"SetAddressAndPort - {Port} {m_ConnectAddress} {m_IsClient} ");
+        MultiprocessLogger.Log($"SetAddressAndPort - {Port} {m_ConnectAddress} IsClient: {m_IsClient} IsHost: {MultiprocessOrchestration.IsHost}");
         var ushortport = ushort.Parse(Port);
         var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
         MultiprocessLogger.Log($"transport is {transport}");
