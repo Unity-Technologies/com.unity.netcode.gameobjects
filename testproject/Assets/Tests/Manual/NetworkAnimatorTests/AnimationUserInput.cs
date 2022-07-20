@@ -17,7 +17,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         // Update is called once per frame
         private void LateUpdate()
         {
-            if (!IsSpawned)
+            if (!IsSpawned || !IsOwner)
             {
                 return;
             }
@@ -26,10 +26,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 foreach (var controller in m_Controllers)
                 {
-                    if ((controller.IsServerAuthoritative && (IsServer || IsOwner)) || (!controller.IsServerAuthoritative && IsOwner))
-                    {
-                        controller.ToggleRotateAnimation();
-                    }
+                    controller.ToggleRotateAnimation();
                 }
             }
 
@@ -37,10 +34,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 foreach (var controller in m_Controllers)
                 {
-                    if ((controller.IsServerAuthoritative && (IsServer || IsOwner)) || (!controller.IsServerAuthoritative && IsOwner))
-                    {
-                        controller.PlayPulseAnimation();
-                    }
+                    controller.PlayPulseAnimation();
                 }
             }
         }
