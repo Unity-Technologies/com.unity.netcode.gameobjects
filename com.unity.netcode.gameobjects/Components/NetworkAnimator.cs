@@ -421,11 +421,6 @@ namespace Unity.Netcode.Components
 
                     stateHash = nextState.fullPathHash;
                 }
-                else
-                if (st.normalizedTime >= adjustedNormalizedMaxTime)
-                {
-                    continue;
-                }
 
                 var animMsg = new AnimationMessage
                 {
