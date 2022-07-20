@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -15,6 +16,19 @@ namespace Tests.Manual.NetworkAnimatorTests
         private bool m_IsServerAuthoritative = true;
         public bool IsServerAuthoritative => m_IsServerAuthoritative;
 
+        private void DetermineNetworkAnimatorComponentType()
+        {
+            m_NetworkAnimator = GetComponent<NetworkAnimator>();
+            if (m_NetworkAnimator != null)
+            {
+                m_IsServerAuthoritative = m_NetworkAnimator.GetType() != typeof(OwnerNetworkAnimator);
+            }
+            else
+            {
+                throw new Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
+            }
+        }
+
         public override void OnNetworkSpawn()
         {
             if (HasAuthority())
@@ -22,25 +36,8 @@ namespace Tests.Manual.NetworkAnimatorTests
                 enabled = false;
             }
             m_Animator = GetComponent<Animator>();
-            m_NetworkAnimator = GetComponent<OwnerNetworkAnimator>();
-            if (m_NetworkAnimator == null)
-            {
-                m_NetworkAnimator = GetComponent<NetworkAnimator>();
-                if (m_NetworkAnimator != null)
-                {
-                    m_IsServerAuthoritative = true;
-                }
-                else
-                {
-                    throw new System.Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
-                }
-            }
-            else
-            {
-                m_IsServerAuthoritative = false;
-            }
+            DetermineNetworkAnimatorComponentType();
             m_Rotate = m_Animator.GetBool("Rotate");
-
         }
 
         private bool HasAuthority()
