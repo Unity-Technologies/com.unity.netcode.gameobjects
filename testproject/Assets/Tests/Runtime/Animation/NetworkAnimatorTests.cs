@@ -383,5 +383,82 @@ namespace TestProject.RuntimeTests
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
+
+        private bool m_ClientDisconnected;
+        /// <summary>
+        /// This validates that NetworkAnimator properly removes its subscription to the
+        /// OnClientConnectedCallback when it is despawned and/or destroyed.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator DisconnectServerTest()
+        {
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Starting ++++++++++++++++++ ");
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
+            var networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
+            m_ServerNetworkManager.OnClientDisconnectCallback += M_ServerNetworkManager_OnClientDisconnectCallback;
+            // Wait for it to spawn server-side
+            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Client and Server ++++++++++++++++++ ");
+            // Now disconnect the client
+            m_ClientNetworkManagers[0].Shutdown();
+
+            // Wait for the server to receive the client disconnection notification
+            yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
+            AssertOnTimeout($"Timed out waiting for the client to disconnect!");
+
+            // Despawn and destroy the prefab instance with the NetworkAnimator component
+            networkObjectInstance.Despawn(true);
+
+            yield return s_DefaultWaitForTick;
+
+            m_ServerNetworkManager.OnClientDisconnectCallback -= M_ServerNetworkManager_OnClientDisconnectCallback;
+            m_ServerNetworkManager.Shutdown(true);
+
+            yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.ShutdownInProgress);
+            AssertOnTimeout($"Timed out waiting for the server to shutdown!");
+
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Restarting Server and Client ++++++++++++++++++ ");
+            // Since the dynamically generated PlayerPrefab is destroyed when the server shuts down,
+            // we need to create a new one and assign it to NetworkPrefab index 0
+            m_PlayerPrefab = new GameObject("Player");
+            NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
+            m_ClientNetworkManagers[0].NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
+            OnCreatePlayerPrefab();
+
+            // Now, restart the server and the client
+            m_ServerNetworkManager.StartHost();
+            m_ClientNetworkManagers[0].StartClient();
+
+            // Wait for the server and client to start and connect
+            yield return WaitForClientsConnectedOrTimeOut();
+
+            // Spawn the same prefab again
+            objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
+            networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
+
+            // Wait for it to spawn server-side
+            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
+            AssertOnTimeout($"[Second Spawn] Timed out waiting for the  server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
+            AssertOnTimeout($"[Second Spawn] Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
+        }
+
+        private void M_ServerNetworkManager_OnClientDisconnectCallback(ulong obj)
+        {
+            m_ClientDisconnected = true;
+        }
     }
 }
