@@ -225,9 +225,8 @@ public class TestCoordinator : NetworkBehaviour
     public void Start()
     {
         MultiprocessLogger.Log($"Start - ishost {NetworkManager.Singleton.IsHost} and isclient {NetworkManager.Singleton.IsClient}");
-        
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()} " + 
-        $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
+        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()} " +
+            $" IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
     }
 
     public void Update()

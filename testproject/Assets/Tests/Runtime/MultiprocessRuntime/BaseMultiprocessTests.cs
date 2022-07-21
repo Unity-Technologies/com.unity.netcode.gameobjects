@@ -291,15 +291,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 }
 
                 Object.Destroy(NetworkManager.Singleton.gameObject); // making sure we clear everything before reloading our scene
-                    MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
-                    MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
-                    if (m_OriginalActiveScene.IsValid())
-                    {
-                        SceneManager.SetActiveScene(m_OriginalActiveScene);
-                    }
-                    MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
-                    SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
-                    MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                MultiprocessLogger.Log($"Currently active scene {SceneManager.GetActiveScene().name}");
+                MultiprocessLogger.Log($"m_OriginalActiveScene.IsValid {m_OriginalActiveScene.IsValid()}");
+                if (m_OriginalActiveScene.IsValid())
+                {
+                    SceneManager.SetActiveScene(m_OriginalActiveScene);
+                }
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
+                SceneManager.UnloadSceneAsync(BuildMultiprocessTestPlayer.MainSceneName);
+                MultiprocessLogger.Log($"TeardownSuite - Unload {BuildMultiprocessTestPlayer.MainSceneName}");
             }
         }
     }
