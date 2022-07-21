@@ -22,7 +22,7 @@ test_platforms:
     utr: ./utr
   - name: ubuntu
     type: Unity::VM
-    image: package-ci/ubuntu:stable
+    image: package-ci/ubuntu-20:stable
     flavor: b1.large
     pathsep: /
     standalone: StandaloneLinux64
