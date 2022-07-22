@@ -5,15 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
-
 ## [Unreleased]
 
 ### Changed
 
 ### Fixed
 
+- Fixed issue where NetworkAnimator was not removing its subscription from OnClientConnectedCallback when despawned during the shutdown sequence. (#2074)
+- Fixed IsServer and IsClient being set to false before object despawn during the shutdown sequence. (#2074)
 - Fixed NetworkLists not populating on client. NetworkList now uses the most recent list as opposed to the list at the end of previous frame, when sending full updates to dynamically spawned NetworkObject. The difference in behaviour is required as scene management spawns those objects at a different time in the frame, relative to updates. (#2062)
-
 - Fixed NetworkList Value event on the server. PreviousValue is now set correctly when a new value is set through property setter. (#2067)
 
 ## [1.0.0] - 2022-06-27

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
@@ -49,8 +50,14 @@ namespace TestProject.RuntimeTests
             base.OnNetworkSpawn();
         }
 
+        public Action<bool, bool> OnCheckIsServerIsClient;
+
         public override void OnNetworkDespawn()
         {
+            // This verifies the issue where IsServer and IsClient were
+            // being reset prior to NetworkObjects being despawned during
+            // the shutdown period.
+            OnCheckIsServerIsClient?.Invoke(IsServer, IsClient);
             if (ClientSideInstances.ContainsKey(NetworkManager.LocalClientId))
             {
                 ClientSideInstances.Remove(NetworkManager.LocalClientId);
