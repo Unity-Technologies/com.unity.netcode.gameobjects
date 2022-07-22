@@ -456,17 +456,6 @@ namespace TestProject.RuntimeTests
             // Wait for the server and client to start and connect
             yield return WaitForClientsConnectedOrTimeOut();
 
-            // Spawn the same prefab again
-            objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
-            networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
-
-            // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"[Second Spawn] Timed out waiting for the  server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
-
-            // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"[Second Spawn] Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }
 
