@@ -1,5 +1,6 @@
 
 using System.Collections;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -387,16 +388,18 @@ namespace TestProject.RuntimeTests
         private bool m_ClientDisconnected;
         /// <summary>
         /// This validates that NetworkAnimator properly removes its subscription to the
-        /// OnClientConnectedCallback when it is despawned and/or destroyed.
+        /// OnClientConnectedCallback when it is despawned and destroyed during the
+        /// shutdown sequence on both the server and the client.
         /// </summary>
         [UnityTest]
-        public IEnumerator DisconnectServerTest()
+        public IEnumerator ShutdownWhileSpawnedAndStartBackUpTest()
         {
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Starting ++++++++++++++++++ ");
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
             var networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
-            m_ServerNetworkManager.OnClientDisconnectCallback += M_ServerNetworkManager_OnClientDisconnectCallback;
+            var serverAnimatorTestHelper = objectInstance.GetComponent<AnimatorTestHelper>();
+            m_ServerNetworkManager.OnClientDisconnectCallback += ServerNetworkManager_OnClientDisconnectCallback;
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
             AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
@@ -405,23 +408,35 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
 
+            var clientAnimatorTestHelper = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].Values.Where((c) => c.GetComponent<AnimatorTestHelper>() != null).First().GetComponent<AnimatorTestHelper>();
+            Assert.IsNotNull(clientAnimatorTestHelper, $"Could not find the client side {nameof(AnimatorTestHelper)}!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Client and Server ++++++++++++++++++ ");
-            // Now disconnect the client
-            m_ClientNetworkManagers[0].Shutdown();
+            clientAnimatorTestHelper.OnCheckIsServerIsClient += Client_OnCheckIsServerIsClient;
+
+            // Now shutdown the client-side to verify this fix.
+            // The client-side spawned NetworkObject should get despawned
+            // and invoke the Client_OnCheckIsServerIsClient action.
+            m_ClientNetworkManagers[0].Shutdown(true);
 
             // Wait for the server to receive the client disconnection notification
             yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
             AssertOnTimeout($"Timed out waiting for the client to disconnect!");
 
-            // Despawn and destroy the prefab instance with the NetworkAnimator component
-            networkObjectInstance.Despawn(true);
+            Assert.IsTrue(m_ClientTestHelperDespawned, $"Client-Side {nameof(AnimatorTestHelper)} did not have a valid IsClient setting!");
+
+            serverAnimatorTestHelper.OnCheckIsServerIsClient += Server_OnCheckIsServerIsClient;
+            m_ServerNetworkManager.OnClientDisconnectCallback -= ServerNetworkManager_OnClientDisconnectCallback;
+
+            // Now shutdown the server-side to verify this fix.
+            // The server-side spawned NetworkObject should get despawned
+            // and invoke the Server_OnCheckIsServerIsClient action.
+            m_ServerNetworkManager.Shutdown();
 
             yield return s_DefaultWaitForTick;
 
-            m_ServerNetworkManager.OnClientDisconnectCallback -= M_ServerNetworkManager_OnClientDisconnectCallback;
-            m_ServerNetworkManager.Shutdown(true);
-
             yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.ShutdownInProgress);
+
+            Assert.IsTrue(m_ServerTestHelperDespawned, $"Server-Side {nameof(AnimatorTestHelper)} did not have a valid IsServer setting!");
             AssertOnTimeout($"Timed out waiting for the server to shutdown!");
 
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Restarting Server and Client ++++++++++++++++++ ");
@@ -452,11 +467,37 @@ namespace TestProject.RuntimeTests
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"[Second Spawn] Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
-
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }
 
-        private void M_ServerNetworkManager_OnClientDisconnectCallback(ulong obj)
+        private bool m_ServerTestHelperDespawned;
+        /// <summary>
+        /// Server-Side
+        /// This callback will be invoked as the spawned prefab is destroyed during shutdown
+        /// </summary>
+        private void Server_OnCheckIsServerIsClient(bool isServer, bool isClient)
+        {
+            // Validates this is still set when the NetworkObject is despawned during shutdown
+            Assert.IsTrue(isServer);
+            m_ServerTestHelperDespawned = true;
+        }
+
+        private bool m_ClientTestHelperDespawned;
+        /// <summary>
+        /// Client-Side
+        /// This callback will be invoked as the spawned prefab is destroyed during shutdown
+        /// </summary>
+        private void Client_OnCheckIsServerIsClient(bool isServer, bool isClient)
+        {
+            // Validates this is still set when the NetworkObject is despawned during shutdown
+            Assert.IsTrue(isClient);
+            m_ClientTestHelperDespawned = true;
+        }
+
+        /// <summary>
+        /// Verifies the client has disconnected
+        /// </summary>
+        private void ServerNetworkManager_OnClientDisconnectCallback(ulong obj)
         {
             m_ClientDisconnected = true;
         }
