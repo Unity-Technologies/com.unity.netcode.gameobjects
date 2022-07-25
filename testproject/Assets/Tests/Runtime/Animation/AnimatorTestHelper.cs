@@ -13,6 +13,7 @@ namespace TestProject.RuntimeTests
         public readonly static Dictionary<ulong, AnimatorTestHelper> ClientSideInstances = new Dictionary<ulong, AnimatorTestHelper>();
 
         public static bool IsTriggerTest;
+        public static bool IsLateJoinSyncTest;
 
         public static void Initialize()
         {
@@ -27,6 +28,13 @@ namespace TestProject.RuntimeTests
         {
             m_Animator = GetComponent<Animator>();
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
+            m_NetworkAnimator.InternalNotifyAnimationMessage = NotifyAnimSync;
+        }
+
+        internal List<NetworkAnimator.AnimationMessage> AnimationMessages = new List<NetworkAnimator.AnimationMessage>();
+        private void NotifyAnimSync(NetworkAnimator.AnimationMessage animationMessage)
+        {
+            AnimationMessages.Add(animationMessage);
         }
 
         public override void OnNetworkSpawn()
@@ -35,6 +43,9 @@ namespace TestProject.RuntimeTests
             {
                 Debug.Log($"[AnimatorTestHelper][{IsServer}] {NetworkManager.name}");
             }
+
+            m_Animator = GetComponent<Animator>();
+            m_NetworkAnimator = GetComponent<NetworkAnimator>();
             if (IsServer)
             {
                 ServerSideInstance = this;
@@ -108,6 +119,16 @@ namespace TestProject.RuntimeTests
         public void SetTrigger(string name = "TestTrigger")
         {
             m_NetworkAnimator.SetTrigger(name);
+        }
+
+        public void SetLateJoinParam(bool isEnabled)
+        {
+            m_Animator.SetBool("LateJoinTest", isEnabled);
+        }
+
+        public Animator GetAnimator()
+        {
+            return m_Animator;
         }
     }
 }

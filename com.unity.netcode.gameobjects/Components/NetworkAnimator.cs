@@ -1,4 +1,5 @@
 #if COM_UNITY_MODULES_ANIMATION
+using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -150,7 +151,6 @@ namespace Unity.Netcode.Components
             NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
         }
     }
-
 
 
     /// <summary>
@@ -378,6 +378,11 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Used for testing late join animation synchronization.
+        /// </summary>
+        internal Action<AnimationMessage> InternalNotifyAnimationMessage;
+
+        /// <summary>
         /// Synchronizes newly joined players
         /// </summary>
         internal void ServerSynchronizeNewPlayer(ulong playerId)
@@ -434,6 +439,9 @@ namespace Unity.Netcode.Components
                 };
                 // Server always send via client RPC
                 SendAnimStateClientRpc(animMsg, m_ClientRpcParams);
+
+                // For integration test tracking purposes
+                InternalNotifyAnimationMessage?.Invoke(animMsg);
             }
         }
 
@@ -833,6 +841,8 @@ namespace Unity.Netcode.Components
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
+                // For integration test tracking purposes
+                InternalNotifyAnimationMessage?.Invoke(animSnapshot);
                 UpdateAnimationState(animSnapshot);
             }
         }
