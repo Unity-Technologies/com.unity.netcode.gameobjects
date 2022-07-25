@@ -869,12 +869,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Constructor that allows you To break tests up as a host
         /// and a server.
         /// Example: Decorate your child derived class with TestFixture
-        /// and then create a constructor at the child level
+        /// and then create a constructor at the child level.
+        /// Don't forget to set your constructor public, else Unity will give you a hard
+        /// to decipher error
         /// [TestFixture(HostOrServer.Host)]
         /// [TestFixture(HostOrServer.Server)]
         /// public class MyChildClass : NetcodeIntegrationTest
         /// {
-        ///     MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
+        ///     public MyChildClass(HostOrServer hostOrServer) : base(hostOrServer) { }
         /// }
         /// </summary>
         /// <param name="hostOrServer"></param>
