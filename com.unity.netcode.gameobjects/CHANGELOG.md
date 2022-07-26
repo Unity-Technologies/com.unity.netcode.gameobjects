@@ -9,7 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this limit.
+- When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
 
 ### Fixed
 
