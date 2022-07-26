@@ -260,16 +260,40 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkManager NetworkManager => NetworkObject.NetworkManager;
 
+        private bool m_IsLocalPlayer;
         /// <summary>
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
         /// is the local player object.  If no NetworkObject is assigned it will always return false.
         /// </summary>
-        public bool IsLocalPlayer { get; private set; }
+        public bool IsLocalPlayer
+        {
+            get
+            {
+                if (!NetworkObject.IsSpawned)
+                {
+                    throw new Exception($"{nameof(IsLocalPlayer)} can only be used on spawned objects.");
+                }
+                return m_IsLocalPlayer;
+            }
+            private set { m_IsLocalPlayer = value; }
+        }
 
+        private bool m_IsOwner = false;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool IsOwner { get; internal set; }
+        public bool IsOwner
+        {
+            get
+            {
+                if (!NetworkObject.IsSpawned)
+                {
+                    throw new Exception($"{nameof(IsOwner)} can only be used on spawned objects.");
+                }
+                return m_IsOwner;
+            }
+            internal set { m_IsOwner = value; }
+        }
 
         /// <summary>
         /// Gets if we are executing as server
@@ -440,9 +464,9 @@ namespace Unity.Netcode
 
         internal void InternalOnNetworkDespawn()
         {
-            IsSpawned = false;
             UpdateNetworkProperties();
             OnNetworkDespawn();
+            IsSpawned = false;
         }
 
         /// <summary>
