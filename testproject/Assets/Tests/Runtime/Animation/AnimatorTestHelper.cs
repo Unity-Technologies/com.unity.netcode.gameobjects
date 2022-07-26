@@ -13,7 +13,6 @@ namespace TestProject.RuntimeTests
         public readonly static Dictionary<ulong, AnimatorTestHelper> ClientSideInstances = new Dictionary<ulong, AnimatorTestHelper>();
 
         public static bool IsTriggerTest;
-        public static bool IsLateJoinSyncTest;
 
         public static void Initialize()
         {
