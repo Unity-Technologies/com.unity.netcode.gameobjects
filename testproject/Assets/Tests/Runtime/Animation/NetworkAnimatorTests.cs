@@ -468,7 +468,7 @@ namespace TestProject.RuntimeTests
                 Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {i}!");
                 var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(i);
                 StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][i] = animationStateInfo;
-                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time when late joined client connected to {animationStateInfo.normalizedTime}!");
+                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
             }
         }
 
