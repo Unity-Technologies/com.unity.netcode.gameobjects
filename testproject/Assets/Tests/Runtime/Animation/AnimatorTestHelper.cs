@@ -28,13 +28,6 @@ namespace TestProject.RuntimeTests
         {
             m_Animator = GetComponent<Animator>();
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
-            m_NetworkAnimator.InternalNotifyAnimationMessage = NotifyAnimSync;
-        }
-
-        internal List<NetworkAnimator.AnimationMessage> AnimationMessages = new List<NetworkAnimator.AnimationMessage>();
-        private void NotifyAnimSync(NetworkAnimator.AnimationMessage animationMessage)
-        {
-            AnimationMessages.Add(animationMessage);
         }
 
         public override void OnNetworkSpawn()

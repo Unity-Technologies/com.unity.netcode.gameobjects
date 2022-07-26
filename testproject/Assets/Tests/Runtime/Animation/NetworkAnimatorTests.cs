@@ -1,5 +1,5 @@
-
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -44,7 +44,8 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             AnimatorTestHelper.Initialize();
-            TriggerTest.Reset();
+            TriggerTest.ResetTest();
+            StateSyncTest.ResetTest();
             yield return base.OnSetup();
         }
 
@@ -393,6 +394,8 @@ namespace TestProject.RuntimeTests
         public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             VerboseDebug($" ++++++++++++++++++ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
+
+            StateSyncTest.IsVerboseDebug = m_EnableVerboseDebug;
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
@@ -428,9 +431,6 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(firstClientAnimatorTestHelper.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"Timed out waiting for client-side cube to reach 180.0f!");
 
-            // Clear out our server side animation messages so we only have the joining client's AnimationMessages captured
-            AnimatorTestHelper.ServerSideInstance.AnimationMessages.Clear();
-
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
@@ -447,7 +447,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
 
-            yield return WaitForConditionOrTimeOut(() => LateJoinClientSynchronized(lateJoinObjectInstance));
+            yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
             AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
             var newlyJoinedClient = m_ClientNetworkManagers[1];
@@ -457,37 +457,53 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// Used by: LateJoinSynchronizationTest
-        /// Wait condition method that compares the states sent by the server to the
-        /// states received by the client.
+        /// Wait condition method that compares the states of all clients and the server
         /// </summary>
-        private bool LateJoinClientSynchronized(AnimatorTestHelper animatorTestHelper)
+        private bool LateJoinClientSynchronized()
         {
-            var serverSentMessages = AnimatorTestHelper.ServerSideInstance.AnimationMessages;
-            // We should have sent all states to the newly synchronizing client
-            if (AnimatorTestHelper.ServerSideInstance.GetAnimator().layerCount != serverSentMessages.Count)
+            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[0].LocalClientId))
             {
                 return false;
             }
 
-            // The client should have received all states update messages
-            if (serverSentMessages.Count != animatorTestHelper.AnimationMessages.Count)
+            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
             {
                 return false;
             }
 
-            // Basically a sanity check to make sure they were all received
-            for (int i = 0; i < animatorTestHelper.AnimationMessages.Count; i++)
+            var serverStates = StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId];
+            var clientStates = new List<List<AnimatorStateInfo>>();
+            foreach (var client in m_ClientNetworkManagers)
             {
-                if (serverSentMessages[i].Layer != animatorTestHelper.AnimationMessages[i].Layer)
+                clientStates.Add(new List<AnimatorStateInfo>(StateSyncTest.StatesEntered[client.LocalClientId]));
+            }
+
+            // All clients should have matching state counts
+            foreach (var clientAnimState in clientStates)
+            {
+                if (serverStates.Count != clientAnimState.Count)
                 {
                     return false;
                 }
-                if (serverSentMessages[i].NormalizedTime != animatorTestHelper.AnimationMessages[i].NormalizedTime)
+            }
+
+            // Basically a sanity check to make sure they all match
+            for (int i = 0; i < serverStates.Count; i++)
+            {
+                var serverAnimState = serverStates[i];
+                foreach (var clientAnimState in clientStates)
                 {
-                    return false;
+                    if (clientAnimState[i].shortNameHash != serverAnimState.shortNameHash)
+                    {
+                        VerboseDebug($"[Hash Fail] {clientAnimState[i].shortNameHash} | {serverAnimState.shortNameHash}");
+                        return false;
+                    }
+                    if (clientAnimState[i].normalizedTime != serverAnimState.normalizedTime)
+                    {
+                        VerboseDebug($"[NormalizedTime Fail] {clientAnimState[i].normalizedTime} | {serverAnimState.normalizedTime}");
+                        return false;
+                    }
                 }
-                VerboseDebug($"[Client-Sync-Rec][{animatorTestHelper.AnimationMessages[i].Layer}][{animatorTestHelper.AnimationMessages[i].NormalizedTime}] --- " +
-                    $"[Server-Sync-Send][{serverSentMessages[i].Layer}][{serverSentMessages[i].NormalizedTime}]");
             }
             return true;
         }
