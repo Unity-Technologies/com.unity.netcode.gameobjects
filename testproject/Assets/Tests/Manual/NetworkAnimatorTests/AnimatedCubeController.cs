@@ -14,7 +14,6 @@ namespace Tests.Manual.NetworkAnimatorTests
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
         private bool m_IsServerAuthoritative = true;
-        public bool IsServerAuthoritative => m_IsServerAuthoritative;
 
         private void DetermineNetworkAnimatorComponentType()
         {
