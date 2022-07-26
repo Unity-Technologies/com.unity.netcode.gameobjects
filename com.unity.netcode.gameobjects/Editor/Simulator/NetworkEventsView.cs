@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Unity.Netcode.Editor
@@ -12,11 +13,12 @@ namespace Unity.Netcode.Editor
         Button LagSpikeButton => this.Q<Button>(nameof(LagSpikeButton));
         SliderInt LagSpikeDurationSlider => this.Q<SliderInt>(nameof(LagSpikeDurationSlider));
 
-        readonly INetworkEventsApi m_NetworkEventsApi;
+        INetworkEventsApi m_NetworkEventsApi;
+        readonly NetworkSimulator m_NetworkSimulator;
 
-        public NetworkEventsView(INetworkEventsApi networkEventsApi)
+        public NetworkEventsView(NetworkSimulator networkSimulator)
         {
-            m_NetworkEventsApi = networkEventsApi;
+            m_NetworkSimulator = networkSimulator;
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
             LagSpikeButton.SetEnabled(LagSpikeDurationSlider.value != 0);
@@ -65,6 +67,7 @@ namespace Unity.Netcode.Editor
 
         void OnEditorUpdate()
         {
+            m_NetworkEventsApi = m_NetworkSimulator.NetworkEventsApi;
             DisconnectButton.text = m_NetworkEventsApi.IsDisabledBySimulator
                 ? "Re-enable Connection"
                 : "Disable Connection";

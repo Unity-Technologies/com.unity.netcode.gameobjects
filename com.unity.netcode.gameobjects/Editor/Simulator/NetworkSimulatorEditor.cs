@@ -13,11 +13,11 @@ namespace Unity.Netcode.Editor
         public override VisualElement CreateInspectorGUI()
         {
             m_NetworkSimulator = (NetworkSimulator)target;
-            
+
             m_Inspector = new VisualElement();
-            m_Inspector.Add(new NetworkEventsView(m_NetworkSimulator.NetworkEventsApi));
+            m_Inspector.Add(new NetworkEventsView(m_NetworkSimulator));
             m_Inspector.Add(new NetworkTypeView(serializedObject, m_NetworkSimulator));
-            
+
             return m_Inspector;
         }
     }
