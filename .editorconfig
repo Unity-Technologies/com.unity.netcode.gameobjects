@@ -1,0 +1,106 @@
+root = true
+
+[*]
+charset = utf-8
+
+[*.cs]
+# spacing rules
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# formatting rules
+dotnet_diagnostic.IDE0001.severity = error # Simplify name
+dotnet_diagnostic.IDE0002.severity = error # Simplify member access
+dotnet_diagnostic.IDE0005.severity = error # Remove unnecessary import
+dotnet_diagnostic.IDE0063.severity = error # Use simple 'using' statement
+dotnet_style_qualification_for_field = false:error
+dotnet_style_qualification_for_property = false:error
+dotnet_style_qualification_for_method = false:error
+dotnet_style_qualification_for_event = false:error
+dotnet_style_predefined_type_for_locals_parameters_members = true:error
+dotnet_style_predefined_type_for_member_access = true:error
+dotnet_style_require_accessibility_modifiers = always:error
+csharp_style_var_when_type_is_apparent = true:error
+csharp_prefer_braces = true:error
+csharp_using_directive_placement = outside_namespace:error
+
+# naming rules
+# namespace Unity.Netcode { ... }
+# public class NetworkObject { ... }
+# public void Spawn(...) { ... }
+dotnet_naming_symbols.usertypes_naming_symbols.applicable_kinds = namespace, class, struct, enum, property, method, field, event, delegate, local_function
+dotnet_naming_symbols.usertypes_naming_symbols.applicable_accessibilities = public, internal
+dotnet_naming_style.usertypes_naming_style.capitalization = pascal_case
+dotnet_naming_rule.usertypes_naming_rule.symbols = usertypes_naming_symbols
+dotnet_naming_rule.usertypes_naming_rule.style = usertypes_naming_style
+dotnet_naming_rule.usertypes_naming_rule.severity = error
+
+# public void ChangeOwnership(ulong newOwnerClientId) { ... }
+# ulong[] targetClientIds = clientRpcParams.Send.TargetClientIds;
+dotnet_naming_symbols.paramlocal_naming_symbols.applicable_kinds = parameter, local
+dotnet_naming_symbols.paramlocal_naming_symbols.applicable_accessibilities = *
+dotnet_naming_style.paramlocal_naming_style.capitalization = camel_case
+dotnet_naming_rule.paramlocal_naming_rule.symbols = paramlocal_naming_symbols
+dotnet_naming_rule.paramlocal_naming_rule.style = paramlocal_naming_style
+dotnet_naming_rule.paramlocal_naming_rule.severity = error
+
+# interface INetworkSerializable
+dotnet_naming_symbols.interface_naming_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_naming_symbols.applicable_accessibilities = public, internal
+dotnet_naming_style.interface_naming_style.required_prefix = I
+dotnet_naming_style.interface_naming_style.capitalization = pascal_case
+dotnet_naming_rule.interface_naming_rule.symbols = interface_naming_symbols
+dotnet_naming_rule.interface_naming_rule.style = interface_naming_style
+dotnet_naming_rule.interface_naming_rule.severity = error
+
+# class NetworkVariable<T>
+# class NetworkDictionary<TKey, TValue>
+dotnet_naming_symbols.typeparam_naming_symbols.applicable_kinds = type_parameter
+dotnet_naming_symbols.typeparam_naming_symbols.applicable_accessibilities = public, internal
+dotnet_naming_style.typeparam_naming_style.required_prefix = T
+dotnet_naming_style.typeparam_naming_style.capitalization = pascal_case
+dotnet_naming_rule.typeparam_naming_rule.symbols = typeparam_naming_symbols
+dotnet_naming_rule.typeparam_naming_rule.style = typeparam_naming_style
+dotnet_naming_rule.typeparam_naming_rule.severity = error
+
+# const int k_MaxCount
+dotnet_naming_symbols.constant_naming_symbols.applicable_kinds = field
+dotnet_naming_symbols.constant_naming_symbols.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.constant_naming_symbols.required_modifiers = const
+dotnet_naming_style.constant_naming_style.required_prefix = k_
+dotnet_naming_style.constant_naming_style.capitalization = pascal_case
+dotnet_naming_rule.constant_naming_rule.symbols = constant_naming_symbols
+dotnet_naming_rule.constant_naming_rule.style = constant_naming_style
+dotnet_naming_rule.constant_naming_rule.severity = error
+
+# static readonly Vector3 k_DefaultLength
+dotnet_naming_symbols.staticreadonly_naming_symbols.applicable_kinds = field
+dotnet_naming_symbols.staticreadonly_naming_symbols.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.staticreadonly_naming_symbols.required_modifiers = static, readonly
+dotnet_naming_style.staticreadonly_naming_style.required_prefix = k_
+dotnet_naming_style.staticreadonly_naming_style.capitalization = pascal_case
+dotnet_naming_rule.staticreadonly_naming_rule.symbols = staticreadonly_naming_symbols
+dotnet_naming_rule.staticreadonly_naming_rule.style = staticreadonly_naming_style
+dotnet_naming_rule.staticreadonly_naming_rule.severity = error
+
+# static int s_SharedCount
+dotnet_naming_symbols.staticfield_naming_symbols.applicable_kinds = field
+dotnet_naming_symbols.staticfield_naming_symbols.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_symbols.staticfield_naming_symbols.required_modifiers = static
+dotnet_naming_style.staticfield_naming_style.required_prefix = s_
+dotnet_naming_style.staticfield_naming_style.capitalization = pascal_case
+dotnet_naming_rule.staticfield_naming_rule.symbols = staticfield_naming_symbols
+dotnet_naming_rule.staticfield_naming_rule.style = staticfield_naming_style
+dotnet_naming_rule.staticfield_naming_rule.severity = error
+
+# int m_CurrentCount
+dotnet_naming_symbols.memberfield_naming_symbols.applicable_kinds = field
+dotnet_naming_symbols.memberfield_naming_symbols.applicable_accessibilities = private, protected, protected_internal, private_protected
+dotnet_naming_style.memberfield_naming_style.required_prefix = m_
+dotnet_naming_style.memberfield_naming_style.capitalization = pascal_case
+dotnet_naming_rule.memberfield_naming_rule.symbols = memberfield_naming_symbols
+dotnet_naming_rule.memberfield_naming_rule.style = memberfield_naming_style
+dotnet_naming_rule.memberfield_naming_rule.severity = error

@@ -1,0 +1,35 @@
+{
+    "name": "Unity.Netcode.Runtime",
+    "rootNamespace": "Unity.Netcode",
+    "references": [
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.NetStatsReporting",
+        "Unity.Multiplayer.NetworkSolutionInterface",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.NetStatsReporting",
+        "Unity.Multiplayer.Tools.NetworkSolutionInterface",
+        "Unity.Networking.Transport",
+        "Unity.Collections",
+        "Unity.Burst"
+    ],
+    "allowUnsafeCode": true,
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        },
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "1.0.0-pre.7",
+            "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
+        }
+    ]
+}

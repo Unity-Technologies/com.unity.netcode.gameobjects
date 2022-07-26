@@ -1,31 +1,69 @@
 using UnityEngine;
-using MLAPI;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
+#if ENABLE_RELAY_SERVICE
+using Unity.Services.Core;
+using Unity.Services.Authentication;
+#endif
 
 public class UIController : MonoBehaviour
 {
-    public NetworkManager network;
-    public GameObject buttonsUI;
+    public NetworkManager NetworkManager;
+    public GameObject ButtonsRoot;
+    public GameObject AuthButton;
+    public GameObject JoinCode;
 
-    public void CreateServer()
+    public UnityTransport Transport;
+
+    private void Awake()
     {
-        network.StartServer();
+#if ENABLE_RELAY_SERVICE
+        if (Transport.Protocol == UnityTransport.ProtocolType.RelayUnityTransport)
+        {
+            HideButtons();
+            JoinCode.SetActive(false);
+        }
+#endif
+    }
+
+    public void StartServer()
+    {
+        NetworkManager.StartServer();
         HideButtons();
     }
 
-    public void CreateHost()
+    public void StartHost()
     {
-        network.StartHost();
+        NetworkManager.StartHost();
         HideButtons();
     }
 
-    public void JoinGame()
+    public void StartClient()
     {
-        network.StartClient();
+        NetworkManager.StartClient();
         HideButtons();
     }
 
     private void HideButtons()
     {
-        buttonsUI.SetActive(false);
+        ButtonsRoot.SetActive(false);
+    }
+
+
+    public async void OnSignIn()
+    {
+#if ENABLE_RELAY_SERVICE
+        await UnityServices.InitializeAsync();
+        Debug.Log("OnSignIn");
+        await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Debug.Log($"Logging in with PlayerID {AuthenticationService.Instance.PlayerId}");
+
+        if (AuthenticationService.Instance.IsSignedIn)
+        {
+            ButtonsRoot.SetActive(true);
+            JoinCode.SetActive(true);
+            AuthButton.SetActive(false);
+        }
+#endif
     }
 }

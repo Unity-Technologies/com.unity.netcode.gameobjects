@@ -1,0 +1,10 @@
+{
+    "name": "TestProject.ManualTests",
+    "rootNamespace": "TestProject.ManualTests",
+    "references": [
+        "TestProject",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Components",
+        "Unity.Collections"
+    ]
+}

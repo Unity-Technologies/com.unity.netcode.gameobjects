@@ -69,7 +69,11 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+/[Aa]ssets/[Ss]treamingAssets/BuildInfo.json
+/[Aa]ssets/[Ss]treamingAssets/BuildInfo.json.meta
 
-# Packages
-/[Pp]ackages/*
-!/[Pp]ackages/manifest.json
+InitTestScene*
+
+boot.config
+SceneTemplateSettings.json
+*BurstAotSettings*.json

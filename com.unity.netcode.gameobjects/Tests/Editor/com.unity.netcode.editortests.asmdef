@@ -1,0 +1,34 @@
+{
+    "name": "Unity.Netcode.EditorTests",
+    "rootNamespace": "Unity.Netcode.EditorTests",
+    "references": [
+        "Unity.Collections",
+        "Unity.Netcode.Runtime",
+        "Unity.Netcode.Editor",
+        "Unity.Netcode.Components",
+        "Unity.Multiplayer.MetricTypes",
+        "Unity.Multiplayer.NetStats",
+        "Unity.Multiplayer.Tools.MetricTypes",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Networking.Transport"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "allowUnsafeCode": true,
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        },
+        {
+            "name": "Unity",
+            "expression": "(0,2022.2.0a5)",
+            "define": "UNITY_UNET_PRESENT"
+        }
+    ]
+}

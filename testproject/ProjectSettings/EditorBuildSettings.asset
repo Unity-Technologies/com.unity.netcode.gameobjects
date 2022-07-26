@@ -6,6 +6,106 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/MainMenu.unity
+    guid: 21c7fd68cda9dd9488fc0cc01f885e39
+  - enabled: 1
+    path: Assets/Scenes/ZooSam.unity
+    guid: 4683469c9a191411fbda5e426765b2fc
+  - enabled: 1
+    path: Assets/Samples/SamplesMenu.unity
+    guid: 037562c9b1a469f498dfb34256ddf86f
+  - enabled: 1
+    path: Assets/Tests/Manual/ManualTestsMenu.unity
+    guid: 197ba614e9ae3054a8dea7b2bdacad6a
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioning/SceneTransitioningTest.unity
+    guid: 1c2375a896b2e8c4a841aa61224b8494
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
-  m_configObjects: {}
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioning/SecondSceneToLoad.unity
+    guid: 79c2bf7d6b7a06a42a94982aaf1904d8
+  - enabled: 1
+    path: Assets/Tests/Manual/RpcTesting/RpcTesting.unity
+    guid: 931469794d88a874998f1d5edd265522
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioning/ThirdSceneToLoad.unity
+    guid: 637ab8340e96a2949adfe5bfdd42b924
+  - enabled: 1
+    path: Assets/Tests/Manual/ConnectionApproval/ConnectionApprovalTest.unity
+    guid: dd570b5916593cb41bab8beb1c9d9315
+  - enabled: 1
+    path: Assets/Samples/EnableDisableNetworkObject/EnableDisableSceneNetworkObject.unity
+    guid: 619b9eba5892d5a4e9dd1d6cafb0059a
+  - enabled: 1
+    path: Assets/Tests/Manual/NetworkSceneManagerCallbacks/SceneWeAreSwitchingTo.unity
+    guid: ee4d4a69e7f79bc4c861cd9a4b99dd0f
+  - enabled: 1
+    path: Assets/Tests/Manual/NetworkSceneManagerCallbacks/SceneWeAreSwitchingFrom.unity
+    guid: 073bd2111475c0643be45b7abe6a97ad
+  - enabled: 1
+    path: Assets/Scenes/MultiprocessTestScene.unity
+    guid: 76743cb7b342c49279327834918a9c6e
+  - enabled: 1
+    path: Assets/Scenes/EmptyScene.unity
+    guid: a2545a872c007404fbb6b0393ab74974
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase1.unity
+    guid: 780f96a61e8ac8e41b638ae8ec3a3236
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/SceneTransitioningBase2.unity
+    guid: 9e437cc704801bc47add735d743985f5
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene1.unity
+    guid: 41a0239b0c49e2047b7063c822f0df8a
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene2.unity
+    guid: c6a3d883c8253ee43bca4f2b03797d7b
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene3.unity
+    guid: 7da3dd618f5b5a34db1f6d3c9511e221
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveScene4.unity
+    guid: dc7e17c86f5ca81478043be306027c13
+  - enabled: 1
+    path: Assets/Samples/PrefabPool/PrefabPoolExample.unity
+    guid: e4732b28c18f52c4dbe06c8a37f7997f
+  - enabled: 1
+    path: Assets/Samples/PrefabPool/PrefabPoolOverrideExample.unity
+    guid: 8c9bee1332e0526429d8a2c929945d60
+  - enabled: 1
+    path: Assets/Tests/Manual/SceneTransitioningAdditive/AdditiveSceneMultiInstance.unity
+    guid: 0ae94f636016d3b40bfbecad57d99553
+  - enabled: 1
+    path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoadTest.unity
+    guid: ff98b91da4ee7ff44bc3aa8a57ad5c12
+  - enabled: 1
+    path: Assets/Tests/Manual/DontDestroyOnLoad/DontDestroyOnLoad_DestroyNetworkManagerTest.unity
+    guid: 7dc1ab12373402546befc7d54e447258
+  - enabled: 1
+    path: Assets/Tests/Manual/PreserveNetworkObjectsOnShutdown/PreserveNetworkObjects.unity
+    guid: 3efb2ada1190a234d801b415fb526ec3
+  - enabled: 1
+    path: Assets/Samples/Physics/PhysicsSample.unity
+    guid: 2c76877ad66aa22458c62a0d74514a91
+  - enabled: 1
+    path: Assets/Tests/Runtime/ObjectParenting/NetworkObjectParentingTests.unity
+    guid: 7522f8723c5674939a3c24acfd83a688
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/UnitTestBaseScene.unity
+    guid: fa0b4956a4a0aee48ae43f9116d28354
+  - enabled: 1
+    path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObject.unity
+    guid: 136692aa47cd577499d03a2b0dabbf28
+  - enabled: 1
+    path: Assets/Tests/Manual/InSceneObjectParentingTests/InSceneNetworkObjectParentingTest.unity
+    guid: f112d7c4abed6c34ca1287cf5ff15b9c
+  - enabled: 1
+    path: Assets/Tests/Manual/InSceneObjectParentingTests/InSceneNetworkObjectToLoad.unity
+    guid: f06a8525a4b5200459f62905c29ce09e
+    path: Assets/Tests/Manual/NetworkAnimatorTests/NetworkAnimatorEnhancement.unity
+    guid: f88da8bb8d07e11418eaad6524d5cc12
+  m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
+      type: 2}

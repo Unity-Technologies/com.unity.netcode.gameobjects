@@ -1,83 +1,51 @@
-[![](https://i.imgur.com/d0amtqs.png)](https://mlapi.network/)
+# Netcode for GameObjects
 
-[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases/latest)
-[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases)
+[![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/) [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
+[![Manual](https://img.shields.io/badge/docs-manual-informational.svg)](https://docs-multiplayer.unity3d.com/netcode/current/about) [![API](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/netcode/current/api/introduction)
 
-[![Forums](https://img.shields.io/badge/unity--forums-multiplayer-blue)](https://forum.unity.com/forums/multiplayer.26/)
-[![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
+[![GitHub Release](https://img.shields.io/github/release/Unity-Technologies/com.unity.netcode.gameobjects.svg?logo=github)](https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/releases/latest)
 
+### Welcome!
 
-[![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENSE)
-[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://docs-multiplayer.unity3d.com/)
-[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://docs-multiplayer.unity3d.com/docs/mlapi-api/introduction)
+Welcome to the Netcode for GameObjects repository.
 
-
-The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetitive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
+Netcode for GameObjects is a Unity package that provides networking capabilities to GameObject & MonoBehaviour workflows. The framework is interoperable with many low-level transports, including the official [Unity Transport Package](https://docs-multiplayer.unity3d.com/transport/current/about).
 
 ### Getting Started
-To get started, check the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/).
+
+Visit the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/) for package & API documentation, as well as information about several samples which leverage the Netcode for GameObjects package.
+
+You can also jump right into our [Hello World](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/helloworld/helloworldintro) guide for a taste of how to use the framework for basic networked tasks.
 
 ### Community and Feedback
-For general questions, networking advice or discussions about MLAPI, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
+
+For general questions, networking advice or discussions about Netcode for GameObjects, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
 
 ### Compatibility
-The MLAPI supports all major Unity platforms. To use the WebGL platform a custom WebGL transport based on web sockets is needed.
 
-MLAPI is compatible with Unity 2019 and newer versions.
+Netcode for GameObjects targets the following Unity versions:
+- Unity 2020.3, 2021.1, 2021.2 and 2021.3
+
+On the following runtime platforms:
+- Windows, MacOS, and Linux
+- iOS and Android
+- Most closed platforms, such as consoles. Contact us for more information about specific closed platforms.
 
 ### Development
-We follow the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). The master branch contains our latest stable release version while the develop branch tracks our current work.
 
 This repository is broken into multiple components, each one implemented as a Unity Package.
 ```
     .
-    ├── com.unity.multiplayer.mlapi            # The core netcode SDK unity package (source + tests)
-    └── testproject                            # A Unity project with various test implementations & scenes which exercise the features in the above package(s).
+    ├── com.unity.netcode.gameobjects           # The core netcode SDK unity package (source + tests)
+    └── testproject                             # A Unity project with various test implementations & scenes which exercise the features in the above packages.
 ```
 
 ### Contributing
-The MLAPI is an open-source project and we encourage and welcome
-contributions. If you wish to contribute, be sure to review our
-[contribution guidelines](CONTRIBUTING.md)
 
-### Issues and missing features
+We are an open-source project and we encourage and welcome contributions. If you wish to contribute, please be sure to review our [contribution guidelines](CONTRIBUTING.md).
+
+#### Issues and missing features
+
 If you have an issue, bug or feature request, please follow the information in our [contribution guidelines](CONTRIBUTING.md) to submit an issue.
 
-### Example
-Here is a sample MonoBehaviour showing a chat script where everyone can write and read from. This shows the basis of the MLAPI and the abstractions it adds.
-
-```csharp
-public class Chat : NetworkBehaviour
-{
-    private NetworkList<string> ChatMessages = new NetworkList<string>(new MLAPI.NetworkVariable.NetworkVariableSettings()
-    {
-        ReadPermission = MLAPI.NetworkVariable.NetworkVariablePermission.Everyone,
-        WritePermission = MLAPI.NetworkVariable.NetworkVariablePermission.Everyone,
-        SendTickrate = 5
-    }, new List<string>());
-
-    private string textField = "";
-
-    private void OnGUI()
-    {
-        if (IsClient)
-        {
-            textField = GUILayout.TextField(textField, GUILayout.Width(200));
-            
-            if (GUILayout.Button("Send") && !string.IsNullOrWhiteSpace(textField))
-            {
-                ChatMessages.Add(textField);
-                textField = "";
-            }
-
-            for (int i = ChatMessages.Count - 1; i >= 0; i--)
-            {
-                GUILayout.Label(ChatMessages[i]);
-            }
-        }
-    }
-}
-```
-
-### License
-[MIT License](LICENSE)
+You can also check out our public [roadmap](https://unity.com/roadmap/unity-platform/multiplayer-networking) to get an idea for what we might be working on next!
