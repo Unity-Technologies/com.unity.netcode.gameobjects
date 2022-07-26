@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -307,7 +306,6 @@ namespace TestProject.RuntimeTests
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
-
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
             AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
@@ -431,6 +429,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(firstClientAnimatorTestHelper.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"Timed out waiting for client-side cube to reach 180.0f!");
 
+            m_ServerNetworkManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
@@ -456,53 +455,57 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
+        /// Update Server Side Animator Layer's AnimationStateInfo when late joining
+        /// client connects to get the values being sent to the late joining client
+        /// during NetworkAnimator synchronization.
+        /// </summary>
+        private void Server_OnClientConnectedCallback(ulong obj)
+        {
+            m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
+            var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
+            for (int i = 0; i < serverAnimator.layerCount; i++)
+            {
+                Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {i}!");
+                var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(i);
+                StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][i] = animationStateInfo;
+                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time when late joined client connected to {animationStateInfo.normalizedTime}!");
+            }
+        }
+
+        /// <summary>
         /// Used by: LateJoinSynchronizationTest
-        /// Wait condition method that compares the states of all clients and the server
+        /// Wait condition method that compares the states of the late joined client
+        /// and the server.
         /// </summary>
         private bool LateJoinClientSynchronized()
         {
-            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[0].LocalClientId))
-            {
-                return false;
-            }
-
             if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
             {
                 return false;
             }
 
             var serverStates = StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId];
-            var clientStates = new List<List<AnimatorStateInfo>>();
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                clientStates.Add(new List<AnimatorStateInfo>(StateSyncTest.StatesEntered[client.LocalClientId]));
-            }
+            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[1].LocalClientId];
 
-            // All clients should have matching state counts
-            foreach (var clientAnimState in clientStates)
+            if (serverStates.Count() != clientStates.Count())
             {
-                if (serverStates.Count != clientAnimState.Count)
-                {
-                    return false;
-                }
+                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[1].LocalClientId}]{clientStates.Count}");
+                return false;
             }
 
             // Basically a sanity check to make sure they all match
             for (int i = 0; i < serverStates.Count; i++)
             {
                 var serverAnimState = serverStates[i];
-                foreach (var clientAnimState in clientStates)
+                if (clientStates[i].shortNameHash != serverAnimState.shortNameHash)
                 {
-                    if (clientAnimState[i].shortNameHash != serverAnimState.shortNameHash)
-                    {
-                        VerboseDebug($"[Hash Fail] {clientAnimState[i].shortNameHash} | {serverAnimState.shortNameHash}");
-                        return false;
-                    }
-                    if (clientAnimState[i].normalizedTime != serverAnimState.normalizedTime)
-                    {
-                        VerboseDebug($"[NormalizedTime Fail] {clientAnimState[i].normalizedTime} | {serverAnimState.normalizedTime}");
-                        return false;
-                    }
+                    VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[i].shortNameHash}) ");
+                    return false;
+                }
+                if (clientStates[i].normalizedTime != serverAnimState.normalizedTime)
+                {
+                    VerboseDebug($"[NormalizedTime Fail] Server({serverAnimState.normalizedTime}) | Client({clientStates[i].normalizedTime})");
+                    return false;
                 }
             }
             return true;
