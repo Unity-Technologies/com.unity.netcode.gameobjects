@@ -409,11 +409,11 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
-            // Set the trigger based on the type of test
+            // Set the late join parameter based on the type of test
             if (authoritativeMode == AuthoritativeMode.OwnerAuth)
             {
                 var objectToUpdate = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
-                // Set the animation trigger via the owner
+                // Set the late join parameter via the owner
                 objectToUpdate.SetLateJoinParam(true);
             }
             else
@@ -446,6 +446,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
 
+            // Validate the fix by making sure the late joining client was synchronized to the server's Animator's states
             yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
             AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
