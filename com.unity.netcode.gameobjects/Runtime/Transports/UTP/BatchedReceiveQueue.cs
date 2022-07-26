@@ -1,5 +1,6 @@
 using System;
-using Unity.Networking.Transport;
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -18,14 +19,15 @@ namespace Unity.Netcode.Transports.UTP
         /// <see cref="NetworkDriver"/> when popping a data event.
         /// </summary>
         /// <param name="reader">The <see cref="DataStreamReader"/> to construct from.</param>
-        public BatchedReceiveQueue(DataStreamReader reader)
+        public BatchedReceiveQueue(Unity.Collections.DataStreamReader reader)
         {
             m_Data = new byte[reader.Length];
             unsafe
             {
                 fixed (byte* dataPtr = m_Data)
                 {
-                    reader.ReadBytes(dataPtr, reader.Length);
+                    //reader.ReadBytes(dataPtr, reader.Length);
+                    reader.ReadBytesUnsafe(dataPtr, reader.Length);
                 }
             }
 
@@ -38,7 +40,7 @@ namespace Unity.Netcode.Transports.UTP
         /// event from a <see cref="NetworkDriver">) to the queue.
         /// </summary>
         /// <param name="reader">The <see cref="DataStreamReader"/> to push the data of.</param>
-        public void PushReader(DataStreamReader reader)
+        public void PushReader(Unity.Collections.DataStreamReader reader)
         {
             // Resize the array and copy the existing data to the beginning if there's not enough
             // room to copy the reader's data at the end of the existing data.
@@ -62,7 +64,8 @@ namespace Unity.Netcode.Transports.UTP
             {
                 fixed (byte* dataPtr = m_Data)
                 {
-                    reader.ReadBytes(dataPtr + m_Offset + m_Length, reader.Length);
+                    //reader.ReadBytes(dataPtr + m_Offset + m_Length, reader.Length);
+                    reader.ReadBytesUnsafe(dataPtr + m_Offset + m_Length, reader.Length);
                 }
             }
 
