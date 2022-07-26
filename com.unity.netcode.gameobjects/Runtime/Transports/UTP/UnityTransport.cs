@@ -158,11 +158,11 @@ namespace Unity.Netcode.Transports.UTP
             set => m_MaxPacketQueueSize = value;
         }
 
-        [Tooltip("The maximum size of a payload that can be handled by the transport.")]
+        [Tooltip("The maximum size of an unreliable payload that can be handled by the transport.")]
         [SerializeField]
         private int m_MaxPayloadSize = InitialMaxPayloadSize;
 
-        /// <summary>The maximum size of a payload that can be handled by the transport.</summary>
+        /// <summary>The maximum size of an unreliable payload that can be handled by the transport.</summary>
         public int MaxPayloadSize
         {
             get => m_MaxPayloadSize;
@@ -1148,13 +1148,13 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="networkDelivery">The delivery type (QoS) to send data with</param>
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            if (payload.Count > m_MaxPayloadSize)
+            var pipeline = SelectSendPipeline(networkDelivery);
+
+            if (pipeline != m_ReliableSequencedPipeline && payload.Count > m_MaxPayloadSize)
             {
-                Debug.LogError($"Payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
+                Debug.LogError($"Unreliable payload of size {payload.Count} larger than configured 'Max Payload Size' ({m_MaxPayloadSize}).");
                 return;
             }
-
-            var pipeline = SelectSendPipeline(networkDelivery);
 
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
