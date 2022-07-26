@@ -457,5 +457,26 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator ReliablePayloadsCanBeLargerThanMaximum()
+        {
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Client1, out m_Client1Events);
+
+            m_Server.StartServer();
+            m_Client1.StartClient();
+
+            yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
+
+            var payloadSize = UnityTransport.InitialMaxPayloadSize + 1;
+            var data = new ArraySegment<byte>(new byte[payloadSize]);
+
+            m_Server.Send(m_Client1.ServerClientId, data, NetworkDelivery.Reliable);
+
+            yield return WaitForNetworkEvent(NetworkEvent.Data, m_Client1Events);
+
+            yield return null;
+        }
     }
 }
