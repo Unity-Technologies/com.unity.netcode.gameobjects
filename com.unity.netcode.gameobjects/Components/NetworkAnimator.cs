@@ -1,5 +1,4 @@
 #if COM_UNITY_MODULES_ANIMATION
-using System;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -151,6 +150,7 @@ namespace Unity.Netcode.Components
             NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
         }
     }
+
 
 
     /// <summary>
