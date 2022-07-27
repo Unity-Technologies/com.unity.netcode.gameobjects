@@ -15,12 +15,16 @@ namespace Unity.Netcode.Editor
 
         INetworkEventsApi m_NetworkEventsApi;
         readonly NetworkSimulator m_NetworkSimulator;
+        const string k_LagSpikeValueString = "LagSpikeValue";
+        const string k_LagSpikeButtonStateString = "LagSpikeButtonState";
 
         public NetworkEventsView(NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
+            LagSpikeDurationSlider.viewDataKey = k_LagSpikeValueString;
+            LagSpikeButton.viewDataKey = k_LagSpikeButtonStateString;
             LagSpikeButton.SetEnabled(LagSpikeDurationSlider.value != 0);
             this.AddEventLifecycle(OnAttach, OnDetached);
         }
