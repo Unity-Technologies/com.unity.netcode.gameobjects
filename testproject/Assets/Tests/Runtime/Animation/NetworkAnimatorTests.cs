@@ -1,4 +1,3 @@
-
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
@@ -38,14 +37,14 @@ namespace TestProject.RuntimeTests
             Assert.NotNull(m_AnimatorObjectPrefab, $"Failed to load resource {k_AnimatorObjectName}");
             m_OwnerAnimatorObjectPrefab = Resources.Load(k_OwnerAnimatorObjectName);
             Assert.NotNull(m_OwnerAnimatorObjectPrefab, $"Failed to load resource {k_OwnerAnimatorObjectName}");
-
             base.OnOneTimeSetup();
         }
 
         protected override IEnumerator OnSetup()
         {
             AnimatorTestHelper.Initialize();
-            TriggerTest.Reset();
+            TriggerTest.ResetTest();
+            StateSyncTest.ResetTest();
             yield return base.OnSetup();
         }
 
@@ -293,20 +292,19 @@ namespace TestProject.RuntimeTests
 
         /// <summary>
         /// Verifies that late joining clients are synchronized to an
-        /// animator's state.
+        /// animator's trigger state.
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
         [UnityTest]
-        public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        public IEnumerator LateJoinTriggerSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
-            VerboseDebug($" ++++++++++++++++++ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
+            VerboseDebug($" ++++++++++++++++++ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
 
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
-
 
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
@@ -382,7 +380,136 @@ namespace TestProject.RuntimeTests
 
             var newlyJoinedClient = m_ClientNetworkManagers[1];
             yield return StopOneClient(newlyJoinedClient);
-            VerboseDebug($" ------------------ Late-Join Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
+            VerboseDebug($" ------------------ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
+        }
+
+        /// <summary>
+        /// Verifies that late joining clients are synchronized to all of the
+        /// states of an animator.
+        /// </summary>
+        /// <param name="authoritativeMode">Server or Owner authoritative</param>
+        [UnityTest]
+        public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        {
+            VerboseDebug($" ++++++++++++++++++ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
+
+            StateSyncTest.IsVerboseDebug = m_EnableVerboseDebug;
+            TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
+            AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
+            bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
+
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
+
+            // Wait for it to spawn server-side
+            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Set the late join parameter based on the type of test
+            if (authoritativeMode == AuthoritativeMode.OwnerAuth)
+            {
+                var objectToUpdate = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+                // Set the late join parameter via the owner
+                objectToUpdate.SetLateJoinParam(true);
+            }
+            else
+            {
+                // Set the late join parameter to kick off the late join synchronization state
+                // (it rotates to 180 degrees and then stops animating until the value is reset)
+                AnimatorTestHelper.ServerSideInstance.SetLateJoinParam(true);
+            }
+
+            var firstClientAnimatorTestHelper = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId];
+
+            // Wait for the 1st client to rotate to the 180.0f degree point
+            yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(firstClientAnimatorTestHelper.transform.rotation.eulerAngles.y, 180.0f));
+            AssertOnTimeout($"Timed out waiting for client-side cube to reach 180.0f!");
+
+            m_ServerNetworkManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            // Create and join a new client (late joining client)
+            yield return CreateAndStartNewClient();
+
+            Assert.IsTrue(m_ClientNetworkManagers.Length == 2, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
+
+            // Wait for the client to have spawned and the spawned prefab to be instantiated
+            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
+            AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
+            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+
+            var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[1].LocalClientId];
+            yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
+            AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
+
+            // Validate the fix by making sure the late joining client was synchronized to the server's Animator's states
+            yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
+            AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
+
+            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            yield return StopOneClient(newlyJoinedClient);
+            VerboseDebug($" ------------------ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
+        }
+
+        /// <summary>
+        /// Update Server Side Animator Layer's AnimationStateInfo when late joining
+        /// client connects to get the values being sent to the late joining client
+        /// during NetworkAnimator synchronization.
+        /// </summary>
+        private void Server_OnClientConnectedCallback(ulong obj)
+        {
+            m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
+            var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
+            for (int i = 0; i < serverAnimator.layerCount; i++)
+            {
+                Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {i}!");
+                var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(i);
+                StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][i] = animationStateInfo;
+                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
+            }
+        }
+
+        /// <summary>
+        /// Used by: LateJoinSynchronizationTest
+        /// Wait condition method that compares the states of the late joined client
+        /// and the server.
+        /// </summary>
+        private bool LateJoinClientSynchronized()
+        {
+            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
+            {
+                return false;
+            }
+
+            var serverStates = StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId];
+            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[1].LocalClientId];
+
+            if (serverStates.Count() != clientStates.Count())
+            {
+                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[1].LocalClientId}]{clientStates.Count}");
+                return false;
+            }
+
+            // Basically a sanity check to make sure they all match
+            for (int i = 0; i < serverStates.Count; i++)
+            {
+                var serverAnimState = serverStates[i];
+                if (clientStates[i].shortNameHash != serverAnimState.shortNameHash)
+                {
+                    VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[i].shortNameHash}) ");
+                    return false;
+                }
+                if (clientStates[i].normalizedTime != serverAnimState.normalizedTime)
+                {
+                    VerboseDebug($"[NormalizedTime Fail] Server({serverAnimState.normalizedTime}) | Client({clientStates[i].normalizedTime})");
+                    return false;
+                }
+            }
+            return true;
         }
 
         private bool m_ClientDisconnected;

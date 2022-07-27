@@ -35,6 +35,9 @@ namespace TestProject.RuntimeTests
             {
                 Debug.Log($"[AnimatorTestHelper][{IsServer}] {NetworkManager.name}");
             }
+
+            m_Animator = GetComponent<Animator>();
+            m_NetworkAnimator = GetComponent<NetworkAnimator>();
             if (IsServer)
             {
                 ServerSideInstance = this;
@@ -108,6 +111,16 @@ namespace TestProject.RuntimeTests
         public void SetTrigger(string name = "TestTrigger")
         {
             m_NetworkAnimator.SetTrigger(name);
+        }
+
+        public void SetLateJoinParam(bool isEnabled)
+        {
+            m_Animator.SetBool("LateJoinTest", isEnabled);
+        }
+
+        public Animator GetAnimator()
+        {
+            return m_Animator;
         }
     }
 }
