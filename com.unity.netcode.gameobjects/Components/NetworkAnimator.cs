@@ -163,6 +163,7 @@ namespace Unity.Netcode.Components
         internal struct AnimationMessage : INetworkSerializable
         {
             // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            internal bool Transition;
             internal int StateHash;
             internal float NormalizedTime;
             internal int Layer;
@@ -423,10 +424,14 @@ namespace Unity.Netcode.Components
                     }
 
                     stateHash = nextState.fullPathHash;
+
+                    m_TransitionHash[layer] = stateHash;
+                    m_AnimationHash[layer] = 0;
                 }
 
                 var animMsg = new AnimationMessage
                 {
+                    Transition = m_Animator.IsInTransition(layer),
                     StateHash = stateHash,
                     NormalizedTime = normalizedTime,
                     Layer = layer,
@@ -454,7 +459,7 @@ namespace Unity.Netcode.Components
                 SendParametersUpdate();
             }
 
-            if (m_Animator.runtimeAnimatorController == null)
+            if (m_Animator.runtimeAnimatorController == null || !m_Animator.isActiveAndEnabled)
             {
                 return;
             }
@@ -482,6 +487,7 @@ namespace Unity.Netcode.Components
 
                 var animMsg = new AnimationMessage
                 {
+                    Transition = m_Animator.IsInTransition(layer),
                     StateHash = stateHash,
                     NormalizedTime = normalizedTime,
                     Layer = layer,
@@ -744,7 +750,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         private unsafe void UpdateAnimationState(AnimationMessage animationState)
         {
-            if (animationState.StateHash != 0)
+            if (animationState.StateHash == 0)
+            {
+                return;
+            }
+
+            var currentState = m_Animator.GetCurrentAnimatorStateInfo(animationState.Layer);
+            if (currentState.fullPathHash != animationState.StateHash || m_Animator.IsInTransition(animationState.Layer) != animationState.Transition)
             {
                 m_Animator.Play(animationState.StateHash, animationState.Layer, animationState.NormalizedTime);
             }
@@ -830,6 +842,10 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
+            if (IsServer)
+            {
+                return;
+            }
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
@@ -912,8 +928,6 @@ namespace Unity.Netcode.Components
                 {
                     SendAnimTriggerServerRpc(animTriggerMessage);
                 }
-                //  trigger the animation locally on the server...
-                m_Animator.SetBool(hash, setTrigger);
             }
         }
 
