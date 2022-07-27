@@ -23,6 +23,7 @@ namespace Unity.Netcode.Editor
             m_NetworkSimulator = networkSimulator;
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
+            //Temporary solution until we implement the UX properly
             LagSpikeDurationSlider.viewDataKey = k_LagSpikeValueString;
             LagSpikeButton.viewDataKey = k_LagSpikeButtonStateString;
             LagSpikeButton.SetEnabled(LagSpikeDurationSlider.value != 0);
