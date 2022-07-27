@@ -27,7 +27,7 @@ public class TestCoordinator : NetworkBehaviour
 {
     public const int PerTestTimeoutSec = 5 * 60; // seconds
 
-    public const float MaxWaitTimeoutSec = 20;
+    public const float MaxWaitTimeoutSec = 60;
     private const char k_MethodFullNameSplitChar = '@';
 
     private bool m_ShouldShutdown;
@@ -75,8 +75,10 @@ public class TestCoordinator : NetworkBehaviour
         enabled = false;
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
+        MultiprocessLogger.Log("Awake - Initialize All Steps");
+        ExecuteStepInContext.InitializeAllSteps();
+
         s_ProcessId = Process.GetCurrentProcess().Id;
-        MultiprocessLogger.Log($"Awake {s_ProcessId}");
         ReadGitHashFile();
 
         // Configuration via command line (supported for many but not all platforms)
@@ -165,6 +167,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void ReadGitHashFile()
     {
+        Rawgithash = "uninitialized";
         try
         {
             var githash_resource = Resources.Load<TextAsset>("Text/githash");
@@ -216,12 +219,7 @@ public class TestCoordinator : NetworkBehaviour
 
     public void Start()
     {
-        MultiprocessLogger.Log("Start");
-        MultiprocessLogger.Log("Initialize All Steps");
-        ExecuteStepInContext.InitializeAllSteps();
-        MultiprocessLogger.Log($"Initialize All Steps... done");
-        MultiprocessLogger.Log($"IsInvoking: {NetworkManager.Singleton.IsInvoking()}");
-        MultiprocessLogger.Log($"IsActiveAndEnabled: {NetworkManager.Singleton.isActiveAndEnabled}");
+        MultiprocessLogger.Log($"TestCoordinator - Start");
     }
 
     public void Update()
@@ -282,8 +280,11 @@ public class TestCoordinator : NetworkBehaviour
     // Once we are connected, we can run the update method
     public void OnClientConnectedCallback(ulong clientId)
     {
-        MultiprocessLogger.Log("Client start callback, enabling behavior");
-        enabled = true;
+        if (enabled == false)
+        {
+            MultiprocessLogger.Log($"OnClientConnectedCallback enabling behavior clientId: {clientId} {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient} IsRegistering:{ExecuteStepInContext.IsRegistering}");
+            enabled = true;
+        }
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
@@ -424,6 +425,7 @@ public class TestCoordinator : NetworkBehaviour
     public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         MultiprocessLogger.Log($"received RPC from server, client side triggering action ID {actionId}");
+        WriteLogServerRpc($"received RPC from server, client side triggering action ID {actionId} {ExecuteStepInContext.AllActions.Count}");
         try
         {
             ExecuteStepInContext.AllActions[actionId].Invoke(args);
@@ -518,6 +520,12 @@ public class TestCoordinator : NetworkBehaviour
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteLogServerRpc(string logMessage, ServerRpcParams receiveParams = default)
+    {
+        MultiprocessLogger.Log($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {logMessage}");
     }
 }
 

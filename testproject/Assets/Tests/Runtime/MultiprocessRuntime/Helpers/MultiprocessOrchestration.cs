@@ -84,7 +84,6 @@ public class MultiprocessOrchestration
 
         if (s_Processes.Count > 0)
         {
-            MultiprocessLogger.Log($"s_Processes.Count is {s_Processes.Count}");
             foreach (var p in s_Processes)
             {
                 if ((p != null) && (!p.HasExited))
