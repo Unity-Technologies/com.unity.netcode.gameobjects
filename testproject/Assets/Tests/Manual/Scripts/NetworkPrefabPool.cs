@@ -45,6 +45,8 @@ namespace TestProject.ManualTests
 
         private static GameObject s_Instance;
 
+        public NetworkObject ObjectToMessWith;
+
         /// <summary>
         /// Called when enabled, if already connected we register any custom prefab spawn handler here
         /// </summary>
@@ -302,6 +304,17 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                ObjectToMessWith.NetworkHide(1);
+            }
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                ObjectToMessWith.NetworkShow(1);
+            }
+        }
 
 
 
