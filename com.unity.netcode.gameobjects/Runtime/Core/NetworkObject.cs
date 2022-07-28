@@ -236,6 +236,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Makes the previously hidden <see cref="NetworkObject"/> "netcode visible" to the targeted client.<br/>
+        /// </summary>
+        /// <remarks>
         /// Usage: Use to start sending updates for a previously hidden <see cref="NetworkObject"/> to the targeted client.<br/>
         /// <br/>
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client side.<br/>
@@ -244,7 +246,7 @@ namespace Unity.Netcode
         /// See Also:<br/>
         /// <see cref="NetworkShow(ulong)"/><br/>
         /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br/>
-        /// </summary>
+        /// </remarks>
         /// <param name="clientId">The targeted client</param>
         public void NetworkShow(ulong clientId)
         {
@@ -271,6 +273,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Makes a list of previously hidden <see cref="NetworkObject"/>s "netcode visible" for the client specified.<br/>
+        /// </summary>
+        /// <remarks>
         /// Usage: Use to start sending updates for previously hidden <see cref="NetworkObject"/>s to the targeted client.<br/>
         /// <br/>
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client's side.<br/>
@@ -279,7 +283,7 @@ namespace Unity.Netcode
         /// See Also:<br/>
         /// <see cref="NetworkShow(ulong)"/><br/>
         /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br/>
-        /// </summary>
+        /// </remarks>
         /// <param name="networkObjects">The objects to become "netcode visible" to the targeted client</param>
         /// <param name="clientId">The targeted client</param>
         public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
@@ -323,6 +327,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Hides the <see cref="NetworkObject"/> from the targeted client.<br/>
+        /// </summary>
+        /// <remarks>
         /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for a currently visible <see cref="NetworkObject"/>.<br/>
         /// <br/>
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br/>
@@ -331,7 +337,7 @@ namespace Unity.Netcode
         /// See Also:<br/>
         /// <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br/>
         /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br/>
-        /// </summary>
+        /// </remarks>
         /// <param name="clientId">The targeted client</param>
         public void NetworkHide(ulong clientId)
         {
@@ -369,6 +375,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Hides a list of <see cref="NetworkObject"/>s from the targeted client.<br/>
+        /// </summary>
+        /// <remarks>
         /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for the currently visible <see cref="NetworkObject"/>s.<br/>
         /// <br/>
         /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br/>
@@ -377,7 +385,7 @@ namespace Unity.Netcode
         /// See Also:<br/>
         /// <see cref="NetworkHide(ulong)"/><br/>
         /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br/>
-        /// </summary>
+        /// </remarks>
         /// <param name="networkObjects">The <see cref="NetworkObject"/>s that will become "netcode invisible" to the targeted client</param>
         /// <param name="clientId">The targeted client</param>
         public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
