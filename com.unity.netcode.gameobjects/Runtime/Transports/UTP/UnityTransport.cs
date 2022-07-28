@@ -232,6 +232,47 @@ namespace Unity.Netcode.Transports.UTP
 
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
+        /// <summary>
+        /// Parameters for the Network Simulator
+        /// </summary>
+        [Serializable]
+        public struct SimulatorParameters
+        {
+            /// <summary>
+            /// Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.
+            /// </summary>
+            [Tooltip("Delay to add to every send and received packet (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketDelayMS;
+
+            /// <summary>
+            /// Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.
+            /// </summary>
+            [Tooltip("Jitter (random variation) to add/substract to the packet delay (in milliseconds). Only applies in the editor and in development builds. The value is ignored in production builds.")]
+            [SerializeField]
+            public int PacketJitterMS;
+
+            /// <summary>
+            /// Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.
+            /// </summary>
+            [Tooltip("Percentage of sent and received packets to drop. Only applies in the editor and in the editor and in developments builds.")]
+            [SerializeField]
+            public int PacketDropRate;
+        }
+
+        /// <summary>
+        /// Can be used to simulate poor network conditions such as:
+        /// - packet delay/latency
+        /// - packet jitter (variances in latency, see: https://en.wikipedia.org/wiki/Jitter)
+        /// - packet drop rate (packet loss)
+        /// </summary>
+        public SimulatorParameters DebugSimulator = new SimulatorParameters
+        {
+            PacketDelayMS = 0,
+            PacketJitterMS = 0,
+            PacketDropRate = 0
+        };
+
         public bool IsDisabledBySimulator { get; private set; } = false;
 
         private State m_State = State.Disconnected;
@@ -500,6 +541,26 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
+        }
+
+        /// <summary>Set the parameters for the debug simulator.</summary>
+        /// <param name="packetDelay">Packet delay in milliseconds.</param>
+        /// <param name="packetJitter">Packet jitter in milliseconds.</param>
+        /// <param name="dropRate">Packet drop percentage.</param>
+        public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
+        {
+            if (m_Driver.IsCreated)
+            {
+                Debug.LogError("SetDebugSimulatorParameters() must be called before StartClient() or StartServer().");
+                return;
+            }
+
+            DebugSimulator = new SimulatorParameters
+            {
+                PacketDelayMS = packetDelay,
+                PacketJitterMS = packetJitter,
+                PacketDropRate = dropRate
+            };
         }
 
         private bool StartRelayServer()
@@ -1076,7 +1137,10 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
+            var maxFrameTimeMs = 0;
 
 #if UNITY_MP_TOOLS_NETSIM_ENABLED
             var configuration = GetComponent<NetworkSimulator>()?.SimulatorConfiguration;
@@ -1084,13 +1148,24 @@ namespace Unity.Netcode.Transports.UTP
                 300,
                 NetworkParameterConstants.MTU,
                 ApplyMode.AllPackets,
-                packetDelayMs: configuration?.PacketDelayMs ?? 0,
-                packetJitterMs: configuration?.PacketJitterMs ?? 0,
+                packetDelayMs: configuration?.PacketDelayMs ?? DebugSimulator.PacketDelayMS,
+                packetJitterMs: configuration?.PacketJitterMs ?? DebugSimulator.PacketJitterMS,
                 packetDropInterval: configuration?.PacketLossInterval ?? 0,
-                packetDropPercentage: configuration?.PacketLossPercent ?? 0,
+                packetDropPercentage: configuration?.PacketLossPercent ?? DebugSimulator.PacketDropRate,
                 packetDuplicationPercentage: configuration?.PacketDuplicationPercent ?? 0);
 
             m_SimulatorInitialized = true;
+            maxFrameTimeMs = 100;
+#elif UNITY_EDITOR || DEVELOPMENT_BUILD
+            m_NetworkSettings.WithSimulatorStageParameters(
+                maxPacketCount: 300, // TODO Is there any way to compute a better value?
+                maxPacketSize: NetworkParameterConstants.MTU,
+                ApplyMode.AllPackets,
+                packetDelayMs: DebugSimulator.PacketDelayMS,
+                packetJitterMs: DebugSimulator.PacketJitterMS,
+                packetDropPercentage: DebugSimulator.PacketDropRate
+            );
+            maxFrameTimeMs = 100;
 #endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
@@ -1098,26 +1173,62 @@ namespace Unity.Netcode.Transports.UTP
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
-                maxFrameTimeMS: 100);
+                maxFrameTimeMS: maxFrameTimeMs);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
-            unreliableFragmentedPipeline = driver.CreatePipeline(
-                typeof(FragmentationPipelineStage),
-                typeof(SimulatorPipelineStage),
-                typeof(NetworkMetricsPipelineStage)
-            );
-            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
-                typeof(FragmentationPipelineStage),
-                typeof(UnreliableSequencedPipelineStage),
-                typeof(SimulatorPipelineStage),
-                typeof(NetworkMetricsPipelineStage)
-            );
-            reliableSequencedPipeline = driver.CreatePipeline(
-                typeof(ReliableSequencedPipelineStage),
-                typeof(SimulatorPipelineStage),
-                typeof(NetworkMetricsPipelineStage)
-            );
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_ENABLED
+            if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
+            {
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    , typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(UnreliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+                reliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(ReliableSequencedPipelineStage),
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+            }
+            else
+#endif
+            {
+                unreliableFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+                unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                    typeof(FragmentationPipelineStage),
+                    typeof(UnreliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+                reliableSequencedPipeline = driver.CreatePipeline(
+                    typeof(ReliableSequencedPipelineStage)
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                    ,typeof(NetworkMetricsPipelineStage)
+#endif
+                );
+            }
         }
 
 #if UNITY_MP_TOOLS_NETSIM_ENABLED
