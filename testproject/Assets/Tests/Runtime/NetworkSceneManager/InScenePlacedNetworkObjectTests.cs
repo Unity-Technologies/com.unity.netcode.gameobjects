@@ -109,7 +109,7 @@ namespace TestProject.RuntimeTests
             serverObject.NetworkHide(firstClientId);
 
             yield return WaitForConditionOrTimeOut(() => NetworkObjectTestComponent.SpawnedInstances.Count == TotalClients - 1);
-            AssertOnTimeout($"[NetworkHide] Timed out waiting for Client-{firstClientId} to despawn the in-scene placed NetworkObject! Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {TotalClients-1}");
+            AssertOnTimeout($"[NetworkHide] Timed out waiting for Client-{firstClientId} to despawn the in-scene placed NetworkObject! Current spawned count: {NetworkObjectTestComponent.SpawnedInstances.Count()} | Expected spawn count: {TotalClients - 1}");
 
             // Validate that the first client can spawn the "netcode hidden" in-scene placed NetworkObject
             serverObject.NetworkShow(firstClientId);
