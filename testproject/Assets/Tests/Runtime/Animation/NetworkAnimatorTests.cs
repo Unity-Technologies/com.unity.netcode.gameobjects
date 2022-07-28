@@ -289,7 +289,7 @@ namespace TestProject.RuntimeTests
                 clientIdList.Add(client.LocalClientId);
             }
 
-            // Verify we only entered each state once and have the same values upon entering the state
+            // Verify we only entered each state once
             yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
 
