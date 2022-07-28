@@ -1325,10 +1325,8 @@ namespace Unity.Netcode.Transports.UTP
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
-            var maxFrameTimeMS = 0;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            maxFrameTimeMS = 100;
             ConfigureSimulator();
 #endif
 
@@ -1336,8 +1334,7 @@ namespace Unity.Netcode.Transports.UTP
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
-                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
-                maxFrameTimeMS: maxFrameTimeMS);
+                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
