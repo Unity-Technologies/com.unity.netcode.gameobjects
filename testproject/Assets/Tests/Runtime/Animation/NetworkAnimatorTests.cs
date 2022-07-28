@@ -520,14 +520,14 @@ namespace TestProject.RuntimeTests
                 return false;
             }
 
-            var clientNormalizedTimeAdjusted = clientStates[index].normalizedTime;
-            var serverNormalizedTimeAdjusted = serverAnimState.normalizedTime;
-            if (!Mathf.Approximately(clientNormalizedTimeAdjusted, serverNormalizedTimeAdjusted))
+            var clientNormalizedTime = clientStates[index].normalizedTime;
+            var serverNormalizedTime = serverAnimState.normalizedTime;
+            if (!Mathf.Approximately(clientNormalizedTime, serverNormalizedTime))
             {
-                VerboseDebug($"[NormalizedTime Fail][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTimeAdjusted}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTimeAdjusted})");
+                VerboseDebug($"[NormalizedTime Fail][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
                 return false;
             }
-            VerboseDebug($"[NormalizedTime][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTimeAdjusted}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTimeAdjusted})");
+            VerboseDebug($"[NormalizedTime][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
 
             return true;
         }
