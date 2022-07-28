@@ -447,6 +447,10 @@ namespace Unity.Netcode.Components
             m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
         }
 
+        /// <summary>
+        /// Checks for changes in both Animator parameters and state
+        /// changes.
+        /// </summary>
         internal void CheckForAnimatorChanges()
         {
             if (!IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && !IsServer)
@@ -895,7 +899,6 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
-            var isServerAuthoritative = IsServerAuthoritative();
             m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
 
@@ -913,6 +916,12 @@ namespace Unity.Netcode.Components
         /// <param name="setTrigger">sets (true) or resets (false) the trigger. The default is to set it (true).</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
+            // MTT-3564:
+            // After fixing the issue with trigger controlled Transitions being synchronized twice,
+            // it exposed additional issues with this logic.  Now, either the owner or the server can
+            // update triggers. Since server-side RPCs are immediately invoked, for a host a trigger
+            // will happen when SendAnimTriggerClientRpc is called.  For a client owner, we call the
+            // SendAnimTriggerServerRpc and then trigger locally when running in owner authority mode.
             if (IsOwner || IsServer)
             {
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
