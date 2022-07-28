@@ -896,10 +896,7 @@ namespace Unity.Netcode.Components
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
             var isServerAuthoritative = IsServerAuthoritative();
-            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
-            {
-                m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
-            }
+            m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
 
         /// <summary>
@@ -916,8 +913,7 @@ namespace Unity.Netcode.Components
         /// <param name="setTrigger">sets (true) or resets (false) the trigger. The default is to set it (true).</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
-            var isServerAuthoritative = IsServerAuthoritative();
-            if (IsOwner && !isServerAuthoritative || IsServer && isServerAuthoritative)
+            if (IsOwner || IsServer)
             {
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
                 if (IsServer)
@@ -927,6 +923,10 @@ namespace Unity.Netcode.Components
                 else
                 {
                     SendAnimTriggerServerRpc(animTriggerMessage);
+                    if (!IsServerAuthoritative())
+                    {
+                        m_Animator.SetTrigger(hash);
+                    }
                 }
             }
         }
