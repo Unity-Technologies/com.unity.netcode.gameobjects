@@ -448,8 +448,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Checks for changes in both Animator parameters and state
-        /// changes.
+        /// Checks for changes in both Animator parameters and state.
         /// </summary>
         internal void CheckForAnimatorChanges()
         {
