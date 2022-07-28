@@ -424,9 +424,6 @@ namespace Unity.Netcode.Components
                     }
 
                     stateHash = nextState.fullPathHash;
-
-                    m_TransitionHash[layer] = stateHash;
-                    m_AnimationHash[layer] = 0;
                 }
 
                 var animMsg = new AnimationMessage
