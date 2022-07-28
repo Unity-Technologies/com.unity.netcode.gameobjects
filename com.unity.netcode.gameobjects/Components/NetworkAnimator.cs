@@ -463,7 +463,7 @@ namespace Unity.Netcode.Components
                 SendParametersUpdate();
             }
 
-            if (m_Animator.runtimeAnimatorController == null || !m_Animator.isActiveAndEnabled)
+            if (m_Animator.runtimeAnimatorController == null)
             {
                 return;
             }
