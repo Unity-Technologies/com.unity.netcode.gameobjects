@@ -21,39 +21,50 @@ namespace Unity.Netcode.SampleScenarios
 
         [field: SerializeField]
         NetworkTypeByTime[] NetworkTypeByTimeList { get; set; }
-        
+
         int CurrentIndex
         {
             get => m_CurrentIndex;
-            set => m_CurrentIndex = value >= NetworkTypeByTimeList.Length
-                ? value % NetworkTypeByTimeList.Length
-                : value;
+            set
+            {
+                if (NetworkTypeByTimeList.Length != 0)
+                {
+                    m_CurrentIndex = value >= NetworkTypeByTimeList.Length
+                        ? value % NetworkTypeByTimeList.Length
+                        : value;
+                }
+            }
         }
-    
+
         public void Start(INetworkEventsApi networkEventsApi)
         {
             m_NetworkEventsApi = networkEventsApi;
             IterateConnectionType();
         }
-            
+
         public void Dispose()
         {
         }
-            
+
         public void Update(float deltaTime)
         {
             m_TimeElapsed += deltaTime;
-            if (m_TimeElapsed < m_CurrentType.Duration)
+            if (NetworkTypeByTimeList.Length == 0 || m_TimeElapsed < m_CurrentType.Duration)
             {
                 return;
             }
-    
+
             m_TimeElapsed -= m_CurrentType.Duration;
             IterateConnectionType();
         }
-        
+
         void IterateConnectionType()
         {
+            if (NetworkTypeByTimeList.Length == 0)
+            {
+                return;
+            }
+
             m_CurrentType = NetworkTypeByTimeList[CurrentIndex++];
             var connectionType = m_CurrentType.Configuration;
             m_NetworkEventsApi.ChangeNetworkType(connectionType);
