@@ -235,9 +235,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Shows a previously hidden <see cref="NetworkObject"/> to a client
+        /// Makes the previously hidden <see cref="NetworkObject"/> "netcode visible" to the targeted client.
         /// </summary>
-        /// <param name="clientId">The client to show the <see cref="NetworkObject"/> to</param>
+        /// <remarks>
+        /// Usage: Use to start sending updates for a previously hidden <see cref="NetworkObject"/> to the targeted client.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client side.<br />
+        /// In-Scene Placed: The instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkShow(ulong)"/><br />
+        /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="clientId">The targeted client</param>
         public void NetworkShow(ulong clientId)
         {
             if (!IsSpawned)
@@ -260,11 +270,22 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
+
         /// <summary>
-        /// Shows a list of previously hidden <see cref="NetworkObject"/>s to a client
+        /// Makes a list of previously hidden <see cref="NetworkObject"/>s "netcode visible" for the client specified.
         /// </summary>
-        /// <param name="networkObjects">The <see cref="NetworkObject"/>s to show</param>
-        /// <param name="clientId">The client to show the objects to</param>
+        /// <remarks>
+        /// Usage: Use to start sending updates for previously hidden <see cref="NetworkObject"/>s to the targeted client.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client's side.<br />
+        /// In-Scene Placed: Already instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkShow(ulong)"/><br />
+        /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="networkObjects">The objects to become "netcode visible" to the targeted client</param>
+        /// <param name="clientId">The targeted client</param>
         public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
@@ -305,9 +326,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Hides a object from a specific client
+        /// Hides the <see cref="NetworkObject"/> from the targeted client.
         /// </summary>
-        /// <param name="clientId">The client to hide the object for</param>
+        /// <remarks>
+        /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for a currently visible <see cref="NetworkObject"/>.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br />
+        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be despawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="clientId">The targeted client</param>
         public void NetworkHide(ulong clientId)
         {
             if (!IsSpawned)
@@ -335,7 +366,7 @@ namespace Unity.Netcode
             var message = new DestroyObjectMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                DestroyGameObject = true
+                DestroyGameObject = !IsSceneObject.Value
             };
             // Send destroy call
             var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
@@ -343,10 +374,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Hides a list of objects from a client
+        /// Hides a list of <see cref="NetworkObject"/>s from the targeted client.
         /// </summary>
-        /// <param name="networkObjects">The objects to hide</param>
-        /// <param name="clientId">The client to hide the objects from</param>
+        /// <remarks>
+        /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for the currently visible <see cref="NetworkObject"/>s.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br />
+        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be despawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkHide(ulong)"/><br />
+        /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="networkObjects">The <see cref="NetworkObject"/>s that will become "netcode invisible" to the targeted client</param>
+        /// <param name="clientId">The targeted client</param>
         public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
@@ -455,8 +496,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Spawns a <see cref="NetworkObject"/> across the network and makes it the player object for the given client
         /// </summary>
-        /// <param name="clientId">The clientId whos player object this is</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        /// <param name="clientId">The clientId who's player object this is</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
             SpawnInternal(destroyWithScene, clientId, true);
@@ -697,7 +738,7 @@ namespace Unity.Netcode
         // For instance, if we're spawning NetworkObject 5 and its parent is 10, what should happen if we do not have 10 yet?
         // let's say 10 is on the way to be replicated in a few frames and we could fix that parent-child relationship later.
         //
-        // If you couldn't find your parent, we put you into OrphanChildren set and everytime we spawn another NetworkObject locally due to replication,
+        // If you couldn't find your parent, we put you into OrphanChildren set and every time we spawn another NetworkObject locally due to replication,
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
