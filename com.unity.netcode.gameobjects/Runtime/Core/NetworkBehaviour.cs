@@ -759,6 +759,25 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnDestroy()
         {
+            /// NCCBUG-135: This is a reminder to open a new ticket about
+            /// this OnDestroy method. Our current documentation already tells
+            /// users that they should always invoke the base class method if
+            /// they override this method, but in the event they forget then
+            /// this bug will still occur. Fixing that issue will potentially
+            /// require changes in how this OnDestroy method is handled.
+            if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
+            {
+                // Only under the condition that our assigned NetworkObject
+                // does not share the same GameObject, then we want to notify
+                // the still spawned NetworkObject that this NetworkBehaviour
+                // is being destroyed so the NetworkObject can remove it from the
+                // ChildNetworkBehaviours list.
+                if (NetworkObject.gameObject != gameObject)
+                {
+                    NetworkObject.OnNetworkBehaviourDestroyed(this);
+                }
+            }
+
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
             //  of those variables use native containers (e.g. NetworkList) as they won't be
@@ -769,6 +788,7 @@ namespace Unity.Netcode
             {
                 InitializeVariables();
             }
+
 
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
