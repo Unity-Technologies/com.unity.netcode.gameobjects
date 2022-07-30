@@ -42,6 +42,9 @@ namespace Unity.Netcode.RuntimeTests
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
 
+            // The only valid condition for this would be if the NetworkBehaviour is spawned.
+            simpleNetworkBehaviour.IsSpawned = true;
+
             // Verify the warning gets logged under normal conditions
             var isNull = simpleNetworkBehaviour.NetworkObject == null;
             LogAssert.Expect(LogType.Warning, $"[Netcode] Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
