@@ -23,6 +23,12 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
+        protected override IEnumerator OnSetup()
+        {
+            m_AllowServerToStart = false;
+            return base.OnSetup();
+        }
+
         /// <summary>
         /// This test validates a fix to NetworkBehaviour.NetworkObject when
         /// the NetworkManager.LogLevel is set to Developer
@@ -59,6 +65,47 @@ namespace Unity.Netcode.RuntimeTests
 
             networkObjectToTest.Despawn();
             Object.Destroy(networkObjectToTest);
+        }
+
+        /// <summary>
+        /// This validates the fix for when a child GameObject with a NetworkBehaviour
+        /// is deleted while the parent GameObject with a NetworkObject is spawned and
+        /// is not deleted until a later time would cause an exception due to the
+        /// NetworkBehaviour not being removed from the NetworkObject.ChildNetworkBehaviours
+        /// list.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ValidateDeleteChildNetworkBehaviour()
+        {
+            m_AllowServerToStart = true;
+
+            yield return s_DefaultWaitForTick;
+
+            // Now just start the Host
+            yield return StartServerAndClients();
+
+            var parentObject = new GameObject();
+            var childObject = new GameObject();
+            childObject.transform.parent = parentObject.transform;
+            var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
+            childObject.AddComponent<SimpleNetworkBehaviour>();
+
+            // set the log level to developer
+            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
+
+            parentNetworkObject.Spawn();
+            yield return s_DefaultWaitForTick;
+
+            // Destroy the child object with child NetworkBehaviour
+            Object.Destroy(childObject);
+
+            yield return s_DefaultWaitForTick;
+            // Assure no log messages are logged when they should not be logged
+            LogAssert.NoUnexpectedReceived();
+
+            // Destroy the parent object which should not cause any exceptions
+            // (validating the fix)
+            Object.Destroy(parentObject);
         }
     }
 }
