@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -59,6 +60,8 @@ namespace Unity.Netcode
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
+        internal Type[] ReverseTypeMap => m_ReverseTypeMap;
+
         internal uint MessageHandlerCount => m_HighMessageType;
 
         internal uint GetMessageType(Type t)
@@ -75,6 +78,36 @@ namespace Unity.Netcode
             public MessageHandler Handler;
         }
 
+        private List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
+        {
+            var prioritizedTypes = new List<MessageWithHandler>();
+            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.ConnectionRequestMessage
+            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.ConnectionApprovedMessage
+            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.OrderingMessage
+
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName == "Unity.Netcode.ConnectionRequestMessage")
+                {
+                    prioritizedTypes[0] = t;
+                }
+                else if (t.MessageType.FullName == "Unity.Netcode.ConnectionApprovedMessage")
+                {
+                    prioritizedTypes[1] = t;
+                }
+                else if (t.MessageType.FullName == "Unity.Netcode.OrderingMessage")
+                {
+                    prioritizedTypes[2] = t;
+                }
+                else
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
+
+            return prioritizedTypes;
+        }
+
         public MessagingSystem(IMessageSender messageSender, object owner, IMessageProvider provider = null)
         {
             try
@@ -89,6 +122,7 @@ namespace Unity.Netcode
                 var allowedTypes = provider.GetMessages();
 
                 allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
+                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
@@ -224,6 +258,63 @@ namespace Unity.Netcode
             }
 
             return true;
+        }
+
+        internal void ReorderMessage(int desiredOrder, int targetHash)
+        {
+            if (desiredOrder < 0)
+            {
+                // invalid message re-ordering request. Ignore.
+                return;
+            }
+
+            if (desiredOrder < m_ReverseTypeMap.Length &&
+                m_ReverseTypeMap[desiredOrder].FullName.GetHashCode() == targetHash)
+            {
+                // matching positions and hashes. All good.
+                return;
+            }
+
+            Debug.Log($"Unexpected hash for {desiredOrder}");
+
+            // Insert placeholder
+
+            var typesAsList = m_ReverseTypeMap.ToList();
+            typesAsList.Insert(desiredOrder, null);
+            m_ReverseTypeMap = typesAsList.ToArray();
+            var handlersAsList = m_MessageHandlers.ToList();
+            handlersAsList.Insert(desiredOrder, null);
+            m_MessageHandlers = handlersAsList.ToArray();
+
+            int position = desiredOrder;
+            bool found = false;
+            while(position < m_ReverseTypeMap.Length)
+            {
+                if (m_ReverseTypeMap[position] != null &&
+                    m_ReverseTypeMap[position].FullName.GetHashCode() == targetHash)
+                {
+                    Debug.Log($"Found {desiredOrder} at position {position}");
+                    found = true;
+                    break;
+                }
+
+                position++;
+            }
+
+            if (found)
+            {
+                // copy original and remove it
+
+                m_ReverseTypeMap[desiredOrder] = m_ReverseTypeMap[position];
+                m_MessageHandlers[desiredOrder] = m_MessageHandlers[position];
+
+                typesAsList = m_ReverseTypeMap.ToList();
+                typesAsList.RemoveAt(position);
+                m_ReverseTypeMap = typesAsList.ToArray();
+                handlersAsList = m_MessageHandlers.ToList();
+                handlersAsList.RemoveAt(position);
+                m_MessageHandlers = handlersAsList.ToArray();
+            }
         }
 
         public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)

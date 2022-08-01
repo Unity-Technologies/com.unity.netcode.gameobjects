@@ -2074,6 +2074,21 @@ namespace Unity.Netcode
                     {
                         SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
+
+                    for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
+                    {
+                        if (MessagingSystem.ReverseTypeMap[index] != null)
+                        {
+                            var orderingMessage = new OrderingMessage
+                            {
+                                Order = index,
+                                Hash = MessagingSystem.ReverseTypeMap[index].FullName.GetHashCode()
+                            };
+
+                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced,
+                                ownerClientId);
+                        }
+                    }
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
                 {
