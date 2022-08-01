@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Components;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -21,6 +22,41 @@ namespace Unity.Netcode.RuntimeTests
 
         public class SimpleNetworkBehaviour : NetworkBehaviour
         {
+        }
+
+
+        /// <summary>
+        /// This validates the fix for when a child GameObject with a NetworkBehaviour
+        /// is deleted while the parent GameObject with a NetworkObject is spawned and
+        /// is not deleted until a later time would cause an exception due to the
+        /// NetworkBehaviour not being removed from the NetworkObject.ChildNetworkBehaviours
+        /// list.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ValidatedDisableddNetworkBehaviourWarning()
+        {
+            m_AllowServerToStart = true;
+
+            yield return s_DefaultWaitForTick;
+
+            // Now just start the Host
+            yield return StartServerAndClients();
+
+            var parentObject = new GameObject();
+            var childObject = new GameObject();
+            childObject.name = "ChildObject";
+            childObject.transform.parent = parentObject.transform;
+            var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
+            var childBehaviour = childObject.AddComponent<NetworkTransform>();
+
+            // Set the child object to be inactive in the hierarchy
+            childObject.SetActive(false);
+
+            LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
+            LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
+
+            parentNetworkObject.Spawn();
+            yield return s_DefaultWaitForTick;
         }
 
         /// <summary>
