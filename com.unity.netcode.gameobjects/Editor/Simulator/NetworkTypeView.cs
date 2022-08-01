@@ -31,6 +31,8 @@ namespace Unity.Netcode.Editor
 
         bool HasCustomValue => HasValue && NetworkTypePresets.Values.Any(SimulatorConfigurationMatchesPresetName) == false;
 
+        private const string k_PresetSelectionString = "PresetDropDownSelectionString";
+
         public NetworkTypeView(SerializedObject serializedObject, NetworkSimulator networkSimulator)
         {
             m_NetworkSimulator = networkSimulator;
@@ -46,6 +48,8 @@ namespace Unity.Netcode.Editor
 
             AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UXML).CloneTree(this);
 
+            PresetDropdown.viewDataKey = k_PresetSelectionString;
+
             CustomPresetSetup();
 
             this.AddEventLifecycle(OnAttach, OnDetach);
@@ -56,7 +60,7 @@ namespace Unity.Netcode.Editor
             UpdatePresetDropdown();
             UpdateSliders(m_NetworkSimulator.SimulatorConfiguration);
             UpdateEnabled();
-            
+
             CustomPresetValue.RegisterCallback<ChangeEvent<Object>>(OnCustomPresetChange);
             PacketDelaySlider.RegisterCallback<ChangeEvent<int>>(OnPackageDelayChange);
             PacketJitterSlider.RegisterCallback<ChangeEvent<int>>(OnPacketJitterChanged);
@@ -64,7 +68,7 @@ namespace Unity.Netcode.Editor
             PacketLossPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
             PacketDuplicationPercentSlider.RegisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
             PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
-            
+
             Undo.undoRedoPerformed += OnUndoRedoPerformed;
             m_NetworkSimulator.PropertyChanged += OnNetworkSimulatorPropertyChanged;
         }
@@ -78,7 +82,7 @@ namespace Unity.Netcode.Editor
             PacketLossPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketLossPercentChange);
             PacketDuplicationPercentSlider.UnregisterCallback<ChangeEvent<int>>(OnPacketDuplicationChange);
             PresetDropdown.RegisterCallback<ChangeEvent<string>>(OnPresetSelected);
-            
+
             Undo.undoRedoPerformed -= OnUndoRedoPerformed;
             m_NetworkSimulator.PropertyChanged -= OnNetworkSimulatorPropertyChanged;
         }
@@ -133,11 +137,11 @@ namespace Unity.Netcode.Editor
         {
             var presets = NetworkTypePresets.Values.Select(x => x.Name).ToList();
             presets.Add(Custom);
-            
+
             var configurationName = m_NetworkSimulator.SimulatorConfiguration != null
                 ? m_NetworkSimulator.SimulatorConfiguration.Name
                 : string.Empty;
-            
+
             PresetDropdown.choices = presets;
             PresetDropdown.index = HasCustomValue
                 ? PresetDropdown.choices.IndexOf(Custom)
