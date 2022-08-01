@@ -760,12 +760,6 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnDestroy()
         {
-            /// NCCBUG-135: This is a reminder to open a new ticket about
-            /// this OnDestroy method. Our current documentation already tells
-            /// users that they should always invoke the base class method if
-            /// they override this method, but in the event they forget then
-            /// this bug will still occur. Fixing that issue will potentially
-            /// require changes in how this OnDestroy method is handled.
             if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
             {
                 // Only under the condition that our assigned NetworkObject
