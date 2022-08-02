@@ -38,12 +38,6 @@ namespace Unity.Netcode.RuntimeTests
             return base.OnSetup();
         }
 
-        protected override IEnumerator OnSetup()
-        {
-            m_AllowServerToStart = false;
-            return base.OnSetup();
-        }
-
         /// <summary>
         /// This validates the fix for when a child GameObject with a NetworkBehaviour
         /// is deleted while the parent GameObject with a NetworkObject is spawned and
