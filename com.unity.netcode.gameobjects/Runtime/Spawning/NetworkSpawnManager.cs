@@ -557,7 +557,12 @@ namespace Unity.Netcode
             var children = networkObject.GetComponentsInChildren<NetworkObject>();
             foreach (var childObject in children)
             {
-                childObject.IsSceneObject = sceneObject;
+                // Only assign parent's sceneObject value if the child hasn't
+                // had its IsSceneObject assigned
+                if (childObject.IsSceneObject == null)
+                {
+                    childObject.IsSceneObject = sceneObject;
+                }
             }
         }
 
@@ -598,14 +603,14 @@ namespace Unity.Netcode
 
         internal void DespawnObject(NetworkObject networkObject, bool destroyObject = false)
         {
-            if (!networkObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is not spawned");
-            }
-
             if (!NetworkManager.IsServer)
             {
-                throw new NotServerException("Only server can despawn objects");
+                throw new NotServerException($"[{nameof(DespawnObject)}][{networkObject.name}] Only server can despawn objects");
+            }
+
+            if (!networkObject.IsSpawned)
+            {
+                throw new SpawnStateException($"[{nameof(DespawnObject)}][{networkObject.name}] is not spawned");
             }
 
             OnDespawnObject(networkObject, destroyObject);
@@ -643,32 +648,95 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Handles despawning and destroying NetworkObjects in the proper order of
+        /// operations based on the following:
+        /// 1.) Migrate NetworkPrefabHandler spawned NetworkObjects upwards
+        /// 2.) Migrate the INetworkPrefabInstanceHandler implementations downwards
+        /// 3.) Migrate children of a parent upwards (despawn children before parents)
+        /// 4.) Migrate parents downwards
+        /// </summary>
+        /// <returns>-1 moves first down, 0 leaves both at the same place, 1 moves first upwards</returns>
+        private int SortNetworkObjectBeforeDestroyAndDespawn(NetworkObject first, NetworkObject second)
+        {
+            // Migrate PrefabHandler objects upwards
+            var doesFirstHaveHandler = NetworkManager.PrefabHandler.ContainsHandler(first);
+            var doesSecondHaveHandler = NetworkManager.PrefabHandler.ContainsHandler(second);
+            if (doesFirstHaveHandler != doesSecondHaveHandler)
+            {
+                if (doesFirstHaveHandler)
+                {
+                    return -1;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+
+            // Migrate parents downwards (which migrates children upwards)
+            var firstChildren = first.GetComponentsInChildren<NetworkObject>();
+            var secondChildren = second.GetComponentsInChildren<NetworkObject>();
+
+            // Comparing First to Second:
+            // If first is a parent of second, migrate the first downwards
+            if (firstChildren.Contains(second))
+            {
+                return -1;
+            }
+
+            // If the second is a parent of the first, migrate the first upwards
+            if (secondChildren.Contains(first))
+            {
+                return 1;
+            }
+
+            // Otherwise neither need to be moved
+            return 0;
+        }
+
         internal void DespawnAndDestroyNetworkObjects()
         {
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
-
-            for (int i = 0; i < networkObjects.Length; i++)
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
+            networkObjects.Sort(SortNetworkObjectBeforeDestroyAndDespawn);
+            for (int i = 0; i < networkObjects.Count; i++)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                // Adding try catch to assure even if a NetworkBehaviour derived class throws
+                // an exception, it will not interrupt despawning and destroying the remaining
+                // NetworkObjects
+                try
                 {
-                    if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                    if (networkObjects[i].NetworkManager == NetworkManager)
                     {
-                        OnDespawnObject(networkObjects[i], false);
-                        // Leave destruction up to the handler
-                        NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
-                    }
-                    else if (networkObjects[i].IsSpawned)
-                    {
-                        // If it is an in-scene placed NetworkObject then just despawn
-                        // and let it be destroyed when the scene is unloaded. Otherwise, despawn and destroy it.
-                        var shouldDestroy = !(networkObjects[i].IsSceneObject != null && networkObjects[i].IsSceneObject.Value);
+                        var children = networkObjects[i].GetComponentsInChildren<NetworkObject>();
+                        var isParent = children.Length > 0;
 
-                        OnDespawnObject(networkObjects[i], shouldDestroy);
+                        if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
+                        {
+                            OnDespawnObject(networkObjects[i], false);
+                            // Leave destruction up to the handler
+                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObjects[i]);
+                        }
+                        else if (networkObjects[i].IsSpawned)
+                        {
+                            // In-Scene placed NetworkObjects only despawn and the unloading of
+                            // their associated scene will handle destroying them.
+                            // Dynamically spawned will always be destroyed.
+                            var shouldDestroy = !networkObjects[i].IsSceneObject.Value;
+                            OnDespawnObject(networkObjects[i], shouldDestroy);
+                        }
+                        else if (networkObjects[i].IsSceneObject == false)
+                        {
+                            // Destroy dynamically despawned NetworkObjects and let despawned
+                            // in-scene placed NetworkObjects get destroyed when the scene is
+                            // unloaded.
+                            UnityEngine.Object.Destroy(networkObjects[i].gameObject);
+                        }
                     }
-                    else if (networkObjects[i].IsSceneObject != null && !networkObjects[i].IsSceneObject.Value)
-                    {
-                        UnityEngine.Object.Destroy(networkObjects[i].gameObject);
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
                 }
             }
         }
@@ -681,7 +749,7 @@ namespace Unity.Netcode
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (networkObjects[i].IsSceneObject == null || networkObjects[i].IsSceneObject.Value == true)
+                    if (networkObjects[i].IsSceneObject != false)
                     {
                         if (NetworkManager.PrefabHandler.ContainsHandler(networkObjects[i]))
                         {

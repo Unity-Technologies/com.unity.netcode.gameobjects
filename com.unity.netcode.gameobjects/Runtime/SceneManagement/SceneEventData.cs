@@ -320,6 +320,25 @@ namespace Unity.Netcode
                     return -1;
                 }
             }
+
+            // Migrate parents upwards (which migrates children downwards)
+            var firstChildren = first.GetComponentsInChildren<NetworkObject>();
+            var secondChildren = second.GetComponentsInChildren<NetworkObject>();
+
+            // Comparing First to Second:
+            // If first is a parent of second, migrate the first upwards
+            if (firstChildren.Contains(second))
+            {
+                return 1;
+            }
+
+            // If the second is a parent of the first, migrate the first downwards
+            if (secondChildren.Contains(first))
+            {
+                return -1;
+            }
+
+            // Otherwise neither need to be moved
             return 0;
         }
 
