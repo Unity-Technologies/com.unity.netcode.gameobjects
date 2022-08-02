@@ -24,6 +24,11 @@ namespace Unity.Netcode.RuntimeTests
         {
         }
 
+        protected override IEnumerator OnSetup()
+        {
+            m_AllowServerToStart = false;
+            return base.OnSetup();
+        }
 
         /// <summary>
         /// This validates the fix for when a child GameObject with a NetworkBehaviour
