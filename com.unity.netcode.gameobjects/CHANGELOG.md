@@ -11,8 +11,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
 
+
 ### Fixed
 
+- Fixed issue when attempting to spawn a parent `GameObject`, with `NetworkObject` component attached, that has one or more child `GameObject`s, that are inactive in the hierarchy, with `NetworkBehaviour` components it will no longer attempt to spawn the associated NetworkBehaviour(s) or invoke ownership changed notifications but will log a warning message. (#2096)
 - Fixed issue where `NetworkObject.NetworkHide` was despawning and destroying, as opposed to only despawning, in-scene placed `NetworkObject`s. (#2086)
 - Fixed `NetworkAnimator` synchronizing transitions twice due to it detecting the change in animation state once a transition is started by a trigger. (#2084)
 - Fixed issue where `NetworkAnimator` would not synchronize a looping animation for late joining clients if it was at the very end of its loop. (#2076)
