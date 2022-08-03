@@ -275,10 +275,8 @@ namespace Unity.Netcode
                 return;
             }
 
-            Debug.Log($"Unexpected hash for {desiredOrder}");
-
-            // Insert placeholder
-
+            // Since the message at `desiredOrder` is not the expected one,
+            // insert an empty placeholder and move the messages down
             var typesAsList = m_ReverseTypeMap.ToList();
             typesAsList.Insert(desiredOrder, null);
             m_ReverseTypeMap = typesAsList.ToArray();
@@ -288,12 +286,11 @@ namespace Unity.Netcode
 
             int position = desiredOrder;
             bool found = false;
-            while(position < m_ReverseTypeMap.Length)
+            while (position < m_ReverseTypeMap.Length)
             {
                 if (m_ReverseTypeMap[position] != null &&
                     m_ReverseTypeMap[position].FullName.GetHashCode() == targetHash)
                 {
-                    Debug.Log($"Found {desiredOrder} at position {position}");
                     found = true;
                     break;
                 }
@@ -303,11 +300,11 @@ namespace Unity.Netcode
 
             if (found)
             {
-                // copy original and remove it
-
+                // Copy the handler and type to the right index
                 m_ReverseTypeMap[desiredOrder] = m_ReverseTypeMap[position];
                 m_MessageHandlers[desiredOrder] = m_MessageHandlers[position];
 
+                // Shift back the remaining messages
                 typesAsList = m_ReverseTypeMap.ToList();
                 typesAsList.RemoveAt(position);
                 m_ReverseTypeMap = typesAsList.ToArray();
