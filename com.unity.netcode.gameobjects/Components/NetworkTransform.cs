@@ -912,13 +912,11 @@ namespace Unity.Netcode.Components
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
-
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
-
+            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
             //  not have leftover interpolator state from the previous object
