@@ -42,7 +42,7 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-            NetworkManager.Singleton.MessagingSystem.ReorderMessage(Order, Hash);
+            ((NetworkManager)context.SystemOwner).MessagingSystem.ReorderMessage(Order, Hash);
         }
     }
 }
