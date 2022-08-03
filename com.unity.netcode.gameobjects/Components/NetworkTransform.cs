@@ -681,7 +681,7 @@ namespace Unity.Netcode.Components
             // InLocalSpace Read
             InLocalSpace = networkState.InLocalSpace;
             // Position Read
-            if (networkState.HasPositionX)
+            if (networkState.HasPositionX )
             {
                 interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
             }
@@ -929,6 +929,34 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// These local values are for the non-authoritative side
+        /// This prevents non-authoritative instances from changing
+        /// the transform.
+        /// </summary>
+        private Vector3 m_LocalPosition;
+        private Vector3 m_LocalScale;
+        private Quaternion m_LocalRotation;
+
+        /// <summary>
+        /// Applies the last authorized position, scale, and rotation
+        /// </summary>
+        private void ApplyTransformValues()
+        {
+            m_Transform.position = m_LocalPosition;
+            m_Transform.localScale = m_LocalScale;
+            m_Transform.rotation = m_LocalRotation;
+        }
+
+        /// <summary>
+        /// Sets the currently authorized position, scale, and rotation
+        /// </summary>
+        private void SetTransformValues()
+        {
+            m_LocalPosition = m_Transform.position;
+            m_LocalScale = m_Transform.localScale;
+            m_LocalRotation = m_Transform.rotation;
+        }
 
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
@@ -947,6 +975,11 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
+            }
+            else
+            {
+                // For the non-authoritative side, we need to capture these values
+                SetTransformValues();
             }
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
@@ -1073,6 +1106,10 @@ namespace Unity.Netcode.Components
                     TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
                 }
             }
+            else
+            {
+                ApplyTransformValues();
+            }
 
             // apply interpolated value
             if (m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening)
@@ -1095,8 +1132,15 @@ namespace Unity.Netcode.Components
 
                 if (!CanCommitToTransform)
                 {
+                    // Always update from the last transform values before updating from the transform state to assure
+                    // no non-authoritative changes are allowed
+                    ApplyTransformValues();
+
                     // Apply updated interpolated value
                     ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform, serverTime.Time);
+
+                    // Always set the any new transform values to assure only the authoritative side is updating the transform
+                    SetTransformValues();
                 }
             }
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
