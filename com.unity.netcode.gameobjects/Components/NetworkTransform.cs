@@ -62,7 +62,7 @@ namespace Unity.Netcode.Components
             private const int k_TeleportingBit = 10;
 
             // 11-15: <unused>
-            private ushort m_Bitset;
+            internal ushort m_Bitset;
 
             internal bool InLocalSpace
             {
@@ -369,7 +369,9 @@ namespace Unity.Netcode.Components
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
-
+        
+        private NetworkTransformState m_LastNetworkState;
+        
         private const int k_DebugDrawLineTime = 10;
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
@@ -509,7 +511,7 @@ namespace Unity.Netcode.Components
             var isPositionDirty = false;
             var isRotationDirty = false;
             var isScaleDirty = false;
-
+            networkState.m_Bitset = 0;
             // hasPositionZ set to false when it should be true?
 
             if (InLocalSpace != networkState.InLocalSpace)
@@ -778,6 +780,69 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private NetworkTransformState MergeNewState(NetworkTransformState newState)
+        {
+            NetworkTransformState mergeState = m_LastNetworkState;
+            mergeState.SentTime = newState.SentTime;
+            
+            if (newState.HasPositionX)
+            {
+                mergeState.PositionX = newState.PositionX;
+                mergeState.HasPositionX = true;
+            }
+
+            if (newState.HasPositionY)
+            {
+                mergeState.PositionY = newState.PositionY;
+                mergeState.HasPositionY = true;
+            }
+
+            if (newState.HasPositionZ)
+            {
+                mergeState.PositionZ = newState.PositionZ;
+                mergeState.HasPositionZ = true;
+            }
+            
+            if (newState.HasRotAngleX)
+            {
+                mergeState.RotAngleX = newState.RotAngleX;
+                mergeState.HasRotAngleX = true;
+            }
+
+            if (newState.HasRotAngleY)
+            {
+                mergeState.RotAngleY = newState.RotAngleY;
+                mergeState.HasRotAngleY = true;
+            }
+
+            if (newState.HasRotAngleZ)
+            {
+                mergeState.RotAngleZ = newState.RotAngleZ;
+                mergeState.HasRotAngleZ = true;
+            }
+            
+            if (newState.HasScaleX)
+            {
+                mergeState.ScaleX = newState.ScaleX;
+                mergeState.HasScaleX = true;
+            }
+
+            if (newState.HasScaleY)
+            {
+                mergeState.ScaleY = newState.ScaleY;
+                mergeState.HasScaleY = true;
+            }
+
+            if (newState.HasScaleZ)
+            {
+                mergeState.ScaleZ = newState.ScaleZ;
+                mergeState.HasScaleZ = true;
+            }
+
+            m_LastNetworkState = mergeState;
+            return m_LastNetworkState;
+        }
+        
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -791,6 +856,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            newState = MergeNewState(newState);
             if (Interpolate)
             {
                 AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal));
@@ -897,6 +963,7 @@ namespace Unity.Netcode.Components
             }
             else if (m_Transform != null)
             {
+                ApplyTransformToNetworkState(ref m_LastNetworkState, 0, m_Transform);
                 ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform);
             }
         }
