@@ -23,6 +23,9 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        private static bool logReloaded = false;
+        private bool logThisIstance = false;
+        internal long logId = DateTime.Now.Millisecond;
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -1543,6 +1546,18 @@ namespace Unity.Netcode
         // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
         private void OnNetworkPreUpdate()
         {
+            if (!logReloaded)
+            {
+                Debug.Log($"It seems like domain was reloaded. I am {logId}");
+                logReloaded = true;
+            }
+
+            if (!logThisIstance)
+            {
+                Debug.Log($"This NetworkManager is constructed. I am {logId}");
+                logThisIstance = true;
+            }
+
             if (IsServer == false && IsConnectedClient == false)
             {
                 // As a client wait to run the time system until we are connected.
@@ -2016,6 +2031,7 @@ namespace Unity.Netcode
         /// <param name="response">The response to allow the player in or not, with its parameters</param>
         internal void HandleConnectionApproval(ulong ownerClientId, ConnectionApprovalResponse response)
         {
+            Debug.Log($"Handling connection approval. I am {logId}");
             if (response.Approved)
             {
                 // Inform new client it got approved
