@@ -2065,16 +2065,6 @@ namespace Unity.Netcode
 
                     SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
 
-                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
-                    if (!NetworkConfig.EnableSceneManagement)
-                    {
-                        InvokeOnClientConnectedCallback(ownerClientId);
-                    }
-                    else
-                    {
-                        SceneManager.SynchronizeNetworkObjects(ownerClientId);
-                    }
-
                     for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
                     {
                         if (MessagingSystem.ReverseTypeMap[index] != null)
@@ -2088,6 +2078,16 @@ namespace Unity.Netcode
                             SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced,
                                 ownerClientId);
                         }
+                    }
+
+                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
+                    if (!NetworkConfig.EnableSceneManagement)
+                    {
+                        InvokeOnClientConnectedCallback(ownerClientId);
+                    }
+                    else
+                    {
+                        SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
                 }
                 else // Server just adds itself as an observer to all spawned NetworkObjects
