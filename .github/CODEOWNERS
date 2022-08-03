@@ -7,10 +7,10 @@ Metrics/ @Unity-Technologies/multiplayer-tools
 /com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-server
 /com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-server
 /com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-server
-*.asmdef @ThusWroteNomad
-package.json @ThusWroteNomad
-AssemblyInfo.cs @ThusWroteNomad
-.editorconfig @ThusWroteNomad
-.gitignore @ThusWroteNomad
-.github/ @ThusWroteNomad @lpmaurice @ashwinimurt
-.yamato/ @ThusWroteNomad @lpmaurice @ashwinimurt
+*.asmdef @ThusSpokeNomad
+package.json @ThusSpokeNomad
+AssemblyInfo.cs @ThusSpokeNomad
+.editorconfig @ThusSpokeNomad
+.gitignore @ThusSpokeNomad
+.github/ @ThusSpokeNomad @lpmaurice @ashwinimurt
+.yamato/ @ThusSpokeNomad @lpmaurice @ashwinimurt
