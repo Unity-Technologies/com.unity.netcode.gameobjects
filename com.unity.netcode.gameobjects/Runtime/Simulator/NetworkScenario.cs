@@ -1,13 +1,13 @@
 // NetSim Implementation compilation boilerplate
-// All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
+// All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
 #if UNITY_EDITOR || ((DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE))
-    #define UNITY_MP_TOOLS_NETSIM_ENABLED
+    #define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 
 using System;
 using System.Collections;
@@ -50,15 +50,15 @@ namespace Unity.Netcode
             {
                 yield return null;
             }
-            
+
             NetworkSimulatorScenario.Start(NetworkSimulatorSimulator.NetworkEventsApi);
         }
-        
+
         void OnDestroy()
         {
             NetworkSimulatorScenario?.Dispose();
         }
-        
+
         void Update()
         {
             if (NetworkSimulatorScenario is INetworkSimulatorScenarioUpdateHandler updatableSimulator)

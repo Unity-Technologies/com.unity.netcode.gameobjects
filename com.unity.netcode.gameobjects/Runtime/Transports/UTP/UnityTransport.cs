@@ -1,9 +1,9 @@
 // NetSim Implementation compilation boilerplate
-// All references to UNITY_MP_TOOLS_NETSIM_ENABLED should be defined in the same way,
+// All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 // ---------------------------------------------------------------------------------------------------------------------
 #if UNITY_EDITOR || ((DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE))
-    #define UNITY_MP_TOOLS_NETSIM_ENABLED
+    #define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 #endif
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -1142,7 +1142,7 @@ namespace Unity.Netcode.Transports.UTP
 #endif
             var maxFrameTimeMs = 0;
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             var configuration = GetComponent<NetworkSimulator>()?.SimulatorConfiguration;
             m_NetworkSettings.WithSimulatorStageParameters(
                 300,
@@ -1177,7 +1177,7 @@ namespace Unity.Netcode.Transports.UTP
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_ENABLED
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
@@ -1231,7 +1231,7 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
-#if UNITY_MP_TOOLS_NETSIM_ENABLED
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
         public void UpdateSimulationPipelineParameters(INetworkSimulatorConfiguration configuration)
         {
             if (!m_SimulatorInitialized)
