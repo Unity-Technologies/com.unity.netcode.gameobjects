@@ -62,118 +62,118 @@ namespace Unity.Netcode.Components
             private const int k_TeleportingBit = 10;
 
             // 11-15: <unused>
-            private ushort m_Bitset;
+            internal ushort Bitset;
 
             internal bool InLocalSpace
             {
-                get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
+                get => (Bitset & (1 << k_InLocalSpaceBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_InLocalSpaceBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_InLocalSpaceBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_InLocalSpaceBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_InLocalSpaceBit)); }
                 }
             }
 
             // Position
             internal bool HasPositionX
             {
-                get => (m_Bitset & (1 << k_PositionXBit)) != 0;
+                get => (Bitset & (1 << k_PositionXBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionXBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionXBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionXBit)); }
                 }
             }
 
             internal bool HasPositionY
             {
-                get => (m_Bitset & (1 << k_PositionYBit)) != 0;
+                get => (Bitset & (1 << k_PositionYBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionYBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionYBit)); }
                 }
             }
 
             internal bool HasPositionZ
             {
-                get => (m_Bitset & (1 << k_PositionZBit)) != 0;
+                get => (Bitset & (1 << k_PositionZBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionZBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionZBit)); }
                 }
             }
 
             // RotAngles
             internal bool HasRotAngleX
             {
-                get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
+                get => (Bitset & (1 << k_RotAngleXBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleXBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleXBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleXBit)); }
                 }
             }
 
             internal bool HasRotAngleY
             {
-                get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
+                get => (Bitset & (1 << k_RotAngleYBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleYBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleYBit)); }
                 }
             }
 
             internal bool HasRotAngleZ
             {
-                get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
+                get => (Bitset & (1 << k_RotAngleZBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleZBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleZBit)); }
                 }
             }
 
             // Scale
             internal bool HasScaleX
             {
-                get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
+                get => (Bitset & (1 << k_ScaleXBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleXBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleXBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleXBit)); }
                 }
             }
 
             internal bool HasScaleY
             {
-                get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
+                get => (Bitset & (1 << k_ScaleYBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleYBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleYBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleYBit)); }
                 }
             }
 
             internal bool HasScaleZ
             {
-                get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
+                get => (Bitset & (1 << k_ScaleZBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleZBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleZBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleZBit)); }
                 }
             }
 
             internal bool IsTeleportingNextFrame
             {
-                get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
+                get => (Bitset & (1 << k_TeleportingBit)) != 0;
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_TeleportingBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_TeleportingBit)); }
+                    if (value) { Bitset = (ushort)(Bitset | (1 << k_TeleportingBit)); }
+                    else { Bitset = (ushort)(Bitset & ~(1 << k_TeleportingBit)); }
                 }
             }
 
@@ -219,7 +219,7 @@ namespace Unity.Netcode.Components
             {
                 serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
-                serializer.SerializeValue(ref m_Bitset);
+                serializer.SerializeValue(ref Bitset);
                 // Position Values
                 if (HasPositionX)
                 {
@@ -523,76 +523,130 @@ namespace Unity.Netcode.Components
             //  this still is overly costly and could use more improvements.
             //
             // (ditto for scale components)
-            if (SyncPositionX &&
-                Mathf.Abs(networkState.PositionX - position.x) > PositionThreshold)
+            if (SyncPositionX)
             {
-                networkState.PositionX = position.x;
-                networkState.HasPositionX = true;
-                isPositionDirty = true;
+                if (Mathf.Abs(networkState.PositionX - position.x) > PositionThreshold)
+                {
+                    networkState.PositionX = position.x;
+                    networkState.HasPositionX = true;
+                    isPositionDirty = true;
+                }
+                else
+                {
+                    networkState.HasPositionX = false;
+                }
             }
 
-            if (SyncPositionY &&
-                Mathf.Abs(networkState.PositionY - position.y) > PositionThreshold)
+            if (SyncPositionY)
             {
-                networkState.PositionY = position.y;
-                networkState.HasPositionY = true;
-                isPositionDirty = true;
+                if (Mathf.Abs(networkState.PositionY - position.y) > PositionThreshold)
+                {
+                    networkState.PositionY = position.y;
+                    networkState.HasPositionY = true;
+                    isPositionDirty = true;
+                }
+                else
+                {
+                    networkState.HasPositionY = false;
+                }
             }
 
-            if (SyncPositionZ &&
-                Mathf.Abs(networkState.PositionZ - position.z) > PositionThreshold)
+            if (SyncPositionZ)
             {
-                networkState.PositionZ = position.z;
-                networkState.HasPositionZ = true;
-                isPositionDirty = true;
+                if (Mathf.Abs(networkState.PositionZ - position.z) > PositionThreshold)
+                {
+                    networkState.PositionZ = position.z;
+                    networkState.HasPositionZ = true;
+                    isPositionDirty = true;
+                }
+                else
+                {
+                    networkState.HasPositionZ = false;
+                }
             }
 
-            if (SyncRotAngleX &&
-                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
+            if (SyncRotAngleX)
             {
-                networkState.RotAngleX = rotAngles.x;
-                networkState.HasRotAngleX = true;
-                isRotationDirty = true;
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
+                {
+                    networkState.RotAngleX = rotAngles.x;
+                    networkState.HasRotAngleX = true;
+                    isRotationDirty = true;
+                }
+                else
+                {
+                    networkState.HasRotAngleX = false;
+                }
             }
 
-            if (SyncRotAngleY &&
-                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
+            if (SyncRotAngleY)
             {
-                networkState.RotAngleY = rotAngles.y;
-                networkState.HasRotAngleY = true;
-                isRotationDirty = true;
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
+                {
+                    networkState.RotAngleY = rotAngles.y;
+                    networkState.HasRotAngleY = true;
+                    isRotationDirty = true;
+                }
+                else
+                {
+                    networkState.HasRotAngleY = false;
+                }
             }
 
-            if (SyncRotAngleZ &&
-                Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
+            if (SyncRotAngleZ)
             {
-                networkState.RotAngleZ = rotAngles.z;
-                networkState.HasRotAngleZ = true;
-                isRotationDirty = true;
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
+                {
+                    networkState.RotAngleZ = rotAngles.z;
+                    networkState.HasRotAngleZ = true;
+                    isRotationDirty = true;
+                }
+                else
+                {
+                    networkState.HasRotAngleZ = false;
+                }
             }
 
-            if (SyncScaleX &&
-                Mathf.Abs(networkState.ScaleX - scale.x) > ScaleThreshold)
+            if (SyncScaleX)
             {
-                networkState.ScaleX = scale.x;
-                networkState.HasScaleX = true;
-                isScaleDirty = true;
+                if (Mathf.Abs(networkState.ScaleX - scale.x) > ScaleThreshold)
+                {
+                    networkState.ScaleX = scale.x;
+                    networkState.HasScaleX = true;
+                    isScaleDirty = true;
+                }
+                else
+                {
+                    networkState.HasScaleX = false;
+                }
             }
 
-            if (SyncScaleY &&
-                Mathf.Abs(networkState.ScaleY - scale.y) > ScaleThreshold)
+            if (SyncScaleY)
             {
-                networkState.ScaleY = scale.y;
-                networkState.HasScaleY = true;
-                isScaleDirty = true;
+                if (Mathf.Abs(networkState.ScaleY - scale.y) > ScaleThreshold)
+                {
+                    networkState.ScaleY = scale.y;
+                    networkState.HasScaleY = true;
+                    isScaleDirty = true;
+                }
+                else
+                {
+                    networkState.HasScaleY = false;
+                }
             }
 
-            if (SyncScaleZ &&
-                Mathf.Abs(networkState.ScaleZ - scale.z) > ScaleThreshold)
+            if (SyncScaleZ)
             {
-                networkState.ScaleZ = scale.z;
-                networkState.HasScaleZ = true;
-                isScaleDirty = true;
+                if (Mathf.Abs(networkState.ScaleZ - scale.z) > ScaleThreshold)
+                {
+                    networkState.ScaleZ = scale.z;
+                    networkState.HasScaleZ = true;
+                    isScaleDirty = true;
+                }
+                else
+                {
+                    networkState.HasScaleZ = false;
+                }
             }
 
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
@@ -858,11 +912,13 @@ namespace Unity.Netcode.Components
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
+
+            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
             //  not have leftover interpolator state from the previous object
