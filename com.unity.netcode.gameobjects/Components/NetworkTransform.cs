@@ -681,7 +681,7 @@ namespace Unity.Netcode.Components
             // InLocalSpace Read
             InLocalSpace = networkState.InLocalSpace;
             // Position Read
-            if (networkState.HasPositionX )
+            if (networkState.HasPositionX)
             {
                 interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
             }
