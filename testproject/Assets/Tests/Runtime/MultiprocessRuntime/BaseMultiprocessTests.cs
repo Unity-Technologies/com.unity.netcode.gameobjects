@@ -85,7 +85,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            MultiprocessLogger.Log($"OnSceneLoaded {scene.name}");
             SceneManager.sceneLoaded -= OnSceneLoaded;
             if (scene.name == BuildMultiprocessTestPlayer.MainSceneName)
             {
@@ -93,7 +92,6 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             var transport = NetworkManager.Singleton.NetworkConfig.NetworkTransport;
-            MultiprocessLogger.Log($"transport is {transport}");
             switch (transport)
             {
 #if UNITY_UNET_PRESENT
