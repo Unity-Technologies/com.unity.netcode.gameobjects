@@ -259,7 +259,7 @@ namespace Unity.Netcode
             return true;
         }
 
-        internal void ReorderMessage(int desiredOrder, int targetHash)
+        internal void ReorderMessage(int desiredOrder, uint targetHash)
         {
             if (desiredOrder < 0)
             {
@@ -268,7 +268,7 @@ namespace Unity.Netcode
             }
 
             if (desiredOrder < m_ReverseTypeMap.Length &&
-                m_ReverseTypeMap[desiredOrder].FullName.GetHashCode() == targetHash)
+                XXHash.Hash32(m_ReverseTypeMap[desiredOrder].FullName) == targetHash)
             {
                 // matching positions and hashes. All good.
                 return;
@@ -293,7 +293,7 @@ namespace Unity.Netcode
             while(position < m_ReverseTypeMap.Length)
             {
                 if (m_ReverseTypeMap[position] != null &&
-                    m_ReverseTypeMap[position].FullName.GetHashCode() == targetHash)
+                    XXHash.Hash32(m_ReverseTypeMap[position].FullName) == targetHash)
                 {
                     Debug.Log($"Found {desiredOrder} at position {position}");
                     found = true;
