@@ -81,25 +81,24 @@ namespace Unity.Netcode
         private List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
         {
             var prioritizedTypes = new List<MessageWithHandler>();
-            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.ConnectionRequestMessage
-            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.ConnectionApprovedMessage
-            prioritizedTypes.Add(new MessageWithHandler()); // reserve space for Unity.Netcode.OrderingMessage
+
+            // first pass puts the priority message in the first indices
+            // Those are the messages that must be delivered in order to allow re-ordering the others later
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName == "Unity.Netcode.ConnectionRequestMessage" ||
+                    t.MessageType.FullName == "Unity.Netcode.ConnectionApprovedMessage" ||
+                    t.MessageType.FullName == "Unity.Netcode.OrderingMessage")
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
 
             foreach (var t in allowedTypes)
             {
-                if (t.MessageType.FullName == "Unity.Netcode.ConnectionRequestMessage")
-                {
-                    prioritizedTypes[0] = t;
-                }
-                else if (t.MessageType.FullName == "Unity.Netcode.ConnectionApprovedMessage")
-                {
-                    prioritizedTypes[1] = t;
-                }
-                else if (t.MessageType.FullName == "Unity.Netcode.OrderingMessage")
-                {
-                    prioritizedTypes[2] = t;
-                }
-                else
+                if (t.MessageType.FullName != "Unity.Netcode.ConnectionRequestMessage" &&
+                    t.MessageType.FullName != "Unity.Netcode.ConnectionApprovedMessage" &&
+                    t.MessageType.FullName != "Unity.Netcode.OrderingMessage")
                 {
                     prioritizedTypes.Add(t);
                 }
@@ -286,6 +285,9 @@ namespace Unity.Netcode
             handlersAsList.Insert(desiredOrder, null);
             m_MessageHandlers = handlersAsList.ToArray();
 
+            // we added a dummy message, bump the end up
+            m_HighMessageType++;
+
             int position = desiredOrder;
             bool found = false;
             while(position < m_ReverseTypeMap.Length)
@@ -314,6 +316,9 @@ namespace Unity.Netcode
                 handlersAsList = m_MessageHandlers.ToList();
                 handlersAsList.RemoveAt(position);
                 m_MessageHandlers = handlersAsList.ToArray();
+
+                // we removed a copy after moving a message, reduce the high message index
+                m_HighMessageType--;
             }
         }
 
