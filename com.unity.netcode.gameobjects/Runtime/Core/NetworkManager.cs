@@ -2075,8 +2075,7 @@ namespace Unity.Netcode
                                 Hash = MessagingSystem.ReverseTypeMap[index].FullName.GetHashCode()
                             };
 
-                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced,
-                                ownerClientId);
+                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                         }
                     }
 
