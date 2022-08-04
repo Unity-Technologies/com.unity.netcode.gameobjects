@@ -335,7 +335,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnTearDown()
         {
             m_EnableVerboseDebug = false;
-            UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
+            Object.DestroyImmediate(m_PlayerPrefab);
             yield return base.OnTearDown();
         }
     }
