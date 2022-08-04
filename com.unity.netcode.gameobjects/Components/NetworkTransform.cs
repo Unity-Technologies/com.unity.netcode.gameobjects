@@ -862,7 +862,7 @@ namespace Unity.Netcode.Components
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+            m_LastSentState = m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
             //  not have leftover interpolator state from the previous object
