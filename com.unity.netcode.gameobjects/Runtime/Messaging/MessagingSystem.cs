@@ -78,7 +78,7 @@ namespace Unity.Netcode
             public MessageHandler Handler;
         }
 
-        private List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
+        internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
         {
             var prioritizedTypes = new List<MessageWithHandler>();
 
