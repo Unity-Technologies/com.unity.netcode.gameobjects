@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
             else
             {
                 var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
-                networkTransform.Interpolate = false;
+                networkTransform.Interpolate = true;
             }
         }
 
@@ -74,8 +74,8 @@ namespace Unity.Netcode.RuntimeTests
         protected override IEnumerator OnServerAndClientsConnected()
         {
             // Get the client player representation on both the server and the client side
-            m_ServerSideClientPlayer = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
-            m_ClientSideClientPlayer = m_PlayerNetworkObjects[m_ClientNetworkManagers[0].LocalClientId][m_ClientNetworkManagers[0].LocalClientId];
+            m_ServerSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
+            m_ClientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
 
             // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
             var otherSideNetworkTransformComponent = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
@@ -118,38 +118,38 @@ namespace Unity.Netcode.RuntimeTests
 
             authPlayerTransform.position = new Vector3(10, 20, 30);
 
-            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.position.x > approximation);
+            yield return WaitForConditionOrTimeOut(ServerClientPositionMatches);
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
+            AssertOnTimeout($"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
 
-            Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
+            //Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
 
             // test rotation
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
             Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
 
-            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.rotation.eulerAngles.x > approximation);
+            yield return WaitForConditionOrTimeOut(ServerClientRotationMatches);
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, "timeout while waiting for rotation change");
+            AssertOnTimeout("timeout while waiting for rotation change");
 
-            // approximation needed here since eulerAngles isn't super precise.
-            Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
-            Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), approximation, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
-            Assert.LessOrEqual(Math.Abs(35 - otherSideNetworkTransform.transform.rotation.eulerAngles.z), approximation, $"wrong rotation on ghost on z, got {otherSideNetworkTransform.transform.rotation.eulerAngles.z}");
+            //// approximation needed here since eulerAngles isn't super precise.
+            //Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
+            //Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), approximation, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
+            //Assert.LessOrEqual(Math.Abs(35 - otherSideNetworkTransform.transform.rotation.eulerAngles.z), approximation, $"wrong rotation on ghost on z, got {otherSideNetworkTransform.transform.rotation.eulerAngles.z}");
 
             // test scale
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
 
-            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransform.transform.lossyScale.x > 1f + approximation);
+            yield return WaitForConditionOrTimeOut(ServerClientScaleMatches);
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, "timeout while waiting for scale change");
+            AssertOnTimeout("timeout while waiting for scale change");
 
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");
-            UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost");
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");
+            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost");
 
             // todo reparent and test
             // todo test all public API
@@ -251,6 +251,82 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
         }
 
+        /// <summary>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestBitsetValue()
+        {
+            // Get the client player's NetworkTransform for both instances
+            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            otherSideNetworkTransform.RotAngleThreshold = authoritativeNetworkTransform.RotAngleThreshold = 0.1f;
+            yield return s_DefaultWaitForTick;
+
+            authoritativeNetworkTransform.Interpolate = true;
+            otherSideNetworkTransform.Interpolate = true;
+
+            yield return s_DefaultWaitForTick;
+
+            authoritativeNetworkTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
+            var serverLastSentState = authoritativeNetworkTransform.GetLastSentState();
+            var clientReplicatedState = otherSideNetworkTransform.GetReplicatedNetworkState().Value;
+            yield return WaitForConditionOrTimeOut(() => clientReplicatedState.Bitset.Equals(serverLastSentState.Bitset));
+            AssertOnTimeout($"Server-side sent state Bitset {serverLastSentState.Bitset} != Client-side replicated state Bitset {clientReplicatedState.Bitset}");
+
+            yield return WaitForConditionOrTimeOut(ServerClientRotationMatches);
+            AssertOnTimeout($"[Timed-Out] Server-side client rotation {m_ServerSideClientPlayer.transform.rotation.eulerAngles} != Client-side client rotation {m_ClientSideClientPlayer.transform.rotation.eulerAngles}");
+        }
+
+        private bool Aproximately(float x, float y)
+        {
+            return Mathf.Abs(x - y) <= k_AproximateDeltaVariance;
+        }
+
+        private const float k_AproximateDeltaVariance = 0.01f;
+
+        private bool ServerClientRotationMatches()
+        {
+            var serverEulerRotation = m_ServerSideClientPlayer.transform.rotation.eulerAngles;
+            var clientEulerRotation = m_ClientSideClientPlayer.transform.rotation.eulerAngles;
+            var xIsEqual = Aproximately(serverEulerRotation.x, clientEulerRotation.x);
+            var yIsEqual = Aproximately(serverEulerRotation.y, clientEulerRotation.y);
+            var zIsEqual = Aproximately(serverEulerRotation.z, clientEulerRotation.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"Server-side client rotation {m_ServerSideClientPlayer.transform.rotation.eulerAngles} != Client-side client rotation {m_ClientSideClientPlayer.transform.rotation.eulerAngles}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
+        private bool ServerClientPositionMatches()
+        {
+            var serverPosition = m_ServerSideClientPlayer.transform.position;
+            var clientPosition = m_ClientSideClientPlayer.transform.position;
+            var xIsEqual = Aproximately(serverPosition.x, clientPosition.x);
+            var yIsEqual = Aproximately(serverPosition.y, clientPosition.y);
+            var zIsEqual = Aproximately(serverPosition.z, clientPosition.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"Server-side client position {m_ServerSideClientPlayer.transform.position} != Client-side client position {m_ClientSideClientPlayer.transform.position}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
+        private bool ServerClientScaleMatches()
+        {
+            var serverScale = m_ServerSideClientPlayer.transform.localScale;
+            var clientScale = m_ClientSideClientPlayer.transform.localScale;
+            var xIsEqual = Aproximately(serverScale.x, clientScale.x);
+            var yIsEqual = Aproximately(serverScale.y, clientScale.y);
+            var zIsEqual = Aproximately(serverScale.z, clientScale.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"Server-side client scale {m_ServerSideClientPlayer.transform.localScale} != Client-side client scale {m_ClientSideClientPlayer.transform.localScale}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual;
+        }
+
+
         /*
          * ownership change
          * test teleport with interpolation
@@ -259,6 +335,7 @@ namespace Unity.Netcode.RuntimeTests
          */
         protected override IEnumerator OnTearDown()
         {
+            m_EnableVerboseDebug = false;
             UnityEngine.Object.DestroyImmediate(m_PlayerPrefab);
             yield return base.OnTearDown();
         }

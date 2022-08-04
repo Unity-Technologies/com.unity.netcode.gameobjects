@@ -368,6 +368,11 @@ namespace Unity.Netcode.Components
 
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
 
+        internal NetworkVariable<NetworkTransformState> GetReplicatedNetworkState()
+        {
+            return m_ReplicatedNetworkState;
+        }
+
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
         private const int k_DebugDrawLineTime = 10;
@@ -387,6 +392,11 @@ namespace Unity.Netcode.Components
         private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
+
+        internal NetworkTransformState GetLastSentState()
+        {
+            return m_LastSentState;
+        }
 
         /// <summary>
         /// Tries updating the server authoritative transform, only if allowed.
@@ -850,7 +860,10 @@ namespace Unity.Netcode.Components
                 m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
 
-            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+            if (newState.HasRotAngleX || newState.HasRotAngleY || newState.HasRotAngleZ)
+            {
+                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+            }
 
             if (newState.HasScaleX)
             {
