@@ -11,7 +11,7 @@ namespace Unity.Netcode
     internal struct OrderingMessage : INetworkMessage
     {
         public int Order;
-        public int Hash;
+        public uint Hash;
 
         public void Serialize(FastBufferWriter writer)
         {
