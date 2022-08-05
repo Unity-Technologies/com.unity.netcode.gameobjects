@@ -367,19 +367,16 @@ namespace Unity.Netcode
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
-                // This will trigger an exception is if the server knows about a message type the client doesn't know
-                // about. In this case the handler will be null. It is still an issue the user must deal with: If the
-                // two connecting builds know about different messages, the server should not send a message to a client
-                // that doesn't know about it
-                if (handler == null)
-                {
-                    throw new HandlerNotRegisteredException("Received a NetworkMessage we don't know how to deal with. Make sure client and server have the same INetworkMessage");
-                }
                 // No user-land message handler exceptions should escape the receive loop.
                 // If an exception is throw, the message is ignored.
                 // Example use case: A bad message is received that can't be deserialized and throws
                 // an OverflowException because it specifies a length greater than the number of bytes in it
                 // for some dynamic-length value.
+
+                // This will also log an exception is if the server knows about a message type the client doesn't know
+                // about. In this case the handler will be null. It is still an issue the user must deal with: If the
+                // two connecting builds know about different messages, the server should not send a message to a client
+                // that doesn't know about it
                 try
                 {
                     handler.Invoke(reader, ref context, this);
