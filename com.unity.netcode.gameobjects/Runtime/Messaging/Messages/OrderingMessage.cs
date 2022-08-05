@@ -3,10 +3,15 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// This particular struct is a little weird because it doesn't actually contain the data
-    /// it's serializing. Instead, it contains references to the data it needs to do the
-    /// serialization. This is due to the generally amorphous nature of network variable
-    /// deltas, since they're all driven by custom virtual method overloads.
+    /// Upon connecting, the host sends a series of OrderingMessage to the client so that it can make sure both sides
+    /// have the same message types in the same positions in
+    /// - MessagingSystem.m_MessageHandlers
+    /// - MessagingSystem.m_ReverseTypeMap
+    /// even if one side has extra messages (compilation, version, patch, or platform differences, etc...)
+    ///
+    /// The ConnectionRequestedMessage, ConnectionApprovedMessage and OrderingMessage are prioritized at the beginning
+    /// of the mapping, to guarantee they can be exchanged before the two sides share their ordering
+    /// The sorting used in also stable so that even if MessageType names share hashes, it will work most of the time
     /// </summary>
     internal struct OrderingMessage : INetworkMessage
     {

@@ -60,7 +60,6 @@ namespace Unity.Netcode
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
-        internal Type[] ReverseTypeMap => m_ReverseTypeMap;
 
         internal uint MessageHandlerCount => m_HighMessageType;
 
@@ -259,12 +258,14 @@ namespace Unity.Netcode
             return true;
         }
 
+        // Moves the handler for the type having hash `targetHash` to the `desiredOrder` position, in the handler list
+        // This allows the server to tell the client which id it is using for which message and make sure the right
+        // message is used when deserializing.
         internal void ReorderMessage(int desiredOrder, uint targetHash)
         {
             if (desiredOrder < 0)
             {
-                // invalid message re-ordering request. Ignore.
-                return;
+                throw new ArgumentException("ReorderMessage desiredOrder must be positive");
             }
 
             if (desiredOrder < m_ReverseTypeMap.Length &&

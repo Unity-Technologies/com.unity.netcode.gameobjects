@@ -2067,12 +2067,12 @@ namespace Unity.Netcode
 
                     for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
                     {
-                        if (MessagingSystem.ReverseTypeMap[index] != null)
+                        if (MessagingSystem.MessageTypes[index] != null)
                         {
                             var orderingMessage = new OrderingMessage
                             {
                                 Order = index,
-                                Hash = XXHash.Hash32(MessagingSystem.ReverseTypeMap[index].FullName)
+                                Hash = XXHash.Hash32(MessagingSystem.MessageTypes[index].FullName)
                             };
 
                             SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
