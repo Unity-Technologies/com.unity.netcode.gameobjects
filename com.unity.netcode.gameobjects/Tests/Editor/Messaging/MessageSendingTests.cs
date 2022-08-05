@@ -224,5 +224,55 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(message2, receivedMessage2);
             }
         }
+
+        private class TestNoHandlerMessageProvider : IMessageProvider
+        {
+            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            {
+                return new List<MessagingSystem.MessageWithHandler>
+                {
+                    new MessagingSystem.MessageWithHandler
+                    {
+                        MessageType = typeof(TestMessage),
+                        Handler = null
+                    }
+                };
+            }
+        }
+
+        [Test]
+        public void WhenReceivingAMessageWithoutAHandler_ExceptionIsThrown()
+        {
+            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
+
+            var messageHeader = new MessageHeader
+            {
+                MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
+                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+            };
+            var message = GetMessage();
+
+            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            using (writer)
+            {
+                writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
+                writer.WriteValue(message);
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+                    try
+                    {
+                        m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, 0);
+                    }
+                    catch (HandlerNotRegisteredException)
+                    {
+                        return;
+                    }
+
+                    Assert.Fail();
+                }
+            }
+        }
     }
 }
