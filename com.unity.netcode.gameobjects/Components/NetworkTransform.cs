@@ -474,11 +474,6 @@ namespace Unity.Netcode.Components
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
             GetReplicatedNetworkState().Value = networkState;
-
-            if (Interpolate)
-            {
-                AddInterpolatedState(networkState);
-            }
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
@@ -981,18 +976,18 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            m_CachedIsServer = IsServer;
+            m_CachedNetworkManager = NetworkManager;
+
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
 
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
             m_Transform = transform;
-            GetReplicatedNetworkState().OnValueChanged += OnNetworkStateChanged;
-
-            m_CachedIsServer = IsServer;
-            m_CachedNetworkManager = NetworkManager;
 
             m_LocalAuthoritativeNetworkState = GetReplicatedNetworkState().Value;
+
             if (CanCommitToTransform)
             {
                 m_LastSentState = GetReplicatedNetworkState().Value;
@@ -1000,6 +995,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                GetReplicatedNetworkState().OnValueChanged += OnNetworkStateChanged;
                 // For the non-authoritative side, we need to capture these values
                 SetTransformValues();
             }
@@ -1029,14 +1025,13 @@ namespace Unity.Netcode.Components
 
         private void Initialize()
         {
-            ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
-
             if (CanCommitToTransform)
             {
                 GetReplicatedNetworkState().SetDirty(true);
             }
             else if (m_Transform != null)
             {
+                ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
                 ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, NetworkManager.ServerTime.Time);
             }
         }
@@ -1110,29 +1105,23 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!Interpolate && m_LastInterpolate)
-            {
-                // if we just stopped interpolating, let's clear the interpolators
-                foreach (var interpolator in m_AllFloatInterpolators)
-                {
-                    interpolator.Clear();
-                }
-            }
-
-            m_LastInterpolate = Interpolate;
-
             if (CanCommitToTransform)
             {
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             else
             {
-                ApplyTransformValues();
-            }
+                if (!Interpolate && m_LastInterpolate)
+                {
+                    // if we just stopped interpolating, let's clear the interpolators
+                    foreach (var interpolator in m_AllFloatInterpolators)
+                    {
+                        interpolator.Clear();
+                    }
+                }
 
-            // apply interpolated value
-            if (m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening)
-            {
+                m_LastInterpolate = Interpolate;
+
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                 var cachedDeltaTime = Time.deltaTime;
                 var serverTime = NetworkManager.ServerTime;
@@ -1149,19 +1138,17 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
-                if (!CanCommitToTransform)
-                {
-                    // Always update from the last transform values before updating from the transform state to assure
-                    // no non-authoritative changes are allowed
-                    ApplyTransformValues();
+                // Always update from the last transform values before updating from the transform state to assure
+                // no non-authoritative changes are allowed
+                ApplyTransformValues();
 
-                    // Apply updated interpolated value
-                    ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, serverTime.Time);
+                // Apply updated interpolated value
+                ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, serverTime.Time);
 
-                    // Always set the any new transform values to assure only the authoritative side is updating the transform
-                    SetTransformValues();
-                }
+                // Always set the any new transform values to assure only the authoritative side is updating the transform
+                SetTransformValues();
             }
+
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
@@ -1185,7 +1172,7 @@ namespace Unity.Netcode.Components
             stateToSend.Position = newPosition;
             stateToSend.Rotation = newRotationEuler;
             stateToSend.Scale = newScale;
-            ApplyInterpolatedNetworkStateToTransform(stateToSend, transform, m_CachedNetworkManager.ServerTime.Time);
+            //ApplyInterpolatedNetworkStateToTransform(stateToSend, transform, m_CachedNetworkManager.ServerTime.Time);
             // set teleport flag in state to signal to ghosts not to interpolate
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
             // check server side
