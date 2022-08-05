@@ -60,120 +60,120 @@ namespace Unity.Netcode.Components
             private const int k_ScaleYBit = 8;
             private const int k_ScaleZBit = 9;
             private const int k_TeleportingBit = 10;
-
             // 11-15: <unused>
-            internal ushort Bitset;
+
+            private ushort m_Bitset;
 
             internal bool InLocalSpace
             {
-                get => (Bitset & (1 << k_InLocalSpaceBit)) != 0;
+                get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_InLocalSpaceBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_InLocalSpaceBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_InLocalSpaceBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_InLocalSpaceBit)); }
                 }
             }
 
             // Position
             internal bool HasPositionX
             {
-                get => (Bitset & (1 << k_PositionXBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionXBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionXBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionXBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionXBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionXBit)); }
                 }
             }
 
             internal bool HasPositionY
             {
-                get => (Bitset & (1 << k_PositionYBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionYBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionYBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionYBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionYBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionYBit)); }
                 }
             }
 
             internal bool HasPositionZ
             {
-                get => (Bitset & (1 << k_PositionZBit)) != 0;
+                get => (m_Bitset & (1 << k_PositionZBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_PositionZBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_PositionZBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionZBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionZBit)); }
                 }
             }
 
             // RotAngles
             internal bool HasRotAngleX
             {
-                get => (Bitset & (1 << k_RotAngleXBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleXBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleXBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleXBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleXBit)); }
                 }
             }
 
             internal bool HasRotAngleY
             {
-                get => (Bitset & (1 << k_RotAngleYBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleYBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleYBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleYBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleYBit)); }
                 }
             }
 
             internal bool HasRotAngleZ
             {
-                get => (Bitset & (1 << k_RotAngleZBit)) != 0;
+                get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_RotAngleZBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_RotAngleZBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleZBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleZBit)); }
                 }
             }
 
             // Scale
             internal bool HasScaleX
             {
-                get => (Bitset & (1 << k_ScaleXBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleXBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleXBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleXBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleXBit)); }
                 }
             }
 
             internal bool HasScaleY
             {
-                get => (Bitset & (1 << k_ScaleYBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleYBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleYBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleYBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleYBit)); }
                 }
             }
 
             internal bool HasScaleZ
             {
-                get => (Bitset & (1 << k_ScaleZBit)) != 0;
+                get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_ScaleZBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_ScaleZBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleZBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleZBit)); }
                 }
             }
 
             internal bool IsTeleportingNextFrame
             {
-                get => (Bitset & (1 << k_TeleportingBit)) != 0;
+                get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
                 set
                 {
-                    if (value) { Bitset = (ushort)(Bitset | (1 << k_TeleportingBit)); }
-                    else { Bitset = (ushort)(Bitset & ~(1 << k_TeleportingBit)); }
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_TeleportingBit)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_TeleportingBit)); }
                 }
             }
 
@@ -219,7 +219,7 @@ namespace Unity.Netcode.Components
             {
                 serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
-                serializer.SerializeValue(ref Bitset);
+                serializer.SerializeValue(ref m_Bitset);
                 // Position Values
                 if (HasPositionX)
                 {
@@ -414,11 +414,22 @@ namespace Unity.Netcode.Components
         /// <param name="dirtyTime"></param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
+            TryCommitTransform(transformToCommit, dirtyTime);
+        }
+
+
+        protected void TryCommitTransform(Transform transformToCommit, double dirtyTime)
+        {
+            if (!CanCommitToTransform)
+            {
+                Debug.LogError($"[{name}] is trying to commit the transform without authority!");
+                return;
+            }
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
             TryCommit(isDirty);
         }
 
-        private void TryCommitValuesToServer(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
+        private void TryCommitValues(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
 
@@ -979,26 +990,6 @@ namespace Unity.Netcode.Components
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
-            CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
-
-            // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
-            //  and thus awake won't be called.
-            // TODO: investigate further on not sending data for something that is not enabled
-            m_Transform = transform;
-
-            m_LocalAuthoritativeNetworkState = GetReplicatedNetworkState().Value;
-
-            if (CanCommitToTransform)
-            {
-                m_LastSentState = GetReplicatedNetworkState().Value;
-                TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
-            }
-            else
-            {
-                GetReplicatedNetworkState().OnValueChanged += OnNetworkStateChanged;
-                // For the non-authoritative side, we need to capture these values
-                SetTransformValues();
-            }
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
             //  not have leftover interpolator state from the previous object
@@ -1025,14 +1016,35 @@ namespace Unity.Netcode.Components
 
         private void Initialize()
         {
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+            // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
+            //  and thus awake won't be called.
+            // TODO: investigate further on not sending data for something that is not enabled
+            m_Transform = transform;
+
+            CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
+            var replicatedState = GetReplicatedNetworkState();
+            m_LocalAuthoritativeNetworkState = replicatedState.Value;
+
             if (CanCommitToTransform)
             {
-                GetReplicatedNetworkState().SetDirty(true);
+                GetReplicatedNetworkState().OnValueChanged -= OnNetworkStateChanged;
+                TryCommitTransform(m_Transform, m_CachedNetworkManager.LocalTime.Time);
+                replicatedState.SetDirty(true);
             }
-            else if (m_Transform != null)
+            else
             {
+                replicatedState.OnValueChanged += OnNetworkStateChanged;
                 ResetInterpolatedStateToCurrentAuthoritativeState(); // useful for late joining
-                ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, NetworkManager.ServerTime.Time);
+
+                // For the non-authoritative side, we need to capture these values
+                SetTransformValues();
+
+                ApplyInterpolatedNetworkStateToTransform(replicatedState.Value, m_Transform, NetworkManager.ServerTime.Time);
             }
         }
 
@@ -1107,7 +1119,7 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
+                TryCommitTransform(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             else
             {
@@ -1123,13 +1135,13 @@ namespace Unity.Netcode.Components
                 m_LastInterpolate = Interpolate;
 
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
-                var cachedDeltaTime = Time.deltaTime;
-                var serverTime = NetworkManager.ServerTime;
-                var cachedServerTime = serverTime.Time;
-                var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
 
+                var serverTime = NetworkManager.ServerTime;
                 if (Interpolate)
                 {
+                    var cachedDeltaTime = Time.deltaTime;
+                    var cachedServerTime = serverTime.Time;
+                    var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
                     foreach (var interpolator in m_AllFloatInterpolators)
                     {
                         interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
@@ -1172,11 +1184,11 @@ namespace Unity.Netcode.Components
             stateToSend.Position = newPosition;
             stateToSend.Rotation = newRotationEuler;
             stateToSend.Scale = newScale;
-            //ApplyInterpolatedNetworkStateToTransform(stateToSend, transform, m_CachedNetworkManager.ServerTime.Time);
+            ApplyInterpolatedNetworkStateToTransform(stateToSend, transform, m_CachedNetworkManager.ServerTime.Time);
             // set teleport flag in state to signal to ghosts not to interpolate
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
-            // check server side
-            TryCommitValuesToServer(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
+
+            TryCommitValues(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
