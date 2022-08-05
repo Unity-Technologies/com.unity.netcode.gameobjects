@@ -265,7 +265,7 @@ namespace Unity.Netcode.EditorTests
                 using (reader)
                 {
                     m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, 0);
-                    LogAssert.Expect(LogType.Exception, new Regex(".*NullReferenceException.*"));
+                    LogAssert.Expect(LogType.Exception, new Regex(".*HandlerNotRegisteredException.*"));
                 }
             }
         }

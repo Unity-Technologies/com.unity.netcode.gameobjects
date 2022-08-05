@@ -367,23 +367,29 @@ namespace Unity.Netcode
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
-                // No user-land message handler exceptions should escape the receive loop.
-                // If an exception is throw, the message is ignored.
-                // Example use case: A bad message is received that can't be deserialized and throws
-                // an OverflowException because it specifies a length greater than the number of bytes in it
-                // for some dynamic-length value.
-
                 // This will also log an exception is if the server knows about a message type the client doesn't know
                 // about. In this case the handler will be null. It is still an issue the user must deal with: If the
                 // two connecting builds know about different messages, the server should not send a message to a client
                 // that doesn't know about it
-                try
+                if (handler == null)
                 {
-                    handler.Invoke(reader, ref context, this);
+                    Debug.LogException(new HandlerNotRegisteredException(header.MessageType.ToString()));
                 }
-                catch (Exception e)
+                else
                 {
-                    Debug.LogException(e);
+                    // No user-land message handler exceptions should escape the receive loop.
+                    // If an exception is throw, the message is ignored.
+                    // Example use case: A bad message is received that can't be deserialized and throws
+                    // an OverflowException because it specifies a length greater than the number of bytes in it
+                    // for some dynamic-length value.
+                    try
+                    {
+                        handler.Invoke(reader, ref context, this);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
