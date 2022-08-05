@@ -366,11 +366,18 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
 
-        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkState = new NetworkVariable<NetworkTransformState>(new NetworkTransformState());
+        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
 
         internal NetworkVariable<NetworkTransformState> GetReplicatedNetworkState()
         {
-            return m_ReplicatedNetworkState;
+            if (!IsServerAuthoritative())
+            {
+                return m_ReplicatedNetworkStateOwner;
+            }
+
+            return m_ReplicatedNetworkStateServer;
         }
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
@@ -422,7 +429,7 @@ namespace Unity.Netcode.Components
         {
             void Send(NetworkTransformState stateToSend)
             {
-                if (m_CachedIsServer)
+                if (CanCommitToTransform)
                 {
                     // server RPC takes a few frames to execute server side, we want this to execute immediately
                     CommitLocallyAndReplicate(stateToSend);
@@ -466,7 +473,7 @@ namespace Unity.Netcode.Components
 
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
-            m_ReplicatedNetworkState.Value = networkState;
+            GetReplicatedNetworkState().Value = networkState;
 
             if (Interpolate)
             {
@@ -974,19 +981,21 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
+
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
             // TODO: investigate further on not sending data for something that is not enabled
             m_Transform = transform;
-            m_ReplicatedNetworkState.OnValueChanged += OnNetworkStateChanged;
+            GetReplicatedNetworkState().OnValueChanged += OnNetworkStateChanged;
 
-            CanCommitToTransform = IsServer;
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
-            m_LocalAuthoritativeNetworkState = m_ReplicatedNetworkState.Value;
+            m_LocalAuthoritativeNetworkState = GetReplicatedNetworkState().Value;
             if (CanCommitToTransform)
             {
+                m_LastSentState = GetReplicatedNetworkState().Value;
                 TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             else
@@ -1003,7 +1012,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
-            m_ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            GetReplicatedNetworkState().OnValueChanged -= OnNetworkStateChanged;
         }
 
         /// <inheritdoc/>
@@ -1024,11 +1033,11 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                m_ReplicatedNetworkState.SetDirty(true);
+                GetReplicatedNetworkState().SetDirty(true);
             }
             else if (m_Transform != null)
             {
-                ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform, NetworkManager.ServerTime.Time);
+                ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, NetworkManager.ServerTime.Time);
             }
         }
 
@@ -1114,10 +1123,7 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                if (m_CachedIsServer)
-                {
-                    TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
-                }
+                TryCommitTransformToServer(m_Transform, m_CachedNetworkManager.LocalTime.Time);
             }
             else
             {
@@ -1150,7 +1156,7 @@ namespace Unity.Netcode.Components
                     ApplyTransformValues();
 
                     // Apply updated interpolated value
-                    ApplyInterpolatedNetworkStateToTransform(m_ReplicatedNetworkState.Value, m_Transform, serverTime.Time);
+                    ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, serverTime.Time);
 
                     // Always set the any new transform values to assure only the authoritative side is updating the transform
                     SetTransformValues();
