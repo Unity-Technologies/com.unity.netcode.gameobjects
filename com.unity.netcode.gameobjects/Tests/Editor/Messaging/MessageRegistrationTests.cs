@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -247,7 +248,6 @@ namespace Unity.Netcode.EditorTests
 
             // there should not be any extras
             Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
 
             // reorder the zzz one to position 3
             messagingSystem.ReorderMessage(3, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
@@ -263,8 +263,26 @@ namespace Unity.Netcode.EditorTests
 
             // there should still not be any extras
             Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
 
+            // verify we get an exception when asking for an invalid position
+            try
+            {
+                messagingSystem.ReorderMessage(-1, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
+                Assert.Fail();
+            }
+            catch(ArgumentException)
+            {
+            }
+
+            // reorder the zzz one to position 3, again, to check nothing bad happens
+            messagingSystem.ReorderMessage(3, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
+
+            // the two non-priority should not have moved
+            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
+            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(AAAEarlyLexicographicNetworkMessage));
+
+            // there should still not be any extras
+            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
         }
     }
 }
