@@ -283,6 +283,19 @@ namespace Unity.Netcode.EditorTests
 
             // there should still not be any extras
             Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
+
+            // 4242 is a random hash that should not match anything
+            messagingSystem.ReorderMessage(3, 4242);
+
+            // that should result in an extra entry
+            Assert.AreEqual(messagingSystem.MessageHandlerCount, 6);
+
+            // with a null handler
+            Assert.AreEqual(messagingSystem.MessageHandlers[3], null);
+
+            // and it should have bumped the previous messages down
+            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(zzzLateLexicographicNetworkMessage));
+            Assert.AreEqual(messagingSystem.MessageTypes[5], typeof(AAAEarlyLexicographicNetworkMessage));
         }
     }
 }

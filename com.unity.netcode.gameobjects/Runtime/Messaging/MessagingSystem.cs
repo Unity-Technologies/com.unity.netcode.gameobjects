@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -9,6 +8,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    internal class HandlerNotRegisteredException: SystemException
+    {
+        public HandlerNotRegisteredException() { }
+        public HandlerNotRegisteredException(string issue) : base(issue) { }
+    }
 
     internal class InvalidMessageStructureException : SystemException
     {
@@ -45,8 +49,9 @@ namespace Unity.Netcode
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
-        private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
-        private Type[] m_ReverseTypeMap = new Type[255];
+        // These array will grow as we need more message handlers. 4 is just a starting size.
+        private MessageHandler[] m_MessageHandlers = new MessageHandler[4];
+        private Type[] m_ReverseTypeMap = new Type[4];
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
@@ -175,6 +180,13 @@ namespace Unity.Netcode
 
         private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
+            // if we are out of space, perform amortized linear growth
+            if (m_HighMessageType == m_MessageHandlers.Length)
+            {
+                Array.Resize(ref m_MessageHandlers, 2 * m_MessageHandlers.Length);
+                Array.Resize(ref m_ReverseTypeMap, 2 * m_ReverseTypeMap.Length);
+            }
+
             m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
             m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
             m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
@@ -275,24 +287,28 @@ namespace Unity.Netcode
                 return;
             }
 
+            Debug.Log($"Unexpected hash for {desiredOrder}");
+
             // Since the message at `desiredOrder` is not the expected one,
             // insert an empty placeholder and move the messages down
-            var typesAsList = m_ReverseTypeMap.ToList();
+            var typesAsList = new List<Type>(m_ReverseTypeMap);
+
             typesAsList.Insert(desiredOrder, null);
-            m_ReverseTypeMap = typesAsList.ToArray();
-            var handlersAsList = m_MessageHandlers.ToList();
+            var handlersAsList = new List<MessageHandler>(m_MessageHandlers);
             handlersAsList.Insert(desiredOrder, null);
-            m_MessageHandlers = handlersAsList.ToArray();
 
             // we added a dummy message, bump the end up
             m_HighMessageType++;
 
+            // Here, we rely on the server telling us about all messages, in order.
+            // So, we know the handlers before desiredOrder are correct.
+            // We start at desiredOrder to not shift them when we insert.
             int position = desiredOrder;
             bool found = false;
-            while (position < m_ReverseTypeMap.Length)
+            while (position < typesAsList.Count)
             {
-                if (m_ReverseTypeMap[position] != null &&
-                    XXHash.Hash32(m_ReverseTypeMap[position].FullName) == targetHash)
+                if (typesAsList[position] != null &&
+                    XXHash.Hash32(typesAsList[position].FullName) == targetHash)
                 {
                     found = true;
                     break;
@@ -304,20 +320,18 @@ namespace Unity.Netcode
             if (found)
             {
                 // Copy the handler and type to the right index
-                m_ReverseTypeMap[desiredOrder] = m_ReverseTypeMap[position];
-                m_MessageHandlers[desiredOrder] = m_MessageHandlers[position];
 
-                // Shift back the remaining messages
-                typesAsList = m_ReverseTypeMap.ToList();
+                typesAsList[desiredOrder] = typesAsList[position];
+                handlersAsList[desiredOrder] = handlersAsList[position];
                 typesAsList.RemoveAt(position);
-                m_ReverseTypeMap = typesAsList.ToArray();
-                handlersAsList = m_MessageHandlers.ToList();
                 handlersAsList.RemoveAt(position);
-                m_MessageHandlers = handlersAsList.ToArray();
 
                 // we removed a copy after moving a message, reduce the high message index
                 m_HighMessageType--;
             }
+
+            m_ReverseTypeMap = typesAsList.ToArray();
+            m_MessageHandlers = handlersAsList.ToArray();
         }
 
         public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
@@ -353,6 +367,14 @@ namespace Unity.Netcode
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
+                // This will trigger an exception is if the server knows about a message type the client doesn't know
+                // about. In this case the handler will be null. It is still an issue the user must deal with: If the
+                // two connecting builds know about different messages, the server should not send a message to a client
+                // that doesn't know about it
+                if (handler == null)
+                {
+                    throw new HandlerNotRegisteredException("Received a NetworkMessage we don't know how to deal with. Make sure client and server have the same INetworkMessage");
+                }
                 // No user-land message handler exceptions should escape the receive loop.
                 // If an exception is throw, the message is ignored.
                 // Example use case: A bad message is received that can't be deserialized and throws
