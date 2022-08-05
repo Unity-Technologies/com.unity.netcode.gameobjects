@@ -270,7 +270,7 @@ namespace Unity.Netcode.EditorTests
                 messagingSystem.ReorderMessage(-1, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
                 Assert.Fail();
             }
-            catch(ArgumentException)
+            catch (ArgumentException)
             {
             }
 
