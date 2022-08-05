@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 
 namespace TestProject.ManualTests
 {
@@ -12,13 +13,33 @@ namespace TestProject.ManualTests
         private Vector3 m_Direction;
         private Rigidbody m_Rigidbody;
 
+        private NetworkTransform m_NetworkTransform;
+        private ClientNetworkTransform m_ClientNetworkTransform;
+
+        private bool HasAuthority()
+        {
+            if (m_NetworkTransform != null)
+            {
+                if (m_ClientNetworkTransform == null)
+                {
+                    m_ClientNetworkTransform = m_NetworkTransform as ClientNetworkTransform;
+                }
+                if (m_ClientNetworkTransform != null)
+                {
+                    return IsOwner;
+                }
+            }
+
+            return IsServer;
+        }
 
         public override void OnNetworkSpawn()
         {
             m_Rigidbody = GetComponent<Rigidbody>();
+            m_NetworkTransform = GetComponent<NetworkTransform>();
             if (NetworkObject != null && m_Rigidbody != null)
             {
-                if (NetworkObject.IsOwner)
+                if (m_NetworkTransform.NetworkObject.IsOwner)
                 {
                     ChangeDirection(true, true);
                 }
@@ -40,18 +61,18 @@ namespace TestProject.ManualTests
         public void Move(int speed)
         {
             // Server sets this locally
-            if (IsServer && IsOwner)
+            if (HasAuthority())
             {
                 m_MoveTowardsPosition = (m_Direction * speed);
             }
-            else if (!IsServer && IsOwner)
+            else if (m_ClientNetworkTransform == null && !IsServer && IsOwner)
             {
                 // Client must sent Rpc
                 MovePlayerServerRpc(m_Direction * speed * 1.05f);
-            }
-            else if (IsServer && !IsOwner)
-            {
-                m_MoveTowardsPosition = Vector3.Lerp(m_MoveTowardsPosition, Vector3.zero, 0.01f);
+                if (IsServer && !IsOwner)
+                {
+                    m_MoveTowardsPosition = Vector3.Lerp(m_MoveTowardsPosition, Vector3.zero, 0.01f);
+                }
             }
         }
 
@@ -59,7 +80,11 @@ namespace TestProject.ManualTests
         // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()
         {
-            if (IsServer && NetworkObject && NetworkObject.NetworkManager && NetworkObject.NetworkManager.IsListening)
+            if (!IsSpawned)
+            {
+                return;
+            }
+            if (HasAuthority())
             {
                 if (m_Rigidbody == null)
                 {
@@ -84,7 +109,7 @@ namespace TestProject.ManualTests
 
         private void OnCollisionStay(Collision collision)
         {
-            if (IsServer)
+            if (HasAuthority())
             {
                 if (collision.gameObject.CompareTag("Floor") || collision.gameObject.CompareTag("GenericObject"))
                 {
@@ -98,7 +123,7 @@ namespace TestProject.ManualTests
 
                 // If we are not the owner then we need to notify the client that their direction
                 // must change
-                if (!IsOwner)
+                if (m_ClientNetworkTransform == null && IsServer && !IsOwner)
                 {
                     m_MoveTowardsPosition = m_Direction * m_MoveTowardsPosition.magnitude;
                     ChangeDirectionClientRpc(m_Direction);

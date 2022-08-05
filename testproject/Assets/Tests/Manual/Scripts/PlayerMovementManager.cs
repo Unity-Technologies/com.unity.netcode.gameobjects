@@ -20,22 +20,20 @@ namespace TestProject.ManualTests
 
         private void Update()
         {
-            if (NetworkObject != null)
+            if (!IsSpawned)
             {
-                if (IsOwner && Input.GetKeyDown(KeyCode.Space))
-                {
-                    if (m_RandomMovement)
-                    {
-                        m_RandomMovement.enabled = !m_RandomMovement.enabled;
-                    }
-                }
+                return;
+            }
 
-                if (NetworkObject != null && NetworkObject.NetworkManager != null && NetworkObject.NetworkManager.IsListening)
+            if (IsOwner)
+            {
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
-                    if (m_RandomMovement.enabled)
-                    {
-                        m_RandomMovement.Move(MoveSpeed);
-                    }
+                    m_RandomMovement.enabled = !m_RandomMovement.enabled;
+                }
+                if (m_RandomMovement.enabled)
+                {
+                    m_RandomMovement.Move(MoveSpeed);
                 }
             }
         }
