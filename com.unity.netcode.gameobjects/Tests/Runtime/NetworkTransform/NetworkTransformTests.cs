@@ -250,6 +250,17 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
         }
 
+        private bool ValidateBitSetValues(NetworkTransform.NetworkTransformState serverState, NetworkTransform.NetworkTransformState clientState)
+        {
+            if (serverState.HasPositionX == clientState.HasPositionX && serverState.HasPositionY == clientState.HasPositionY && serverState.HasPositionZ == clientState.HasPositionZ &&
+                serverState.HasRotAngleX == clientState.HasRotAngleX && serverState.HasRotAngleY == clientState.HasRotAngleY && serverState.HasRotAngleZ == clientState.HasRotAngleZ &&
+                serverState.HasScaleX == clientState.HasScaleX && serverState.HasScaleY == clientState.HasScaleY && serverState.HasScaleZ == clientState.HasScaleZ)
+            {
+                return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// </summary>
         [UnityTest]
@@ -269,8 +280,8 @@ namespace Unity.Netcode.RuntimeTests
             authoritativeNetworkTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
             var serverLastSentState = authoritativeNetworkTransform.GetLastSentState();
             var clientReplicatedState = otherSideNetworkTransform.GetReplicatedNetworkState().Value;
-            yield return WaitForConditionOrTimeOut(() => clientReplicatedState.Bitset.Equals(serverLastSentState.Bitset));
-            AssertOnTimeout($"Server-side sent state Bitset {serverLastSentState.Bitset} != Client-side replicated state Bitset {clientReplicatedState.Bitset}");
+            yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
+            AssertOnTimeout($"Server-side sent Bitset state != Client-side replicated Bitset state!");
 
             yield return WaitForConditionOrTimeOut(ServerClientRotationMatches);
             AssertOnTimeout($"[Timed-Out] Server-side client rotation {m_ServerSideClientPlayer.transform.rotation.eulerAngles} != Client-side client rotation {m_ClientSideClientPlayer.transform.rotation.eulerAngles}");
