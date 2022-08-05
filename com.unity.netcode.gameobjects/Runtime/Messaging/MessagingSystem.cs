@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal class HandlerNotRegisteredException: SystemException
+    internal class HandlerNotRegisteredException : SystemException
     {
         public HandlerNotRegisteredException() { }
         public HandlerNotRegisteredException(string issue) : base(issue) { }
