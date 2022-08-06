@@ -274,7 +274,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e34656ebae784afca7d1f7f6dc18580, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Range: 5
+  Range: 3
 --- !u!114 &2744080254494315543
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -308,8 +308,8 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  PositionThreshold: 0.01
-  RotAngleThreshold: 0.01
+  PositionThreshold: 0.005
+  RotAngleThreshold: 0.005
   ScaleThreshold: 0.1
   InLocalSpace: 0
   Interpolate: 1

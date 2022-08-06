@@ -64,7 +64,7 @@ public class PlayerMovement : NetworkBehaviour
         {
             return;
         }
-        var clampedTimeDelta = Mathf.Clamp(timeDelta, m_TickFrequency * 0.5f, 2 * m_TickFrequency);
+        var clampedTimeDelta = Mathf.Clamp(timeDelta, m_TickFrequency * 0.40f, m_TickFrequency);
 
         var position = transform.position;
 
@@ -77,11 +77,15 @@ public class PlayerMovement : NetworkBehaviour
     }
 
     [ServerRpc]
-    private void MovePlayerServerRpc(float vertical, float horizontal)
+    private void MovePlayerServerRpc(MovePlayerData movePlayerData)
     {
-        MovePlayer(vertical, horizontal, (0.5f * m_TickFrequency));
+        var serverTimeDelta = (float)(NetworkManager.ServerTime.Time - movePlayerData.ServerTime);
+        //Debug.Log($"ServerTimeDelta: {serverTimeDelta} | Calculated Time Delta: {m_TickFrequency * serverTimeDelta + Time.deltaTime}");
+        MovePlayer(movePlayerData.VerticalAxis, movePlayerData.HorizontalAxis, m_TickFrequency * serverTimeDelta - Time.deltaTime);
     }
 
+
+    private MovePlayerData m_MovePlayerData = new MovePlayerData();
     private void LateUpdate()
     {
         if (IsSpawned && IsOwner)
@@ -90,11 +94,14 @@ public class PlayerMovement : NetworkBehaviour
             {
                 if (IsServer)
                 {
-                    MovePlayer(Input.GetAxis("Vertical"), Input.GetAxis("Horizontal"), Time.deltaTime);
+                    MovePlayer(Input.GetAxis("Vertical"), Input.GetAxis("Horizontal"), m_TickFrequency * 0.40f);
                 }
                 else
                 {
-                    MovePlayerServerRpc(Input.GetAxis("Vertical"), Input.GetAxis("Horizontal"));
+                    m_MovePlayerData.VerticalAxis = Input.GetAxis("Vertical");
+                    m_MovePlayerData.HorizontalAxis = Input.GetAxis("Horizontal");
+                    m_MovePlayerData.ServerTime = NetworkManager.ServerTime.Time;
+                    MovePlayerServerRpc(m_MovePlayerData);
                 }
             }
         }
@@ -116,8 +123,27 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
-    private void FixedUpdate()
+    public class MovePlayerData : INetworkSerializable
     {
-
+        public float HorizontalAxis;
+        public float VerticalAxis;
+        public double ServerTime;
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsWriter)
+            {
+                var writer = serializer.GetFastBufferWriter();
+                BytePacker.WriteValuePacked(writer, HorizontalAxis);
+                BytePacker.WriteValuePacked(writer, VerticalAxis);
+                BytePacker.WriteValuePacked(writer, ServerTime);
+            }
+            else
+            {
+                var reader = serializer.GetFastBufferReader();
+                ByteUnpacker.ReadValuePacked(reader, out HorizontalAxis);
+                ByteUnpacker.ReadValuePacked(reader, out VerticalAxis);
+                ByteUnpacker.ReadValuePacked(reader, out ServerTime);
+            }
+        }
     }
 }
