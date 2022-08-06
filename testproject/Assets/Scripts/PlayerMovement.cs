@@ -22,13 +22,22 @@ public class PlayerMovement : NetworkBehaviour
     private float m_DelayInputForTeleport;
 
     private bool m_IsTeleporting;
+    public bool IsTeleporting
+    {
+        get
+        {
+            return m_IsTeleporting;
+        }
+    }
+
+
 
     public void Telporting()
     {
         if (IsSpawned && IsServer)
         {
             m_IsTeleporting = true;
-            m_DelayInputForTeleport = Time.realtimeSinceStartup + (3 * m_TickFrequency);
+            m_DelayInputForTeleport = Time.realtimeSinceStartup + (2 * m_TickFrequency);
             m_Rigidbody.angularVelocity = Vector3.zero;
             m_Rigidbody.velocity = Vector3.zero;
             m_Rigidbody.isKinematic = true;
@@ -70,7 +79,7 @@ public class PlayerMovement : NetworkBehaviour
     [ServerRpc]
     private void MovePlayerServerRpc(float vertical, float horizontal)
     {
-        MovePlayer(vertical, horizontal, m_TickFrequency + Time.deltaTime);
+        MovePlayer(vertical, horizontal, (0.5f * m_TickFrequency));
     }
 
     private void LateUpdate()
