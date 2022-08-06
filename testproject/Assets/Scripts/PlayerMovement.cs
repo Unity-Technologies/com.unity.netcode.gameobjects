@@ -80,7 +80,6 @@ public class PlayerMovement : NetworkBehaviour
     private void MovePlayerServerRpc(MovePlayerData movePlayerData)
     {
         var serverTimeDelta = (float)(NetworkManager.ServerTime.Time - movePlayerData.ServerTime);
-        //Debug.Log($"ServerTimeDelta: {serverTimeDelta} | Calculated Time Delta: {m_TickFrequency * serverTimeDelta + Time.deltaTime}");
         MovePlayer(movePlayerData.VerticalAxis, movePlayerData.HorizontalAxis, m_TickFrequency * serverTimeDelta - Time.deltaTime);
     }
 
