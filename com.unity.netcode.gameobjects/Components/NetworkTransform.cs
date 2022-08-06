@@ -467,6 +467,7 @@ namespace Unity.Netcode.Components
             }
             else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
+                m_LastSentState.IsTeleportingNextFrame = false;
                 m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
                 Send(m_LastSentState);
                 m_HasSentLastValue = true;
@@ -548,7 +549,7 @@ namespace Unity.Netcode.Components
             // (ditto for scale components)
             if (SyncPositionX)
             {
-                if (Mathf.Abs(networkState.PositionX - position.x) > PositionThreshold)
+                if (Mathf.Abs(networkState.PositionX - position.x) > PositionThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.PositionX = position.x;
                     networkState.HasPositionX = true;
@@ -562,7 +563,7 @@ namespace Unity.Netcode.Components
 
             if (SyncPositionY)
             {
-                if (Mathf.Abs(networkState.PositionY - position.y) > PositionThreshold)
+                if (Mathf.Abs(networkState.PositionY - position.y) > PositionThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.PositionY = position.y;
                     networkState.HasPositionY = true;
@@ -576,7 +577,7 @@ namespace Unity.Netcode.Components
 
             if (SyncPositionZ)
             {
-                if (Mathf.Abs(networkState.PositionZ - position.z) > PositionThreshold)
+                if (Mathf.Abs(networkState.PositionZ - position.z) > PositionThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.PositionZ = position.z;
                     networkState.HasPositionZ = true;
@@ -590,7 +591,7 @@ namespace Unity.Netcode.Components
 
             if (SyncRotAngleX)
             {
-                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold)
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.RotAngleX = rotAngles.x;
                     networkState.HasRotAngleX = true;
@@ -604,7 +605,7 @@ namespace Unity.Netcode.Components
 
             if (SyncRotAngleY)
             {
-                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold)
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.RotAngleY = rotAngles.y;
                     networkState.HasRotAngleY = true;
@@ -618,7 +619,7 @@ namespace Unity.Netcode.Components
 
             if (SyncRotAngleZ)
             {
-                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold)
+                if (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.RotAngleZ = rotAngles.z;
                     networkState.HasRotAngleZ = true;
@@ -632,7 +633,7 @@ namespace Unity.Netcode.Components
 
             if (SyncScaleX)
             {
-                if (Mathf.Abs(networkState.ScaleX - scale.x) > ScaleThreshold)
+                if (Mathf.Abs(networkState.ScaleX - scale.x) > ScaleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.ScaleX = scale.x;
                     networkState.HasScaleX = true;
@@ -646,7 +647,7 @@ namespace Unity.Netcode.Components
 
             if (SyncScaleY)
             {
-                if (Mathf.Abs(networkState.ScaleY - scale.y) > ScaleThreshold)
+                if (Mathf.Abs(networkState.ScaleY - scale.y) > ScaleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.ScaleY = scale.y;
                     networkState.HasScaleY = true;
@@ -660,7 +661,7 @@ namespace Unity.Netcode.Components
 
             if (SyncScaleZ)
             {
-                if (Mathf.Abs(networkState.ScaleZ - scale.z) > ScaleThreshold)
+                if (Mathf.Abs(networkState.ScaleZ - scale.z) > ScaleThreshold || networkState.IsTeleportingNextFrame)
                 {
                     networkState.ScaleZ = scale.z;
                     networkState.HasScaleZ = true;
@@ -799,39 +800,85 @@ namespace Unity.Netcode.Components
         {
             var sentTime = newState.SentTime;
 
+            // When resetting for change in interpolate or teleporting,
             if (reset)
             {
+
+                // we should clear our float interpolators
+                foreach (var interpolator in m_AllFloatInterpolators)
+                {
+                    interpolator.Clear();
+                }
+
+                // we should clear our quaternion interpolator
+                m_RotationInterpolator.Clear();
+
+                // Make sure no unauthorized changes occurred
+                ApplyTransformValues();
+
+                // Then we should apply the state passed to us
                 if (newState.HasPositionX)
                 {
                     m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
+                    m_LastStatePosition.x = newState.PositionX;
                 }
 
                 if (newState.HasPositionY)
                 {
                     m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
+                    m_LastStatePosition.y = newState.PositionY;
                 }
 
                 if (newState.HasPositionZ)
                 {
                     m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
+                    m_LastStatePosition.z = newState.PositionZ;
                 }
 
-                m_RotationInterpolator.ResetTo(Quaternion.Euler(newState.Rotation), sentTime);
+                // Get our current rotation
+                var rotation = m_LastStateRotation.eulerAngles;
+
+                // Adjust it based on which axis changed
+                if (newState.HasRotAngleX)
+                {
+                    rotation.x = newState.RotAngleX;
+                }
+
+                if (newState.HasRotAngleY)
+                {
+                    rotation.y = newState.RotAngleY;
+                }
+
+                if (newState.HasRotAngleZ)
+                {
+                    rotation.z = newState.RotAngleZ;
+                }
+
+                // Apply the rotation
+                m_LastStateRotation = Quaternion.Euler(rotation);
+                m_RotationInterpolator.ResetTo(m_LastStateRotation, sentTime);
+
 
                 if (newState.HasScaleX)
                 {
                     m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
+                    m_LocalScale.x = newState.ScaleX;
                 }
 
                 if (newState.HasScaleY)
                 {
                     m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
+                    m_LocalScale.y = newState.ScaleY;
                 }
 
                 if (newState.HasScaleZ)
                 {
                     m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
+                    m_LocalScale.z = newState.ScaleZ;
                 }
+
+                // Finally, we should apply these values
+                SetTransformValues();
 
                 return;
             }
@@ -922,7 +969,7 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal));
+                AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal) || newState.IsTeleportingNextFrame);
             }
             m_LastInterpolateLocal = newState.InLocalSpace;
         }
@@ -1135,6 +1182,8 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
 
+        private bool m_CanClearTeleportState;
+
         // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         /// <inheritdoc/>
@@ -1148,22 +1197,13 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 TryCommitTransform(m_Transform, m_CachedNetworkManager.LocalTime.Time);
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
             else
             {
-                if (!Interpolate && m_LastInterpolate)
-                {
-                    // if we just stopped interpolating, let's clear the interpolators
-                    foreach (var interpolator in m_AllFloatInterpolators)
-                    {
-                        interpolator.Clear();
-                    }
-                }
-
                 m_LastInterpolate = Interpolate;
 
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
-
                 var serverTime = NetworkManager.ServerTime;
                 if (Interpolate)
                 {
@@ -1189,7 +1229,6 @@ namespace Unity.Netcode.Components
                 SetTransformValues();
             }
 
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
         /// <summary>
@@ -1206,18 +1245,24 @@ namespace Unity.Netcode.Components
                 throw new Exception("Teleport not allowed");
             }
 
-            var newRotationEuler = newRotation.eulerAngles;
-            var stateToSend = m_LocalAuthoritativeNetworkState;
-            stateToSend.IsTeleportingNextFrame = true;
-            stateToSend.Position = newPosition;
-            stateToSend.Rotation = newRotationEuler;
-            stateToSend.Scale = newScale;
-            //ApplyInterpolatedNetworkStateToTransform(stateToSend, transform, m_CachedNetworkManager.ServerTime.Time);
+            if (m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+            {
+                // Sanity check
+                return;
+            }
             // set teleport flag in state to signal to ghosts not to interpolate
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
-
-            TryCommitValues(newPosition, newRotationEuler, newScale, m_CachedNetworkManager.LocalTime.Time);
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+            if (InLocalSpace)
+            {
+                m_Transform.localPosition = newPosition;
+                m_Transform.localRotation = newRotation;
+            }
+            else
+            {
+                m_Transform.position = newPosition;
+                m_Transform.rotation = newRotation;
+            }
+            m_Transform.localScale = newScale;
         }
 
         /// <summary>
