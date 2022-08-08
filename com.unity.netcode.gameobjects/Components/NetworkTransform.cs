@@ -328,6 +328,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public float ScaleThreshold = ScaleThresholdDefault;
 
+
         /// <summary>
         /// Sets whether this transform should sync in local space or in world space.
         /// This is important to set since reparenting this transform could have issues,
@@ -336,14 +337,15 @@ namespace Unity.Netcode.Components
         /// </summary>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
-        private bool m_LastInterpolateLocal = false; // was the last frame local
 
         /// <summary>
         /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
-        /// Note: can be changed during runtime.
         /// </summary>
+        /// <remarks>
+        /// This should only be changed by the authoritative side during runtime. Non-authoritative changes
+        /// will be overridden upon the next <see cref="NetworkTransform"></see> state update.
+        /// </remarks>
         public bool Interpolate = true;
-        private bool m_LastInterpolate = true; // was the last frame interpolated
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
@@ -352,6 +354,7 @@ namespace Unity.Netcode.Components
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
         // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
+        // TODO: With recent updates 08-2022, this should be changed to a private set.
         public bool CanCommitToTransform { get; protected set; }
 
         /// <summary>
@@ -366,6 +369,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         protected NetworkManager m_CachedNetworkManager;
 
+
+        /// <summary>
+        /// We have two internal NetworkVariables.
+        /// One for server authoritative and one for "client/owner" authoritative.
+        /// </summary>
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
@@ -415,7 +423,13 @@ namespace Unity.Netcode.Components
             TryCommitTransform(transformToCommit, dirtyTime);
         }
 
-
+        /// <summary>
+        /// Authoritative side only
+        /// This will try to send/commit the current transform delta states (if any)
+        /// </summary>
+        /// <remarks>
+        /// It is not recommended to use this method in a derived class
+        /// </remarks>
         protected void TryCommitTransform(Transform transformToCommit, double dirtyTime)
         {
             if (!CanCommitToTransform)
@@ -433,7 +447,6 @@ namespace Unity.Netcode.Components
         private void TryCommitValues(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
         {
             var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
-
             TryCommit(isDirty.isDirty);
         }
 
@@ -697,13 +710,13 @@ namespace Unity.Netcode.Components
         /// <param name="serverTime">required to interpolate when axis is not updated in the state to apply</param>
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate, double serverTime)
         {
-            var interpolatedPosition = InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
+            var interpolatedPosition = networkState.InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
             // todo: we should store network state w/ quats vs. euler angles
-            var interpolatedRotAngles = InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
+            var interpolatedRotAngles = networkState.InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
             var interpolatedScale = transformToUpdate.localScale;
 
-            // InLocalSpace Read
+            // InLocalSpace Read: !! Must set the private Property !!
             InLocalSpace = networkState.InLocalSpace;
 
             // Update the position values that were changed in this state update
@@ -805,8 +818,10 @@ namespace Unity.Netcode.Components
             var sentTime = newState.SentTime;
 
             // When there is a change in interpolation or if teleporting, we reset
-            if ((newState.InLocalSpace != m_LastInterpolateLocal) || newState.IsTeleportingNextFrame)
+            if ((newState.InLocalSpace != InLocalSpace) || newState.IsTeleportingNextFrame)
             {
+                InLocalSpace = newState.InLocalSpace;
+
                 // we should clear our float interpolators
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
@@ -987,7 +1002,6 @@ namespace Unity.Netcode.Components
             {
                 AddInterpolatedState(newState);
             }
-            m_LastInterpolateLocal = newState.InLocalSpace;
         }
 
         /// <summary>
@@ -1211,8 +1225,6 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
-            m_LastInterpolate = Interpolate;
 
             if (CanCommitToTransform)
             {
