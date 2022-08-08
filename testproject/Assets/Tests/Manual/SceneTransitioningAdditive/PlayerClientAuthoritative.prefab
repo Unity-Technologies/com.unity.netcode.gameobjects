@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4079352819444256611}
-  - component: {fileID: -6757728931092222887}
+  - component: {fileID: 972770265172480408}
   - component: {fileID: -3775814466963834669}
   - component: {fileID: 4079352819444256610}
   - component: {fileID: 4079352819444256613}
@@ -18,9 +18,9 @@ GameObject:
   - component: {fileID: 4053684789567975459}
   - component: {fileID: 6442518961346739709}
   - component: {fileID: 2756533617708860847}
-  - component: {fileID: 5257990644900685376}
+  - component: {fileID: 9187250582412873179}
   m_Layer: 8
-  m_Name: Player
+  m_Name: PlayerClientAuthoritative
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -42,7 +42,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-6757728931092222887
+--- !u!114 &972770265172480408
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -51,7 +51,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 4079352819444256614}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Script: {fileID: 11500000, guid: cf01cca54b77c0241ad6d9da5ef6a709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   SyncPositionX: 1
@@ -65,7 +65,7 @@ MonoBehaviour:
   SyncScaleZ: 1
   PositionThreshold: 0.01
   RotAngleThreshold: 0.01
-  ScaleThreshold: 0.1
+  ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 1
 --- !u!114 &-3775814466963834669
@@ -200,7 +200,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   MoveSpeed: 10
---- !u!114 &5257990644900685376
+--- !u!114 &9187250582412873179
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
