@@ -206,6 +206,9 @@ namespace TestProject.ManualTests
                 }
                 else
                 {
+                    var networkObject = GetComponent<NetworkObject>();
+                    Debug.Log($"Object {networkObject.NetworkObjectId} collided at {networkObject.transform.position}");
+
                     m_ShouldDespawn = true;
                 }
             }

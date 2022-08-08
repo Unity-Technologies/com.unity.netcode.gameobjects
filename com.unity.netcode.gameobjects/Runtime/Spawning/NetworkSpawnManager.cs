@@ -559,6 +559,8 @@ namespace Unity.Netcode
             {
                 childObject.IsSceneObject = sceneObject;
             }
+
+            Debug.Log($"Object {networkObject.NetworkObjectId} was spawned at {networkObject.transform.position}");
         }
 
         internal void SendSpawnCallForObject(ulong clientId, NetworkObject networkObject)
