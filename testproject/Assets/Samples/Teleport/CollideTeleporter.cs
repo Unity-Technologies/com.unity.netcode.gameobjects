@@ -4,9 +4,13 @@ using Unity.Netcode;
 
 public class CollideTeleporter : MonoBehaviour
 {
+    [Tooltip("The destination GameObject transform. All rotation and scale will be applied, but position values can be ignored by setting the Preserve properties.")]
     public GameObject Destination;
+    [Tooltip("When checked, the x-axis position value will remain the same during teleporting.")]
     public bool Preserve_XAxis;
+    [Tooltip("When checked, the y-axis position value will remain the same during teleporting.")]
     public bool Preserve_YAxis;
+    [Tooltip("When checked, the z-axis position value will remain the same during teleporting.")]
     public bool Preserve_ZAxis;
 
     private void OnCollisionEnter(Collision collision)
@@ -48,7 +52,6 @@ public class CollideTeleporter : MonoBehaviour
             position.z = objectTransform.position.z;
         }
 
-        networkTransform.Teleport(position, networkTransform.transform.rotation, networkTransform.transform.localScale);
-        playerMover.Telporting();
+        playerMover.Telporting(position);
     }
 }

@@ -382,8 +382,6 @@ namespace Unity.Netcode.Components
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
 
-        private const int k_DebugDrawLineTime = 10;
-
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
 
@@ -427,6 +425,9 @@ namespace Unity.Netcode.Components
             }
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
             TryCommit(isDirty);
+            // Authority will reset this the same frame.
+            // (non-authority doesn't need to reset this value as it is updated by authority)
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
         }
 
         private void TryCommitValues(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
@@ -467,7 +468,7 @@ namespace Unity.Netcode.Components
             }
             else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
-                m_LastSentState.IsTeleportingNextFrame = false;
+                m_LastSentState.IsTeleportingNextFrame = false; // This is required here
                 m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
                 Send(m_LastSentState);
                 m_HasSentLastValue = true;
@@ -796,14 +797,16 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void AddInterpolatedState(NetworkTransformState newState, bool reset = false)
+        /// <summary>
+        /// Only non-authoritative instances should invoke this
+        /// </summary>
+        private void AddInterpolatedState(NetworkTransformState newState)
         {
             var sentTime = newState.SentTime;
 
-            // When resetting for change in interpolate or teleporting,
-            if (reset)
+            // When there is a change in interpolation or if teleporting, we reset
+            if ((newState.InLocalSpace != m_LastInterpolateLocal) || newState.IsTeleportingNextFrame)
             {
-
                 // we should clear our float interpolators
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
@@ -836,7 +839,7 @@ namespace Unity.Netcode.Components
                 }
 
                 // Get our current rotation
-                var rotation = m_LastStateRotation.eulerAngles;
+                var rotation = transform.rotation.eulerAngles;
 
                 // Adjust it based on which axis changed
                 if (newState.HasRotAngleX)
@@ -877,9 +880,8 @@ namespace Unity.Netcode.Components
                     m_LocalScale.z = newState.ScaleZ;
                 }
 
-                // Finally, we should apply these values
-                SetTransformValues();
-
+                // Finally, we should apply the updated values
+                ApplyTransformValues();
                 return;
             }
 
@@ -917,14 +919,25 @@ namespace Unity.Netcode.Components
                 m_PositionZInterpolator.AddMeasurement(m_LastStatePosition.z, sentTime);
             }
 
-            if (newState.HasRotAngleX || newState.HasRotAngleY || newState.HasRotAngleZ)
+            // Here we take the new state Euler angles and apply any local
+            // Euler angles to the axis that did not change prior to adding
+            // the rotation measurement.
+            var stateEuler = Quaternion.Euler(newState.Rotation).eulerAngles;
+            var currentEuler = m_LastStateRotation.eulerAngles;
+            if (!newState.HasRotAngleX)
             {
-                m_RotationInterpolator.AddMeasurement(Quaternion.Euler(newState.Rotation), sentTime);
+                stateEuler.x = currentEuler.x;
             }
-            else
+            if (!newState.HasRotAngleY)
             {
-                m_RotationInterpolator.AddMeasurement(m_LastStateRotation, sentTime);
+                stateEuler.y = currentEuler.y;
             }
+            if (!newState.HasRotAngleZ)
+            {
+                stateEuler.z = currentEuler.z;
+            }
+
+            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(stateEuler), sentTime);
 
             if (newState.HasScaleX)
             {
@@ -954,6 +967,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Only non-authoritative instances should invoke this method
+        /// </summary>
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
             if (!NetworkObject.IsSpawned)
@@ -969,7 +985,7 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                AddInterpolatedState(newState, (newState.InLocalSpace != m_LastInterpolateLocal) || newState.IsTeleportingNextFrame);
+                AddInterpolatedState(newState);
             }
             m_LastInterpolateLocal = newState.InLocalSpace;
         }
@@ -1067,8 +1083,17 @@ namespace Unity.Netcode.Components
             m_CachedNetworkManager = NetworkManager;
 
             // crucial we do this to reset the interpolators so that recycled objects when using a pool will
-            //  not have leftover interpolator state from the previous object
+            // not have leftover interpolator state from the previous object
             Initialize();
+
+            // This assures the initial spawning of the object synchronizes all connected clients
+            // with the current transform values. This should not be placed within Initialize since
+            // that can be invoked when ownership changes.
+            if (CanCommitToTransform)
+            {
+                Teleport(m_Transform.position, m_Transform.rotation, m_Transform.localScale);
+                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            }
         }
 
         /// <inheritdoc/>
@@ -1107,9 +1132,7 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                GetReplicatedNetworkState().OnValueChanged -= OnNetworkStateChanged;
-                TryCommitTransform(m_Transform, m_CachedNetworkManager.LocalTime.Time);
-                replicatedState.SetDirty(true);
+                replicatedState.OnValueChanged -= OnNetworkStateChanged;
             }
             else
             {
@@ -1138,51 +1161,46 @@ namespace Unity.Netcode.Components
         /// <exception cref="Exception"></exception>
         public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool shouldGhostsInterpolate = true)
         {
-            if (!IsOwner)
-            {
-                throw new Exception("Trying to set a state on a not owned transform");
-            }
-
-            if (m_CachedNetworkManager && !(m_CachedNetworkManager.IsConnectedClient || m_CachedNetworkManager.IsListening))
+            if (!IsSpawned)
             {
                 return;
             }
 
-            Vector3 pos = posIn == null ? transform.position : (Vector3)posIn;
-            Quaternion rot = rotIn == null ? transform.rotation : (Quaternion)rotIn;
-            Vector3 scale = scaleIn == null ? transform.localScale : (Vector3)scaleIn;
-
             if (!CanCommitToTransform)
             {
-                if (!m_CachedIsServer)
-                {
-                    SetStateServerRpc(pos, rot, scale, shouldGhostsInterpolate);
-                }
+                throw new Exception("Non-owner non-authority instance cannot set the state of the NetworkTransform!");
+            }
+
+            Vector3 pos = posIn == null ? InLocalSpace ? m_Transform.localPosition : m_Transform.position : (Vector3)posIn;
+            Quaternion rot = rotIn == null ? InLocalSpace ? m_Transform.localRotation : m_Transform.rotation : (Quaternion)rotIn;
+            Vector3 scale = scaleIn == null ? m_Transform.localScale : (Vector3)scaleIn;
+
+            SetStateInternal(pos, rot, scale, shouldGhostsInterpolate);
+        }
+
+        /// <summary>
+        /// Authoritative only method
+        /// Sets the internal state (teleporting or just set state)
+        /// </summary>
+        private void SetStateInternal(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
+        {
+            if (InLocalSpace)
+            {
+                m_Transform.localPosition = pos;
+                m_Transform.localRotation = rot;
             }
             else
             {
                 m_Transform.position = pos;
                 m_Transform.rotation = rot;
-                m_Transform.localScale = scale;
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldGhostsInterpolate;
             }
-        }
+            m_Transform.localScale = scale;
 
-        [ServerRpc]
-        private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
-        {
-            // server has received this RPC request to move change transform. give the server a chance to modify or even reject the move
-            if (OnClientRequestChange != null)
-            {
-                (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
-            }
             m_Transform.position = pos;
             m_Transform.rotation = rot;
             m_Transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
-
-        private bool m_CanClearTeleportState;
 
         // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
@@ -1194,15 +1212,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            m_LastInterpolate = Interpolate;
+
             if (CanCommitToTransform)
             {
-                TryCommitTransform(m_Transform, m_CachedNetworkManager.LocalTime.Time);
-                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
             }
             else
             {
-                m_LastInterpolate = Interpolate;
-
                 // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                 var serverTime = NetworkManager.ServerTime;
                 if (Interpolate)
@@ -1218,6 +1235,7 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
+                var replicatedState = GetReplicatedNetworkState();
                 // Always update from the last transform values before updating from the transform state to assure
                 // no non-authoritative changes are allowed
                 ApplyTransformValues();
@@ -1228,7 +1246,6 @@ namespace Unity.Netcode.Components
                 // Always set the any new transform values to assure only the authoritative side is updating the transform
                 SetTransformValues();
             }
-
         }
 
         /// <summary>
@@ -1242,27 +1259,19 @@ namespace Unity.Netcode.Components
         {
             if (!CanCommitToTransform)
             {
-                throw new Exception("Teleport not allowed");
+                throw new Exception("Teleporting on non-authoritative side is not allowed!");
             }
 
+            // Do not allow this instance to teleport while teleporting
             if (m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
-                // Sanity check
                 return;
             }
-            // set teleport flag in state to signal to ghosts not to interpolate
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = true;
-            if (InLocalSpace)
-            {
-                m_Transform.localPosition = newPosition;
-                m_Transform.localRotation = newRotation;
-            }
-            else
-            {
-                m_Transform.position = newPosition;
-                m_Transform.rotation = newRotation;
-            }
-            m_Transform.localScale = newScale;
+
+            // Teleporting now is as simple as:
+            // - Setting teleport flag
+            // - Applying the new position, rotation, and scale
+            SetStateInternal(newPosition, newRotation, newScale, true);
         }
 
         /// <summary>

@@ -198,7 +198,7 @@ namespace TestProject.ManualTests
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOwner && !m_ShouldDespawn)
+            if (IsSpawned && IsOwner && !m_ShouldDespawn)
             {
                 if (other.CompareTag("GenericObject") || other.CompareTag("Floor"))
                 {
