@@ -6,7 +6,7 @@ public class TriggerTest : StateMachineBehaviour
 {
     public static List<ulong> ClientsThatTriggered = new List<ulong>();
     public static bool IsVerboseDebug;
-    public static void Reset()
+    public static void ResetTest()
     {
         ClientsThatTriggered.Clear();
         ClientsThatResetTrigger.Clear();

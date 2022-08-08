@@ -80,6 +80,9 @@ public class TestCoordinator : NetworkBehaviour
 
         NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
 
+        MultiprocessLogger.Log("Awake - Initialize All Steps");
+        ExecuteStepInContext.InitializeAllSteps();
+
         s_ProcessId = Process.GetCurrentProcess().Id;
         MultiprocessLogger.Log($"Awake {s_ProcessId} {ConfigurationTools.GetLocalIPAddress()}");
         ReadGitHashFile();
@@ -173,6 +176,7 @@ public class TestCoordinator : NetworkBehaviour
 
     private void ReadGitHashFile()
     {
+        Rawgithash = "uninitialized";
         try
         {
             var githash_resource = Resources.Load<TextAsset>("Text/githash");
@@ -290,6 +294,7 @@ public class TestCoordinator : NetworkBehaviour
         MultiprocessLogger.Log($"OnClientConnectedCallback - Host/Server/Client {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsServer}/{NetworkManager.Singleton.IsClient}");
         MultiprocessLogger.Log($"OnClientConnectedCallback - Enabling behavior {clientId}");
         enabled = true;
+        MultiprocessLogger.Log($"OnClientConnectedCallback enabling behavior clientId: {clientId} {NetworkManager.Singleton.IsHost}/{NetworkManager.Singleton.IsClient} IsRegistering:{ExecuteStepInContext.IsRegistering}");
     }
 
     private static void OnClientDisconnectCallback(ulong clientId)
@@ -431,6 +436,7 @@ public class TestCoordinator : NetworkBehaviour
     public void TriggerActionIdClientRpc(string actionId, byte[] args, bool ignoreException, ClientRpcParams clientRpcParams = default)
     {
         MultiprocessLogger.Log($"AmIHost: {NetworkManager.Singleton.IsHost} received RPC from server, client side triggering action ID {actionId}");
+        WriteLogServerRpc($"received RPC from server, client side triggering action ID {actionId} {ExecuteStepInContext.AllActions.Count}");
         try
         {
             MultiprocessLogger.Log($"ActionId: {actionId}");
@@ -535,6 +541,12 @@ public class TestCoordinator : NetworkBehaviour
     public void WriteErrorServerRpc(string errorMessage, ServerRpcParams receiveParams = default)
     {
         MultiprocessLogger.LogError($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {errorMessage}");
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    public void WriteLogServerRpc(string logMessage, ServerRpcParams receiveParams = default)
+    {
+        MultiprocessLogger.Log($"[Netcode-Server Sender={receiveParams.Receive.SenderClientId}] {logMessage}");
     }
 }
 

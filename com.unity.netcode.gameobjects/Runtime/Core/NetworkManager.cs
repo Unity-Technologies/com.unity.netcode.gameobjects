@@ -1384,6 +1384,19 @@ namespace Unity.Netcode
             }
 
             IsConnectedClient = false;
+
+            // We need to clean up NetworkObjects before we reset the IsServer
+            // and IsClient properties. This provides consistency of these two
+            // property values for NetworkObjects that are still spawned when
+            // the shutdown cycle begins.
+            if (SpawnManager != null)
+            {
+                SpawnManager.DespawnAndDestroyNetworkObjects();
+                SpawnManager.ServerResetShudownStateForSceneObjects();
+
+                SpawnManager = null;
+            }
+
             IsServer = false;
             IsClient = false;
 
@@ -1404,14 +1417,6 @@ namespace Unity.Netcode
             if (NetworkConfig?.NetworkTransport != null)
             {
                 NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
-            }
-
-            if (SpawnManager != null)
-            {
-                SpawnManager.DespawnAndDestroyNetworkObjects();
-                SpawnManager.ServerResetShudownStateForSceneObjects();
-
-                SpawnManager = null;
             }
 
             if (DeferredMessageManager != null)
