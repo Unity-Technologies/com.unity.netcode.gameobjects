@@ -370,14 +370,17 @@ namespace Unity.Netcode.Components
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
 
-        internal NetworkVariable<NetworkTransformState> GetReplicatedNetworkState()
+        internal NetworkVariable<NetworkTransformState> ReplicatedNetworkState
         {
-            if (!IsServerAuthoritative())
+            get
             {
-                return m_ReplicatedNetworkStateOwner;
-            }
+                if (!IsServerAuthoritative())
+                {
+                    return m_ReplicatedNetworkStateOwner;
+                }
 
-            return m_ReplicatedNetworkStateServer;
+                return m_ReplicatedNetworkStateServer;
+            }
         }
 
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
@@ -484,7 +487,7 @@ namespace Unity.Netcode.Components
 
         private void CommitLocallyAndReplicate(NetworkTransformState networkState)
         {
-            GetReplicatedNetworkState().Value = networkState;
+            ReplicatedNetworkState.Value = networkState;
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
@@ -1024,7 +1027,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
-            GetReplicatedNetworkState().OnValueChanged -= OnNetworkStateChanged;
+            ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
         /// <inheritdoc/>
@@ -1052,7 +1055,7 @@ namespace Unity.Netcode.Components
             m_Transform = transform;
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
-            var replicatedState = GetReplicatedNetworkState();
+            var replicatedState = ReplicatedNetworkState;
             m_LocalAuthoritativeNetworkState = replicatedState.Value;
 
             if (CanCommitToTransform)
@@ -1180,7 +1183,7 @@ namespace Unity.Netcode.Components
                 ApplyTransformValues();
 
                 // Apply updated interpolated value
-                ApplyInterpolatedNetworkStateToTransform(GetReplicatedNetworkState().Value, m_Transform, serverTime.Time);
+                ApplyInterpolatedNetworkStateToTransform(ReplicatedNetworkState.Value, m_Transform, serverTime.Time);
 
                 // Always set the any new transform values to assure only the authoritative side is updating the transform
                 SetTransformValues();
