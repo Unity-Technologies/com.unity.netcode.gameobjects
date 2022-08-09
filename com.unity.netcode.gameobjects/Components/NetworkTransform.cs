@@ -379,12 +379,8 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Tries updating the server authoritative transform, only if allowed.
-        /// If this called server side, this will commit directly.
-        /// If no update is needed, nothing will be sent. This method should still be called every update, it'll self manage when it should and shouldn't send
+        /// Refer to <see cref="TryCommitTransform">, this is a legacy method.
         /// </summary>
-        /// <param name="transformToCommit"></param>
-        /// <param name="dirtyTime"></param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             TryCommitTransform(transformToCommit, dirtyTime);
@@ -397,11 +393,13 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// It is not recommended to use this method in a derived class
         /// </remarks>
+        /// <param name="transformToCommit">the transform to be committed</param>
+        /// <param name="dirtyTime">time it was marked dirty</param>
         protected void TryCommitTransform(Transform transformToCommit, double dirtyTime)
         {
             if (!CanCommitToTransform)
             {
-                Debug.LogError($"[{name}] is trying to commit the transform without authority!");
+                NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
@@ -672,9 +670,6 @@ namespace Unity.Netcode.Components
         /// from having too large of a delta time between the time it was last updated and the time any new update is
         /// sent.
         /// </remarks>
-        /// <param name="networkState">new state to apply</param>
-        /// <param name="transformToUpdate">transform to update</param>
-        /// <param name="serverTime">required to interpolate when axis is not updated in the state to apply</param>
         private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate, double serverTime)
         {
             var interpolatedPosition = networkState.InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
