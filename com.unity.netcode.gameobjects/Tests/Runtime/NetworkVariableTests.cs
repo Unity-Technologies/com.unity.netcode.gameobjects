@@ -14,6 +14,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public NetworkVariable<Vector3> OwnerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Owner);
         public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
+        public NetworkVariable<Vector3> OwnerReadWrite_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
     }
 
     [TestFixtureSource(nameof(TestDataSource))]
@@ -104,6 +105,42 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private bool CheckOwnerReadWriteAreEqualOnOwnerAndServer()
+        {
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompServer = testObjServer.GetComponent<NetVarPermTestComp>();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                if (testObjServer.OwnerClientId == testObjClient.OwnerClientId &&
+                    testCompServer.OwnerReadWrite_Position.Value == testCompClient.ServerWritable_Position.Value &&
+                    testCompServer.OwnerReadWrite_Position.ReadPerm == testCompClient.ServerWritable_Position.ReadPerm &&
+                    testCompServer.OwnerReadWrite_Position.WritePerm == testCompClient.ServerWritable_Position.WritePerm)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool CheckOwnerReadWriteAreNotEqualOnNonOwnerClients(NetVarPermTestComp ownerReadWriteObject)
+        {
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var testObjClient = clientNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+                var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+                if (testObjClient.OwnerClientId != ownerReadWriteObject.OwnerClientId ||
+                    ownerReadWriteObject.OwnerReadWrite_Position.Value == testCompClient.ServerWritable_Position.Value ||
+                    ownerReadWriteObject.OwnerReadWrite_Position.ReadPerm != testCompClient.ServerWritable_Position.ReadPerm ||
+                    ownerReadWriteObject.OwnerReadWrite_Position.WritePerm != testCompClient.ServerWritable_Position.WritePerm)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         [UnityTest]
         public IEnumerator ServerChangesOwnerWritableNetVar()
         {
@@ -163,6 +200,44 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForOwnerWritableAreEqualOnAll();
         }
+
+        /// <summary>
+        /// This tests the scenario where a client owner has both read and write
+        /// permissions set. The server should be the only instance that can read
+        /// the NetworkVariable.  ServerCannotChangeOwnerWritableNetVar performs
+        /// the same check to make sure the server cannot write to a client owner
+        /// NetworkVariable with owner write permissions.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ClientOwnerWithReadWriteChangesNetVar()
+        {
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjServer = m_ServerNetworkManager.SpawnManager.SpawnedObjects[m_TestObjId];
+
+            int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
+            var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
+            testObjServer.ChangeOwnership(newOwnerClientId);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+
+            yield return WaitForOwnerWritableAreEqualOnAll();
+
+            var testObjClient = m_ClientNetworkManagers[clientManagerIndex].SpawnManager.SpawnedObjects[m_TestObjId];
+            var testCompClient = testObjClient.GetComponent<NetVarPermTestComp>();
+
+            var oldValue = testCompClient.OwnerReadWrite_Position.Value;
+            var newValue = oldValue + new Vector3(Random.Range(0, 100.0f), Random.Range(0, 100.0f), Random.Range(0, 100.0f));
+
+            testCompClient.OwnerWritable_Position.Value = newValue;
+            yield return WaitForPositionsAreEqual(testCompClient.OwnerWritable_Position, newValue);
+
+            // Verify the client owner and server match
+            yield return CheckOwnerReadWriteAreEqualOnOwnerAndServer();
+
+            // Verify the non-owner clients do not have the same Value but do have the same permissions
+            yield return CheckOwnerReadWriteAreNotEqualOnNonOwnerClients(testCompClient);
+        }
+
 
         [UnityTest]
         public IEnumerator ClientCannotChangeServerWritableNetVar()
