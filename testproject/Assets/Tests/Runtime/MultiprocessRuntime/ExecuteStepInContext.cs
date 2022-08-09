@@ -11,7 +11,6 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.MultiprocessRuntimeTests;
 using Debug = UnityEngine.Debug;
-using Unity.Netcode.MultiprocessRuntimeTests;
 
 /// <summary>
 /// Allows for context based delegate execution.
@@ -85,7 +84,6 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
     internal static void InitializeAllSteps()
     {
-        MultiprocessLogger.Log("InitializeAllSteps - Start");
         // registering magically all context based steps
         IsRegistering = true;
         var registeredMethods = typeof(TestCoordinator).Assembly.GetTypes().SelectMany(t => t.GetMethods())
@@ -150,7 +148,6 @@ public class ExecuteStepInContext : CustomYieldInstruction
 
         IsRegistering = false;
         HasRegistered = true;
-        MultiprocessLogger.Log("InitializeAllSteps - Done");
     }
 
     /// <summary>
@@ -201,7 +198,6 @@ public class ExecuteStepInContext : CustomYieldInstruction
             // MultiprocessLogger.Log($"Registering: {currentActionId}");
             Assert.That(AllActions, Does.Not.Contain(currentActionId)); // sanity check
             AllActions[currentActionId] = this;
-            MultiprocessLogger.Log($"InitializeAllSteps - Registering {currentActionId}");
         }
         else
         {

@@ -199,8 +199,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             }
 
             MultiprocessLogger.Log($"DEBUG: ConnectedClient Count: {NetworkManager.Singleton.ConnectedClients.Count} WorkerCount: {GetWorkerCount()}");
-            var lastProcess = m_LaunchProcessList[m_LaunchProcessList.Count - 1];
-            MultiprocessLogger.Log($"DEBUG: Lastprocess HasExited: {lastProcess.HasExited}");
+
             var timeOutTime = Time.realtimeSinceStartup + TestCoordinator.MaxWaitTimeoutSec;
             while (NetworkManager.Singleton.ConnectedClients.Count - 1 < GetWorkerCount())
             {
@@ -209,14 +208,19 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 if (Time.realtimeSinceStartup > timeOutTime)
                 {
                     MultiprocessLogger.Log($"DEBUG: {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
-                    MultiprocessLogger.Log($"DEBUG: Lastprocess HasExited: {lastProcess.HasExited}");
-                    // Can we read the output?
-                    MultiprocessLogger.Log($"DEBUG: Reading StandardOutput");
-                    string stdout = lastProcess.StandardOutput.ReadToEnd();
-                    MultiprocessLogger.Log($"DEBUG: Reading StandardOutput {stdout}");
-                    MultiprocessLogger.Log($"DEBUG: Reading StandardError");
-                    string stderr = lastProcess.StandardError.ReadToEnd();
-                    MultiprocessLogger.Log($"DEBUG: Reading StandardError {stderr}");
+                    if (m_LaunchProcessList.Count > 0)
+                    {
+                        var lastProcess = m_LaunchProcessList[m_LaunchProcessList.Count - 1];
+                        MultiprocessLogger.Log($"DEBUG: Lastprocess HasExited: {lastProcess.HasExited}");
+
+                        // Can we read the output?
+                        MultiprocessLogger.Log($"DEBUG: Reading StandardOutput");
+                        string stdout = lastProcess.StandardOutput.ReadToEnd();
+                        MultiprocessLogger.Log($"DEBUG: Reading StandardOutput {stdout}");
+                        MultiprocessLogger.Log($"DEBUG: Reading StandardError");
+                        string stderr = lastProcess.StandardError.ReadToEnd();
+                        MultiprocessLogger.Log($"DEBUG: Reading StandardError {stderr}");
+                    }
                     //TODO: If we have failed to start one or more processes we should do a retry at this point before giving up
                     throw new Exception($" {DateTime.Now:T} Waiting too long to see clients to connect, got {NetworkManager.Singleton.ConnectedClients.Count - 1} clients, but was expecting {GetWorkerCount()}, failing");
                 }
