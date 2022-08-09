@@ -182,39 +182,6 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
 
-            internal Vector3 Position
-            {
-                get { return new Vector3(PositionX, PositionY, PositionZ); }
-                set
-                {
-                    PositionX = value.x;
-                    PositionY = value.y;
-                    PositionZ = value.z;
-                }
-            }
-
-            internal Vector3 Rotation
-            {
-                get { return new Vector3(RotAngleX, RotAngleY, RotAngleZ); }
-                set
-                {
-                    RotAngleX = value.x;
-                    RotAngleY = value.y;
-                    RotAngleZ = value.z;
-                }
-            }
-
-            internal Vector3 Scale
-            {
-                get { return new Vector3(ScaleX, ScaleY, ScaleZ); }
-                set
-                {
-                    ScaleX = value.x;
-                    ScaleY = value.y;
-                    ScaleZ = value.z;
-                }
-            }
-
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref SentTime);
@@ -509,7 +476,7 @@ namespace Unity.Netcode.Components
             m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
             m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.Rotation), serverTime);
+            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.RotAngleX, m_LocalAuthoritativeNetworkState.RotAngleY, m_LocalAuthoritativeNetworkState.RotAngleZ), serverTime);
 
             m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
             m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
@@ -722,17 +689,17 @@ namespace Unity.Netcode.Components
             // Update the position values that were changed in this state update
             if (networkState.HasPositionX)
             {
-                interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.x : m_PositionXInterpolator.GetInterpolatedValue();
+                interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasPositionY)
             {
-                interpolatedPosition.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.y : m_PositionYInterpolator.GetInterpolatedValue();
+                interpolatedPosition.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasPositionZ)
             {
-                interpolatedPosition.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Position.z : m_PositionZInterpolator.GetInterpolatedValue();
+                interpolatedPosition.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
             }
 
             // Update the rotation values that were changed in this state update
@@ -746,34 +713,34 @@ namespace Unity.Netcode.Components
 
                 if (networkState.HasRotAngleX)
                 {
-                    interpolatedRotAngles.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.x : eulerAngles.x;
+                    interpolatedRotAngles.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
                 }
 
                 if (networkState.HasRotAngleY)
                 {
-                    interpolatedRotAngles.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.y : eulerAngles.y;
+                    interpolatedRotAngles.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleY : eulerAngles.y;
                 }
 
                 if (networkState.HasRotAngleZ)
                 {
-                    interpolatedRotAngles.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Rotation.z : eulerAngles.z;
+                    interpolatedRotAngles.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
                 }
             }
 
             // Update all scale axis that were changed in this state update
             if (networkState.HasScaleX)
             {
-                interpolatedScale.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.x : m_ScaleXInterpolator.GetInterpolatedValue();
+                interpolatedScale.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasScaleY)
             {
-                interpolatedScale.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.y : m_ScaleYInterpolator.GetInterpolatedValue();
+                interpolatedScale.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasScaleZ)
             {
-                interpolatedScale.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.Scale.z : m_ScaleZInterpolator.GetInterpolatedValue();
+                interpolatedScale.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
             }
 
             // Apply the new position
@@ -937,7 +904,7 @@ namespace Unity.Netcode.Components
             // Here we take the new state Euler angles and apply any local
             // Euler angles to the axis that did not change prior to adding
             // the rotation measurement.
-            var stateEuler = Quaternion.Euler(newState.Rotation).eulerAngles;
+            var stateEuler = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ).eulerAngles;
             var currentEuler = m_LastStateRotation.eulerAngles;
             if (!newState.HasRotAngleX)
             {
@@ -1247,7 +1214,6 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
-                var replicatedState = GetReplicatedNetworkState();
                 // Always update from the last transform values before updating from the transform state to assure
                 // no non-authoritative changes are allowed
                 ApplyTransformValues();
