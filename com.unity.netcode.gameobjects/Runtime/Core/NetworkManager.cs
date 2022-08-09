@@ -2065,6 +2065,20 @@ namespace Unity.Netcode
 
                     SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
 
+                    for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
+                    {
+                        if (MessagingSystem.MessageTypes[index] != null)
+                        {
+                            var orderingMessage = new OrderingMessage
+                            {
+                                Order = index,
+                                Hash = XXHash.Hash32(MessagingSystem.MessageTypes[index].FullName)
+                            };
+
+                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                        }
+                    }
+
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
                     {
