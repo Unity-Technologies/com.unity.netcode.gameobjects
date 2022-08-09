@@ -683,7 +683,7 @@ namespace Unity.Netcode.Components
             var interpolatedRotAngles = networkState.InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
             var interpolatedScale = transformToUpdate.localScale;
 
-            // InLocalSpace Read: !! Must set the private Property !!
+            // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
 
             // Update the position values that were changed in this state update
