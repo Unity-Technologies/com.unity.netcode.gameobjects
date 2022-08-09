@@ -1221,27 +1221,18 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// This handles cleaning up any NetworkBehaviour attached
-        /// to a GameObject that is a child or any child generation of
-        /// the GameObject this NetworkObject component is attached to.
-        /// Note:
-        /// This will despawn the NetworkBehaviour and remove it
-        /// from the ChildNetworkBehaviours list only if:
-        /// 1.) The NetworkObject is still spawned
-        /// 2.) The NetworkBehaviour.IsSpawned property is still true
-        /// (i.e. it hasn't been despawned yet)
+        /// Removes a NetworkBehaviour from the ChildNetworkBehaviours list when destroyed
+        /// while the NetworkObject is still spawned.
         /// </summary>
         internal void OnNetworkBehaviourDestroyed(NetworkBehaviour networkBehaviour)
         {
             if (networkBehaviour.IsSpawned && IsSpawned)
             {
-                if (ChildNetworkBehaviours.Contains(networkBehaviour))
+                if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    // Assure the NetworkBehaviour runs through the despawn process
-                    // before removing it from the list.
-                    networkBehaviour.InternalOnNetworkDespawn();
-                    ChildNetworkBehaviours.Remove(networkBehaviour);
+                    NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
+                ChildNetworkBehaviours.Remove(networkBehaviour);
             }
         }
     }

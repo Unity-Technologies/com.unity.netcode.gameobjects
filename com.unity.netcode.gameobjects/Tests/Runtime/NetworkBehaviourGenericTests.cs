@@ -131,10 +131,7 @@ namespace Unity.Netcode.RuntimeTests
             var childObject = new GameObject();
             childObject.transform.parent = parentObject.transform;
             var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
-            var childNetworkBehaviour = childObject.AddComponent<SimpleNetworkBehaviour>();
-
-            // set the log level to developer
-            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
+            childObject.AddComponent<SimpleNetworkBehaviour>();
 
             parentNetworkObject.Spawn();
             yield return s_DefaultWaitForTick;
@@ -143,7 +140,6 @@ namespace Unity.Netcode.RuntimeTests
             Object.Destroy(childObject);
 
             yield return s_DefaultWaitForTick;
-            Assert.IsTrue(childNetworkBehaviour.OnNetworkDespawnCalled, "Failed to invoke OnNetworkDespawn on child NetworkBehaviour!");
 
             // Assure no log messages are logged when they should not be logged
             LogAssert.NoUnexpectedReceived();

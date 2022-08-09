@@ -762,15 +762,10 @@ namespace Unity.Netcode
         {
             if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
             {
-                // Only under the condition that our assigned NetworkObject
-                // does not share the same GameObject, then we want to notify
-                // the still spawned NetworkObject that this NetworkBehaviour
-                // is being destroyed so the NetworkObject can remove it from the
+                // If the associated NetworkObject is still spawned then this
+                // NetworkBehaviour will be removed from the NetworkObject's
                 // ChildNetworkBehaviours list.
-                if (NetworkObject.gameObject != gameObject)
-                {
-                    NetworkObject.OnNetworkBehaviourDestroyed(this);
-                }
+                NetworkObject.OnNetworkBehaviourDestroyed(this);
             }
 
             // this seems odd to do here, but in fact especially in tests we can find ourselves
