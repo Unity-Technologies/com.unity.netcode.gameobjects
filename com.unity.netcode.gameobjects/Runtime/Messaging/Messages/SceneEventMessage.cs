@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Unity.Netcode
 {
     // Todo: Would be lovely to get this one nicely formatted with all the data it sends in the struct
@@ -12,13 +10,11 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
-            Debug.Log("Serializing SceneEventMessage");
             EventData.Serialize(writer);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
-            Debug.Log("Deserializing SceneEventMessage");
             m_ReceivedData = reader;
             return true;
         }

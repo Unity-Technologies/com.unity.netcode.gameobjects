@@ -505,11 +505,8 @@ namespace Unity.Netcode
 
             networkObject.IsPlayerObject = playerObject;
 
-            Debug.Log($"Spawned NetworkObjectId {networkObject.NetworkObjectId} locally");
             SpawnedObjects.Add(networkObject.NetworkObjectId, networkObject);
             SpawnedObjectsList.Add(networkObject);
-
-            Debug.Log($"SpawnedObjects is now {SpawnedObjects.Count}-sized. NetworkManager is {networkObject.NetworkManager.logId}");
 
             if (NetworkManager.IsServer)
             {

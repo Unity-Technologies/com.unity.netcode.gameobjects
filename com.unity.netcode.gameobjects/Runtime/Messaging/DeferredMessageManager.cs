@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 using Time = UnityEngine.Time;
 
 namespace Unity.Netcode
@@ -40,7 +39,6 @@ namespace Unity.Netcode
         /// </summary>
         public virtual unsafe void DeferMessage(IDeferredMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
         {
-            Debug.Log($"NetworkManager is {m_NetworkManager.logId}");
             if (!m_Triggers.TryGetValue(trigger, out var triggers))
             {
                 triggers = new Dictionary<ulong, TriggerInfo>();

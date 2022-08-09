@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -234,9 +233,6 @@ namespace Unity.Netcode
             }
             else
             {
-                Debug.Log($"deferring message, I was looking for NetworkId {NetworkObjectId}");
-                Debug.Log($"networkManager.SpawnManager.SpawnedObjects is {networkManager.SpawnManager.SpawnedObjects.Count}-sized");
-                Debug.Log($"networkManager is {networkManager.logId}");
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
             }
         }
