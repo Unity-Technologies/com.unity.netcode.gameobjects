@@ -1176,10 +1176,6 @@ namespace Unity.Netcode.Components
                 m_Transform.rotation = rot;
             }
             m_Transform.localScale = scale;
-
-            m_Transform.position = pos;
-            m_Transform.rotation = rot;
-            m_Transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
         }
 
