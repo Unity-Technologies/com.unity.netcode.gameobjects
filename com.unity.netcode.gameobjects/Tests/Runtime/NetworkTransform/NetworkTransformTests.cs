@@ -279,7 +279,7 @@ namespace Unity.Netcode.RuntimeTests
 
             authoritativeNetworkTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
             var serverLastSentState = authoritativeNetworkTransform.GetLastSentState();
-            var clientReplicatedState = otherSideNetworkTransform.GetReplicatedNetworkState().Value;
+            var clientReplicatedState = otherSideNetworkTransform.ReplicatedNetworkState.Value;
             yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
             AssertOnTimeout($"Server-side sent Bitset state != Client-side replicated Bitset state!");
 
