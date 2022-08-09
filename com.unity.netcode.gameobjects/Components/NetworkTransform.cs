@@ -832,36 +832,19 @@ namespace Unity.Netcode.Components
 
             var currentPosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
 
-            // Note: Any values we don't have an update for need their interpolator deltas reset.
-            // Bandwidth optimizations mean that an update without the value set indicates "this hasn't changed",
-            // and so we need to tell the interpolators that it's the last currently known axis value(s) at this
-            // time delta.
-
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
-            }
-            else
-            {
-                m_PositionXInterpolator.AddMeasurement(m_LastStatePosition.x, sentTime);
             }
 
             if (newState.HasPositionY)
             {
                 m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
             }
-            else
-            {
-                m_PositionYInterpolator.AddMeasurement(m_LastStatePosition.y, sentTime);
-            }
 
             if (newState.HasPositionZ)
             {
                 m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
-            }
-            else
-            {
-                m_PositionZInterpolator.AddMeasurement(m_LastStatePosition.z, sentTime);
             }
 
             // Here we take the new state Euler angles and apply any local
@@ -888,27 +871,15 @@ namespace Unity.Netcode.Components
             {
                 m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
             }
-            else
-            {
-                m_ScaleXInterpolator.AddMeasurement(m_LocalScale.x, sentTime);
-            }
 
             if (newState.HasScaleY)
             {
                 m_ScaleYInterpolator.AddMeasurement(newState.ScaleY, sentTime);
             }
-            else
-            {
-                m_ScaleYInterpolator.AddMeasurement(m_LocalScale.y, sentTime);
-            }
 
             if (newState.HasScaleZ)
             {
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
-            }
-            else
-            {
-                m_ScaleZInterpolator.AddMeasurement(m_LocalScale.z, sentTime);
             }
         }
 
