@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -25,7 +24,6 @@ namespace Unity.Netcode
             {
                 throw new OverflowException($"Not enough space in the buffer to write {nameof(OrderingMessage)}");
             }
-            Debug.Log("Serializing OrderingMessage");
 
             writer.WriteValue(Order);
             writer.WriteValue(Hash);
@@ -37,7 +35,6 @@ namespace Unity.Netcode
             {
                 throw new OverflowException($"Not enough data in the buffer to read {nameof(OrderingMessage)}");
             }
-            Debug.Log("Deserializing OrderingMessage");
 
             reader.ReadValue(out Order);
             reader.ReadValue(out Hash);

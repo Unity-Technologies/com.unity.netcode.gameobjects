@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    internal class HandlerNotRegisteredException: SystemException
+    internal class HandlerNotRegisteredException : SystemException
     {
         public HandlerNotRegisteredException() { }
         public HandlerNotRegisteredException(string issue) : base(issue) { }
@@ -289,9 +289,10 @@ namespace Unity.Netcode
 
             Debug.Log($"Unexpected hash for {desiredOrder}");
 
-            // Insert placeholder
-
+            // Since the message at `desiredOrder` is not the expected one,
+            // insert an empty placeholder and move the messages down
             var typesAsList = new List<Type>(m_ReverseTypeMap);
+
             typesAsList.Insert(desiredOrder, null);
             var handlersAsList = new List<MessageHandler>(m_MessageHandlers);
             handlersAsList.Insert(desiredOrder, null);
@@ -309,7 +310,6 @@ namespace Unity.Netcode
                 if (typesAsList[position] != null &&
                     XXHash.Hash32(typesAsList[position].FullName) == targetHash)
                 {
-                    Debug.Log($"Found {desiredOrder} at position {position}");
                     found = true;
                     break;
                 }
@@ -319,11 +319,10 @@ namespace Unity.Netcode
 
             if (found)
             {
-                // copy original and remove it
+                // Copy the handler and type to the right index
 
                 typesAsList[desiredOrder] = typesAsList[position];
                 handlersAsList[desiredOrder] = handlersAsList[position];
-
                 typesAsList.RemoveAt(position);
                 handlersAsList.RemoveAt(position);
 
@@ -368,26 +367,29 @@ namespace Unity.Netcode
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
-                // This will trigger an exception is if the server knows about a message type the client doesn't know
+                // This will also log an exception is if the server knows about a message type the client doesn't know
                 // about. In this case the handler will be null. It is still an issue the user must deal with: If the
                 // two connecting builds know about different messages, the server should not send a message to a client
                 // that doesn't know about it
                 if (handler == null)
                 {
-                    throw new HandlerNotRegisteredException("Received a NetworkMessage we don't know how to deal with. Make sure client and server have the same INetworkMessage");
+                    Debug.LogException(new HandlerNotRegisteredException(header.MessageType.ToString()));
                 }
-                // No user-land message handler exceptions should escape the receive loop.
-                // If an exception is throw, the message is ignored.
-                // Example use case: A bad message is received that can't be deserialized and throws
-                // an OverflowException because it specifies a length greater than the number of bytes in it
-                // for some dynamic-length value.
-                try
+                else
                 {
-                    handler.Invoke(reader, ref context, this);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
+                    // No user-land message handler exceptions should escape the receive loop.
+                    // If an exception is throw, the message is ignored.
+                    // Example use case: A bad message is received that can't be deserialized and throws
+                    // an OverflowException because it specifies a length greater than the number of bytes in it
+                    // for some dynamic-length value.
+                    try
+                    {
+                        handler.Invoke(reader, ref context, this);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)

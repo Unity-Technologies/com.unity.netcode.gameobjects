@@ -17,7 +17,7 @@ namespace Tests.Manual.NetworkAnimatorTests
         // Update is called once per frame
         private void LateUpdate()
         {
-            if (!IsSpawned || !IsOwner && !IsServer)
+            if (!IsSpawned || !IsOwner)
             {
                 return;
             }

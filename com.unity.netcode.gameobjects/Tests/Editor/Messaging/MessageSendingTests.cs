@@ -1,8 +1,11 @@
-using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEngine;
+using UnityEngine.TestTools;
+using Random = System.Random;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -241,7 +244,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenReceivingAMessageWithoutAHandler_ExceptionIsThrown()
+        public void WhenReceivingAMessageWithoutAHandler_ExceptionIsLogged()
         {
             m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
 
@@ -261,16 +264,8 @@ namespace Unity.Netcode.EditorTests
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    try
-                    {
-                        m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, 0);
-                    }
-                    catch (HandlerNotRegisteredException)
-                    {
-                        return;
-                    }
-
-                    Assert.Fail();
+                    m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, 0);
+                    LogAssert.Expect(LogType.Exception, new Regex(".*HandlerNotRegisteredException.*"));
                 }
             }
         }

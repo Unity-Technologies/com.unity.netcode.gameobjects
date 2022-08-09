@@ -287,7 +287,7 @@ GameObject:
   - component: {fileID: 3078684837582866037}
   - component: {fileID: 3078684837575715027}
   - component: {fileID: 5295167409644547614}
-  - component: {fileID: 1923420540885290134}
+  - component: {fileID: 3632991713004262889}
   m_Layer: 0
   m_Name: NetworkAnimatedCube-Owner
   m_TagString: Untagged
@@ -344,7 +344,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TestIterations: 20
---- !u!114 &1923420540885290134
+--- !u!114 &3632991713004262889
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -353,11 +353,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 3078684837583100501}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
+  m_Script: {fileID: 11500000, guid: f6a3556fb5f3bee4e8a0fb88acff87ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Animator: {fileID: 3078684837575715027}
-  m_IsServerAuthoritative: 0
 --- !u!1 &3214090169133903718
 GameObject:
   m_ObjectHideFlags: 0
@@ -649,7 +648,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Animator: {fileID: 6047057957339659638}
-  m_IsServerAuthoritative: 1
 --- !u!1 &4033769488171516769
 GameObject:
   m_ObjectHideFlags: 0

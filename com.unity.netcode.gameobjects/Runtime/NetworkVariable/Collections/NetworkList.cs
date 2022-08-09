@@ -196,8 +196,16 @@ namespace Unity.Netcode
                         {
                             reader.ReadValueSafe(out int index);
                             NetworkVariableSerialization<T>.Read(reader, out T value);
-                            m_List.InsertRangeWithBeginEnd(index, index + 1);
-                            m_List[index] = value;
+
+                            if (index < m_List.Length)
+                            {
+                                m_List.InsertRangeWithBeginEnd(index, index + 1);
+                                m_List[index] = value;
+                            }
+                            else
+                            {
+                                m_List.Add(value);
+                            }
 
                             if (OnListChanged != null)
                             {
@@ -419,8 +427,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            m_List.InsertRangeWithBeginEnd(index, index + 1);
-            m_List[index] = item;
+            if (index < m_List.Length)
+            {
+                m_List.InsertRangeWithBeginEnd(index, index + 1);
+                m_List[index] = item;
+            }
+            else
+            {
+                m_List.Add(item);
+            }
 
             var listEvent = new NetworkListEvent<T>()
             {
