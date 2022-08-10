@@ -13,7 +13,15 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class NetworkTransformTestComponent : NetworkTransform
     {
+
+        public bool ServerAuthority;
         public bool ReadyToReceivePositionUpdate = false;
+
+
+        protected override bool OnIsServerAuthoritative()
+        {
+            return ServerAuthority;
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -28,152 +36,156 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    // [TestFixture(true, true)]
-    [TestFixture(true, false)]
-    // [TestFixture(false, true)]
-    [TestFixture(false, false)]
+    [TestFixture(HostOrServer.Host, Authority.Server)]
+    [TestFixture(HostOrServer.Host, Authority.Owner)]
+    [TestFixture(HostOrServer.Server, Authority.Server)]
+    [TestFixture(HostOrServer.Server, Authority.Owner)]
+
     public class NetworkTransformTests : NetcodeIntegrationTest
     {
         private NetworkObject m_ClientSideClientPlayer;
         private NetworkObject m_ServerSideClientPlayer;
 
-        private readonly bool m_TestWithClientNetworkTransform;
+        private NetworkObject m_AuthoritativePlayer;
+        private NetworkObject m_NonAuthoritativePlayer;
 
-        public NetworkTransformTests(bool testWithHost, bool testWithClientNetworkTransform)
+        private NetworkTransformTestComponent m_AuthoritativeTransform;
+        private NetworkTransformTestComponent m_NonAuthoritativeTransform;
+
+        private readonly Authority m_Authority;
+
+        public enum Authority
         {
-            m_UseHost = testWithHost; // from test fixture
-            m_TestWithClientNetworkTransform = testWithClientNetworkTransform;
+            Server,
+            Owner
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="testWithHost">Value is set by TestFixture</param>
+        /// <param name="testWithClientNetworkTransform">Value is set by TestFixture</param>
+        public NetworkTransformTests(HostOrServer testWithHost, Authority authority)
+        {
+            m_UseHost = testWithHost == HostOrServer.Host ? true : false;
+            m_Authority = authority;
         }
 
         protected override int NumberOfClients => 1;
 
         protected override void OnCreatePlayerPrefab()
         {
-            if (m_TestWithClientNetworkTransform)
-            {
-                // m_PlayerPrefab.AddComponent<ClientNetworkTransform>();
-            }
-            else
-            {
-                var networkTransform = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
-                networkTransform.Interpolate = true;
-            }
+            var networkTransformTestComponent = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
+            networkTransformTestComponent.ServerAuthority = m_Authority == Authority.Server;
         }
 
         protected override void OnServerAndClientsCreated()
         {
-#if NGO_TRANSFORM_DEBUG
-            // Log assert for writing without authority is a developer log...
-            // TODO: This is why monolithic test base classes and test helpers are an anti-pattern - this is part of an individual test case setup but is separated from the code verifying it!
-            m_ServerNetworkManager.LogLevel = LogLevel.Developer;
-            m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
-#endif
+            if (m_EnableVerboseDebug)
+            {
+                m_ServerNetworkManager.LogLevel = LogLevel.Developer;
+                foreach (var clientNetworkManager in m_ClientNetworkManagers)
+                {
+                    clientNetworkManager.LogLevel = LogLevel.Developer;
+                }
+            }
         }
 
         protected override IEnumerator OnServerAndClientsConnected()
         {
             // Get the client player representation on both the server and the client side
-            m_ServerSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
-            m_ClientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            var serverSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
+            var clientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+
+            m_AuthoritativePlayer = m_Authority == Authority.Server ? serverSideClientPlayer : clientSideClientPlayer;
+            m_NonAuthoritativePlayer = m_Authority == Authority.Server ? clientSideClientPlayer : serverSideClientPlayer;
 
             // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
-            var otherSideNetworkTransformComponent = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
+            m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
+            m_NonAuthoritativeTransform = m_NonAuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            yield return WaitForConditionOrTimeOut(() => otherSideNetworkTransformComponent.ReadyToReceivePositionUpdate == true);
+            yield return WaitForConditionOrTimeOut(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate == true);
+            AssertOnTimeout("Timed out waiting for client-side to notify it is ready!");
 
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side to notify it is ready!");
+            Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
+            Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
+
 
             yield return base.OnServerAndClientsConnected();
         }
 
-        // TODO: rewrite after perms & authority changes
-        [UnityTest]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] bool testLocalTransform)
+        public enum TransformSpace
         {
-            // Get the client player's NetworkTransform for both instances
-            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            World,
+            Local
+        }
 
-            Assert.That(!otherSideNetworkTransform.CanCommitToTransform);
-            Assert.That(authoritativeNetworkTransform.CanCommitToTransform);
-
-            if (authoritativeNetworkTransform.CanCommitToTransform)
-            {
-                authoritativeNetworkTransform.InLocalSpace = testLocalTransform;
-            }
-
-            if (otherSideNetworkTransform.CanCommitToTransform)
-            {
-                otherSideNetworkTransform.InLocalSpace = testLocalTransform;
-            }
-
-            float approximation = 0.05f;
+        /// <summary>
+        /// Tests that the authoritative transform's changes are applied
+        /// to non-authoritative transforms.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform)
+        {
+            m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
 
             // test position
-            var authPlayerTransform = authoritativeNetworkTransform.transform;
+            var authPlayerTransform = m_AuthoritativeTransform.transform;
 
-            Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "server side pos should be zero at first"); // sanity check
+            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
             authPlayerTransform.position = new Vector3(10, 20, 30);
 
-            yield return WaitForConditionOrTimeOut(ServerClientPositionMatches);
-
-            AssertOnTimeout($"timeout while waiting for position change! Otherside value {otherSideNetworkTransform.transform.position.x} vs. Approximation {approximation}");
-
-            //Assert.True(new Vector3(10, 20, 30) == otherSideNetworkTransform.transform.position, $"wrong position on ghost, {otherSideNetworkTransform.transform.position}"); // Vector3 already does float approximation with ==
+            yield return WaitForConditionOrTimeOut(PositionsMatch);
+            AssertOnTimeout($"Timed out waiting for positions to match");
 
             // test rotation
             authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
-            Assert.AreEqual(Quaternion.identity, otherSideNetworkTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
+            Assert.AreEqual(Quaternion.identity, m_NonAuthoritativeTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
 
-            yield return WaitForConditionOrTimeOut(ServerClientRotationMatches);
+            yield return WaitForConditionOrTimeOut(RotationsMatch);
+            AssertOnTimeout($"Timed out waiting for rotations to match");
 
-            AssertOnTimeout("timeout while waiting for rotation change");
-
-            //// approximation needed here since eulerAngles isn't super precise.
-            //Assert.LessOrEqual(Math.Abs(45 - otherSideNetworkTransform.transform.rotation.eulerAngles.x), approximation, $"wrong rotation on ghost on x, got {otherSideNetworkTransform.transform.rotation.eulerAngles.x}");
-            //Assert.LessOrEqual(Math.Abs(40 - otherSideNetworkTransform.transform.rotation.eulerAngles.y), approximation, $"wrong rotation on ghost on y, got {otherSideNetworkTransform.transform.rotation.eulerAngles.y}");
-            //Assert.LessOrEqual(Math.Abs(35 - otherSideNetworkTransform.transform.rotation.eulerAngles.z), approximation, $"wrong rotation on ghost on z, got {otherSideNetworkTransform.transform.rotation.eulerAngles.z}");
-
-            // test scale
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.x, "wrong initial value for scale"); // sanity check
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.y, "wrong initial value for scale"); // sanity check
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(1f, otherSideNetworkTransform.transform.lossyScale.z, "wrong initial value for scale"); // sanity check
             authPlayerTransform.localScale = new Vector3(2, 3, 4);
 
-            yield return WaitForConditionOrTimeOut(ServerClientScaleMatches);
-
-            AssertOnTimeout("timeout while waiting for scale change");
-
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(2f, otherSideNetworkTransform.transform.lossyScale.x, "wrong scale on ghost");
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(3f, otherSideNetworkTransform.transform.lossyScale.y, "wrong scale on ghost");
-            //UnityEngine.Assertions.Assert.AreApproximatelyEqual(4f, otherSideNetworkTransform.transform.lossyScale.z, "wrong scale on ghost");
-
-            // todo reparent and test
-            // todo test all public API
+            yield return WaitForConditionOrTimeOut(ScaleValuesMatch);
+            AssertOnTimeout($"Timed out waiting for scale values to match");
         }
 
+        /// <summary>
+        /// Test to verify nonAuthority cannot change the transform
+        /// </summary>
+        /// <param name="testClientAuthority"></param>
+        /// <returns></returns>
         [UnityTest]
-        public IEnumerator TestCantChangeTransformFromOtherSideAuthority([Values] bool testClientAuthority)
+        public IEnumerator VerifyNonAuthorityCantChangeTransform()
         {
-            // Get the client player's NetworkTransform for both instances
-            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransform>();
-            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransform>();
+            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "other side pos should be zero at first"); // sanity check
 
-            Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "other side pos should be zero at first"); // sanity check
-
-            otherSideNetworkTransform.transform.position = new Vector3(4, 5, 6);
+            m_NonAuthoritativeTransform.transform.position = new Vector3(4, 5, 6);
 
             yield return s_DefaultWaitForTick;
 
-            Assert.AreEqual(Vector3.zero, otherSideNetworkTransform.transform.position, "got authority error, but other side still moved!");
-#if NGO_TRANSFORM_DEBUG
-            // We are no longer emitting this warning, and we are banishing tests that rely on console output, so
-            //  needs re-implementation
-            // TODO: This should be a separate test - verify 1 behavior per test
-            LogAssert.Expect(LogType.Warning, new Regex(".*without authority detected.*"));
-#endif
+            Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "[Position] NonAuthority was able to change the position!");
+
+            var nonAuthorityRotation = m_NonAuthoritativeTransform.transform.rotation;
+            var originalNonAuthorityEulerRotation = nonAuthorityRotation.eulerAngles;
+            var nonAuthorityEulerRotation = originalNonAuthorityEulerRotation;
+            // Verify rotation is not marked dirty when rotated by half of the threshold
+            nonAuthorityEulerRotation.y += 20.0f;
+            nonAuthorityRotation.eulerAngles = nonAuthorityEulerRotation;
+            m_NonAuthoritativeTransform.transform.rotation = nonAuthorityRotation;
+            yield return s_DefaultWaitForTick;
+            var nonAuthorityCurrentEuler = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
+            Assert.True(originalNonAuthorityEulerRotation.Equals(nonAuthorityCurrentEuler), "[Rotation] NonAuthority was able to change the rotation!");
+
+            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
+            m_NonAuthoritativeTransform.transform.localScale = nonAuthorityScale * 100;
+
+            yield return s_DefaultWaitForTick;
+
+            Assert.True(nonAuthorityScale.Equals(m_NonAuthoritativeTransform.transform.localScale), "[Scale] NonAuthority was able to change the scale!");
         }
 
 
@@ -184,70 +196,67 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestRotationThresholdDeltaCheck()
         {
-            // Get the client player's NetworkTransform for both instances
-            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
-            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
-            otherSideNetworkTransform.RotAngleThreshold = authoritativeNetworkTransform.RotAngleThreshold = 5.0f;
+            m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 5.0f;
 
-            var halfThreshold = authoritativeNetworkTransform.RotAngleThreshold * 0.5001f;
-            var serverRotation = authoritativeNetworkTransform.transform.rotation;
-            var serverEulerRotation = serverRotation.eulerAngles;
+            var halfThreshold = m_AuthoritativeTransform.RotAngleThreshold * 0.5001f;
+            var authorityRotation = m_AuthoritativeTransform.transform.rotation;
+            var authorityEulerRotation = authorityRotation.eulerAngles;
 
             // Verify rotation is not marked dirty when rotated by half of the threshold
-            serverEulerRotation.y += halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            var results = authoritativeNetworkTransform.ApplyState();
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
+            authorityEulerRotation.y += halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            var results = m_AuthoritativeTransform.ApplyState();
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
             yield return s_DefaultWaitForTick;
 
             // Verify rotation is marked dirty when rotated by another half threshold value
-            serverEulerRotation.y += halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            results = authoritativeNetworkTransform.ApplyState();
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {authoritativeNetworkTransform.RotAngleThreshold} degrees!");
+            authorityEulerRotation.y += halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            results = m_AuthoritativeTransform.ApplyState();
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {m_AuthoritativeTransform.RotAngleThreshold} degrees!");
             yield return s_DefaultWaitForTick;
 
             //Reset rotation back to zero on all axis
-            serverRotation.eulerAngles = serverEulerRotation = Vector3.zero;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
             yield return s_DefaultWaitForTick;
 
             // Rotate by 360 minus halfThreshold (which is really just negative halfThreshold) and verify rotation is not marked dirty
-            serverEulerRotation.y = 360 - halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            results = authoritativeNetworkTransform.ApplyState();
+            authorityEulerRotation.y = 360 - halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            results = m_AuthoritativeTransform.ApplyState();
 
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by " +
-                $"{Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
+                $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
-            serverEulerRotation.y -= halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            results = authoritativeNetworkTransform.ApplyState();
+            authorityEulerRotation.y -= halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            results = m_AuthoritativeTransform.ApplyState();
 
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
             //Reset rotation back to zero on all axis
-            serverRotation.eulerAngles = serverEulerRotation = Vector3.zero;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
+            authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
             yield return s_DefaultWaitForTick;
 
-            serverEulerRotation.y -= halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            results = authoritativeNetworkTransform.ApplyState();
-            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {authoritativeNetworkTransform.RotAngleThreshold} degrees and only adjusted by " +
-                $"{Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+            authorityEulerRotation.y -= halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            results = m_AuthoritativeTransform.ApplyState();
+            Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by " +
+                $"{Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
 
-            serverEulerRotation.y -= halfThreshold;
-            serverRotation.eulerAngles = serverEulerRotation;
-            authoritativeNetworkTransform.transform.rotation = serverRotation;
-            results = authoritativeNetworkTransform.ApplyState();
+            authorityEulerRotation.y -= halfThreshold;
+            authorityRotation.eulerAngles = authorityEulerRotation;
+            m_AuthoritativeTransform.transform.rotation = authorityRotation;
+            results = m_AuthoritativeTransform.ApplyState();
 
-            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, serverEulerRotation.y)} degrees!");
+            Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by {Mathf.DeltaAngle(0, authorityEulerRotation.y)} degrees!");
         }
 
         private bool ValidateBitSetValues(NetworkTransform.NetworkTransformState serverState, NetworkTransform.NetworkTransformState clientState)
@@ -262,29 +271,43 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         /// <summary>
+        /// Test to make sure that the bitset value is updated properly
         /// </summary>
         [UnityTest]
         public IEnumerator TestBitsetValue()
         {
-            // Get the client player's NetworkTransform for both instances
-            var authoritativeNetworkTransform = m_ServerSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
-            var otherSideNetworkTransform = m_ClientSideClientPlayer.GetComponent<NetworkTransformTestComponent>();
-            otherSideNetworkTransform.RotAngleThreshold = authoritativeNetworkTransform.RotAngleThreshold = 0.1f;
+            m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
             yield return s_DefaultWaitForTick;
 
-            authoritativeNetworkTransform.Interpolate = true;
-            otherSideNetworkTransform.Interpolate = true;
-
-            yield return s_DefaultWaitForTick;
-
-            authoritativeNetworkTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
-            var serverLastSentState = authoritativeNetworkTransform.GetLastSentState();
-            var clientReplicatedState = otherSideNetworkTransform.ReplicatedNetworkState.Value;
+            m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
+            var serverLastSentState = m_AuthoritativeTransform.GetLastSentState();
+            var clientReplicatedState = m_NonAuthoritativeTransform.ReplicatedNetworkState.Value;
             yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
-            AssertOnTimeout($"Server-side sent Bitset state != Client-side replicated Bitset state!");
+            AssertOnTimeout($"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
 
-            yield return WaitForConditionOrTimeOut(ServerClientRotationMatches);
-            AssertOnTimeout($"[Timed-Out] Server-side client rotation {m_ServerSideClientPlayer.transform.rotation.eulerAngles} != Client-side client rotation {m_ClientSideClientPlayer.transform.rotation.eulerAngles}");
+            yield return WaitForConditionOrTimeOut(RotationsMatch);
+            AssertOnTimeout($"[Timed-Out] Authoritative rotation {m_AuthoritativeTransform.transform.rotation.eulerAngles} != Non-Authoritative rotation {m_NonAuthoritativeTransform.transform.rotation.eulerAngles}");
+        }
+
+        private float m_DetectedPotentialInterpolatedTeleport;
+
+        /// <summary>
+        /// Test Teleporting
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TeleportTest()
+        {
+            var authTransform = m_AuthoritativeTransform.transform;
+            var nonAuthPosition = m_NonAuthoritativeTransform.transform.position;
+            var currentTick = m_AuthoritativeTransform.NetworkManager.ServerTime.Tick;
+            m_DetectedPotentialInterpolatedTeleport = 0.0f;
+            var teleportDestination = new Vector3(100.00f, 100.00f, 100.00f);
+            var targetDistance = Mathf.Abs(Vector3.Distance(nonAuthPosition, teleportDestination));
+            m_AuthoritativeTransform.Teleport(new Vector3(100.00f, 100.00f, 100.00f), authTransform.rotation, authTransform.localScale);
+            yield return WaitForConditionOrTimeOut(() => TeleportPositionMatches(nonAuthPosition));
+
+            AssertOnTimeout($"[Timed-Out][Teleport] Timed out waiting for NonAuthoritative position to !");
+            Assert.IsTrue(m_DetectedPotentialInterpolatedTeleport == 0.0f, $"Detected possible interpolation on non-authority side! NonAuthority distance: {m_DetectedPotentialInterpolatedTeleport} | Target distance: {targetDistance}");
         }
 
         private bool Aproximately(float x, float y)
@@ -294,44 +317,68 @@ namespace Unity.Netcode.RuntimeTests
 
         private const float k_AproximateDeltaVariance = 0.01f;
 
-        private bool ServerClientRotationMatches()
+        private bool TeleportPositionMatches(Vector3 nonAuthorityOriginalPosition)
         {
-            var serverEulerRotation = m_ServerSideClientPlayer.transform.rotation.eulerAngles;
-            var clientEulerRotation = m_ClientSideClientPlayer.transform.rotation.eulerAngles;
-            var xIsEqual = Aproximately(serverEulerRotation.x, clientEulerRotation.x);
-            var yIsEqual = Aproximately(serverEulerRotation.y, clientEulerRotation.y);
-            var zIsEqual = Aproximately(serverEulerRotation.z, clientEulerRotation.z);
+            var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
+            var authorityPosition = m_AuthoritativeTransform.transform.position;
+            var targetDistance = Mathf.Abs(Vector3.Distance(nonAuthorityOriginalPosition, authorityPosition));
+            var nonAuthorityCurrentDistance = Mathf.Abs(Vector3.Distance(nonAuthorityPosition, nonAuthorityOriginalPosition));
+            if (!Aproximately(targetDistance, nonAuthorityCurrentDistance))
+            {
+                if (nonAuthorityCurrentDistance >= 0.15f * targetDistance && nonAuthorityCurrentDistance <= 0.75f * targetDistance)
+                {
+                    m_DetectedPotentialInterpolatedTeleport = nonAuthorityCurrentDistance;
+                }
+                return false;
+            }
+            var xIsEqual = Aproximately(authorityPosition.x, nonAuthorityPosition.x);
+            var yIsEqual = Aproximately(authorityPosition.y, nonAuthorityPosition.y);
+            var zIsEqual = Aproximately(authorityPosition.z, nonAuthorityPosition.z);
             if (!xIsEqual || !yIsEqual || !zIsEqual)
             {
-                VerboseDebug($"Server-side client rotation {m_ServerSideClientPlayer.transform.rotation.eulerAngles} != Client-side client rotation {m_ClientSideClientPlayer.transform.rotation.eulerAngles}");
+                VerboseDebug($"Authority position {authorityPosition} != NonAuthority position {nonAuthorityPosition}");
+            }
+            return xIsEqual && yIsEqual && zIsEqual; ;
+        }
+
+        private bool RotationsMatch()
+        {
+            var authorityEulerRotation = m_AuthoritativeTransform.transform.rotation.eulerAngles;
+            var nonAuthorityEulerRotation = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
+            var xIsEqual = Aproximately(authorityEulerRotation.x, nonAuthorityEulerRotation.x);
+            var yIsEqual = Aproximately(authorityEulerRotation.y, nonAuthorityEulerRotation.y);
+            var zIsEqual = Aproximately(authorityEulerRotation.z, nonAuthorityEulerRotation.z);
+            if (!xIsEqual || !yIsEqual || !zIsEqual)
+            {
+                VerboseDebug($"Authority rotation {authorityEulerRotation} != NonAuthority rotation {nonAuthorityEulerRotation}");
             }
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        private bool ServerClientPositionMatches()
+        private bool PositionsMatch()
         {
-            var serverPosition = m_ServerSideClientPlayer.transform.position;
-            var clientPosition = m_ClientSideClientPlayer.transform.position;
-            var xIsEqual = Aproximately(serverPosition.x, clientPosition.x);
-            var yIsEqual = Aproximately(serverPosition.y, clientPosition.y);
-            var zIsEqual = Aproximately(serverPosition.z, clientPosition.z);
+            var authorityPosition = m_AuthoritativeTransform.transform.position;
+            var nonAuthorityPosition = m_NonAuthoritativeTransform.transform.position;
+            var xIsEqual = Aproximately(authorityPosition.x, nonAuthorityPosition.x);
+            var yIsEqual = Aproximately(authorityPosition.y, nonAuthorityPosition.y);
+            var zIsEqual = Aproximately(authorityPosition.z, nonAuthorityPosition.z);
             if (!xIsEqual || !yIsEqual || !zIsEqual)
             {
-                VerboseDebug($"Server-side client position {m_ServerSideClientPlayer.transform.position} != Client-side client position {m_ClientSideClientPlayer.transform.position}");
+                VerboseDebug($"Authority position {authorityPosition} != NonAuthority position {nonAuthorityPosition}");
             }
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        private bool ServerClientScaleMatches()
+        private bool ScaleValuesMatch()
         {
-            var serverScale = m_ServerSideClientPlayer.transform.localScale;
-            var clientScale = m_ClientSideClientPlayer.transform.localScale;
-            var xIsEqual = Aproximately(serverScale.x, clientScale.x);
-            var yIsEqual = Aproximately(serverScale.y, clientScale.y);
-            var zIsEqual = Aproximately(serverScale.z, clientScale.z);
+            var authorityScale = m_AuthoritativeTransform.transform.localScale;
+            var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
+            var xIsEqual = Aproximately(authorityScale.x, nonAuthorityScale.x);
+            var yIsEqual = Aproximately(authorityScale.y, nonAuthorityScale.y);
+            var zIsEqual = Aproximately(authorityScale.z, nonAuthorityScale.z);
             if (!xIsEqual || !yIsEqual || !zIsEqual)
             {
-                VerboseDebug($"Server-side client scale {m_ServerSideClientPlayer.transform.localScale} != Client-side client scale {m_ClientSideClientPlayer.transform.localScale}");
+                VerboseDebug($"Authority scale {authorityScale} != NonAuthority scale {nonAuthorityScale}");
             }
             return xIsEqual && yIsEqual && zIsEqual;
         }
