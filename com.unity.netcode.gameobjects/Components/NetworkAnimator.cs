@@ -769,7 +769,7 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 UpdateParameters(parametersUpdate);
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count > 1)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
@@ -812,7 +812,7 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 UpdateAnimationState(animSnapshot);
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count > 1)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
@@ -857,7 +857,7 @@ namespace Unity.Netcode.Components
                 //  trigger the animation locally on the server...
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count > 1)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
