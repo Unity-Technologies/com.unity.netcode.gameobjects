@@ -10,7 +10,7 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField]
     private float m_RotSpeed = 1.0f;
 
-    [Range(0.01f,1.0f)]
+    [Range(0.01f, 1.0f)]
     [Tooltip("The input response (1.0 is very responsive)")]
     [SerializeField]
     private float m_InputResponse = 0.5f;
@@ -58,7 +58,7 @@ public class PlayerMovement : NetworkBehaviour
         m_Rigidbody = GetComponent<Rigidbody>();
         if (IsServer)
         {
-            m_TickFrequency = 1.0f/NetworkManager.NetworkTickSystem.TickRate;
+            m_TickFrequency = 1.0f / NetworkManager.NetworkTickSystem.TickRate;
             var temp = transform.position;
             temp.y = 0.5f;
             transform.position = temp;
