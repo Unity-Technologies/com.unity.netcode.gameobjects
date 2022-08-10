@@ -10,11 +10,14 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField]
     private float m_RotSpeed = 1.0f;
 
+    [Range(0.01f,1.0f)]
+    [Tooltip("The input response (1.0 is very responsive)")]
+    [SerializeField]
+    private float m_InputResponse = 0.5f;
+
     private Rigidbody m_Rigidbody;
 
     public static Dictionary<ulong, PlayerMovement> Players = new Dictionary<ulong, PlayerMovement>();
-
-    private float m_TickFrequency;
     private float m_DelayInputForTeleport;
 
     private bool m_IsTeleporting;
@@ -26,6 +29,7 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
+    private float m_TickFrequency;
     private Quaternion m_PreviousRotation;
     private RigidbodyInterpolation m_OrginalRigidbodyInterpolation;
 
@@ -34,7 +38,7 @@ public class PlayerMovement : NetworkBehaviour
         if (IsSpawned && IsServer && !m_IsTeleporting)
         {
             m_IsTeleporting = true;
-            m_DelayInputForTeleport = Time.realtimeSinceStartup + (2 * m_TickFrequency);
+            m_DelayInputForTeleport = Time.realtimeSinceStartup + (1.5f * m_TickFrequency);
             m_Rigidbody.isKinematic = true;
             m_OrginalRigidbodyInterpolation = m_Rigidbody.interpolation;
             m_Rigidbody.interpolation = RigidbodyInterpolation.None;
@@ -54,7 +58,7 @@ public class PlayerMovement : NetworkBehaviour
         m_Rigidbody = GetComponent<Rigidbody>();
         if (IsServer)
         {
-            m_TickFrequency = 1.0f / NetworkManager.NetworkTickSystem.TickRate;
+            m_TickFrequency = 1.0f/NetworkManager.NetworkTickSystem.TickRate;
             var temp = transform.position;
             temp.y = 0.5f;
             transform.position = temp;
@@ -63,31 +67,38 @@ public class PlayerMovement : NetworkBehaviour
         Players[OwnerClientId] = this; // todo should really have a NetworkStop for unregistering this...
     }
 
-    private void MovePlayer(float vertical, float horizontal, float timeDelta)
+    private void MovePlayer(float vertical, float horizontal)
     {
         if (m_IsTeleporting)
         {
             return;
         }
-
         if (Mathf.Abs(vertical) > 0.001f)
         {
             var position = transform.position;
-            position += vertical * transform.forward * m_Speed * timeDelta;
-            m_Rigidbody.MovePosition(position);
+            var yAxis = position.y;
+            position += vertical * transform.forward * m_Speed;
+            position.y = yAxis;
+            m_Rigidbody.position = Vector3.Lerp(transform.position, position, Time.fixedDeltaTime);
         }
 
         if (Mathf.Abs(horizontal) > 0.001f)
         {
-            var rotation = Quaternion.Euler(0, horizontal * 90 * m_RotSpeed * timeDelta, 0) * transform.rotation;
-            m_Rigidbody.rotation = rotation;
+            var currentRotation = m_Rigidbody.rotation;
+            var currentEuler = m_Rigidbody.rotation.eulerAngles;
+
+            currentEuler.y = Mathf.Lerp(currentEuler.y, currentEuler.y + horizontal * m_RotSpeed, Time.fixedDeltaTime);
+            currentRotation.eulerAngles = currentEuler;
+            m_Rigidbody.rotation = currentRotation;
         }
     }
+
+    private MovePlayerData m_CurrentClientData;
 
     [ServerRpc]
     private void MovePlayerServerRpc(MovePlayerData movePlayerData)
     {
-        m_CurrentMoveState = m_MovePlayerState.UpdateFromData(movePlayerData);
+        m_CurrentClientData = movePlayerData;
     }
 
     private MovePlayerData m_MovePlayerData = new MovePlayerData();
@@ -106,7 +117,7 @@ public class PlayerMovement : NetworkBehaviour
 
             if (IsServer)
             {
-                m_CurrentMoveState = m_MovePlayerState.UpdateFromData(m_MovePlayerData);
+                m_CurrentMoveState = m_MovePlayerState.UpdateFromData(m_MovePlayerData, m_InputResponse);
             }
             else
             {
@@ -121,6 +132,10 @@ public class PlayerMovement : NetworkBehaviour
                     m_MovePlayerState.ResetKeyStates(m_MovePlayerData);
                 }
             }
+        }
+        else if (IsServer && !IsOwner)
+        {
+            m_CurrentMoveState = m_MovePlayerState.UpdateFromData(m_CurrentClientData, m_InputResponse);
         }
     }
 
@@ -147,7 +162,7 @@ public class PlayerMovement : NetworkBehaviour
             }
         }
 
-        MovePlayer(m_CurrentMoveState.y, m_CurrentMoveState.x, Time.deltaTime);
+        MovePlayer(m_CurrentMoveState.y, m_CurrentMoveState.x);
         // This allows us to rollback to the previous rotation for the teleport
         // sample. If we don't do this the box will collide with the wall and
         // will slightly rotate the box to align with the wall
@@ -253,7 +268,7 @@ public class PlayerMovement : NetworkBehaviour
             return m_XYInput;
         }
 
-        public Vector2 UpdateFromData(MovePlayerData movePlayerData)
+        public Vector2 UpdateFromData(MovePlayerData movePlayerData, float inputResponse)
         {
             movePlayerData.GetInputState();
 
@@ -261,46 +276,46 @@ public class PlayerMovement : NetworkBehaviour
             {
                 ResetKeyStates(movePlayerData);
             }
-            else
-            {
-                UpdateAxialAcceleration(movePlayerData.KeyCodesPressed);
-            }
+
+            UpdateAxialAcceleration(movePlayerData.KeyCodesPressed, inputResponse);
 
             return UpdateAxis();
         }
 
-        private void UpdateAxialAcceleration(List<KeyCode> keyCodesPressed)
+        private void UpdateAxialAcceleration(List<KeyCode> keyCodesPressed, float inputResponse)
         {
             KeyCodesPressed = keyCodesPressed;
-            m_VerticalAccel = Mathf.Lerp(m_VerticalAccel, 0.0f, 0.25f);
-            m_HorizontalAccel = Mathf.Lerp(m_HorizontalAccel, 0.0f, 0.25f);
             HadKeyStates = keyCodesPressed.Count > 0;
+            var targetVertical = 0.0f;
+            var targetHorizontal = 0.0f;
             foreach (var keyPressed in KeyCodesPressed)
             {
                 switch (keyPressed)
                 {
                     case KeyCode.UpArrow:
                         {
-                            m_VerticalAccel = 1.0f;
+                            targetVertical = 1.0f;
                             break;
                         }
                     case KeyCode.DownArrow:
                         {
-                            m_VerticalAccel = -1.0f;
+                            targetVertical = -1.0f;
                             break;
                         }
                     case KeyCode.RightArrow:
                         {
-                            m_HorizontalAccel = 1.0f;
+                            targetHorizontal = 1.0f;
                             break;
                         }
                     case KeyCode.LeftArrow:
                         {
-                            m_HorizontalAccel = -1.0f;
+                            targetHorizontal = -1.0f;
                             break;
                         }
                 }
             }
+            m_VerticalAccel = Mathf.Lerp(m_VerticalAccel, targetVertical, inputResponse);
+            m_HorizontalAccel = Mathf.Lerp(m_HorizontalAccel, targetHorizontal, inputResponse);
         }
     }
 }

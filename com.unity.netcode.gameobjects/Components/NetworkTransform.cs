@@ -309,14 +309,11 @@ namespace Unity.Netcode.Components
 
 
         /// <summary>
-        /// Sets whether this transform should sync in local space or in world space.
-        /// This is important to set since reparenting this transform could have issues,
-        /// if using world position (depending on who gets synced first: the parent or the child)
-        /// Having a child always at position 0,0,0 for example will have less possibilities of desync than when using world positions
+        /// Sets whether the transform should be treated as local (true) or world (false) space.
         /// </summary>
         /// <remarks>
-        /// This should only be changed by the authoritative side during runtime. Non-authoritative changes
-        /// will be overridden upon the next <see cref="NetworkTransform"></see> state update.
+        /// This should only be changed by the authoritative side during runtime. Non-authoritative
+        /// changes will be overridden upon the next state update.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
@@ -746,11 +743,15 @@ namespace Unity.Netcode.Components
         private void AddInterpolatedState(NetworkTransformState newState)
         {
             var sentTime = newState.SentTime;
+            var currentPosition = newState.InLocalSpace ? transform.localPosition : transform.position;
+            var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
+            var currentEulerAngles = currentRotation.eulerAngles;
 
             // When there is a change in interpolation or if teleporting, we reset
             if ((newState.InLocalSpace != InLocalSpace) || newState.IsTeleportingNextFrame)
             {
                 InLocalSpace = newState.InLocalSpace;
+                var currentScale = transform.localScale;
 
                 // we should clear our float interpolators
                 foreach (var interpolator in m_AllFloatInterpolators)
@@ -761,76 +762,81 @@ namespace Unity.Netcode.Components
                 // we should clear our quaternion interpolator
                 m_RotationInterpolator.Clear();
 
-                // Make sure no unauthorized changes occurred
-                ApplyTransformValues();
-
-                // Then we should apply the state passed to us
+                // Adjust based on which axis changed
                 if (newState.HasPositionX)
                 {
                     m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
-                    m_LastStatePosition.x = newState.PositionX;
+                    currentPosition.x = newState.PositionX;
                 }
 
                 if (newState.HasPositionY)
                 {
                     m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
-                    m_LastStatePosition.y = newState.PositionY;
+                    currentPosition.y = newState.PositionY;
                 }
 
                 if (newState.HasPositionZ)
                 {
                     m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
-                    m_LastStatePosition.z = newState.PositionZ;
+                    currentPosition.z = newState.PositionZ;
                 }
 
-                // Get our current rotation
-                var rotation = transform.rotation.eulerAngles;
-
-                // Adjust it based on which axis changed
-                if (newState.HasRotAngleX)
+                // Apply the position
+                if (newState.InLocalSpace)
                 {
-                    rotation.x = newState.RotAngleX;
+                    transform.localPosition = currentPosition;
                 }
-
-                if (newState.HasRotAngleY)
+                else
                 {
-                    rotation.y = newState.RotAngleY;
+                    transform.position = currentPosition;
                 }
 
-                if (newState.HasRotAngleZ)
-                {
-                    rotation.z = newState.RotAngleZ;
-                }
-
-                // Apply the rotation
-                m_LastStateRotation = Quaternion.Euler(rotation);
-                m_RotationInterpolator.ResetTo(m_LastStateRotation, sentTime);
-
-
+                // Adjust based on which axis changed
                 if (newState.HasScaleX)
                 {
                     m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
-                    m_LocalScale.x = newState.ScaleX;
+                    currentScale.x = newState.ScaleX;
                 }
 
                 if (newState.HasScaleY)
                 {
                     m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
-                    m_LocalScale.y = newState.ScaleY;
+                    currentScale.y = newState.ScaleY;
                 }
 
                 if (newState.HasScaleZ)
                 {
                     m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
-                    m_LocalScale.z = newState.ScaleZ;
+                    currentScale.z = newState.ScaleZ;
                 }
 
-                // Finally, we should apply the updated values
-                ApplyTransformValues();
+                // Apply the adjusted scale
+                transform.localScale = currentScale;
+
+                // Adjust based on which axis changed
+                if (newState.HasRotAngleX)
+                {
+                    currentEulerAngles.x = newState.RotAngleX;
+                }
+
+                if (newState.HasRotAngleY)
+                {
+                    currentEulerAngles.y = newState.RotAngleY;
+                }
+
+                if (newState.HasRotAngleZ)
+                {
+                    currentEulerAngles.z = newState.RotAngleZ;
+                }
+
+                // Apply the rotation
+                currentRotation.eulerAngles = currentEulerAngles;
+                transform.rotation = currentRotation;
+
+                // Reset the rotation interpolator
+                m_RotationInterpolator.ResetTo(currentRotation, sentTime);
                 return;
             }
-
-            var currentPosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
 
             if (newState.HasPositionX)
             {
@@ -847,27 +853,6 @@ namespace Unity.Netcode.Components
                 m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
 
-            // Here we take the new state Euler angles and apply any local
-            // Euler angles to the axis that did not change prior to adding
-            // the rotation measurement.
-            var stateQuat = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ);
-            var stateEuler = stateQuat.eulerAngles;
-            var currentEuler = m_LastStateRotation.eulerAngles;
-            if (!newState.HasRotAngleX)
-            {
-                stateEuler.x = currentEuler.x;
-            }
-            if (!newState.HasRotAngleY)
-            {
-                stateEuler.y = currentEuler.y;
-            }
-            if (!newState.HasRotAngleZ)
-            {
-                stateEuler.z = currentEuler.z;
-            }
-            stateQuat.eulerAngles = stateEuler;
-            m_RotationInterpolator.AddMeasurement(stateQuat, sentTime);
-
             if (newState.HasScaleX)
             {
                 m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
@@ -882,6 +867,28 @@ namespace Unity.Netcode.Components
             {
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
+
+            // Here we take the new state Euler angles and apply any local
+            // Euler angles to the axis that did not change prior to adding
+            // the rotation measurement.
+            var stateEuler = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ).eulerAngles;
+
+            if (!newState.HasRotAngleX)
+            {
+                stateEuler.x = currentEulerAngles.x;
+            }
+            if (!newState.HasRotAngleY)
+            {
+                stateEuler.y = currentEulerAngles.y;
+            }
+            if (!newState.HasRotAngleZ)
+            {
+                stateEuler.z = currentEulerAngles.z;
+            }
+
+            currentRotation.eulerAngles = stateEuler;
+
+            m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
         }
 
         /// <summary>
@@ -945,51 +952,6 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
             }
-        }
-
-        /// <summary>
-        /// These local values are for the non-authoritative side
-        /// This prevents non-authoritative instances from changing
-        /// the transform.
-        /// </summary>
-        private Vector3 m_LastStatePosition;
-        private Vector3 m_LocalScale;
-        private Quaternion m_LastStateRotation;
-
-        /// <summary>
-        /// Applies the last authorized position, scale, and rotation
-        /// </summary>
-        private void ApplyTransformValues()
-        {
-            if (InLocalSpace)
-            {
-                m_Transform.localPosition = m_LastStatePosition;
-            }
-            else
-            {
-                m_Transform.position = m_LastStatePosition;
-            }
-
-            if (InLocalSpace)
-            {
-                m_Transform.localRotation = m_LastStateRotation;
-            }
-            else
-            {
-                m_Transform.rotation = m_LastStateRotation;
-            }
-
-            m_Transform.localScale = m_LocalScale;
-        }
-
-        /// <summary>
-        /// Sets the currently authorized position, scale, and rotation
-        /// </summary>
-        private void SetTransformValues()
-        {
-            m_LastStatePosition = InLocalSpace ? m_Transform.localPosition : m_Transform.position;
-            m_LastStateRotation = InLocalSpace ? m_Transform.localRotation : m_Transform.rotation;
-            m_LocalScale = m_Transform.localScale;
         }
 
         /// <inheritdoc/>
@@ -1063,9 +1025,6 @@ namespace Unity.Netcode.Components
 
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-
-                // For the non-authoritative side, we need to capture the initial values of the transform
-                SetTransformValues();
             }
         }
 

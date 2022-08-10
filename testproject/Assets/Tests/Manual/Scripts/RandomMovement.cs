@@ -29,7 +29,6 @@ namespace TestProject.ManualTests
                     return IsOwner;
                 }
             }
-
             return IsServer;
         }
 
@@ -57,9 +56,11 @@ namespace TestProject.ManualTests
         }
 
         private Vector3 m_MoveTowardsPosition;
+        private float m_CurrentSpeed;
 
         public void Move(int speed)
         {
+            m_CurrentSpeed = speed;
             // Server sets this locally
             if (HasAuthority())
             {
@@ -68,11 +69,7 @@ namespace TestProject.ManualTests
             else if (m_ClientNetworkTransform == null && !IsServer && IsOwner)
             {
                 // Client must sent Rpc
-                MovePlayerServerRpc(m_Direction * speed * 1.05f);
-                if (IsServer && !IsOwner)
-                {
-                    m_MoveTowardsPosition = Vector3.Lerp(m_MoveTowardsPosition, Vector3.zero, 0.01f);
-                }
+                MovePlayerServerRpc(m_Direction);
             }
         }
 
@@ -92,7 +89,11 @@ namespace TestProject.ManualTests
                 }
                 if (m_Rigidbody != null)
                 {
-                    m_Rigidbody.MovePosition(transform.position + (m_MoveTowardsPosition * Time.fixedDeltaTime));
+                    var position = m_Rigidbody.position;
+                    var yAxis = position.y;
+                    position += (m_Direction * m_CurrentSpeed);
+                    position.y = yAxis;
+                    m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, position, Time.fixedDeltaTime);
                 }
             }
         }
@@ -128,16 +129,6 @@ namespace TestProject.ManualTests
                     m_MoveTowardsPosition = m_Direction * m_MoveTowardsPosition.magnitude;
                     ChangeDirectionClientRpc(m_Direction);
                 }
-            }
-        }
-
-        private static void ChangeDirectionClientRpcInHandler(NetworkBehaviour target, FastBufferReader reader)
-        {
-            NetworkManager networkManager = target.NetworkManager;
-            if (networkManager != null && networkManager.IsListening)
-            {
-                reader.ReadValueSafe(out Vector3 value);
-                ((RandomMovement)target).ChangeDirectionClientRpc(value);
             }
         }
 
