@@ -1017,6 +1017,13 @@ namespace Unity.Netcode.Components
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        public override void OnDestroy()
+        {
+            base.OnDestroy();
+            m_ReplicatedNetworkStateServer.Dispose();
+            m_ReplicatedNetworkStateOwner.Dispose();
+        }
+
         /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
