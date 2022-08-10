@@ -630,12 +630,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Applies the authoritative state to the local transform
         /// </summary>
-        /// <remarks>
-        /// The serverTime is required for position and scale in order to prevent a single element of each 3 elements
-        /// from having too large of a delta time between the time it was last updated and the time any new update is
-        /// sent.
-        /// </remarks>
-        private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate, double serverTime)
+        private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
         {
             var interpolatedPosition = networkState.InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
@@ -1102,10 +1097,10 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
-                var serverTime = NetworkManager.ServerTime;
                 if (Interpolate)
                 {
+                    // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
+                    var serverTime = NetworkManager.ServerTime;
                     var cachedDeltaTime = Time.deltaTime;
                     var cachedServerTime = serverTime.Time;
                     var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
@@ -1118,7 +1113,7 @@ namespace Unity.Netcode.Components
                 }
 
                 // Apply updated interpolated value
-                ApplyInterpolatedNetworkStateToTransform(ReplicatedNetworkState.Value, m_Transform, serverTime.Time);
+                ApplyInterpolatedNetworkStateToTransform(ReplicatedNetworkState.Value, m_Transform);
             }
         }
 
