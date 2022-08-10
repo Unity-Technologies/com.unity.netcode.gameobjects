@@ -630,7 +630,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Applies the authoritative state to the local transform
         /// </summary>
-        private void ApplyInterpolatedNetworkStateToTransform(NetworkTransformState networkState, Transform transformToUpdate)
+        private void ApplyAuthoritativeState(NetworkTransformState networkState, Transform transformToUpdate)
         {
             var interpolatedPosition = networkState.InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
 
@@ -1112,8 +1112,8 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
-                // Apply updated interpolated value
-                ApplyInterpolatedNetworkStateToTransform(ReplicatedNetworkState.Value, m_Transform);
+                // Now apply the current authoritative state
+                ApplyAuthoritativeState(ReplicatedNetworkState.Value, m_Transform);
             }
         }
 
