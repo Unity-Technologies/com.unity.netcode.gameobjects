@@ -189,6 +189,7 @@ namespace Unity.Netcode.Components
             /// </summary>
             internal void ClearBitSetForNextTick()
             {
+                // since we store the actual value (and not a dirty bit) here, we need to preserve it
                 m_Bitset &= (ushort)(m_Bitset & (1 << k_InLocalSpaceBit));
                 IsDirty = false;
             }
