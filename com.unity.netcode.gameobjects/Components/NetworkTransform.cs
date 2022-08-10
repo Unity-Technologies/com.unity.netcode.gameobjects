@@ -189,8 +189,7 @@ namespace Unity.Netcode.Components
             /// </summary>
             internal void ClearBitSetForNextTick()
             {
-                var localSpace = (ushort)(m_Bitset & (1 << k_InLocalSpaceBit));
-                m_Bitset = (ushort)(m_Bitset & localSpace);
+                m_Bitset &= (ushort)(m_Bitset & (1 << k_InLocalSpaceBit));
                 IsDirty = false;
             }
 
@@ -314,16 +313,16 @@ namespace Unity.Netcode.Components
         /// if using world position (depending on who gets synced first: the parent or the child)
         /// Having a child always at position 0,0,0 for example will have less possibilities of desync than when using world positions
         /// </summary>
+        /// <remarks>
+        /// This should only be changed by the authoritative side during runtime. Non-authoritative changes
+        /// will be overridden upon the next <see cref="NetworkTransform"></see> state update.
+        /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
         /// <summary>
         /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
         /// </summary>
-        /// <remarks>
-        /// This should only be changed by the authoritative side during runtime. Non-authoritative changes
-        /// will be overridden upon the next <see cref="NetworkTransform"></see> state update.
-        /// </remarks>
         public bool Interpolate = true;
 
         /// <summary>
@@ -398,7 +397,7 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_PositionXInterpolator;
         private BufferedLinearInterpolator<float> m_PositionYInterpolator;
         private BufferedLinearInterpolator<float> m_PositionZInterpolator;
-        private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator;
+        private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator; // rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
         private BufferedLinearInterpolator<float> m_ScaleXInterpolator;
         private BufferedLinearInterpolator<float> m_ScaleYInterpolator;
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
@@ -850,7 +849,8 @@ namespace Unity.Netcode.Components
             // Here we take the new state Euler angles and apply any local
             // Euler angles to the axis that did not change prior to adding
             // the rotation measurement.
-            var stateEuler = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ).eulerAngles;
+            var stateQuat = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ);
+            var stateEuler = stateQuat.eulerAngles;
             var currentEuler = m_LastStateRotation.eulerAngles;
             if (!newState.HasRotAngleX)
             {
@@ -864,8 +864,8 @@ namespace Unity.Netcode.Components
             {
                 stateEuler.z = currentEuler.z;
             }
-
-            m_RotationInterpolator.AddMeasurement(Quaternion.Euler(stateEuler), sentTime);
+            stateQuat.eulerAngles = stateEuler;
+            m_RotationInterpolator.AddMeasurement(stateQuat, sentTime);
 
             if (newState.HasScaleX)
             {
@@ -1157,15 +1157,8 @@ namespace Unity.Netcode.Components
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
-                // Always update from the last transform values before updating from the transform state to assure
-                // no non-authoritative changes are allowed
-                ApplyTransformValues();
-
                 // Apply updated interpolated value
                 ApplyInterpolatedNetworkStateToTransform(ReplicatedNetworkState.Value, m_Transform, serverTime.Time);
-
-                // Always set the any new transform values to assure only the authoritative side is updating the transform
-                SetTransformValues();
             }
         }
 
