@@ -60,6 +60,12 @@ namespace Unity.Netcode.RuntimeTests
             Owner
         }
 
+        public enum Interpolation
+        {
+            DisableInterpolate,
+            EnableInterpolate
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -126,8 +132,11 @@ namespace Unity.Netcode.RuntimeTests
         /// to non-authoritative transforms.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform)
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation)
         {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
 
             // test position
@@ -159,8 +168,10 @@ namespace Unity.Netcode.RuntimeTests
         /// <param name="testClientAuthority"></param>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator VerifyNonAuthorityCantChangeTransform()
+        public IEnumerator VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation)
         {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "other side pos should be zero at first"); // sanity check
 
             m_NonAuthoritativeTransform.transform.position = new Vector3(4, 5, 6);
@@ -194,8 +205,11 @@ namespace Unity.Netcode.RuntimeTests
         /// results when rolling over between 0 and 360 degrees
         /// </summary>
         [UnityTest]
-        public IEnumerator TestRotationThresholdDeltaCheck()
+        public IEnumerator TestRotationThresholdDeltaCheck([Values] Interpolation interpolation)
         {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 5.0f;
 
             var halfThreshold = m_AuthoritativeTransform.RotAngleThreshold * 0.5001f;
@@ -274,8 +288,10 @@ namespace Unity.Netcode.RuntimeTests
         /// Test to make sure that the bitset value is updated properly
         /// </summary>
         [UnityTest]
-        public IEnumerator TestBitsetValue()
+        public IEnumerator TestBitsetValue([Values] Interpolation interpolation)
         {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
             yield return s_DefaultWaitForTick;
 
@@ -295,8 +311,10 @@ namespace Unity.Netcode.RuntimeTests
         /// Test Teleporting
         /// </summary>
         [UnityTest]
-        public IEnumerator TeleportTest()
+        public IEnumerator TeleportTest([Values] Interpolation interpolation)
         {
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             var authTransform = m_AuthoritativeTransform.transform;
             var nonAuthPosition = m_NonAuthoritativeTransform.transform.position;
             var currentTick = m_AuthoritativeTransform.NetworkManager.ServerTime.Tick;
