@@ -46,7 +46,6 @@ namespace Unity.Netcode
                                     dirtyObj.ChildNetworkBehaviours[k].VariableUpdate(client.ClientId);
                                 }
                             }
-                            
                         }
                     }
 
