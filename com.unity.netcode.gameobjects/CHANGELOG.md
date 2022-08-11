@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue when attempting to spawn a parent `GameObject`, with `NetworkObject` component attached, that has one or more child `GameObject`s, that are inactive in the hierarchy, with `NetworkBehaviour` components it will no longer attempt to spawn the associated NetworkBehaviour(s) or invoke ownership changed notifications but will log a warning message. (#2096)
-- Fixed issue where destroying `GameObject`, with an attached NetworkBehaviour component, that was a child or any child generation of the assigned `NetworkObject` component's `GameObject` would not deregister with the NetworkObject nor would it have its OnNetworkSpawn method invoked. (#2091)
+- Fixed an issue where destroying a NetworkBehaviour would not deregister it from the parent NetworkObject, leading to exceptions when the parent was later destroyed. (#2091)
 - Fixed issue where `NetworkObject.NetworkHide` was despawning and destroying, as opposed to only despawning, in-scene placed `NetworkObject`s. (#2086)
 - Fixed issue where `NetworkAnimator` would not synchronize a looping animation for late joining clients if it was at the very end of its loop. (#2076)
 - Fixed issue where `NetworkAnimator` was not removing its subscription from `OnClientConnectedCallback` when despawned during the shutdown sequence. (#2074)
