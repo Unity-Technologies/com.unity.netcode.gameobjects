@@ -628,15 +628,16 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Applies the authoritative state to the local transform
+        /// Applies the authoritative state to the transform
         /// </summary>
-        private void ApplyAuthoritativeState(NetworkTransformState networkState, Transform transformToUpdate)
+        private void ApplyAuthoritativeState()
         {
-            var interpolatedPosition = networkState.InLocalSpace ? transformToUpdate.localPosition : transformToUpdate.position;
+            var networkState = ReplicatedNetworkState.Value;
+            var interpolatedPosition = networkState.InLocalSpace ? m_Transform.localPosition : m_Transform.position;
 
             // todo: we should store network state w/ quats vs. euler angles
-            var interpolatedRotAngles = networkState.InLocalSpace ? transformToUpdate.localEulerAngles : transformToUpdate.eulerAngles;
-            var interpolatedScale = transformToUpdate.localScale;
+            var interpolatedRotAngles = networkState.InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
+            var interpolatedScale = m_Transform.localScale;
 
             // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
@@ -704,11 +705,11 @@ namespace Unity.Netcode.Components
                 if (InLocalSpace)
                 {
 
-                    transformToUpdate.localPosition = interpolatedPosition;
+                    m_Transform.localPosition = interpolatedPosition;
                 }
                 else
                 {
-                    transformToUpdate.position = interpolatedPosition;
+                    m_Transform.position = interpolatedPosition;
                 }
             }
 
@@ -717,18 +718,18 @@ namespace Unity.Netcode.Components
             {
                 if (InLocalSpace)
                 {
-                    transformToUpdate.localRotation = Quaternion.Euler(interpolatedRotAngles);
+                    m_Transform.localRotation = Quaternion.Euler(interpolatedRotAngles);
                 }
                 else
                 {
-                    transformToUpdate.rotation = Quaternion.Euler(interpolatedRotAngles);
+                    m_Transform.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
             }
 
             // Apply the new scale
             if (networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ)
             {
-                transformToUpdate.localScale = interpolatedScale;
+                m_Transform.localScale = interpolatedScale;
             }
         }
 
@@ -964,7 +965,7 @@ namespace Unity.Netcode.Components
             // that can be invoked when ownership changes.
             if (CanCommitToTransform)
             {
-                Teleport(m_Transform.position, m_Transform.rotation, m_Transform.localScale);
+                SetStateInternal(m_Transform.position, m_Transform.rotation, m_Transform.localScale, true);
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
             }
         }
@@ -1113,7 +1114,7 @@ namespace Unity.Netcode.Components
                 }
 
                 // Now apply the current authoritative state
-                ApplyAuthoritativeState(ReplicatedNetworkState.Value, m_Transform);
+                ApplyAuthoritativeState();
             }
         }
 
