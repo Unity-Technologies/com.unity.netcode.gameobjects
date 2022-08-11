@@ -79,6 +79,7 @@ namespace Unity.Netcode
         public virtual void SetDirty(bool isDirty)
         {
             m_IsDirty = isDirty;
+            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
 
         /// <summary>
