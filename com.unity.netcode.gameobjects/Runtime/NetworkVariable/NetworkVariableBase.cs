@@ -111,7 +111,7 @@ namespace Unity.Netcode
                 case NetworkVariableReadPermission.Everyone:
                     return true;
                 case NetworkVariableReadPermission.Owner:
-                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId;
+                    return clientId == m_NetworkBehaviour.NetworkObject.OwnerClientId || NetworkManager.ServerClientId == clientId;
             }
         }
 
