@@ -22,6 +22,13 @@ namespace Unity.Netcode.RuntimeTests
 
         public class SimpleNetworkBehaviour : NetworkBehaviour
         {
+            public bool OnNetworkDespawnCalled;
+
+            public override void OnNetworkDespawn()
+            {
+                OnNetworkDespawnCalled = true;
+                base.OnNetworkDespawn();
+            }
         }
 
         protected override IEnumerator OnSetup()
@@ -83,6 +90,9 @@ namespace Unity.Netcode.RuntimeTests
             // set the log level to developer
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
 
+            // The only valid condition for this would be if the NetworkBehaviour is spawned.
+            simpleNetworkBehaviour.IsSpawned = true;
+
             // Verify the warning gets logged under normal conditions
             var isNull = simpleNetworkBehaviour.NetworkObject == null;
             LogAssert.Expect(LogType.Warning, $"[Netcode] Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
@@ -97,6 +107,45 @@ namespace Unity.Netcode.RuntimeTests
 
             networkObjectToTest.Despawn();
             Object.Destroy(networkObjectToTest);
+        }
+
+        /// <summary>
+        /// This validates the fix for when a child GameObject with a NetworkBehaviour
+        /// is deleted while the parent GameObject with a NetworkObject is spawned and
+        /// is not deleted until a later time would cause an exception due to the
+        /// NetworkBehaviour not being removed from the NetworkObject.ChildNetworkBehaviours
+        /// list.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ValidateDeleteChildNetworkBehaviour()
+        {
+            m_AllowServerToStart = true;
+
+            yield return s_DefaultWaitForTick;
+
+            // Now just start the Host
+            yield return StartServerAndClients();
+
+            var parentObject = new GameObject();
+            var childObject = new GameObject();
+            childObject.transform.parent = parentObject.transform;
+            var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
+            childObject.AddComponent<SimpleNetworkBehaviour>();
+
+            parentNetworkObject.Spawn();
+            yield return s_DefaultWaitForTick;
+
+            // Destroy the child object with child NetworkBehaviour
+            Object.Destroy(childObject);
+
+            yield return s_DefaultWaitForTick;
+
+            // Assure no log messages are logged when they should not be logged
+            LogAssert.NoUnexpectedReceived();
+
+            // Destroy the parent object which should not cause any exceptions
+            // (validating the fix)
+            Object.Destroy(parentObject);
         }
     }
 }

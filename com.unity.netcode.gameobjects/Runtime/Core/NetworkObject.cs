@@ -1219,5 +1219,21 @@ namespace Unity.Netcode
 
             return GlobalObjectIdHash;
         }
+
+        /// <summary>
+        /// Removes a NetworkBehaviour from the ChildNetworkBehaviours list when destroyed
+        /// while the NetworkObject is still spawned.
+        /// </summary>
+        internal void OnNetworkBehaviourDestroyed(NetworkBehaviour networkBehaviour)
+        {
+            if (networkBehaviour.IsSpawned && IsSpawned)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
+                }
+                ChildNetworkBehaviours.Remove(networkBehaviour);
+            }
+        }
     }
 }
