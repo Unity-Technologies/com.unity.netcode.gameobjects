@@ -627,7 +627,7 @@ namespace Unity.Netcode.Components
                 networkState.SentTime = dirtyTime;
             }
 
-            /// We need to set this in order to know when we can re-apply our local authority state <see cref="Update"/>
+            /// We need to set this in order to know when we can reset our local authority state <see cref="Update"/>
             /// If our state is already dirty or we just found deltas (i.e. isDirty == true)
             networkState.IsDirty |= isDirty;
             return isDirty;
@@ -841,6 +841,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // Apply axial changes from the new state
             if (newState.HasPositionX)
             {
                 m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
@@ -871,27 +872,29 @@ namespace Unity.Netcode.Components
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
 
-            // Here we take the new state Euler angles and apply any local
-            // Euler angles to the axis that did not change prior to adding
-            // the rotation measurement.
-            var stateEuler = Quaternion.Euler(newState.RotAngleX, newState.RotAngleY, newState.RotAngleZ).eulerAngles;
-
-            if (!newState.HasRotAngleX)
+            // With rotation, we check if there are any changes first and
+            // if so then apply the changes to the current Euler rotation
+            // values.
+            if (newState.HasRotAngleChange)
             {
-                stateEuler.x = currentEulerAngles.x;
-            }
-            if (!newState.HasRotAngleY)
-            {
-                stateEuler.y = currentEulerAngles.y;
-            }
-            if (!newState.HasRotAngleZ)
-            {
-                stateEuler.z = currentEulerAngles.z;
-            }
+                if (newState.HasRotAngleX)
+                {
+                    currentEulerAngles.x = newState.RotAngleX;
+                }
 
-            currentRotation.eulerAngles = stateEuler;
+                if (newState.HasRotAngleY)
+                {
+                    currentEulerAngles.y = newState.RotAngleY;
+                }
 
-            m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
+                if (newState.HasRotAngleZ)
+                {
+                    currentEulerAngles.z = newState.RotAngleZ;
+                }
+
+                currentRotation.eulerAngles = currentEulerAngles;
+                m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
+            }
         }
 
         /// <summary>

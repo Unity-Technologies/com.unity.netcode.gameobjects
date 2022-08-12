@@ -6,20 +6,23 @@ using Unity.Netcode.Components;
 
 public class PlayerMovement : NetworkTransform
 {
-
     public float Speed = 4.0f;
 
     public float RotSpeed = 1.0f;
 
     private Rigidbody m_Rigidbody;
+
+    /// Used by <see cref="GrabbableBall"/>
     public static Dictionary<ulong, PlayerMovement> Players = new Dictionary<ulong, PlayerMovement>();
 
+    /// <summary>
+    /// Make this PlayerMovement-NetworkTransform component
+    /// Owner Authoritative
+    /// </summary>
     protected override bool OnIsServerAuthoritative()
     {
         return false;
     }
-
-    private float m_DelayInputForTeleport;
 
     private bool m_IsTeleporting;
     public bool IsTeleporting
@@ -31,27 +34,36 @@ public class PlayerMovement : NetworkTransform
     }
 
     private float m_TickFrequency;
+    private float m_DelayInputForTeleport;
     private Quaternion m_PreviousRotation;
     private RigidbodyInterpolation m_OrginalRigidbodyInterpolation;
-    private Vector3 m_TeleportDestination;
 
     public void Telporting(Vector3 destination)
     {
         if (IsSpawned && IsOwner && !m_IsTeleporting)
         {
             m_IsTeleporting = true;
-            m_TeleportDestination = destination;
+
+            // With rigid bodies, if you already know you are using standard
+            // transform interpolation (not NetworkTransform) on the authoritative
+            // side then you need to set it to Kinematic, preserve the current rigid
+            // body interpolation value, and then finally set interpolation to none.
             m_Rigidbody.isKinematic = true;
             m_OrginalRigidbodyInterpolation = m_Rigidbody.interpolation;
             m_Rigidbody.interpolation = RigidbodyInterpolation.None;
+
+            // We want to provide a few network ticks to pass in time before restoring
+            // the rigid body back to its settings prior to being teleported.
+            m_DelayInputForTeleport = Time.realtimeSinceStartup + (3f * m_TickFrequency);
+
             // Since the player-cube is a cube, when colliding with something it could
             // cause the cube to rotate based on the surface being collided against
             // and the facing of the cube. This prevents rotation from being changed
             // due to colliding with a side wall (and then teleported)
             transform.rotation = m_PreviousRotation;
-            m_DelayInputForTeleport = Time.realtimeSinceStartup + (3f * m_TickFrequency);
+
             // Now teleport
-            Teleport(m_TeleportDestination, transform.rotation, transform.localScale);
+            Teleport(destination, transform.rotation, transform.localScale);
         }
     }
 
@@ -62,14 +74,29 @@ public class PlayerMovement : NetworkTransform
             var temp = transform.position;
             temp.y = 0.5f;
             transform.position = temp;
+            m_Rigidbody = GetComponent<Rigidbody>();
+            m_TickFrequency = 1.0f / NetworkManager.NetworkTickSystem.TickRate;
         }
-        m_Rigidbody = GetComponent<Rigidbody>();
-        m_TickFrequency = 1.0f / NetworkManager.NetworkTickSystem.TickRate;
-        Players[OwnerClientId] = this; // todo should really have a NetworkStop for unregistering this...
+
+        /// Used by <see cref="GrabbableBall"/>
+        Players[OwnerClientId] = this;
 
         base.OnNetworkSpawn();
     }
 
+    public override void OnNetworkDespawn()
+    {
+        if (Players.ContainsKey(OwnerClientId))
+        {
+            Players.Remove(OwnerClientId);
+        }
+        base.OnNetworkDespawn();
+    }
+
+    /// <summary>
+    /// LateUpdate is being used to check for the end of
+    /// a player's teleporting cycle.
+    /// </summary>
     private void LateUpdate()
     {
         if (!IsSpawned || !IsOwner || !m_IsTeleporting)
@@ -98,9 +125,8 @@ public class PlayerMovement : NetworkTransform
             euler.y += Input.GetAxis("Horizontal") * 90 * RotSpeed * Time.fixedDeltaTime;
             rotation.eulerAngles = euler;
             transform.rotation = rotation;
-            // This allows us to rollback to the previous rotation for the teleport
-            // sample. If we don't do this the box will collide with the wall and
-            // will slightly rotate the box to align with the wall
+
+            /// We store this to handle a collision rotation issue: <see cref="Teleport(Vector3, Quaternion, Vector3)"/>
             m_PreviousRotation = transform.rotation;
         }
     }
