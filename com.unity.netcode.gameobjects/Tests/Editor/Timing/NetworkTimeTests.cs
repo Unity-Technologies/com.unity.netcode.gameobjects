@@ -147,40 +147,53 @@ namespace Unity.Netcode.EditorTests
             var random = new Random(42);
             var randomSteps = Enumerable.Repeat(0f, 1000).Select(t => Mathf.Lerp(1 / 25f, 1.80f, (float)random.NextDouble())).ToList();
 
-            NetworkTimeAdvanceTestInternal(randomSteps, 60, 0f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 1, 0f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 10, 0f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 20, 0f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 30, 0f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 144, 0f);
+            void CheckResults((bool, string) value)
+            {
+                if (!value.Item1)
+                {
+                    Assert.Fail(value.Item2);
+                }
+            }
 
-            NetworkTimeAdvanceTestInternal(randomSteps, 60, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 1, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 10, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 20, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 30, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 30, 23132.231f);
-            NetworkTimeAdvanceTestInternal(randomSteps, 144, 23132.231f);
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 60, 0f));
+
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 1, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 10, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 20, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 30, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 144, 0f));
+
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 60, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 1, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 10, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 20, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 30, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 30, 23132.231f));
+            CheckResults(NetworkTimeAdvanceTestInternal(randomSteps, 144, 23132.231f));
+            randomSteps.Clear();
+            randomSteps = null;
 
             var shortSteps = Enumerable.Repeat(1 / 30f, 1000);
 
-            NetworkTimeAdvanceTestInternal(shortSteps, 60, 0f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 1, 0f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 10, 0f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 20, 0f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 30, 0f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 144, 0f);
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 60, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 1, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 10, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 20, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 30, 0f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 144, 0f));
 
-            NetworkTimeAdvanceTestInternal(shortSteps, 60, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 60, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 1, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 10, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 20, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 30, 1000000f);
-            NetworkTimeAdvanceTestInternal(shortSteps, 144, 1000000f);
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 60, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 60, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 1, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 10, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 20, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 30, 1000000f));
+            CheckResults(NetworkTimeAdvanceTestInternal(shortSteps, 144, 1000000f));
+            shortSteps = null;
+
         }
 
-        private void NetworkTimeAdvanceTestInternal(IEnumerable<float> steps, uint tickRate, float start, float start2 = 0f)
+        private (bool, string) NetworkTimeAdvanceTestInternal(IEnumerable<float> steps, uint tickRate, float start, float start2 = 0f)
         {
             float maxAcceptableTotalOffset = 0.005f;
 
@@ -192,10 +205,17 @@ namespace Unity.Netcode.EditorTests
             {
                 startTime += step;
                 startTime2 += step;
-                Assert.IsTrue(Approximately(startTime.Time, (startTime2 - dif).Time));
+                var isExpectedValue = Approximately(startTime.Time, (startTime2 - dif).Time);
+                if (!isExpectedValue)
+                {
+                    return (false, $"[NetworkTimeAdvanceTest-Failure] startTime: {startTime.Time} | Step Time Diff: {(startTime2 - dif).Time}");
+                }
             }
-
-            Assert.IsTrue(Approximately(startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset));
+            if (!Approximately(startTime.Time, (startTime2 - dif).Time, maxAcceptableTotalOffset))
+            {
+                return (false, $"[NetworkTimeAdvanceTest-Failure-End] startTime: {startTime.Time} | Step Time Diff: {(startTime2 - dif).Time} | Max Accepted Total Offset: {maxAcceptableTotalOffset}");
+            }
+            return (true, string.Empty);
         }
 
         [Test]
