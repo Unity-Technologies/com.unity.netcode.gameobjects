@@ -105,6 +105,14 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool HasPositionChange
+            {
+                get
+                {
+                    return HasPositionX | HasPositionY | HasPositionZ;
+                }
+            }
+
             // RotAngles
             internal bool HasRotAngleX
             {
@@ -136,6 +144,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool HasRotAngleChange
+            {
+                get
+                {
+                    return HasRotAngleX | HasRotAngleY | HasRotAngleZ;
+                }
+            }
+
+
             // Scale
             internal bool HasScaleX
             {
@@ -164,6 +181,14 @@ namespace Unity.Netcode.Components
                 {
                     if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleZBit)); }
                     else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleZBit)); }
+                }
+            }
+
+            internal bool HasScaleChange
+            {
+                get
+                {
+                    return HasScaleX | HasScaleY | HasScaleZ;
                 }
             }
 
@@ -329,8 +354,6 @@ namespace Unity.Netcode.Components
         /// in the package samples for how to implement a NetworkTransform with client write support.
         /// If using different values, please use RPCs to write to the server. Netcode doesn't support client side network variable writing
         /// </summary>
-        // This is public to make sure that users don't depend on this IsClient && IsOwner check in their code. If this logic changes in the future, we can make it invisible here
-        // TODO: With recent updates 08-2022, this should be changed to a private set.
         public bool CanCommitToTransform { get; protected set; }
 
         /// <summary>
@@ -346,32 +369,11 @@ namespace Unity.Netcode.Components
         protected NetworkManager m_CachedNetworkManager;
 
         /// <summary>
-        /// Used to know when we are resetting the dirty flag (i.e. we sent the state)
-        /// </summary>
-        internal class NetworkTransformVariable : NetworkVariable<NetworkTransformState>
-        {
-            public override void ResetDirty()
-            {
-                base.ResetDirty();
-
-                // Now clear our bitset and prepare for next network tick state update
-                Value.ClearBitSetForNextTick();
-            }
-
-            public NetworkTransformVariable(NetworkTransformState value = default,
-                NetworkVariableReadPermission readPerm = DefaultReadPerm,
-                NetworkVariableWritePermission writePerm = DefaultWritePerm)
-                : base(value, readPerm, writePerm)
-            {
-            }
-        }
-
-        /// <summary>
         /// We have two internal NetworkVariables.
         /// One for server authoritative and one for "client/owner" authoritative.
         /// </summary>
-        private readonly NetworkTransformVariable m_ReplicatedNetworkStateServer = new NetworkTransformVariable(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-        private readonly NetworkTransformVariable m_ReplicatedNetworkStateOwner = new NetworkTransformVariable(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
 
         internal NetworkVariable<NetworkTransformState> ReplicatedNetworkState
@@ -411,8 +413,15 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Refer to <see cref="TryCommitTransform">, this is a legacy method.
+        /// Authoritative side only
+        /// This will try to send/commit the current transform delta states (if any)
         /// </summary>
+        /// <remarks>
+        /// It is not recommended to use this method, but allow the state commit process
+        /// to be handled within <see cref="NetworkTransform"/>
+        /// </remarks>
+        /// <param name="transformToCommit">the transform to be committed</param>
+        /// <param name="dirtyTime">time it was marked dirty</param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
             TryCommitTransform(transformToCommit, dirtyTime);
@@ -420,14 +429,10 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Authoritative side only
-        /// This will try to send/commit the current transform delta states (if any)
+        /// If there are any transform delta states, this method will synchronize the
+        /// state with all non-authority instances.
         /// </summary>
-        /// <remarks>
-        /// It is not recommended to use this method in a derived class
-        /// </remarks>
-        /// <param name="transformToCommit">the transform to be committed</param>
-        /// <param name="dirtyTime">time it was marked dirty</param>
-        protected void TryCommitTransform(Transform transformToCommit, double dirtyTime)
+        private void TryCommitTransform(Transform transformToCommit, double dirtyTime)
         {
             if (!CanCommitToTransform)
             {
@@ -436,14 +441,6 @@ namespace Unity.Netcode.Components
             }
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
             TryCommit(isDirty);
-            // (non-authority doesn't need to reset this value as it is updated by authority)
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
-        }
-
-        private void TryCommitValues(Vector3 position, Vector3 rotation, Vector3 scale, double dirtyTime)
-        {
-            var isDirty = ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, position, rotation, scale);
-            TryCommit(isDirty.isDirty);
         }
 
         private void TryCommit(bool isDirty)
@@ -513,36 +510,46 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed isDirty information returned.
+        /// Used for integration testing:
+        /// Will apply the transform to the LocalAuthoritativeNetworkState and get detailed dirty information returned
+        /// in the <see cref="NetworkTransformState"/> returned.
         /// </summary>
         /// <param name="transform">transform to apply</param>
-        /// <returns>bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty</returns>
-        internal (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyLocalNetworkState(Transform transform)
+        /// <returns>NetworkTransformState</returns>
+        internal NetworkTransformState ApplyLocalNetworkState(Transform transform)
         {
-            return ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+            // Since we never commit these changes, we need to simulate that any changes were committed previously and the bitset
+            // value would already be reset prior to having the state applied
+            m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+
+            // Now check the transform for any threshold value changes
+            ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+
+            // Return the entire state to be used by the integration test
+            return m_LocalAuthoritativeNetworkState;
         }
 
-        // updates `NetworkState` properties if they need to and returns a `bool` indicating whether or not there was any changes made
-        // returned boolean would be useful to change encapsulating `NetworkVariable<NetworkState>`'s dirty state, e.g. ReplNetworkState.SetDirty(isDirty);
+        /// <summary>
+        /// Used for integration testing
+        /// </summary>
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
-            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse).isDirty;
+            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse);
         }
 
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
-        {
-            var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
-            var scale = transformToUse.localScale;
-            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, position, rotAngles, scale);
-        }
-
-        private (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Vector3 position, Vector3 rotAngles, Vector3 scale)
+        /// <summary>
+        /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
+        /// </summary>
+        private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
             var isDirty = false;
             var isPositionDirty = false;
             var isRotationDirty = false;
             var isScaleDirty = false;
+
+            var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
+            var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
+            var scale = transformToUse.localScale;
 
             if (InLocalSpace != networkState.InLocalSpace)
             {
@@ -550,63 +557,63 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
-            if (SyncPositionX && Mathf.Abs(networkState.PositionX - position.x) > PositionThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncPositionX && Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.PositionX = position.x;
                 networkState.HasPositionX = true;
                 isPositionDirty = true;
             }
 
-            if (SyncPositionY && Mathf.Abs(networkState.PositionY - position.y) > PositionThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncPositionY && Mathf.Abs(networkState.PositionY - position.y) >= PositionThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.PositionY = position.y;
                 networkState.HasPositionY = true;
                 isPositionDirty = true;
             }
 
-            if (SyncPositionZ && Mathf.Abs(networkState.PositionZ - position.z) > PositionThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncPositionZ && Mathf.Abs(networkState.PositionZ - position.z) >= PositionThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
                 isPositionDirty = true;
             }
 
-            if (SyncRotAngleX && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncRotAngleX && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.RotAngleX = rotAngles.x;
                 networkState.HasRotAngleX = true;
                 isRotationDirty = true;
             }
 
-            if (SyncRotAngleY && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncRotAngleY && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.RotAngleY = rotAngles.y;
                 networkState.HasRotAngleY = true;
                 isRotationDirty = true;
             }
 
-            if (SyncRotAngleZ && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) > RotAngleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncRotAngleZ && Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
                 isRotationDirty = true;
             }
 
-            if (SyncScaleX && Mathf.Abs(networkState.ScaleX - scale.x) > ScaleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncScaleX && Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.ScaleX = scale.x;
                 networkState.HasScaleX = true;
                 isScaleDirty = true;
             }
 
-            if (SyncScaleY && Mathf.Abs(networkState.ScaleY - scale.y) > ScaleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncScaleY && Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.ScaleY = scale.y;
                 networkState.HasScaleY = true;
                 isScaleDirty = true;
             }
 
-            if (SyncScaleZ && Mathf.Abs(networkState.ScaleZ - scale.z) > ScaleThreshold || networkState.IsTeleportingNextFrame)
+            if (SyncScaleZ && Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
             {
                 networkState.ScaleZ = scale.z;
                 networkState.HasScaleZ = true;
@@ -622,9 +629,8 @@ namespace Unity.Netcode.Components
 
             // We need to set this in order to know when we can re-apply our local authority state
             /// <see cref="Update"/>
-            networkState.IsDirty = isDirty;
-
-            return (isDirty, isPositionDirty, isRotationDirty, isScaleDirty);
+            networkState.IsDirty = !networkState.IsDirty && isDirty;
+            return isDirty;
         }
 
         /// <summary>
@@ -638,6 +644,7 @@ namespace Unity.Netcode.Components
             // todo: we should store network state w/ quats vs. euler angles
             var interpolatedRotAngles = networkState.InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
             var interpolatedScale = m_Transform.localScale;
+            var isTeleporting = networkState.IsTeleportingNextFrame;
 
             // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
@@ -645,21 +652,21 @@ namespace Unity.Netcode.Components
             // Update the position values that were changed in this state update
             if (networkState.HasPositionX)
             {
-                interpolatedPosition.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
+                interpolatedPosition.x = isTeleporting || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasPositionY)
             {
-                interpolatedPosition.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
+                interpolatedPosition.y = isTeleporting || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasPositionZ)
             {
-                interpolatedPosition.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
+                interpolatedPosition.z = isTeleporting || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
             }
 
             // Update the rotation values that were changed in this state update
-            if (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ)
+            if (networkState.HasRotAngleChange)
             {
                 var eulerAngles = new Vector3();
                 if (Interpolate)
@@ -669,38 +676,38 @@ namespace Unity.Netcode.Components
 
                 if (networkState.HasRotAngleX)
                 {
-                    interpolatedRotAngles.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
+                    interpolatedRotAngles.x = isTeleporting || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
                 }
 
                 if (networkState.HasRotAngleY)
                 {
-                    interpolatedRotAngles.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleY : eulerAngles.y;
+                    interpolatedRotAngles.y = isTeleporting || !Interpolate ? networkState.RotAngleY : eulerAngles.y;
                 }
 
                 if (networkState.HasRotAngleZ)
                 {
-                    interpolatedRotAngles.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
+                    interpolatedRotAngles.z = isTeleporting || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
                 }
             }
 
             // Update all scale axis that were changed in this state update
             if (networkState.HasScaleX)
             {
-                interpolatedScale.x = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
+                interpolatedScale.x = isTeleporting || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasScaleY)
             {
-                interpolatedScale.y = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
+                interpolatedScale.y = isTeleporting || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasScaleZ)
             {
-                interpolatedScale.z = networkState.IsTeleportingNextFrame || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
+                interpolatedScale.z = isTeleporting || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
             }
 
             // Apply the new position
-            if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
+            if (networkState.HasPositionChange)
             {
                 if (InLocalSpace)
                 {
@@ -714,7 +721,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new rotation
-            if (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ)
+            if (networkState.HasRotAngleChange)
             {
                 if (InLocalSpace)
                 {
@@ -727,7 +734,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new scale
-            if (networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ)
+            if (networkState.HasScaleChange)
             {
                 m_Transform.localScale = interpolatedScale;
             }
@@ -965,7 +972,10 @@ namespace Unity.Netcode.Components
             // that can be invoked when ownership changes.
             if (CanCommitToTransform)
             {
+                // Teleport to current position
                 SetStateInternal(m_Transform.position, m_Transform.rotation, m_Transform.localScale, true);
+
+                // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
             }
         }
@@ -976,6 +986,7 @@ namespace Unity.Netcode.Components
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
         }
 
+        /// <inheritdoc/>
         public override void OnDestroy()
         {
             base.OnDestroy();
@@ -1004,7 +1015,6 @@ namespace Unity.Netcode.Components
 
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
-            // TODO: investigate further on not sending data for something that is not enabled
             m_Transform = transform;
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
@@ -1058,7 +1068,8 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Authoritative only method
-        /// Sets the internal state (teleporting or just set state)
+        /// Sets the internal state (teleporting or just set state) of the authoritative
+        /// transform directly.
         /// </summary>
         private void SetStateInternal(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
         {
@@ -1074,6 +1085,7 @@ namespace Unity.Netcode.Components
             }
             m_Transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
         // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
@@ -1088,11 +1100,11 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
-                // If we have sent the state, then base our m_LocalAuthoritativeNetworkState from the last state sent
-                /// <see cref="NetworkTransformVariable"/>
-                if (!ReplicatedNetworkState.Value.IsDirty)
+                // If our replicated state is not dirty and our local authority state is dirty, clear it.
+                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
                 {
-                    m_LocalAuthoritativeNetworkState = ReplicatedNetworkState.Value;
+                    // Now clear our bitset and prepare for next network tick state update
+                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
                 }
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
             }
@@ -1112,7 +1124,6 @@ namespace Unity.Netcode.Components
 
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
-
                 // Now apply the current authoritative state
                 ApplyAuthoritativeState();
             }
@@ -1132,15 +1143,7 @@ namespace Unity.Netcode.Components
                 throw new Exception("Teleporting on non-authoritative side is not allowed!");
             }
 
-            // Do not allow this instance to teleport while teleporting
-            if (m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
-            {
-                return;
-            }
-
-            // Teleporting now is as simple as:
-            // - Setting teleport flag
-            // - Applying the new position, rotation, and scale
+            // Teleporting now is as simple as setting the internal state and passing the teleport flag
             SetStateInternal(newPosition, newRotation, newScale, true);
         }
 

@@ -32,7 +32,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
         {
-            return ApplyLocalNetworkState(transform);
+            var transformState = ApplyLocalNetworkState(transform);
+            return (transformState.IsDirty, transformState.HasPositionChange, transformState.HasRotAngleChange, transformState.HasScaleChange);
         }
     }
 
