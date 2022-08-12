@@ -113,6 +113,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("This test makes assumptions about the SDK that were broken for performance reasons. (#2116)")]
         public IEnumerator TestEntireBufferIsCopiedOnNetworkVariableDelta()
         {
             // This is the *SERVER VERSION* of the *CLIENT PLAYER*
