@@ -627,9 +627,9 @@ namespace Unity.Netcode.Components
                 networkState.SentTime = dirtyTime;
             }
 
-            // We need to set this in order to know when we can re-apply our local authority state
-            /// <see cref="Update"/>
-            networkState.IsDirty = !networkState.IsDirty && isDirty;
+            /// We need to set this in order to know when we can re-apply our local authority state <see cref="Update"/>
+            /// If our state is already dirty or we just found deltas (i.e. isDirty == true)
+            networkState.IsDirty |= isDirty;
             return isDirty;
         }
 
