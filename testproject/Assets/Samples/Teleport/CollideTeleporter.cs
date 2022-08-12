@@ -15,7 +15,7 @@ public class CollideTeleporter : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening || !NetworkManager.Singleton.IsServer)
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening)
         {
             return;
         }
