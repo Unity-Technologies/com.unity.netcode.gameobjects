@@ -664,11 +664,11 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                NetworkVariableFields[j].SetDirty(true);
+                NetworkVariableFields[j].SetDirty(dirty);
             }
         }
 

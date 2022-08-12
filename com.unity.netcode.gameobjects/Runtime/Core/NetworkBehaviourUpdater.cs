@@ -57,6 +57,11 @@ namespace Unity.Netcode
                             dirtyObj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
                     }
+                    // This is not strictly needed for runtime, but it fails tests, otherwise.
+                    foreach (var networkObject in m_DirtyNetworkObjects)
+                    {
+                        networkObject.MarkVariablesDirty(false);
+                    }
                     m_DirtyNetworkObjects.Clear();
                 }
                 else
@@ -80,6 +85,11 @@ namespace Unity.Netcode
                         {
                             sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
                         }
+                    }
+                    // This is not strictly needed for runtime, but it fails tests, otherwise.
+                    foreach (var networkObject in m_DirtyNetworkObjects)
+                    {
+                        networkObject.MarkVariablesDirty(false);
                     }
                     m_DirtyNetworkObjects.Clear();
                 }

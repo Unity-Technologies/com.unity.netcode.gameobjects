@@ -868,12 +868,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
-                behavior.MarkVariablesDirty();
+                behavior.MarkVariablesDirty(dirty);
             }
         }
 
