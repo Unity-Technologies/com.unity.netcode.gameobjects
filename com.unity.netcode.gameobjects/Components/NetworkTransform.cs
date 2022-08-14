@@ -271,6 +271,20 @@ namespace Unity.Netcode.Components
                 {
                     serializer.SerializeValue(ref ScaleZ);
                 }
+
+                // Only if we are receiving state
+                if (serializer.IsReader)
+                {
+                    // Go ahead and mark the local state dirty or not dirty as well
+                    if (HasPositionChange || HasRotAngleChange || HasScaleChange)
+                    {
+                        IsDirty = true;
+                    }
+                    else
+                    {
+                        IsDirty = false;
+                    }
+                }
             }
         }
 
@@ -413,18 +427,52 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Authoritative side only
         /// This will try to send/commit the current transform delta states (if any)
         /// </summary>
         /// <remarks>
-        /// It is not recommended to use this method, but allow the state commit process
-        /// to be handled within <see cref="NetworkTransform"/>
+        /// Only client owners or the server should invoked this method
         /// </remarks>
         /// <param name="transformToCommit">the transform to be committed</param>
         /// <param name="dirtyTime">time it was marked dirty</param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
-            TryCommitTransform(transformToCommit, dirtyTime);
+            //
+            if (!IsOwner && !m_CachedIsServer)
+            {
+                NetworkLog.LogError($"Non-owner instance, {name}, is trying to commit a transform!");
+                return;
+            }
+
+            if (m_CachedIsServer && !OnIsServerAuthoritative() && !IsOwner)
+            {
+                NetworkLog.LogError($"Server is trying to commit {name}'s transform to itself! Use {nameof(SetState)} instead!");
+                return;
+            }
+
+            /// If authority is invoking this, then treat it like we do <see cref="Update"/>
+            if (CanCommitToTransform)
+            {
+                // If our replicated state is not dirty and our local authority state is dirty, clear it.
+                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
+                {
+                    // Now clear our bitset and prepare for next network tick state update
+                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+                }
+
+                TryCommitTransform(transformToCommit, m_CachedNetworkManager.LocalTime.Time);
+            }
+            else
+            {
+                // We are an owner requesting to update our state
+                if (!m_CachedIsServer)
+                {
+                    SetStateServerRpc(transformToCommit.position, transformToCommit.rotation, transformToCommit.localScale, false);
+                }
+                else // Server is always authoritative (including owner authoritative)
+                {
+                    SetStateClientRpc(transformToCommit.position, transformToCommit.rotation, transformToCommit.localScale, false);
+                }
+            }
         }
 
         /// <summary>
@@ -434,7 +482,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void TryCommitTransform(Transform transformToCommit, double dirtyTime)
         {
-            if (!CanCommitToTransform)
+            if (!CanCommitToTransform && !IsOwner)
             {
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
@@ -445,19 +493,6 @@ namespace Unity.Netcode.Components
 
         private void TryCommit(bool isDirty)
         {
-            void Send(NetworkTransformState stateToSend)
-            {
-                if (CanCommitToTransform)
-                {
-                    // server RPC takes a few frames to execute server side, we want this to execute immediately
-                    CommitLocallyAndReplicate(stateToSend);
-                }
-                else
-                {
-                    CommitTransformServerRpc(stateToSend);
-                }
-            }
-
             // if dirty, send
             // if not dirty anymore, but hasn't sent last value for limiting extrapolation, still set isDirty
             // if not dirty and has already sent last value, don't do anything
@@ -467,7 +502,7 @@ namespace Unity.Netcode.Components
             // making it immobile.
             if (isDirty)
             {
-                Send(m_LocalAuthoritativeNetworkState);
+                CommitLocallyAndReplicate(m_LocalAuthoritativeNetworkState);
                 m_HasSentLastValue = false;
                 m_LastSentTick = m_CachedNetworkManager.LocalTime.Tick;
                 m_LastSentState = m_LocalAuthoritativeNetworkState;
@@ -476,17 +511,8 @@ namespace Unity.Netcode.Components
             {
                 m_LastSentState.IsTeleportingNextFrame = false; // This is required here
                 m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
-                Send(m_LastSentState);
+                CommitLocallyAndReplicate(m_LastSentState);
                 m_HasSentLastValue = true;
-            }
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void CommitTransformServerRpc(NetworkTransformState networkState, ServerRpcParams serverParams = default)
-        {
-            if (serverParams.Receive.SenderClientId == OwnerClientId) // RPC call when not authorized to write could happen during the RTT interval during which a server's ownership change hasn't reached the client yet
-            {
-                CommitLocallyAndReplicate(networkState);
             }
         }
 
@@ -1009,6 +1035,9 @@ namespace Unity.Netcode.Components
             Initialize();
         }
 
+        /// <summary>
+        /// Initializes NetworkTransform when spawned and ownership changes.
+        /// </summary>
         private void Initialize()
         {
             if (!IsSpawned)
@@ -1037,8 +1066,11 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
+        private List<ulong> m_ClientIds = new List<ulong>() { 0 };
         /// <summary>
         /// Directly sets a state on the authoritative transform.
+        /// Owner clients can directly set the state on a server authoritative transform
         /// This will override any changes made previously to the transform
         /// This isn't resistant to network jitter. Server side changes due to this method won't be interpolated.
         /// The parameters are broken up into pos / rot / scale on purpose so that the caller can perturb
@@ -1057,16 +1089,33 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (!CanCommitToTransform)
+            // Only the server or owner can invoke this method
+            if (!IsOwner && !m_CachedIsServer)
             {
-                throw new Exception("Non-owner non-authority instance cannot set the state of the NetworkTransform!");
+                throw new Exception("Non-owner client instance cannot set the state of the NetworkTransform!");
             }
 
-            Vector3 pos = posIn == null ? InLocalSpace ? m_Transform.localPosition : m_Transform.position : (Vector3)posIn;
-            Quaternion rot = rotIn == null ? InLocalSpace ? m_Transform.localRotation : m_Transform.rotation : (Quaternion)rotIn;
-            Vector3 scale = scaleIn == null ? m_Transform.localScale : (Vector3)scaleIn;
+            Vector3 pos = posIn == null ? InLocalSpace ? m_Transform.localPosition : m_Transform.position : posIn.Value;
+            Quaternion rot = rotIn == null ? InLocalSpace ? m_Transform.localRotation : m_Transform.rotation : rotIn.Value;
+            Vector3 scale = scaleIn == null ? m_Transform.localScale : scaleIn.Value;
 
-            SetStateInternal(pos, rot, scale, shouldGhostsInterpolate);
+            if (!CanCommitToTransform)
+            {
+                // Preserving the ability for owner authoritative mode to accept state changes from server
+                if (m_CachedIsServer)
+                {
+                    m_ClientIds[0] = OwnerClientId;
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientIds;
+                    SetStateClientRpc(pos, rot, scale, !shouldGhostsInterpolate, m_ClientRpcParams);
+                }
+                else // Preserving the ability for server authoritative mode to accept state changes from owner
+                {
+                    SetStateServerRpc(pos, rot, scale, !shouldGhostsInterpolate);
+                }
+                return;
+            }
+
+            SetStateInternal(pos, rot, scale, !shouldGhostsInterpolate);
         }
 
         /// <summary>
@@ -1088,12 +1137,58 @@ namespace Unity.Netcode.Components
             }
             m_Transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+
+            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="SetState"/>, allows a non-owner server to update the transform state
+        /// </summary>
+        /// <remarks>
+        /// Continued support for client-driven server authority model
+        /// </remarks>
+        [ClientRpc]
+        private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
+        {
+            // Server dictated state is always applied
+            m_Transform.position = pos;
+            m_Transform.rotation = rot;
+            m_Transform.localScale = scale;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+        }
+
+        /// <summary>
+        /// Invoked by <see cref="SetState"/>, allows an owner-client update the transform state
+        /// </summary>
+        /// <remarks>
+        /// Continued support for client-driven server authority model
+        /// </remarks>
+        [ServerRpc]
+        private void SetStateServerRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport)
+        {
+            // server has received this RPC request to move change transform. give the server a chance to modify or even reject the move
+            if (OnClientRequestChange != null)
+            {
+                (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
+            }
+
+            m_Transform.position = pos;
+            m_Transform.rotation = rot;
+            m_Transform.localScale = scale;
+            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
         // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
         // conditional to users only making transform update changes in FixedUpdate.
         /// <inheritdoc/>
+        /// <remarks>
+        /// If you override this method, be sure that:
+        /// - Non-owners always invoke this base class method when using interpolation.
+        /// - Authority can opt to use <see cref="TryCommitTransformToServer"/> in place of invoking this base class method.
+        /// - Non-authority owners can use <see cref="TryCommitTransformToServer"/> but should still invoke the this base class method when using interpolation.
+        /// </remarks>
         protected virtual void Update()
         {
             if (!IsSpawned)
