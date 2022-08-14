@@ -132,7 +132,7 @@ namespace Unity.Netcode.RuntimeTests
             Local
         }
 
-        public enum OverideState
+        public enum OverrideState
         {
             Update,
             CommitToTransform
@@ -148,9 +148,9 @@ namespace Unity.Netcode.RuntimeTests
         /// to non-authoritative transforms.
         /// </summary>
         [UnityTest]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverideState overideState)
+        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverideState.CommitToTransform;
+            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
 
