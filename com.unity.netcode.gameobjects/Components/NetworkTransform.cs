@@ -433,22 +433,16 @@ namespace Unity.Netcode.Components
         /// This will try to send/commit the current transform delta states (if any)
         /// </summary>
         /// <remarks>
-        /// Only client owners or the server should invoked this method
+        /// Only client owners or the server should invoke this method
         /// </remarks>
         /// <param name="transformToCommit">the transform to be committed</param>
         /// <param name="dirtyTime">time it was marked dirty</param>
         protected void TryCommitTransformToServer(Transform transformToCommit, double dirtyTime)
         {
-            //
+            // Only client owners or the server should invoke this method
             if (!IsOwner && !m_CachedIsServer)
             {
                 NetworkLog.LogError($"Non-owner instance, {name}, is trying to commit a transform!");
-                return;
-            }
-
-            if (m_CachedIsServer && !OnIsServerAuthoritative() && !IsOwner)
-            {
-                NetworkLog.LogError($"Server is trying to commit {name}'s transform to itself! Use {nameof(SetState)} instead!");
                 return;
             }
 
