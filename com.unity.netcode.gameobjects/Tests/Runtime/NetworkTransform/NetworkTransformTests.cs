@@ -142,10 +142,9 @@ namespace Unity.Netcode.RuntimeTests
         /// Tests changing all axial values one at a time.
         /// These tests are performed:
         /// - While in local space and world space
-        /// - While interpolation is enabled and disable
+        /// - While interpolation is enabled and disabled
         /// - Using the TryCommitTransformToServer "override" that can be used
         /// from a child derived or external class.
-        /// to non-authoritative transforms.
         /// </summary>
         [UnityTest]
         public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
