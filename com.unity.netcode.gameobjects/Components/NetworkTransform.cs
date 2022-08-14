@@ -276,6 +276,7 @@ namespace Unity.Netcode.Components
                 if (serializer.IsReader)
                 {
                     // Go ahead and mark the local state dirty or not dirty as well
+                    /// <see cref="TryCommitTransformToServer"/>
                     if (HasPositionChange || HasRotAngleChange || HasScaleChange)
                     {
                         IsDirty = true;
@@ -407,6 +408,8 @@ namespace Unity.Netcode.Components
 
         private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
+        private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
+        private List<ulong> m_ClientIds = new List<ulong>() { 0 };
 
         private BufferedLinearInterpolator<float> m_PositionXInterpolator;
         private BufferedLinearInterpolator<float> m_PositionYInterpolator;
@@ -1066,8 +1069,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
-        private List<ulong> m_ClientIds = new List<ulong>() { 0 };
         /// <summary>
         /// Directly sets a state on the authoritative transform.
         /// Owner clients can directly set the state on a server authoritative transform
