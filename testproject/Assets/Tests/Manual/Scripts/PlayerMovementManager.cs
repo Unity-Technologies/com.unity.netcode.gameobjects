@@ -25,9 +25,9 @@ namespace TestProject.ManualTests
                 return;
             }
 
-            if (IsOwner)
+            if (m_RandomMovement.HasAuthority())
             {
-                if (Input.GetKeyDown(KeyCode.Space))
+                if (Input.GetKeyDown(KeyCode.Space) && IsOwner)
                 {
                     m_RandomMovement.enabled = !m_RandomMovement.enabled;
                 }
@@ -36,6 +36,19 @@ namespace TestProject.ManualTests
                     m_RandomMovement.Move(MoveSpeed);
                 }
             }
+            else if (IsOwner)
+            {
+                if (Input.GetKeyDown(KeyCode.Space) && IsOwner)
+                {
+                    ToggleEnableDisableServerRpc();
+                }
+            }
+        }
+
+        [ServerRpc]
+        private void ToggleEnableDisableServerRpc()
+        {
+            m_RandomMovement.enabled = !m_RandomMovement.enabled;
         }
     }
 }

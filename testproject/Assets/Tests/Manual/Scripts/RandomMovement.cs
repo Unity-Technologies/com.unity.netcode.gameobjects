@@ -16,7 +16,7 @@ namespace TestProject.ManualTests
         private NetworkTransform m_NetworkTransform;
         private ClientNetworkTransform m_ClientNetworkTransform;
 
-        private bool HasAuthority()
+        public bool HasAuthority()
         {
             if (m_NetworkTransform != null)
             {
@@ -38,21 +38,11 @@ namespace TestProject.ManualTests
             m_NetworkTransform = GetComponent<NetworkTransform>();
             if (NetworkObject != null && m_Rigidbody != null)
             {
-                if (m_NetworkTransform.NetworkObject.IsOwner)
+                if (HasAuthority())
                 {
                     ChangeDirection(true, true);
                 }
             }
-        }
-
-        /// <summary>
-        /// Notify the server of any client side change in direction or speed
-        /// </summary>
-        /// <param name="moveTowards"></param>
-        [ServerRpc(RequireOwnership = false)]
-        private void MovePlayerServerRpc(Vector3 moveTowards)
-        {
-            m_MoveTowardsPosition = moveTowards;
         }
 
         private Vector3 m_MoveTowardsPosition;
@@ -61,16 +51,6 @@ namespace TestProject.ManualTests
         public void Move(int speed)
         {
             m_CurrentSpeed = speed;
-            // Server sets this locally
-            if (HasAuthority())
-            {
-                m_MoveTowardsPosition = (m_Direction * speed);
-            }
-            else if (m_ClientNetworkTransform == null && !IsServer && IsOwner)
-            {
-                // Client must sent Rpc
-                MovePlayerServerRpc(m_Direction);
-            }
         }
 
 
@@ -98,16 +78,6 @@ namespace TestProject.ManualTests
             }
         }
 
-        /// <summary>
-        /// Handles server notification to client that we need to change direction
-        /// </summary>
-        /// <param name="direction"></param>
-        [ClientRpc]
-        private void ChangeDirectionClientRpc(Vector3 direction)
-        {
-            m_Direction = direction;
-        }
-
         private void OnCollisionStay(Collision collision)
         {
             if (HasAuthority())
@@ -121,14 +91,6 @@ namespace TestProject.ManualTests
                 bool moveDown = collisionPoint.z > transform.position.z;
 
                 ChangeDirection(moveRight, moveDown);
-
-                // If we are not the owner then we need to notify the client that their direction
-                // must change
-                if (m_ClientNetworkTransform == null && IsServer && !IsOwner)
-                {
-                    m_MoveTowardsPosition = m_Direction * m_MoveTowardsPosition.magnitude;
-                    ChangeDirectionClientRpc(m_Direction);
-                }
             }
         }
 
