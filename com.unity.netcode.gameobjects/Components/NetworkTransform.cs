@@ -505,7 +505,8 @@ namespace Unity.Netcode.Components
             // making it immobile.
             if (isDirty)
             {
-                CommitLocallyAndReplicate(m_LocalAuthoritativeNetworkState);
+                // Commit the state
+                ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
                 m_HasSentLastValue = false;
                 m_LastSentTick = m_CachedNetworkManager.LocalTime.Tick;
                 m_LastSentState = m_LocalAuthoritativeNetworkState;
@@ -514,14 +515,10 @@ namespace Unity.Netcode.Components
             {
                 m_LastSentState.IsTeleportingNextFrame = false; // This is required here
                 m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
-                CommitLocallyAndReplicate(m_LastSentState);
+                // Commit the state
+                ReplicatedNetworkState.Value = m_LastSentState;
                 m_HasSentLastValue = true;
             }
-        }
-
-        private void CommitLocallyAndReplicate(NetworkTransformState networkState)
-        {
-            ReplicatedNetworkState.Value = networkState;
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
