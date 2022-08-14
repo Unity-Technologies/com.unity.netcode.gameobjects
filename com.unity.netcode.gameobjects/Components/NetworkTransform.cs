@@ -995,8 +995,6 @@ namespace Unity.Netcode.Components
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
-            // crucial we do this to reset the interpolators so that recycled objects when using a pool will
-            // not have leftover interpolator state from the previous object
             Initialize();
 
             // This assures the initial spawning of the object synchronizes all connected clients
@@ -1050,6 +1048,7 @@ namespace Unity.Netcode.Components
 
             // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
             //  and thus awake won't be called.
+            // TODO: We might consider removing this and just using transform directly;
             m_Transform = transform;
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
