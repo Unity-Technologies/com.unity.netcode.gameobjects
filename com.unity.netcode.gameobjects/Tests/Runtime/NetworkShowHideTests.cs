@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariable<int> MyNetworkVariable;
 
-        private void Start()
+        private void Awake()
         {
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;

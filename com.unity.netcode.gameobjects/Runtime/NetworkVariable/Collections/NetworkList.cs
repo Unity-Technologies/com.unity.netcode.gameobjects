@@ -63,7 +63,7 @@ namespace Unity.Netcode
             return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
-        internal void ConsiderDirty()
+        internal void MarkNetworkObjectDirty()
         {
             m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
@@ -194,7 +194,7 @@ namespace Unity.Netcode
                                     Index = m_List.Length - 1,
                                     Value = m_List[m_List.Length - 1]
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -231,7 +231,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = m_List[index]
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -264,7 +264,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -292,7 +292,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -328,7 +328,7 @@ namespace Unity.Netcode
                                     Value = value,
                                     PreviousValue = previousValue
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -351,7 +351,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType
                                 });
-                                ConsiderDirty();
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -496,7 +496,7 @@ namespace Unity.Netcode
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
             m_DirtyEvents.Add(listEvent);
-            ConsiderDirty();
+            MarkNetworkObjectDirty();
             OnListChanged?.Invoke(listEvent);
         }
 
