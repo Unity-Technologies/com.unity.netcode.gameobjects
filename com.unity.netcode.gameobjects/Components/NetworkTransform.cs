@@ -420,7 +420,6 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
-        private Transform m_Transform; // cache the transform component to reduce unnecessary bounce between managed and native
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
 
@@ -446,7 +445,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            /// If authority is invoking this, then treat it like we do <see cref="Update"/>
+            /// If authority is invoking this, then treat it like we do with <see cref="Update"/>
             if (CanCommitToTransform)
             {
                 // If our replicated state is not dirty and our local authority state is dirty, clear it.
@@ -485,11 +484,7 @@ namespace Unity.Netcode.Components
                 return;
             }
             var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
-            TryCommit(isDirty);
-        }
 
-        private void TryCommit(bool isDirty)
-        {
             // if dirty, send
             // if not dirty anymore, but hasn't sent last value for limiting extrapolation, still set isDirty
             // if not dirty and has already sent last value, don't do anything
@@ -659,11 +654,11 @@ namespace Unity.Netcode.Components
         private void ApplyAuthoritativeState()
         {
             var networkState = ReplicatedNetworkState.Value;
-            var interpolatedPosition = networkState.InLocalSpace ? m_Transform.localPosition : m_Transform.position;
+            var interpolatedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
 
             // todo: we should store network state w/ quats vs. euler angles
-            var interpolatedRotAngles = networkState.InLocalSpace ? m_Transform.localEulerAngles : m_Transform.eulerAngles;
-            var interpolatedScale = m_Transform.localScale;
+            var interpolatedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var interpolatedScale = transform.localScale;
             var isTeleporting = networkState.IsTeleportingNextFrame;
 
             // InLocalSpace Read:
@@ -732,11 +727,11 @@ namespace Unity.Netcode.Components
                 if (InLocalSpace)
                 {
 
-                    m_Transform.localPosition = interpolatedPosition;
+                    transform.localPosition = interpolatedPosition;
                 }
                 else
                 {
-                    m_Transform.position = interpolatedPosition;
+                    transform.position = interpolatedPosition;
                 }
             }
 
@@ -745,18 +740,18 @@ namespace Unity.Netcode.Components
             {
                 if (InLocalSpace)
                 {
-                    m_Transform.localRotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.localRotation = Quaternion.Euler(interpolatedRotAngles);
                 }
                 else
                 {
-                    m_Transform.rotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.rotation = Quaternion.Euler(interpolatedRotAngles);
                 }
             }
 
             // Apply the new scale
             if (networkState.HasScaleChange)
             {
-                m_Transform.localScale = interpolatedScale;
+                transform.localScale = interpolatedScale;
             }
         }
 
@@ -994,7 +989,7 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 // Teleport to current position
-                SetStateInternal(m_Transform.position, m_Transform.rotation, m_Transform.localScale, true);
+                SetStateInternal(transform.position, transform.rotation, transform.localScale, true);
 
                 // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
@@ -1036,11 +1031,6 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
-            // must set up m_Transform in OnNetworkSpawn because it's possible an object spawns but is disabled
-            //  and thus awake won't be called.
-            // TODO: We might consider removing this and just using transform directly;
-            m_Transform = transform;
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
@@ -1086,9 +1076,9 @@ namespace Unity.Netcode.Components
                 throw new Exception("Non-owner client instance cannot set the state of the NetworkTransform!");
             }
 
-            Vector3 pos = posIn == null ? InLocalSpace ? m_Transform.localPosition : m_Transform.position : posIn.Value;
-            Quaternion rot = rotIn == null ? InLocalSpace ? m_Transform.localRotation : m_Transform.rotation : rotIn.Value;
-            Vector3 scale = scaleIn == null ? m_Transform.localScale : scaleIn.Value;
+            Vector3 pos = posIn == null ? InLocalSpace ? transform.localPosition : transform.position : posIn.Value;
+            Quaternion rot = rotIn == null ? InLocalSpace ? transform.localRotation : transform.rotation : rotIn.Value;
+            Vector3 scale = scaleIn == null ? transform.localScale : scaleIn.Value;
 
             if (!CanCommitToTransform)
             {
@@ -1118,15 +1108,15 @@ namespace Unity.Netcode.Components
         {
             if (InLocalSpace)
             {
-                m_Transform.localPosition = pos;
-                m_Transform.localRotation = rot;
+                transform.localPosition = pos;
+                transform.localRotation = rot;
             }
             else
             {
-                m_Transform.position = pos;
-                m_Transform.rotation = rot;
+                transform.position = pos;
+                transform.rotation = rot;
             }
-            m_Transform.localScale = scale;
+            transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
 
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
@@ -1142,9 +1132,9 @@ namespace Unity.Netcode.Components
         private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
         {
             // Server dictated state is always applied
-            m_Transform.position = pos;
-            m_Transform.rotation = rot;
-            m_Transform.localScale = scale;
+            transform.position = pos;
+            transform.rotation = rot;
+            transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
@@ -1164,9 +1154,9 @@ namespace Unity.Netcode.Components
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
             }
 
-            m_Transform.position = pos;
-            m_Transform.rotation = rot;
-            m_Transform.localScale = scale;
+            transform.position = pos;
+            transform.rotation = rot;
+            transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
