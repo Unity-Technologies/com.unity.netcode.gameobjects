@@ -263,7 +263,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenReceivingAMessageWithoutAHandler_ExceptionIsLogged()
         {
-            // If we are going to create a new MessagingSystem, dispose of the current one (if there is one)
+            // If a MessagingSystem already exists then dispose of it before creating a new MessagingSystem (otherwise memory leak)
             if (m_MessagingSystem != null)
             {
                 m_MessagingSystem.Dispose();
@@ -272,6 +272,7 @@ namespace Unity.Netcode.EditorTests
 
             // Since m_MessagingSystem is disposed during teardown we don't need to worry about that here.
             m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
+            m_MessagingSystem.ClientConnected(0);
 
             var messageHeader = new MessageHeader
             {
