@@ -38,7 +38,7 @@ namespace TestProject.ManualTests
             }
             else if (IsOwner)
             {
-                if (Input.GetKeyDown(KeyCode.Space) && IsOwner)
+                if (Input.GetKeyDown(KeyCode.Space))
                 {
                     ToggleEnableDisableServerRpc();
                 }
