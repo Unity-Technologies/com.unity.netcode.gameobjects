@@ -163,6 +163,7 @@ namespace Unity.Netcode.EditorTests
             NetworkTimeAdvanceTestInternal(randomSteps, 144, 23132.231f);
 
             var shortSteps = Enumerable.Repeat(1 / 30f, 1000);
+
             NetworkTimeAdvanceTestInternal(shortSteps, 60, 0f);
             NetworkTimeAdvanceTestInternal(shortSteps, 1, 0f);
             NetworkTimeAdvanceTestInternal(shortSteps, 10, 0f);
@@ -186,6 +187,7 @@ namespace Unity.Netcode.EditorTests
             var startTime = new NetworkTime(tickRate, start);
             var startTime2 = new NetworkTime(tickRate, start2);
             NetworkTime dif = startTime2 - startTime;
+
             foreach (var step in steps)
             {
                 startTime += step;
