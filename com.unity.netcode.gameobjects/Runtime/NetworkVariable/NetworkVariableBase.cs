@@ -54,7 +54,7 @@ namespace Unity.Netcode
         /// The <see cref="m_IsDirty"/> property is used to determine if the
         /// value of the `NetworkVariable` has changed.
         /// </summary>
-        private protected bool m_IsDirty;
+        private bool m_IsDirty;
 
         /// <summary>
         /// Gets or sets the name of the network variable's instance
