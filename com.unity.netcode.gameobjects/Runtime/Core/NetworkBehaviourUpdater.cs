@@ -48,16 +48,6 @@ namespace Unity.Netcode
                             }
                         }
                     }
-
-                    // Now, reset all the no-longer-dirty variables
-                    foreach (var dirtyObj in m_DirtyNetworkObjects)
-                    {
-                        for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            dirtyObj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
-                        }
-                    }
-                    m_DirtyNetworkObjects.Clear();
                 }
                 else
                 {
@@ -72,19 +62,16 @@ namespace Unity.Netcode
                             }
                         }
                     }
-
-                    // Now, reset all the no-longer-dirty variables
-                    foreach (var sobj in m_DirtyNetworkObjects)
-                    {
-                        for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
-                        {
-                            sobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
-                        }
-                        // This is not strictly needed for runtime, but it fails tests, otherwise.
-                        sobj.MarkVariablesDirty(false);
-                    }
-                    m_DirtyNetworkObjects.Clear();
                 }
+                // Now, reset all the no-longer-dirty variables
+                foreach (var dirtyobj in m_DirtyNetworkObjects)
+                {
+                    for (int k = 0; k < dirtyobj.ChildNetworkBehaviours.Count; k++)
+                    {
+                        dirtyobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+                    }
+                }
+                m_DirtyNetworkObjects.Clear();
             }
             finally
             {
