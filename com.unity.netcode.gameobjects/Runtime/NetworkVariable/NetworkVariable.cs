@@ -87,7 +87,7 @@ namespace Unity.Netcode
         /// <param name="value">the new value of type `T` to be set/></param>
         private protected void Set(T value)
         {
-            m_IsDirty = true;
+            SetDirty(true);
             T previousValue = m_InternalValue;
             m_InternalValue = value;
             OnValueChanged?.Invoke(previousValue, m_InternalValue);
@@ -119,7 +119,7 @@ namespace Unity.Netcode
 
             if (keepDirtyDelta)
             {
-                m_IsDirty = true;
+                SetDirty(true);
             }
 
             OnValueChanged?.Invoke(previousValue, m_InternalValue);

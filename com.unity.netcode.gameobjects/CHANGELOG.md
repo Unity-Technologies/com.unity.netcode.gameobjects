@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
 
+- Preformance improvements for cases with large number of NetworkObjects, by not iterating over all unchanged NetworkObjects 
 
 ### Fixed
 
