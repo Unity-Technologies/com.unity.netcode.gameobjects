@@ -583,6 +583,8 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
             }
+
+            MarkVariablesDirty(false);
         }
 
         internal void VariableUpdate(ulong targetClientId)
