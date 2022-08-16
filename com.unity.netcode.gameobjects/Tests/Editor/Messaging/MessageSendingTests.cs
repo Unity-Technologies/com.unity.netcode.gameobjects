@@ -48,6 +48,7 @@ namespace Unity.Netcode.EditorTests
         {
             // Keep track of what we sent
             private List<List<MessagingSystem.MessageWithHandler>> m_CachedMessages = new List<List<MessagingSystem.MessageWithHandler>>();
+
             public void Dispose()
             {
                 foreach (var cachedItem in m_CachedMessages)
@@ -57,6 +58,7 @@ namespace Unity.Netcode.EditorTests
                 }
                 m_CachedMessages.Clear();
             }
+
             public List<MessagingSystem.MessageWithHandler> GetMessages()
             {
                 var messageList = new List<MessagingSystem.MessageWithHandler>
