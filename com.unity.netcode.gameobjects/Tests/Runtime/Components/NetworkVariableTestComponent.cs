@@ -53,7 +53,6 @@ namespace Unity.Netcode.RuntimeTests
 
 
         public bool EnableTesting;
-        private bool m_Initialized;
         private bool m_FinishedTests;
         private bool m_ChangesAppliedToNetworkVariables;
 
@@ -148,6 +147,11 @@ namespace Unity.Netcode.RuntimeTests
             return m_FinishedTests;
         }
 
+        public void Awake()
+        {
+            InitializeTest();
+        }
+
         // Update is called once per frame
         private void Update()
         {
@@ -164,37 +168,29 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     if (NetworkManager != null && NetworkManager.IsListening)
                     {
-                        if (!m_Initialized)
-                        {
-                            InitializeTest();
-                            m_Initialized = true;
-                        }
-                        else
-                        {
-                            //Now change all of the values to make sure we are at least testing the local callback
-                            m_NetworkVariableBool.Value = false;
-                            m_NetworkVariableByte.Value = 255;
-                            m_NetworkVariableColor.Value = new Color(100, 100, 100);
-                            m_NetworkVariableColor32.Value = new Color32(100, 100, 100, 100);
-                            m_NetworkVariableDouble.Value = 1000;
-                            m_NetworkVariableFloat.Value = 1000.0f;
-                            m_NetworkVariableInt.Value = 1000;
-                            m_NetworkVariableLong.Value = 100000;
-                            m_NetworkVariableSByte.Value = -127;
-                            m_NetworkVariableQuaternion.Value = new Quaternion(100, 100, 100, 100);
-                            m_NetworkVariableShort.Value = short.MaxValue;
-                            m_NetworkVariableVector4.Value = new Vector4(1000, 1000, 1000, 1000);
-                            m_NetworkVariableVector3.Value = new Vector3(1000, 1000, 1000);
-                            m_NetworkVariableVector2.Value = new Vector2(1000, 1000);
-                            m_NetworkVariableRay.Value = new Ray(Vector3.one, Vector3.right);
-                            m_NetworkVariableULong.Value = ulong.MaxValue;
-                            m_NetworkVariableUInt.Value = uint.MaxValue;
-                            m_NetworkVariableUShort.Value = ushort.MaxValue;
+                        //Now change all of the values to make sure we are at least testing the local callback
+                        m_NetworkVariableBool.Value = false;
+                        m_NetworkVariableByte.Value = 255;
+                        m_NetworkVariableColor.Value = new Color(100, 100, 100);
+                        m_NetworkVariableColor32.Value = new Color32(100, 100, 100, 100);
+                        m_NetworkVariableDouble.Value = 1000;
+                        m_NetworkVariableFloat.Value = 1000.0f;
+                        m_NetworkVariableInt.Value = 1000;
+                        m_NetworkVariableLong.Value = 100000;
+                        m_NetworkVariableSByte.Value = -127;
+                        m_NetworkVariableQuaternion.Value = new Quaternion(100, 100, 100, 100);
+                        m_NetworkVariableShort.Value = short.MaxValue;
+                        m_NetworkVariableVector4.Value = new Vector4(1000, 1000, 1000, 1000);
+                        m_NetworkVariableVector3.Value = new Vector3(1000, 1000, 1000);
+                        m_NetworkVariableVector2.Value = new Vector2(1000, 1000);
+                        m_NetworkVariableRay.Value = new Ray(Vector3.one, Vector3.right);
+                        m_NetworkVariableULong.Value = ulong.MaxValue;
+                        m_NetworkVariableUInt.Value = uint.MaxValue;
+                        m_NetworkVariableUShort.Value = ushort.MaxValue;
 
-                            //Set the timeout (i.e. how long we will wait for all NetworkVariables to have registered their changes)
-                            m_WaitForChangesTimeout = Time.realtimeSinceStartup + 0.50f;
-                            m_ChangesAppliedToNetworkVariables = true;
-                        }
+                        //Set the timeout (i.e. how long we will wait for all NetworkVariables to have registered their changes)
+                        m_WaitForChangesTimeout = Time.realtimeSinceStartup + 0.50f;
+                        m_ChangesAppliedToNetworkVariables = true;
                     }
                 }
             }
