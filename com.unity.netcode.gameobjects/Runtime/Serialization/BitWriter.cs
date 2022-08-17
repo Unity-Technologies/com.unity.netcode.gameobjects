@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -140,7 +139,7 @@ namespace Unity.Netcode
                     WriteMisaligned(asBytes[i]);
                 }
             }
-            
+
             for (var count = wholeBytes * k_BitsPerByte; count < bitCount; ++count)
             {
                 WriteBit((value & (1UL << count)) != 0);

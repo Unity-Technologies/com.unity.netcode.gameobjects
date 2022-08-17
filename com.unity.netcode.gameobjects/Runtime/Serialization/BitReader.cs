@@ -20,7 +20,7 @@ namespace Unity.Netcode
 #endif
 
         private const int k_BitsPerByte = 8;
-        
+
         private int BytePosition => m_BitPosition >> 3;
 
         /// <summary>
