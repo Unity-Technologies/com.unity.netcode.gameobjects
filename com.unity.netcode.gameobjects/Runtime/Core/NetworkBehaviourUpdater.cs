@@ -30,6 +30,11 @@ namespace Unity.Netcode
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
+                        for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                        {
+                            dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
+                        }
+
                         for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                         {
                             var client = networkManager.ConnectedClientsList[i];
@@ -56,6 +61,10 @@ namespace Unity.Netcode
                     {
                         if (sobj.IsOwner)
                         {
+                            for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
+                            {
+                                sobj.ChildNetworkBehaviours[k].PreVariableUpdate();
+                            }
                             for (int k = 0; k < sobj.ChildNetworkBehaviours.Count; k++)
                             {
                                 sobj.ChildNetworkBehaviours[k].VariableUpdate(NetworkManager.ServerClientId);
