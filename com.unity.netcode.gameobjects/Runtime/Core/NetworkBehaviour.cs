@@ -587,7 +587,7 @@ namespace Unity.Netcode
             MarkVariablesDirty(false);
         }
 
-        internal void VariableUpdate(ulong targetClientId)
+        internal void PreVariableUpdate()
         {
             if (!m_VarInit)
             {
@@ -595,6 +595,10 @@ namespace Unity.Netcode
             }
 
             PreNetworkVariableWrite();
+        }
+
+        internal void VariableUpdate(ulong targetClientId)
+        {
             NetworkVariableUpdate(targetClientId, NetworkBehaviourId);
         }
 
