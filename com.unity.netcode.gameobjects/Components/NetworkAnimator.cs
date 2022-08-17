@@ -163,6 +163,7 @@ namespace Unity.Netcode.Components
         internal struct AnimationMessage : INetworkSerializable
         {
             // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            internal bool Transition;
             internal int StateHash;
             internal float NormalizedTime;
             internal int Layer;
@@ -427,6 +428,7 @@ namespace Unity.Netcode.Components
 
                 var animMsg = new AnimationMessage
                 {
+                    Transition = m_Animator.IsInTransition(layer),
                     StateHash = stateHash,
                     NormalizedTime = normalizedTime,
                     Layer = layer,
@@ -442,6 +444,9 @@ namespace Unity.Netcode.Components
             m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
         }
 
+        /// <summary>
+        /// Checks for changes in both Animator parameters and state.
+        /// </summary>
         internal void CheckForAnimatorChanges()
         {
             if (!IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && !IsServer)
@@ -482,6 +487,7 @@ namespace Unity.Netcode.Components
 
                 var animMsg = new AnimationMessage
                 {
+                    Transition = m_Animator.IsInTransition(layer),
                     StateHash = stateHash,
                     NormalizedTime = normalizedTime,
                     Layer = layer,
@@ -744,7 +750,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         private unsafe void UpdateAnimationState(AnimationMessage animationState)
         {
-            if (animationState.StateHash != 0)
+            if (animationState.StateHash == 0)
+            {
+                return;
+            }
+
+            var currentState = m_Animator.GetCurrentAnimatorStateInfo(animationState.Layer);
+            if (currentState.fullPathHash != animationState.StateHash || m_Animator.IsInTransition(animationState.Layer) != animationState.Transition)
             {
                 m_Animator.Play(animationState.StateHash, animationState.Layer, animationState.NormalizedTime);
             }
@@ -830,6 +842,10 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
+            if (IsServer)
+            {
+                return;
+            }
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
@@ -879,11 +895,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
-            var isServerAuthoritative = IsServerAuthoritative();
-            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
-            {
-                m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
-            }
+            m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
 
         /// <summary>
@@ -900,8 +912,13 @@ namespace Unity.Netcode.Components
         /// <param name="setTrigger">sets (true) or resets (false) the trigger. The default is to set it (true).</param>
         public void SetTrigger(int hash, bool setTrigger = true)
         {
-            var isServerAuthoritative = IsServerAuthoritative();
-            if (IsOwner && !isServerAuthoritative || IsServer && isServerAuthoritative)
+            // MTT-3564:
+            // After fixing the issue with trigger controlled Transitions being synchronized twice,
+            // it exposed additional issues with this logic.  Now, either the owner or the server can
+            // update triggers. Since server-side RPCs are immediately invoked, for a host a trigger
+            // will happen when SendAnimTriggerClientRpc is called.  For a client owner, we call the
+            // SendAnimTriggerServerRpc and then trigger locally when running in owner authority mode.
+            if (IsOwner || IsServer)
             {
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
                 if (IsServer)
@@ -911,9 +928,11 @@ namespace Unity.Netcode.Components
                 else
                 {
                     SendAnimTriggerServerRpc(animTriggerMessage);
+                    if (!IsServerAuthoritative())
+                    {
+                        m_Animator.SetTrigger(hash);
+                    }
                 }
-                //  trigger the animation locally on the server...
-                m_Animator.SetBool(hash, setTrigger);
             }
         }
 
