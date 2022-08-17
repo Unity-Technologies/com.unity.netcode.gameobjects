@@ -6,16 +6,21 @@ namespace Unity.Netcode
 
         public bool IsReparented;
 
+        public bool ChildWorldPositionStays;
+
         //If(Metadata.IsReparented)
         public bool IsLatestParentSet;
 
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
+
+
         public void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(NetworkObjectId);
             writer.WriteValueSafe(IsReparented);
+            writer.WriteValueSafe(ChildWorldPositionStays);
             if (IsReparented)
             {
                 writer.WriteValueSafe(IsLatestParentSet);
@@ -36,6 +41,7 @@ namespace Unity.Netcode
 
             reader.ReadValueSafe(out NetworkObjectId);
             reader.ReadValueSafe(out IsReparented);
+            reader.ReadValueSafe(out ChildWorldPositionStays);
             if (IsReparented)
             {
                 reader.ReadValueSafe(out IsLatestParentSet);
@@ -59,7 +65,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-            networkObject.SetNetworkParenting(IsReparented, LatestParent);
+            networkObject.SetNetworkParenting(IsReparented, LatestParent, ChildWorldPositionStays);
             networkObject.ApplyNetworkParenting();
         }
     }

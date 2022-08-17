@@ -575,6 +575,7 @@ namespace Unity.Netcode
         private bool m_IsReparented; // Did initial parent (came from the scene hierarchy) change at runtime?
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
+        private bool m_ChildWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -583,10 +584,11 @@ namespace Unity.Netcode
 
         internal (bool IsReparented, ulong? LatestParent) GetNetworkParenting() => (m_IsReparented, m_LatestParent);
 
-        internal void SetNetworkParenting(bool isReparented, ulong? latestParent)
+        internal void SetNetworkParenting(bool isReparented, ulong? latestParent, bool childWorldPositionStays)
         {
             m_IsReparented = isReparented;
             m_LatestParent = latestParent;
+            m_ChildWorldPositionStays = childWorldPositionStays;
         }
 
         /// <summary>
@@ -648,7 +650,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-
+            m_ChildWorldPositionStays = worldPositionStays;
             transform.SetParent(parent.transform, worldPositionStays);
             return true;
         }
@@ -709,6 +711,7 @@ namespace Unity.Netcode
             else
             {
                 m_LatestParent = null;
+                m_ChildWorldPositionStays = true; // Reset to the default setting of true
             }
 
             m_IsReparented = true;
@@ -770,6 +773,7 @@ namespace Unity.Netcode
             {
                 m_CachedParent = null;
                 transform.parent = null;
+                m_ChildWorldPositionStays = true;  // Reset to the default setting of true
 
                 InvokeBehaviourOnNetworkObjectParentChanged(null);
                 return true;
@@ -784,7 +788,7 @@ namespace Unity.Netcode
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
-            transform.parent = parentObject.transform;
+            transform.SetParent(parentObject.transform, m_ChildWorldPositionStays);
 
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
@@ -990,12 +994,14 @@ namespace Unity.Netcode
 
             public int NetworkSceneHandle;
 
+            public bool ChildWorldPositionStays;
+
             public unsafe void Serialize(FastBufferWriter writer)
             {
                 var writeSize = sizeof(HeaderData);
                 writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
                 writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + FastBufferWriter.GetWriteSize<bool>() + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
                 writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!writer.TryBeginWrite(writeSize))
@@ -1018,6 +1024,7 @@ namespace Unity.Netcode
                 if (Header.IsReparented)
                 {
                     writer.WriteValue(IsLatestParentSet);
+                    writer.WriteValue(ChildWorldPositionStays);
                     if (IsLatestParentSet)
                     {
                         writer.WriteValue((ulong)LatestParent);
@@ -1046,7 +1053,7 @@ namespace Unity.Netcode
                 reader.ReadValue(out Header);
                 var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
                 readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + FastBufferWriter.GetWriteSize<bool>() + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!reader.TryBeginRead(readSize))
@@ -1067,6 +1074,7 @@ namespace Unity.Netcode
                 if (Header.IsReparented)
                 {
                     reader.ReadValue(out IsLatestParentSet);
+                    reader.ReadValue(out ChildWorldPositionStays);
                     if (IsLatestParentSet)
                     {
                         reader.ReadValueSafe(out ulong latestParent);
@@ -1119,8 +1127,10 @@ namespace Unity.Netcode
                 obj.Header.HasTransform = true;
                 obj.Transform = new SceneObject.TransformData
                 {
-                    Position = transform.position,
-                    Rotation = transform.rotation
+                    // If we are parented and we have the m_ChildWorldPositionStays disabled, then pass the local values
+                    // as opposed to the world values.
+                    Position = parentNetworkObject && !m_ChildWorldPositionStays ? transform.localPosition : transform.position,
+                    Rotation = parentNetworkObject && !m_ChildWorldPositionStays ? transform.localRotation : transform.rotation
                 };
             }
 
@@ -1130,6 +1140,7 @@ namespace Unity.Netcode
             {
                 var isLatestParentSet = latestParent != null && latestParent.HasValue;
                 obj.IsLatestParentSet = isLatestParentSet;
+                obj.ChildWorldPositionStays = m_ChildWorldPositionStays;
                 if (isLatestParentSet)
                 {
                     obj.LatestParent = latestParent.Value;
@@ -1175,7 +1186,7 @@ namespace Unity.Netcode
                 sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
                 sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
 
-            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
+            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent, sceneObject.ChildWorldPositionStays);
 
             if (networkObject == null)
             {
@@ -1190,7 +1201,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            // Spawn the NetworkObject(
+            // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, variableData, false);
 
             return networkObject;
