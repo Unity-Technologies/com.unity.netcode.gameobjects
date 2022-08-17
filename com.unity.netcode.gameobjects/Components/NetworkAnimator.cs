@@ -295,37 +295,31 @@ namespace Unity.Netcode.Components
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner || IsServer)
+            int layers = m_Animator.layerCount;
+            m_TransitionHash = new int[layers];
+            m_AnimationHash = new int[layers];
+            m_LayerWeights = new float[layers];
+
+            if (IsServer)
             {
-                int layers = m_Animator.layerCount;
-                m_TransitionHash = new int[layers];
-                m_AnimationHash = new int[layers];
-                m_LayerWeights = new float[layers];
+                NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+                m_ClientSendList = new List<ulong>(128);
+                m_ClientRpcParams = new ClientRpcParams();
+                m_ClientRpcParams.Send = new ClientRpcSendParams();
+                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+            }
 
-                if (IsServer)
+            // Store off our current layer weights
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
+            {
+                float layerWeightNow = m_Animator.GetLayerWeight(layer);
+                if (layerWeightNow != m_LayerWeights[layer])
                 {
-                    NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                }
-
-                // Store off our current layer weights
-                for (int layer = 0; layer < m_Animator.layerCount; layer++)
-                {
-                    float layerWeightNow = m_Animator.GetLayerWeight(layer);
-                    if (layerWeightNow != m_LayerWeights[layer])
-                    {
-                        m_LayerWeights[layer] = layerWeightNow;
-                    }
-                }
-
-                if (IsServer)
-                {
-                    m_ClientSendList = new List<ulong>(128);
-                    m_ClientRpcParams = new ClientRpcParams();
-                    m_ClientRpcParams.Send = new ClientRpcSendParams();
-                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                    m_LayerWeights[layer] = layerWeightNow;
                 }
             }
 
+            // Create our internal parameter cache to determine change in state
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
             m_ParametersToUpdate = new List<int>(parameters.Length);
