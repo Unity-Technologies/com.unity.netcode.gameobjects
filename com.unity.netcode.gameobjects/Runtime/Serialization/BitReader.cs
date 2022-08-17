@@ -20,6 +20,8 @@ namespace Unity.Netcode
 #endif
 
         private const int k_BitsPerByte = 8;
+        
+        private int BytePosition => m_BitPosition >> 3;
 
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
@@ -98,11 +100,6 @@ namespace Unity.Netcode
                 throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read more than 64 bits from a 64-bit value!");
             }
 
-            if (bitCount < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bitCount), "Cannot read fewer than 0 bits!");
-            }
-
             int checkPos = (int)(m_BitPosition + bitCount);
             if (checkPos > m_AllowedBitwiseReadMark)
             {
@@ -165,7 +162,7 @@ namespace Unity.Netcode
 #endif
 
             int offset = m_BitPosition & 7;
-            int pos = m_BitPosition >> 3;
+            int pos = BytePosition;
             bit = (m_BufferPointer[pos] & (1 << offset)) != 0;
             ++m_BitPosition;
         }
@@ -175,7 +172,7 @@ namespace Unity.Netcode
         {
             var val = new T();
             byte* ptr = ((byte*)&val) + offsetBytes;
-            byte* bufferPointer = m_BufferPointer + m_Position;
+            byte* bufferPointer = m_BufferPointer + BytePosition;
             UnsafeUtility.MemCpy(ptr, bufferPointer, bytesToRead);
 
             m_BitPosition += bytesToRead * k_BitsPerByte;
