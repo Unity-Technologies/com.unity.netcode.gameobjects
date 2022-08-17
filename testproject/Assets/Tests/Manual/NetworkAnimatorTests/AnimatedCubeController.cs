@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -14,23 +15,17 @@ namespace Tests.Manual.NetworkAnimatorTests
         private NetworkAnimator m_NetworkAnimator;
         private bool m_IsServerAuthoritative = true;
 
-        private void Awake()
+        private void DetermineNetworkAnimatorComponentType()
         {
-            m_Animator = GetComponent<Animator>();
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
-            if (m_NetworkAnimator == null)
+            if (m_NetworkAnimator != null)
             {
-                m_NetworkAnimator = GetComponent<OwnerNetworkAnimator>();
-                if (m_NetworkAnimator != null)
-                {
-                    m_IsServerAuthoritative = false;
-                }
-                else
-                {
-                    throw new System.Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
-                }
+                m_IsServerAuthoritative = m_NetworkAnimator.GetType() != typeof(OwnerNetworkAnimator);
             }
-            m_Rotate = m_Animator.GetBool("Rotate");
+            else
+            {
+                throw new Exception($"{nameof(AnimatedCubeController)} requires that it is paired with either a {nameof(NetworkAnimator)} or {nameof(OwnerNetworkAnimator)}.  Neither of the two components were found!");
+            }
         }
 
         public override void OnNetworkSpawn()
@@ -39,6 +34,9 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 enabled = false;
             }
+            m_Animator = GetComponent<Animator>();
+            DetermineNetworkAnimatorComponentType();
+            m_Rotate = m_Animator.GetBool("Rotate");
         }
 
         private bool HasAuthority()

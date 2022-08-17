@@ -15,17 +15,6 @@ namespace Unity.Netcode.RuntimeTests
             public bool FieldWritten;
             public bool DeltaRead;
             public bool FieldRead;
-            public bool Dirty = false;
-
-            public override void ResetDirty()
-            {
-                Dirty = false;
-            }
-
-            public override bool IsDirty()
-            {
-                return Dirty;
-            }
 
             public override void WriteDelta(FastBufferWriter writer)
             {
@@ -138,12 +127,12 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client side DummyNetBehaviour to register it was spawned!");
 
             // Check that FieldWritten is written when dirty
-            serverComponent.NetVar.Dirty = true;
+            serverComponent.NetVar.SetDirty(true);
             yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.FieldWritten);
 
             // Check that DeltaWritten is written when dirty
-            serverComponent.NetVar.Dirty = true;
+            serverComponent.NetVar.SetDirty(true);
             yield return s_DefaultWaitForTick;
             Assert.True(serverComponent.NetVar.DeltaWritten);
 

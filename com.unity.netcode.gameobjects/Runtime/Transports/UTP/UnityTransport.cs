@@ -1285,10 +1285,10 @@ namespace Unity.Netcode.Transports.UTP
                 SendBatchedMessages(kvp.Key, kvp.Value);
             }
 
-            // The above flush only puts the message in UTP internal buffers, need the flush send
-            // job to execute to actually get things out on the wire. This will also ensure any
-            // disconnect messages are sent out.
-            m_Driver.ScheduleFlushSend(default).Complete();
+            // The above flush only puts the message in UTP internal buffers, need an update to
+            // actually get the messages on the wire. (Normally a flush send would be sufficient,
+            // but there might be disconnect messages and those require an update call.)
+            m_Driver.ScheduleUpdate().Complete();
 
             DisposeInternals();
 

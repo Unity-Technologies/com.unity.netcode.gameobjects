@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 39a16938ffb5cd846a9f6df7a686a9c4, type: 3}
-  m_Name: NetworkAnimatorEnhancements
+  m_Name: NetworkAnimatorServerOwnerTest
   m_EditorClassIdentifier: 
   SceneToReference: {fileID: 102900000, guid: f88da8bb8d07e11418eaad6524d5cc12, type: 3}
   m_IncludedScenes: []
