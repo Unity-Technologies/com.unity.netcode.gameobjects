@@ -37,10 +37,16 @@ namespace TestProject.ManualTests
                 }
             }
 
-            m_ServerAuthText.text = $"ID-{OwnerClientId}";
-            m_OwnerAuthText.text = $"ID-{OwnerClientId}";
-
             base.OnNetworkSpawn();
+        }
+
+        private void OnGUI()
+        {
+            if (IsSpawned)
+            {
+                m_ServerAuthText.text = $"ID-{OwnerClientId}";
+                m_OwnerAuthText.text = $"ID-{OwnerClientId}";
+            }
         }
     }
 }

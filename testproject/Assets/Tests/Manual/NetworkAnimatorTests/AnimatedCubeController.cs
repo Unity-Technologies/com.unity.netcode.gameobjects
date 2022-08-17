@@ -39,7 +39,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             m_Rotate = m_Animator.GetBool("Rotate");
         }
 
-        private bool HasAuthority()
+        public bool HasAuthority()
         {
             if (IsOwnerAuthority() || IsServerAuthority())
             {
@@ -48,7 +48,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             return false;
         }
 
-        private bool IsServerAuthority()
+        public bool IsServerAuthority()
         {
             if (IsServer && m_IsServerAuthoritative)
             {
@@ -57,7 +57,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             return false;
         }
 
-        private bool IsOwnerAuthority()
+        public bool IsOwnerAuthority()
         {
             if (IsOwner && !m_IsServerAuthoritative)
             {

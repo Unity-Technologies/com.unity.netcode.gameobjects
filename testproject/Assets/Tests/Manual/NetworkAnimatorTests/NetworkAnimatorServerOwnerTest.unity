@@ -349,7 +349,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 25
+    m_FontSize: 23
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -360,7 +360,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press "C" and "Space" to make the cube play animations.
+  m_Text: Press "C" and "Space"  play animations.  "S" switches  ownership.
 --- !u!222 &146283181
 CanvasRenderer:
   m_ObjectHideFlags: 0
