@@ -578,7 +578,7 @@ GameObject:
   - component: {fileID: 3604323723684300772}
   - component: {fileID: 6047057957339659638}
   - component: {fileID: 8104648428997222210}
-  - component: {fileID: 5157980021080854601}
+  - component: {fileID: 1245349943772079751}
   m_Layer: 0
   m_Name: NetworkAnimatedCube-Server
   m_TagString: Untagged
@@ -635,7 +635,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TestIterations: 20
---- !u!114 &5157980021080854601
+--- !u!114 &1245349943772079751
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
