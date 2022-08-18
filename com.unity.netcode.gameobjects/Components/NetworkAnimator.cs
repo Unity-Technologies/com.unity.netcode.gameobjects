@@ -156,10 +156,12 @@ namespace Unity.Netcode.Components
         /// </remarks>
         private void ProcessAnimationMessageQueue()
         {
+            // Early exit if nothing to process
             if (m_AnimationMessageQueue.Count == 0)
             {
                 return;
             }
+
             if (m_AnimationMessageBeingProcessed.HasBeenProcessed)
             {
                 m_AnimationMessageBeingProcessed = m_AnimationMessageQueue.Dequeue();
@@ -185,12 +187,10 @@ namespace Unity.Netcode.Components
             ProcessTransitionSynchronization();
         }
 
-        private bool ProcessTransitionSynchronization()
+        private void ProcessTransitionSynchronization()
         {
-            var stillProcessing = false;
             for (int i = 0; i < m_AnimationMessageBeingProcessed.AnimationStates.Count; i++)
             {
-
                 var animationState = m_AnimationMessageBeingProcessed.AnimationStates[i];
                 // Skip things already processed or are not transition states
                 if (animationState.HasBeenProcessed || !animationState.Transition)
@@ -198,6 +198,7 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
+                // Only occurs for newly joined clients
                 if (!animationState.TriggerProcessed)
                 {
                     // Trigger transition here
@@ -207,9 +208,6 @@ namespace Unity.Netcode.Components
 
                     // Apply the changes
                     m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
-
-                    // Wait for the trigger to trigger before applying state, return true signifying we are still processing the transition
-                    stillProcessing = true;
 
                     // We break in order to allow the trigger to be processed by the animator first
                     // Next frame during PreUpdate the triggered transition state will be synchronized
@@ -224,7 +222,6 @@ namespace Unity.Netcode.Components
                     m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
                 }
             }
-            return stillProcessing;
         }
 
         internal void AddAnimationMessageToProcessQueue(NetworkAnimator.AnimationMessage message)
