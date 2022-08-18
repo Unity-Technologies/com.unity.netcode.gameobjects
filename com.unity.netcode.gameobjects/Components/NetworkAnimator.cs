@@ -63,6 +63,8 @@ namespace Unity.Netcode.Components
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
+
+                        ProcessAnimationMessageQueue();
                         break;
                     }
             }
@@ -139,6 +141,97 @@ namespace Unity.Netcode.Components
             m_SendTriggerUpdates.Add(new TriggerUpdate() { ClientRpcParams = clientRpcParams, AnimationTriggerMessage = animationTriggerMessage });
         }
 
+        private Queue<NetworkAnimator.AnimationMessage> m_AnimationMessageQueue = new Queue<NetworkAnimator.AnimationMessage>();
+
+        // We initialize the first animation message as having been processed so it will pull from the queue
+        private NetworkAnimator.AnimationMessage m_AnimationMessageBeingProcessed = new NetworkAnimator.AnimationMessage() { HasBeenProcessed = true };
+
+        /// <summary>
+        ///  This processes any inbound pending <see cref="NetworkAnimator.AnimationMessage"/>s
+        ///  that need processing.
+        /// </summary>
+        /// <remarks>
+        /// Currently we have no way to link triggers to transition states
+        /// <see cref="NetworkAnimator.m_LastTriggerHash"/>
+        /// </remarks>
+        private void ProcessAnimationMessageQueue()
+        {
+            if (m_AnimationMessageQueue.Count == 0)
+            {
+                return;
+            }
+            if (m_AnimationMessageBeingProcessed.HasBeenProcessed)
+            {
+                m_AnimationMessageBeingProcessed = m_AnimationMessageQueue.Dequeue();
+            }
+
+            // Process all non-transition animation states that haven't been processed in
+            // one pass
+            for (int i = 0; i < m_AnimationMessageBeingProcessed.AnimationStates.Count; i++)
+            {
+                var animationState = m_AnimationMessageBeingProcessed.AnimationStates[i];
+                if (animationState.HasBeenProcessed || animationState.Transition)
+                {
+                    continue;
+                }
+
+                m_NetworkAnimator.UpdateAnimationState(animationState);
+                animationState.HasBeenProcessed = true;
+                // Apply the changes
+                m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
+            }
+
+            // Finally, the last thing we apply is triggers and their transition state
+            ProcessTransitionSynchronization();
+        }
+
+        private bool ProcessTransitionSynchronization()
+        {
+            var stillProcessing = false;
+            for (int i = 0; i < m_AnimationMessageBeingProcessed.AnimationStates.Count; i++)
+            {
+
+                var animationState = m_AnimationMessageBeingProcessed.AnimationStates[i];
+                // Skip things already processed or are not transition states
+                if (animationState.HasBeenProcessed || !animationState.Transition)
+                {
+                    continue;
+                }
+
+                if (!animationState.TriggerProcessed)
+                {
+                    // Trigger transition here
+                    m_NetworkAnimator.SetTrigger(animationState.TransitionHash);
+                    // Then set this to false to signify we are done
+                    animationState.TriggerProcessed = true;
+
+                    // Apply the changes
+                    m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
+
+                    // Wait for the trigger to trigger before applying state, return true signifying we are still processing the transition
+                    stillProcessing = true;
+
+                    // We break in order to allow the trigger to be processed by the animator first
+                    // Next frame during PreUpdate the triggered transition state will be synchronized
+                    break;
+                }
+                else
+                {
+                    // Synchronize the triggered transition state
+                    m_NetworkAnimator.UpdateAnimationState(animationState);
+                    animationState.HasBeenProcessed = true;
+                    // Apply the changes
+                    m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
+                }
+            }
+            return stillProcessing;
+        }
+
+        internal void AddAnimationMessageToProcessQueue(NetworkAnimator.AnimationMessage message)
+        {
+            m_AnimationMessageQueue.Enqueue(message);
+        }
+
         internal void DeregisterUpdate()
         {
             NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.PreUpdate);
@@ -160,21 +253,91 @@ namespace Unity.Netcode.Components
     [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour
     {
-        internal struct AnimationMessage : INetworkSerializable
+        internal struct AnimationState : INetworkSerializable
         {
-            // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
-            internal bool Transition;
+            // Not to be serialized, used for processing the animation state
+            internal bool HasBeenProcessed;
+
             internal int StateHash;
             internal float NormalizedTime;
             internal int Layer;
             internal float Weight;
 
+            // Not to be serialized, used for processing the animation state
+            internal bool TriggerProcessed;
+
+            // For synchronizing transitions
+            internal bool Transition;
+            internal int TransitionHash;
+
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                serializer.SerializeValue(ref StateHash);
-                serializer.SerializeValue(ref NormalizedTime);
-                serializer.SerializeValue(ref Layer);
-                serializer.SerializeValue(ref Weight);
+                if (serializer.IsWriter)
+                {
+                    var writer = serializer.GetFastBufferWriter();
+                    BytePacker.WriteValuePacked(writer, StateHash);
+                    BytePacker.WriteValuePacked(writer, NormalizedTime);
+                    BytePacker.WriteValuePacked(writer, Layer);
+                    BytePacker.WriteValuePacked(writer, Weight);
+                    BytePacker.WriteValuePacked(writer, Transition);
+                    if (Transition)
+                    {
+                        BytePacker.WriteValuePacked(writer, TransitionHash);
+                    }
+                }
+                else
+                {
+                    var reader = serializer.GetFastBufferReader();
+                    ByteUnpacker.ReadValuePacked(reader, out StateHash);
+                    ByteUnpacker.ReadValuePacked(reader, out NormalizedTime);
+                    ByteUnpacker.ReadValuePacked(reader, out Layer);
+                    ByteUnpacker.ReadValuePacked(reader, out Weight);
+                    ByteUnpacker.ReadValuePacked(reader, out Transition);
+                    if (Transition)
+                    {
+                        ByteUnpacker.ReadValuePacked(reader, out TransitionHash);
+                    }
+                }
+            }
+        }
+
+        internal struct AnimationMessage : INetworkSerializable
+        {
+            // Not to be serialized, used for processing the animation message
+            internal bool HasBeenProcessed;
+
+            // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            internal List<AnimationState> AnimationStates;
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                if (serializer.IsReader)
+                {
+                    if (AnimationStates == null)
+                    {
+                        AnimationStates = new List<AnimationState>();
+                    }
+                    else if (AnimationStates.Count > 0)
+                    {
+                        AnimationStates.Clear();
+                    }
+                }
+                var count = AnimationStates.Count;
+                serializer.SerializeValue(ref count);
+
+                var animationState = new AnimationState();
+                for (int i = 0; i < count; i++)
+                {
+                    if (serializer.IsWriter)
+                    {
+                        animationState = AnimationStates[i];
+                    }
+                    serializer.SerializeNetworkSerializable(ref animationState);
+                    if (serializer.IsReader)
+                    {
+                        AnimationStates.Add(animationState);
+                    }
+                }
             }
         }
 
@@ -224,6 +387,7 @@ namespace Unity.Netcode.Components
         }
 
         // Animators only support up to 32 params
+        // TODO: Look into making this a range limited property
         private const int k_MaxAnimationParams = 32;
 
         private int[] m_TransitionHash;
@@ -293,37 +457,34 @@ namespace Unity.Netcode.Components
         private List<int> m_ParametersToUpdate;
         private List<ulong> m_ClientSendList;
         private ClientRpcParams m_ClientRpcParams;
+        private List<AnimationState> m_AnimationMessageStates;
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner || IsServer)
+            int layers = m_Animator.layerCount;
+            m_TransitionHash = new int[layers];
+            m_AnimationHash = new int[layers];
+            m_LayerWeights = new float[layers];
+
+            m_AnimationMessageStates = new List<AnimationState>();
+
+            if (IsServer)
             {
-                int layers = m_Animator.layerCount;
-                m_TransitionHash = new int[layers];
-                m_AnimationHash = new int[layers];
-                m_LayerWeights = new float[layers];
+                m_ClientSendList = new List<ulong>(128);
+                m_ClientRpcParams = new ClientRpcParams();
+                m_ClientRpcParams.Send = new ClientRpcSendParams();
+                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
+            }
 
-                if (IsServer)
+            // Store off our current layer weights
+            for (int layer = 0; layer < m_Animator.layerCount; layer++)
+            {
+                m_AnimationMessageStates.Add(new AnimationState());
+                float layerWeightNow = m_Animator.GetLayerWeight(layer);
+                if (layerWeightNow != m_LayerWeights[layer])
                 {
-                    NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
-                }
-
-                // Store off our current layer weights
-                for (int layer = 0; layer < m_Animator.layerCount; layer++)
-                {
-                    float layerWeightNow = m_Animator.GetLayerWeight(layer);
-                    if (layerWeightNow != m_LayerWeights[layer])
-                    {
-                        m_LayerWeights[layer] = layerWeightNow;
-                    }
-                }
-
-                if (IsServer)
-                {
-                    m_ClientSendList = new List<ulong>(128);
-                    m_ClientRpcParams = new ClientRpcParams();
-                    m_ClientRpcParams.Send = new ClientRpcSendParams();
-                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                    m_LayerWeights[layer] = layerWeightNow;
                 }
             }
 
@@ -393,14 +554,18 @@ namespace Unity.Netcode.Components
                 m_ParametersToUpdate.Add(i);
             }
             SendParametersUpdate(m_ClientRpcParams);
+
+            var animationMessage = new AnimationMessage
+            {
+                AnimationStates = m_AnimationMessageStates
+            };
+
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
 
                 var stateHash = st.fullPathHash;
                 var normalizedTime = st.normalizedTime;
-                var totalSpeed = st.speed * st.speedMultiplier;
-                var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
                 // NOTE:
                 // When synchronizing, for now we will just complete the transition and
                 // synchronize the player to the next state being transitioned into
@@ -422,23 +587,29 @@ namespace Unity.Netcode.Components
                     {
                         normalizedTime = 0.0f;
                     }
-
                     stateHash = nextState.fullPathHash;
                 }
+                var animMsg = m_AnimationMessageStates[layer];
 
-                var animMsg = new AnimationMessage
-                {
-                    Transition = m_Animator.IsInTransition(layer),
-                    StateHash = stateHash,
-                    NormalizedTime = normalizedTime,
-                    Layer = layer,
-                    Weight = m_LayerWeights[layer]
-                };
+                animMsg.TransitionHash = m_LastTriggerHash;
+                animMsg.Transition = m_Animator.IsInTransition(layer);
+                animMsg.StateHash = stateHash;
+                animMsg.NormalizedTime = normalizedTime;
+                animMsg.Layer = layer;
+                animMsg.Weight = m_LayerWeights[layer];
+
+                m_AnimationMessageStates[layer] = animMsg;
+            }
+            if (animationMessage.AnimationStates.Count > 0)
+            {
                 // Server always send via client RPC
-                SendAnimStateClientRpc(animMsg, m_ClientRpcParams);
+                SendAnimStateClientRpc(animationMessage, m_ClientRpcParams);
             }
         }
 
+        /// <summary>
+        /// Required for the server to synchronize newly joining players
+        /// </summary>
         private void OnClientConnectedCallback(ulong playerId)
         {
             m_NetworkAnimatorStateChangeHandler.SynchronizeClient(playerId);
@@ -467,6 +638,11 @@ namespace Unity.Netcode.Components
             int stateHash;
             float normalizedTime;
 
+            var animationMessage = new AnimationMessage
+            {
+                AnimationStates = new List<AnimationState>()
+            };
+
             // This sends updates only if a layer change or transition is happening
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
@@ -485,7 +661,7 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
-                var animMsg = new AnimationMessage
+                var animationState = new AnimationState
                 {
                     Transition = m_Animator.IsInTransition(layer),
                     StateHash = stateHash,
@@ -494,13 +670,19 @@ namespace Unity.Netcode.Components
                     Weight = m_LayerWeights[layer]
                 };
 
+                animationMessage.AnimationStates.Add(animationState);
+            }
+
+            // Make sure there is something to send
+            if (animationMessage.AnimationStates.Count > 0)
+            {
                 if (!IsServer && IsOwner)
                 {
-                    SendAnimStateServerRpc(animMsg);
+                    SendAnimStateServerRpc(animationMessage);
                 }
                 else
                 {
-                    SendAnimStateClientRpc(animMsg);
+                    SendAnimStateClientRpc(animationMessage);
                 }
             }
         }
@@ -746,9 +928,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Applies the AnimationMessage state to the Animator
+        /// Applies the AnimationState state to the Animator
         /// </summary>
-        private unsafe void UpdateAnimationState(AnimationMessage animationState)
+        internal void UpdateAnimationState(AnimationState animationState)
         {
             if (animationState.StateHash == 0)
             {
@@ -756,10 +938,19 @@ namespace Unity.Netcode.Components
             }
 
             var currentState = m_Animator.GetCurrentAnimatorStateInfo(animationState.Layer);
-            if (currentState.fullPathHash != animationState.StateHash || m_Animator.IsInTransition(animationState.Layer) != animationState.Transition)
+
+            // Currently:
+            // In order to update a state our new state should not be the current relative state
+            // or should be a trigger to transition being synchronized for a late joining player
+            // TODO Future:
+            // Possibly investigate synchronizing time based on tick frequency. This would require
+            // a public property that allows users to define the frequency (in ticks), per instance,
+            // that any currently playing animation will be time synchronized.
+            if (currentState.fullPathHash != animationState.StateHash || animationState.Transition && animationState.TriggerProcessed)
             {
                 m_Animator.Play(animationState.StateHash, animationState.Layer, animationState.NormalizedTime);
             }
+
             m_Animator.SetLayerWeight(animationState.Layer, animationState.Weight);
         }
 
@@ -823,7 +1014,7 @@ namespace Unity.Netcode.Components
                 {
                     return;
                 }
-                UpdateAnimationState(animSnapshot);
+                m_NetworkAnimatorStateChangeHandler.AddAnimationMessageToProcessQueue(animSnapshot);
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
                     m_ClientSendList.Clear();
@@ -849,7 +1040,7 @@ namespace Unity.Netcode.Components
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
-                UpdateAnimationState(animSnapshot);
+                m_NetworkAnimatorStateChangeHandler.AddAnimationMessageToProcessQueue(animSnapshot);
             }
         }
 
@@ -871,7 +1062,7 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 //  trigger the animation locally on the server...
-                m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
+                InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
                 if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
                 {
@@ -883,7 +1074,29 @@ namespace Unity.Netcode.Components
                     m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage, m_ClientRpcParams);
                 }
             }
+        }
 
+        /// <summary>
+        /// For late joining players:
+        /// Tracks the last trigger to better synchronize late joining clients.
+        /// </summary>
+        /// <remarks>
+        /// This is a semi-work-around because we don't currently have a way to link triggers to transitions.
+        /// Since there could be, theoretically, multiple triggers active that each have their own layer
+        /// relative state transition, this "semi-work-around" will only handle synchronizing the very last
+        /// trigger and more complex setups could very well not get all triggers synchronized.
+        /// TODO: Determine (possibly editor side) a way to link transition hashes with trigger hashes.
+        /// </remarks>
+        private int m_LastTriggerHash;
+
+        /// <summary>
+        /// See above <see cref="m_LastTriggerHash"/>
+        /// </summary>
+        private void InternalSetTrigger(int hash, bool isSet = true)
+        {
+            m_LastTriggerHash = hash;
+            m_Animator.SetBool(hash, isSet);
+            m_Animator.SetTrigger(hash);
         }
 
         /// <summary>
@@ -895,7 +1108,7 @@ namespace Unity.Netcode.Components
         [ClientRpc]
         internal void SendAnimTriggerClientRpc(AnimationTriggerMessage animationTriggerMessage, ClientRpcParams clientRpcParams = default)
         {
-            m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
+            InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
         }
 
         /// <summary>
@@ -924,13 +1137,17 @@ namespace Unity.Netcode.Components
                 if (IsServer)
                 {
                     SendAnimTriggerClientRpc(animTriggerMessage);
+                    if (!IsHost)
+                    {
+                        InternalSetTrigger(hash);
+                    }
                 }
                 else
                 {
                     SendAnimTriggerServerRpc(animTriggerMessage);
                     if (!IsServerAuthoritative())
                     {
-                        m_Animator.SetTrigger(hash);
+                        InternalSetTrigger(hash);
                     }
                 }
             }
