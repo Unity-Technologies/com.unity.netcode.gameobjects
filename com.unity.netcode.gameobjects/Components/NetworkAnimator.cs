@@ -462,6 +462,9 @@ namespace Unity.Netcode.Components
         public override void OnNetworkSpawn()
         {
             int layers = m_Animator.layerCount;
+
+            // Initializing the below arrays for everyone handles an issue
+            // when running in owner authoritative mode and the owner changes.
             m_TransitionHash = new int[layers];
             m_AnimationHash = new int[layers];
             m_LayerWeights = new float[layers];
