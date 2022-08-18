@@ -30,6 +30,12 @@ namespace Unity.Netcode.Components
             }
             m_SendParameterUpdates.Clear();
 
+            foreach (var sendEntry in m_SendAnimationUpdates)
+            {
+                m_NetworkAnimator.SendAnimStateClientRpc(sendEntry.AnimationMessage, sendEntry.ClientRpcParams);
+            }
+            m_SendAnimationUpdates.Clear();
+
             foreach (var sendEntry in m_SendTriggerUpdates)
             {
                 m_NetworkAnimator.SendAnimTriggerClientRpc(sendEntry.AnimationTriggerMessage, sendEntry.ClientRpcParams);
@@ -781,12 +787,11 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 UpdateParameters(parametersUpdate);
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count - 1 > 0)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
                     m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     m_NetworkAnimatorStateChangeHandler.SendParameterUpdate(parametersUpdate, m_ClientRpcParams);
                 }
@@ -824,12 +829,11 @@ namespace Unity.Netcode.Components
                     return;
                 }
                 UpdateAnimationState(animSnapshot);
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count - 1 > 0)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
                     m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     m_NetworkAnimatorStateChangeHandler.SendAnimationUpdate(animSnapshot, m_ClientRpcParams);
                 }
@@ -840,7 +844,7 @@ namespace Unity.Netcode.Components
         /// Internally-called RPC client receiving function to update some animation state on a client
         /// </summary>
         [ClientRpc]
-        private unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
+        internal unsafe void SendAnimStateClientRpc(AnimationMessage animSnapshot, ClientRpcParams clientRpcParams = default)
         {
             if (IsServer)
             {
@@ -873,12 +877,11 @@ namespace Unity.Netcode.Components
                 //  trigger the animation locally on the server...
                 m_Animator.SetBool(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
 
-                if (NetworkManager.ConnectedClientsIds.Count - 2 > 0)
+                if (NetworkManager.ConnectedClientsIds.Count - 1 > 0)
                 {
                     m_ClientSendList.Clear();
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
                     m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     m_NetworkAnimatorStateChangeHandler.SendTriggerUpdate(animationTriggerMessage, m_ClientRpcParams);
                 }
