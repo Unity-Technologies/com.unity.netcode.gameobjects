@@ -18,6 +18,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed an issue where reading/writing more than 8 bits at a time with BitReader/BitWriter would write/read from the wrong place, returning and incorrect result. (#2130)
+- Fixed issue with the internal `NetworkTransformState.m_Bitset` flag not getting cleared upon the next tick advancement. (#2110)
+- Fixed interpolation issue with `NetworkTransform.Teleport`. (#2110)
+- Fixed issue where the authoritative side was interpolating its transform. (#2110)
 - Fixed Owner-written NetworkVariable infinitely write themselves (#2109)
 - Fixed NetworkList issue that showed when inserting at the very end of a NetworkList (#2099)
 - Fixed issue where a client owner of a `NetworkVariable` with both owner read and write permissions would not update the server side when changed. (#2097)
