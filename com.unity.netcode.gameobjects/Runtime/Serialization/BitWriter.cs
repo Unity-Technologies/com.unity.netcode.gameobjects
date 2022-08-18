@@ -29,6 +29,8 @@ namespace Unity.Netcode
             get => (m_BitPosition & 7) == 0;
         }
 
+        private int BytePosition => m_BitPosition >> 3;
+
         internal unsafe BitWriter(FastBufferWriter writer)
         {
             m_Writer = writer;
@@ -181,7 +183,7 @@ namespace Unity.Netcode
 #endif
 
             int offset = m_BitPosition & 7;
-            int pos = m_BitPosition >> 3;
+            int pos = BytePosition;
             ++m_BitPosition;
             m_BufferPointer[pos] = (byte)(bit ? (m_BufferPointer[pos] & ~(1 << offset)) | (1 << offset) : (m_BufferPointer[pos] & ~(1 << offset)));
         }
@@ -190,7 +192,7 @@ namespace Unity.Netcode
         private unsafe void WritePartialValue<T>(T value, int bytesToWrite, int offsetBytes = 0) where T : unmanaged
         {
             byte* ptr = ((byte*)&value) + offsetBytes;
-            byte* bufferPointer = m_BufferPointer + m_Position;
+            byte* bufferPointer = m_BufferPointer + BytePosition;
             UnsafeUtility.MemCpy(bufferPointer, ptr, bytesToWrite);
 
             m_BitPosition += bytesToWrite * k_BitsPerByte;

@@ -35,8 +35,8 @@ internal static class Program
             var procInfo = new ProcessStartInfo("dotnet");
 
             procInfo.Arguments = check
-                ? $"format {file} whitespace --no-restore --verify-no-changes --verbosity {verbosity}"
-                : $"format {file} whitespace --no-restore --verbosity {verbosity}";
+                ? $"format whitespace {file} --no-restore --verify-no-changes --verbosity {verbosity}"
+                : $"format whitespace {file} --no-restore --verbosity {verbosity}";
             Console.WriteLine($"######## START -> {(check ? "check" : "fix")} whitespace issues");
             var whitespace = Process.Start(procInfo);
             whitespace.WaitForExit();
@@ -48,8 +48,8 @@ internal static class Program
             Console.WriteLine("######## SUCCEEDED -> no whitespace issues");
 
             procInfo.Arguments = check
-                ? $"format {file} style --severity error --no-restore --verify-no-changes --verbosity {verbosity}"
-                : $"format {file} style --severity error --no-restore --verbosity {verbosity}";
+                ? $"format style {file} --severity error --no-restore --verify-no-changes --verbosity {verbosity}"
+                : $"format style {file} --severity error --no-restore --verbosity {verbosity}";
             Console.WriteLine($"######## START -> {(check ? "check" : "fix")} style/naming issues");
             var style = Process.Start(procInfo);
             style.WaitForExit();
