@@ -1129,8 +1129,8 @@ namespace Unity.Netcode
                 {
                     // If we are parented and we have the m_ChildWorldPositionStays disabled, then pass the local values
                     // as opposed to the world values.
-                    Position = parentNetworkObject && !m_ChildWorldPositionStays ? transform.localPosition : transform.position,
-                    Rotation = parentNetworkObject && !m_ChildWorldPositionStays ? transform.localRotation : transform.rotation
+                    Position = parentNetworkObject && !m_ChildWorldPositionStays ? Vector3.zero : transform.position,
+                    Rotation = parentNetworkObject && !m_ChildWorldPositionStays ? Quaternion.identity : transform.rotation
                 };
             }
 
