@@ -502,7 +502,9 @@ namespace Unity.Netcode.Components
             }
             else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
             {
-                m_LastSentState.IsTeleportingNextFrame = false; // This is required here
+                // Since the last m_LocalAuthoritativeNetworkState could have included a IsTeleportingNextFrame
+                // we need to reset this here so only the deltas are applied and interpolation is not reset again.
+                m_LastSentState.IsTeleportingNextFrame = false;
                 m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
                 // Commit the state
                 ReplicatedNetworkState.Value = m_LastSentState;
