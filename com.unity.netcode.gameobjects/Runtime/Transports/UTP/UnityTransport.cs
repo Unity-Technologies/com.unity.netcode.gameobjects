@@ -237,6 +237,19 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>
+        /// Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.
+        /// ! This should be solely used for Testing as UTP will select the best option for the user depending on the platform used !
+        /// </summary>
+        [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
+        [SerializeField]
+        private bool m_UseWebSocket = false;
+        public bool UseWebSocket
+        {
+            get => m_UseWebSocket;
+            set => m_UseWebSocket = value;
+        }
+
+        /// <summary>
         /// Structure to store the address to connect to
         /// </summary>
         [Serializable]
@@ -1345,7 +1358,8 @@ namespace Unity.Netcode.Transports.UTP
                 receiveQueueCapacity: m_MaxPacketQueueSize,
                 sendQueueCapacity: m_MaxPacketQueueSize);
 
-            driver = NetworkDriver.Create(m_NetworkSettings);
+            // Per default the driver will use UDP. If the user choose so, he can use WebSocket instead.
+            driver = m_UseWebSocket ? NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings):NetworkDriver.Create(m_NetworkSettings);
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
