@@ -183,12 +183,16 @@ namespace Unity.Netcode.Components
                 m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
             }
 
-            // Finally, the last thing we apply is triggers and their transition state
-            ProcessTransitionSynchronization();
+            // The last thing we apply is triggers and their transition states
+            m_AnimationMessageBeingProcessed.HasBeenProcessed = !ProcessTransitionSynchronization();
         }
 
-        private void ProcessTransitionSynchronization()
+        /// <summary>
+        /// This is primarily for late joining client trigger and transition synchronization
+        /// </summary>
+        private bool ProcessTransitionSynchronization()
         {
+            bool continueProcessing = false;
             for (int i = 0; i < m_AnimationMessageBeingProcessed.AnimationStates.Count; i++)
             {
                 var animationState = m_AnimationMessageBeingProcessed.AnimationStates[i];
@@ -209,8 +213,10 @@ namespace Unity.Netcode.Components
                     // Apply the changes
                     m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
 
-                    // We break in order to allow the trigger to be processed by the animator first
-                    // Next frame during PreUpdate the triggered transition state will be synchronized
+                    // We need to mark this as true so the AnimationMessage doesn't get
+                    // marked as having been fully processed (still need to sync the state)
+                    continueProcessing = true;
+                    /// <see cref="NetworkAnimator.AnimationState"/> and NetworkAnimator.m_LastTriggerHash
                     break;
                 }
                 else
@@ -222,6 +228,7 @@ namespace Unity.Netcode.Components
                     m_AnimationMessageBeingProcessed.AnimationStates[i] = animationState;
                 }
             }
+            return continueProcessing;
         }
 
         internal void AddAnimationMessageToProcessQueue(NetworkAnimator.AnimationMessage message)
