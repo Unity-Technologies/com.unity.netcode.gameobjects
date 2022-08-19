@@ -205,8 +205,12 @@ namespace Unity.Netcode.Components
                 // Only occurs for newly joined clients
                 if (!animationState.TriggerProcessed)
                 {
-                    // Trigger transition here
-                    m_NetworkAnimator.SetTrigger(animationState.TransitionHash);
+                    if (animationState.TransitionHash != 0)
+                    {
+                        // Trigger transition here
+                        m_NetworkAnimator.SetTrigger(animationState.TransitionHash);
+                    }
+
                     // Then set this to false to signify we are done
                     animationState.TriggerProcessed = true;
 
@@ -437,10 +441,10 @@ namespace Unity.Netcode.Components
                 m_NetworkAnimatorStateChangeHandler = null;
             }
 
-            if (IsServer)
-            {
-                NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
-            }
+            // The safest way to be assured that you get a NetworkManager instance when also
+            // taking integration testing into consideration (multiple NetworkManager instances)
+            var networkManager = HasNetworkObject ? NetworkManager : NetworkManager.Singleton;
+            networkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
@@ -647,7 +651,7 @@ namespace Unity.Netcode.Components
 
             var animationMessage = new AnimationMessage
             {
-                AnimationStates = new List<AnimationState>()
+                AnimationStates = m_AnimationMessageStates
             };
 
             // This sends updates only if a layer change or transition is happening
@@ -657,11 +661,11 @@ namespace Unity.Netcode.Components
                 var totalSpeed = st.speed * st.speedMultiplier;
                 var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
 
-                // determine if we have reached the end of our state time, if so we can skip
-                if (st.normalizedTime >= adjustedNormalizedMaxTime)
-                {
-                    continue;
-                }
+                //// determine if we have reached the end of our state time, if so we can skip
+                //if (st.normalizedTime >= adjustedNormalizedMaxTime)
+                //{
+                //    continue;
+                //}
 
                 if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
                 {
@@ -785,7 +789,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Checks if any of the Animator's states have changed
         /// </summary>
-        private unsafe bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
+        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
         {
             stateHash = 0;
             normalizedTime = 0;
@@ -1096,14 +1100,94 @@ namespace Unity.Netcode.Components
         /// </remarks>
         private int m_LastTriggerHash;
 
+
+        internal struct TriggerStateInfo
+        {
+            public bool IsDirty;
+            public AnimatorStateInfo CurrentState;
+            public AnimatorStateInfo NextState;
+        }
+
+        /// <summary>
+        /// Links triggers with layer state transitions.
+        /// This only tracks the initial transition from one state to the next when a trigger fires
+        /// ** This does not track the transitions back to the original state **
+        /// </summary>
+        /// <remarks>
+        ///[TriggerNameHash][Layer Index][TriggerStateInfo]
+        /// </remarks>
+        private Dictionary<int, Dictionary<int, TriggerStateInfo>> m_CurrentTriggers = new Dictionary<int, Dictionary<int, TriggerStateInfo>>();
+
+        /// <summary>
+        /// Links triggers with transitions
+        /// </summary>
+        internal void UpdatePendingTriggerStates()
+        {
+            foreach (var keyPair in m_CurrentTriggers)
+            {
+                var hash = keyPair.Key;
+
+                // Check for the layers with states in transition
+                for (int i = 0; i < m_Animator.layerCount; i++)
+                {
+                    // Skip any triggers that have no layer indices set yet.
+                    if (!keyPair.Value.ContainsKey(i) || !keyPair.Value[i].IsDirty)
+                    {
+                        continue;
+                    }
+
+                    var triggerStateInfo = keyPair.Value[i];
+                    if (m_Animator.IsInTransition(i))
+                    {
+                        triggerStateInfo.NextState = m_Animator.GetNextAnimatorStateInfo(i);
+                        Debug.Log($"[{hash}][TriggerState][ADD] Current ({triggerStateInfo.CurrentState.fullPathHash}) | Next ({triggerStateInfo.NextState.fullPathHash})");
+                    }
+                    triggerStateInfo.IsDirty = false;
+                    keyPair.Value[i] = triggerStateInfo;
+                }
+            }
+        }
+
         /// <summary>
         /// See above <see cref="m_LastTriggerHash"/>
         /// </summary>
         private void InternalSetTrigger(int hash, bool isSet = true)
         {
             m_LastTriggerHash = hash;
+
+            // We re-use what we allocate
+            if (!m_CurrentTriggers.ContainsKey(hash))
+            {
+                m_CurrentTriggers.Add(hash, new Dictionary<int, TriggerStateInfo>());
+            }
+
+            // Get the current states for all layers and mark them dirty for processing
+            for (int i = 0; i < m_Animator.layerCount; i++)
+            {
+                var triggerStates = m_CurrentTriggers[hash];
+                var currentState = m_Animator.GetCurrentAnimatorStateInfo(i);
+
+                // We re-use what we create for the duration of this NetworkAnimator instance
+                if (!triggerStates.ContainsKey(i))
+                {
+                    var triggerStateInfo = new TriggerStateInfo()
+                    {
+                        IsDirty = true,
+                        CurrentState = currentState,
+                    };
+                    triggerStates.Add(i, triggerStateInfo);
+                }
+                else
+                {
+                    var triggerStateEntry = triggerStates[i];
+                    triggerStateEntry.IsDirty = true;
+                    triggerStateEntry.CurrentState = currentState;
+                    triggerStates[i] = triggerStateEntry;
+                }
+            }
+
+            // Set the trigger value
             m_Animator.SetBool(hash, isSet);
-            m_Animator.SetTrigger(hash);
         }
 
         /// <summary>
@@ -1140,6 +1224,10 @@ namespace Unity.Netcode.Components
             // SendAnimTriggerServerRpc and then trigger locally when running in owner authority mode.
             if (IsOwner || IsServer)
             {
+                /// <see cref="UpdatePendingTriggerStates"/>
+                Debug.LogWarning("[NetworkAnimator] Need to queue sending the messages in order to allow UpdatePendingTriggerStates to update and then send te RPCs");
+                Debug.Break();
+
                 var animTriggerMessage = new AnimationTriggerMessage() { Hash = hash, IsTriggerSet = setTrigger };
                 if (IsServer)
                 {
