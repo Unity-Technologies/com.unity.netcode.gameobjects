@@ -221,7 +221,7 @@ namespace Unity.Netcode.Components
                     if (animationState.TriggerHashValues != null && animationState.TriggerHashValues.Count > 0)
                     {
                         // Set all triggers associated with the state
-                        foreach(var triggerHash in animationState.TriggerHashValues)
+                        foreach (var triggerHash in animationState.TriggerHashValues)
                         {
                             // Set trigger
                             m_NetworkAnimator.SetTrigger(triggerHash);
@@ -308,7 +308,7 @@ namespace Unity.Netcode.Components
                     if (Transition)
                     {
                         BytePacker.WriteValuePacked(writer, TriggerHashValues.Count);
-                        foreach(var triggerHash in TriggerHashValues)
+                        foreach (var triggerHash in TriggerHashValues)
                         {
                             BytePacker.WriteValuePacked(writer, triggerHash);
                         }
@@ -328,7 +328,7 @@ namespace Unity.Netcode.Components
                         ByteUnpacker.ReadValuePacked(reader, out count);
                         TriggerHashValues = new List<int>(count);
                         var triggerHash = 0;
-                        for(int i = 0; i < count; i++)
+                        for (int i = 0; i < count; i++)
                         {
                             ByteUnpacker.ReadValuePacked(reader, out triggerHash);
                             TriggerHashValues.Add(triggerHash);
@@ -649,7 +649,7 @@ namespace Unity.Netcode.Components
                             var triggerStateInfo = triggerEntry.Value[layer];
                             if (triggerStateInfo.CurrentState.fullPathHash == stateHash || triggerStateInfo.NextState.fullPathHash == stateHash)
                             {
-                                if(!animMsg.TriggerHashValues.Contains(triggerEntry.Key))
+                                if (!animMsg.TriggerHashValues.Contains(triggerEntry.Key))
                                 {
                                     animMsg.TriggerHashValues.Add(triggerEntry.Key);
                                 }
