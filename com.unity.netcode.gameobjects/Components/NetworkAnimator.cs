@@ -506,8 +506,6 @@ namespace Unity.Netcode.Components
             m_AnimationHash = new int[layers];
             m_LayerWeights = new float[layers];
 
-            m_AnimationMessageStates = new List<AnimationState>();
-
             if (IsServer)
             {
                 m_ClientSendList = new List<ulong>(128);
@@ -517,7 +515,13 @@ namespace Unity.Netcode.Components
                 NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
             }
 
-            // Store off our current layer weights
+            // !! Note !!
+            // Do not clear this list. We re-use the AnimationState entries
+            // initialized below
+            m_AnimationMessageStates = new List<AnimationState>();
+
+            // Store off our current layer weights and create our animation
+            // state entries per layer.
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 m_AnimationMessageStates.Add(new AnimationState());
@@ -528,6 +532,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // Build our reference parameter values to detect when they change
             var parameters = m_Animator.parameters;
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
             m_ParametersToUpdate = new List<int>(parameters.Length);
@@ -587,6 +592,7 @@ namespace Unity.Netcode.Components
             m_ClientSendList.Clear();
             m_ClientSendList.Add(playerId);
             m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+
             // With synchronization we send all parameters
             m_ParametersToUpdate.Clear();
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
@@ -597,6 +603,7 @@ namespace Unity.Netcode.Components
 
             var animationMessage = new AnimationMessage
             {
+                // Assign the existing m_AnimationMessageStates list
                 AnimationStates = m_AnimationMessageStates
             };
 
@@ -698,6 +705,7 @@ namespace Unity.Netcode.Components
 
             var animationMessage = new AnimationMessage
             {
+                // Assign the existing m_AnimationMessageStates list
                 AnimationStates = m_AnimationMessageStates
             };
 
@@ -707,12 +715,6 @@ namespace Unity.Netcode.Components
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
                 var totalSpeed = st.speed * st.speedMultiplier;
                 var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
-
-                //// determine if we have reached the end of our state time, if so we can skip
-                //if (st.normalizedTime >= adjustedNormalizedMaxTime)
-                //{
-                //    continue;
-                //}
 
                 if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
                 {
