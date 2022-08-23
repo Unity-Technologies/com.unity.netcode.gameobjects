@@ -15,6 +15,9 @@
     "optionalUnityReferences": [
         "TestAssemblies"
     ],
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
     "includePlatforms": [
         "Editor"
     ],
