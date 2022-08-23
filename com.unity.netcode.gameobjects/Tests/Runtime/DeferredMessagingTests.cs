@@ -983,9 +983,9 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        [Ignore("This test is unstable (MTT-4146)")]
         public IEnumerator WhenAMessageIsDeferredForMoreThanTheConfiguredTime_ItIsRemoved([Values(1, 2, 3)] int timeout)
         {
+            m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             CatchSpawns();
             foreach (var client in m_ClientNetworkManagers)
@@ -1040,23 +1040,30 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return new WaitForSeconds(timeout + 0.1f);
 
-            Assert.AreEqual(m_NumberOfClientsToLateJoin, purgeCount);
-            foreach (var client in m_ClientNetworkManagers)
+            bool HaveAllClientsPurged()
             {
-                var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
-                Assert.AreEqual(0, manager.DeferredMessageCountTotal());
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
+                    if (manager.DeferredMessageCountTotal() != 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsPurged);
+            AssertOnTimeout("Timed out waiting for all clients to purge their deferred messages!");
         }
 
         [UnityTest]
-        [Ignore("This test is unstable on standalones")]
         public IEnumerator WhenMultipleMessagesForTheSameObjectAreDeferredForMoreThanTheConfiguredTime_TheyAreAllRemoved([Values(1, 2, 3)] int timeout)
         {
+            m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             CatchSpawns();
-            // Have to start these before spawning here because spawning sends a NetworkVariableDeltaMessage, too
-            // Depending on timing, if we start this after spawning, we may end up missing the first one.
-            var waiters = WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>();
+            var waiters = WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>();
             var coroutines = StartMultiple(waiters);
 
             foreach (var client in m_ClientNetworkManagers)
@@ -1102,23 +1109,30 @@ namespace Unity.Netcode.RuntimeTests
                     ++purgeCount;
                     var elapsed = Time.realtimeSinceStartup - start;
                     Assert.GreaterOrEqual(elapsed, timeout - 0.05f);
-                    Assert.AreEqual(4, manager.DeferredMessageCountTotal());
-                    Assert.AreEqual(4, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
-                    Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
+                    Assert.AreEqual(3, manager.DeferredMessageCountTotal());
+                    Assert.AreEqual(3, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
+                    Assert.AreEqual(3, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, key));
                     Assert.AreEqual(serverObject.GetComponent<NetworkObject>().NetworkObjectId, key);
                 };
                 var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
                 manager.OnBeforePurge = beforePurge;
             }
 
-            yield return new WaitForSeconds(timeout + 0.1f);
-
-            Assert.AreEqual(m_NumberOfClientsToLateJoin, purgeCount);
-            foreach (var client in m_ClientNetworkManagers)
+            bool HaveAllClientsPurged()
             {
-                var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
-                Assert.AreEqual(0, manager.DeferredMessageCountTotal());
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
+                    if (manager.DeferredMessageCountTotal() != 0)
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsPurged);
+            AssertOnTimeout("Timed out waiting for all clients to purge their deferred messages!");
         }
 
         [UnityTest]
@@ -1128,8 +1142,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return SpawnClients();
             CatchSpawns();
 
-            // Have to start these before spawning here because spawning sends a NetworkVariableDeltaMessage, too
-            // Depending on timing, if we start this after spawning, we may end up missing the first one.
+            // Since there are two unique objects we need to look for two sets of messages
             var waiters = WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>();
             waiters.AddRange(WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>());
             var coroutines = StartMultiple(waiters);
