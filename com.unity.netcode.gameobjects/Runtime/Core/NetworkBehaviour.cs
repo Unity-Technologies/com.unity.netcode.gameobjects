@@ -436,6 +436,10 @@ namespace Unity.Netcode
             IsSpawned = true;
             InitializeVariables();
             UpdateNetworkProperties();
+        }
+
+        internal void VisibleOnNetworkSpawn()
+        {
             OnNetworkSpawn();
         }
 
