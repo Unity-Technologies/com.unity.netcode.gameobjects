@@ -4,7 +4,6 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -21,20 +20,20 @@ namespace Unity.Netcode.EditorTests
             var buildTargetGroup = BuildPipeline.GetBuildTargetGroup(buildTarget);
             var buildTargetSupported = BuildPipeline.IsBuildTargetSupported(buildTargetGroup, buildTarget);
 
-            var buildReport = BuildPipeline.BuildPlayer(
-                new[] { Path.Combine(packagePath, DefaultBuildScenePath) },
-                Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds", nameof(BuildTests)),
-                buildTarget,
-                BuildOptions.None
-            );
-
             if (buildTargetSupported)
             {
+                var buildReport = BuildPipeline.BuildPlayer(
+                    new[] { Path.Combine(packagePath, DefaultBuildScenePath) },
+                    Path.Combine(Path.GetDirectoryName(Application.dataPath), "Builds", nameof(BuildTests)),
+                    buildTarget,
+                    BuildOptions.None
+                );
+
                 Assert.AreEqual(BuildResult.Succeeded, buildReport.summary.result);
             }
             else
             {
-                LogAssert.Expect(LogType.Error, "Error building player because build target was unsupported");
+                Debug.Log($"Skipped building player due to Unsupported Build Target");
             }
         }
     }

@@ -669,7 +669,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         if (parameters[1].IsIn)
                         {
-                            if (parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve() &&
+                            if (((ByReferenceType)parameters[1].ParameterType).ElementType.FullName == paramType.FullName &&
                                 ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
                             {
                                 methodRef = method;
@@ -679,8 +679,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                         else
                         {
-
-                            if (parameters[1].ParameterType.Resolve() == paramType.Resolve() &&
+                            if (parameters[1].ParameterType.FullName == paramType.FullName &&
                                 parameters[1].ParameterType.IsArray == paramType.IsArray)
                             {
                                 methodRef = method;
@@ -813,7 +812,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     var parameters = method.Resolve().Parameters;
                     if (method.Name == k_ReadValueMethodName &&
                         parameters[1].IsOut &&
-                        parameters[1].ParameterType.Resolve() == paramType.MakeByReferenceType().Resolve() &&
+                        ((ByReferenceType)parameters[1].ParameterType).ElementType.FullName == paramType.FullName &&
                         ((ByReferenceType)parameters[1].ParameterType).ElementType.IsArray == paramType.IsArray)
                     {
                         methodRef = method;
