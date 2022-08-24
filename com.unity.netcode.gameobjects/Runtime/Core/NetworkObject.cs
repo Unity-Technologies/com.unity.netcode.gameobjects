@@ -1128,7 +1128,7 @@ namespace Unity.Netcode
                 obj.Transform = new SceneObject.TransformData
                 {
                     // If we are parented and we have the m_ChildWorldPositionStays disabled, then use the default
-                    // values as opposed to the world space values.
+                    // values as opposed to the world space values and adjust relative to the parent.
                     Position = parentNetworkObject && !m_ChildWorldPositionStays ? Vector3.zero : transform.position,
                     Rotation = parentNetworkObject && !m_ChildWorldPositionStays ? Quaternion.identity : transform.rotation
                 };
