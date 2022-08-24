@@ -1008,7 +1008,12 @@ namespace Unity.Netcode
                 var writeSize = sizeof(HeaderData);
                 writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
                 writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + FastBufferWriter.GetWriteSize<bool>() + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                if (Header.IsReparented)
+                {
+                    writeSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
+                    writeSize += FastBufferWriter.GetWriteSize(ChildWorldPositionStays);
+                    writeSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                }
                 writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!writer.TryBeginWrite(writeSize))
