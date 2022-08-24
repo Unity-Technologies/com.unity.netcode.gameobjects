@@ -4,9 +4,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 {
     internal class MessageHooks : INetworkHooks
     {
-        public bool IsWaiting;
+        public bool IsWaiting = true;
         public delegate bool MessageReceiptCheck(object receivedMessage);
         public MessageReceiptCheck ReceiptCheck;
+
+        public static bool CurrentMessageHasTriggerdAHook = false;
 
         public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
         {
@@ -57,13 +59,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
+            // The way the system works, it goes through all hooks and calls OnBeforeHandleMessage, then handles the message,
+            // then goes thorugh all hooks and calls OnAfterHandleMessage.
+            // This ensures each message only manages to activate a single message hook - because we know that only
+            // one message will ever be handled between OnBeforeHandleMessage and OnAfterHandleMessage,
+            // we can reset the flag here, and then in OnAfterHandleMessage, the moment the message matches a hook,
+            // it'll flip this flag back on, and then other hooks will stop checking that message.
+            // Without this flag, waiting for 10 messages of the same type isn't possible - all 10 hooks would get
+            // tripped by the first message.
+            CurrentMessageHasTriggerdAHook = false;
         }
 
         public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            if (IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
+            if (!CurrentMessageHasTriggerdAHook && IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
             {
                 IsWaiting = false;
+                CurrentMessageHasTriggerdAHook = true;
             }
         }
     }
