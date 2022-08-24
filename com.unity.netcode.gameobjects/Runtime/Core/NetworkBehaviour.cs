@@ -439,7 +439,7 @@ namespace Unity.Netcode
         }
 
         internal void VisibleOnNetworkSpawn()
-		{
+        {
             try
             {
                 OnNetworkSpawn();
