@@ -8,7 +8,7 @@ namespace Unity.Netcode
     /// Event based NetworkVariable container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
-    public class NetworkList<T> : NetworkVariableSerialization<T> where T : unmanaged, IEquatable<T>
+    public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
         private NativeList<T> m_ListAtLastReset = new NativeList<T>(64, Allocator.Persistent);
@@ -25,8 +25,15 @@ namespace Unity.Netcode
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
 
+        /// <summary>
+        /// Constructor method for <see cref="NetworkList"/>
+        /// </summary>
         public NetworkList() { }
 
+        /// <inheritdoc/>
+        /// <param name="values"></param>
+        /// <param name="readPerm"></param>
+        /// <param name="writePerm"></param>
         public NetworkList(IEnumerable<T> values = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -56,6 +63,11 @@ namespace Unity.Netcode
             return base.IsDirty() || m_DirtyEvents.Length > 0;
         }
 
+        internal void MarkNetworkObjectDirty()
+        {
+            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
+        }
+
         /// <inheritdoc />
         public override void WriteDelta(FastBufferWriter writer)
         {
@@ -72,34 +84,35 @@ namespace Unity.Netcode
             writer.WriteValueSafe((ushort)m_DirtyEvents.Length);
             for (int i = 0; i < m_DirtyEvents.Length; i++)
             {
-                writer.WriteValueSafe(m_DirtyEvents[i].Type);
-                switch (m_DirtyEvents[i].Type)
+                var element = m_DirtyEvents.ElementAt(i);
+                writer.WriteValueSafe(element.Type);
+                switch (element.Type)
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            Write(writer, m_DirtyEvents[i].Value);
+                            NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            Write(writer, m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(element.Index);
+                            NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            Write(writer, m_DirtyEvents[i].Value);
+                            NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.RemoveAt:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
+                            writer.WriteValueSafe(element.Index);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
-                            writer.WriteValueSafe(m_DirtyEvents[i].Index);
-                            Write(writer, m_DirtyEvents[i].Value);
+                            writer.WriteValueSafe(element.Index);
+                            NetworkVariableSerialization<T>.Write(writer, ref element.Value);
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Clear:
@@ -114,10 +127,26 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
-            for (int i = 0; i < m_ListAtLastReset.Length; i++)
+            // The listAtLastReset mechanism was put in place to deal with duplicate adds
+            // upon initial spawn. However, it causes issues with in-scene placed objects
+            // due to difference in spawn order. In order to address this, we pick the right
+            // list based on the type of object.
+            bool isSceneObject = m_NetworkBehaviour.NetworkObject.IsSceneObject != false;
+            if (isSceneObject)
             {
-                Write(writer, m_ListAtLastReset[i]);
+                writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
+                for (int i = 0; i < m_ListAtLastReset.Length; i++)
+                {
+                    NetworkVariableSerialization<T>.Write(writer, ref m_ListAtLastReset.ElementAt(i));
+                }
+            }
+            else
+            {
+                writer.WriteValueSafe((ushort)m_List.Length);
+                for (int i = 0; i < m_List.Length; i++)
+                {
+                    NetworkVariableSerialization<T>.Write(writer, ref m_List.ElementAt(i));
+                }
             }
         }
 
@@ -128,7 +157,7 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
-                Read(reader, out T value);
+                NetworkVariableSerialization<T>.Read(reader, out T value);
                 m_List.Add(value);
             }
         }
@@ -144,7 +173,7 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            Read(reader, out T value);
+                            NetworkVariableSerialization<T>.Read(reader, out T value);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -165,15 +194,24 @@ namespace Unity.Netcode
                                     Index = m_List.Length - 1,
                                     Value = m_List[m_List.Length - 1]
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             reader.ReadValueSafe(out int index);
-                            Read(reader, out T value);
-                            m_List.InsertRangeWithBeginEnd(index, index + 1);
-                            m_List[index] = value;
+                            NetworkVariableSerialization<T>.Read(reader, out T value);
+
+                            if (index < m_List.Length)
+                            {
+                                m_List.InsertRangeWithBeginEnd(index, index + 1);
+                                m_List[index] = value;
+                            }
+                            else
+                            {
+                                m_List.Add(value);
+                            }
 
                             if (OnListChanged != null)
                             {
@@ -193,12 +231,13 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = m_List[index]
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            Read(reader, out T value);
+                            NetworkVariableSerialization<T>.Read(reader, out T value);
                             int index = m_List.IndexOf(value);
                             if (index == -1)
                             {
@@ -225,6 +264,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -252,13 +292,14 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             reader.ReadValueSafe(out int index);
-                            Read(reader, out T value);
+                            NetworkVariableSerialization<T>.Read(reader, out T value);
                             if (index >= m_List.Length)
                             {
                                 throw new Exception("Shouldn't be here, index is higher than list length");
@@ -287,6 +328,7 @@ namespace Unity.Netcode
                                     Value = value,
                                     PreviousValue = previousValue
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -309,6 +351,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -395,8 +438,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            m_List.InsertRangeWithBeginEnd(index, index + 1);
-            m_List[index] = item;
+            if (index < m_List.Length)
+            {
+                m_List.InsertRangeWithBeginEnd(index, index + 1);
+                m_List[index] = item;
+            }
+            else
+            {
+                m_List.Add(item);
+            }
 
             var listEvent = new NetworkListEvent<T>()
             {
@@ -428,13 +478,15 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
+                var previousValue = m_List[index];
                 m_List[index] = value;
 
                 var listEvent = new NetworkListEvent<T>()
                 {
                     Type = NetworkListEvent<T>.EventType.Value,
                     Index = index,
-                    Value = value
+                    Value = value,
+                    PreviousValue = previousValue
                 };
 
                 HandleAddListEvent(listEvent);
@@ -444,9 +496,13 @@ namespace Unity.Netcode
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
             m_DirtyEvents.Add(listEvent);
+            MarkNetworkObjectDirty();
             OnListChanged?.Invoke(listEvent);
         }
 
+        /// <summary>
+        /// This is actually unused left-over from a previous interface
+        /// </summary>
         public int LastModifiedTick
         {
             get
@@ -456,6 +512,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Overridden <see cref="IDisposable"/> implementation.
+        /// CAUTION: If you derive from this class and override the <see cref="Dispose"/> method,
+        /// you **must** always invoke the base.Dispose() method!
+        /// </summary>
         public override void Dispose()
         {
             m_List.Dispose();

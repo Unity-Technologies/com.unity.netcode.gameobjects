@@ -813,6 +813,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("This test is unstable (MTT-4146)")]
         public IEnumerator WhenAMessageIsDeferredForMoreThanTheConfiguredTime_ItIsRemoved([Values(1, 2, 3)] int timeout)
         {
             RegisterClientPrefabs();
@@ -878,6 +879,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        [Ignore("This test is unstable on standalones")]
         public IEnumerator WhenMultipleMessagesForTheSameObjectAreDeferredForMoreThanTheConfiguredTime_TheyAreAllRemoved([Values(1, 2, 3)] int timeout)
         {
             RegisterClientPrefabs();

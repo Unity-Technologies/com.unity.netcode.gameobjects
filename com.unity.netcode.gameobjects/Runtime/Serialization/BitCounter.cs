@@ -2,6 +2,9 @@ using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Utility class to count the number of bytes or bits needed to serialize a value.
+    /// </summary>
     public static class BitCounter
     {
         // Since we don't have access to BitOperations.LeadingZeroCount() (which would have been the fastest)

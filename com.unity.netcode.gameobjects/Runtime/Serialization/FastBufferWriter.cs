@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// Optimized class used for writing values into a byte stream
+    /// <seealso cref="FastBufferReader"/>
+    /// <seealso cref="BytePacker"/>
+    /// <seealso cref="ByteUnpacker"/>
+    /// </summary>
     public struct FastBufferWriter : IDisposable
     {
         internal struct WriterHandle
@@ -108,7 +114,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Frees the allocated buffer
+        /// <see cref="IDisposable"/> implementation that frees the allocated buffer
         /// </summary>
         public unsafe void Dispose()
         {
@@ -267,7 +273,8 @@ namespace Unity.Netcode
         /// operations in release builds. Instead, attempting to write past the marked position in release builds
         /// will write to random memory and cause undefined behavior, likely including instability and crashes.
         /// </summary>
-        /// <param name="value">The value you want to write</param>
+        /// <typeparam name="T">The value type to write</typeparam>
+        /// <param name="value">The value of the type `T` you want to write</param>
         /// <returns>True if the write is allowed, false otherwise</returns>
         /// <exception cref="InvalidOperationException">If called while in a bitwise context</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -716,15 +723,30 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Get the size required to write an unmanaged value
+        /// Get the write size for any general unmanaged value
+        /// The ForStructs value here makes this the lowest-priority overload so other versions
+        /// will be prioritized over this if they match
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="unused"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe int GetWriteSize<T>(in T value, ForStructs unused = default) where T : unmanaged
+        {
+            return sizeof(T);
+        }
+
+        /// <summary>
+        /// Get the write size for a FixedString
         /// </summary>
         /// <param name="value"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe int GetWriteSize<T>(in T value) where T : unmanaged
+        public static int GetWriteSize<T>(in T value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
-            return sizeof(T);
+            return value.Length + sizeof(int);
         }
 
         /// <summary>
@@ -738,7 +760,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanaged<T>(in T value) where T : unmanaged
+        internal unsafe void WriteUnmanaged<T>(in T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -747,7 +769,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanagedSafe<T>(in T value) where T : unmanaged
+        internal unsafe void WriteUnmanagedSafe<T>(in T value) where T : unmanaged
         {
             fixed (T* ptr = &value)
             {
@@ -757,7 +779,7 @@ namespace Unity.Netcode
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
+        internal unsafe void WriteUnmanaged<T>(T[] value) where T : unmanaged
         {
             WriteUnmanaged(value.Length);
             fixed (T* ptr = value)
@@ -767,7 +789,7 @@ namespace Unity.Netcode
             }
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
+        internal unsafe void WriteUnmanagedSafe<T>(T[] value) where T : unmanaged
         {
             WriteUnmanagedSafe(value.Length);
             fixed (T* ptr = value)
@@ -777,130 +799,641 @@ namespace Unity.Netcode
             }
         }
 
-        // These structs enable overloading of WriteValue with different generic constraints.
-        // The compiler's actually able to distinguish between overloads based on generic constraints.
-        // But at the bytecode level, the constraints aren't included in the method signature.
-        // By adding a second parameter with a defaulted value, the signatures of each generic are different,
-        // thus allowing overloads of methods based on the first parameter meeting constraints.
+        /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
         public struct ForPrimitives
         {
 
         }
 
+        /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
         public struct ForEnums
         {
 
         }
 
+        /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
         public struct ForStructs
         {
 
         }
 
+        /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
         public struct ForNetworkSerializable
         {
 
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+        /// <summary>
+        /// This empty struct exists to allow overloading WriteValue based on generic constraints.
+        /// At the bytecode level, constraints aren't included in the method signature, so if multiple
+        /// methods exist with the same signature, it causes a compile error because they would end up
+        /// being emitted as the same method, even if the constraints are different.
+        /// Adding an empty struct with a default value gives them different signatures in the bytecode,
+        /// which then allows the compiler to do overload resolution based on the generic constraints
+        /// without the user having to pass the struct in themselves.
+        /// </summary>
+        public struct ForFixedStrings
+        {
+
+        }
+
+        /// <summary>
+        /// Write a NetworkSerializable value
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
+        /// <summary>
+        /// Write a NetworkSerializable array
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
+        /// <summary>
+        /// Write a NetworkSerializable value
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(in T value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
+        /// <summary>
+        /// Write a NetworkSerializable array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe<T>(T[] value, ForNetworkSerializable unused = default) where T : INetworkSerializable => WriteNetworkSerializable(value);
 
+        /// <summary>
+        /// Write a struct
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a struct array
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a struct
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a struct array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a primitive value array (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a primitive value (int, bool, etc)
+        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
+        /// on values that are not primitives.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write an enum value
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write an enum array
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write an enum value
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write an enum array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">The values to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(T[] value, ForEnums unused = default) where T : unmanaged, Enum => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector2
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector2 array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Vector2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector3
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector3 array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Vector3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector2Int
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector2Int value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector2Int array
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector2Int[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector3Int
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Vector3Int value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector3Int array
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Vector3Int[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector4
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Vector4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Vector4
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Vector4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Quaternion
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Quaternion value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Quaternion array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Quaternion[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Color
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Color value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Color array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Color[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Color32
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Color32 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Color32 array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Color32[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Ray
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Ray value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Ray array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Ray2D
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in Ray2D value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Ray2D array
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
+
+
+        /// <summary>
+        /// Write a Vector2
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Vector2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector2 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Vector2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector3
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Vector3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector3 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Vector3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector2Int
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector2Int value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector2Int array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector2Int[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector3Int
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Vector3Int value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector3Int array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Vector3Int[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector4
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Vector4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Vector4 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Vector4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Quaternion
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Quaternion value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Quaternion array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Quaternion[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Color
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Color value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Collor array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Color[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Color32
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Color32 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Color32 array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Color32[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Ray
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Ray value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Ray array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Ray2D
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in Ray2D value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Ray2D array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
+
+        // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
+        // INativeList<bool> provides the Length property
+        // IUTF8Bytes provides GetUnsafePtr()
+        // Those two are necessary to serialize FixedStrings efficiently
+        // - otherwise we'd just be memcpying the whole thing even if
+        // most of it isn't used.
+
+        /// <summary>
+        /// Write a FixedString value. Writes only the part of the string that's actually used.
+        /// When calling TryBeginWrite, ensure you calculate the write size correctly (preferably by calling
+        /// FastBufferWriter.GetWriteSize())
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void WriteValue<T>(in T value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            WriteUnmanaged(value.Length);
+            // This avoids a copy on the string, which could be costly for FixedString4096Bytes
+            // Otherwise, GetUnsafePtr() is an impure function call and will result in a copy
+            // for `in` parameters.
+            fixed (T* ptr = &value)
+            {
+                WriteBytes(ptr->GetUnsafePtr(), value.Length);
+            }
+        }
+
+
+        /// <summary>
+        /// Write a FixedString value. Writes only the part of the string that's actually used.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe<T>(in T value, ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            if (!TryBeginWriteInternal(sizeof(int) + value.Length))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            WriteValue(value);
+        }
     }
 }

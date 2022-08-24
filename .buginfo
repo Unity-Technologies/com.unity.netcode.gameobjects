@@ -1,0 +1,4 @@
+system: jira
+server: jira.unity3d.com
+project: NCCBUG
+issuetype: Bug

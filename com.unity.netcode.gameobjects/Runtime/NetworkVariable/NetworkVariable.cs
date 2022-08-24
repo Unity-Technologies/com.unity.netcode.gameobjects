@@ -8,8 +8,9 @@ namespace Unity.Netcode
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// </summary>
+    /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
     [Serializable]
-    public class NetworkVariable<T> : NetworkVariableSerialization<T> where T : unmanaged
+    public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
     {
         /// <summary>
         /// Delegate type for value changed event
@@ -22,7 +23,12 @@ namespace Unity.Netcode
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
 
-
+        /// <summary>
+        /// Constructor for <see cref="NetworkVariable{T}"/>
+        /// </summary>
+        /// <param name="value">initial value set that is of type T</param>
+        /// <param name="readPerm">the <see cref="NetworkVariableReadPermission"/> for this <see cref="NetworkVariable{T}"/></param>
+        /// <param name="writePerm">the <see cref="NetworkVariableWritePermission"/> for this <see cref="NetworkVariable{T}"/></param>
         public NetworkVariable(T value = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
@@ -31,6 +37,9 @@ namespace Unity.Netcode
             m_InternalValue = value;
         }
 
+        /// <summary>
+        /// The internal value of the NetworkVariable
+        /// </summary>
         [SerializeField]
         private protected T m_InternalValue;
 
@@ -58,7 +67,7 @@ namespace Unity.Netcode
         }
 
         // Compares two values of the same unmanaged type by underlying memory
-        // Ignoring any overriden value checks
+        // Ignoring any overridden value checks
         // Size is fixed
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe bool ValueEquals(ref T a, ref T b)
@@ -71,10 +80,14 @@ namespace Unity.Netcode
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(T)) == 0;
         }
 
-
+        /// <summary>
+        /// Sets the <see cref="Value"/>, marks the <see cref="NetworkVariable{T}"/> dirty, and invokes the <see cref="OnValueChanged"/> callback
+        /// if there are subscribers to that event.
+        /// </summary>
+        /// <param name="value">the new value of type `T` to be set/></param>
         private protected void Set(T value)
         {
-            m_IsDirty = true;
+            SetDirty(true);
             T previousValue = m_InternalValue;
             m_InternalValue = value;
             OnValueChanged?.Invoke(previousValue, m_InternalValue);
@@ -102,11 +115,11 @@ namespace Unity.Netcode
             // would be stored in different fields
 
             T previousValue = m_InternalValue;
-            Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
 
             if (keepDirtyDelta)
             {
-                m_IsDirty = true;
+                SetDirty(true);
             }
 
             OnValueChanged?.Invoke(previousValue, m_InternalValue);
@@ -115,13 +128,13 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
-            Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
         }
 
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            Write(writer, m_InternalValue);
+            NetworkVariableSerialization<T>.Write(writer, ref m_InternalValue);
         }
     }
 }

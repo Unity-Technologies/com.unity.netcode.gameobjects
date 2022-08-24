@@ -7,25 +7,55 @@ using UnityEngine.PlayerLoop;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// Defines the required interface of a network update system being executed by the network update loop.
+    /// Defines the required interface of a network update system being executed by the <see cref="NetworkUpdateLoop"/>.
     /// </summary>
     public interface INetworkUpdateSystem
     {
+        /// <summary>
+        /// The update method that is being executed in the context of related <see cref="NetworkUpdateStage"/>.
+        /// </summary>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> that is being executed.</param>
         void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 
     /// <summary>
     /// Defines network update stages being executed by the network update loop.
+    /// See for more details on update stages:
+    /// https://docs.unity3d.com/ScriptReference/PlayerLoop.Initialization.html
     /// </summary>
     public enum NetworkUpdateStage : byte
     {
-        Unset = 0, // Default
+        /// <summary>
+        /// Default value
+        /// </summary>
+        Unset = 0,
+        /// <summary>
+        /// Very first initialization update
+        /// </summary>
         Initialization = 1,
+        /// <summary>
+        /// Invoked before Fixed update
+        /// </summary>
         EarlyUpdate = 2,
+        /// <summary>
+        /// Fixed Update (i.e. state machine, physics, animations, etc)
+        /// </summary>
         FixedUpdate = 3,
+        /// <summary>
+        /// Updated before the Monobehaviour.Update for all components is invoked
+        /// </summary>
         PreUpdate = 4,
+        /// <summary>
+        /// Updated when the Monobehaviour.Update for all components is invoked
+        /// </summary>
         Update = 5,
+        /// <summary>
+        /// Updated before the Monobehaviour.LateUpdate for all components is invoked
+        /// </summary>
         PreLateUpdate = 6,
+        /// <summary>
+        /// Updated after the Monobehaviour.LateUpdate for all components is invoked
+        /// </summary>
         PostLateUpdate = 7
     }
 
@@ -53,6 +83,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a network update system to be executed in all network update stages.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to register for all network updates</param>
         public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
@@ -64,6 +95,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Registers a network update system to be executed in a specific network update stage.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to register for all network updates</param>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> being registered for the <see cref="INetworkUpdateSystem"/> implementation</param>
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             var sysSet = s_UpdateSystem_Sets[updateStage];
@@ -94,6 +127,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Unregisters a network update system from all network update stages.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to deregister from all network updates</param>
         public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
@@ -105,6 +139,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Unregisters a network update system from a specific network update stage.
         /// </summary>
+        /// <param name="updateSystem">The <see cref="INetworkUpdateSystem"/> implementation to deregister from all network updates</param>
+        /// <param name="updateStage">The <see cref="NetworkUpdateStage"/> to be deregistered from the <see cref="INetworkUpdateSystem"/> implementation</param>
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             var sysSet = s_UpdateSystem_Sets[updateStage];

@@ -198,13 +198,13 @@ Note that performance tests should be run from external processes (not from edit
 ### Multiple processes orchestration
 
 Test code and host code execute in the same process: When writing play mode tests, Unity will start a unity environment for that test, including game loop, scene, object hierarchy, all that fun stuff. This means the test itself has access to everything other unity scripts would have access to. At test startup, the test will ask unity to switch scene to MultiprocessTestScene containing a GameObject already placed in that scene called TestCoordinator . The test will callStartHost that will listen for connections, still all in the same process.
-Once that’s done, that same test will then spawn new client processes. These clients will also start with that MultiprocessTestScene  loaded at startup, also containing a TestCoordinator . These client side TestCoordinators will detect they are clients (using command line arg) and instead of calling StartHost  will call StartClient . This is where new code to specify the IP to connect to would stand (the lines I sent you).
+Once that's done, that same test will then spawn new client processes. These clients will also start with that MultiprocessTestScene  loaded at startup, also containing a TestCoordinator . These client side TestCoordinators will detect they are clients (using command line arg) and instead of calling StartHost  will call StartClient . This is where new code to specify the IP to connect to would stand (the lines I sent you).
 A good way I could have clarified that code is to separate TestCoordinator into TestCoordinatorClient and TestCoordinatorServer thinking of it. Right now TestCoordinator code does both.
 Once the connection is established (tests yield wait for connection in  Setup code), then the tests can start sending RPCs to each other.
-The test (that’s server side) will call multiple TriggerActionIdClientRpc . This will trigger these actions on all clients. The clients execute their test code, then answer back with ClientFinishedServerRpc.
+The test (that's server side) will call multiple TriggerActionIdClientRpc . This will trigger these actions on all clients. The clients execute their test code, then answer back with ClientFinishedServerRpc.
 Once all the tests are done exchanging commands, a final RPC CloseRemoteClientRpc is called to tell the clients they are done.
 If that RPC fails to send for some reason, clients also have a keep alive that tells them to self destroy when it expires.
-If you look at the “how it’s done” section in the multiprocess readme.md testproject/Assets/Tests/Runtime/MultiprocessRuntime/readme.md there’s a few drawings to explain that flow.
+If you look at the “how it's done” section in the multiprocess readme.md testproject/Assets/Tests/Runtime/MultiprocessRuntime/readme.md there's a few drawings to explain that flow.
 
 So:
 Editor
@@ -235,7 +235,10 @@ Tests when launched locally will simply create new OS processes for each worker 
 ![](readme-ressources/OrchestrationOverview.jpg)
 *Note that this diagram is still WIP for the CI part*
 ### Bokken orchestration
-todo
+Bokken Orchestration can be performed with the support of the following tool:
+[Multiplayer Multiprocess Test Tools](https://github.cds.internal.unity3d.com/unity/multiplayer-multiprocess-test-tools)
+[Documentation](https://backstage.corp.unity3d.com/catalog/default/component/multiplayer-multiprocess-test-tools/docs/)
+
 ### CI
 todo
 #### Performance report dashboards
@@ -246,6 +249,30 @@ The test coordinator in client mode will automatically try to connect to a serve
 ### Context based step execution
 Test methods are executed twice. Once in "registration" mode, to have all the steps register themselves using a unique ID. This ID is deterministic between client and server processes, so that when a server calls a step during actual test execution, the clients have the same ID associated with the same lambda.
 During test execution, the main node's step will call an RPC on clients to trigger their pre-registered lambda. The main node's step will then yield until it receives a "client done" RPC from all clients. The main node's test will then be able to continue execution to the next step.
+
+## The MultiprocessTestPlayer
+The MultiprocessTestPlayer, which is built by the sub-menu items under "Netcode" -> "Multiprocess Test", supports many workflows and configurations.
+
+### Command Line
+Currently the MultiprocessTestPlayer can be configured via the command line on all platforms that support parsing of command line arguments in the C# layer.
+For example, this means that command line configuration is not available on Android.
+
+#### Setting the transport address
+Default Values on Client: 127.0.0.1, 3076
+
+In order to set the transport address for either the server/host or the client, the options of "-ip" and "-p" can be used.  For example:
+
+    -ip 127.0.0.1 -p 3076
+	
+These options can be passed when starting the client, for example, in order to let it know where the host is to connect to.
+
+#### Setting the transport
+Default Values: UNET
+
+The default transport is UNET but this can be switched to UTP by using 
+
+    -transport utp
+	
 
 # Future considerations
 - Integrate with local MultiInstance tests?

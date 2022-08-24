@@ -151,6 +151,8 @@ namespace Unity.Netcode.Editor
             }
         }
 
+
+        /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             if (!m_Initialized)
@@ -218,6 +220,11 @@ namespace Unity.Netcode.Editor
         /// </summary>
         private void OnEnable()
         {
+            // This can be null and throw an exception when running test runner in the editor
+            if (target == null)
+            {
+                return;
+            }
             // When we first add a NetworkBehaviour this editor will be enabled
             // so we go ahead and check for an already existing NetworkObject here
             CheckForNetworkObject((target as NetworkBehaviour).gameObject);
@@ -225,6 +232,11 @@ namespace Unity.Netcode.Editor
 
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
 
+        /// <summary>
+        /// Recursively finds the root parent of a <see cref="Transform"/>
+        /// </summary>
+        /// <param name="transform">The current <see cref="Transform"/> we are inspecting for a parent</param>
+        /// <returns>the root parent for the first <see cref="Transform"/> passed into the method</returns>
         public static Transform GetRootParentTransform(Transform transform)
         {
             if (transform.parent == null || transform.parent == transform)
@@ -239,6 +251,8 @@ namespace Unity.Netcode.Editor
         /// does not already have a NetworkObject component.  If not it will notify
         /// the user that NetworkBehaviours require a NetworkObject.
         /// </summary>
+        /// <param name="gameObject"><see cref="GameObject"/> to start checking for a <see cref="NetworkObject"/></param>
+        /// <param name="networkObjectRemoved">used internally</param>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
             // If there are no NetworkBehaviours or no gameObject, then exit early
@@ -249,6 +263,39 @@ namespace Unity.Netcode.Editor
 
             // Now get the root parent transform to the current GameObject (or itself)
             var rootTransform = GetRootParentTransform(gameObject.transform);
+            var networkManager = rootTransform.GetComponent<NetworkManager>();
+            if (networkManager == null)
+            {
+                networkManager = rootTransform.GetComponentInChildren<NetworkManager>();
+            }
+
+            // If there is a NetworkManager, then notify the user that a NetworkManager cannot have NetworkBehaviour components
+            if (networkManager != null)
+            {
+                var networkBehaviours = networkManager.gameObject.GetComponents<NetworkBehaviour>();
+                var networkBehavioursChildren = networkManager.gameObject.GetComponentsInChildren<NetworkBehaviour>();
+                if (networkBehaviours.Length > 0 || networkBehavioursChildren.Length > 0)
+                {
+                    if (EditorUtility.DisplayDialog("NetworkBehaviour or NetworkManager Cannot Be Added", $"{nameof(NetworkManager)}s cannot have {nameof(NetworkBehaviour)} components added to the root parent or any of its children." +
+                        $" Would you like to remove the NetworkManager or NetworkBehaviour?", "NetworkManager", "NetworkBehaviour"))
+                    {
+                        DestroyImmediate(networkManager);
+                    }
+                    else
+                    {
+                        foreach (var networkBehaviour in networkBehaviours)
+                        {
+                            DestroyImmediate(networkBehaviour);
+                        }
+
+                        foreach (var networkBehaviour in networkBehaviours)
+                        {
+                            DestroyImmediate(networkBehaviour);
+                        }
+                    }
+                    return;
+                }
+            }
 
             // Otherwise, check to see if there is any NetworkObject from the root GameObject down to all children.
             // If not, notify the user that NetworkBehaviours require that the relative GameObject has a NetworkObject component.

@@ -65,7 +65,7 @@ namespace TestProject.ManualTests
 
             if (NetworkManager != null && NetworkManager.NetworkConfig.ConnectionApproval)
             {
-                NetworkManager.ConnectionApprovalCallback += ConnectionApprovalCallback;
+                NetworkManager.ConnectionApprovalCallback = ConnectionApprovalCallback;
 
                 if (m_ApprovalToken != string.Empty)
                 {
@@ -151,37 +151,43 @@ namespace TestProject.ManualTests
         /// <summary>
         /// Invoked only on the server, this will handle the various connection approval combinations
         /// </summary>
-        /// <param name="dataToken">key or password to get approval</param>
-        /// <param name="clientId">client identifier being approved</param>
-        /// <param name="aprovalCallback">callback that should be invoked once it is determined if client is approved or not</param>
-        private void ConnectionApprovalCallback(byte[] dataToken, ulong clientId, NetworkManager.ConnectionApprovedDelegate aprovalCallback)
+        /// <param name="request">The connection approval request</param>
+        /// <returns>ConnectionApprovalResult with the approval decision, with parameters</returns>
+        private void ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
         {
-            string approvalToken = Encoding.ASCII.GetString(dataToken);
+            string approvalToken = Encoding.ASCII.GetString(request.Payload);
             var isTokenValid = approvalToken == m_ApprovalToken;
-            if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && clientId != NetworkManager.LocalClientId)
+            if (m_SimulateFailure && m_SimulateFailure.isOn && IsServer && request.ClientNetworkId != NetworkManager.LocalClientId)
             {
                 isTokenValid = false;
             }
 
             if (m_GlobalObjectIdHashOverride != 0 && m_PlayerPrefabOverride && m_PlayerPrefabOverride.isOn)
             {
-                aprovalCallback.Invoke(true, m_GlobalObjectIdHashOverride, isTokenValid, null, null);
+                response.Approved = isTokenValid;
+                response.PlayerPrefabHash = m_GlobalObjectIdHashOverride;
+                response.Position = null;
+                response.Rotation = null;
+                response.CreatePlayerObject = true;
             }
             else
             {
-                aprovalCallback.Invoke(true, null, isTokenValid, null, null);
+                response.Approved = isTokenValid;
+                response.PlayerPrefabHash = null;
+                response.Position = null;
+                response.Rotation = null;
+                response.CreatePlayerObject = true;
             }
-
 
             if (m_ConnectionMessageToDisplay)
             {
                 if (isTokenValid)
                 {
-                    AddNewMessage($"Client id {clientId} is authorized!");
+                    AddNewMessage($"Client id {request.ClientNetworkId} is authorized!");
                 }
                 else
                 {
-                    AddNewMessage($"Client id {clientId} failed authorization!");
+                    AddNewMessage($"Client id {request.ClientNetworkId} failed authorization!");
                 }
 
                 m_ConnectionMessageToDisplay.gameObject.SetActive(true);

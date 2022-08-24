@@ -18,8 +18,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
-            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+            compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 

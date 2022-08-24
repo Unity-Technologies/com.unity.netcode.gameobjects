@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
@@ -151,6 +152,7 @@ namespace Unity.Netcode
 #endif
         }
 
+        private readonly HashSet<ulong> m_EmptyULongHashSet = new HashSet<ulong>();
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
@@ -159,7 +161,7 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                throw new SpawnStateException("Object is not spawned");
+                return m_EmptyULongHashSet.GetEnumerator();
             }
 
             return Observers.GetEnumerator();
@@ -174,21 +176,78 @@ namespace Unity.Netcode
         {
             if (!IsSpawned)
             {
-                throw new SpawnStateException("Object is not spawned");
+                return false;
+            }
+            return Observers.Contains(clientId);
+        }
+
+        /// <summary>
+        ///  In the event the scene of origin gets unloaded, we keep
+        ///  the most important part to uniquely identify in-scene
+        ///  placed NetworkObjects
+        /// </summary>
+        internal int SceneOriginHandle = 0;
+
+        private Scene m_SceneOrigin;
+        /// <summary>
+        /// The scene where the NetworkObject was first instantiated
+        /// Note: Primarily for in-scene placed NetworkObjects
+        /// We need to keep track of the original scene of origin for
+        /// the NetworkObject in order to be able to uniquely identify it
+        /// using the scene of origin's handle.
+        /// </summary>
+        internal Scene SceneOrigin
+        {
+            get
+            {
+                return m_SceneOrigin;
             }
 
-            return Observers.Contains(clientId);
+            set
+            {
+                // The scene origin should only be set once.
+                // Once set, it should never change.
+                if (SceneOriginHandle == 0 && value.IsValid() && value.isLoaded)
+                {
+                    m_SceneOrigin = value;
+                    SceneOriginHandle = value.handle;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to return the correct scene handle
+        /// Note: Do not use this within NetworkSpawnManager.SpawnNetworkObjectLocallyCommon
+        /// </summary>
+        internal int GetSceneOriginHandle()
+        {
+            if (SceneOriginHandle == 0 && IsSpawned && IsSceneObject != false)
+            {
+                throw new Exception($"{nameof(GetSceneOriginHandle)} called when {nameof(SceneOriginHandle)} is still zero but the {nameof(NetworkObject)} is already spawned!");
+            }
+            return SceneOriginHandle != 0 ? SceneOriginHandle : gameObject.scene.handle;
         }
 
         private void Awake()
         {
             SetCachedParent(transform.parent);
+            SceneOrigin = gameObject.scene;
         }
 
         /// <summary>
-        /// Shows a previously hidden <see cref="NetworkObject"/> to a client
+        /// Makes the previously hidden <see cref="NetworkObject"/> "netcode visible" to the targeted client.
         /// </summary>
-        /// <param name="clientId">The client to show the <see cref="NetworkObject"/> to</param>
+        /// <remarks>
+        /// Usage: Use to start sending updates for a previously hidden <see cref="NetworkObject"/> to the targeted client.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client side.<br />
+        /// In-Scene Placed: The instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkShow(ulong)"/><br />
+        /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="clientId">The targeted client</param>
         public void NetworkShow(ulong clientId)
         {
             if (!IsSpawned)
@@ -211,11 +270,22 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
         }
 
+
         /// <summary>
-        /// Shows a list of previously hidden <see cref="NetworkObject"/>s to a client
+        /// Makes a list of previously hidden <see cref="NetworkObject"/>s "netcode visible" for the client specified.
         /// </summary>
-        /// <param name="networkObjects">The <see cref="NetworkObject"/>s to show</param>
-        /// <param name="clientId">The client to show the objects to</param>
+        /// <remarks>
+        /// Usage: Use to start sending updates for previously hidden <see cref="NetworkObject"/>s to the targeted client.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be instantiated and spawned on the targeted client's side.<br />
+        /// In-Scene Placed: Already instantiated but despawned <see cref="NetworkObject"/>s will be spawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkShow(ulong)"/><br />
+        /// <see cref="NetworkHide(ulong)"/> or <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="networkObjects">The objects to become "netcode visible" to the targeted client</param>
+        /// <param name="clientId">The targeted client</param>
         public static void NetworkShow(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
@@ -256,9 +326,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Hides a object from a specific client
+        /// Hides the <see cref="NetworkObject"/> from the targeted client.
         /// </summary>
-        /// <param name="clientId">The client to hide the object for</param>
+        /// <remarks>
+        /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for a currently visible <see cref="NetworkObject"/>.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br />
+        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be despawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkHide(List{NetworkObject}, ulong)"/><br />
+        /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="clientId">The targeted client</param>
         public void NetworkHide(ulong clientId)
         {
             if (!IsSpawned)
@@ -285,7 +365,8 @@ namespace Unity.Netcode
 
             var message = new DestroyObjectMessage
             {
-                NetworkObjectId = NetworkObjectId
+                NetworkObjectId = NetworkObjectId,
+                DestroyGameObject = !IsSceneObject.Value
             };
             // Send destroy call
             var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
@@ -293,10 +374,20 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Hides a list of objects from a client
+        /// Hides a list of <see cref="NetworkObject"/>s from the targeted client.
         /// </summary>
-        /// <param name="networkObjects">The objects to hide</param>
-        /// <param name="clientId">The client to hide the objects from</param>
+        /// <remarks>
+        /// Usage: Use to stop sending updates to the targeted client, "netcode invisible", for the currently visible <see cref="NetworkObject"/>s.<br />
+        /// <br />
+        /// Dynamically Spawned: <see cref="NetworkObject"/>s will be despawned and destroyed on the targeted client's side.<br />
+        /// In-Scene Placed: <see cref="NetworkObject"/>s will only be despawned on the targeted client's side.<br />
+        /// <br />
+        /// See Also:<br />
+        /// <see cref="NetworkHide(ulong)"/><br />
+        /// <see cref="NetworkShow(ulong)"/> or <see cref="NetworkShow(List{NetworkObject}, ulong)"/><br />
+        /// </remarks>
+        /// <param name="networkObjects">The <see cref="NetworkObject"/>s that will become "netcode invisible" to the targeted client</param>
+        /// <param name="clientId">The targeted client</param>
         public static void NetworkHide(List<NetworkObject> networkObjects, ulong clientId)
         {
             if (networkObjects == null || networkObjects.Count == 0)
@@ -372,7 +463,7 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), false, playerObject, ownerClientId, destroyWithScene);
+            NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
             {
@@ -405,8 +496,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Spawns a <see cref="NetworkObject"/> across the network and makes it the player object for the given client
         /// </summary>
-        /// <param name="clientId">The clientId whos player object this is</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        /// <param name="clientId">The clientId who's player object this is</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
             SpawnInternal(destroyWithScene, clientId, true);
@@ -462,7 +553,14 @@ namespace Unity.Netcode
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InternalOnGainedOwnership();
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].InternalOnGainedOwnership();
+                }
+                else
+                {
+                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                }
             }
         }
 
@@ -491,16 +589,34 @@ namespace Unity.Netcode
             m_LatestParent = latestParent;
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
             return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
         }
 
+        /// <summary>
+        /// Set the parent of the NetworkObject transform.
+        /// </summary>
+        /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(NetworkObject parent, bool worldPositionStays = true)
         {
             if (!AutoObjectParentSync)
@@ -629,7 +745,7 @@ namespace Unity.Netcode
         // For instance, if we're spawning NetworkObject 5 and its parent is 10, what should happen if we do not have 10 yet?
         // let's say 10 is on the way to be replicated in a few frames and we could fix that parent-child relationship later.
         //
-        // If you couldn't find your parent, we put you into OrphanChildren set and everytime we spawn another NetworkObject locally due to replication,
+        // If you couldn't find your parent, we put you into OrphanChildren set and every time we spawn another NetworkObject locally due to replication,
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
@@ -696,7 +812,14 @@ namespace Unity.Netcode
 
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
-                ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].InternalOnNetworkSpawn();
+                }
+                else
+                {
+                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during spawn!");
+                }
             }
         }
 
@@ -745,12 +868,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
-                behavior.MarkVariablesDirty();
+                behavior.MarkVariablesDirty(dirty);
             }
         }
 
@@ -763,8 +886,8 @@ namespace Unity.Netcode
         // if and when we have different systems for where it is expected that orphans survive across ticks,
         //   then this warning will remind us that we need to revamp the system because then we can no longer simply
         //   spawn the orphan without its parent (at least, not when its transform is set to local coords mode)
-        //   - because then you’ll have children popping at the wrong location not having their parent’s global position to root them
-        //   - and then they’ll pop to the correct location after they get the parent, and that would be not good
+        //   - because then you'll have children popping at the wrong location not having their parent's global position to root them
+        //   - and then they'll pop to the correct location after they get the parent, and that would be not good
         internal static void VerifyParentingStatus()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
@@ -865,16 +988,17 @@ namespace Unity.Netcode
             public NetworkObject OwnerObject;
             public ulong TargetClientId;
 
+            public int NetworkSceneHandle;
+
             public unsafe void Serialize(FastBufferWriter writer)
             {
-                if (!writer.TryBeginWrite(
-                    sizeof(HeaderData) +
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented
-                        ? FastBufferWriter.GetWriteSize(IsLatestParentSet) +
-                          (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0)
-                        : 0)))
+                var writeSize = sizeof(HeaderData);
+                writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
+                writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
+                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+
+                if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
@@ -900,6 +1024,16 @@ namespace Unity.Netcode
                     }
                 }
 
+                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
+                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
+                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
+                // This is only set on in-scene placed NetworkObjects to reduce the over-all packet
+                // sizes for dynamically spawned NetworkObjects.
+                if (Header.IsSceneObject)
+                {
+                    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
+                }
+
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
@@ -910,10 +1044,12 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
                 reader.ReadValue(out Header);
-                if (!reader.TryBeginRead(
-                    (Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0) +
-                    (Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0) +
-                    (Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) : 0)))
+                var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
+                readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
+                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+
+                if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
@@ -936,6 +1072,16 @@ namespace Unity.Netcode
                         reader.ReadValueSafe(out ulong latestParent);
                         LatestParent = latestParent;
                     }
+                }
+
+                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
+                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
+                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
+                // Client-side NetworkSceneManagers use this to locate their local instance of the
+                // NetworkObject instance.
+                if (Header.IsSceneObject)
+                {
+                    reader.ReadValueSafe(out NetworkSceneHandle);
                 }
             }
         }
@@ -1006,6 +1152,7 @@ namespace Unity.Netcode
             Vector3? position = null;
             Quaternion? rotation = null;
             ulong? parentNetworkId = null;
+            int? networkSceneHandle = null;
 
             if (sceneObject.Header.HasTransform)
             {
@@ -1018,10 +1165,15 @@ namespace Unity.Netcode
                 parentNetworkId = sceneObject.ParentObjectId;
             }
 
+            if (sceneObject.Header.IsSceneObject)
+            {
+                networkSceneHandle = sceneObject.NetworkSceneHandle;
+            }
+
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
                 sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, position, rotation, sceneObject.Header.IsReparented);
+                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
 
             networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
 
@@ -1066,6 +1218,22 @@ namespace Unity.Netcode
             }
 
             return GlobalObjectIdHash;
+        }
+
+        /// <summary>
+        /// Removes a NetworkBehaviour from the ChildNetworkBehaviours list when destroyed
+        /// while the NetworkObject is still spawned.
+        /// </summary>
+        internal void OnNetworkBehaviourDestroyed(NetworkBehaviour networkBehaviour)
+        {
+            if (networkBehaviour.IsSpawned && IsSpawned)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
+                }
+                ChildNetworkBehaviours.Remove(networkBehaviour);
+            }
         }
     }
 }

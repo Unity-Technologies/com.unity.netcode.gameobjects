@@ -1,7 +1,19 @@
 {
   "dependencies": {
+    "com.unity.addressables": {
+      "version": "1.16.19",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.scriptablebuildpipeline": "1.15.2",
+        "com.unity.modules.assetbundle": "1.0.0",
+        "com.unity.modules.unitywebrequest": "1.0.0",
+        "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.burst": {
-      "version": "1.6.4",
+      "version": "1.6.6",
       "depth": 2,
       "source": "registry",
       "dependencies": {
@@ -17,11 +29,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "1.2.3",
+      "version": "1.2.4",
       "depth": 2,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.6.4",
+        "com.unity.burst": "1.6.6",
         "com.unity.test-framework": "1.1.31"
       },
       "url": "https://packages.unity.com"
@@ -59,7 +71,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.5",
+      "version": "1.2.6",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
@@ -71,7 +83,7 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.transport": "1.0.0"
+        "com.unity.transport": "1.2.0"
       }
     },
     "com.unity.nuget.mono-cecil": {
@@ -95,6 +107,13 @@
       "dependencies": {
         "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
       },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.scriptablebuildpipeline": {
+      "version": "1.15.2",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.services.authentication": {
@@ -176,13 +195,13 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "1.0.0",
+      "version": "1.2.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {
-        "com.unity.collections": "1.2.3",
-        "com.unity.burst": "1.6.4",
-        "com.unity.mathematics": "1.2.5"
+        "com.unity.collections": "1.2.4",
+        "com.unity.burst": "1.6.6",
+        "com.unity.mathematics": "1.2.6"
       },
       "url": "https://packages.unity.com"
     },

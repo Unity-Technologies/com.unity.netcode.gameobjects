@@ -120,12 +120,32 @@ namespace Unity.Netcode
             serializer.SerializeValue(ref m_NetworkObjectId);
         }
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObjectReference"/> to <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="networkObjectRef">The <see cref="NetworkObjectReference"/> to convert from.</param>
+        /// <returns>The <see cref="NetworkObject"/> the <see cref="NetworkObjectReference"/> is referencing</returns>
         public static implicit operator NetworkObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef);
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObject"/> to <see cref="NetworkObjectReference"/>.
+        /// </summary>
+        /// <param name="networkObject">The <see cref="NetworkObject"/> to convert from.</param>
+        /// <returns>The <see cref="NetworkObjectReference"/> created from the <see cref="NetworkObject"/> parameter</returns>
         public static implicit operator NetworkObjectReference(NetworkObject networkObject) => new NetworkObjectReference(networkObject);
 
+        /// <summary>
+        /// Implicitly convert <see cref="NetworkObjectReference"/> to <see cref="GameObject"/>.
+        /// </summary>
+        /// <param name="networkObjectRef">The <see cref="NetworkObjectReference"/> to convert from.</param>
+        /// <returns>This returns the <see cref="GameObject"/> that the <see cref="NetworkObject"/> is attached to and is referenced by the <see cref="NetworkObjectReference"/> passed in as a parameter</returns>
         public static implicit operator GameObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef).gameObject;
 
+        /// <summary>
+        /// Implicitly convert <see cref="GameObject"/> to <see cref="NetworkObject"/>.
+        /// </summary>
+        /// <param name="gameObject">The <see cref="GameObject"/> to convert from.</param>
+        /// <returns>The <see cref="NetworkObjectReference"/> created from the <see cref="GameObject"/> parameter that has a <see cref="NetworkObject"/> component attached to it</returns>
         public static implicit operator NetworkObjectReference(GameObject gameObject) => new NetworkObjectReference(gameObject);
     }
 }

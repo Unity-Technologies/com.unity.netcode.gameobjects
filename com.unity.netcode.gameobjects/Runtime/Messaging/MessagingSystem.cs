@@ -8,6 +8,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    internal class HandlerNotRegisteredException : SystemException
+    {
+        public HandlerNotRegisteredException() { }
+        public HandlerNotRegisteredException(string issue) : base(issue) { }
+    }
 
     internal class InvalidMessageStructureException : SystemException
     {
@@ -44,8 +49,9 @@ namespace Unity.Netcode
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
-        private MessageHandler[] m_MessageHandlers = new MessageHandler[255];
-        private Type[] m_ReverseTypeMap = new Type[255];
+        // These array will grow as we need more message handlers. 4 is just a starting size.
+        private MessageHandler[] m_MessageHandlers = new MessageHandler[4];
+        private Type[] m_ReverseTypeMap = new Type[4];
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
@@ -59,6 +65,7 @@ namespace Unity.Netcode
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
+
         internal uint MessageHandlerCount => m_HighMessageType;
 
         internal uint GetMessageType(Type t)
@@ -75,6 +82,35 @@ namespace Unity.Netcode
             public MessageHandler Handler;
         }
 
+        internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
+        {
+            var prioritizedTypes = new List<MessageWithHandler>();
+
+            // first pass puts the priority message in the first indices
+            // Those are the messages that must be delivered in order to allow re-ordering the others later
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName == "Unity.Netcode.ConnectionRequestMessage" ||
+                    t.MessageType.FullName == "Unity.Netcode.ConnectionApprovedMessage" ||
+                    t.MessageType.FullName == "Unity.Netcode.OrderingMessage")
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
+
+            foreach (var t in allowedTypes)
+            {
+                if (t.MessageType.FullName != "Unity.Netcode.ConnectionRequestMessage" &&
+                    t.MessageType.FullName != "Unity.Netcode.ConnectionApprovedMessage" &&
+                    t.MessageType.FullName != "Unity.Netcode.OrderingMessage")
+                {
+                    prioritizedTypes.Add(t);
+                }
+            }
+
+            return prioritizedTypes;
+        }
+
         public MessagingSystem(IMessageSender messageSender, object owner, IMessageProvider provider = null)
         {
             try
@@ -89,6 +125,7 @@ namespace Unity.Netcode
                 var allowedTypes = provider.GetMessages();
 
                 allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
+                allowedTypes = PrioritizeMessageOrder(allowedTypes);
                 foreach (var type in allowedTypes)
                 {
                     RegisterMessageType(type);
@@ -143,6 +180,13 @@ namespace Unity.Netcode
 
         private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
+            // if we are out of space, perform amortized linear growth
+            if (m_HighMessageType == m_MessageHandlers.Length)
+            {
+                Array.Resize(ref m_MessageHandlers, 2 * m_MessageHandlers.Length);
+                Array.Resize(ref m_ReverseTypeMap, 2 * m_ReverseTypeMap.Length);
+            }
+
             m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
             m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
             m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
@@ -226,6 +270,70 @@ namespace Unity.Netcode
             return true;
         }
 
+        // Moves the handler for the type having hash `targetHash` to the `desiredOrder` position, in the handler list
+        // This allows the server to tell the client which id it is using for which message and make sure the right
+        // message is used when deserializing.
+        internal void ReorderMessage(int desiredOrder, uint targetHash)
+        {
+            if (desiredOrder < 0)
+            {
+                throw new ArgumentException("ReorderMessage desiredOrder must be positive");
+            }
+
+            if (desiredOrder < m_ReverseTypeMap.Length &&
+                XXHash.Hash32(m_ReverseTypeMap[desiredOrder].FullName) == targetHash)
+            {
+                // matching positions and hashes. All good.
+                return;
+            }
+
+            Debug.Log($"Unexpected hash for {desiredOrder}");
+
+            // Since the message at `desiredOrder` is not the expected one,
+            // insert an empty placeholder and move the messages down
+            var typesAsList = new List<Type>(m_ReverseTypeMap);
+
+            typesAsList.Insert(desiredOrder, null);
+            var handlersAsList = new List<MessageHandler>(m_MessageHandlers);
+            handlersAsList.Insert(desiredOrder, null);
+
+            // we added a dummy message, bump the end up
+            m_HighMessageType++;
+
+            // Here, we rely on the server telling us about all messages, in order.
+            // So, we know the handlers before desiredOrder are correct.
+            // We start at desiredOrder to not shift them when we insert.
+            int position = desiredOrder;
+            bool found = false;
+            while (position < typesAsList.Count)
+            {
+                if (typesAsList[position] != null &&
+                    XXHash.Hash32(typesAsList[position].FullName) == targetHash)
+                {
+                    found = true;
+                    break;
+                }
+
+                position++;
+            }
+
+            if (found)
+            {
+                // Copy the handler and type to the right index
+
+                typesAsList[desiredOrder] = typesAsList[position];
+                handlersAsList[desiredOrder] = handlersAsList[position];
+                typesAsList.RemoveAt(position);
+                handlersAsList.RemoveAt(position);
+
+                // we removed a copy after moving a message, reduce the high message index
+                m_HighMessageType--;
+            }
+
+            m_ReverseTypeMap = typesAsList.ToArray();
+            m_MessageHandlers = handlersAsList.ToArray();
+        }
+
         public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
         {
             if (header.MessageType >= m_HighMessageType)
@@ -259,18 +367,29 @@ namespace Unity.Netcode
             var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
-                // No user-land message handler exceptions should escape the receive loop.
-                // If an exception is throw, the message is ignored.
-                // Example use case: A bad message is received that can't be deserialized and throws
-                // an OverflowException because it specifies a length greater than the number of bytes in it
-                // for some dynamic-length value.
-                try
+                // This will also log an exception is if the server knows about a message type the client doesn't know
+                // about. In this case the handler will be null. It is still an issue the user must deal with: If the
+                // two connecting builds know about different messages, the server should not send a message to a client
+                // that doesn't know about it
+                if (handler == null)
                 {
-                    handler.Invoke(reader, ref context, this);
+                    Debug.LogException(new HandlerNotRegisteredException(header.MessageType.ToString()));
                 }
-                catch (Exception e)
+                else
                 {
-                    Debug.LogException(e);
+                    // No user-land message handler exceptions should escape the receive loop.
+                    // If an exception is throw, the message is ignored.
+                    // Example use case: A bad message is received that can't be deserialized and throws
+                    // an OverflowException because it specifies a length greater than the number of bytes in it
+                    // for some dynamic-length value.
+                    try
+                    {
+                        handler.Invoke(reader, ref context, this);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
                 }
             }
             for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)

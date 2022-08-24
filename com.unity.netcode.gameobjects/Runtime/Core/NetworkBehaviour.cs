@@ -331,7 +331,8 @@ namespace Unity.Netcode
                 // in Update and/or in FixedUpdate could still be checking NetworkBehaviour.NetworkObject directly (i.e. does it exist?)
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
-                if (m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
+                // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
+                if (IsSpawned && m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -484,6 +485,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets called when the parent NetworkObject of this NetworkBehaviour's NetworkObject has changed
         /// </summary>
+        /// <param name="parentNetworkObject">the new <see cref="NetworkObject"/> parent</param>
         public virtual void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject) { }
 
         private bool m_VarInit = false;
@@ -595,9 +597,11 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
             }
+
+            MarkVariablesDirty(false);
         }
 
-        internal void VariableUpdate(ulong targetClientId)
+        internal void PreVariableUpdate()
         {
             if (!m_VarInit)
             {
@@ -605,6 +609,10 @@ namespace Unity.Netcode
             }
 
             PreNetworkVariableWrite();
+        }
+
+        internal void VariableUpdate(ulong targetClientId)
+        {
             NetworkVariableUpdate(targetClientId, NetworkBehaviourId);
         }
 
@@ -676,11 +684,11 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                NetworkVariableFields[j].SetDirty(true);
+                NetworkVariableFields[j].SetDirty(dirty);
             }
         }
 
@@ -765,8 +773,21 @@ namespace Unity.Netcode
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
 
+        /// <summary>
+        /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to.
+        /// NOTE:  If you override this, you will want to always invoke this base class version of this
+        /// <see cref="OnDestroy"/> method!!
+        /// </summary>
         public virtual void OnDestroy()
         {
+            if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
+            {
+                // If the associated NetworkObject is still spawned then this
+                // NetworkBehaviour will be removed from the NetworkObject's
+                // ChildNetworkBehaviours list.
+                NetworkObject.OnNetworkBehaviourDestroyed(this);
+            }
+
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
             //  of those variables use native containers (e.g. NetworkList) as they won't be
@@ -777,6 +798,7 @@ namespace Unity.Netcode
             {
                 InitializeVariables();
             }
+
 
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {

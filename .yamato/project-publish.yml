@@ -3,6 +3,26 @@
 {% for project in projects -%}
 {% if project.publish == "true" -%}
 {% for package in project.packages -%}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+validate_{{ package.name }}_{{ platform.name }}_{{ editor }}:
+  name : Validate (Isolation Tests) Package {{ package.name }} - {{ editor }} on {{ platform.name }}
+  agent:
+    type: {{ platform.type }}
+    image: {{ platform.image }}
+    flavor: {{ platform.flavor}}
+  commands:
+    - npm install upm-ci-utils@stable -g --registry https://artifactory.prd.cds.internal.unity3d.com/artifactory/api/npm/upm-npm
+    - {% if platform.name == "ubuntu" %}DISPLAY=:0 {% endif %}upm-ci project test -u {{ editor }} --type isolation-tests --project-path {{ project.path }} --package-filter {{ package.name }} --platform editmode
+  artifacts:
+    logs:
+      paths:
+        - "upm-ci~/test-results/**/*"
+  dependencies:
+    - .yamato/project-pack.yml#pack_{{ project.name }}
+{% endfor -%}
+{% endfor -%}
+
 publish_{{ project.name }}_{{ package.name }}:
   name: Publish Project {{project.name }} - Package {{ package.name }} to Internal Registry
   agent:
@@ -18,7 +38,7 @@ publish_{{ project.name }}_{{ package.name }}:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
     - .yamato/project-publish.yml#publish_{{ project.name }}_{{ package.name }}_dry_run
 
 publish_{{ project.name }}_{{ package.name }}_dry_run:
@@ -36,7 +56,11 @@ publish_{{ project.name }}_{{ package.name }}_dry_run:
         - "upm-ci~/packages/*.tgz"
   dependencies:
     - .yamato/project-pack.yml#pack_{{ project.name }}
-    - .yamato/project-tests.yml#validate_{{ package.name }}_{{ test_platforms.first.name }}_{{ validation_editor }}
+{% for editor in project.test_editors -%}
+{% for platform in test_platforms -%}
+    - .yamato/project-publish.yml#validate_{{ package.name }}_{{ platform.name }}_{{ editor }}
+{% endfor -%}
+{% endfor -%}
 
 {% endfor -%}
 {% endif -%}

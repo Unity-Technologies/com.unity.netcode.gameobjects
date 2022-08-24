@@ -28,6 +28,8 @@ namespace TestProject.RuntimeTests
             m_DDOL_ObjectToSpawn = new GameObject();
             var networkObject = m_DDOL_ObjectToSpawn.AddComponent<NetworkObject>();
             m_DDOL_ObjectToSpawn.AddComponent<DDOLBehaviour>();
+            networkObject.DontDestroyWithOwner = true;
+            networkObject.DestroyWithScene = false;
 
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
@@ -82,6 +84,7 @@ namespace TestProject.RuntimeTests
             [Values(MovedIntoDDOLBy.User, MovedIntoDDOLBy.NetworkSceneManager)] MovedIntoDDOLBy movedIntoDDOLBy,
             [Values(NetworkObjectType.InScenePlaced, NetworkObjectType.DynamicallySpawned)] NetworkObjectType networkObjectType)
         {
+            var waitForFullNetworkTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             var isActive = activeState == DefaultState.IsEnabled ? true : false;
             var isInScene = networkObjectType == NetworkObjectType.InScenePlaced ? true : false;
             var objectInstance = Object.Instantiate(m_DDOL_ObjectToSpawn);
@@ -101,21 +104,21 @@ namespace TestProject.RuntimeTests
             ddolBehaviour.SetInScene(isInScene);
 
             networkObject.Spawn();
+            yield return waitForFullNetworkTick;
 
             Assert.That(networkObject.IsSpawned);
 
             objectInstance.SetActive(isActive);
-
             m_ServerNetworkManager.SceneManager.MoveObjectsToDontDestroyOnLoad();
 
-            yield return new WaitForSeconds(0.03f);
+            yield return waitForFullNetworkTick;
 
             // It should be isActive when MoveObjectsToDontDestroyOnLoad is called.
             Assert.That(networkObject.isActiveAndEnabled == isActive);
 
             m_ServerNetworkManager.SceneManager.MoveObjectsFromDontDestroyOnLoadToScene(SceneManager.GetActiveScene());
 
-            yield return new WaitForSeconds(0.03f);
+            yield return waitForFullNetworkTick;
 
             // It should be isActive when MoveObjectsFromDontDestroyOnLoadToScene is called.
             Assert.That(networkObject.isActiveAndEnabled == isActive);
@@ -129,6 +132,12 @@ namespace TestProject.RuntimeTests
             public void MoveToDDOL()
             {
                 DontDestroyOnLoad(gameObject);
+            }
+
+            public override void OnNetworkSpawn()
+            {
+                NetworkObject.DestroyWithScene = false;
+                base.OnNetworkSpawn();
             }
 
             public void SetInScene(bool isInScene)

@@ -10,21 +10,19 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class TransformInterpolationObject : NetworkBehaviour
     {
+        // Set the minimum threshold which we will use as our margin of error
+        public const float MinThreshold = 0.001f;
+
         public bool CheckPosition;
         public bool IsMoving;
         public bool IsFixed;
 
         private void Update()
         {
-            // Since the local position is transformed from local to global and vice-versa on the server and client
-            // it may accumulate some error. We allow an error of 0.01 over the range of 1000 used in this test.
-            // This requires precision to 5 digits, so it doesn't weaken the test, while preventing spurious failures
-            const float maxRoundingError = 0.01f;
-
             // Check the position of the nested object on the client
             if (CheckPosition)
             {
-                if (transform.position.y < -maxRoundingError || transform.position.y > 100.0f + maxRoundingError)
+                if (transform.position.y < -MinThreshold || transform.position.y > 100.0f + MinThreshold)
                 {
                     Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
                 }
@@ -33,11 +31,7 @@ namespace Unity.Netcode.RuntimeTests
             // Move the nested object on the server
             if (IsMoving)
             {
-                var y = Time.realtimeSinceStartup;
-                while (y > 10.0f)
-                {
-                    y -= 10.0f;
-                }
+                var y = Time.realtimeSinceStartup % 10.0f;
 
                 // change the space between local and global every second
                 GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
@@ -69,7 +63,8 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("InterpTestObject");
-            m_PrefabToSpawn.AddComponent<NetworkTransform>();
+            var networkTransform = m_PrefabToSpawn.AddComponent<NetworkTransform>();
+            networkTransform.PositionThreshold = TransformInterpolationObject.MinThreshold;
             m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
         }
 
@@ -89,8 +84,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_SpawnedAsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
             m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
-
-
         }
 
         [UnityTest]
@@ -119,6 +112,7 @@ namespace Unity.Netcode.RuntimeTests
 
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
             spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
+            spawnedObject.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
 
             const float maxPlacementError = 0.01f;
 
@@ -131,6 +125,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.01f);
             }
 
+            m_SpawnedObjectOnClient.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
             m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 
             // Test that interpolation works correctly for 10 seconds

@@ -98,4 +98,18 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/IntegrationTestScenes/InSceneNetworkObject.unity
     guid: 136692aa47cd577499d03a2b0dabbf28
-  m_configObjects: {}
+  - enabled: 1
+    path: Assets/Tests/Manual/InSceneObjectParentingTests/InSceneNetworkObjectParentingTest.unity
+    guid: f112d7c4abed6c34ca1287cf5ff15b9c
+  - enabled: 1
+    path: Assets/Tests/Manual/InSceneObjectParentingTests/InSceneNetworkObjectToLoad.unity
+    guid: f06a8525a4b5200459f62905c29ce09e
+  - enabled: 1
+    path: Assets/Tests/Manual/NetworkAnimatorTests/NetworkAnimatorServerOwnerTest.unity
+    guid: f88da8bb8d07e11418eaad6524d5cc12
+  - enabled: 1
+    path: Assets/Samples/Teleport/TeleportSample.unity
+    guid: efa247d1f78ca694f8d2dcb5672e8f8b
+  m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
+      type: 2}

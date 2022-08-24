@@ -4,6 +4,9 @@ using Unity.Netcode.Components;
 
 namespace Unity.Netcode.Editor
 {
+    /// <summary>
+    /// The <see cref="CustomEditor"/> for <see cref="NetworkTransform"/>
+    /// </summary>
     [CustomEditor(typeof(NetworkTransform), true)]
     public class NetworkTransformEditor : UnityEditor.Editor
     {
@@ -28,6 +31,7 @@ namespace Unity.Netcode.Editor
         private static GUIContent s_RotationLabel = EditorGUIUtility.TrTextContent("Rotation");
         private static GUIContent s_ScaleLabel = EditorGUIUtility.TrTextContent("Scale");
 
+        /// <inheritdoc/>
         public void OnEnable()
         {
             m_SyncPositionXProperty = serializedObject.FindProperty(nameof(NetworkTransform.SyncPositionX));
@@ -46,6 +50,7 @@ namespace Unity.Netcode.Editor
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
         }
 
+        /// <inheritdoc/>
         public override void OnInspectorGUI()
         {
             EditorGUILayout.LabelField("Syncing", EditorStyles.boldLabel);

@@ -53,26 +53,6 @@ namespace TestProject.ManualTests
         }
 
         /// <summary>
-        /// Handles disabling the MeshRenderer when the client despawns a NetworkObject
-        /// </summary>
-        public override void OnNetworkDespawn()
-        {
-            if (!IsServer)
-            {
-                if (m_MeshRenderer == null)
-                {
-                    m_MeshRenderer = GetComponent<MeshRenderer>();
-                }
-
-                if (m_MeshRenderer != null)
-                {
-                    m_MeshRenderer.enabled = false;
-                }
-            }
-            base.OnNetworkDespawn();
-        }
-
-        /// <summary>
         /// Makes mesh renderer visible again
         /// </summary>
         public void Reset()
@@ -82,28 +62,6 @@ namespace TestProject.ManualTests
                 m_MeshRenderer = GetComponent<MeshRenderer>();
             }
             m_MeshRenderer.enabled = true;
-        }
-
-        private float m_VisibilitySpawn;
-        /// <summary>
-        /// Handles setting a delay before the newly spawned object is visible
-        /// </summary>
-        public override void OnNetworkSpawn()
-        {
-            if (!IsServer)
-            {
-                if (m_MeshRenderer == null)
-                {
-                    m_MeshRenderer = GetComponent<MeshRenderer>();
-                }
-                m_MeshRenderer.enabled = false;
-                m_VisibilitySpawn = Time.realtimeSinceStartup + 0.12f;
-                if (NetworkObject.NetworkObjectId == 0)
-                {
-                    Debug.Log("Spawning NetworkObjectId 0!");
-                }
-            }
-            base.OnNetworkSpawn();
         }
 
         public void ShouldMoveRandomly(bool shouldMoveRandomly)
@@ -176,19 +134,6 @@ namespace TestProject.ManualTests
                     NetworkObject.Despawn();
                 }
             }
-            else if (!IsServer)
-            {
-                // This is here to handle any short term latency between the time
-                // an object becomes spawned to the time it takes to update its first
-                // position.
-                if (m_MeshRenderer != null && !m_MeshRenderer.enabled)
-                {
-                    if (m_VisibilitySpawn < Time.realtimeSinceStartup)
-                    {
-                        m_MeshRenderer.enabled = true;
-                    }
-                }
-            }
         }
 
         [HideInInspector]
@@ -198,7 +143,7 @@ namespace TestProject.ManualTests
 
         private void OnTriggerEnter(Collider other)
         {
-            if (IsOwner && !m_ShouldDespawn)
+            if (IsSpawned && IsOwner && !m_ShouldDespawn)
             {
                 if (other.CompareTag("GenericObject") || other.CompareTag("Floor"))
                 {

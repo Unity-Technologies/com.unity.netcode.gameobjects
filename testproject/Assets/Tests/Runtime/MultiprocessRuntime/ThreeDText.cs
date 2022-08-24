@@ -1,7 +1,4 @@
 using UnityEngine;
-#if UNITY_UNET_PRESENT
-using Unity.Netcode.Transports.UNET;
-#endif
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {
@@ -38,10 +35,15 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             string[] args = System.Environment.GetCommandLineArgs();
             foreach (var arg in args)
             {
-                Debug.Log(arg);
-                CommandLineArguments += " " + arg;
+                if (arg.Length > 15)
+                {
+                    CommandLineArguments += " " + arg.Substring(0, 14);
+                }
+                else
+                {
+                    CommandLineArguments += "\n" + arg;
+                }
             }
-            Debug.Log($"CommandLineArguments {CommandLineArguments}");
         }
 
         // Update is called once per frame
@@ -69,14 +71,16 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
 
             if (IsTestCoordinatorActiveAndEnabled != testCoordinator.isActiveAndEnabled ||
                 !m_HasFired ||
+                m_UpdateCounter % 25 == 0 ||
                 !m_TransportString.Equals(transportString))
             {
                 m_HasFired = true;
                 m_TransportString = transportString;
                 IsTestCoordinatorActiveAndEnabled = testCoordinator.isActiveAndEnabled;
-                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled}\n" +
+                t.text = $"On Update -\ntestCoordinator.isActiveAndEnabled:{testCoordinator.isActiveAndEnabled} {testCoordinator.ConfigurationType}\n" +
                     $"Transport: {transportString}\n" +
                     $"{CommandLineArguments}\n" +
+                    $"IsHost: {NetworkManager.Singleton.IsHost} IsClient: {NetworkManager.Singleton.IsClient} {NetworkManager.Singleton.IsConnectedClient}\n" +
                     $"{m_UpdateCounter}\n";
             }
         }
