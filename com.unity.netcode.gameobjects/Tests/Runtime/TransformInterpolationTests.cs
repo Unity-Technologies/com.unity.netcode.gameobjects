@@ -24,7 +24,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 if (transform.position.y < -MinThreshold || transform.position.y > 100.0f + MinThreshold)
                 {
-                    Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0");
+                    Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0. Current threshold is [+/- {MinThreshold}].");
                 }
             }
 
