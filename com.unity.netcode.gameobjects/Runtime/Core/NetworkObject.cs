@@ -1065,7 +1065,12 @@ namespace Unity.Netcode
                 reader.ReadValue(out Header);
                 var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
                 readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + FastBufferWriter.GetWriteSize<bool>() + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                if (Header.IsReparented)
+                {
+                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
+                    readSize += FastBufferWriter.GetWriteSize(ChildWorldPositionStays);
+                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                }
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!reader.TryBeginRead(readSize))
