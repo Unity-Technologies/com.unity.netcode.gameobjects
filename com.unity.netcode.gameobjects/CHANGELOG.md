@@ -24,6 +24,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed not sending all NetworkVariables to all clients when a client connects to a server. (#1987)
 - Fixed an issue where reading/writing more than 8 bits at a time with BitReader/BitWriter would write/read from the wrong place, returning and incorrect result. (#2130)
 - Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)
 - Fixed issue with the internal `NetworkTransformState.m_Bitset` flag not getting cleared upon the next tick advancement. (#2110)
