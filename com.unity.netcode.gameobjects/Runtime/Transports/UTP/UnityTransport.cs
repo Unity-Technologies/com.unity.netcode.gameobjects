@@ -1346,7 +1346,7 @@ namespace Unity.Netcode.Transports.UTP
                 sendQueueCapacity: m_MaxPacketQueueSize);
 
             Debug.Log("Hello");
-            driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
+            driver = NetworkDriver.Create(m_NetworkSettings);
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
