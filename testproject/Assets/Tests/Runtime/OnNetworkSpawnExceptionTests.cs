@@ -15,11 +15,16 @@ namespace TestProject.RuntimeTests
     public class OnNetworkSpawnNoExceptionComponent : NetworkBehaviour
     {
         public static int NumClientSpawns = 0;
+        public static int NumServerSpawns = 0;
         public override void OnNetworkSpawn()
         {
             if (IsClient)
             {
                 ++NumClientSpawns;
+            }
+            else
+            {
+                ++NumServerSpawns;
             }
         }
     }
@@ -27,24 +32,34 @@ namespace TestProject.RuntimeTests
     public class OnNetworkSpawnThrowsExceptionComponent : NetworkBehaviour
     {
         public static int NumClientSpawns = 0;
+        public static int NumServerSpawns = 0;
         public override void OnNetworkSpawn()
         {
             if (IsClient)
             {
                 ++NumClientSpawns;
-                throw new Exception("Exception thrown in OnNetworkSpawn");
             }
+            else
+            {
+                ++NumServerSpawns;
+            }
+            throw new Exception("Exception thrown in OnNetworkSpawn");
         }
     }
 
     public class OnNetworkDespawnNoExceptionComponent : NetworkBehaviour
     {
         public static int NumClientDespawns = 0;
+        public static int NumServerDespawns = 0;
         public override void OnNetworkDespawn()
         {
             if (IsClient)
             {
                 ++NumClientDespawns;
+            }
+            else
+            {
+                ++NumServerDespawns;
             }
         }
     }
@@ -52,13 +67,18 @@ namespace TestProject.RuntimeTests
     public class OnNetworkDespawnThrowsExceptionComponent : NetworkBehaviour
     {
         public static int NumClientDespawns = 0;
+        public static int NumServerDespawns = 0;
         public override void OnNetworkDespawn()
         {
             if (IsClient)
             {
                 ++NumClientDespawns;
-                throw new Exception("Exception thrown in OnNetworkDespawn");
             }
+            else
+            {
+                ++NumServerDespawns;
+            }
+            throw new Exception("Exception thrown in OnNetworkDespawn");
         }
     }
 
@@ -94,12 +114,16 @@ namespace TestProject.RuntimeTests
                 {
                     instance = UnityEngine.Object.Instantiate(m_SpawnExceptionPrefab);
                     ++numExceptionsExpected;
+                    // One for server, one for client.
+                    LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkSpawn"));
                     LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkSpawn"));
                 }
                 else if (i == 1 || (i != k_NumObjects - 1 && rand == 1))
                 {
                     instance = UnityEngine.Object.Instantiate(m_SpawnWithAndWithoutExceptionPrefab);
                     ++numExceptionsExpected;
+                    // One for server, one for client.
+                    LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkSpawn"));
                     LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkSpawn"));
                     ++numExceptionFreeSpawnsExpected;
                 }
@@ -123,7 +147,9 @@ namespace TestProject.RuntimeTests
 
             // Assert that all objects had their OnNetworkSpawn called whether they threw exceptions or not
             Assert.AreEqual(numExceptionsExpected, OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns);
+            Assert.AreEqual(numExceptionsExpected, OnNetworkSpawnThrowsExceptionComponent.NumServerSpawns);
             Assert.AreEqual(numExceptionFreeSpawnsExpected, OnNetworkSpawnNoExceptionComponent.NumClientSpawns);
+            Assert.AreEqual(numExceptionFreeSpawnsExpected, OnNetworkSpawnNoExceptionComponent.NumServerSpawns);
         }
 
         [UnityTest]
@@ -181,6 +207,8 @@ namespace TestProject.RuntimeTests
             var messageHookEntriesForDespawn = new List<MessageHookEntry>();
             for (var i = 0; i < numExceptionsExpected; ++i)
             {
+                // One for server, one for client
+                LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkDespawn"));
                 LogAssert.Expect(LogType.Exception, new Regex("Exception thrown in OnNetworkDespawn"));
             }
             foreach (var networkObject in allObjects)
@@ -196,14 +224,22 @@ namespace TestProject.RuntimeTests
 
             // Assert that all objects had their OnNetworkSpawn called whether they threw exceptions or not
             Assert.AreEqual(numExceptionsExpected, OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns);
+            Assert.AreEqual(numExceptionsExpected, OnNetworkDespawnThrowsExceptionComponent.NumServerDespawns);
             Assert.AreEqual(numExceptionFreeDespawnsExpected, OnNetworkDespawnNoExceptionComponent.NumClientDespawns);
+            Assert.AreEqual(numExceptionFreeDespawnsExpected, OnNetworkDespawnNoExceptionComponent.NumServerDespawns);
         }
 
         protected override IEnumerator OnSetup()
         {
             m_UseHost = false;
             OnNetworkSpawnThrowsExceptionComponent.NumClientSpawns = 0;
+            OnNetworkSpawnThrowsExceptionComponent.NumServerSpawns = 0;
+            OnNetworkSpawnNoExceptionComponent.NumClientSpawns = 0;
+            OnNetworkSpawnNoExceptionComponent.NumServerSpawns = 0;
             OnNetworkDespawnThrowsExceptionComponent.NumClientDespawns = 0;
+            OnNetworkDespawnThrowsExceptionComponent.NumServerDespawns = 0;
+            OnNetworkDespawnNoExceptionComponent.NumClientDespawns = 0;
+            OnNetworkDespawnNoExceptionComponent.NumServerDespawns = 0;
             yield return null;
         }
 
