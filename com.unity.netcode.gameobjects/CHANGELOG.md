@@ -9,8 +9,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed RPC codegen failing to choose the correct extension methods for FastBufferReader and FastBufferWriter when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+
+## [1.0.1] - 2022-08-23
+
 ### Changed
 
+- Changed version to 1.0.1. (#2131)
 - Updated dependency on `com.unity.transport` to 1.2.0. (#2129)
 - When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
 - Preformance improvements for cases with large number of NetworkObjects, by not iterating over all unchanged NetworkObjects 
