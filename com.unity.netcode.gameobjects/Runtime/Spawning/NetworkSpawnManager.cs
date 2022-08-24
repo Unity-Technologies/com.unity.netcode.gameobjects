@@ -575,8 +575,6 @@ namespace Unity.Netcode
             };
             var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
             NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
-
-            networkObject.MarkVariablesDirty(true);
         }
 
         internal ulong? GetSpawnParentId(NetworkObject networkObject)
