@@ -1359,7 +1359,7 @@ namespace Unity.Netcode.Transports.UTP
                 sendQueueCapacity: m_MaxPacketQueueSize);
 
             // Per default the driver will use UDP. If the user choose so, he can use WebSocket instead.
-            driver = m_UseWebSocket ? NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings):NetworkDriver.Create(m_NetworkSettings);
+            driver = m_UseWebSocket ? NetworkDriver.Create(new WebSocketNetworkInterface()):NetworkDriver.Create(m_NetworkSettings);
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
