@@ -440,14 +440,28 @@ namespace Unity.Netcode
 
         internal void VisibleOnNetworkSpawn()
         {
-            OnNetworkSpawn();
+            try
+            {
+                OnNetworkSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
             UpdateNetworkProperties();
-            OnNetworkDespawn();
+            try
+            {
+                OnNetworkDespawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
