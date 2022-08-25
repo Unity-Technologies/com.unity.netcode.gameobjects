@@ -15,7 +15,7 @@ Netcode for GameObjects is a Unity package that provides networking capabilities
 
 Visit the [Multiplayer Docs Site](https://docs-multiplayer.unity3d.com/) for package & API documentation, as well as information about several samples which leverage the Netcode for GameObjects package.
 
-You can also jump right into our [Hello World](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/helloworld/helloworldintro) guide for a taste of how to use the framework for basic networked tasks.
+You can also jump right into our [Hello World](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/helloworld) guide for a taste of how to use the framework for basic networked tasks.
 
 ### Community and Feedback
 
