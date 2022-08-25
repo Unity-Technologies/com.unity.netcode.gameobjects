@@ -859,6 +859,19 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        private void LateUpdate()
+        {
+            if (m_Driver.IsCreated)
+            {
+                foreach (var kvp in m_SendQueue)
+                {
+                    SendBatchedMessages(kvp.Key, kvp.Value);
+                }
+
+                m_Driver.ScheduleFlushSend(default).Complete();
+            }
+        }
+
         private void OnDestroy()
         {
             DisposeInternals();
