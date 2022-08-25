@@ -81,15 +81,14 @@ namespace Unity.Netcode
         {
             m_IsDirty = isDirty;
 
-            if (m_NetworkBehaviour == null)
-            {
-                Debug.LogWarning($"NetworkVariable is written to, but doesn't know its NetworkBehaviour yet. " +
-                                 "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
-                return;
-            }
-
             if (m_IsDirty)
             {
+                if (m_NetworkBehaviour == null)
+                {
+                    Debug.LogWarning($"NetworkVariable is written to, but doesn't know its NetworkBehaviour yet. " +
+                                     "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
+                    return;
+                }
                 m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
             }
         }
