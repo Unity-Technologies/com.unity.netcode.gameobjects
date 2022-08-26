@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by ClientRpcParams. (#2144)
 - Fixed RPC codegen failing to choose the correct extension methods for FastBufferReader and FastBufferWriter when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
 - Fixed throwing an exception in OnNetworkUpdate causing other OnNetworkUpdate calls to not be executed. (#1739)
 
