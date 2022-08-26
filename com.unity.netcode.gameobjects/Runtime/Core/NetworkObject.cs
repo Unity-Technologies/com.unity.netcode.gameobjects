@@ -509,6 +509,7 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+            MarkVariablesDirty(false);
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
@@ -819,6 +820,13 @@ namespace Unity.Netcode
                 else
                 {
                     Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during spawn!");
+                }
+            }
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].VisibleOnNetworkSpawn();
                 }
             }
         }

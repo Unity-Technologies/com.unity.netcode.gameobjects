@@ -464,14 +464,32 @@ namespace Unity.Netcode
             IsSpawned = true;
             InitializeVariables();
             UpdateNetworkProperties();
-            OnNetworkSpawn();
+        }
+
+        internal void VisibleOnNetworkSpawn()
+        {
+            try
+            {
+                OnNetworkSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
             UpdateNetworkProperties();
-            OnNetworkDespawn();
+            try
+            {
+                OnNetworkDespawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
