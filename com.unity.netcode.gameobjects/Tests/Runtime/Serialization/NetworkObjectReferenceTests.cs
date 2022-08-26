@@ -118,7 +118,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
             networkObjectContext.Object.Spawn();
-            
+
             var outWriter = new FastBufferWriter(1300, Allocator.Temp);
             try
             {
@@ -126,9 +126,9 @@ namespace Unity.Netcode.RuntimeTests
                 var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
                 NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
                 outReference.NetworkSerialize(outSerializer);
-                
+
                 networkObjectContext.Object.Despawn();
-                GameObject.DestroyImmediate(networkObjectContext.Object.gameObject);
+                Object.DestroyImmediate(networkObjectContext.Object.gameObject);
 
                 // deserialize
                 NetworkObjectReference inReference = default;
