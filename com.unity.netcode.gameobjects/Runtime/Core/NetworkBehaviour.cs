@@ -235,14 +235,42 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                foreach (var client in NetworkManager.ConnectedClients)
+                if (clientRpcParams.Send.TargetClientIds != null)
                 {
-                    NetworkManager.NetworkMetrics.TrackRpcSent(
-                        client.Key,
-                        NetworkObject,
-                        rpcMethodName,
-                        __getTypeName(),
-                        rpcWriteSize);
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
+                {
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else
+                {
+                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                    while (observerEnumerator.MoveNext())
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            observerEnumerator.Current,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
                 }
             }
 #endif
@@ -440,14 +468,28 @@ namespace Unity.Netcode
 
         internal void VisibleOnNetworkSpawn()
         {
-            OnNetworkSpawn();
+            try
+            {
+                OnNetworkSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
             UpdateNetworkProperties();
-            OnNetworkDespawn();
+            try
+            {
+                OnNetworkDespawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
