@@ -139,7 +139,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="networkObjectRef">The <see cref="NetworkObjectReference"/> to convert from.</param>
         /// <returns>This returns the <see cref="GameObject"/> that the <see cref="NetworkObject"/> is attached to and is referenced by the <see cref="NetworkObjectReference"/> passed in as a parameter</returns>
-        public static implicit operator GameObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef).gameObject;
+        public static implicit operator GameObject(NetworkObjectReference networkObjectRef) => Resolve(networkObjectRef)?.gameObject;
 
         /// <summary>
         /// Implicitly convert <see cref="GameObject"/> to <see cref="NetworkObject"/>.

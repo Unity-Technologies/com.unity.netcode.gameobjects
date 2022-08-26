@@ -25,9 +25,12 @@ namespace Unity.Netcode.RuntimeTests
 
             public GameObject RpcReceivedGameObject;
 
+            public bool ReceivedRpc;
+
             [ServerRpc]
             public void SendReferenceServerRpc(NetworkObjectReference value)
             {
+                ReceivedRpc = true;
                 RpcReceivedGameObject = value;
                 RpcReceivedNetworkObject = value;
             }
@@ -103,6 +106,49 @@ namespace Unity.Netcode.RuntimeTests
                 // validate
                 Assert.AreEqual(outReference, inReference);
                 Assert.AreEqual(networkObjectContext.Object.gameObject, gameObject);
+            }
+            finally
+            {
+                outWriter.Dispose();
+            }
+        }
+
+        [Test]
+        public void TestNoExceptionsIfObjectDisappears()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            networkObjectContext.Object.Spawn();
+            
+            var outWriter = new FastBufferWriter(1300, Allocator.Temp);
+            try
+            {
+                // serialize
+                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
+                NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
+                outReference.NetworkSerialize(outSerializer);
+                
+                networkObjectContext.Object.Despawn();
+                GameObject.DestroyImmediate(networkObjectContext.Object.gameObject);
+
+                // deserialize
+                NetworkObjectReference inReference = default;
+                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
+                try
+                {
+                    var inSerializer =
+                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
+                    inReference.NetworkSerialize(inSerializer);
+                }
+                finally
+                {
+                    inReader.Dispose();
+                }
+                GameObject gameObject = inReference;
+                NetworkObject networkObject = inReference;
+
+                // because the object is gone, it won't exist on the now, so it should end up null and shouldn't throw exceptions.
+                Assert.AreEqual(null, networkObject);
+                Assert.AreEqual(null, gameObject);
             }
             finally
             {
