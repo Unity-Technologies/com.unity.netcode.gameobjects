@@ -1129,13 +1129,12 @@ namespace Unity.Netcode.Transports.UTP
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
 
-            m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
+            m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
 #if !UTP_TRANSPORT_2_0_ABOVE
-                .WithBaselibNetworkInterfaceParameters(
-                    receiveQueueCapacity: m_MaxPacketQueueSize,
-                    sendQueueCapacity: m_MaxPacketQueueSize)
+            m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+                sendQueueCapacity: m_MaxPacketQueueSize);
 #endif
-                ;
 #endif
         }
 
@@ -1351,6 +1350,10 @@ namespace Unity.Netcode.Transports.UTP
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
+#if UTP_TRANSPORT_2_0_ABOVE
+                sendQueueCapacity: m_MaxPacketQueueSize,
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+#endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
