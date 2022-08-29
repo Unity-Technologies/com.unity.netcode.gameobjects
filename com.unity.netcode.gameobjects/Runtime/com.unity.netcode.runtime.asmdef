@@ -30,6 +30,11 @@
             "name": "com.unity.multiplayer.tools",
             "expression": "1.0.0-pre.7",
             "define": "MULTIPLAYER_TOOLS_1_0_0_PRE_7"
+        },
+        {
+            "name": "com.unity.transport",
+            "expression": "2.0.0-exp",
+            "define": "TRANSPORT_2_0_ABOVE"
         }
     ]
 }
