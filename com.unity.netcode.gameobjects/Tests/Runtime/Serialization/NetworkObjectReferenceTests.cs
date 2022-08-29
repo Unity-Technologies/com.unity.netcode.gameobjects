@@ -25,12 +25,9 @@ namespace Unity.Netcode.RuntimeTests
 
             public GameObject RpcReceivedGameObject;
 
-            public bool ReceivedRpc;
-
             [ServerRpc]
             public void SendReferenceServerRpc(NetworkObjectReference value)
             {
-                ReceivedRpc = true;
                 RpcReceivedGameObject = value;
                 RpcReceivedNetworkObject = value;
             }
