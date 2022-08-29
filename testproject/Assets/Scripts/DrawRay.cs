@@ -3,23 +3,26 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class DrawRay : MonoBehaviour
 {
+    private const float RayLength = 10;
+    
+    private Transform m_Transform;
     private LineRenderer m_LineRenderer;
 
     private void Awake()
     {
-        m_LineRenderer = GetComponent<LineRenderer>();
+        TryGetComponent(out m_Transform);
+        TryGetComponent(out m_LineRenderer);
         m_LineRenderer.SetPosition(0, transform.position);
     }
 
     private void FixedUpdate()
     {
-        if (Physics.Raycast(new Ray(transform.position, transform.forward * 10), out RaycastHit hit, 10, Physics.DefaultRaycastLayers))
-        {
-            m_LineRenderer.SetPosition(1, hit.point);
-        }
-        else
-        {
-            m_LineRenderer.SetPosition(1, transform.position + transform.forward * 10);
-        }
+        var ray = new Ray(m_Transform.position, m_Transform.forward * RayLength);
+
+        var point = Physics.Raycast(ray, out var hit, RayLength, Physics.DefaultRaycastLayers)
+            ? hit.point
+            : m_Transform.position + m_Transform.forward * RayLength;
+
+        m_LineRenderer.SetPosition(1, point);
     }
 }
