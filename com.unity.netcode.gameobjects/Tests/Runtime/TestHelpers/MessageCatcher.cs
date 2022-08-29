@@ -21,19 +21,19 @@ namespace Unity.Netcode.RuntimeTests
             public float Timestamp;
             public int SerializedHeaderSize;
         }
-        private readonly List<TriggerData> CaughtMessages = new List<TriggerData>();
+        private readonly List<TriggerData> m_CaughtMessages = new List<TriggerData>();
 
         public void ReleaseMessages()
         {
 
-            foreach (var caughtSpawn in CaughtMessages)
+            foreach (var caughtSpawn in m_CaughtMessages)
             {
                 // Reader will be disposed within HandleMessage
                 m_OwnerNetworkManager.MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
             }
         }
 
-        public int CaughtMessageCount => CaughtMessages.Count;
+        public int CaughtMessageCount => m_CaughtMessages.Count;
 
         public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
         {
@@ -76,7 +76,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (messageType == typeof(TMessageType))
             {
-                CaughtMessages.Add(new TriggerData
+                m_CaughtMessages.Add(new TriggerData
                 {
                     Reader = new FastBufferReader(messageContent, Allocator.Persistent),
                     Header = context.Header,

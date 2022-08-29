@@ -25,7 +25,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(8.0f);
         protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
 
-        protected NetcodeLogAssert NetcodeLogAssert;
+        public NetcodeLogAssert NetcodeLogAssert;
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
