@@ -3,8 +3,8 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class DrawRay : MonoBehaviour
 {
-    private const float RayLength = 10;
-    
+    private const float k_RayLength = 10;
+
     private Transform m_Transform;
     private LineRenderer m_LineRenderer;
 
@@ -17,11 +17,11 @@ public class DrawRay : MonoBehaviour
 
     private void FixedUpdate()
     {
-        var ray = new Ray(m_Transform.position, m_Transform.forward * RayLength);
+        var ray = new Ray(m_Transform.position, m_Transform.forward * k_RayLength);
 
-        var point = Physics.Raycast(ray, out var hit, RayLength, Physics.DefaultRaycastLayers)
+        var point = Physics.Raycast(ray, out var hit, k_RayLength, Physics.DefaultRaycastLayers)
             ? hit.point
-            : m_Transform.position + m_Transform.forward * RayLength;
+            : m_Transform.position + m_Transform.forward * k_RayLength;
 
         m_LineRenderer.SetPosition(1, point);
     }
