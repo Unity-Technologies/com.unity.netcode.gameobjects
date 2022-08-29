@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed RPC codegen failing to choose the correct extension methods for FastBufferReader and FastBufferWriter when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
 - Fixed throwing an exception in OnNetworkUpdate causing other OnNetworkUpdate calls to not be executed. (#1739)
 - Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
+- Fixed Connection Approval Timeout not working client side. (#2164)
 
 ## [1.0.1] - 2022-08-23
 
