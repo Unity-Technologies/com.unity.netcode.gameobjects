@@ -114,48 +114,31 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNoExceptionsIfObjectDisappears()
+        public void TestImplicitConversionToGameObject()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
             networkObjectContext.Object.Spawn();
 
-            var outWriter = new FastBufferWriter(1300, Allocator.Temp);
-            try
-            {
-                // serialize
-                var outSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(outWriter));
-                NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
-                outReference.NetworkSerialize(outSerializer);
+            NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
 
-                networkObjectContext.Object.Despawn();
-                Object.DestroyImmediate(networkObjectContext.Object.gameObject);
-
-                // deserialize
-                NetworkObjectReference inReference = default;
-                var inReader = new FastBufferReader(outWriter, Allocator.Temp);
-                try
-                {
-                    var inSerializer =
-                        new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(inReader));
-                    inReference.NetworkSerialize(inSerializer);
-                }
-                finally
-                {
-                    inReader.Dispose();
-                }
-                GameObject gameObject = inReference;
-                NetworkObject networkObject = inReference;
-
-                // because the object is gone, it won't exist on the now, so it should end up null and shouldn't throw exceptions.
-                Assert.AreEqual(null, networkObject);
-                Assert.AreEqual(null, gameObject);
-            }
-            finally
-            {
-                outWriter.Dispose();
-            }
+            GameObject go = outReference;
+            Assert.AreEqual(networkObjectContext.Object.gameObject, go);
         }
 
+        [Test]
+        public void TestImplicitToGameObjectIsNullWhenNotFound()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            networkObjectContext.Object.Spawn();
+
+            NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
+
+            networkObjectContext.Object.Despawn();
+            Object.DestroyImmediate(networkObjectContext.Object.gameObject);
+
+            GameObject go = outReference;
+            Assert.IsNull(go);
+        }
         [Test]
         public void TestTryGet()
         {
