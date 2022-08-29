@@ -14,7 +14,7 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
         }
 
         [ClientRpc]
-        public void MyClientRpc()
+        public void MyClientRpc(ClientRpcParams rpcParams = default)
         {
             OnClientRpcAction?.Invoke();
         }
