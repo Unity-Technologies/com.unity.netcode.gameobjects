@@ -9,12 +9,12 @@ using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
-namespace Unity.Netcode.Transports.UTP
-{
 #if !UTP_TRANSPORT_2_0_ABOVE
-    using NetworkEndpoint = NetworkEndPoint;
+    using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
 #endif
 
+namespace Unity.Netcode.Transports.UTP
+{
     /// <summary>
     /// Provides an interface that overrides the ability to create your own drivers and pipelines
     /// </summary>
