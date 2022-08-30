@@ -55,6 +55,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Ignore("Pending adjustment for UTP 2.0")]
+#endif
         public IEnumerator TrackPacketLossAsClient()
         {
             double packetLossRateMinRange = (m_PacketLossRate-m_PacketLossRangeDelta) / 100d;
