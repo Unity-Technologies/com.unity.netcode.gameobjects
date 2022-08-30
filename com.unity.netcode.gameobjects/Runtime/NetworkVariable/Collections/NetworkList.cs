@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -65,6 +66,13 @@ namespace Unity.Netcode
 
         internal void MarkNetworkObjectDirty()
         {
+            if (m_NetworkBehaviour == null)
+            {
+                Debug.LogWarning($"NetworkList is written to, but doesn't know its NetworkBehaviour yet. " +
+                                 "Are you modifying a NetworkList before the NetworkObject is spawned?");
+                return;
+            }
+
             m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
 
