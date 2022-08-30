@@ -911,7 +911,11 @@ namespace Unity.Netcode.Transports.UTP
         {
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
+#if UTP_TRANSPORT_2_0_ABOVE
+                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+#else
                 NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1339,7 +1343,9 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline reliableSequencedPipeline)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+#if !UTP_TRANSPORT_2_0_ABOVE
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
 #endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1357,6 +1363,10 @@ namespace Unity.Netcode.Transports.UTP
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
+#endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
