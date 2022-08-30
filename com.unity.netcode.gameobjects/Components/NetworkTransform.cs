@@ -974,7 +974,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// <see cref="OnNetworkStateChanged"/>
         /// </remarks>
-        private void StopExtrapolatingLastState()
+        private void TryToStopExtrapolatingLastState()
         {
             if (!m_LastReceivedState.IsDirty || m_LastReceivedState.EndExtrapolationTick >= NetworkManager.LocalTime.Tick)
             {
@@ -1006,9 +1006,15 @@ namespace Unity.Netcode.Components
             {
                 // This is "just in case" we receive a new state before the end
                 // of any currently applied and potentially extrapolating state.
-                StopExtrapolatingLastState();
+                // Attempts to stop extrapolating any previously applied state.
+                TryToStopExtrapolatingLastState();
+
+                // Add measurements for the new state's deltas
                 AddInterpolatedState(newState);
+
+                // Set the last received state to the new state (will be used to stop extrapolating the new state on the next local tick)
                 m_LastReceivedState = newState;
+
                 // Set the current local tick and wait until the next tick before we end
                 // this state's extrapolation.
                 m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
@@ -1312,9 +1318,8 @@ namespace Unity.Netcode.Components
                 // Apply the current authoritative state
                 ApplyAuthoritativeState();
 
-                // Handles stopping extrapolation for any previously
-                // applied state.
-                StopExtrapolatingLastState();
+                // Attempts to stop extrapolating any previously applied state.
+                TryToStopExtrapolatingLastState();
             }
         }
 
