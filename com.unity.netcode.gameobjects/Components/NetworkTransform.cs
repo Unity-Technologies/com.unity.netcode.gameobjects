@@ -1020,8 +1020,8 @@ namespace Unity.Netcode.Components
                 m_LastReceivedState = newState;
 
                 // Set the current local tick and wait until the next tick before we end
-                // this state's extrapolation.
-                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick + 2;
+                // this state's potential of extrapolating past the target value
+                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
             }
         }
 
