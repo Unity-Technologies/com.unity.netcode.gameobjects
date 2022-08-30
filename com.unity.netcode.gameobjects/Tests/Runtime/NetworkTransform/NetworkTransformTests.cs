@@ -4,7 +4,6 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
-using Unity.Netcode.Transports.UTP;
 
 namespace Unity.Netcode.RuntimeTests
 {
