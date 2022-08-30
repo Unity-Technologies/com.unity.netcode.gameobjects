@@ -1364,8 +1364,10 @@ namespace Unity.Netcode.Transports.UTP
 
             driver = NetworkDriver.Create(m_NetworkSettings);
 
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 #if UTP_TRANSPORT_2_0_ABOVE
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
+#endif
 #endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
