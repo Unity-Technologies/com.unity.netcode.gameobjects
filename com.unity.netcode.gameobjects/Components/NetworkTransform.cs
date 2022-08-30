@@ -434,6 +434,10 @@ namespace Unity.Netcode.Components
             }
         }
 
+        // Used by both authoritative and non-authoritative instances.
+        // This represents the most recent local authoritative state.
+        private NetworkTransformState m_LocalAuthoritativeNetworkState;
+
         private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
         private List<ulong> m_ClientIds = new List<ulong>() { 0 };
 
@@ -446,15 +450,16 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
-        // Used by both authoritative and non-authoritative instances.
-        // This represents the most recent local authoritative state.
-        private NetworkTransformState m_LocalAuthoritativeNetworkState;
-
         // Used by integration test
         private NetworkTransformState m_LastSentState;
 
         // Used by the non-authoritative side to handle ending extrapolation
         private NetworkTransformState m_LastReceivedState;
+
+        internal NetworkTransformState GetLastSentState()
+        {
+            return m_LastSentState;
+        }
 
         /// Calculated when spawned, this is used to offset a newly received non-authority side state by 1 tick duration
         /// in order to end the extrapolation for that state's values.
@@ -464,11 +469,6 @@ namespace Unity.Netcode.Components
         /// One tick later, NetworkState-A-Post is applied to end that delta's extrapolation.
         /// <see cref="OnNetworkStateChanged"/> to see how NetworkState-A-Post doesn't get excluded/missed
         private double m_TickFrequency;
-
-        internal NetworkTransformState GetLastSentState()
-        {
-            return m_LastSentState;
-        }
 
         /// <summary>
         /// This will try to send/commit the current transform delta states (if any)
@@ -487,8 +487,12 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Either updates the authority or sends and RPC to the authoritative instance
-            if (!TryUpdateAuthority(transformToCommit))
+            // If we are authority, update the authoritative state
+            if (CanCommitToTransform)
+            {
+                UpdateAuthoritativeState(transform);
+            }
+            else // Non-Authority
             {
                 // We are an owner requesting to update our state
                 if (!m_CachedIsServer)
@@ -1017,7 +1021,7 @@ namespace Unity.Netcode.Components
 
                 // Set the current local tick and wait until the next tick before we end
                 // this state's extrapolation.
-                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
+                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick + 2;
             }
         }
 
@@ -1262,13 +1266,8 @@ namespace Unity.Netcode.Components
         /// If it is not authority it exits early returning false.
         /// </summary>
         /// <param name="transformSource">transform to be updated</param>
-        private bool TryUpdateAuthority(Transform transformSource)
+        private void UpdateAuthoritativeState(Transform transformSource)
         {
-            if (!CanCommitToTransform)
-            {
-                return false;
-            }
-
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
             {
@@ -1278,7 +1277,6 @@ namespace Unity.Netcode.Components
             }
 
             TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
-            return true;
         }
 
         /// <inheritdoc/>
@@ -1295,11 +1293,12 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Either updates the authority or handle:
-            // - Non-authoritative side interpolation
-            // - Applying the current authoritative state
-            // - Stop extrapolating the current state (if it is 1 tick after it was received)
-            if (!TryUpdateAuthority(transform))
+            // If we are authority, update the authoritative state
+            if (CanCommitToTransform)
+            {
+                UpdateAuthoritativeState(transform);
+            }
+            else // Non-Authority
             {
                 if (Interpolate)
                 {
