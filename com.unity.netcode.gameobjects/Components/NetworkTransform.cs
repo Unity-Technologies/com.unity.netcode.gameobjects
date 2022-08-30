@@ -683,8 +683,7 @@ namespace Unity.Netcode.Components
 
             // NOTE ABOUT INTERPOLATING AND BELOW CODE:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
-            // to properly extrapolate.  Extrapolation is stopped on the non-authoritative side 1 tick after the original
-            // state was applied.
+            // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
 
             // Update the position values that were changed in this state update
             if (networkState.HasPositionX)
