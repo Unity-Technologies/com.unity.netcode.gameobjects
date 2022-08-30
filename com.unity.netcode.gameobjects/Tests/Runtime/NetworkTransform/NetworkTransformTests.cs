@@ -4,6 +4,7 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode.Transports.UTP;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -133,6 +134,111 @@ namespace Unity.Netcode.RuntimeTests
             Update,
             CommitToTransform
         }
+
+        [UnityTest]
+        public IEnumerator NetworkTransformParentingLocalSpaceOffsetTests([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
+        {
+            var overrideUpdate = overideState == OverrideState.CommitToTransform;
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
+            m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
+
+            // WIP
+
+            yield return null;
+        }
+
+        private IEnumerator MoveAndRotateAuthority(Vector3 position, Vector3 rotation)
+        {
+            m_AuthoritativeTransform.transform.position = position;
+            yield return null;
+            var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
+            authoritativeRotation.eulerAngles = rotation;
+            m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
+            yield return null;
+        }
+
+        private int m_PositionRotationIterations = 8;
+
+        private IEnumerator WaitForPositionAndRotationToMatch(int ticksToWait)
+        {
+            // Validate we interpolate to the appropriate position and rotation
+            yield return WaitForConditionOrTimeOut(PositionAndRotationMatches);
+            AssertOnTimeout("Timed out waiting for non-authority to match authority's position or rotation");
+
+            // Wait for the specified number of ticks
+            for (int i = 0; i < ticksToWait; i++)
+            {
+                yield return s_DefaultWaitForTick;
+            }
+
+            // Verify both sides match (i.e. no drifting or over-extrapolating)
+            Assert.IsTrue(PositionsMatch(), $"Non-authority position did not match after waiting for {ticksToWait} ticks! " +
+                $"Authority ({m_AuthoritativeTransform.transform.position}) Non-Authority ({m_NonAuthoritativeTransform.transform.position})");
+            Assert.IsTrue(RotationsMatch(), $"Non-authority rotation did not match after waiting for {ticksToWait} ticks! " +
+                $"Authority ({m_AuthoritativeTransform.transform.rotation.eulerAngles}) Non-Authority ({m_NonAuthoritativeTransform.transform.rotation.eulerAngles})");
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState)
+        {
+            var overrideUpdate = overideState == OverrideState.CommitToTransform;
+            m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
+
+            // Wait for tick to change (so we start close to the beginning the next tick)
+            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
+            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
+            {
+                yield return null;
+            }
+
+            var positionStart = new Vector3(1.0f, 0.5f, 2.0f);
+            var rotationStart = new Vector3(0.0f, 45.0f, 0.0f);
+            var position = positionStart;
+            var rotation = rotationStart;
+            // Move and rotate within the same tick, validate the non-authoritative instance updates
+            // to each set of changes.  Repeat several times.
+            for (int i = 1; i < m_PositionRotationIterations + 1; i++)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                MoveAndRotateAuthority(position, rotation);
+                yield return WaitForPositionAndRotationToMatch(4);
+            }
+
+            // Repeat this in the opposite direction
+            for (int i = -1; i > -1 * (m_PositionRotationIterations + 1); i--)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                MoveAndRotateAuthority(position, rotation);
+                yield return WaitForPositionAndRotationToMatch(4);
+            }
+
+            // Move and rotate within the same tick several times, then validate the non-authoritative
+            // instance updates to the authoritative instance's final position and rotation.
+            for (int i = 1; i < m_PositionRotationIterations + 1; i++)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                MoveAndRotateAuthority(position, rotation);
+
+            }
+
+            yield return WaitForPositionAndRotationToMatch(1);
+
+            // Repeat this in the opposite direction
+            for (int i = -1; i > -1 * (m_PositionRotationIterations + 1); i--)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                MoveAndRotateAuthority(position, rotation);
+            }
+            yield return WaitForPositionAndRotationToMatch(1);
+        }
+
+
 
         /// <summary>
         /// Tests changing all axial values one at a time.
@@ -502,6 +608,11 @@ namespace Unity.Netcode.RuntimeTests
         private bool PositionRotationScaleMatches(Vector3 position, Vector3 eulerRotation, Vector3 scale)
         {
             return PositionsMatchesValue(position) && RotationMatchesValue(eulerRotation) && ScaleMatchesValue(scale);
+        }
+
+        private bool PositionAndRotationMatches()
+        {
+            return RotationsMatch() && PositionsMatch();
         }
 
         private bool RotationsMatch()
