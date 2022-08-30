@@ -212,7 +212,7 @@ namespace Unity.Netcode.Components
             internal bool IsDirty;
 
             // Non-Authoritative side uses this for ending extrapolation of the last applied state
-            internal int ExtrapolateTick;
+            internal int EndExtrapolationTick;
 
             /// <summary>
             /// This will reset the NetworkTransform BitSet
@@ -933,10 +933,11 @@ namespace Unity.Netcode.Components
         /// </remarks>
         private void StopExtrapolatingLastState()
         {
-            if (!m_LastReceivedState.IsDirty || m_LastReceivedState.ExtrapolateTick >= NetworkManager.LocalTime.Tick)
+            if (!m_LastReceivedState.IsDirty || m_LastReceivedState.EndExtrapolationTick >= NetworkManager.LocalTime.Tick)
             {
                 return;
             }
+            // Offset by 1 tick duration
             m_LastReceivedState.SentTime += m_TickFrequency;
             AddInterpolatedState(m_LastReceivedState);
             m_LastReceivedState.ClearBitSetForNextTick();
@@ -965,7 +966,9 @@ namespace Unity.Netcode.Components
                 StopExtrapolatingLastState();
                 AddInterpolatedState(newState);
                 m_LastReceivedState = newState;
-                m_LastReceivedState.ExtrapolateTick = NetworkManager.LocalTime.Tick;
+                // Set the current local tick and wait until the next tick before we end
+                // this state's extrapolation.
+                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
             }
         }
 
