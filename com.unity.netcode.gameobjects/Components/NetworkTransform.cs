@@ -207,7 +207,11 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
 
+            // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
+            // dirty or not.
             internal bool IsDirty;
+
+            // Non-Authoritative side uses this for ending extrapolation of the last applied state
             internal int ExtrapolateTick;
 
             /// <summary>
