@@ -306,6 +306,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of position will be replicated
         /// </summary>
         public bool SyncPositionZ = true;
+
+        private bool SynchronizePosition
+        {
+            get
+            {
+                return SyncPositionX || SyncPositionY || SyncPositionZ;
+            }
+        }
+
         /// <summary>
         /// Whether or not x component of rotation will be replicated
         /// </summary>
@@ -318,6 +327,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of rotation will be replicated
         /// </summary>
         public bool SyncRotAngleZ = true;
+
+        private bool SynchronizeRotation
+        {
+            get
+            {
+                return SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ;
+            }
+        }
+
         /// <summary>
         /// Whether or not x component of scale will be replicated
         /// </summary>
@@ -330,6 +348,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of scale will be replicated
         /// </summary>
         public bool SyncScaleZ = true;
+
+
+        private bool SynchronizeScale
+        {
+            get
+            {
+                return SyncScaleX || SyncScaleY || SyncScaleZ;
+            }
+        }
 
         /// <summary>
         /// The current position threshold value
@@ -351,7 +378,6 @@ namespace Unity.Netcode.Components
         /// Any changes to the scale that exceeds the current threshold value will be replicated
         /// </summary>
         public float ScaleThreshold = ScaleThresholdDefault;
-
 
         /// <summary>
         /// Sets whether the transform should be treated as local (true) or world (false) space.
@@ -651,6 +677,11 @@ namespace Unity.Netcode.Components
             // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
 
+            // NOTE ABOUT INTERPOLATING AND BELOW CODE:
+            // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
+            // to properly extrapolate.  Extrapolation is stopped on the non-authoritative side 1 tick after the original
+            // state was applied.
+
             // Update the position values that were changed in this state update
             if (networkState.HasPositionX)
             {
@@ -698,7 +729,7 @@ namespace Unity.Netcode.Components
                     interpolatedRotAngles.z = isTeleporting || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
                 }
             }
-            else if (Interpolate && SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
+            else if (Interpolate && SynchronizeRotation)
             {
                 var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
                 interpolatedRotAngles = eulerAngles;
@@ -723,19 +754,31 @@ namespace Unity.Netcode.Components
             {
                 interpolatedScale.x = isTeleporting || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
             }
+            else if (Interpolate && SyncScaleX)
+            {
+                interpolatedScale.x = m_ScaleXInterpolator.GetInterpolatedValue();
+            }
 
             if (networkState.HasScaleY)
             {
                 interpolatedScale.y = isTeleporting || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
+            }
+            else if (Interpolate && SyncScaleY)
+            {
+                interpolatedScale.y = m_ScaleYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasScaleZ)
             {
                 interpolatedScale.z = isTeleporting || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
             }
+            else if (Interpolate && SyncScaleZ)
+            {
+                interpolatedScale.z = m_ScaleZInterpolator.GetInterpolatedValue();
+            }
 
             // Apply the new position
-            if (networkState.HasPositionChange || Interpolate && (SyncPositionX || SyncPositionY || SyncPositionZ))
+            if (networkState.HasPositionChange || Interpolate && SynchronizePosition)
             {
                 if (InLocalSpace)
                 {
@@ -748,7 +791,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new rotation
-            if (networkState.HasRotAngleChange || Interpolate && (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ))
+            if (networkState.HasRotAngleChange || Interpolate && SynchronizeRotation)
             {
                 if (InLocalSpace)
                 {
@@ -761,7 +804,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new scale
-            if (networkState.HasScaleChange || Interpolate && (SyncScaleX || SyncScaleY || SyncScaleZ))
+            if (networkState.HasScaleChange || Interpolate && SynchronizeScale)
             {
                 transform.localScale = interpolatedScale;
             }
@@ -990,18 +1033,25 @@ namespace Unity.Netcode.Components
             m_ScaleZInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
+        /// <summary>
+        /// Create interpolators when first instantiated to avoid memory allocations if the
+        /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
+        /// </summary>
         private void Awake()
         {
-            // we only want to create our interpolators during Awake so that, when pooled, we do not create tons
-            //  of gc thrash each time objects wink out and are re-used
+            // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
+
+            // All other interpolators are BufferedLinearInterpolatorFloats
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
 
+            // Used to quickly iteration over the BufferedLinearInterpolatorFloat
+            // instances
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
