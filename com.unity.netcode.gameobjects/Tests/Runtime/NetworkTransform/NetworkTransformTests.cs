@@ -148,6 +148,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
+        /// <summary>
+        /// Moves and rotates the authority side with a single frame between
+        /// both actions in order to
+        /// </summary>
         private IEnumerator MoveAndRotateAuthority(Vector3 position, Vector3 rotation)
         {
             m_AuthoritativeTransform.transform.position = position;
@@ -179,30 +183,40 @@ namespace Unity.Netcode.RuntimeTests
                 $"Authority ({m_AuthoritativeTransform.transform.rotation.eulerAngles}) Non-Authority ({m_NonAuthoritativeTransform.transform.rotation.eulerAngles})");
         }
 
+        private IEnumerator WaitForNextTick()
+        {
+            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
+            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
+            {
+                yield return null;
+            }
+        }
+
         [UnityTest]
         public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState)
         {
             var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
 
-            // Wait for tick to change (so we start close to the beginning the next tick)
-            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
-            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
-            {
-                yield return null;
-            }
-
             var positionStart = new Vector3(1.0f, 0.5f, 2.0f);
             var rotationStart = new Vector3(0.0f, 45.0f, 0.0f);
             var position = positionStart;
             var rotation = rotationStart;
+
             // Move and rotate within the same tick, validate the non-authoritative instance updates
             // to each set of changes.  Repeat several times.
             for (int i = 1; i < m_PositionRotationIterations + 1; i++)
             {
                 position = positionStart * i;
                 rotation = rotationStart * i;
+                // Wait for tick to change so we cam start close to the beginning the next tick in order
+                // to apply both deltas within the same tick period.
+                yield return WaitForNextTick();
+
+                // Apply deltas
                 MoveAndRotateAuthority(position, rotation);
+
+                // Wait for deltas to synchronize on non-authoritative side
                 yield return WaitForPositionAndRotationToMatch(4);
             }
 
@@ -211,9 +225,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 position = positionStart * i;
                 rotation = rotationStart * i;
+                // Wait for tick to change so we cam start close to the beginning the next tick in order
+                // to apply both deltas within the same tick period.
+                yield return WaitForNextTick();
+
                 MoveAndRotateAuthority(position, rotation);
                 yield return WaitForPositionAndRotationToMatch(4);
             }
+
+            // Wait for tick to change so we cam start close to the beginning the next tick in order
+            // to apply as many deltas within the same tick period as we can (if not all)
+            yield return WaitForNextTick();
 
             // Move and rotate within the same tick several times, then validate the non-authoritative
             // instance updates to the authoritative instance's final position and rotation.
@@ -221,13 +243,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 position = positionStart * i;
                 rotation = rotationStart * i;
-                MoveAndRotateAuthority(position, rotation);
 
+                MoveAndRotateAuthority(position, rotation);
             }
 
             yield return WaitForPositionAndRotationToMatch(1);
 
-            // Repeat this in the opposite direction
+            // Wait for tick to change so we cam start close to the beginning the next tick in order
+            // to apply as many deltas within the same tick period as we can (if not all)
+            yield return WaitForNextTick();
+
+            // Repeat this in the opposite direction and rotation
             for (int i = -1; i > -1 * (m_PositionRotationIterations + 1); i--)
             {
                 position = positionStart * i;
@@ -236,8 +262,6 @@ namespace Unity.Netcode.RuntimeTests
             }
             yield return WaitForPositionAndRotationToMatch(1);
         }
-
-
 
         /// <summary>
         /// Tests changing all axial values one at a time.
