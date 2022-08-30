@@ -208,6 +208,7 @@ namespace Unity.Netcode.Components
             internal double SentTime;
 
             internal bool IsDirty;
+            internal int ExtrapolateTick;
 
             /// <summary>
             /// This will reset the NetworkTransform BitSet
@@ -423,6 +424,9 @@ namespace Unity.Netcode.Components
         private int m_LastSentTick;
         private NetworkTransformState m_LastSentState;
 
+        // Used by the non-authoritative side to handle ending extrapolation (replaces server sending)
+        private NetworkTransformState m_LastReceivedState;
+
         internal NetworkTransformState GetLastSentState()
         {
             return m_LastSentState;
@@ -483,32 +487,11 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
-            var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
 
-            // if dirty, send
-            // if not dirty anymore, but hasn't sent last value for limiting extrapolation, still set isDirty
-            // if not dirty and has already sent last value, don't do anything
-            // extrapolation works by using last two values. if it doesn't receive anything anymore, it'll continue to extrapolate.
-            // This is great in case there's message loss, not so great if we just don't have new values to send.
-            // the following will send one last "copied" value so unclamped interpolation tries to extrapolate between two identical values, effectively
-            // making it immobile.
-            if (isDirty)
+            if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
                 // Commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
-                m_HasSentLastValue = false;
-                m_LastSentTick = m_CachedNetworkManager.LocalTime.Tick;
-                m_LastSentState = m_LocalAuthoritativeNetworkState;
-            }
-            else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
-            {
-                // Since the last m_LocalAuthoritativeNetworkState could have included a IsTeleportingNextFrame
-                // we need to reset this here so only the deltas are applied and interpolation is not reset again.
-                m_LastSentState.IsTeleportingNextFrame = false;
-                m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
-                // Commit the state
-                ReplicatedNetworkState.Value = m_LastSentState;
-                m_HasSentLastValue = true;
             }
         }
 
@@ -671,26 +654,33 @@ namespace Unity.Netcode.Components
             {
                 interpolatedPosition.x = isTeleporting || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
             }
+            else if (Interpolate && SyncPositionX)
+            {
+                interpolatedPosition.x = m_PositionXInterpolator.GetInterpolatedValue();
+            }
 
             if (networkState.HasPositionY)
             {
                 interpolatedPosition.y = isTeleporting || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
+            }
+            else if (Interpolate && SyncPositionY)
+            {
+                interpolatedPosition.y = m_PositionYInterpolator.GetInterpolatedValue();
             }
 
             if (networkState.HasPositionZ)
             {
                 interpolatedPosition.z = isTeleporting || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
             }
+            else if (Interpolate && SyncPositionZ)
+            {
+                interpolatedPosition.z = m_PositionZInterpolator.GetInterpolatedValue();
+            }
 
             // Update the rotation values that were changed in this state update
             if (networkState.HasRotAngleChange)
             {
-                var eulerAngles = new Vector3();
-                if (Interpolate)
-                {
-                    eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                }
-
+                var eulerAngles = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles : new Vector3();
                 if (networkState.HasRotAngleX)
                 {
                     interpolatedRotAngles.x = isTeleporting || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
@@ -704,6 +694,25 @@ namespace Unity.Netcode.Components
                 if (networkState.HasRotAngleZ)
                 {
                     interpolatedRotAngles.z = isTeleporting || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
+                }
+            }
+            else if (Interpolate && SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
+            {
+                var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                interpolatedRotAngles = eulerAngles;
+                if (SyncRotAngleY)
+                {
+                    interpolatedRotAngles.x = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x;
+                }
+
+                if (SyncRotAngleY)
+                {
+                    interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
+                }
+
+                if (SyncRotAngleY)
+                {
+                    interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
                 }
             }
 
@@ -724,11 +733,10 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new position
-            if (networkState.HasPositionChange)
+            if (networkState.HasPositionChange || Interpolate && (SyncPositionX || SyncPositionY || SyncPositionZ))
             {
                 if (InLocalSpace)
                 {
-
                     transform.localPosition = interpolatedPosition;
                 }
                 else
@@ -738,7 +746,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new rotation
-            if (networkState.HasRotAngleChange)
+            if (networkState.HasRotAngleChange || Interpolate && (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ))
             {
                 if (InLocalSpace)
                 {
@@ -751,10 +759,16 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new scale
-            if (networkState.HasScaleChange)
+            if (networkState.HasScaleChange || Interpolate && (SyncScaleX || SyncScaleY || SyncScaleZ))
             {
                 transform.localScale = interpolatedScale;
             }
+        }
+
+        [ServerRpc]
+        private void UpdateServerWithAppliedRotationServerRpc(Vector3 eulerAngles)
+        {
+            Debug.Log($"[{name}] client updated their rotation to ({eulerAngles})");
         }
 
         /// <summary>
@@ -910,8 +924,29 @@ namespace Unity.Netcode.Components
                 }
 
                 currentRotation.eulerAngles = currentEulerAngles;
+                if (!IsServer && IsOwner)
+                {
+                    UpdateServerWithUpdatedRotationServerRpc(currentEulerAngles);
+                }
                 m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
             }
+        }
+
+        [ServerRpc]
+        private void UpdateServerWithUpdatedRotationServerRpc(Vector3 eulerAngles)
+        {
+            Debug.Log($"[{name}] Client notified it updated rotation interpolator with ({eulerAngles})");
+        }
+
+        private void ApplyLastState()
+        {
+            if (!m_LastReceivedState.IsDirty || m_LastReceivedState.ExtrapolateTick >= NetworkManager.LocalTime.Tick)
+            {
+                return;
+            }
+            m_LastReceivedState.SentTime += 1.0 / NetworkManager.NetworkConfig.TickRate;
+            AddInterpolatedState(m_LastReceivedState);
+            m_LastReceivedState.ClearBitSetForNextTick();
         }
 
         /// <summary>
@@ -932,7 +967,10 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
+                ApplyLastState();
                 AddInterpolatedState(newState);
+                m_LastReceivedState = newState;
+                m_LastReceivedState.ExtrapolateTick = NetworkManager.LocalTime.Tick;
             }
         }
 
@@ -1207,6 +1245,9 @@ namespace Unity.Netcode.Components
                 }
                 // Now apply the current authoritative state
                 ApplyAuthoritativeState();
+
+
+                ApplyLastState();
             }
         }
 
