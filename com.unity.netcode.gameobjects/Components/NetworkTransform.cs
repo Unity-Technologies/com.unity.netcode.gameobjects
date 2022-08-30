@@ -391,7 +391,6 @@ namespace Unity.Netcode.Components
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-
         internal NetworkVariable<NetworkTransformState> ReplicatedNetworkState
         {
             get
@@ -405,10 +404,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private NetworkTransformState m_LocalAuthoritativeNetworkState;
-
-        private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
-
         private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
         private List<ulong> m_ClientIds = new List<ulong>() { 0 };
 
@@ -421,11 +416,24 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
-        private int m_LastSentTick;
+        // Used by both authoritative and non-authoritative instances.
+        // This represents the most recent local authoritative state.
+        private NetworkTransformState m_LocalAuthoritativeNetworkState;
+
+        // Used by integration test
         private NetworkTransformState m_LastSentState;
 
-        // Used by the non-authoritative side to handle ending extrapolation (replaces server sending)
+        // Used by the non-authoritative side to handle ending extrapolation
         private NetworkTransformState m_LastReceivedState;
+
+        /// Calculated when spawned, this is used to offset a newly received non-authority side state by 1 tick duration
+        /// in order to end the extrapolation for that state's values.
+        /// Example:
+        /// NetworkState-A is received, processed, and measurements added
+        /// NetworkState-A is duplicated (NetworkState-A-Post) and its sent time is offset by the tick frequency
+        /// One tick later, NetworkState-A-Post is applied to end that delta's extrapolation.
+        /// <see cref="OnNetworkStateChanged"/> to see how NetworkState-A-Post doesn't get excluded/missed
+        private double m_TickFrequency;
 
         internal NetworkTransformState GetLastSentState()
         {
@@ -449,19 +457,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            /// If authority is invoking this, then treat it like we do with <see cref="Update"/>
-            if (CanCommitToTransform)
-            {
-                // If our replicated state is not dirty and our local authority state is dirty, clear it.
-                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
-                {
-                    // Now clear our bitset and prepare for next network tick state update
-                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                }
-
-                TryCommitTransform(transformToCommit, m_CachedNetworkManager.LocalTime.Time);
-            }
-            else
+            // Either updates the authority or sends and RPC to the authoritative instance
+            if (!TryUpdateAuthority(transformToCommit))
             {
                 // We are an owner requesting to update our state
                 if (!m_CachedIsServer)
@@ -488,9 +485,10 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // If the transform has deltas (returns dirty) then...
             if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
-                // Commit the state
+                // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
             }
         }
@@ -765,12 +763,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        [ServerRpc]
-        private void UpdateServerWithAppliedRotationServerRpc(Vector3 eulerAngles)
-        {
-            Debug.Log($"[{name}] client updated their rotation to ({eulerAngles})");
-        }
-
         /// <summary>
         /// Only non-authoritative instances should invoke this
         /// </summary>
@@ -924,27 +916,24 @@ namespace Unity.Netcode.Components
                 }
 
                 currentRotation.eulerAngles = currentEulerAngles;
-                if (!IsServer && IsOwner)
-                {
-                    UpdateServerWithUpdatedRotationServerRpc(currentEulerAngles);
-                }
+
                 m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
             }
         }
 
-        [ServerRpc]
-        private void UpdateServerWithUpdatedRotationServerRpc(Vector3 eulerAngles)
-        {
-            Debug.Log($"[{name}] Client notified it updated rotation interpolator with ({eulerAngles})");
-        }
-
-        private void ApplyLastState()
+        /// <summary>
+        /// Stops extrapolating the <see cref="m_LastReceivedState"/>.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="OnNetworkStateChanged"/>
+        /// </remarks>
+        private void StopExtrapolatingLastState()
         {
             if (!m_LastReceivedState.IsDirty || m_LastReceivedState.ExtrapolateTick >= NetworkManager.LocalTime.Tick)
             {
                 return;
             }
-            m_LastReceivedState.SentTime += 1.0 / NetworkManager.NetworkConfig.TickRate;
+            m_LastReceivedState.SentTime += m_TickFrequency;
             AddInterpolatedState(m_LastReceivedState);
             m_LastReceivedState.ClearBitSetForNextTick();
         }
@@ -967,7 +956,9 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                ApplyLastState();
+                // This is "just in case" we receive a new state before the end
+                // of any currently applied and potentially extrapolating state.
+                StopExtrapolatingLastState();
                 AddInterpolatedState(newState);
                 m_LastReceivedState = newState;
                 m_LastReceivedState.ExtrapolateTick = NetworkManager.LocalTime.Tick;
@@ -1020,6 +1011,7 @@ namespace Unity.Netcode.Components
         {
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
+            m_TickFrequency = 1.0 / NetworkManager.NetworkConfig.TickRate;
 
             Initialize();
 
@@ -1201,8 +1193,31 @@ namespace Unity.Netcode.Components
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
-        // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
-        // conditional to users only making transform update changes in FixedUpdate.
+        /// <summary>
+        /// If the instance is authority it will attempt to update the current tick
+        /// network state and returns true.
+        /// If it is not authority it exits early returning false.
+        /// </summary>
+        /// <param name="transformSource">transform to be updated</param>
+        private bool TryUpdateAuthority(Transform transformSource)
+        {
+            if (!CanCommitToTransform)
+            {
+                return false;
+            }
+
+            // If our replicated state is not dirty and our local authority state is dirty, clear it.
+            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
+            {
+                m_LastSentState = m_LocalAuthoritativeNetworkState;
+                // Now clear our bitset and prepare for next network tick state update
+                m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+            }
+
+            TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
+            return true;
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// If you override this method, be sure that:
@@ -1217,21 +1232,14 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            if (CanCommitToTransform)
-            {
-                // If our replicated state is not dirty and our local authority state is dirty, clear it.
-                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
-                {
-                    // Now clear our bitset and prepare for next network tick state update
-                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                }
-                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
-            }
-            else
+            // Either updates the authority or handle:
+            // - Non-authoritative side interpolation
+            // - Applying the current authoritative state
+            // - Stop extrapolating the current state (if it is 1 tick after it was received)
+            if (!TryUpdateAuthority(transform))
             {
                 if (Interpolate)
                 {
-                    // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                     var serverTime = NetworkManager.ServerTime;
                     var cachedDeltaTime = Time.deltaTime;
                     var cachedServerTime = serverTime.Time;
@@ -1243,11 +1251,13 @@ namespace Unity.Netcode.Components
 
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
-                // Now apply the current authoritative state
+
+                // Apply the current authoritative state
                 ApplyAuthoritativeState();
 
-
-                ApplyLastState();
+                // Handles stopping extrapolation for any previously
+                // applied state.
+                StopExtrapolatingLastState();
             }
         }
 
