@@ -739,20 +739,19 @@ namespace Unity.Netcode.Components
             else if (Interpolate && SynchronizeRotation)
             {
                 var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                interpolatedRotAngles = eulerAngles;
                 if (SyncRotAngleX)
                 {
-                    interpolatedRotAngles.x = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x;
+                    interpolatedRotAngles.x = eulerAngles.x;
                 }
 
                 if (SyncRotAngleY)
                 {
-                    interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
+                    interpolatedRotAngles.y = eulerAngles.y;
                 }
 
                 if (SyncRotAngleZ)
                 {
-                    interpolatedRotAngles.z = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z;
+                    interpolatedRotAngles.z = eulerAngles.z;
                 }
             }
 
