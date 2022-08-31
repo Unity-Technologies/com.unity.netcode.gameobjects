@@ -299,7 +299,7 @@ namespace Unity.Netcode.RuntimeTests
         /// parented under another NetworkTransform
         /// </summary>
         [UnityTest]
-        public IEnumerator NetworkTransformParentedLocalSpaceTests([Values] Interpolation interpolation, [Values] OverrideState overideState)
+        public IEnumerator NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
             var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
