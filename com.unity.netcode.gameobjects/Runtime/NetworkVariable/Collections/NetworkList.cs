@@ -53,7 +53,7 @@ namespace Unity.Netcode
             if (m_DirtyEvents.Length > 0)
             {
                 m_DirtyEvents.Clear();
-                m_ListAtLastReset.CopyFrom(m_List);
+                m_ListAtLastReset.CopyFrom(m_List.AsArray());
             }
         }
 

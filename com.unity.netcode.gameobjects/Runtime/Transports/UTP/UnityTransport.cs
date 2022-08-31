@@ -9,6 +9,10 @@ using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
 
+#if !UTP_TRANSPORT_2_0_ABOVE
+using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
+#endif
+
 namespace Unity.Netcode.Transports.UTP
 {
     /// <summary>
@@ -263,9 +267,9 @@ namespace Unity.Netcode.Transports.UTP
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndPoint ParseNetworkEndpoint(string ip, ushort port)
+            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
             {
-                if (!NetworkEndPoint.TryParse(ip, port, out var endpoint))
+                if (!NetworkEndpoint.TryParse(ip, port, out var endpoint))
                 {
                     Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
                     return default;
@@ -277,12 +281,12 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) clients will connect to.
             /// </summary>
-            public NetworkEndPoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
+            public NetworkEndpoint ServerEndPoint => ParseNetworkEndpoint(Address, Port);
 
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndPoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
         }
 
         /// <summary>
@@ -425,7 +429,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ClientBindAndConnect()
         {
-            var serverEndpoint = default(NetworkEndPoint);
+            var serverEndpoint = default(NetworkEndpoint);
 
             if (m_ProtocolType == ProtocolType.RelayUnityTransport)
             {
@@ -446,7 +450,7 @@ namespace Unity.Netcode.Transports.UTP
 
             InitDriver();
 
-            int result = m_Driver.Bind(NetworkEndPoint.AnyIpv4);
+            int result = m_Driver.Bind(NetworkEndpoint.AnyIpv4);
             if (result != 0)
             {
                 Debug.LogError("Client failed to bind");
@@ -459,7 +463,7 @@ namespace Unity.Netcode.Transports.UTP
             return true;
         }
 
-        private bool ServerBindAndListen(NetworkEndPoint endPoint)
+        private bool ServerBindAndListen(NetworkEndpoint endPoint)
         {
             InitDriver();
 
@@ -536,7 +540,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             RelayConnectionData hostConnectionData;
 
-            if (!NetworkEndPoint.TryParse(ipv4Address, port, out var serverEndpoint))
+            if (!NetworkEndpoint.TryParse(ipv4Address, port, out var serverEndpoint))
             {
                 Debug.LogError($"Invalid address {ipv4Address}:{port}");
 
@@ -613,7 +617,7 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         /// <param name="endPoint">The remote end point</param>
         /// <param name="listenEndPoint">The local listen endpoint</param>
-        public void SetConnectionData(NetworkEndPoint endPoint, NetworkEndPoint listenEndPoint = default)
+        public void SetConnectionData(NetworkEndpoint endPoint, NetworkEndpoint listenEndPoint = default)
         {
             string serverAddress = endPoint.Address.Split(':')[0];
 
@@ -662,7 +666,7 @@ namespace Unity.Netcode.Transports.UTP
             else
             {
                 m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
-                return ServerBindAndListen(NetworkEndPoint.AnyIpv4);
+                return ServerBindAndListen(NetworkEndpoint.AnyIpv4);
             }
         }
 
@@ -907,7 +911,11 @@ namespace Unity.Netcode.Transports.UTP
         {
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
+#if UTP_TRANSPORT_2_0_ABOVE
+                NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
+#else
                 NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -934,7 +942,11 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+#if UTP_TRANSPORT_2_0_ABOVE
+                NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
+#else
                 NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -956,7 +968,11 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+#if UTP_TRANSPORT_2_0_ABOVE
+                NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
+#else
                 NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1117,11 +1133,12 @@ namespace Unity.Netcode.Transports.UTP
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
 
-            m_NetworkSettings
-                .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity)
-                .WithBaselibNetworkInterfaceParameters(
-                    receiveQueueCapacity: m_MaxPacketQueueSize,
-                    sendQueueCapacity: m_MaxPacketQueueSize);
+            m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
+#if !UTP_TRANSPORT_2_0_ABOVE
+            m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+                sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
 #endif
         }
 
@@ -1306,6 +1323,9 @@ namespace Unity.Netcode.Transports.UTP
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
                 packetDropPercentage: DebugSimulator.PacketDropRate
+#if UTP_TRANSPORT_2_0_ABOVE
+                , mode: ApplyMode.AllPackets
+#endif
             );
         }
 
@@ -1323,7 +1343,9 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline reliableSequencedPipeline)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+#if !UTP_TRANSPORT_2_0_ABOVE
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+#endif
 #endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1334,17 +1356,29 @@ namespace Unity.Netcode.Transports.UTP
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
+#if UTP_TRANSPORT_2_0_ABOVE
+                sendQueueCapacity: m_MaxPacketQueueSize,
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+#endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
+
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+#if UTP_TRANSPORT_2_0_ABOVE
+            driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
+#endif
+#endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
+                    typeof(SimulatorPipelineStage)
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
@@ -1352,16 +1386,20 @@ namespace Unity.Netcode.Transports.UTP
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
+                    typeof(SimulatorPipelineStage)
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage),
-                    typeof(SimulatorPipelineStageInSend)
+                    typeof(SimulatorPipelineStage)
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
