@@ -818,8 +818,8 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         private string ConditionFailedInfo()
         {
-            return $"{m_NetworkListTestState} condition test failed:\n Server List Count: { m_Player1OnServer.TheList.Count} vs  Client List Count: { m_Player1OnClient1.TheList.Count}\n" +
-                $"Server List Count: { m_Player1OnServer.TheLargeList.Count} vs  Client List Count: { m_Player1OnClient1.TheLargeList.Count}\n" +
+            return $"{m_NetworkListTestState} condition test failed:\n Server List Count: {m_Player1OnServer.TheList.Count} vs  Client List Count: {m_Player1OnClient1.TheList.Count}\n" +
+                $"Server List Count: {m_Player1OnServer.TheLargeList.Count} vs  Client List Count: {m_Player1OnClient1.TheLargeList.Count}\n" +
                 $"Server Delegate Triggered: {m_Player1OnServer.ListDelegateTriggered} | Client Delegate Triggered: {m_Player1OnClient1.ListDelegateTriggered}\n";
         }
 
