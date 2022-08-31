@@ -461,6 +461,7 @@ namespace Unity.Netcode.Components
             return m_LastSentState;
         }
 
+        /// <remarks>
         /// Calculated when spawned, this is used to offset a newly received non-authority side state by 1 tick duration
         /// in order to end the extrapolation for that state's values.
         /// Example:
@@ -468,6 +469,7 @@ namespace Unity.Netcode.Components
         /// NetworkState-A is duplicated (NetworkState-A-Post) and its sent time is offset by the tick frequency
         /// One tick later, NetworkState-A-Post is applied to end that delta's extrapolation.
         /// <see cref="OnNetworkStateChanged"/> to see how NetworkState-A-Post doesn't get excluded/missed
+        /// </remarks>
         private double m_TickFrequency;
 
         /// <summary>
