@@ -213,19 +213,7 @@ namespace Unity.Netcode.Editor
 #if !MULTIPLAYER_TOOLS
             DrawInstallMultiplayerToolsTip();
 #endif
-
-            {
-                var iterator = serializedObject.GetIterator();
-
-                for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
-                {
-                    using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath))
-                    {
-                        EditorGUILayout.PropertyField(iterator, false);
-                    }
-                }
-            }
-
+            
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();

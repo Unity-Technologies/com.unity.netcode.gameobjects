@@ -9,7 +9,7 @@ namespace Unity.Netcode.Editor
     /// </summary>
     [CustomEditor(typeof(NetworkObject), true)]
     [CanEditMultipleObjects]
-    public class NetworkObjectEditor : UnityEditor.Editor
+    public class NetworkObjectEditor : HiddenScriptEditor
     {
         private bool m_Initialized;
         private NetworkObject m_NetworkObject;
