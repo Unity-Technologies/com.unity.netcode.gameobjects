@@ -7,12 +7,12 @@ namespace Unity.Netcode.Editor
 {
     public class HiddenScriptEditor : UnityEditor.Editor
     {
-        private static readonly string[] s_HiddenFields = { "m_Script" };
+        private static readonly string[] k_HiddenFields = { "m_Script" };
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginChangeCheck();
             serializedObject.UpdateIfRequiredOrScript();
-            DrawPropertiesExcluding(serializedObject, s_HiddenFields);
+            DrawPropertiesExcluding(serializedObject, k_HiddenFields);
             serializedObject.ApplyModifiedProperties();
             EditorGUI.EndChangeCheck();
         }
