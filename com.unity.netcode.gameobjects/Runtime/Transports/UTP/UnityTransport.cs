@@ -7,6 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 
 namespace Unity.Netcode.Transports.UTP
@@ -24,12 +25,14 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
         /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
         /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
+        /// <param name="isServer">Flag communicate the role of the driver</param>
         void CreateDriver(
             UnityTransport transport,
             out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline);
+            out NetworkPipeline reliableSequencedPipeline,
+            bool isServer=false);
     }
 
     /// <summary>
@@ -242,13 +245,34 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
         [SerializeField]
-        private bool m_UseWebSocket = false;
+        private bool m_UseWebSocket = true;
         public bool UseWebSocket
         {
             get => m_UseWebSocket;
             set => m_UseWebSocket = value;
         }
 
+        /// <summary>
+        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
+        /// </summary>
+        [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
+        [SerializeField]
+        private bool m_UseEncryption = true;
+        public bool UseEncryption
+        {
+            get => m_UseEncryption;
+            set => m_UseEncryption = value;
+        }
+
+        /*[Tooltip(
+            "Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
+        [SerializeField]
+        private SecureAccessor m_SecureAccessor = new SecureAccessor();
+        public SecureAccessor SecureAccessor
+        {
+            get => m_SecureAccessor;
+            set => m_SecureAccessor = value;
+        }*/
         /// <summary>
         /// Structure to store the address to connect to
         /// </summary>
@@ -388,14 +412,14 @@ namespace Unity.Netcode.Transports.UTP
         // around to avoid losing partial messages.
         private readonly Dictionary<ulong, BatchedReceiveQueue> m_ReliableReceiveQueues = new Dictionary<ulong, BatchedReceiveQueue>();
 
-        private void InitDriver()
+        private void InitDriver(bool isServer = false)
         {
             DriverConstructor.CreateDriver(
                 this,
                 out m_Driver,
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
-                out m_ReliableSequencedPipeline);
+                out m_ReliableSequencedPipeline, isServer);
         }
 
         private void DisposeInternals()
@@ -474,22 +498,22 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ServerBindAndListen(NetworkEndpoint endPoint)
         {
-            InitDriver();
+            InitDriver(isServer:true);
 
             int result = m_Driver.Bind(endPoint);
             if (result != 0)
             {
-                Debug.LogError("Server failed to bind");
+                Debug.LogError("Server failed to bind on "+endPoint);
                 return false;
             }
 
             result = m_Driver.Listen();
             if (result != 0)
             {
-                Debug.LogError("Server failed to listen");
+                Debug.LogError("Server failed to listen on "+ endPoint);
                 return false;
             }
-
+            Debug.Log("Server is successfully listening to" +endPoint);
             m_State = State.Listening;
             return true;
         }
@@ -1334,10 +1358,11 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="unreliableFragmentedPipeline">The UnreliableFragmented NetworkPipeline</param>
         /// <param name="unreliableSequencedFragmentedPipeline">The UnreliableSequencedFragmented NetworkPipeline</param>
         /// <param name="reliableSequencedPipeline">The ReliableSequenced NetworkPipeline</param>
+        /// <param name="isServer">Flag communicate the role of the driver</param>
         public void CreateDriver(UnityTransport transport, out NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
-            out NetworkPipeline reliableSequencedPipeline)
+            out NetworkPipeline reliableSequencedPipeline, bool isServer=false)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             //NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
@@ -1357,10 +1382,57 @@ namespace Unity.Netcode.Transports.UTP
                 maxFrameTimeMS: maxFrameTimeMS,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
                 sendQueueCapacity: m_MaxPacketQueueSize);
+            if (m_UseEncryption)
+            {
+                try
+                {
+                    SecureAccessor secureAccessor  = gameObject.GetComponent<SecureAccessor>();
+                    if (isServer)
+                    {
+#if UNITY_WEBGL
+                        throw new Exception("WebGL as a server is not supported by Unity Transport.");
+#else
+                        FixedString4096Bytes serverPrivate     = secureAccessor.ServerPrivate;
+                        FixedString4096Bytes serverCertificate = secureAccessor.ServerCertificate;
+                        m_NetworkSettings.WithSecureServerParameters(
+                        certificate: ref serverCertificate,
+                        privateKey: ref serverPrivate);
+#endif
+                    }
+                    else
+                    {
 
+                        FixedString512Bytes commonName     = secureAccessor.ServerCommonName;
+#if !UNITY_WEBGL
+                        FixedString4096Bytes clientCa          = secureAccessor.ClientCA;
+#endif
+                        m_NetworkSettings.WithSecureClientParameters(
+                            serverName: ref commonName
+#if !UNITY_WEBGL
+                            ,caCertificate: ref clientCa  
+#endif
+                        );
+                    }
+                }catch(Exception e)
+                {
+                    Debug.LogException(e,this);
+                }
+            }
             // Per default the driver will use UDP. If the user choose so, he can use WebSocket instead.
-            driver = m_UseWebSocket ? NetworkDriver.Create(new WebSocketNetworkInterface()):NetworkDriver.Create(m_NetworkSettings);
-
+                if(m_UseWebSocket)
+                {
+                    driver = NetworkDriver.Create(new WebSocketNetworkInterface(),m_NetworkSettings);
+                }
+                else
+                {
+#if UNITY_WEBGL
+                    Debug.Log("WebGL only supports WebSocket Network interface - Forcing the use of it.");
+                    UseWebSocket = true;
+                    driver = NetworkDriver.Create(new WebSocketNetworkInterface(),m_NetworkSettings);
+#else
+                    driver = NetworkDriver.Create(m_NetworkSettings);
+#endif
+                }
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
 #endif
@@ -1453,3 +1525,4 @@ namespace Unity.Netcode.Transports.UTP
         }
     }
 }
+
