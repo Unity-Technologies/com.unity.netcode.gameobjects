@@ -784,7 +784,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new position
-            if (networkState.HasPositionChange || Interpolate && SynchronizePosition)
+            if (networkState.HasPositionChange || (Interpolate && SynchronizePosition))
             {
                 if (InLocalSpace)
                 {
@@ -797,7 +797,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new rotation
-            if (networkState.HasRotAngleChange || Interpolate && SynchronizeRotation)
+            if (networkState.HasRotAngleChange || (Interpolate && SynchronizeRotation))
             {
                 if (InLocalSpace)
                 {
@@ -810,7 +810,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new scale
-            if (networkState.HasScaleChange || Interpolate && SynchronizeScale)
+            if (networkState.HasScaleChange || (Interpolate && SynchronizeScale))
             {
                 transform.localScale = interpolatedScale;
             }
