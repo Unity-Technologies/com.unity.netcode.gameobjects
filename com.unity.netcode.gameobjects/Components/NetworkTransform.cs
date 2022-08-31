@@ -986,6 +986,8 @@ namespace Unity.Netcode.Components
             // Offset by 1 tick duration
             m_LastReceivedState.SentTime += m_TickFrequency;
             AddInterpolatedState(m_LastReceivedState);
+
+            // Now reset our last received state so we won't apply this state again
             m_LastReceivedState.ClearBitSetForNextTick();
         }
 
@@ -1019,7 +1021,8 @@ namespace Unity.Netcode.Components
                 m_LastReceivedState = newState;
 
                 // Set the current local tick and wait until the next tick before we end
-                // this state's potential of extrapolating past the target value
+                // this state's potential of extrapolating past the target value beyond
+                // the state's relative tick duration
                 m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
             }
         }
