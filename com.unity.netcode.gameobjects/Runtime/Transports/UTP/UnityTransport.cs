@@ -1397,7 +1397,6 @@ namespace Unity.Netcode.Transports.UTP
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
-                maxFrameTimeMS: maxFrameTimeMS,
 #if UTP_TRANSPORT_2_0_ABOVE
                 sendQueueCapacity: m_MaxPacketQueueSize,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
