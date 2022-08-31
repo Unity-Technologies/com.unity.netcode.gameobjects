@@ -740,7 +740,7 @@ namespace Unity.Netcode.Components
             {
                 var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
                 interpolatedRotAngles = eulerAngles;
-                if (SyncRotAngleY)
+                if (SyncRotAngleX)
                 {
                     interpolatedRotAngles.x = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.x;
                 }
@@ -750,7 +750,7 @@ namespace Unity.Netcode.Components
                     interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
                 }
 
-                if (SyncRotAngleY)
+                if (SyncRotAngleZ)
                 {
                     interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
                 }
