@@ -509,6 +509,7 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+            MarkVariablesDirty(false);
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
@@ -821,6 +822,13 @@ namespace Unity.Netcode
                     Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during spawn!");
                 }
             }
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].VisibleOnNetworkSpawn();
+                }
+            }
         }
 
         internal void InvokeBehaviourNetworkDespawn()
@@ -868,12 +876,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
-                behavior.MarkVariablesDirty();
+                behavior.MarkVariablesDirty(dirty);
             }
         }
 
@@ -1218,6 +1226,22 @@ namespace Unity.Netcode
             }
 
             return GlobalObjectIdHash;
+        }
+
+        /// <summary>
+        /// Removes a NetworkBehaviour from the ChildNetworkBehaviours list when destroyed
+        /// while the NetworkObject is still spawned.
+        /// </summary>
+        internal void OnNetworkBehaviourDestroyed(NetworkBehaviour networkBehaviour)
+        {
+            if (networkBehaviour.IsSpawned && IsSpawned)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
+                }
+                ChildNetworkBehaviours.Remove(networkBehaviour);
+            }
         }
     }
 }

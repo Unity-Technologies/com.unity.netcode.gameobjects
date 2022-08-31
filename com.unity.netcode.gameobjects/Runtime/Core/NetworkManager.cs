@@ -54,7 +54,12 @@ namespace Unity.Netcode
             return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
         }
 
-        internal NetworkBehaviourUpdater BehaviourUpdater { get; private set; }
+        internal NetworkBehaviourUpdater BehaviourUpdater { get; set; }
+
+        internal void MarkNetworkObjectDirty(NetworkObject networkObject)
+        {
+            BehaviourUpdater.AddForUpdate(networkObject);
+        }
 
         internal MessagingSystem MessagingSystem { get; private set; }
 

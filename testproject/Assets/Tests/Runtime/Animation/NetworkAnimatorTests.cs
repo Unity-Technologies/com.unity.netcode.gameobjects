@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             AnimatorTestHelper.Initialize();
+            CheckStateEnterCount.ResetTest();
             TriggerTest.ResetTest();
             StateSyncTest.ResetTest();
             yield return base.OnSetup();
@@ -229,6 +231,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator TriggerUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
+            CheckStateEnterCount.ResetTest();
             VerboseDebug($" ++++++++++++++++++ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
@@ -277,6 +280,18 @@ namespace TestProject.RuntimeTests
                 yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
                 AssertOnTimeout($"Timed out waiting for all triggers to match!");
             }
+
+            yield return s_DefaultWaitForTick;
+
+            var clientIdList = new List<ulong>();
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                clientIdList.Add(client.LocalClientId);
+            }
+
+            // Verify we only entered each state once
+            yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
+            AssertOnTimeout($"Timed out waiting for all states entered to match!");
 
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
@@ -464,13 +479,14 @@ namespace TestProject.RuntimeTests
         {
             m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
             var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
-            for (int i = 0; i < serverAnimator.layerCount; i++)
-            {
-                Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {i}!");
-                var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(i);
-                StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][i] = animationStateInfo;
-                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
-            }
+
+            // Only update the 3rd layer since this is where we want to assure all values are synchronized to the
+            // same values upon the client connecting.
+            var index = 2;
+            Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {index}!");
+            var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(index);
+            StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][index] = animationStateInfo;
+            VerboseDebug($"[{index}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
         }
 
         /// <summary>
@@ -482,6 +498,7 @@ namespace TestProject.RuntimeTests
         {
             if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
             {
+                VerboseDebug($"Late join client has not had any states synchronized yet!");
                 return false;
             }
 
@@ -494,21 +511,24 @@ namespace TestProject.RuntimeTests
                 return false;
             }
 
-            // Basically a sanity check to make sure they all match
-            for (int i = 0; i < serverStates.Count; i++)
+            // We only check the last layer for this test as the other layers will have their normalized time slightly out of sync
+            var index = 2;
+            var serverAnimState = serverStates[index];
+            if (clientStates[index].shortNameHash != serverAnimState.shortNameHash)
             {
-                var serverAnimState = serverStates[i];
-                if (clientStates[i].shortNameHash != serverAnimState.shortNameHash)
-                {
-                    VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[i].shortNameHash}) ");
-                    return false;
-                }
-                if (clientStates[i].normalizedTime != serverAnimState.normalizedTime)
-                {
-                    VerboseDebug($"[NormalizedTime Fail] Server({serverAnimState.normalizedTime}) | Client({clientStates[i].normalizedTime})");
-                    return false;
-                }
+                VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[index].shortNameHash}) ");
+                return false;
             }
+
+            var clientNormalizedTime = clientStates[index].normalizedTime;
+            var serverNormalizedTime = serverAnimState.normalizedTime;
+            if (!Mathf.Approximately(clientNormalizedTime, serverNormalizedTime))
+            {
+                VerboseDebug($"[NormalizedTime Fail][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
+                return false;
+            }
+            VerboseDebug($"[NormalizedTime][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
+
             return true;
         }
 

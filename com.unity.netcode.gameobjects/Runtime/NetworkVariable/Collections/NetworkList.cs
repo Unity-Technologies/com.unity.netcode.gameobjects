@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -52,7 +53,7 @@ namespace Unity.Netcode
             if (m_DirtyEvents.Length > 0)
             {
                 m_DirtyEvents.Clear();
-                m_ListAtLastReset.CopyFrom(m_List);
+                m_ListAtLastReset.CopyFrom(m_List.AsArray());
             }
         }
 
@@ -61,6 +62,18 @@ namespace Unity.Netcode
         {
             // we call the base class to allow the SetDirty() mechanism to work
             return base.IsDirty() || m_DirtyEvents.Length > 0;
+        }
+
+        internal void MarkNetworkObjectDirty()
+        {
+            if (m_NetworkBehaviour == null)
+            {
+                Debug.LogWarning($"NetworkList is written to, but doesn't know its NetworkBehaviour yet. " +
+                                 "Are you modifying a NetworkList before the NetworkObject is spawned?");
+                return;
+            }
+
+            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
 
         /// <inheritdoc />
@@ -189,6 +202,7 @@ namespace Unity.Netcode
                                     Index = m_List.Length - 1,
                                     Value = m_List[m_List.Length - 1]
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -225,6 +239,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = m_List[index]
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -257,6 +272,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -284,6 +300,7 @@ namespace Unity.Netcode
                                     Index = index,
                                     Value = value
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -319,6 +336,7 @@ namespace Unity.Netcode
                                     Value = value,
                                     PreviousValue = previousValue
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -341,6 +359,7 @@ namespace Unity.Netcode
                                 {
                                     Type = eventType
                                 });
+                                MarkNetworkObjectDirty();
                             }
                         }
                         break;
@@ -485,6 +504,7 @@ namespace Unity.Netcode
         private void HandleAddListEvent(NetworkListEvent<T> listEvent)
         {
             m_DirtyEvents.Add(listEvent);
+            MarkNetworkObjectDirty();
             OnListChanged?.Invoke(listEvent);
         }
 

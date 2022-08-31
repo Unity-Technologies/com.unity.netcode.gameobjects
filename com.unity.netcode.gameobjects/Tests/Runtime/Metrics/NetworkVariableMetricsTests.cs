@@ -25,10 +25,17 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var metricValues = waitForMetricValues.AssertMetricValuesHaveBeenFound();
 
-            var networkVariableDeltaSent = metricValues.First();
-            Assert.AreEqual(nameof(NetworkVariableComponent.MyNetworkVariable), networkVariableDeltaSent.Name);
-            Assert.AreEqual(Server.LocalClientId, networkVariableDeltaSent.Connection.Id);
-            Assert.AreNotEqual(0, networkVariableDeltaSent.BytesCount);
+            bool found = false;
+            foreach (var networkVariableDeltaSent in metricValues)
+            {
+                if (nameof(NetworkVariableComponent.MyNetworkVariable) == networkVariableDeltaSent.Name &&
+                    Client.LocalClientId == networkVariableDeltaSent.Connection.Id &&
+                    0 != networkVariableDeltaSent.BytesCount)
+                {
+                    found = true;
+                }
+            }
+            Assert.IsTrue(found);
         }
 
         [UnityTest]

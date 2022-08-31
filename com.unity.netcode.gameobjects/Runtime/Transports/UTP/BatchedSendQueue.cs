@@ -80,8 +80,12 @@ namespace Unity.Netcode.Transports.UTP
 
                 fixed (byte* dataPtr = data.Array)
                 {
-                    //writer.WriteBytes(dataPtr + data.Offset, data.Count);
+
+#if UTP_TRANSPORT_2_0_ABOVE
                     writer.WriteBytesUnsafe(dataPtr + data.Offset, data.Count);
+#else
+                    writer.WriteBytes(dataPtr + data.Offset, data.Count);
+#endif
                 }
             }
 
@@ -151,9 +155,13 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
+
+#if UTP_TRANSPORT_2_0_ABOVE
                 var slice = m_Data.GetSubArray(HeadIndex, Length);
                 var reader = new DataStreamReader(slice);
-                //var reader = new DataStreamReader((byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
+#else
+                var reader = new DataStreamReader((byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
+#endif
 
                 var writerAvailable = writer.Capacity;
                 var readerOffset = 0;
@@ -172,8 +180,11 @@ namespace Unity.Netcode.Transports.UTP
                         writer.WriteInt(messageLength);
 
                         var messageOffset = HeadIndex + reader.GetBytesRead();
-                        //writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
+#if UTP_TRANSPORT_2_0_ABOVE
                         writer.WriteBytesUnsafe((byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
+#else
+                        writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
+#endif
 
                         writerAvailable -= sizeof(int) + messageLength;
                         readerOffset += sizeof(int) + messageLength;
@@ -210,8 +221,12 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
-                //writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+
+#if UTP_TRANSPORT_2_0_ABOVE
                 writer.WriteBytesUnsafe((byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+#else
+                writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+#endif
             }
 
             return copyLength;

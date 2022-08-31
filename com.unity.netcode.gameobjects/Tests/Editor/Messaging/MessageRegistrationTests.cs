@@ -137,9 +137,9 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
 
-            var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
-            var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
-            var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
+            using var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
+            using var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
+            using var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
@@ -161,9 +161,9 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
 
-            var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
-            var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
-            var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
+            using var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
+            using var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
+            using var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
@@ -235,7 +235,7 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
             var provider = new OrderingMessageProvider();
-            var messagingSystem = new MessagingSystem(sender, null, provider);
+            using var messagingSystem = new MessagingSystem(sender, null, provider);
 
             // the 3 priority messages should appear first, in lexicographic order
             Assert.AreEqual(messagingSystem.MessageTypes[0], typeof(ConnectionApprovedMessage));

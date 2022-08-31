@@ -1,31 +1,20 @@
 {
   "dependencies": {
     "com.unity.addressables": {
-      "version": "1.20.3",
+      "version": "1.16.19",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.scriptablebuildpipeline": "1.20.2",
+        "com.unity.scriptablebuildpipeline": "1.15.2",
         "com.unity.modules.assetbundle": "1.0.0",
-        "com.unity.modules.imageconversion": "1.0.0",
-        "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
-    "com.unity.ai.navigation": {
-      "version": "1.1.0-pre.1",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.modules.ai": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
     "com.unity.burst": {
-      "version": "1.7.3",
-      "depth": 1,
+      "version": "1.6.6",
+      "depth": 2,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
@@ -33,22 +22,21 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "1.15.18",
+      "version": "1.9.0",
       "depth": 0,
       "source": "registry",
-      "dependencies": {
-        "com.unity.services.core": "1.0.1"
-      },
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.collections": {
-      "version": "file:/Users/jeffrey.rainy/Downloads/package",
-      "depth": 0,
-      "source": "local",
+      "version": "1.2.4",
+      "depth": 2,
+      "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.7.2",
+        "com.unity.burst": "1.6.6",
         "com.unity.test-framework": "1.1.31"
-      }
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.ext.nunit": {
       "version": "1.0.6",
@@ -58,7 +46,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.15",
+      "version": "3.0.7",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -67,7 +55,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.16",
+      "version": "2.0.11",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -76,7 +64,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.vscode": {
-      "version": "1.2.5",
+      "version": "1.2.3",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
@@ -84,7 +72,7 @@
     },
     "com.unity.mathematics": {
       "version": "1.2.6",
-      "depth": 0,
+      "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -95,18 +83,18 @@
       "source": "local",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.transport": "1.1.0"
+        "com.unity.transport": "1.2.0"
       }
     },
     "com.unity.nuget.mono-cecil": {
-      "version": "1.11.4",
+      "version": "1.10.1",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.nuget.newtonsoft-json": {
-      "version": "3.0.2",
+      "version": "2.0.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
@@ -122,63 +110,45 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.scriptablebuildpipeline": {
-      "version": "1.20.2",
+      "version": "1.15.2",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.services.authentication": {
-      "version": "2.1.1",
+      "version": "1.0.0-pre.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "3.0.2",
-        "com.unity.services.core": "1.4.2",
-        "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.ugui": "1.0.0"
+        "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.services.core": "1.1.0-pre.8",
+        "com.unity.modules.unitywebrequest": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.services.core": {
-      "version": "1.4.2",
+      "version": "1.1.0-pre.8",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.nuget.newtonsoft-json": "3.0.2",
-        "com.unity.modules.androidjni": "1.0.0"
-      },
-      "url": "https://packages.unity.com"
-    },
-    "com.unity.services.qos": {
-      "version": "1.0.0",
-      "depth": 1,
-      "source": "registry",
-      "dependencies": {
-        "com.unity.services.core": "1.3.2",
-        "com.unity.modules.unitywebrequest": "1.0.0",
-        "com.unity.nuget.newtonsoft-json": "3.0.1",
-        "com.unity.services.authentication": "2.0.0",
-        "com.unity.collections": "1.2.3"
+        "com.unity.modules.unitywebrequest": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.services.relay": {
-      "version": "1.0.2",
+      "version": "1.0.1-pre.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.services.core": "1.4.0",
-        "com.unity.services.authentication": "2.0.0",
-        "com.unity.services.qos": "1.0.0",
+        "com.unity.services.core": "1.1.0-pre.8",
         "com.unity.modules.unitywebrequest": "1.0.0",
         "com.unity.modules.unitywebrequestassetbundle": "1.0.0",
         "com.unity.modules.unitywebrequestaudio": "1.0.0",
         "com.unity.modules.unitywebrequesttexture": "1.0.0",
         "com.unity.modules.unitywebrequestwww": "1.0.0",
-        "com.unity.nuget.newtonsoft-json": "3.0.1",
-        "com.unity.transport": "1.0.0"
+        "com.unity.nuget.newtonsoft-json": "2.0.0",
+        "com.unity.services.authentication": "1.0.0-pre.4"
       },
       "url": "https://packages.unity.com"
     },
@@ -213,7 +183,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.7.1",
+      "version": "1.6.2",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -225,14 +195,15 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.transport": {
-      "version": "file:/Users/jeffrey.rainy/code/com.unity.transport/com.unity.transport",
-      "depth": 0,
-      "source": "local",
+      "version": "1.2.0",
+      "depth": 1,
+      "source": "registry",
       "dependencies": {
-        "com.unity.collections": "2.0.0-pre.37",
-        "com.unity.burst": "1.7.3",
+        "com.unity.collections": "1.2.4",
+        "com.unity.burst": "1.6.6",
         "com.unity.mathematics": "1.2.6"
-      }
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.ugui": {
       "version": "1.0.0",
@@ -374,6 +345,17 @@
     "com.unity.modules.uielements": {
       "version": "1.0.0",
       "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.modules.ui": "1.0.0",
+        "com.unity.modules.imgui": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.uielementsnative": "1.0.0"
+      }
+    },
+    "com.unity.modules.uielementsnative": {
+      "version": "1.0.0",
+      "depth": 1,
       "source": "builtin",
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",

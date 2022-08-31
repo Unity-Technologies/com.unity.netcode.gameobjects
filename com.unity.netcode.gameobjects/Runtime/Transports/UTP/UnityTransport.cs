@@ -10,6 +10,10 @@ using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 
+#if !UTP_TRANSPORT_2_0_ABOVE
+using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
+#endif
+
 namespace Unity.Netcode.Transports.UTP
 {
     /// <summary>
@@ -944,8 +948,12 @@ namespace Unity.Netcode.Transports.UTP
         {
             //Don't need to dispose of the buffers, they are filled with data pointers.
             m_Driver.GetPipelineBuffers(pipeline,
+
+#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<NetworkMetricsPipelineStage>(),
-                //NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+#else
+                NetworkPipelineStageCollection.GetStageId(typeof(NetworkMetricsPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -972,8 +980,11 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
-                //NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#else
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -995,8 +1006,12 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+
+#if UTP_TRANSPORT_2_0_ABOVE
                 NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
-                //NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#else
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#endif
                 networkConnection,
                 out _,
                 out _,
@@ -1156,12 +1171,12 @@ namespace Unity.Netcode.Transports.UTP
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
-
-            m_NetworkSettings
-                .WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
-                // .WithBaselibNetworkInterfaceParameters(
-                //     receiveQueueCapacity: m_MaxPacketQueueSize,
-                //     sendQueueCapacity: m_MaxPacketQueueSize);
+            m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
+#if !UTP_TRANSPORT_2_0_ABOVE
+            m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
+                receiveQueueCapacity: m_MaxPacketQueueSize,
+                sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
 #endif
         }
 
@@ -1345,8 +1360,11 @@ namespace Unity.Netcode.Transports.UTP
                 maxPacketSize: NetworkParameterConstants.MTU,
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
-                packetDropPercentage: DebugSimulator.PacketDropRate,
-                mode: ApplyMode.AllPackets
+
+                packetDropPercentage: DebugSimulator.PacketDropRate
+#if UTP_TRANSPORT_2_0_ABOVE
+                , mode: ApplyMode.AllPackets
+#endif
             );
         }
 
@@ -1365,12 +1383,13 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline reliableSequencedPipeline, bool isServer=false)
         {
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-            //NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
+
+#if !UTP_TRANSPORT_2_0_ABOVE
+            NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
-            var maxFrameTimeMS = 0;
+#endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            maxFrameTimeMS = 100;
             ConfigureSimulator();
 #endif
 
@@ -1378,10 +1397,12 @@ namespace Unity.Netcode.Transports.UTP
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
-                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS,
                 maxFrameTimeMS: maxFrameTimeMS,
+#if UTP_TRANSPORT_2_0_ABOVE
+                sendQueueCapacity: m_MaxPacketQueueSize,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
-                sendQueueCapacity: m_MaxPacketQueueSize);
+#endif
+                heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
             if (m_UseEncryption)
             {
                 try
@@ -1409,7 +1430,7 @@ namespace Unity.Netcode.Transports.UTP
                         m_NetworkSettings.WithSecureClientParameters(
                             serverName: ref commonName
 #if !UNITY_WEBGL
-                            ,caCertificate: ref clientCa  
+                            ,caCertificate: ref clientCa
 #endif
                         );
                     }
@@ -1437,12 +1458,22 @@ namespace Unity.Netcode.Transports.UTP
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
 #endif
 
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+#if UTP_TRANSPORT_2_0_ABOVE
+            driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
+#endif
+#endif
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage)
+
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
@@ -1451,6 +1482,10 @@ namespace Unity.Netcode.Transports.UTP
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage)
+
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
@@ -1458,6 +1493,10 @@ namespace Unity.Netcode.Transports.UTP
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage)
+
+#if !UTP_TRANSPORT_2_0_ABOVE
+                    , typeof(SimulatorPipelineStageInSend)
+#endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     ,typeof(NetworkMetricsPipelineStage)
 #endif
