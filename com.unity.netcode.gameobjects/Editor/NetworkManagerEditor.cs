@@ -213,7 +213,7 @@ namespace Unity.Netcode.Editor
 #if !MULTIPLAYER_TOOLS
             DrawInstallMultiplayerToolsTip();
 #endif
-            
+
             if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
             {
                 serializedObject.Update();
