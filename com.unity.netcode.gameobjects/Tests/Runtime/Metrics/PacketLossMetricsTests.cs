@@ -18,7 +18,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         protected override int NumberOfClients => 1;
         private readonly int m_PacketLossRate = 25;
-        private readonly int m_PacketLossRangeDelta = 5;
+        private readonly int m_PacketLossRangeDelta = 3;
+        private readonly int m_MessageSize = 200;
 
         public PacketLossMetricsTests()
             : base(HostOrServer.Server)
@@ -27,6 +28,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
+            clientTransport.DebugSimulatorRandomSeed = 4; // Determined through trial and error.
             clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
 
             base.OnServerAndClientsCreated();
@@ -41,9 +43,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             for (int i = 0; i < 1000; ++i)
             {
-                using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
+                using (var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent))
                 {
-                    writer.WriteByteSafe(42);
+                    writer.WriteBytesSafe(new byte[m_MessageSize]);
                     m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
                 }
             }
@@ -55,9 +57,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         }
 
         [UnityTest]
-#if UTP_TRANSPORT_2_0_ABOVE
-        [Ignore("Pending adjustment for UTP 2.0")]
-#endif
         public IEnumerator TrackPacketLossAsClient()
         {
             double packetLossRateMinRange = (m_PacketLossRate-m_PacketLossRangeDelta) / 100d;
@@ -69,9 +68,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             for (int i = 0; i < 1000; ++i)
             {
-                using (var writer = new FastBufferWriter(sizeof(byte), Allocator.Persistent))
+                using (var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent))
                 {
-                    writer.WriteByteSafe(42);
+                    writer.WriteBytesSafe(new byte[m_MessageSize]);
                     m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
                 }
             }
