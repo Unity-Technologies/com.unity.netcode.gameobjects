@@ -1267,9 +1267,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// If the instance is authority it will attempt to update the current tick
-        /// network state and returns true.
-        /// If it is not authority it exits early returning false.
+        /// Will update the authoritative transform state if any deltas are detected.
+        /// This will also reset the m_LocalAuthoritativeNetworkState if it is still dirty
+        /// but the replicated network state is not.
         /// </summary>
         /// <param name="transformSource">transform to be updated</param>
         private void UpdateAuthoritativeState(Transform transformSource)
