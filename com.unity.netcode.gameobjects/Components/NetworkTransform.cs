@@ -752,7 +752,7 @@ namespace Unity.Netcode.Components
 
                 if (SyncRotAngleZ)
                 {
-                    interpolatedRotAngles.y = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.y;
+                    interpolatedRotAngles.z = m_RotationInterpolator.GetInterpolatedValue().eulerAngles.z;
                 }
             }
 
