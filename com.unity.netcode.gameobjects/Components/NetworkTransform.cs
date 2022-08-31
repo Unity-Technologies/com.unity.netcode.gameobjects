@@ -461,9 +461,11 @@ namespace Unity.Netcode.Components
             return m_LastSentState;
         }
 
-        /// <remarks>
+        /// <summary>
         /// Calculated when spawned, this is used to offset a newly received non-authority side state by 1 tick duration
         /// in order to end the extrapolation for that state's values.
+        /// </summary>
+        /// <remarks>
         /// Example:
         /// NetworkState-A is received, processed, and measurements added
         /// NetworkState-A is duplicated (NetworkState-A-Post) and its sent time is offset by the tick frequency
