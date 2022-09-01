@@ -277,14 +277,7 @@ namespace Unity.Netcode.Components
                 {
                     // Go ahead and mark the local state dirty or not dirty as well
                     /// <see cref="TryCommitTransformToServer"/>
-                    if (HasPositionChange || HasRotAngleChange || HasScaleChange)
-                    {
-                        IsDirty = true;
-                    }
-                    else
-                    {
-                        IsDirty = false;
-                    }
+                    IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
                 }
             }
         }
@@ -1115,8 +1108,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                transform.position = pos;
-                transform.rotation = rot;
+                transform.SetPositionAndRotation(pos, rot);
             }
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
@@ -1134,8 +1126,7 @@ namespace Unity.Netcode.Components
         private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
         {
             // Server dictated state is always applied
-            transform.position = pos;
-            transform.rotation = rot;
+            transform.SetPositionAndRotation(pos, rot);
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
@@ -1156,8 +1147,7 @@ namespace Unity.Netcode.Components
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
             }
 
-            transform.position = pos;
-            transform.rotation = rot;
+            transform.SetPositionAndRotation(pos, rot);
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
             TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);

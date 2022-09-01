@@ -435,7 +435,7 @@ namespace Unity.Netcode
         private void OnDestroy()
         {
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
+                (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
@@ -690,8 +690,7 @@ namespace Unity.Netcode
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
-                var parentObject = transform.parent.GetComponent<NetworkObject>();
-                if (parentObject == null)
+                if (!transform.parent.TryGetComponent<NetworkObject>(out var parentObject))
                 {
                     transform.parent = m_CachedParent;
                     Debug.LogException(new InvalidParentException($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent"));
