@@ -387,6 +387,12 @@ namespace Unity.Netcode.RuntimeTests
         // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
         private const int k_PositionRotationScaleIterations = 8;
 
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.NetworkPrefabs = m_ServerNetworkManager.NetworkConfig.NetworkPrefabs;
+            base.OnNewClientCreated(networkManager);
+        }
+
         /// <summary>
         /// This validates that multiple changes can occur within the same tick or over
         /// several ticks while still keeping non-authoritative instances synchronized.
@@ -420,6 +426,23 @@ namespace Unity.Netcode.RuntimeTests
 
                 // Wait for deltas to synchronize on non-authoritative side
                 yield return WaitForPositionRotationAndScaleToMatch(4);
+            }
+
+            // Check scale for all player instances when a client late joins
+            // NOTE: This validates the use of the spawned object's transform values as opposed to the replicated state (which now is only the last deltas)
+            yield return CreateAndStartNewClient();
+            var newClientNetworkManager = m_ClientNetworkManagers[NumberOfClients];
+            foreach (var playerRelativeEntry in m_PlayerNetworkObjects)
+            {
+                foreach (var playerInstanceEntry in playerRelativeEntry.Value)
+                {
+                    var playerInstance = playerInstanceEntry.Value;
+                    if (newClientNetworkManager.LocalClientId == playerInstance.OwnerClientId)
+                    {
+                        Assert.IsTrue(Aproximately(m_PlayerPrefab.transform.localScale, playerInstance.transform.localScale), $"{playerInstance.name}'s cloned instance's scale does not match original scale!\n" +
+                            $"[ClientId-{playerRelativeEntry.Key} Relative] Player-{playerInstance.OwnerClientId}'s LocalScale ({playerInstance.transform.localScale}) vs Target Scale ({m_PlayerPrefab.transform.localScale})");
+                    }
+                }
             }
 
             // Repeat this in the opposite direction
