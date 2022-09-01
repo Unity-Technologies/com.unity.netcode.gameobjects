@@ -534,15 +534,31 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
-            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
-            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.RotAngleX, m_LocalAuthoritativeNetworkState.RotAngleY, m_LocalAuthoritativeNetworkState.RotAngleZ), serverTime);
+            // TODO: Look into a better way to communicate the entire state for late joining clients.
+            // Since the replicated network state will just be the most recent deltas and not the entire state.
+            //m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
+            //m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
+            //m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
-            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
-            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
+            //m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.RotAngleX, m_LocalAuthoritativeNetworkState.RotAngleY, m_LocalAuthoritativeNetworkState.RotAngleZ), serverTime);
+
+            //m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
+            //m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
+            //m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
+
+            // NOTE ABOUT THIS CHANGE:
+            // !!! This will exclude any scale changes because we currently do not spawn network objects with scale !!!
+            // Regarding Scale: It will be the same scale as the default scale for the object being spawned.
+            m_PositionXInterpolator.ResetTo(transform.position.x, serverTime);
+            m_PositionYInterpolator.ResetTo(transform.position.y, serverTime);
+            m_PositionZInterpolator.ResetTo(transform.position.z, serverTime);
+
+            m_RotationInterpolator.ResetTo(transform.rotation, serverTime);
+
+            m_ScaleXInterpolator.ResetTo(transform.localScale.x, serverTime);
+            m_ScaleYInterpolator.ResetTo(transform.localScale.y, serverTime);
+            m_ScaleZInterpolator.ResetTo(transform.localScale.z, serverTime);
         }
 
         /// <summary>
@@ -675,144 +691,82 @@ namespace Unity.Netcode.Components
         private void ApplyAuthoritativeState()
         {
             var networkState = ReplicatedNetworkState.Value;
-            var interpolatedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
+            var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
 
-            // todo: we should store network state w/ quats vs. euler angles
-            var interpolatedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
-            var interpolatedScale = transform.localScale;
-            var isTeleporting = networkState.IsTeleportingNextFrame;
+            // TODO: We should store network state w/ quats vs. euler angles
+            var adjustedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var adjustedScale = transform.localScale;
 
             // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
 
-            // NOTE ABOUT INTERPOLATING AND BELOW CODE:
+            // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
+            var useInterpolatedValue = !networkState.IsTeleportingNextFrame && Interpolate;
+            if (!useInterpolatedValue)
+            {
+                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
+                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
+                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
 
-            // Update the position values that were changed in this state update
-            if (networkState.HasPositionX)
-            {
-                interpolatedPosition.x = isTeleporting || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
-            }
-            else if (Interpolate && SyncPositionX)
-            {
-                interpolatedPosition.x = m_PositionXInterpolator.GetInterpolatedValue();
-            }
+                if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
+                if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
+                if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
 
-            if (networkState.HasPositionY)
-            {
-                interpolatedPosition.y = isTeleporting || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
+                if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
+                if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
+                if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
             }
-            else if (Interpolate && SyncPositionY)
+            else if (useInterpolatedValue)
             {
-                interpolatedPosition.y = m_PositionYInterpolator.GetInterpolatedValue();
-            }
+                if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
 
-            if (networkState.HasPositionZ)
-            {
-                interpolatedPosition.z = isTeleporting || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
-            }
-            else if (Interpolate && SyncPositionZ)
-            {
-                interpolatedPosition.z = m_PositionZInterpolator.GetInterpolatedValue();
-            }
+                if (SyncScaleX) { adjustedScale.x = m_ScaleXInterpolator.GetInterpolatedValue(); }
+                if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
+                if (SyncScaleZ) { adjustedScale.z = m_ScaleZInterpolator.GetInterpolatedValue(); }
 
-            // Update the rotation values that were changed in this state update
-            if (networkState.HasRotAngleChange)
-            {
-                var eulerAngles = Interpolate ? m_RotationInterpolator.GetInterpolatedValue().eulerAngles : new Vector3();
-                if (networkState.HasRotAngleX)
+                if (SynchronizeRotation)
                 {
-                    interpolatedRotAngles.x = isTeleporting || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
-                }
-
-                if (networkState.HasRotAngleY)
-                {
-                    interpolatedRotAngles.y = isTeleporting || !Interpolate ? networkState.RotAngleY : eulerAngles.y;
-                }
-
-                if (networkState.HasRotAngleZ)
-                {
-                    interpolatedRotAngles.z = isTeleporting || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
-                }
-            }
-            else if (Interpolate && SynchronizeRotation)
-            {
-                var eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                if (SyncRotAngleX)
-                {
-                    interpolatedRotAngles.x = eulerAngles.x;
-                }
-
-                if (SyncRotAngleY)
-                {
-                    interpolatedRotAngles.y = eulerAngles.y;
-                }
-
-                if (SyncRotAngleZ)
-                {
-                    interpolatedRotAngles.z = eulerAngles.z;
+                    var interpolatedEulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                    if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
+                    if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
+                    if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
                 }
             }
 
-            // Update all scale axis that were changed in this state update
-            if (networkState.HasScaleX)
-            {
-                interpolatedScale.x = isTeleporting || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
-            }
-            else if (Interpolate && SyncScaleX)
-            {
-                interpolatedScale.x = m_ScaleXInterpolator.GetInterpolatedValue();
-            }
-
-            if (networkState.HasScaleY)
-            {
-                interpolatedScale.y = isTeleporting || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
-            }
-            else if (Interpolate && SyncScaleY)
-            {
-                interpolatedScale.y = m_ScaleYInterpolator.GetInterpolatedValue();
-            }
-
-            if (networkState.HasScaleZ)
-            {
-                interpolatedScale.z = isTeleporting || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
-            }
-            else if (Interpolate && SyncScaleZ)
-            {
-                interpolatedScale.z = m_ScaleZInterpolator.GetInterpolatedValue();
-            }
-
-            // Apply the new position
-            if (networkState.HasPositionChange || (Interpolate && SynchronizePosition))
+            // Apply the new position if it has changed or we are interpolating and synchronizing position
+            if (networkState.HasPositionChange || (useInterpolatedValue && SynchronizePosition))
             {
                 if (InLocalSpace)
                 {
-                    transform.localPosition = interpolatedPosition;
+                    transform.localPosition = adjustedPosition;
                 }
                 else
                 {
-                    transform.position = interpolatedPosition;
+                    transform.position = adjustedPosition;
                 }
             }
 
-            // Apply the new rotation
-            if (networkState.HasRotAngleChange || (Interpolate && SynchronizeRotation))
+            // Apply the new rotation if it has changed or we are interpolating and synchronizing rotation
+            if (networkState.HasRotAngleChange || (useInterpolatedValue && SynchronizeRotation))
             {
                 if (InLocalSpace)
                 {
-                    transform.localRotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.localRotation = Quaternion.Euler(adjustedRotAngles);
                 }
                 else
                 {
-                    transform.rotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.rotation = Quaternion.Euler(adjustedRotAngles);
                 }
             }
 
-            // Apply the new scale
-            if (networkState.HasScaleChange || (Interpolate && SynchronizeScale))
+            // Apply the new scale if it has changed or we are interpolating and synchronizing scale
+            if (networkState.HasScaleChange || (useInterpolatedValue && SynchronizeScale))
             {
-                transform.localScale = interpolatedScale;
+                transform.localScale = adjustedScale;
             }
         }
 
