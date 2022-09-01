@@ -704,21 +704,7 @@ namespace Unity.Netcode.Components
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
             var useInterpolatedValue = !networkState.IsTeleportingNextFrame && Interpolate;
-            if (!useInterpolatedValue)
-            {
-                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
-                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
-                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
-
-                if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
-                if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
-                if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
-
-                if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
-                if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
-                if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
-            }
-            else if (useInterpolatedValue)
+            if (useInterpolatedValue)
             {
                 if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
                 if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
@@ -736,6 +722,30 @@ namespace Unity.Netcode.Components
                     if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
                 }
             }
+            else
+            {
+                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
+                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
+                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
+
+                if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
+                if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
+                if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
+
+                if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
+                if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
+                if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+            }
+
+            // NOTE: The below conditional checks for applying axial values are required in order to
+            // prevent the non-authoritative side from making adjustments when interpolation is off.
+
+            // TODO: Determine if we want to enforce, frame by frame, the non-authoritative transform values.
+            // We would want save the position, rotation, and scale (each individually) after applying each
+            // authoritative transform state received. Otherwise, the non-authoritative side could make
+            // changes to an axial value (if interpolation is turned off) until authority sends an update for
+            // that same axial value. When interpolation is on, the state's values being synchronized are
+            // always applied each frame.
 
             // Apply the new position if it has changed or we are interpolating and synchronizing position
             if (networkState.HasPositionChange || (useInterpolatedValue && SynchronizePosition))
