@@ -1,10 +1,6 @@
 #if MULTIPLAYER_TOOLS
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
@@ -12,10 +8,11 @@ namespace Unity.Netcode.TestHelpers.Runtime.Metrics
 {
     internal class WaitForEventMetricValues<TMetric> : WaitForMetricValues<TMetric>
     {
-        IReadOnlyCollection<TMetric> m_EventValues;
+        private IReadOnlyCollection<TMetric> m_EventValues;
 
         public delegate bool EventFilter(TMetric metric);
-        EventFilter m_EventFilterDelegate;
+
+        private EventFilter m_EventFilterDelegate;
 
         public WaitForEventMetricValues(IMetricDispatcher dispatcher, DirectionalMetricInfo directionalMetricName)
             : base(dispatcher, directionalMetricName)
