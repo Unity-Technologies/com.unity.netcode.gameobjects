@@ -1,7 +1,6 @@
 #if MULTIPLAYER_TOOLS
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 
-using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Collections;
@@ -9,7 +8,6 @@ using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 using Unity.Netcode.Transports.UTP;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
@@ -23,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
         public PacketLossMetricsTests()
             : base(HostOrServer.Server)
-        {}
+        { }
 
         protected override void OnServerAndClientsCreated()
         {
@@ -48,11 +46,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             for (int i = 0; i < 1000; ++i)
             {
-                using (var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent))
-                {
-                    writer.WriteBytesSafe(new byte[m_MessageSize]);
-                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
-                }
+                using var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent);
+                writer.WriteBytesSafe(new byte[m_MessageSize]);
+                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
             }
 
             yield return waitForPacketLossMetric.WaitForMetricsReceived();
@@ -64,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackPacketLossAsClient()
         {
-            double packetLossRateMinRange = (m_PacketLossRate-m_PacketLossRangeDelta) / 100d;
+            double packetLossRateMinRange = (m_PacketLossRate - m_PacketLossRangeDelta) / 100d;
             double packetLossRateMaxrange = (m_PacketLossRate + m_PacketLossRangeDelta) / 100d;
             var clientNetworkManager = m_ClientNetworkManagers[0];
             var waitForPacketLossMetric = new WaitForGaugeMetricValues((clientNetworkManager.NetworkMetrics as NetworkMetrics).Dispatcher,
@@ -73,11 +69,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             for (int i = 0; i < 1000; ++i)
             {
-                using (var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent))
-                {
-                    writer.WriteBytesSafe(new byte[m_MessageSize]);
-                    m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
-                }
+                using var writer = new FastBufferWriter(m_MessageSize, Allocator.Persistent);
+                writer.WriteBytesSafe(new byte[m_MessageSize]);
+                m_ServerNetworkManager.CustomMessagingManager.SendNamedMessage("Test", m_ServerNetworkManager.ConnectedClientsIds, writer);
             }
 
             yield return waitForPacketLossMetric.WaitForMetricsReceived();

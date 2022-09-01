@@ -26,7 +26,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIds = new []{FirstClient.LocalClientId}
+                    TargetClientIds = new[] { FirstClient.LocalClientId }
                 }
             });
 
@@ -50,7 +50,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             {
                 Send = new ClientRpcSendParams
                 {
-                    TargetClientIdsNativeArray = new NativeArray<ulong>(new []{FirstClient.LocalClientId}, Allocator.Temp)
+                    TargetClientIdsNativeArray = new NativeArray<ulong>(new[] { FirstClient.LocalClientId }, Allocator.Temp)
                 }
             });
 

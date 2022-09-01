@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    class NetworkObjectProvider : INetworkObjectProvider
+    internal class NetworkObjectProvider : INetworkObjectProvider
     {
         private readonly NetworkManager m_NetworkManager;
 
@@ -15,7 +15,7 @@ namespace Unity.Netcode
 
         public Object GetNetworkObject(ulong networkObjectId)
         {
-            if(m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject value))
+            if (m_NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectId, out NetworkObject value))
             {
                 return value;
             }

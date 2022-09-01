@@ -1,5 +1,4 @@
 #if MULTIPLAYER_TOOLS
-using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
@@ -36,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         private NetworkObject SpawnNetworkObject()
         {
             // Spawn another network object so we can hide multiple.
-            var gameObject = UnityEngine.Object.Instantiate(m_NewNetworkPrefab); // new GameObject(NewNetworkObjectName);
+            var gameObject = Object.Instantiate(m_NewNetworkPrefab); // new GameObject(NewNetworkObjectName);
             var networkObject = gameObject.GetComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = Server;
             networkObject.Spawn();

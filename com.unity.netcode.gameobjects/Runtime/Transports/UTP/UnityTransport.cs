@@ -897,7 +897,7 @@ namespace Unity.Netcode.Transports.UTP
 
         private void ExtractNetworkMetricsForClient(ulong transportClientId)
         {
-            var networkConnection =  ParseClientId(transportClientId);
+            var networkConnection = ParseClientId(transportClientId);
             ExtractNetworkMetricsFromPipeline(m_UnreliableFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_UnreliableSequencedFragmentedPipeline, networkConnection);
             ExtractNetworkMetricsFromPipeline(m_ReliableSequencedPipeline, networkConnection);
@@ -1394,7 +1394,7 @@ namespace Unity.Netcode.Transports.UTP
                     , typeof(SimulatorPipelineStageInSend)
 #endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
+                    , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
@@ -1404,7 +1404,7 @@ namespace Unity.Netcode.Transports.UTP
                     , typeof(SimulatorPipelineStageInSend)
 #endif
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
+                    , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
             }
@@ -1414,20 +1414,20 @@ namespace Unity.Netcode.Transports.UTP
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
+                    , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
+                    , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-                    ,typeof(NetworkMetricsPipelineStage)
+                    , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
             }
