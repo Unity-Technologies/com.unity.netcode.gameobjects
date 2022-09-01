@@ -150,6 +150,18 @@ namespace Unity.Netcode.Transports.UTP
         [SerializeField]
         private ProtocolType m_ProtocolType;
 
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Tooltip("Whether or not to use WebSockets as Network Interface")]
+        [SerializeField]
+        private bool m_UseWebSockets = false;
+
+        public bool UseWebSockets
+        {
+            set => m_UseWebSockets = value;
+            get => m_UseWebSockets;
+        }
+#endif
+
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField]
         private int m_MaxPacketQueueSize = InitialMaxPacketQueueSize;
@@ -1362,7 +1374,16 @@ namespace Unity.Netcode.Transports.UTP
 #endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
-            driver = NetworkDriver.Create(m_NetworkSettings);
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (m_UseWebSockets)
+            {
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
+            }
+            else
+#endif
+            {
+                driver = NetworkDriver.Create(new BaselibNetworkInterface(), m_NetworkSettings);
+            }
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 #if UTP_TRANSPORT_2_0_ABOVE
