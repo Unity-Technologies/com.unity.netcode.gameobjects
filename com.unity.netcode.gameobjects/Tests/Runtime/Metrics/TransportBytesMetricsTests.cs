@@ -1,7 +1,6 @@
 #if MULTIPLAYER_TOOLS
 using System;
 using System.Collections;
-using System.IO;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
@@ -15,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
         private const int k_MessageHeaderSize = 2;
-        static readonly long MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + k_MessageHeaderSize;
+        private static readonly long k_MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + k_MessageHeaderSize;
 
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
@@ -42,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead, observer.Value);
         }
 
         [UnityTest]
@@ -72,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + MessageOverhead, observer.Value);
+            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead, observer.Value);
         }
 
         private class TotalBytesObserver : IMetricObserver
