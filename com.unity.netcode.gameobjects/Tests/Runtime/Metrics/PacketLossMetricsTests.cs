@@ -28,8 +28,13 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         protected override void OnServerAndClientsCreated()
         {
             var clientTransport = (UnityTransport)m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport;
-            clientTransport.DebugSimulatorRandomSeed = 4; // Determined through trial and error.
             clientTransport.SetDebugSimulatorParameters(0, 0, m_PacketLossRate);
+
+            // Determined through trial and error. With both UTP 1.2 and 2.0, this random seed
+            // results in an effective packet loss percentage between 22% and 28%. Future UTP
+            // updates may change the RNG call patterns and cause this test to fail, in which
+            // case the value should be modified again.
+            clientTransport.DebugSimulatorRandomSeed = 4;
 
             base.OnServerAndClientsCreated();
         }
