@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
 
 namespace Unity.Netcode.RuntimeTests.Metrics
