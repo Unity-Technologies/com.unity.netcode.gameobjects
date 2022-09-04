@@ -3,7 +3,13 @@ using UnityEngine;
 
 public class OnCollisionColor : MonoBehaviour
 {
+    private Material m_Material;
     private int m_CollisionCount;
+    
+    private void Start()
+    {
+        m_Material = GetComponent<Renderer>().material;
+    }
 
     public void OnCollisionEnter(Collision other)
     {
@@ -14,14 +20,7 @@ public class OnCollisionColor : MonoBehaviour
 
     private void HandleCollisionCountChanged()
     {
-        if (m_CollisionCount > 0)
-        {
-            GetComponent<Renderer>().material.color = Color.red;
-        }
-        else
-        {
-            GetComponent<Renderer>().material.color = Color.white;
-        }
+        m_Material.color = m_CollisionCount > 0 ? Color.red : Color.white;
     }
 
     private IEnumerator StayColored()
