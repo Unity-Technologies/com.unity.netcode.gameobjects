@@ -783,7 +783,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Only non-authoritative instances should invoke this
         /// </summary>
-        private void AddInterpolatedState(NetworkTransformState newState)
+        private void AddInterpolatedState(NetworkTransformState newState, bool stopExtrapolation = false)
         {
             var sentTime = newState.SentTime;
             var currentPosition = newState.InLocalSpace ? transform.localPosition : transform.position;
@@ -884,17 +884,17 @@ namespace Unity.Netcode.Components
             // Apply axial changes from the new state
             if (newState.HasPositionX)
             {
-                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
+                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime, stopExtrapolation);
             }
 
             if (newState.HasPositionY)
             {
-                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime, stopExtrapolation);
             }
 
             if (newState.HasPositionZ)
             {
-                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
+                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime, stopExtrapolation);
             }
 
             if (newState.HasScaleX)
@@ -934,7 +934,7 @@ namespace Unity.Netcode.Components
 
                 currentRotation.eulerAngles = currentEulerAngles;
 
-                m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
+                m_RotationInterpolator.AddMeasurement(currentRotation, sentTime, stopExtrapolation);
             }
         }
 
@@ -951,8 +951,8 @@ namespace Unity.Netcode.Components
                 return;
             }
             // Offset by 1 tick duration
-            m_LastReceivedState.SentTime += m_TickFrequency;
-            AddInterpolatedState(m_LastReceivedState);
+            m_LastReceivedState.SentTime += m_TickFrequency * 0.5f;
+            AddInterpolatedState(m_LastReceivedState, true);
 
             // Now reset our last received state so we won't apply this state again
             m_LastReceivedState.ClearBitSetForNextTick();
@@ -976,21 +976,21 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                // This is "just in case" we receive a new state before the end
-                // of any currently applied and potentially extrapolating state.
-                // Attempts to stop extrapolating any previously applied state.
-                TryToStopExtrapolatingLastState();
+                //// This is "just in case" we receive a new state before the end
+                //// of any currently applied and potentially extrapolating state.
+                //// Attempts to stop extrapolating any previously applied state.
+                //TryToStopExtrapolatingLastState();
 
                 // Add measurements for the new state's deltas
                 AddInterpolatedState(newState);
 
-                // Set the last received state to the new state (will be used to stop extrapolating the new state on the next local tick)
-                m_LastReceivedState = newState;
+                //// Set the last received state to the new state (will be used to stop extrapolating the new state on the next local tick)
+                //m_LastReceivedState = newState;
 
-                // Set the current local tick and wait until the next tick before we end
-                // this state's potential of extrapolating past the target value beyond
-                // the state's relative tick duration
-                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
+                //// Set the current local tick and wait until the next tick before we end
+                //// this state's potential of extrapolating past the target value beyond
+                //// the state's relative tick duration
+                //m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
             }
         }
 
@@ -1287,7 +1287,7 @@ namespace Unity.Netcode.Components
                 ApplyAuthoritativeState();
 
                 // Attempts to stop extrapolating any previously applied state.
-                TryToStopExtrapolatingLastState();
+                //TryToStopExtrapolatingLastState();
             }
         }
 

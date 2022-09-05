@@ -229,7 +229,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="newMeasurement">The new measurement value to use</param>
         /// <param name="sentTime">The time to record for measurement</param>
-        public void AddMeasurement(T newMeasurement, double sentTime)
+        public void AddMeasurement(T newMeasurement, double sentTime, bool stopExtrapolation = false)
         {
             m_NbItemsReceivedThisFrame++;
 
@@ -253,6 +253,56 @@ namespace Unity.Netcode
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
                 m_Buffer.Add(m_LastBufferedItemReceived);
             }
+            //else
+            //{
+            //    if (m_Buffer.Count > 0)
+            //    {
+            //        var currentIndex = m_Buffer.Count - 1;
+            //        var previousEntry = m_Buffer[currentIndex];
+            //        var currentEntry = m_Buffer[currentIndex];
+
+            //        while (currentIndex >= 0)
+            //        {
+            //            currentEntry = m_Buffer[currentIndex];
+            //            if (currentEntry.TimeSent >= sentTime)
+            //            {
+            //                currentIndex--;
+            //                previousEntry = currentEntry;
+            //                continue;
+            //            }
+            //            else
+            //            {
+            //                // Split the difference
+            //                var insertBufferItem = new BufferedItem(newMeasurement, (currentEntry.TimeSent + previousEntry.TimeSent) * 0.50f);
+            //                m_Buffer.Insert(currentIndex, insertBufferItem);
+            //                Inserted(insertBufferItem, currentIndex, stopExtrapolation);
+            //                return;
+            //            }
+            //        }
+            //        DroppedMeasurement(newMeasurement, sentTime, stopExtrapolation);
+            //    }
+            //    else
+            //    {
+            //        var insertBufferItem = new BufferedItem(newMeasurement, m_EndTimeConsumed);
+            //        m_Buffer.Add(insertBufferItem);
+            //        Added(insertBufferItem, sentTime, stopExtrapolation);
+            //    }
+            //}
+        }
+
+        private void Added(BufferedItem bufferedItem, bool stopExtrapolation = false)
+        {
+            Debug.LogWarning($"[Add][{m_Buffer.Count}][StopExtrap:{stopExtrapolation}][EndTime:{m_EndTimeConsumed}][sentTime:{bufferedItem.TimeSent}] Type: {typeof(T).Name} | Value {bufferedItem.Item}");
+        }
+
+        private void Inserted(BufferedItem bufferedItem,int index, bool stopExtrapolation = false)
+        {
+            Debug.LogWarning($"[Insert][{index}][{m_Buffer.Count}][StopExtrap:{stopExtrapolation}][EndTime:{m_EndTimeConsumed}][sentTime:{bufferedItem.TimeSent}] Type: {typeof(T).Name} | Value {bufferedItem.Item}");
+        }
+
+        private void DroppedMeasurement(T measurement, double sentTime, bool stopExtrapolation = false)
+        {
+            Debug.LogWarning($"[Drop][StopExtrap:{stopExtrapolation}][EndTime:{m_EndTimeConsumed}][sentTime:{sentTime}] Type: {typeof(T).Name} | Value {measurement}");
         }
 
         /// <summary>
@@ -292,7 +342,9 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
-            return Mathf.LerpUnclamped(start, end, time);
+            // Disabling extrapolation
+            //return Mathf.LerpUnclamped(start, end, time);
+            return Mathf.Lerp(start, end, time);
         }
 
         /// <inheritdoc />
@@ -311,13 +363,15 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
-            return Quaternion.SlerpUnclamped(start, end, time);
+            // Disabling extrapolation
+            //return Quaternion.SlerpUnclamped(start, end, time);
+            return Quaternion.Slerp(start, end, time);
         }
 
         /// <inheritdoc />
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
-            return Quaternion.SlerpUnclamped(start, end, time);
+            return Quaternion.Slerp(start, end, time);
         }
     }
 }
