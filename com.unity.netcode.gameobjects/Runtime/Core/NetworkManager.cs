@@ -2040,7 +2040,8 @@ namespace Unity.Netcode
                         parentNetworkId: null,
                         networkSceneHandle: null,
                         response.Position,
-                        response.Rotation);
+                        response.Rotation,
+                        null); // TODO: Add scale to ConnectionApprovalResponse when we do a minor version update
                     SpawnManager.SpawnNetworkObjectLocally(
                         networkObject,
                         SpawnManager.GetNetworkObjectId(),

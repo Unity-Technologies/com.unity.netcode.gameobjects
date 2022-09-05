@@ -316,7 +316,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Should only run on the client
         /// </summary>
-        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, int? networkSceneHandle, Vector3? position, Quaternion? rotation, bool isReparented = false)
+        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, int? networkSceneHandle, Vector3? position, Quaternion? rotation, Vector3? scale, bool isReparented = false)
         {
             NetworkObject parentNetworkObject = null;
 
@@ -341,6 +341,7 @@ namespace Unity.Netcode
                 if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
                 {
                     // Let the handler spawn the NetworkObject
+                    // TODO: Add scale to the Prefab Handler
                     var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
                     networkObject.NetworkManagerOwner = NetworkManager;
@@ -389,6 +390,10 @@ namespace Unity.Netcode
 
                     // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
                     var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    if (scale != null && scale.HasValue)
+                    {
+                        networkObject.transform.localScale = scale.Value;
+                    }
 
                     networkObject.NetworkManagerOwner = NetworkManager;
 

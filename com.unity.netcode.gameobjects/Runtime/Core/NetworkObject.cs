@@ -983,6 +983,7 @@ namespace Unity.Netcode
             {
                 public Vector3 Position;
                 public Quaternion Rotation;
+                public Vector3 Scale;
             }
 
             public TransformData Transform;
@@ -1128,7 +1129,8 @@ namespace Unity.Netcode
                 obj.Transform = new SceneObject.TransformData
                 {
                     Position = transform.position,
-                    Rotation = transform.rotation
+                    Rotation = transform.rotation,
+                    Scale = transform.localScale
                 };
             }
 
@@ -1159,6 +1161,7 @@ namespace Unity.Netcode
         {
             Vector3? position = null;
             Quaternion? rotation = null;
+            Vector3? scale = null;
             ulong? parentNetworkId = null;
             int? networkSceneHandle = null;
 
@@ -1166,6 +1169,7 @@ namespace Unity.Netcode
             {
                 position = sceneObject.Transform.Position;
                 rotation = sceneObject.Transform.Rotation;
+                scale = sceneObject.Transform.Scale;
             }
 
             if (sceneObject.Header.HasParent)
@@ -1181,7 +1185,7 @@ namespace Unity.Netcode
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
                 sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
+                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, scale, sceneObject.Header.IsReparented);
 
             networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
 
