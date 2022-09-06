@@ -453,9 +453,6 @@ namespace Unity.Netcode.Components
         // Used by integration test
         private NetworkTransformState m_LastSentState;
 
-        // Used by the non-authoritative side to handle ending extrapolation
-        private NetworkTransformState m_LastReceivedState;
-
         internal NetworkTransformState GetLastSentState()
         {
             return m_LastSentState;
@@ -556,6 +553,8 @@ namespace Unity.Netcode.Components
 
             m_RotationInterpolator.ResetTo(transform.rotation, serverTime);
 
+            // TODO: (Create Jira Ticket) Synchronize local scale during NetworkObject synchronization
+            // (We will probably want to byte pack TransformData to offset the 3 float addition)
             m_ScaleXInterpolator.ResetTo(transform.localScale.x, serverTime);
             m_ScaleYInterpolator.ResetTo(transform.localScale.y, serverTime);
             m_ScaleZInterpolator.ResetTo(transform.localScale.z, serverTime);
@@ -939,26 +938,6 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Stops extrapolating the <see cref="m_LastReceivedState"/>.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="OnNetworkStateChanged"/>
-        /// </remarks>
-        private void TryToStopExtrapolatingLastState()
-        {
-            if (!m_LastReceivedState.IsDirty || m_LastReceivedState.EndExtrapolationTick >= NetworkManager.LocalTime.Tick)
-            {
-                return;
-            }
-            // Offset by 1 tick duration
-            m_LastReceivedState.SentTime += m_TickFrequency;
-            AddInterpolatedState(m_LastReceivedState);
-
-            // Now reset our last received state so we won't apply this state again
-            m_LastReceivedState.ClearBitSetForNextTick();
-        }
-
-        /// <summary>
         /// Only non-authoritative instances should invoke this method
         /// </summary>
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
@@ -976,21 +955,8 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
-                // This is "just in case" we receive a new state before the end
-                // of any currently applied and potentially extrapolating state.
-                // Attempts to stop extrapolating any previously applied state.
-                TryToStopExtrapolatingLastState();
-
                 // Add measurements for the new state's deltas
                 AddInterpolatedState(newState);
-
-                // Set the last received state to the new state (will be used to stop extrapolating the new state on the next local tick)
-                m_LastReceivedState = newState;
-
-                // Set the current local tick and wait until the next tick before we end
-                // this state's potential of extrapolating past the target value beyond
-                // the state's relative tick duration
-                m_LastReceivedState.EndExtrapolationTick = NetworkManager.LocalTime.Tick;
             }
         }
 
@@ -1114,6 +1080,11 @@ namespace Unity.Netcode.Components
 
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
+            }
+
+            if (!IsServer)
+            {
+                Interpolate = false;
             }
         }
 
@@ -1261,6 +1232,10 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+            if (!IsServer)
+            {
+                Interpolate = false;
+            }
 
             // If we are authority, update the authoritative state
             if (CanCommitToTransform)
@@ -1285,9 +1260,6 @@ namespace Unity.Netcode.Components
 
                 // Apply the current authoritative state
                 ApplyAuthoritativeState();
-
-                // Attempts to stop extrapolating any previously applied state.
-                TryToStopExtrapolatingLastState();
             }
         }
 
