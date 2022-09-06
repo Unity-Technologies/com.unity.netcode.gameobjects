@@ -1081,11 +1081,6 @@ namespace Unity.Netcode.Components
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
             }
-
-            if (!IsServer)
-            {
-                Interpolate = false;
-            }
         }
 
         /// <summary>
@@ -1231,10 +1226,6 @@ namespace Unity.Netcode.Components
             if (!IsSpawned)
             {
                 return;
-            }
-            if (!IsServer)
-            {
-                Interpolate = false;
             }
 
             // If we are authority, update the authoritative state
