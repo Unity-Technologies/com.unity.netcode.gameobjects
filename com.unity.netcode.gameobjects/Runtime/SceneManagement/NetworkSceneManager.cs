@@ -1450,12 +1450,6 @@ namespace Unity.Netcode
                         m_NetworkManager.SpawnManager.SpawnNetworkObjectLocally(keyValuePairBySceneHandle.Value,
                             m_NetworkManager.SpawnManager.GetNetworkObjectId(), true, false, NetworkManager.ServerClientId, true);
                     }
-
-                    // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
-                    // NetworkList, we need to mark the object as free of updates.
-                    // This should happen for all objects on the machine triggering the spawn.
-                    Debug.Log($"Calling PostNetworkVariableWrite on {keyValuePairBySceneHandle.Value.name}");
-                    keyValuePairBySceneHandle.Value.PostNetworkVariableWrite();
                 }
             }
 
