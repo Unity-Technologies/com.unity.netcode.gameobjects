@@ -30,21 +30,27 @@ namespace Unity.Netcode.Editor
 
     }
 
+#if COM_UNITY_MODULES_ANIMATION
     [CustomEditor(typeof(NetworkAnimator), true)]
     public class NetworkAnimatorEditor : HiddenScriptEditor
     {
 
     }
+#endif
 
+#if COM_UNITY_MODULES_PHYSICS
     [CustomEditor(typeof(NetworkRigidbody), true)]
     public class NetworkRigidbodyEditor : HiddenScriptEditor
     {
 
     }
+#endif
 
+#if COM_UNITY_MODULES_PHYSICS2D
     [CustomEditor(typeof(NetworkRigidbody2D), true)]
     public class NetworkRigidbody2DEditor : HiddenScriptEditor
     {
 
     }
+#endif
 }
