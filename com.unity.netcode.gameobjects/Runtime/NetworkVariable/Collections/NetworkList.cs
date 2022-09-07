@@ -53,7 +53,6 @@ namespace Unity.Netcode
             {
                 m_DirtyEvents.Clear();
             }
-            Debug.Log("NetworkList got cleared");
         }
 
         /// <inheritdoc />
