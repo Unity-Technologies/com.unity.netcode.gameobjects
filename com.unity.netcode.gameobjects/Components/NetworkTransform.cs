@@ -547,11 +547,12 @@ namespace Unity.Netcode.Components
             // NOTE ABOUT THIS CHANGE:
             // !!! This will exclude any scale changes because we currently do not spawn network objects with scale !!!
             // Regarding Scale: It will be the same scale as the default scale for the object being spawned.
-            m_PositionXInterpolator.ResetTo(transform.position.x, serverTime);
-            m_PositionYInterpolator.ResetTo(transform.position.y, serverTime);
-            m_PositionZInterpolator.ResetTo(transform.position.z, serverTime);
-
-            m_RotationInterpolator.ResetTo(transform.rotation, serverTime);
+            var position = InLocalSpace ? transform.localPosition : transform.position;
+            m_PositionXInterpolator.ResetTo(position.x, serverTime);
+            m_PositionYInterpolator.ResetTo(position.y, serverTime);
+            m_PositionZInterpolator.ResetTo(position.z, serverTime);
+            var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            m_RotationInterpolator.ResetTo(rotation, serverTime);
 
             // TODO: (Create Jira Ticket) Synchronize local scale during NetworkObject synchronization
             // (We will probably want to byte pack TransformData to offset the 3 float addition)
