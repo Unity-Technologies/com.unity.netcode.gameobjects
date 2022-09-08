@@ -346,6 +346,10 @@ namespace Unity.Netcode.Transports.UTP
             public float PacketLoss;
         };
 
+        internal static event Action<UnityTransport> TransportInitialized;
+        internal static event Action<UnityTransport> TransportDisposed;
+        internal NetworkDriver NetworkDriver => m_Driver;
+
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
         private State m_State = State.Disconnected;
@@ -389,6 +393,8 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
+
+            TransportInitialized?.Invoke(this);
         }
 
         private void DisposeInternals()
@@ -406,6 +412,8 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_SendQueue.Clear();
+
+            TransportDisposed?.Invoke(this);
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -1324,12 +1332,15 @@ namespace Unity.Netcode.Transports.UTP
                 maxPacketSize: NetworkParameterConstants.MTU,
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
-                packetDropPercentage: DebugSimulator.PacketDropRate,
-                randomSeed: DebugSimulatorRandomSeed
+                packetDropPercentage: DebugSimulator.PacketDropRate
 #if UTP_TRANSPORT_2_0_ABOVE
                 , mode: ApplyMode.AllPackets
 #endif
             );
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            m_NetworkSettings.WithNetworkSimulatorParameters();
+#endif
         }
 
         /// <summary>
@@ -1351,7 +1362,7 @@ namespace Unity.Netcode.Transports.UTP
 #endif
 #endif
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || MULTIPLAYER_TOOLS_1_1_0
             ConfigureSimulator();
 #endif
 
@@ -1373,7 +1384,7 @@ namespace Unity.Netcode.Transports.UTP
 #endif
 #endif
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || MULTIPLAYER_TOOLS_1_1_0
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
