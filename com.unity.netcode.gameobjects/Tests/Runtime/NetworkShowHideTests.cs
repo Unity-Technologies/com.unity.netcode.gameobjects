@@ -37,6 +37,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 ClientTargetedNetworkObjects.Add(this);
             }
+
+            if (IsServer)
+            {
+                MyListSetOnSpawn.Add(45);
+            }
+            else
+            {
+                Debug.Assert(MyListSetOnSpawn.Count == 1);
+                Debug.Assert(MyListSetOnSpawn[0] == 45);
+            }
+
             base.OnNetworkSpawn();
         }
 
@@ -50,11 +61,14 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public NetworkVariable<int> MyNetworkVariable;
+        public NetworkList<int> MyListSetOnSpawn;
 
         private void Awake()
         {
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;
+
+            MyListSetOnSpawn = new NetworkList<int>();
         }
 
         public void Changed(int before, int after)

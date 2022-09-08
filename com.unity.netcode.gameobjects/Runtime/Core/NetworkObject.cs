@@ -1094,6 +1094,14 @@ namespace Unity.Netcode
             }
         }
 
+        internal void PostNetworkVariableWrite()
+        {
+            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
+            {
+                ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+            }
+        }
+
         internal SceneObject GetMessageSceneObject(ulong targetClientId)
         {
             var obj = new SceneObject

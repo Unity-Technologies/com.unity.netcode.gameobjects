@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -11,7 +12,6 @@ namespace Unity.Netcode
     public class NetworkList<T> : NetworkVariableBase where T : unmanaged, IEquatable<T>
     {
         private NativeList<T> m_List = new NativeList<T>(64, Allocator.Persistent);
-        private NativeList<T> m_ListAtLastReset = new NativeList<T>(64, Allocator.Persistent);
         private NativeList<NetworkListEvent<T>> m_DirtyEvents = new NativeList<NetworkListEvent<T>>(64, Allocator.Persistent);
 
         /// <summary>
@@ -52,7 +52,6 @@ namespace Unity.Netcode
             if (m_DirtyEvents.Length > 0)
             {
                 m_DirtyEvents.Clear();
-                m_ListAtLastReset.CopyFrom(m_List);
             }
         }
 
@@ -65,6 +64,13 @@ namespace Unity.Netcode
 
         internal void MarkNetworkObjectDirty()
         {
+            if (m_NetworkBehaviour == null)
+            {
+                Debug.LogWarning($"NetworkList is written to, but doesn't know its NetworkBehaviour yet. " +
+                                 "Are you modifying a NetworkList before the NetworkObject is spawned?");
+                return;
+            }
+
             m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
         }
 
@@ -127,26 +133,10 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            // The listAtLastReset mechanism was put in place to deal with duplicate adds
-            // upon initial spawn. However, it causes issues with in-scene placed objects
-            // due to difference in spawn order. In order to address this, we pick the right
-            // list based on the type of object.
-            bool isSceneObject = m_NetworkBehaviour.NetworkObject.IsSceneObject != false;
-            if (isSceneObject)
+            writer.WriteValueSafe((ushort)m_List.Length);
+            for (int i = 0; i < m_List.Length; i++)
             {
-                writer.WriteValueSafe((ushort)m_ListAtLastReset.Length);
-                for (int i = 0; i < m_ListAtLastReset.Length; i++)
-                {
-                    NetworkVariableSerialization<T>.Write(writer, ref m_ListAtLastReset.ElementAt(i));
-                }
-            }
-            else
-            {
-                writer.WriteValueSafe((ushort)m_List.Length);
-                for (int i = 0; i < m_List.Length; i++)
-                {
-                    NetworkVariableSerialization<T>.Write(writer, ref m_List.ElementAt(i));
-                }
+                NetworkVariableSerialization<T>.Write(writer, ref m_List.ElementAt(i));
             }
         }
 
@@ -520,7 +510,6 @@ namespace Unity.Netcode
         public override void Dispose()
         {
             m_List.Dispose();
-            m_ListAtLastReset.Dispose();
             m_DirtyEvents.Dispose();
         }
     }
