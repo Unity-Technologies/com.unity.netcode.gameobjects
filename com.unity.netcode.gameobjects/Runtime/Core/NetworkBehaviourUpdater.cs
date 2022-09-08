@@ -79,10 +79,7 @@ namespace Unity.Netcode
                 // Now, reset all the no-longer-dirty variables
                 foreach (var dirtyobj in m_DirtyNetworkObjects)
                 {
-                    for (int k = 0; k < dirtyobj.ChildNetworkBehaviours.Count; k++)
-                    {
-                        dirtyobj.ChildNetworkBehaviours[k].PostNetworkVariableWrite();
-                    }
+                    dirtyobj.PostNetworkVariableWrite();
                 }
                 m_DirtyNetworkObjects.Clear();
             }

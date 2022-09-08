@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode.Components;
 using NUnit.Framework;
 using UnityEngine;
@@ -7,6 +8,9 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    /// <summary>
+    /// Helper component for all NetworkTransformTests
+    /// </summary>
     public class NetworkTransformTestComponent : NetworkTransform
     {
         public bool ServerAuthority;
@@ -37,15 +41,52 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    [TestFixture(HostOrServer.Host, Authority.Server)]
-    [TestFixture(HostOrServer.Host, Authority.Owner)]
-    [TestFixture(HostOrServer.Server, Authority.Server)]
-    [TestFixture(HostOrServer.Server, Authority.Owner)]
+    /// <summary>
+    /// Helper component for NetworkTransform parenting tests
+    /// </summary>
+    public class ChildObjectComponent : NetworkBehaviour
+    {
+        public readonly static List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
+        public static ChildObjectComponent ServerInstance { get; internal set; }
+        public readonly static Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
+
+        public static void Reset()
+        {
+            ServerInstance = null;
+            ClientInstances.Clear();
+            Instances.Clear();
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer)
+            {
+                ServerInstance = this;
+            }
+            else
+            {
+                ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+            }
+            Instances.Add(this);
+            base.OnNetworkSpawn();
+        }
+    }
+
+    /// <summary>
+    /// Integration tests for NetworkTransform that will test both
+    /// server and host operating modes and will test both authoritative
+    /// models for each operating mode.
+    /// </summary>
+    [TestFixture(HostOrServer.Host, Authority.ServerAuthority)]
+    [TestFixture(HostOrServer.Host, Authority.OwnerAuthority)]
+    [TestFixture(HostOrServer.Server, Authority.ServerAuthority)]
+    [TestFixture(HostOrServer.Server, Authority.OwnerAuthority)]
 
     public class NetworkTransformTests : NetcodeIntegrationTest
     {
         private NetworkObject m_AuthoritativePlayer;
         private NetworkObject m_NonAuthoritativePlayer;
+        private NetworkObject m_ChildObjectToBeParented;
 
         private NetworkTransformTestComponent m_AuthoritativeTransform;
         private NetworkTransformTestComponent m_NonAuthoritativeTransform;
@@ -55,8 +96,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public enum Authority
         {
-            Server,
-            Owner
+            ServerAuthority,
+            OwnerAuthority
         }
 
         public enum Interpolation
@@ -78,14 +119,32 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 1;
 
+        protected override IEnumerator OnSetup()
+        {
+            ChildObjectComponent.Reset();
+            return base.OnSetup();
+        }
+
         protected override void OnCreatePlayerPrefab()
         {
             var networkTransformTestComponent = m_PlayerPrefab.AddComponent<NetworkTransformTestComponent>();
-            networkTransformTestComponent.ServerAuthority = m_Authority == Authority.Server;
+            networkTransformTestComponent.ServerAuthority = m_Authority == Authority.ServerAuthority;
         }
 
         protected override void OnServerAndClientsCreated()
         {
+            var childObject = CreateNetworkObjectPrefab("ChildObject");
+            childObject.AddComponent<ChildObjectComponent>();
+            var childNetworkTransform = childObject.AddComponent<NetworkTransform>();
+            childNetworkTransform.InLocalSpace = true;
+            m_ChildObjectToBeParented = childObject.GetComponent<NetworkObject>();
+
+            // Now apply local transform values
+            m_ChildObjectToBeParented.transform.position = m_ChildObjectLocalPosition;
+            var childRotation = m_ChildObjectToBeParented.transform.rotation;
+            childRotation.eulerAngles = m_ChildObjectLocalRotation;
+            m_ChildObjectToBeParented.transform.rotation = childRotation;
+            m_ChildObjectToBeParented.transform.localScale = m_ChildObjectLocalScale;
             if (m_EnableVerboseDebug)
             {
                 m_ServerNetworkManager.LogLevel = LogLevel.Developer;
@@ -102,8 +161,8 @@ namespace Unity.Netcode.RuntimeTests
             var serverSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
             var clientSideClientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
 
-            m_AuthoritativePlayer = m_Authority == Authority.Server ? serverSideClientPlayer : clientSideClientPlayer;
-            m_NonAuthoritativePlayer = m_Authority == Authority.Server ? clientSideClientPlayer : serverSideClientPlayer;
+            m_AuthoritativePlayer = m_Authority == Authority.ServerAuthority ? serverSideClientPlayer : clientSideClientPlayer;
+            m_NonAuthoritativePlayer = m_Authority == Authority.ServerAuthority ? clientSideClientPlayer : serverSideClientPlayer;
 
             // Get the NetworkTransformTestComponent to make sure the client side is ready before starting test
             m_AuthoritativeTransform = m_AuthoritativePlayer.GetComponent<NetworkTransformTestComponent>();
@@ -118,7 +177,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
             Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
 
-
             yield return base.OnServerAndClientsConnected();
         }
 
@@ -132,6 +190,305 @@ namespace Unity.Netcode.RuntimeTests
         {
             Update,
             CommitToTransform
+        }
+
+        /// <summary>
+        /// Returns true when the server-host and all clients have
+        /// instantiated the child object to be used in <see cref="NetworkTransformParentingLocalSpaceOffsetTests"/>
+        /// </summary>
+        /// <returns></returns>
+        private bool AllChildObjectInstancesAreSpawned()
+        {
+            if (ChildObjectComponent.ServerInstance == null)
+            {
+                return false;
+            }
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (!ChildObjectComponent.ClientInstances.ContainsKey(clientNetworkManager.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool AllChildObjectInstancesHaveChild()
+        {
+            foreach (var instance in ChildObjectComponent.ClientInstances.Values)
+            {
+                if (instance.transform.parent == null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // To test that local position, rotation, and scale remain the same when parented.
+        private Vector3 m_ChildObjectLocalPosition = new Vector3(5.0f, 0.0f, -5.0f);
+        private Vector3 m_ChildObjectLocalRotation = new Vector3(-35.0f, 90.0f, 270.0f);
+        private Vector3 m_ChildObjectLocalScale = new Vector3(0.1f, 0.5f, 0.4f);
+
+        /// <summary>
+        /// A wait condition specific method that assures the local space coordinates
+        /// are not impacted by NetworkTransform when parented.
+        /// </summary>
+        private bool AllInstancesKeptLocalTransformValues()
+        {
+            foreach (var childInstance in ChildObjectComponent.Instances)
+            {
+                var childLocalPosition = childInstance.transform.localPosition;
+                var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
+                var childLocalScale = childInstance.transform.localScale;
+
+                if (!Aproximately(childLocalPosition, m_ChildObjectLocalPosition))
+                {
+                    return false;
+                }
+                if (!AproximatelyEuler(childLocalRotation, m_ChildObjectLocalRotation))
+                {
+                    return false;
+                }
+                if (!Aproximately(childLocalScale, m_ChildObjectLocalScale))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Handles validating the local space values match the original local space values.
+        /// If not, it generates a message containing the axial values that did not match
+        /// the target/start local space values.
+        /// </summary>
+        private IEnumerator WaitForAllChildrenLocalTransformValuesToMatch()
+        {
+            yield return WaitForConditionOrTimeOut(AllInstancesKeptLocalTransformValues);
+            var infoMessage = string.Empty;
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                foreach (var childInstance in ChildObjectComponent.Instances)
+                {
+                    var childLocalPosition = childInstance.transform.localPosition;
+                    var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
+                    var childLocalScale = childInstance.transform.localScale;
+
+                    if (!Aproximately(childLocalPosition, m_ChildObjectLocalPosition))
+                    {
+                        infoMessage += $"[{childInstance.name}] Child's Local Position ({childLocalPosition}) | Original Local Position ({m_ChildObjectLocalPosition})\n";
+                    }
+                    if (!AproximatelyEuler(childLocalRotation, m_ChildObjectLocalRotation))
+                    {
+                        infoMessage += $"[{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Original Local Rotation ({m_ChildObjectLocalRotation})\n";
+                    }
+                    if (!Aproximately(childLocalScale, m_ChildObjectLocalScale))
+                    {
+                        infoMessage += $"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Original Local Rotation ({m_ChildObjectLocalScale})\n";
+                    }
+                }
+                AssertOnTimeout($"Timed out waiting for all children to have the correct local space values:\n {infoMessage}");
+            }
+            yield return null;
+        }
+
+        /// <summary>
+        /// Validates that local space transform values remain the same when a NetworkTransform is
+        /// parented under another NetworkTransform
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation, [Values] OverrideState overideState)
+        {
+            var overrideUpdate = overideState == OverrideState.CommitToTransform;
+            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            var authoritativeChildObject = SpawnObject(m_ChildObjectToBeParented.gameObject, m_AuthoritativeTransform.NetworkManager);
+
+            // Assure all of the child object instances are spawned
+            yield return WaitForConditionOrTimeOut(AllChildObjectInstancesAreSpawned);
+            AssertOnTimeout("Timed out waiting for all child instances to be spawned!");
+            // Just a sanity check as it should have timed out before this check
+            Assert.IsNotNull(ChildObjectComponent.ServerInstance, $"The server-side {nameof(ChildObjectComponent)} instance is null!");
+
+            // This determines which parent on the server side should be the parent
+            if (m_AuthoritativeTransform.IsServerAuthoritative())
+            {
+                Assert.True(ChildObjectComponent.ServerInstance.NetworkObject.TrySetParent(m_AuthoritativeTransform.transform, false), "[Authoritative] Failed to parent the child object!");
+            }
+            else
+            {
+                Assert.True(ChildObjectComponent.ServerInstance.NetworkObject.TrySetParent(m_NonAuthoritativeTransform.transform, false), "[Non-Authoritative] Failed to parent the child object!");
+            }
+
+            // This waits for all child instances to be parented
+            yield return WaitForConditionOrTimeOut(AllChildObjectInstancesHaveChild);
+            AssertOnTimeout("Timed out waiting for all instances to have parented a child!");
+
+            // This validates each child instance has preserved their local space values
+            yield return WaitForAllChildrenLocalTransformValuesToMatch();
+        }
+
+        /// <summary>
+        /// Validates that moving, rotating, and scaling the authority side with a single
+        /// tick will properly synchronize the non-authoritative side with the same values.
+        /// </summary>
+        private IEnumerator MoveRotateAndScaleAuthority(Vector3 position, Vector3 rotation, Vector3 scale)
+        {
+            m_AuthoritativeTransform.transform.position = position;
+            yield return null;
+            var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
+            authoritativeRotation.eulerAngles = rotation;
+            m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
+            yield return null;
+            m_AuthoritativeTransform.transform.localScale = scale;
+        }
+
+        /// <summary>
+        /// Validates we don't extrapolate beyond the target value
+        /// </summary>
+        /// <remarks>
+        /// This will first wait for any authoritative changes to have been synchronized
+        /// with the non-authoritative side.  It will then wait for the specified number
+        /// of tick periods to assure the values don't change
+        /// </remarks>
+        private IEnumerator WaitForPositionRotationAndScaleToMatch(int ticksToWait)
+        {
+            // Validate we interpolate to the appropriate position and rotation
+            yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
+            AssertOnTimeout("Timed out waiting for non-authority to match authority's position or rotation");
+
+            // Wait for the specified number of ticks
+            for (int i = 0; i < ticksToWait; i++)
+            {
+                yield return s_DefaultWaitForTick;
+            }
+
+            // Verify both sides match (i.e. no drifting or over-extrapolating)
+            Assert.IsTrue(PositionsMatch(), $"Non-authority position did not match after waiting for {ticksToWait} ticks! " +
+                $"Authority ({m_AuthoritativeTransform.transform.position}) Non-Authority ({m_NonAuthoritativeTransform.transform.position})");
+            Assert.IsTrue(RotationsMatch(), $"Non-authority rotation did not match after waiting for {ticksToWait} ticks! " +
+                $"Authority ({m_AuthoritativeTransform.transform.rotation.eulerAngles}) Non-Authority ({m_NonAuthoritativeTransform.transform.rotation.eulerAngles})");
+        }
+
+        /// <summary>
+        /// Waits until the next tick
+        /// </summary>
+        private IEnumerator WaitForNextTick()
+        {
+            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
+            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
+            {
+                yield return null;
+            }
+        }
+
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
+        private const int k_PositionRotationScaleIterations = 8;
+
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            networkManager.NetworkConfig.NetworkPrefabs = m_ServerNetworkManager.NetworkConfig.NetworkPrefabs;
+            base.OnNewClientCreated(networkManager);
+        }
+
+        /// <summary>
+        /// This validates that multiple changes can occur within the same tick or over
+        /// several ticks while still keeping non-authoritative instances synchronized.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState)
+        {
+            var overrideUpdate = overideState == OverrideState.CommitToTransform;
+            m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
+
+            var positionStart = new Vector3(1.0f, 0.5f, 2.0f);
+            var rotationStart = new Vector3(0.0f, 45.0f, 0.0f);
+            var scaleStart = new Vector3(1.0f, 1.0f, 1.0f);
+            var position = positionStart;
+            var rotation = rotationStart;
+            var scale = scaleStart;
+
+            // Move and rotate within the same tick, validate the non-authoritative instance updates
+            // to each set of changes.  Repeat several times.
+            for (int i = 1; i < k_PositionRotationScaleIterations + 1; i++)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                scale = scaleStart * i;
+                // Wait for tick to change so we cam start close to the beginning the next tick in order
+                // to apply both deltas within the same tick period.
+                yield return WaitForNextTick();
+
+                // Apply deltas
+                MoveRotateAndScaleAuthority(position, rotation, scale);
+
+                // Wait for deltas to synchronize on non-authoritative side
+                yield return WaitForPositionRotationAndScaleToMatch(4);
+            }
+
+            // Check scale for all player instances when a client late joins
+            // NOTE: This validates the use of the spawned object's transform values as opposed to the replicated state (which now is only the last deltas)
+            yield return CreateAndStartNewClient();
+            var newClientNetworkManager = m_ClientNetworkManagers[NumberOfClients];
+            foreach (var playerRelativeEntry in m_PlayerNetworkObjects)
+            {
+                foreach (var playerInstanceEntry in playerRelativeEntry.Value)
+                {
+                    var playerInstance = playerInstanceEntry.Value;
+                    if (newClientNetworkManager.LocalClientId == playerInstance.OwnerClientId)
+                    {
+                        Assert.IsTrue(Aproximately(m_PlayerPrefab.transform.localScale, playerInstance.transform.localScale), $"{playerInstance.name}'s cloned instance's scale does not match original scale!\n" +
+                            $"[ClientId-{playerRelativeEntry.Key} Relative] Player-{playerInstance.OwnerClientId}'s LocalScale ({playerInstance.transform.localScale}) vs Target Scale ({m_PlayerPrefab.transform.localScale})");
+                    }
+                }
+            }
+
+            // Repeat this in the opposite direction
+            for (int i = -1; i > -1 * (k_PositionRotationScaleIterations + 1); i--)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                scale = scaleStart * i;
+                // Wait for tick to change so we cam start close to the beginning the next tick in order
+                // to apply both deltas within the same tick period.
+                yield return WaitForNextTick();
+
+                MoveRotateAndScaleAuthority(position, rotation, scale);
+                yield return WaitForPositionRotationAndScaleToMatch(4);
+            }
+
+            // Wait for tick to change so we cam start close to the beginning the next tick in order
+            // to apply as many deltas within the same tick period as we can (if not all)
+            yield return WaitForNextTick();
+
+            // Move and rotate within the same tick several times, then validate the non-authoritative
+            // instance updates to the authoritative instance's final position and rotation.
+            for (int i = 1; i < k_PositionRotationScaleIterations + 1; i++)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                scale = scaleStart * i;
+
+                MoveRotateAndScaleAuthority(position, rotation, scale);
+            }
+
+            yield return WaitForPositionRotationAndScaleToMatch(1);
+
+            // Wait for tick to change so we cam start close to the beginning the next tick in order
+            // to apply as many deltas within the same tick period as we can (if not all)
+            yield return WaitForNextTick();
+
+            // Repeat this in the opposite direction and rotation
+            for (int i = -1; i > -1 * (k_PositionRotationScaleIterations + 1); i--)
+            {
+                position = positionStart * i;
+                rotation = rotationStart * i;
+                scale = scaleStart * i;
+                MoveRotateAndScaleAuthority(position, rotation, scale);
+            }
+            yield return WaitForPositionRotationAndScaleToMatch(1);
         }
 
         /// <summary>
@@ -419,6 +776,13 @@ namespace Unity.Netcode.RuntimeTests
                 Mathf.Abs(a.z - b.z) <= k_AproximateDeltaVariance;
         }
 
+        private bool AproximatelyEuler(Vector3 a, Vector3 b)
+        {
+            return Mathf.DeltaAngle(a.x, b.x) <= k_AproximateDeltaVariance &&
+                Mathf.DeltaAngle(a.y, b.y) <= k_AproximateDeltaVariance &&
+                Mathf.DeltaAngle(a.z, b.z) <= k_AproximateDeltaVariance;
+        }
+
         private const float k_AproximateDeltaVariance = 0.01f;
         private bool PositionsMatchesValue(Vector3 positionToMatch)
         {
@@ -502,6 +866,11 @@ namespace Unity.Netcode.RuntimeTests
         private bool PositionRotationScaleMatches(Vector3 position, Vector3 eulerRotation, Vector3 scale)
         {
             return PositionsMatchesValue(position) && RotationMatchesValue(eulerRotation) && ScaleMatchesValue(scale);
+        }
+
+        private bool PositionRotationScaleMatches()
+        {
+            return RotationsMatch() && PositionsMatch() && ScaleValuesMatch();
         }
 
         private bool RotationsMatch()
