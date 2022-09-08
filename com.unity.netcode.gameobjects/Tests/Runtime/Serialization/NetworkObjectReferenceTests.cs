@@ -111,6 +111,32 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
+        public void TestImplicitConversionToGameObject()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            networkObjectContext.Object.Spawn();
+
+            NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
+
+            GameObject go = outReference;
+            Assert.AreEqual(networkObjectContext.Object.gameObject, go);
+        }
+
+        [Test]
+        public void TestImplicitToGameObjectIsNullWhenNotFound()
+        {
+            using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
+            networkObjectContext.Object.Spawn();
+
+            NetworkObjectReference outReference = networkObjectContext.Object.gameObject;
+
+            networkObjectContext.Object.Despawn();
+            Object.DestroyImmediate(networkObjectContext.Object.gameObject);
+
+            GameObject go = outReference;
+            Assert.IsNull(go);
+        }
+        [Test]
         public void TestTryGet()
         {
             using var networkObjectContext = UnityObjectContext.CreateNetworkObject();
