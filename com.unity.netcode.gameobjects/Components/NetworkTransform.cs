@@ -1023,8 +1023,10 @@ namespace Unity.Netcode.Components
             // that can be invoked when ownership changes.
             if (CanCommitToTransform)
             {
+                var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
+                var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
                 // Teleport to current position
-                SetStateInternal(transform.position, transform.rotation, transform.localScale, true);
+                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
