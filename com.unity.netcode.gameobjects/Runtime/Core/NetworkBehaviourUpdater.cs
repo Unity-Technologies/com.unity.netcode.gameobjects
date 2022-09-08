@@ -26,6 +26,10 @@ namespace Unity.Netcode
 #endif
             try
             {
+                // NetworkObject references can become null, when hidden or despawned. Once NUll, there is no point
+                // trying to process them, even if they were previously marked as dirty.
+                m_DirtyNetworkObjects.RemoveWhere((sobj) => sobj == null);
+
                 if (networkManager.IsServer)
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
