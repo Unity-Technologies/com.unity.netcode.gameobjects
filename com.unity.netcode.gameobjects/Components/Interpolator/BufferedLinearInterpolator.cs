@@ -248,6 +248,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Part the of reason for disabling extrapolation is how we add and use measurements over time.
+            // TODO: Add detailed description of this area in Jira ticket
             if (sentTime > m_EndTimeConsumed || m_LifetimeConsumedCount == 0) // treat only if value is newer than the one being interpolated to right now
             {
                 m_LastBufferedItemReceived = new BufferedItem(newMeasurement, sentTime);
@@ -292,7 +294,9 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
-            return Mathf.LerpUnclamped(start, end, time);
+            // Disabling Extrapolation:
+            // TODO: Add Jira Ticket
+            return Mathf.Lerp(start, end, time);
         }
 
         /// <inheritdoc />
@@ -311,13 +315,17 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
-            return Quaternion.SlerpUnclamped(start, end, time);
+            // Disabling Extrapolation:
+            // TODO: Add Jira Ticket
+            return Quaternion.Slerp(start, end, time);
         }
 
         /// <inheritdoc />
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
-            return Quaternion.SlerpUnclamped(start, end, time);
+            // Disabling Extrapolation:
+            // TODO: Add Jira Ticket
+            return Quaternion.Slerp(start, end, time);
         }
     }
 }
