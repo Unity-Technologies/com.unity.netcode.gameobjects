@@ -4,25 +4,24 @@ using AOT;
 using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Networking.Transport;
-using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
 {
     [BurstCompile]
     internal unsafe struct NetworkMetricsPipelineStage : INetworkPipelineStage
     {
-        static TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate> ReceiveFunction = new TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate>(Receive);
-        static TransportFunctionPointer<NetworkPipelineStage.SendDelegate> SendFunction = new TransportFunctionPointer<NetworkPipelineStage.SendDelegate>(Send);
-        static TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate> InitializeConnectionFunction = new TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate>(InitializeConnection);
+        private static TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate> s_ReceiveFunction = new TransportFunctionPointer<NetworkPipelineStage.ReceiveDelegate>(Receive);
+        private static TransportFunctionPointer<NetworkPipelineStage.SendDelegate> s_SendFunction = new TransportFunctionPointer<NetworkPipelineStage.SendDelegate>(Send);
+        private static TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate> s_InitializeConnectionFunction = new TransportFunctionPointer<NetworkPipelineStage.InitializeConnectionDelegate>(InitializeConnection);
 
         public NetworkPipelineStage StaticInitialize(byte* staticInstanceBuffer,
             int staticInstanceBufferLength,
             NetworkSettings settings)
         {
             return new NetworkPipelineStage(
-                ReceiveFunction,
-                SendFunction,
-                InitializeConnectionFunction,
+                s_ReceiveFunction,
+                s_SendFunction,
+                s_InitializeConnectionFunction,
                 ReceiveCapacity: 0,
                 SendCapacity: 0,
                 HeaderCapacity: 0,

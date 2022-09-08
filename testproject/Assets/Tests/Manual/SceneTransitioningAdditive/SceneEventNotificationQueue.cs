@@ -66,7 +66,7 @@ namespace TestProject.ManualTests
             var sceneEventMsg = $"({NetworkManager.Singleton.LocalClientId})-[{sceneEvent.ClientId} | {sceneEvent.SceneEventType} | {sceneEvent.SceneName}";
             if (sceneEvent.SceneEventType == SceneEventType.Load || sceneEvent.SceneEventType == SceneEventType.LoadComplete)
             {
-                sceneEventMsg += $" | { sceneEvent.LoadSceneMode}";
+                sceneEventMsg += $" | {sceneEvent.LoadSceneMode}";
                 if (sceneEvent.Scene.IsValid() && sceneEvent.SceneEventType == SceneEventType.LoadComplete)
                 {
                     sceneEventMsg += $" | SHID: {sceneEvent.Scene.handle}";
