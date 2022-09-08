@@ -536,6 +536,25 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
         }
 
+        /// <summary>
+        /// Runs tests that network variables sync on client whatever the local value of <see cref="Time.timeScale"/>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkVariableSync_WithDifferentTimeScale([Values(true, false)] bool useHost, [Values(0.0f, 0.1f, 0.5f, 1.0f, 2.0f, 5.0f)] float timeScale)
+        {
+            Time.timeScale = timeScale;
+
+            yield return InitializeServerAndClients(useHost);
+
+            m_Player1OnServer.TheScalar.Value = k_TestVal1;
+
+            // Now wait for the client side version to be updated to k_TestVal1
+            yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.TheScalar.Value == k_TestVal1);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
+
+            Time.timeScale = 1.0f;
+        }
+
         [UnityTest]
         public IEnumerator FixedString32Test([Values(true, false)] bool useHost)
         {
