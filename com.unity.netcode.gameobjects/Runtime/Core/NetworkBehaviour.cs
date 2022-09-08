@@ -476,6 +476,15 @@ namespace Unity.Netcode
             {
                 Debug.LogException(e);
             }
+
+            InitializeVariables();
+            if (IsServer)
+            {
+                // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
+                // NetworkList, we need to mark the object as free of updates.
+                // This should happen for all objects on the machine triggering the spawn.
+                PostNetworkVariableWrite(true);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
@@ -622,12 +631,24 @@ namespace Unity.Netcode
             NetworkVariableIndexesToResetSet.Clear();
         }
 
-        internal void PostNetworkVariableWrite()
+        internal void PostNetworkVariableWrite(bool forced = false)
         {
-            // mark any variables we wrote as no longer dirty
-            for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+            if (forced)
             {
-                NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                // Mark every variable as no longer dirty. We just spawned the object and whatever the game code did
+                // during OnNetworkSpawn has been sent and needs to be cleared
+                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                {
+                    NetworkVariableFields[i].ResetDirty();
+                }
+            }
+            else
+            {
+                // mark any variables we wrote as no longer dirty
+                for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+                {
+                    NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                }
             }
 
             MarkVariablesDirty(false);
