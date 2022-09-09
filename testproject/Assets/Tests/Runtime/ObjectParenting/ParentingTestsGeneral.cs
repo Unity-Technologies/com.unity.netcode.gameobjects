@@ -221,14 +221,21 @@ namespace TestProject.RuntimeTests
 
         private const int k_NestedChildren = 10;
 
+        public enum ParentingTestModes
+        {
+            LocalPositionStays,
+            WorldPositionStays
+        }
+
         /// <summary>
         /// Verifies that using worldPositionStays when parenting via NetworkObject.TrySetParent,
         /// that the client-side transform values match that of the server-side.
         /// This also tests nested parenting and out of hierarchical order child spawning.
         /// </summary>
         [UnityTest]
-        public IEnumerator WorldPositionStaysTest()
+        public IEnumerator WorldPositionStaysTest([Values] ParentingTestModes mode)
         {
+            var worldPositionStays = mode == ParentingTestModes.WorldPositionStays;
             var startTime = Time.realtimeSinceStartup;
             m_ServerSideParent = Object.Instantiate(m_ParentPrefabObject);
 
@@ -292,7 +299,7 @@ namespace TestProject.RuntimeTests
             {
                 var childNetworkObject = m_ServerSideChildren[i].GetComponent<NetworkObject>();
                 // Do not keep the world position by setting WorldPositionStays to false
-                Assert.True(childNetworkObject.TrySetParent(currentParent, false));
+                Assert.True(childNetworkObject.TrySetParent(currentParent, worldPositionStays));
                 currentParent = childNetworkObject;
             }
 
@@ -320,9 +327,13 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-                    // Assure we still have the same local space values
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localPosition, m_ChildStartPosition), $"Client-{clientEntry.Key} child's local space position ({clientChildInfo.Child.transform.localPosition}) does not equal the default child's position ({m_ChildStartPosition})!");
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localRotation.eulerAngles, m_ChildStartRotation.eulerAngles), $"Client-{clientEntry.Key} child's local space rotation ({clientChildInfo.Child.transform.localRotation.eulerAngles}) does not equal the server child's rotation ({m_ChildStartRotation})!");
+
+                    // Assure we still have the same local space values when not preserving the world position
+                    if (!worldPositionStays)
+                    {
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localPosition, m_ChildStartPosition), $"Client-{clientEntry.Key} child's local space position ({clientChildInfo.Child.transform.localPosition}) does not equal the default child's position ({m_ChildStartPosition})!");
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localRotation.eulerAngles, m_ChildStartRotation.eulerAngles), $"Client-{clientEntry.Key} child's local space rotation ({clientChildInfo.Child.transform.localRotation.eulerAngles}) does not equal the server child's rotation ({m_ChildStartRotation})!");
+                    }
                 }
             }
 
@@ -354,9 +365,12 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-                    // Assure we still have the same local space values
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localPosition, m_ChildStartPosition), $"Client-{clientEntry.Key} child's local space position ({clientChildInfo.Child.transform.localPosition}) does not equal the default child's position ({m_ChildStartPosition})!");
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localRotation.eulerAngles, m_ChildStartRotation.eulerAngles), $"Client-{clientEntry.Key} child's local space rotation ({clientChildInfo.Child.transform.localRotation.eulerAngles}) does not equal the server child's rotation ({m_ChildStartRotation})!");
+                    // Assure we still have the same local space values when not preserving the world position
+                    if (!worldPositionStays)
+                    {
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localPosition, m_ChildStartPosition), $"Client-{clientEntry.Key} child's local space position ({clientChildInfo.Child.transform.localPosition}) does not equal the default child's position ({m_ChildStartPosition})!");
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localRotation.eulerAngles, m_ChildStartRotation.eulerAngles), $"Client-{clientEntry.Key} child's local space rotation ({clientChildInfo.Child.transform.localRotation.eulerAngles}) does not equal the server child's rotation ({m_ChildStartRotation})!");
+                    }
                 }
             }
             VerboseDebug($"[{Time.realtimeSinceStartup - startTime}] Late joined client was validated.");
