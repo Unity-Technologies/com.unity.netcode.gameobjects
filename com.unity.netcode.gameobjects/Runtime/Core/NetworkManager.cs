@@ -1623,23 +1623,56 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            NetworkTime timeStarted = LocalTime;
-
-            //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while ((LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+            if (IsServer)
             {
-                yield return null;
-            }
+                NetworkTime timeStarted = LocalTime;
 
-            if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
-            {
-                // Timeout
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                //We yield every frame incase a pending client disconnects and someone else gets its connection id
+                while (IsListening && (LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
                 {
-                    NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
+                    yield return null;
                 }
 
-                DisconnectClient(clientId);
+                if (!IsListening)
+                {
+                    yield break;
+                }
+
+                if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
+                {
+                    // Timeout
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
+                    }
+
+                    DisconnectClient(clientId);
+                }
+            }
+            else
+            {
+                float timeStarted = Time.realtimeSinceStartup;
+
+                //We yield every frame incase a pending client disconnects and someone else gets its connection id
+                while (IsListening && (Time.realtimeSinceStartup - timeStarted) < NetworkConfig.ClientConnectionBufferTimeout && !IsConnectedClient)
+                {
+                    yield return null;
+                }
+
+                if (!IsListening)
+                {
+                    yield break;
+                }
+
+                if (!IsConnectedClient)
+                {
+                    // Timeout
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    {
+                        NetworkLog.LogInfo("Server Handshake Timed Out");
+                    }
+                    Shutdown(true);
+                }
             }
         }
 
