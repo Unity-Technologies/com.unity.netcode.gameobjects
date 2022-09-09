@@ -10,7 +10,7 @@ namespace Unity.Netcode.Components
     /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform.
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
+    [AddComponentMenu("Netcode/Network Transform")]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
