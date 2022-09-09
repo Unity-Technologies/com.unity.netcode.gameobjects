@@ -99,12 +99,14 @@ namespace Unity.Netcode.RuntimeTests
 
             Time.timeScale = 1.0f;
 
-            if (m_PlayerLoopFixedTimeTestComponent != null) {
+            if (m_PlayerLoopFixedTimeTestComponent != null)
+            {
                 Object.DestroyImmediate(m_PlayerLoopFixedTimeTestComponent.gameObject);
                 m_PlayerLoopFixedTimeTestComponent = null;
             }
 
-            if (m_PlayerLoopTimeTestComponent != null) {
+            if (m_PlayerLoopTimeTestComponent != null)
+            {
                 Object.DestroyImmediate(m_PlayerLoopTimeTestComponent.gameObject);
                 m_PlayerLoopTimeTestComponent = null;
             }
