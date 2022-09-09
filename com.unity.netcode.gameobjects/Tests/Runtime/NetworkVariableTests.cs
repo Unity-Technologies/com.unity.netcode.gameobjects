@@ -551,8 +551,6 @@ namespace Unity.Netcode.RuntimeTests
             // Now wait for the client side version to be updated to k_TestVal1
             yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.TheScalar.Value == k_TestVal1);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
-
-            Time.timeScale = 1.0f;
         }
 
         [UnityTest]

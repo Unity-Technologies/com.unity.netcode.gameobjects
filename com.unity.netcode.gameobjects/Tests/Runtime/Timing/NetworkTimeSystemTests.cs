@@ -15,9 +15,13 @@ namespace Unity.Netcode.RuntimeTests
         private MonoBehaviourTest<PlayerLoopFixedTimeTestComponent> m_PlayerLoopFixedTimeTestComponent; // cache for teardown
         private MonoBehaviourTest<PlayerLoopTimeTestComponent> m_PlayerLoopTimeTestComponent; // cache for teardown
 
+        private float m_OriginalTimeScale = 1.0f;
+
         [SetUp]
         public void Setup()
         {
+            m_OriginalTimeScale = Time.timeScale;
+
             // Create, instantiate, and host
             Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out _));
         }
@@ -97,7 +101,7 @@ namespace Unity.Netcode.RuntimeTests
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
 
-            Time.timeScale = 1.0f;
+            Time.timeScale = m_OriginalTimeScale;
 
             if (m_PlayerLoopFixedTimeTestComponent != null)
             {
