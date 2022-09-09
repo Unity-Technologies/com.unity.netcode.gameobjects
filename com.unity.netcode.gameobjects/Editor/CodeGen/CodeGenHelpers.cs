@@ -14,6 +14,7 @@ namespace Unity.Netcode.Editor.CodeGen
 {
     namespace Import
     {
+#pragma warning disable IDE1006 // disable naming rule violation check
         internal static class Modules
         {
             public const string NetcodeRuntime = "Unity.Netcode.Runtime.dll";
@@ -133,6 +134,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             public const string Debug_LogError = "LogError";
         }
+#pragma warning restore IDE1006 // disable naming rule violation check
     }
     internal static class CodeGenHelpers
     {
@@ -181,9 +183,12 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public static int GetEnumValue(TypeDefinition enumDefinition, string value)
         {
-            foreach (var field in enumDefinition.Fields) {
+            foreach (var field in enumDefinition.Fields)
+            {
                 if (field.Name == value)
+                {
                     return (int)field.Constant;
+                }
             }
 
             throw new Exception(string.Format("Enum value not found for {0}", value));
@@ -294,7 +299,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             // Iterating in reverse because the system libraries are first and are unlikely to be what we're looking for
-            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0 ; --i)
+            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0; --i)
             {
                 var moduleDefinition = assemblyDefinition.Modules[i];
                 for (var j = moduleDefinition.AssemblyReferences.Count - 1; j >= 0; --j)
@@ -372,7 +377,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             // Iterating in reverse because the system libraries are first and are unlikely to be what we're looking for
-            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0 ; --i)
+            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0; --i)
             {
                 var moduleDefinition = assemblyDefinition.Modules[i];
                 for (var j = moduleDefinition.AssemblyReferences.Count - 1; j >= 0; --j)

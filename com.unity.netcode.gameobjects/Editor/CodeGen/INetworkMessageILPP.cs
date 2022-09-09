@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
@@ -164,7 +163,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var messagingSystemType = netcodeModule.FindType(Types.MessagingSystem);;
+            var messagingSystemType = netcodeModule.FindType(Types.MessagingSystem);
             foreach (var methodInfo in messagingSystemType.Methods)
             {
                 switch (methodInfo.Name)
