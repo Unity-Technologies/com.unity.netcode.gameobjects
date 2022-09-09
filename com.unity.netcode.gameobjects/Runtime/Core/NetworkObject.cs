@@ -723,7 +723,8 @@ namespace Unity.Netcode
                 NetworkObjectId = NetworkObjectId,
                 IsReparented = m_IsReparented,
                 IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
-                LatestParent = m_LatestParent
+                LatestParent = m_LatestParent,
+                WorldPositionStays = m_WorldPositionStays
             };
 
             unsafe
@@ -782,7 +783,10 @@ namespace Unity.Netcode
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                OrphanChildren.Add(this);
+                if (!OrphanChildren.Contains(this))
+                {
+                    OrphanChildren.Add(this);
+                }
                 return false;
             }
 
@@ -1068,8 +1072,8 @@ namespace Unity.Netcode
                 readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
                 if (Header.IsReparented)
                 {
-                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
                     readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
+                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
                     readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
                 }
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
@@ -1148,18 +1152,6 @@ namespace Unity.Netcode
                 obj.Header.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
             }
-            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
-            {
-                obj.Header.HasTransform = true;
-                obj.Transform = new SceneObject.TransformData
-                {
-                    // If we are parented and we have the m_WorldPositionStays disabled, then use the default
-                    // values as opposed to the world space values and adjust relative to the parent.
-                    Position = parentNetworkObject && !m_WorldPositionStays ? Vector3.zero : transform.position,
-                    Rotation = parentNetworkObject && !m_WorldPositionStays ? Quaternion.identity : transform.rotation
-                };
-            }
-
             var (isReparented, latestParent) = GetNetworkParenting();
             obj.Header.IsReparented = isReparented;
             if (isReparented)
@@ -1171,6 +1163,18 @@ namespace Unity.Netcode
                 {
                     obj.LatestParent = latestParent.Value;
                 }
+            }
+
+            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
+            {
+                obj.Header.HasTransform = true;
+                obj.Transform = new SceneObject.TransformData
+                {
+                    // If we are parented and we have the m_WorldPositionStays disabled, then use the default
+                    // values as opposed to the world space values and adjust relative to the parent.
+                    Position = parentNetworkObject && !m_WorldPositionStays ? transform.localPosition : transform.position,
+                    Rotation = parentNetworkObject && !m_WorldPositionStays ? transform.localRotation : transform.rotation
+                };
             }
 
             return obj;
@@ -1207,12 +1211,11 @@ namespace Unity.Netcode
                 networkSceneHandle = sceneObject.NetworkSceneHandle;
             }
 
+            // TODO: Make CreateLocalNetworkObject just accept the entire sceneObject which now contains everything needed to create the NetworkObject locally
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
                 sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
-
-            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent, sceneObject.WorldPositionStays);
+                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented, sceneObject.WorldPositionStays);
 
             if (networkObject == null)
             {

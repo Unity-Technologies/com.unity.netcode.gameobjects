@@ -243,6 +243,12 @@ namespace Unity.Netcode
                     m_NetworkObjectsSync.Add(sobj);
                 }
             }
+
+            // Sort by parents before children
+            m_NetworkObjectsSync.Sort(SortParentedNetworkObjects);
+
+            // Sort by INetworkPrefabInstanceHandler implementation before the
+            // NetworkObjects spawned by the implementation
             m_NetworkObjectsSync.Sort(SortNetworkObjects);
         }
 
@@ -322,6 +328,31 @@ namespace Unity.Netcode
             }
             return 0;
         }
+
+        /// <summary>
+        /// Sorts the synchronization order of the NetworkObjects to be serialized
+        /// by parents before children.
+        /// </summary>
+        /// <remarks>
+        /// This only handles late joining players. Spawning and nesting several children
+        /// dynamically is still handled by the orphaned child list when done out of
+        /// hierarchical order.
+        /// </remarks>
+        private int SortParentedNetworkObjects(NetworkObject first, NetworkObject second)
+        {
+            // If the second is the parent to the first or the first has a parent, then move down
+            if (second.transform == first.transform.parent || first.transform.parent != null)
+            {
+                return 1;
+            }
+            else // If the first is the parent to the second or the second has no parent, then move up
+            if (first.transform == second.transform.parent || second.transform.parent != null)
+            {
+                return -1;
+            }
+            return 0;
+        }
+
 
         /// <summary>
         /// Client and Server Side:
