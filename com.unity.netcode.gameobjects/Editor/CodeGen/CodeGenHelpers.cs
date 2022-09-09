@@ -15,14 +15,14 @@ namespace Unity.Netcode.Editor.CodeGen
     namespace Import
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
-        internal static class Modules
+        internal static class ModuleNames
         {
             public const string NetcodeRuntime = "Unity.Netcode.Runtime.dll";
             public const string NetStandard = "netstandard.dll";
             public const string UnityEngineCoreModule = "UnityEngine.CoreModule.dll";
         }
 
-        internal static class Types
+        internal static class TypeNames
         {
             public const string NetworkManager = "Unity.Netcode.NetworkManager";
             public const string NetworkManager_RpcReceiveHandler = "Unity.Netcode.NetworkManager/RpcReceiveHandler";
@@ -68,7 +68,7 @@ namespace Unity.Netcode.Editor.CodeGen
             public const string ForceNetworkSerializeByMemcpy_ShortName = "ForceNetworkSerializeByMemcpy";
         }
 
-        internal static class EnumValues
+        internal static class EnumValueNames
         {
             public const string RpcDelivery_Reliable = "Reliable";
 
@@ -79,7 +79,7 @@ namespace Unity.Netcode.Editor.CodeGen
             public const string RpcExecStage_Client = "Client";
         }
 
-        internal static class Fields
+        internal static class FieldNames
         {
             public const string MessagingSystem_MessageType = "MessageType";
             public const string MessagingSystem_Handler = "Handler";
@@ -102,7 +102,7 @@ namespace Unity.Netcode.Editor.CodeGen
             public const string ServerRpcReceiveParams_SenderClientId = "SenderClientId";
         }
 
-        internal static class Properties
+        internal static class ImportProperties
         {
             public const string NetworkBehaviour_NetworkManager = "NetworkManager";
             public const string NetworkBehaviour_OwnerClientId = "OwnerClientId";
@@ -114,7 +114,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         }
 
-        internal static class Methods
+        internal static class MethodNames
         {
             public const string MessagingSystem_ReceiveMessage = "ReceiveMessage";
 

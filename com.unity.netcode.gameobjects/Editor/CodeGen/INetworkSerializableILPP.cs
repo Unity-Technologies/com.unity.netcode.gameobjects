@@ -70,7 +70,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 try
                 {
                     var structTypes = mainModule.GetTypes()
-                        .Where(t => t.Resolve().HasInterface(Types.INetworkSerializeByMemcpy) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
+                        .Where(t => t.Resolve().HasInterface(TypeNames.INetworkSerializeByMemcpy) && !t.Resolve().IsAbstract && !t.Resolve().HasGenericParameters && t.Resolve().IsValueType)
                         .ToList();
 
                     foreach (var type in structTypes)
@@ -78,15 +78,15 @@ namespace Unity.Netcode.Editor.CodeGen
                         // We'll avoid some confusion by ensuring users only choose one of the two
                         // serialization schemes - by method OR by memcpy, not both. We'll also do a cursory
                         // check that INetworkSerializeByMemcpy types are unmanaged.
-                        if (type.HasInterface(Types.INetworkSerializeByMemcpy))
+                        if (type.HasInterface(TypeNames.INetworkSerializeByMemcpy))
                         {
-                            if (type.HasInterface(Types.INetworkSerializable))
+                            if (type.HasInterface(TypeNames.INetworkSerializable))
                             {
-                                m_Diagnostics.AddError($"{Types.INetworkSerializeByMemcpy} types may not implement {Types.INetworkSerializable} - choose one or the other.");
+                                m_Diagnostics.AddError($"{TypeNames.INetworkSerializeByMemcpy} types may not implement {TypeNames.INetworkSerializable} - choose one or the other.");
                             }
                             if (!type.IsValueType)
                             {
-                                m_Diagnostics.AddError($"{Types.INetworkSerializeByMemcpy} types must be unmanaged types.");
+                                m_Diagnostics.AddError($"{TypeNames.INetworkSerializeByMemcpy} types must be unmanaged types.");
                             }
                         }
                     }

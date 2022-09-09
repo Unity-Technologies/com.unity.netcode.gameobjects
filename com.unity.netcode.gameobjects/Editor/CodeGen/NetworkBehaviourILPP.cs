@@ -12,14 +12,13 @@ using Unity.Netcode.Editor.CodeGen.Import;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
-using Types = Unity.Netcode.Editor.CodeGen.Import.Types;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
-        private const string k_ReadValueMethodName = Methods.FastBufferReader_ReadValueSafe;
-        private const string k_WriteValueMethodName = Methods.FastBufferWriter_WriteValueSafe;
+        private const string k_ReadValueMethodName = MethodNames.FastBufferReader_ReadValueSafe;
+        private const string k_WriteValueMethodName = MethodNames.FastBufferWriter_WriteValueSafe;
 
         public override ILPPInterface GetInstance() => this;
 
@@ -57,7 +56,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     try
                     {
                         mainModule.GetTypes()
-                            .Where(t => t.IsSubclassOf(Types.NetworkBehaviour))
+                            .Where(t => t.IsSubclassOf(TypeNames.NetworkBehaviour))
                             .ToList()
                             .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
                     }
@@ -137,32 +136,32 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            var netcodeModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, Modules.NetcodeRuntime);
+            var netcodeModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, ModuleNames.NetcodeRuntime);
             if (netcodeModule == null)
             {
                 return false;
             }
 
-            var coreModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, Modules.UnityEngineCoreModule);
+            var coreModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, ModuleNames.UnityEngineCoreModule);
 
-            var rpcDeliveryType = netcodeModule.FindType(Types.RpcDelivery);
-            m_RpcDelivery_Reliable_Value = CodeGenHelpers.GetEnumValue(rpcDeliveryType, EnumValues.RpcDelivery_Reliable);
+            var rpcDeliveryType = netcodeModule.FindType(TypeNames.RpcDelivery);
+            m_RpcDelivery_Reliable_Value = CodeGenHelpers.GetEnumValue(rpcDeliveryType, EnumValueNames.RpcDelivery_Reliable);
 
-            var logLevelType = netcodeModule.FindType(Types.LogLevel);
-            m_LogLevel_Normal_Value = CodeGenHelpers.GetEnumValue(logLevelType, EnumValues.LogLevel_Normal);
+            var logLevelType = netcodeModule.FindType(TypeNames.LogLevel);
+            m_LogLevel_Normal_Value = CodeGenHelpers.GetEnumValue(logLevelType, EnumValueNames.LogLevel_Normal);
 
-            var rpcExecStageType = netcodeModule.FindType(Types.NetworkBehaviour___RpcExecStage);
-            m_RpcExecStage_None_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValues.RpcExecStage_None);
-            m_RpcExecStage_Client_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValues.RpcExecStage_Client);
-            m_RpcExecStage_Server_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValues.RpcExecStage_Server);
+            var rpcExecStageType = netcodeModule.FindType(TypeNames.NetworkBehaviour___RpcExecStage);
+            m_RpcExecStage_None_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValueNames.RpcExecStage_None);
+            m_RpcExecStage_Client_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValueNames.RpcExecStage_Client);
+            m_RpcExecStage_Server_Value = CodeGenHelpers.GetEnumValue(rpcExecStageType, EnumValueNames.RpcExecStage_Server);
 
             Console.WriteLine("Debug");
-            var debugType = coreModule.FindType(Types.Debug);
+            var debugType = coreModule.FindType(TypeNames.Debug);
             foreach (var methodInfo in debugType.Methods)
             {
                 switch (methodInfo.Name)
                 {
-                    case Methods.Debug_LogError:
+                    case MethodNames.Debug_LogError:
                         if (methodInfo.Parameters.Count == 1)
                         {
                             m_Debug_LogError_MethodRef = moduleDefinition.ImportReference(methodInfo);
@@ -172,26 +171,26 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            Console.WriteLine(Types.NetworkManager);
-            var networkManagerType = netcodeModule.FindType(Types.NetworkManager);
+            Console.WriteLine(TypeNames.NetworkManager);
+            var networkManagerType = netcodeModule.FindType(TypeNames.NetworkManager);
             m_NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.Properties)
             {
                 switch (propertyInfo.Name)
                 {
-                    case Properties.NetworkManager_LocalClientId:
+                    case ImportProperties.NetworkManager_LocalClientId:
                         m_NetworkManager_getLocalClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case Properties.NetworkManager_IsListening:
+                    case ImportProperties.NetworkManager_IsListening:
                         m_NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case Properties.NetworkManager_IsHost:
+                    case ImportProperties.NetworkManager_IsHost:
                         m_NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case Properties.NetworkManager_IsServer:
+                    case ImportProperties.NetworkManager_IsServer:
                         m_NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case Properties.NetworkManager_IsClient:
+                    case ImportProperties.NetworkManager_IsClient:
                         m_NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -201,10 +200,10 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case Fields.NetworkManager_LogLevel:
+                    case FieldNames.NetworkManager_LogLevel:
                         m_NetworkManager_LogLevel_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
-                    case Fields.NetworkManager___rpc_func_table:
+                    case FieldNames.NetworkManager___rpc_func_table:
                         m_NetworkManager_rpc_func_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         foreach (var method in fieldInfo.FieldType.Resolve().Methods)
                         {
@@ -217,7 +216,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
                         }
                         break;
-                    case Fields.NetworkManager___rpc_name_table:
+                    case FieldNames.NetworkManager___rpc_name_table:
                         m_NetworkManager_rpc_name_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         foreach (var method in fieldInfo.FieldType.Resolve().Methods)
                         {
@@ -233,17 +232,17 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            Console.WriteLine(Types.NetworkBehaviour);
-            var networkBehaviourType = netcodeModule.FindType(Types.NetworkBehaviour);
+            Console.WriteLine(TypeNames.NetworkBehaviour);
+            var networkBehaviourType = netcodeModule.FindType(TypeNames.NetworkBehaviour);
             m_NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourType);
             foreach (var propertyInfo in networkBehaviourType.Properties)
             {
                 switch (propertyInfo.Name)
                 {
-                    case Properties.NetworkBehaviour_NetworkManager:
+                    case ImportProperties.NetworkBehaviour_NetworkManager:
                         m_NetworkBehaviour_getNetworkManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case Properties.NetworkBehaviour_OwnerClientId:
+                    case ImportProperties.NetworkBehaviour_OwnerClientId:
                         m_NetworkBehaviour_getOwnerClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -253,16 +252,16 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case Methods.NetworkBehaviour___beginSendServerRpc:
+                    case MethodNames.NetworkBehaviour___beginSendServerRpc:
                         m_NetworkBehaviour_beginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case Methods.NetworkBehaviour___endSendServerRpc:
+                    case MethodNames.NetworkBehaviour___endSendServerRpc:
                         m_NetworkBehaviour_endSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case Methods.NetworkBehaviour___beginSendClientRpc:
+                    case MethodNames.NetworkBehaviour___beginSendClientRpc:
                         m_NetworkBehaviour_beginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case Methods.NetworkBehaviour___endSendClientRpc:
+                    case MethodNames.NetworkBehaviour___endSendClientRpc:
                         m_NetworkBehaviour_endSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -272,14 +271,14 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case Fields.NetworkBehaviour___rpc_exec_stage:
+                    case FieldNames.NetworkBehaviour___rpc_exec_stage:
                         m_NetworkBehaviour_rpc_exec_stage_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            Console.WriteLine(Types.NetworkManager_RpcReceiveHandler);
-            var networkHandlerDelegateType = netcodeModule.FindType(Types.NetworkManager_RpcReceiveHandler);
+            Console.WriteLine(TypeNames.NetworkManager_RpcReceiveHandler);
+            var networkHandlerDelegateType = netcodeModule.FindType(TypeNames.NetworkManager_RpcReceiveHandler);
             foreach (var constructor in networkHandlerDelegateType.GetConstructors())
             {
                 if (constructor.HasParameters && constructor.Parameters.Count == 2 && constructor.Parameters[0].ParameterType.Name == "Object" && constructor.Parameters[1].ParameterType.Name == "IntPtr")
@@ -289,35 +288,35 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            Console.WriteLine(Types.__RpcParams);
-            var rpcParamsType = netcodeModule.FindType(Types.__RpcParams);
+            Console.WriteLine(TypeNames.__RpcParams);
+            var rpcParamsType = netcodeModule.FindType(TypeNames.__RpcParams);
             m_RpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsType);
             foreach (var fieldInfo in rpcParamsType.Fields)
             {
                 switch (fieldInfo.Name)
                 {
-                    case Fields.RpcParams_Server:
+                    case FieldNames.RpcParams_Server:
                         m_RpcParams_Server_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
-                    case Fields.RpcParams_Client:
+                    case FieldNames.RpcParams_Client:
                         m_RpcParams_Client_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            Console.WriteLine(Types.ServerRpcParams);
-            var serverRpcParamsType = netcodeModule.FindType(Types.ServerRpcParams);
+            Console.WriteLine(TypeNames.ServerRpcParams);
+            var serverRpcParamsType = netcodeModule.FindType(TypeNames.ServerRpcParams);
             m_ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
             foreach (var fieldInfo in serverRpcParamsType.Fields)
             {
                 switch (fieldInfo.Name)
                 {
-                    case Fields.ServerRpcParams_Receive:
+                    case FieldNames.ServerRpcParams_Receive:
                         foreach (var recvFieldInfo in fieldInfo.FieldType.Resolve().Fields)
                         {
                             switch (recvFieldInfo.Name)
                             {
-                                case Fields.ServerRpcReceiveParams_SenderClientId:
+                                case FieldNames.ServerRpcReceiveParams_SenderClientId:
                                     m_ServerRpcParams_Receive_SenderClientId_FieldRef = moduleDefinition.ImportReference(recvFieldInfo);
                                     break;
                             }
@@ -328,16 +327,16 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            Console.WriteLine(Types.ClientRpcParams);
-            var clientRpcParamsType = netcodeModule.FindType(Types.ClientRpcParams);
+            Console.WriteLine(TypeNames.ClientRpcParams);
+            var clientRpcParamsType = netcodeModule.FindType(TypeNames.ClientRpcParams);
             m_ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
 
-            Console.WriteLine(Types.FastBufferWriter);
-            var fastBufferWriterType = netcodeModule.FindType(Types.FastBufferWriter);
+            Console.WriteLine(TypeNames.FastBufferWriter);
+            var fastBufferWriterType = netcodeModule.FindType(TypeNames.FastBufferWriter);
             m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterType);
 
-            Console.WriteLine(Types.FastBufferReader);
-            var fastBufferReaderType = netcodeModule.FindType(Types.FastBufferReader);
+            Console.WriteLine(TypeNames.FastBufferReader);
+            var fastBufferReaderType = netcodeModule.FindType(TypeNames.FastBufferReader);
             m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(fastBufferReaderType);
 
             // Find all extension methods for FastBufferReader and FastBufferWriter to enable user-implemented
@@ -495,10 +494,10 @@ namespace Unity.Netcode.Editor.CodeGen
             // override NetworkBehaviour.__getTypeName() method to return concrete type
             {
                 var networkBehaviour_TypeDef = m_NetworkBehaviour_TypeRef.Resolve();
-                var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(Methods.NetworkBehaviour___getTypeName));
+                var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(MethodNames.NetworkBehaviour___getTypeName));
 
                 var newGetTypeNameMethod = new MethodDefinition(
-                    Methods.NetworkBehaviour___getTypeName,
+                    MethodNames.NetworkBehaviour___getTypeName,
                     (baseGetTypeNameMethod.Attributes & ~MethodAttributes.NewSlot) | MethodAttributes.ReuseSlot,
                     baseGetTypeNameMethod.ReturnType)
                 {
@@ -523,8 +522,8 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 var customAttributeType_FullName = customAttribute.AttributeType.FullName;
 
-                if (customAttributeType_FullName == Types.ServerRpcAttribute ||
-                    customAttributeType_FullName == Types.ClientRpcAttribute)
+                if (customAttributeType_FullName == TypeNames.ServerRpcAttribute ||
+                    customAttributeType_FullName == TypeNames.ClientRpcAttribute)
                 {
                     bool isValid = true;
 
@@ -552,14 +551,14 @@ namespace Unity.Netcode.Editor.CodeGen
                         isValid = false;
                     }
 
-                    if (customAttributeType_FullName == Types.ServerRpcAttribute &&
+                    if (customAttributeType_FullName == TypeNames.ServerRpcAttribute &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         m_Diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
                         isValid = false;
                     }
 
-                    if (customAttributeType_FullName == Types.ClientRpcAttribute &&
+                    if (customAttributeType_FullName == TypeNames.ClientRpcAttribute &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
@@ -868,17 +867,17 @@ namespace Unity.Netcode.Editor.CodeGen
             var typeSystem = methodDefinition.Module.TypeSystem;
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
-            var isServerRpc = rpcAttribute.AttributeType.FullName == Types.ServerRpcAttribute;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == TypeNames.ServerRpcAttribute;
             var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
             var rpcDelivery = m_RpcDelivery_Reliable_Value; // default value MUST be == `RpcAttribute.Delivery`
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
-                    case Fields.RpcAttribute_Delivery:
+                    case FieldNames.RpcAttribute_Delivery:
                         rpcDelivery = (int)attrField.Argument.Value;
                         break;
-                    case Fields.ServerRpcAttribute_RequireOwnership:
+                    case FieldNames.ServerRpcAttribute_RequireOwnership:
                         requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                 }
@@ -887,8 +886,8 @@ namespace Unity.Netcode.Editor.CodeGen
             var paramCount = methodDefinition.Parameters.Count;
             var hasRpcParams =
                 paramCount > 0 &&
-                ((isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == Types.ServerRpcParams) ||
-                 (!isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == Types.ClientRpcParams));
+                ((isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == TypeNames.ServerRpcParams) ||
+                 (!isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == TypeNames.ClientRpcParams));
 
             methodDefinition.Body.InitLocals = true;
             // NetworkManager networkManager;
@@ -1035,42 +1034,42 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
-                    if (paramType.FullName == Types.ClientRpcSendParams ||
-                        paramType.FullName == Types.ClientRpcReceiveParams)
+                    if (paramType.FullName == TypeNames.ClientRpcSendParams ||
+                        paramType.FullName == TypeNames.ClientRpcReceiveParams)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {Types.ClientRpcParams} instead.");
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {TypeNames.ClientRpcParams} instead.");
                         continue;
                     }
 
-                    if (paramType.FullName == Types.ServerRpcSendParams ||
-                        paramType.FullName == Types.ServerRpcReceiveParams)
+                    if (paramType.FullName == TypeNames.ServerRpcSendParams ||
+                        paramType.FullName == TypeNames.ServerRpcReceiveParams)
                     {
-                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {Types.ServerRpcParams} instead.");
+                        m_Diagnostics.AddError($"Rpcs may not accept {paramType.FullName} as a parameter. Use {TypeNames.ServerRpcParams} instead.");
                         continue;
                     }
                     // ServerRpcParams
-                    if (paramType.FullName == Types.ServerRpcParams)
+                    if (paramType.FullName == TypeNames.ServerRpcParams)
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{Types.ServerRpcParams} must be the last parameter in a ServerRpc.");
+                            m_Diagnostics.AddError(methodDefinition, $"{TypeNames.ServerRpcParams} must be the last parameter in a ServerRpc.");
                         }
                         if (!isServerRpc)
                         {
-                            m_Diagnostics.AddError($"ClientRpcs may not accept {Types.ServerRpcParams} as a parameter.");
+                            m_Diagnostics.AddError($"ClientRpcs may not accept {TypeNames.ServerRpcParams} as a parameter.");
                         }
                         continue;
                     }
                     // ClientRpcParams
-                    if (paramType.FullName == Types.ClientRpcParams)
+                    if (paramType.FullName == TypeNames.ClientRpcParams)
                     {
                         if (paramIndex != paramCount - 1)
                         {
-                            m_Diagnostics.AddError(methodDefinition, $"{Types.ClientRpcParams} must be the last parameter in a ClientRpc.");
+                            m_Diagnostics.AddError(methodDefinition, $"{TypeNames.ClientRpcParams} must be the last parameter in a ClientRpc.");
                         }
                         if (isServerRpc)
                         {
-                            m_Diagnostics.AddError($"ServerRpcs may not accept {Types.ClientRpcParams} as a parameter.");
+                            m_Diagnostics.AddError($"ServerRpcs may not accept {TypeNames.ClientRpcParams} as a parameter.");
                         }
                         continue;
                     }
@@ -1191,7 +1190,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     else
                     {
-                        m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {Types.INetworkSerializeByMemcpy} or {Types.INetworkSerializable}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {Types.ForceNetworkSerializeByMemcpy_ShortName}<{paramType}>, or you can create extension methods for {Types.FastBufferReader}.{Methods.FastBufferReader_ReadValueSafe}(this {Types.FastBufferReader}, out {paramType}) and {Types.FastBufferWriter}.{Methods.FastBufferWriter_WriteValueSafe}(this {Types.FastBufferWriter}, in {paramType}) to define serialization for this type.");
+                        m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {TypeNames.INetworkSerializeByMemcpy} or {TypeNames.INetworkSerializable}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {TypeNames.ForceNetworkSerializeByMemcpy_ShortName}<{paramType}>, or you can create extension methods for {TypeNames.FastBufferReader}.{MethodNames.FastBufferReader_ReadValueSafe}(this {TypeNames.FastBufferReader}, out {paramType}) and {TypeNames.FastBufferWriter}.{MethodNames.FastBufferWriter_WriteValueSafe}(this {TypeNames.FastBufferWriter}, in {paramType}) to define serialization for this type.");
                         continue;
                     }
 
@@ -1307,13 +1306,13 @@ namespace Unity.Netcode.Editor.CodeGen
 
             var processor = rpcHandler.Body.GetILProcessor();
 
-            var isServerRpc = rpcAttribute.AttributeType.FullName == Types.ServerRpcAttribute;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == TypeNames.ServerRpcAttribute;
             var requireOwnership = true; // default value MUST be == `ServerRpcAttribute.RequireOwnership`
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
-                    case Fields.ServerRpcAttribute_RequireOwnership:
+                    case FieldNames.ServerRpcAttribute_RequireOwnership:
                         requireOwnership = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                 }
@@ -1398,7 +1397,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 // ServerRpcParams, ClientRpcParams
                 {
                     // ServerRpcParams
-                    if (paramType.FullName == Types.ServerRpcParams)
+                    if (paramType.FullName == TypeNames.ServerRpcParams)
                     {
                         processor.Emit(OpCodes.Ldarg_2);
                         processor.Emit(OpCodes.Ldfld, m_RpcParams_Server_FieldRef);
@@ -1407,7 +1406,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
 
                     // ClientRpcParams
-                    if (paramType.FullName == Types.ClientRpcParams)
+                    if (paramType.FullName == TypeNames.ClientRpcParams)
                     {
                         processor.Emit(OpCodes.Ldarg_2);
                         processor.Emit(OpCodes.Ldfld, m_RpcParams_Client_FieldRef);
@@ -1505,7 +1504,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 else
                 {
-                    m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {Types.INetworkSerializeByMemcpy} or {Types.INetworkSerializable}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {Types.ForceNetworkSerializeByMemcpy_ShortName}<{paramType}>, or you can create extension methods for {Types.FastBufferReader}.{Methods.FastBufferReader_ReadValueSafe}(this {Types.FastBufferReader}, out {paramType}) and {Types.FastBufferWriter}.{Methods.FastBufferWriter_WriteValueSafe}(this {Types.FastBufferWriter}, in {paramType}) to define serialization for this type.");
+                    m_Diagnostics.AddError(methodDefinition, $"{methodDefinition.Name} - Don't know how to serialize {paramType.Name}. RPC parameter types must either implement {TypeNames.INetworkSerializeByMemcpy} or {TypeNames.INetworkSerializable}. If this type is external and you are sure its memory layout makes it serializable by memcpy, you can replace {paramType} with {TypeNames.ForceNetworkSerializeByMemcpy_ShortName}<{paramType}>, or you can create extension methods for {TypeNames.FastBufferReader}.{MethodNames.FastBufferReader_ReadValueSafe}(this {TypeNames.FastBufferReader}, out {paramType}) and {TypeNames.FastBufferWriter}.{MethodNames.FastBufferWriter_WriteValueSafe}(this {TypeNames.FastBufferWriter}, in {paramType}) to define serialization for this type.");
                     continue;
                 }
 

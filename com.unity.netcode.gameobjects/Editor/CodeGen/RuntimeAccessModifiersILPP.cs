@@ -47,13 +47,13 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     switch (typeDefinition.FullName)
                     {
-                        case Types.NetworkManager:
+                        case TypeNames.NetworkManager:
                             ProcessNetworkManager(typeDefinition, compiledAssembly.Defines);
                             break;
-                        case Types.NetworkBehaviour:
+                        case TypeNames.NetworkBehaviour:
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
-                        case Types.__RpcParams:
+                        case TypeNames.__RpcParams:
                             typeDefinition.IsPublic = true;
                             break;
                     }
@@ -84,17 +84,17 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == Fields.NetworkManager___rpc_func_table)
+                if (fieldDefinition.Name == FieldNames.NetworkManager___rpc_func_table)
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
-                if (fieldDefinition.Name == Fields.NetworkManager_RpcReceiveHandler)
+                if (fieldDefinition.Name == FieldNames.NetworkManager_RpcReceiveHandler)
                 {
                     fieldDefinition.IsPublic = true;
                 }
 
-                if (fieldDefinition.Name == Fields.NetworkManager___rpc_name_table)
+                if (fieldDefinition.Name == FieldNames.NetworkManager___rpc_name_table)
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -105,7 +105,7 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == Types.NetworkBehaviour___RpcExecStage)
+                if (nestedType.Name == TypeNames.NetworkBehaviour___RpcExecStage)
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -113,7 +113,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == Fields.NetworkBehaviour___rpc_exec_stage)
+                if (fieldDefinition.Name == FieldNames.NetworkBehaviour___rpc_exec_stage)
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -121,10 +121,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var methodDefinition in typeDefinition.Methods)
             {
-                if (methodDefinition.Name == Methods.NetworkBehaviour___beginSendServerRpc ||
-                    methodDefinition.Name == Methods.NetworkBehaviour___endSendServerRpc ||
-                    methodDefinition.Name == Methods.NetworkBehaviour___beginSendClientRpc ||
-                    methodDefinition.Name == Methods.NetworkBehaviour___endSendClientRpc)
+                if (methodDefinition.Name == MethodNames.NetworkBehaviour___beginSendServerRpc ||
+                    methodDefinition.Name == MethodNames.NetworkBehaviour___endSendServerRpc ||
+                    methodDefinition.Name == MethodNames.NetworkBehaviour___beginSendClientRpc ||
+                    methodDefinition.Name == MethodNames.NetworkBehaviour___endSendClientRpc)
                 {
                     methodDefinition.IsFamily = true;
                 }
