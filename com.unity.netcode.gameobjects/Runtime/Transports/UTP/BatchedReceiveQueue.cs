@@ -1,5 +1,9 @@
 using System;
 using Unity.Networking.Transport;
+#if UTP_TRANSPORT_2_0_ABOVE
+using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+#endif
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -25,7 +29,11 @@ namespace Unity.Netcode.Transports.UTP
             {
                 fixed (byte* dataPtr = m_Data)
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    reader.ReadBytesUnsafe(dataPtr, reader.Length);
+#else
                     reader.ReadBytes(dataPtr, reader.Length);
+#endif
                 }
             }
 
@@ -62,7 +70,11 @@ namespace Unity.Netcode.Transports.UTP
             {
                 fixed (byte* dataPtr = m_Data)
                 {
+#if UTP_TRANSPORT_2_0_ABOVE
+                    reader.ReadBytesUnsafe(dataPtr + m_Offset + m_Length, reader.Length);
+#else
                     reader.ReadBytes(dataPtr + m_Offset + m_Length, reader.Length);
+#endif
                 }
             }
 
