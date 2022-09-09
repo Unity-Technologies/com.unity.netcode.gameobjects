@@ -13,6 +13,7 @@ using Unity.Multiplayer.Tools;
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using System.Runtime.CompilerServices;
+using Unity.Netcode.Shared;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode

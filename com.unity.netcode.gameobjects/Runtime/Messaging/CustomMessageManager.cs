@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Unity.Netcode.Shared;
 
 namespace Unity.Netcode
 {

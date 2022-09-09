@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.Netcode.Shared;
 
 namespace Unity.Netcode.EditorTests
 {

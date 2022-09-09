@@ -8,6 +8,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using Unity.Netcode.Editor.CodeGen.Import;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
@@ -22,6 +23,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
+        private PostProcessorAssemblyResolver m_AssemblyResolver;
+
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly))
@@ -32,7 +35,7 @@ namespace Unity.Netcode.Editor.CodeGen
             m_Diagnostics.Clear();
 
             // read
-            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly, out var resolver);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly, out m_AssemblyResolver);
             if (assemblyDefinition == null)
             {
                 m_Diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
@@ -46,7 +49,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (ImportReferences(mainModule))
                 {
                     var types = mainModule.GetTypes()
-                        .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkMessage_FullName) && !t.Resolve().IsAbstract)
+                        .Where(t => t.Resolve().HasInterface(Types.INetworkMessage) && !t.Resolve().IsAbstract)
                         .ToList();
                     // process `INetworkMessage` types
                     if (types.Count == 0)
@@ -101,66 +104,72 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_Type_GetTypeFromHandle_MethodRef;
         private MethodReference m_List_Add_MethodRef;
 
-        private const string k_ReceiveMessageName = nameof(MessagingSystem.ReceiveMessage);
-
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            m_MessagingSystem_MessageHandler_Constructor_TypeRef = moduleDefinition.ImportReference(typeof(MessagingSystem.MessageHandler).GetConstructors()[0]);
+            var netcodeModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, Modules.NetcodeRuntime);
+            var netStandardModule = moduleDefinition.Assembly.FindReferencedModule(m_AssemblyResolver, Modules.NetStandard);
 
-            var messageWithHandlerType = typeof(MessagingSystem.MessageWithHandler);
+            var definition = netcodeModule.FindType(Types.MessagingSystem_MessageHandler);
+            m_MessagingSystem_MessageHandler_Constructor_TypeRef = moduleDefinition.ImportReference(definition.GetConstructors().First());
+
+            var messageWithHandlerType = netcodeModule.FindType(Types.MessagingSystem_MessageWithHandler);
             m_MessagingSystem_MessageWithHandler_TypeRef = moduleDefinition.ImportReference(messageWithHandlerType);
-            foreach (var fieldInfo in messageWithHandlerType.GetFields())
+            foreach (var fieldInfo in messageWithHandlerType.Fields)
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(MessagingSystem.MessageWithHandler.MessageType):
+                    case Fields.MessagingSystem_MessageType:
                         m_MessagingSystem_MessageWithHandler_MessageType_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
-                    case nameof(MessagingSystem.MessageWithHandler.Handler):
+                    case Fields.MessagingSystem_Handler:
                         m_MessagingSystem_MessageWithHandler_Handler_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            var typeType = typeof(Type);
-            foreach (var methodInfo in typeType.GetMethods())
+            var typeType = netStandardModule.FindType(Types.Type);
+            foreach (var methodInfo in typeType.Methods)
             {
                 switch (methodInfo.Name)
                 {
-                    case nameof(Type.GetTypeFromHandle):
+                    case Methods.Type_GetTypeFromHandle:
                         m_Type_GetTypeFromHandle_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
             }
 
-            var ilppMessageProviderType = typeof(ILPPMessageProvider);
-            foreach (var fieldInfo in ilppMessageProviderType.GetFields(BindingFlags.Static | BindingFlags.NonPublic))
+            var ilppMessageProviderType = netcodeModule.FindType(Types.ILPPMessageProvider);//typeof(ILPPMessageProvider);
+            foreach (var fieldInfo in ilppMessageProviderType.Fields)
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(ILPPMessageProvider.__network_message_types):
+                    case Fields.ILPPMessageProvider___network_message_types:
                         m_ILPPMessageProvider___network_message_types_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            var listType = typeof(List<MessagingSystem.MessageWithHandler>);
-            foreach (var methodInfo in listType.GetMethods())
+            var genericListType = netStandardModule.FindType(Types.List);
+            var listType = genericListType.MakeGenericInstanceType(messageWithHandlerType);
+
+            foreach (var methodInfo in genericListType.Methods)
             {
                 switch (methodInfo.Name)
                 {
-                    case nameof(List<MessagingSystem.MessageWithHandler>.Add):
-                        m_List_Add_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case Methods.List_Add:
+                        m_List_Add_MethodRef = methodInfo;
+                        m_List_Add_MethodRef.DeclaringType = listType;
+                        m_List_Add_MethodRef = moduleDefinition.ImportReference(m_List_Add_MethodRef);
                         break;
                 }
             }
 
-            var messagingSystemType = typeof(MessagingSystem);
-            foreach (var methodInfo in messagingSystemType.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public))
+            var messagingSystemType = netcodeModule.FindType(Types.MessagingSystem);;
+            foreach (var methodInfo in messagingSystemType.Methods)
             {
                 switch (methodInfo.Name)
                 {
-                    case k_ReceiveMessageName:
+                    case Methods.MessagingSystem_ReceiveMessage:
                         m_MessagingSystem_ReceiveMessage_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -175,7 +184,7 @@ namespace Unity.Netcode.Editor.CodeGen
             if (staticCtorMethodDef == null)
             {
                 staticCtorMethodDef = new MethodDefinition(
-                    ".cctor", // Static Constructor (constant-constructor)
+                    Methods.Module_StaticConstructor,
                     MethodAttributes.HideBySig |
                     MethodAttributes.SpecialName |
                     MethodAttributes.RTSpecialName |
@@ -227,7 +236,7 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
             {
-                if (typeDefinition.FullName == "<Module>")
+                if (typeDefinition.FullName == Types.Module)
                 {
                     var staticCtorMethodDef = GetOrCreateStaticConstructor(typeDefinition);
 

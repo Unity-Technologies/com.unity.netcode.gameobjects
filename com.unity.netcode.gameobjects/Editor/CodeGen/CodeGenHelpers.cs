@@ -6,38 +6,137 @@ using System.Text;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
-using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
-using UnityEngine;
+using Unity.Netcode.Shared;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
+    namespace Import
+    {
+        internal static class Modules
+        {
+            public const string NetcodeRuntime = "Unity.Netcode.Runtime.dll";
+            public const string NetStandard = "netstandard.dll";
+            public const string UnityEngineCoreModule = "UnityEngine.CoreModule.dll";
+        }
+
+        internal static class Types
+        {
+            public const string NetworkManager = "Unity.Netcode.NetworkManager";
+            public const string NetworkManager_RpcReceiveHandler = "Unity.Netcode.NetworkManager/RpcReceiveHandler";
+            public const string NetworkBehaviour = "Unity.Netcode.NetworkBehaviour";
+            public const string NetworkBehaviour___RpcExecStage = "Unity.Netcode.NetworkBehaviour/__RpcExecStage";
+
+            public const string INetworkMessage = "Unity.Netcode.INetworkMessage";
+            public const string INetworkSerializable = "Unity.Netcode.INetworkSerializable";
+            public const string INetworkSerializeByMemcpy = "Unity.Netcode.INetworkSerializeByMemcpy";
+
+            public const string __RpcParams = "Unity.Netcode.__RpcParams";
+
+            public const string MessagingSystem = "Unity.Netcode.MessagingSystem";
+            public const string MessagingSystem_MessageHandler = "Unity.Netcode.MessagingSystem/MessageHandler";
+            public const string MessagingSystem_MessageWithHandler = "Unity.Netcode.MessagingSystem/MessageWithHandler";
+
+            public const string ILPPMessageProvider = "Unity.Netcode.ILPPMessageProvider";
+
+            public const string ClientRpcParams = "Unity.Netcode.ClientRpcParams";
+            public const string ServerRpcParams = "Unity.Netcode.ServerRpcParams";
+            public const string ClientRpcSendParams = "Unity.Netcode.ClientRpcSendParams";
+            public const string ServerRpcSendParams = "Unity.Netcode.ServerRpcSendParams";
+            public const string ClientRpcReceiveParams = "Unity.Netcode.ClientRpcReceiveParams";
+            public const string ServerRpcReceiveParams = "Unity.Netcode.ServerRpcReceiveParams";
+
+            public const string ClientRpcAttribute = "Unity.Netcode.ClientRpcAttribute";
+            public const string ServerRpcAttribute = "Unity.Netcode.ServerRpcAttribute";
+
+            public const string FastBufferReader = "Unity.Netcode.FastBufferReader";
+            public const string FastBufferWriter = "Unity.Netcode.FastBufferWriter";
+
+            public const string RpcDelivery = "Unity.Netcode.RpcDelivery";
+            public const string LogLevel = "Unity.Netcode.LogLevel";
+
+
+            public const string Debug = "UnityEngine.Debug";
+
+            public const string Type = "System.Type";
+            public const string List = "System.Collections.Generic.List`1";
+
+            public const string Module = "<Module>";
+
+            public const string ForceNetworkSerializeByMemcpy_ShortName = "ForceNetworkSerializeByMemcpy";
+        }
+
+        internal static class EnumValues
+        {
+            public const string RpcDelivery_Reliable = "Reliable";
+
+            public const string LogLevel_Normal = "Normal";
+
+            public const string RpcExecStage_None = "None";
+            public const string RpcExecStage_Server = "Server";
+            public const string RpcExecStage_Client = "Client";
+        }
+
+        internal static class Fields
+        {
+            public const string MessagingSystem_MessageType = "MessageType";
+            public const string MessagingSystem_Handler = "Handler";
+
+            public const string NetworkManager___rpc_func_table = "__rpc_func_table";
+            public const string NetworkManager_RpcReceiveHandler = "RpcReceiveHandler";
+            public const string NetworkManager___rpc_name_table = "__rpc_name_table";
+
+            public const string NetworkBehaviour___rpc_exec_stage = "__rpc_exec_stage";
+
+            public const string ILPPMessageProvider___network_message_types = "__network_message_types";
+
+            public const string NetworkManager_LogLevel = "LogLevel";
+
+            public const string RpcAttribute_Delivery = "Delivery";
+            public const string ServerRpcAttribute_RequireOwnership = "RequireOwnership";
+            public const string RpcParams_Server = "Server";
+            public const string RpcParams_Client = "Client";
+            public const string ServerRpcParams_Receive = "Receive";
+            public const string ServerRpcReceiveParams_SenderClientId = "SenderClientId";
+        }
+
+        internal static class Properties
+        {
+            public const string NetworkBehaviour_NetworkManager = "NetworkManager";
+            public const string NetworkBehaviour_OwnerClientId = "OwnerClientId";
+            public const string NetworkManager_LocalClientId = "LocalClientId";
+            public const string NetworkManager_IsListening = "IsListening";
+            public const string NetworkManager_IsHost = "IsHost";
+            public const string NetworkManager_IsServer = "IsServer";
+            public const string NetworkManager_IsClient = "IsClient";
+
+        }
+
+        internal static class Methods
+        {
+            public const string MessagingSystem_ReceiveMessage = "ReceiveMessage";
+
+            public const string NetworkBehaviour___beginSendServerRpc = "__beginSendServerRpc";
+            public const string NetworkBehaviour___endSendServerRpc = "__endSendServerRpc";
+            public const string NetworkBehaviour___beginSendClientRpc = "__beginSendClientRpc";
+            public const string NetworkBehaviour___endSendClientRpc = "__endSendClientRpc";
+            public const string NetworkBehaviour___getTypeName = "__getTypeName";
+
+            public const string FastBufferReader_ReadValueSafe = "ReadValueSafe";
+            public const string FastBufferWriter_WriteValueSafe = "WriteValueSafe";
+
+            public const string Type_GetTypeFromHandle = "GetTypeFromHandle";
+            public const string List_Add = "Add";
+
+            public const string Module_StaticConstructor = ".cctor";
+
+            public const string Debug_LogError = "LogError";
+        }
+    }
     internal static class CodeGenHelpers
     {
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
-
-        public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
-        public static readonly string INetworkMessage_FullName = typeof(INetworkMessage).FullName;
-        public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
-        public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
-        public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
-        public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
-        public static readonly string ClientRpcSendParams_FullName = typeof(ClientRpcSendParams).FullName;
-        public static readonly string ClientRpcReceiveParams_FullName = typeof(ClientRpcReceiveParams).FullName;
-        public static readonly string ServerRpcSendParams_FullName = typeof(ServerRpcSendParams).FullName;
-        public static readonly string ServerRpcReceiveParams_FullName = typeof(ServerRpcReceiveParams).FullName;
-        public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
-        public static readonly string INetworkSerializeByMemcpy_FullName = typeof(INetworkSerializeByMemcpy).FullName;
-        public static readonly string IUTF8Bytes_FullName = typeof(IUTF8Bytes).FullName;
-        public static readonly string UnityColor_FullName = typeof(Color).FullName;
-        public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
-        public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
-        public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
-        public static readonly string UnityVector4_FullName = typeof(Vector4).FullName;
-        public static readonly string UnityQuaternion_FullName = typeof(Quaternion).FullName;
-        public static readonly string UnityRay_FullName = typeof(Ray).FullName;
-        public static readonly string UnityRay2D_FullName = typeof(Ray2D).FullName;
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
@@ -78,6 +177,16 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             return false;
+        }
+
+        public static int GetEnumValue(TypeDefinition enumDefinition, string value)
+        {
+            foreach (var field in enumDefinition.Fields) {
+                if (field.Name == value)
+                    return (int)field.Constant;
+            }
+
+            throw new Exception(string.Format("Enum value not found for {0}", value));
         }
 
         public static string FullNameWithGenericParameters(this TypeReference typeReference, GenericParameter[] contextGenericParameters, TypeReference[] contextGenericParameterTypes)
@@ -128,156 +237,6 @@ namespace Unity.Netcode.Editor.CodeGen
             }
         }
 
-        public static bool IsSerializable(this TypeReference typeReference)
-        {
-            var typeSystem = typeReference.Module.TypeSystem;
-
-            // C# primitives
-            if (typeReference == typeSystem.Boolean)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Char)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.SByte)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Byte)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Int16)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.UInt16)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Int32)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.UInt32)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Int64)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.UInt64)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Single)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.Double)
-            {
-                return true;
-            }
-
-            if (typeReference == typeSystem.String)
-            {
-                return true;
-            }
-
-            // Unity primitives
-            if (typeReference.FullName == UnityColor_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityColor32_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityVector2_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityVector3_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityVector4_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityQuaternion_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityRay_FullName)
-            {
-                return true;
-            }
-
-            if (typeReference.FullName == UnityRay2D_FullName)
-            {
-                return true;
-            }
-
-            // Enum
-            if (typeReference.GetEnumAsInt() != null)
-            {
-                return true;
-            }
-
-            // INetworkSerializable
-            if (typeReference.HasInterface(INetworkSerializable_FullName))
-            {
-                return true;
-            }
-
-            // Static array
-            if (typeReference.IsArray)
-            {
-                return typeReference.GetElementType().IsSerializable();
-            }
-
-            return false;
-        }
-
-        public static TypeReference GetEnumAsInt(this TypeReference typeReference)
-        {
-            if (typeReference.IsArray)
-            {
-                return null;
-            }
-
-            try
-            {
-                var typeDef = typeReference.Resolve();
-                return typeDef.IsEnum ? typeDef.GetEnumUnderlyingType() : null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
         public static void AddError(this List<DiagnosticMessage> diagnostics, string message)
         {
             diagnostics.AddError((SequencePoint)null, message);
@@ -320,6 +279,148 @@ namespace Unity.Netcode.Editor.CodeGen
                 Column = sequencePoint?.StartColumn ?? 0,
                 MessageData = $" - {message}"
             });
+        }
+
+        public static TypeDefinition FindTypeRecursive(this AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver resolver, string fullTypeName, HashSet<string> visited = null)
+        {
+            if (visited == null)
+            {
+                visited = new HashSet<string>();
+            }
+            var type = FindTypeWithin(assemblyDefinition, fullTypeName);
+            if (type != null)
+            {
+                return type;
+            }
+
+            // Iterating in reverse because the system libraries are first and are unlikely to be what we're looking for
+            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0 ; --i)
+            {
+                var moduleDefinition = assemblyDefinition.Modules[i];
+                for (var j = moduleDefinition.AssemblyReferences.Count - 1; j >= 0; --j)
+                {
+                    var assemblyReference = moduleDefinition.AssemblyReferences[j];
+                    if (assemblyReference == null)
+                    {
+                        continue;
+                    }
+                    if (visited.Contains(assemblyReference.Name))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(assemblyReference.Name);
+                    var assembly = resolver.Resolve(assemblyReference);
+                    if (assembly == null)
+                    {
+                        continue;
+                    }
+                    type = FindTypeRecursive(assembly, resolver, fullTypeName);
+                    if (type != null)
+                    {
+                        return type;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static TypeDefinition FindTypeWithin(this AssemblyDefinition assemblyDefinition, string fullTypeName)
+        {
+            foreach (var module in assemblyDefinition.Modules)
+            {
+                if (module == null)
+                {
+                    continue;
+                }
+                foreach (var type in module.GetAllTypes())
+                {
+                    if (type.FullName == fullTypeName)
+                    {
+                        return type;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static TypeDefinition FindType(this ModuleDefinition module, string fullTypeName)
+        {
+            foreach (var type in module.GetAllTypes())
+            {
+                if (type.FullName == fullTypeName)
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+        public static ModuleDefinition FindReferencedModule(this AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver resolver, string moduleName, HashSet<string> visited = null)
+        {
+            if (visited == null)
+            {
+                visited = new HashSet<string>();
+            }
+            var module = FindModuleWithin(assemblyDefinition, moduleName);
+            if (module != null)
+            {
+                return module;
+            }
+
+            // Iterating in reverse because the system libraries are first and are unlikely to be what we're looking for
+            for (var i = assemblyDefinition.Modules.Count - 1; i >= 0 ; --i)
+            {
+                var moduleDefinition = assemblyDefinition.Modules[i];
+                for (var j = moduleDefinition.AssemblyReferences.Count - 1; j >= 0; --j)
+                {
+                    var assemblyReference = moduleDefinition.AssemblyReferences[j];
+                    if (assemblyReference == null)
+                    {
+                        continue;
+                    }
+
+                    if (visited.Contains(assemblyReference.Name))
+                    {
+                        continue;
+                    }
+
+                    visited.Add(assemblyReference.Name);
+
+                    var assembly = resolver.Resolve(assemblyReference);
+                    if (assembly == null)
+                    {
+                        continue;
+                    }
+                    module = FindReferencedModule(assembly, resolver, moduleName, visited);
+                    if (module != null)
+                    {
+                        return module;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public static ModuleDefinition FindModuleWithin(this AssemblyDefinition assemblyDefinition, string moduleName)
+        {
+            foreach (var module in assemblyDefinition.Modules)
+            {
+                if (module == null)
+                {
+                    continue;
+                }
+                if (module.Name == moduleName)
+                {
+                    return module;
+                }
+            }
+
+            return null;
         }
 
         public static void RemoveRecursiveReferences(this ModuleDefinition moduleDefinition)

@@ -2,9 +2,7 @@
     "name": "Unity.Netcode.Editor.CodeGen",
     "rootNamespace": "Unity.Netcode.Editor.CodeGen",
     "references": [
-        "Unity.Netcode.Runtime",
-        "Unity.Collections"
-    ],
+    "GUID:34f0fb646a4c6c94ea752b0db70ba252"],
     "includePlatforms": [
         "Editor"
     ],

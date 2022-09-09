@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Unity.Collections;
+using Unity.Netcode.Shared;
 
 namespace Unity.Netcode
 {
@@ -275,4 +276,3 @@ namespace Unity.Netcode
         }
     }
 }
-

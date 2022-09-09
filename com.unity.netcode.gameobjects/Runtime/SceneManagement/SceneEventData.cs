@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using Unity.Collections;
+using Unity.Netcode.Shared;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode

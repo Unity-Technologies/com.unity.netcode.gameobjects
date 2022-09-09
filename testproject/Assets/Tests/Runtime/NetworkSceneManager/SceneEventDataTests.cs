@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
+using Unity.Netcode.Shared;
 using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
