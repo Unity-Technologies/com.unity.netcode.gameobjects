@@ -777,9 +777,18 @@ namespace Unity.Netcode.RuntimeTests
         }
         #endregion
 
+        private float m_OriginalTimeScale = 1.0f;
+
+        protected override IEnumerator OnSetup()
+        {
+            m_OriginalTimeScale = Time.timeScale;
+            yield return null;
+        }
 
         protected override IEnumerator OnTearDown()
         {
+            Time.timeScale = m_OriginalTimeScale;
+
             m_NetworkListPredicateHandler = null;
             yield return base.OnTearDown();
         }
