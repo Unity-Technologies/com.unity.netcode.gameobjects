@@ -76,7 +76,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Advances the time system by a certain amount of time. Should be called once per frame with Time.deltaTime or similar.
+        /// Advances the time system by a certain amount of time. Should be called once per frame with Time.unscaledDeltaTime or similar.
         /// </summary>
         /// <param name="deltaTimeSec">The amount of time to advance. The delta time which passed since Advance was last called.</param>
         /// <returns></returns>

@@ -1,6 +1,7 @@
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.Assertions.Comparers;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 
@@ -11,7 +12,8 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class NetworkTimeSystemTests
     {
-        private MonoBehaviourTest<PlayerLoopTimeTestComponent> m_MonoBehaviourTest; // cache for teardown
+        private MonoBehaviourTest<PlayerLoopFixedTimeTestComponent> m_PlayerLoopFixedTimeTestComponent; // cache for teardown
+        private MonoBehaviourTest<PlayerLoopTimeTestComponent> m_PlayerLoopTimeTestComponent; // cache for teardown
 
         [SetUp]
         public void Setup()
@@ -22,14 +24,29 @@ namespace Unity.Netcode.RuntimeTests
 
         /// <summary>
         /// Tests whether time is accessible and has correct values inside Update/FixedUpdate.
+        /// This test applies only when <see cref="Time.timeScale"> is 1.
         /// </summary>
         /// <returns></returns>
         [UnityTest]
-        public IEnumerator PlayerLoopTimeTest()
+        public IEnumerator PlayerLoopFixedTimeTest()
         {
-            m_MonoBehaviourTest = new MonoBehaviourTest<PlayerLoopTimeTestComponent>();
+            m_PlayerLoopFixedTimeTestComponent = new MonoBehaviourTest<PlayerLoopFixedTimeTestComponent>();
 
-            yield return m_MonoBehaviourTest;
+            yield return m_PlayerLoopFixedTimeTestComponent;
+        }
+
+        /// <summary>
+        /// Tests whether time is accessible and has correct values inside Update, for multiples <see cref="Time.timeScale"/> values.
+        /// </summary>
+        /// <returns></returns>
+        [UnityTest]
+        public IEnumerator PlayerLoopTimeTest_WithDifferentTimeScale([Values(0.0f, 0.1f, 0.5f, 1.0f, 2.0f, 5.0f)] float timeScale)
+        {
+            Time.timeScale = timeScale;
+
+            m_PlayerLoopTimeTestComponent = new MonoBehaviourTest<PlayerLoopTimeTestComponent>();
+
+            yield return m_PlayerLoopTimeTestComponent;
         }
 
         /// <summary>
@@ -40,10 +57,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator CorrectAmountTicksTest()
         {
-            var tickSystem = NetworkManager.Singleton.NetworkTickSystem;
-            var delta = tickSystem.LocalTime.FixedDeltaTime;
-            var previous_localTickCalculated = 0;
-            var previous_serverTickCalculated = 0;
+            NetworkTickSystem tickSystem = NetworkManager.Singleton.NetworkTickSystem;
+            float delta = tickSystem.LocalTime.FixedDeltaTime;
+            int previous_localTickCalculated = 0;
+            int previous_serverTickCalculated = 0;
 
             while (tickSystem.LocalTime.Time < 3f)
             {
@@ -70,7 +87,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 Assert.AreEqual(previous_localTickCalculated, NetworkManager.Singleton.LocalTime.Tick, $"Calculated local tick {previous_localTickCalculated} does not match local tick {NetworkManager.Singleton.LocalTime.Tick}!");
                 Assert.AreEqual(previous_serverTickCalculated, NetworkManager.Singleton.ServerTime.Tick, $"Calculated server tick {previous_serverTickCalculated} does not match server tick {NetworkManager.Singleton.ServerTime.Tick}!");
-                Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time), $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!");
+                Assert.AreEqual((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time, $"Local time {(float)NetworkManager.Singleton.LocalTime.Time} is not approximately server time {(float)NetworkManager.Singleton.ServerTime.Time}!", FloatComparer.s_ComparerWithDefaultTolerance);
             }
         }
 
@@ -80,15 +97,21 @@ namespace Unity.Netcode.RuntimeTests
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
 
-            if (m_MonoBehaviourTest != null)
-            {
-                Object.DestroyImmediate(m_MonoBehaviourTest.gameObject);
+            Time.timeScale = 1.0f;
+
+            if (m_PlayerLoopFixedTimeTestComponent != null) {
+                Object.DestroyImmediate(m_PlayerLoopFixedTimeTestComponent.gameObject);
+                m_PlayerLoopFixedTimeTestComponent = null;
+            }
+
+            if (m_PlayerLoopTimeTestComponent != null) {
+                Object.DestroyImmediate(m_PlayerLoopTimeTestComponent.gameObject);
+                m_PlayerLoopTimeTestComponent = null;
             }
         }
-
     }
 
-    public class PlayerLoopTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
+    public class PlayerLoopFixedTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
     {
         public const int Passes = 100;
 
@@ -101,7 +124,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkTime m_ServerTimePreviousUpdate;
         private NetworkTime m_LocalTimePreviousFixedUpdate;
 
-        public void Start()
+        private void Start()
         {
             // Run fixed update at same rate as network tick
             Time.fixedDeltaTime = NetworkManager.Singleton.LocalTime.FixedDeltaTime;
@@ -110,23 +133,23 @@ namespace Unity.Netcode.RuntimeTests
             Time.maximumDeltaTime = float.MaxValue;
         }
 
-        public void Update()
+        private void Update()
         {
             // This must run first else it wont run if there is an exception
             m_UpdatePasses++;
 
-            var localTime = NetworkManager.Singleton.LocalTime;
-            var serverTime = NetworkManager.Singleton.ServerTime;
+            NetworkTime localTime = NetworkManager.Singleton.LocalTime;
+            NetworkTime serverTime = NetworkManager.Singleton.ServerTime;
 
             // time should have advanced on the host/server
-            Assert.True(m_LocalTimePreviousUpdate.Time < localTime.Time);
-            Assert.True(m_ServerTimePreviousUpdate.Time < serverTime.Time);
+            Assert.Less(m_LocalTimePreviousUpdate.Time, localTime.Time);
+            Assert.Less(m_ServerTimePreviousUpdate.Time, serverTime.Time);
 
             // time should be further then last fixed step in update
-            Assert.True(m_LocalTimePreviousFixedUpdate.FixedTime < localTime.Time);
+            Assert.Less(m_LocalTimePreviousFixedUpdate.FixedTime, localTime.Time);
 
             // we should be in same or further tick then fixed update
-            Assert.True(m_LocalTimePreviousFixedUpdate.Tick <= localTime.Tick);
+            Assert.LessOrEqual(m_LocalTimePreviousFixedUpdate.Tick, localTime.Tick);
 
             // fixed update should result in same amounts of tick as network time
             if (m_TickOffset == -1)
@@ -135,23 +158,61 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
-                // offset of  1 is ok, this happens due to different tick duration offsets
-                Assert.True(Mathf.Abs(serverTime.Tick - m_TickOffset - m_LastFixedUpdateTick) <= 1);
+                // offset of 1 is ok, this happens due to different tick duration offsets
+                Assert.LessOrEqual(Mathf.Abs(serverTime.Tick - m_TickOffset - m_LastFixedUpdateTick), 1);
             }
 
             m_LocalTimePreviousUpdate = localTime;
+            m_ServerTimePreviousUpdate = serverTime;
         }
 
-        public void FixedUpdate()
+        private void FixedUpdate()
         {
-            var time = NetworkManager.Singleton.LocalTime;
+            m_LocalTimePreviousFixedUpdate = NetworkManager.Singleton.LocalTime;
 
-            m_LocalTimePreviousFixedUpdate = time;
-
-            Assert.AreEqual(Time.fixedDeltaTime, time.FixedDeltaTime);
-            Assert.True(Mathf.Approximately((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time));
-
+            Assert.AreEqual(Time.fixedDeltaTime, m_LocalTimePreviousFixedUpdate.FixedDeltaTime);
+            Assert.AreEqual((float)NetworkManager.Singleton.LocalTime.Time, (float)NetworkManager.Singleton.ServerTime.Time, null, FloatComparer.s_ComparerWithDefaultTolerance);
             m_LastFixedUpdateTick++;
+        }
+
+        public bool IsTestFinished => m_UpdatePasses >= Passes;
+    }
+
+    public class PlayerLoopTimeTestComponent : MonoBehaviour, IMonoBehaviourTest
+    {
+        public const int Passes = 100;
+
+        private int m_UpdatePasses = 0;
+
+        private NetworkTime m_LocalTimePreviousUpdate;
+        private NetworkTime m_ServerTimePreviousUpdate;
+        private NetworkTime m_LocalTimePreviousFixedUpdate;
+
+        private void Update()
+        {
+            // This must run first else it wont run if there is an exception
+            m_UpdatePasses++;
+
+            NetworkTime localTime = NetworkManager.Singleton.LocalTime;
+            NetworkTime serverTime = NetworkManager.Singleton.ServerTime;
+
+            // time should have advanced on the host/server
+            Assert.Less(m_LocalTimePreviousUpdate.Time, localTime.Time);
+            Assert.Less(m_ServerTimePreviousUpdate.Time, serverTime.Time);
+
+            // time should be further then last fixed step in update
+            Assert.Less(m_LocalTimePreviousFixedUpdate.FixedTime, localTime.Time);
+
+            // we should be in same or further tick then fixed update
+            Assert.LessOrEqual(m_LocalTimePreviousFixedUpdate.Tick, localTime.Tick);
+
+            m_LocalTimePreviousUpdate = localTime;
+            m_ServerTimePreviousUpdate = serverTime;
+        }
+
+        private void FixedUpdate()
+        {
+            m_LocalTimePreviousFixedUpdate = NetworkManager.Singleton.LocalTime;
         }
 
         public bool IsTestFinished => m_UpdatePasses >= Passes;
