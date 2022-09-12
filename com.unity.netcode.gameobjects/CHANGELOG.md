@@ -11,7 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run.
+- The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
 
 ### Fixed
 
