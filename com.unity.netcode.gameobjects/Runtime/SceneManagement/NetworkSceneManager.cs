@@ -341,6 +341,7 @@ namespace Unity.Netcode
             public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
             {
                 var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+                sceneEventAction.Scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
                 operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
                 return operation;
             }
@@ -649,40 +650,6 @@ namespace Unity.Netcode
         /// assign the right loaded scene to the right client's ScenesLoaded list
         /// </summary>
         internal Func<string, Scene> OverrideGetAndAddNewlyLoadedSceneByName;
-
-        /// <summary>
-        /// Since SceneManager.GetSceneByName only returns the first scene that matches the name
-        /// we must "find" a newly added scene by looking through all loaded scenes and determining
-        /// which scene with the same name has not yet been loaded.
-        /// In order to support loading the same additive scene within in-scene placed NetworkObjects,
-        /// we must do this to be able to soft synchronize the "right version" of the NetworkObject.
-        /// </summary>
-        /// <param name="sceneName"></param>
-        /// <returns></returns>
-        internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
-        {
-            if (OverrideGetAndAddNewlyLoadedSceneByName != null)
-            {
-                return OverrideGetAndAddNewlyLoadedSceneByName.Invoke(sceneName);
-            }
-            else
-            {
-                for (int i = 0; i < SceneManager.sceneCount; i++)
-                {
-                    var sceneLoaded = SceneManager.GetSceneAt(i);
-                    if (sceneLoaded.name == sceneName)
-                    {
-                        if (!ScenesLoaded.ContainsKey(sceneLoaded.handle))
-                        {
-                            ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
-                            return sceneLoaded;
-                        }
-                    }
-                }
-
-                throw new Exception($"Failed to find any loaded scene named {sceneName}!");
-            }
-        }
 
         /// <summary>
         /// Client Side Only:
@@ -1050,7 +1017,7 @@ namespace Unity.Netcode
         /// Server and Client:
         /// Invoked when an additively loaded scene is unloaded
         /// </summary>
-        private void OnSceneUnloaded(uint sceneEventId)
+        private void OnSceneUnloaded(uint sceneEventId, Scene _)
         {
             // If we are shutdown or about to shutdown, then ignore this event
             if (!m_NetworkManager.IsListening || m_NetworkManager.ShutdownInProgress)
@@ -1099,7 +1066,7 @@ namespace Unity.Netcode
             m_IsSceneEventActive = false;
         }
 
-        private void EmptySceneUnloadedOperation(uint sceneEventId)
+        private void EmptySceneUnloadedOperation(uint sceneEventId, Scene _)
         {
             // Do nothing (this is a stub call since it is only used to flush all additively loaded scenes)
         }
@@ -1375,7 +1342,7 @@ namespace Unity.Netcode
         /// Client and Server:
         /// Generic on scene loaded callback method to be called upon a scene loading
         /// </summary>
-        private void OnSceneLoaded(uint sceneEventId)
+        private void OnSceneLoaded(uint sceneEventId, Scene scene)
         {
             // If we are shutdown or about to shutdown, then ignore this event
             if (!m_NetworkManager.IsListening || m_NetworkManager.ShutdownInProgress)
@@ -1384,11 +1351,13 @@ namespace Unity.Netcode
             }
 
             var sceneEventData = SceneEventDataStore[sceneEventId];
-            var nextScene = GetAndAddNewlyLoadedSceneByName(SceneNameFromHash(sceneEventData.SceneHash));
+            var nextScene = scene; // GetAndAddNewlyLoadedSceneByName(SceneNameFromHash(sceneEventData.SceneHash));
             if (!nextScene.isLoaded || !nextScene.IsValid())
             {
                 throw new Exception($"Failed to find valid scene internal Unity.Netcode for {nameof(GameObject)}s error!");
             }
+
+            ScenesLoaded.Add(nextScene.handle, nextScene);
 
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
@@ -1680,7 +1649,7 @@ namespace Unity.Netcode
             else
             {
                 // If so, then pass through
-                ClientLoadedSynchronization(sceneEventId);
+                ClientLoadedSynchronization(sceneEventId, activeScene);
             }
         }
 
@@ -1689,16 +1658,18 @@ namespace Unity.Netcode
         /// This handles all of the in-scene and dynamically spawned NetworkObject synchronization
         /// </summary>
         /// <param name="sceneIndex">Netcode scene index that was loaded</param>
-        private void ClientLoadedSynchronization(uint sceneEventId)
+        private void ClientLoadedSynchronization(uint sceneEventId, Scene scene)
         {
             var sceneEventData = SceneEventDataStore[sceneEventId];
             var sceneName = SceneNameFromHash(sceneEventData.ClientSceneHash);
-            var nextScene = GetAndAddNewlyLoadedSceneByName(sceneName);
+            var nextScene = scene; //GetAndAddNewlyLoadedSceneByName(sceneName);
 
             if (!nextScene.isLoaded || !nextScene.IsValid())
             {
                 throw new Exception($"Failed to find valid scene internal Unity.Netcode for {nameof(GameObject)}s error!");
             }
+
+            ScenesLoaded.Add(nextScene.handle, nextScene);
 
             var loadSceneMode = (sceneEventData.ClientSceneHash == sceneEventData.SceneHash ? sceneEventData.LoadSceneMode : LoadSceneMode.Additive);
 
