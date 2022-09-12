@@ -1,8 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -113,82 +111,6 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 
-    internal class SpawnCatcher : INetworkHooks
-    {
-        public struct TriggerData
-        {
-            public FastBufferReader Reader;
-            public MessageHeader Header;
-            public ulong SenderId;
-            public float Timestamp;
-            public int SerializedHeaderSize;
-        }
-        public readonly List<TriggerData> CaughtMessages = new List<TriggerData>();
-
-        public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
-        {
-        }
-
-        public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
-        {
-        }
-
-        public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
-        {
-        }
-
-        public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
-        {
-        }
-
-        public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
-        {
-        }
-
-        public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
-        {
-        }
-
-        public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
-        {
-        }
-
-        public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
-        {
-        }
-
-        public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
-        {
-            return true;
-        }
-
-        public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
-        {
-            if (messageType == typeof(CreateObjectMessage))
-            {
-                CaughtMessages.Add(new TriggerData
-                {
-                    Reader = new FastBufferReader(messageContent, Allocator.Persistent),
-                    Header = context.Header,
-                    Timestamp = context.Timestamp,
-                    SenderId = context.SenderId,
-                    SerializedHeaderSize = context.SerializedHeaderSize
-                });
-                return false;
-            }
-
-            return true;
-        }
-
-        public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-        {
-        }
-
-        public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-        {
-        }
-    }
-
     public class DeferredMessageTestRpcComponent : NetworkBehaviour
     {
         public bool ClientRpcCalled;
@@ -262,7 +184,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         protected override int NumberOfClients => 0;
 
-        private List<SpawnCatcher> m_ClientSpawnCatchers = new List<SpawnCatcher>();
+        private List<MessageCatcher<CreateObjectMessage>> m_ClientSpawnCatchers = new List<MessageCatcher<CreateObjectMessage>>();
 
         private GameObject m_RpcPrefab;
         private GameObject m_NetworkVariablePrefab;
@@ -362,7 +284,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             foreach (var client in m_ClientNetworkManagers)
             {
-                var catcher = new SpawnCatcher();
+                var catcher = new MessageCatcher<CreateObjectMessage>(client);
                 m_ClientSpawnCatchers.Add(catcher);
                 client.MessagingSystem.Hook(catcher);
             }
@@ -374,11 +296,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // Unhook first so the spawn catcher stops catching spawns
                 m_ClientNetworkManagers[i].MessagingSystem.Unhook(m_ClientSpawnCatchers[i]);
-                foreach (var caughtSpawn in m_ClientSpawnCatchers[i].CaughtMessages)
-                {
-                    // Reader will be disposed within HandleMessage
-                    m_ClientNetworkManagers[i].MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
-                }
+                m_ClientSpawnCatchers[i].ReleaseMessages();
             }
             m_ClientSpawnCatchers.Clear();
         }
@@ -396,7 +314,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 foreach (var catcher in m_ClientSpawnCatchers)
                 {
-                    if (catcher.CaughtMessages.Count != count)
+                    if (catcher.CaughtMessageCount != count)
                     {
                         return false;
                     }

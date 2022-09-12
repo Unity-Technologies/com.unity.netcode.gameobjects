@@ -349,6 +349,8 @@ namespace Unity.Netcode.Transports.UTP
             PacketDropRate = 0
         };
 
+        internal uint DebugSimulatorRandomSeed { get; set; } = 0;
+
         private struct PacketLossCache
         {
             public int PacketsReceived;
@@ -1334,7 +1336,8 @@ namespace Unity.Netcode.Transports.UTP
                 maxPacketSize: NetworkParameterConstants.MTU,
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
-                packetDropPercentage: DebugSimulator.PacketDropRate
+                packetDropPercentage: DebugSimulator.PacketDropRate,
+                randomSeed: DebugSimulatorRandomSeed
 #if UTP_TRANSPORT_2_0_ABOVE
                 , mode: ApplyMode.AllPackets
 #endif
