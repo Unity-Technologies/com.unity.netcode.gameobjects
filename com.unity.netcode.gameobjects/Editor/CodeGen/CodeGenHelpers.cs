@@ -102,7 +102,7 @@ namespace Unity.Netcode.Editor.CodeGen
             public const string ServerRpcReceiveParams_SenderClientId = "SenderClientId";
         }
 
-        internal static class ImportProperties
+        internal static class PropertyNames
         {
             public const string NetworkBehaviour_NetworkManager = "NetworkManager";
             public const string NetworkBehaviour_OwnerClientId = "OwnerClientId";
