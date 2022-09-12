@@ -646,12 +646,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Used for NetcodeIntegrationTest testing in order to properly
-        /// assign the right loaded scene to the right client's ScenesLoaded list
-        /// </summary>
-        internal Func<string, Scene> OverrideGetAndAddNewlyLoadedSceneByName;
-
-        /// <summary>
         /// Client Side Only:
         /// This takes a server scene handle that is written by the server before the scene relative
         /// NetworkObject is serialized and converts the server scene handle to a local client handle
