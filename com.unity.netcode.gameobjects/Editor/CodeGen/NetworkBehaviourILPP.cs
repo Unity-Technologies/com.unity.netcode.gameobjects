@@ -178,19 +178,19 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (propertyInfo.Name)
                 {
-                    case ImportProperties.NetworkManager_LocalClientId:
+                    case PropertyNames.NetworkManager_LocalClientId:
                         m_NetworkManager_getLocalClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case ImportProperties.NetworkManager_IsListening:
+                    case PropertyNames.NetworkManager_IsListening:
                         m_NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case ImportProperties.NetworkManager_IsHost:
+                    case PropertyNames.NetworkManager_IsHost:
                         m_NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case ImportProperties.NetworkManager_IsServer:
+                    case PropertyNames.NetworkManager_IsServer:
                         m_NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case ImportProperties.NetworkManager_IsClient:
+                    case PropertyNames.NetworkManager_IsClient:
                         m_NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -239,10 +239,10 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (propertyInfo.Name)
                 {
-                    case ImportProperties.NetworkBehaviour_NetworkManager:
+                    case PropertyNames.NetworkBehaviour_NetworkManager:
                         m_NetworkBehaviour_getNetworkManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case ImportProperties.NetworkBehaviour_OwnerClientId:
+                    case PropertyNames.NetworkBehaviour_OwnerClientId:
                         m_NetworkBehaviour_getOwnerClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
