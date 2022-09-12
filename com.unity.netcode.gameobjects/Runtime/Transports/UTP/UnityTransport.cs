@@ -1369,12 +1369,12 @@ namespace Unity.Netcode.Transports.UTP
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 #if !UTP_TRANSPORT_2_0_ABOVE
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
-#endif
-#endif
+#endif //!UTP_TRANSPORT_2_0_ABOVE
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             ConfigureSimulator();
-#endif
+#endif //UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 
             m_NetworkSettings.WithNetworkConfigParameters(
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
@@ -1383,7 +1383,7 @@ namespace Unity.Netcode.Transports.UTP
 #if UTP_TRANSPORT_2_0_ABOVE
                 sendQueueCapacity: m_MaxPacketQueueSize,
                 receiveQueueCapacity: m_MaxPacketQueueSize,
-#endif
+#endif //UTP_TRANSPORT_2_0_ABOVE
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
             driver = NetworkDriver.Create(m_NetworkSettings);
@@ -1391,21 +1391,23 @@ namespace Unity.Netcode.Transports.UTP
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 #if UTP_TRANSPORT_2_0_ABOVE
             driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
-#endif
-#endif
+#endif //UTP_TRANSPORT_2_0_ABOVE
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD || UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if !UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
+#endif //!UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(SimulatorPipelineStage)
 #if !UTP_TRANSPORT_2_0_ABOVE
                     , typeof(SimulatorPipelineStageInSend)
-#endif
+#endif //!UTP_TRANSPORT_2_0_ABOVE
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
@@ -1413,45 +1415,48 @@ namespace Unity.Netcode.Transports.UTP
                     typeof(SimulatorPipelineStage)
 #if !UTP_TRANSPORT_2_0_ABOVE
                     , typeof(SimulatorPipelineStageInSend)
-#endif
+#endif //!UTP_TRANSPORT_2_0_ABOVE
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
                     typeof(SimulatorPipelineStage)
 #if !UTP_TRANSPORT_2_0_ABOVE
                     , typeof(SimulatorPipelineStageInSend)
-#endif
+#endif //!UTP_TRANSPORT_2_0_ABOVE
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
             }
+#if !UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
             else
-#endif
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
-#endif
+#endif //MULTIPLAYER_TOOLS_1_0_0_PRE_7
                 );
             }
+        }
+#endif //UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+#endif //UNITY_EDITOR || DEVELOPMENT_BUILD
         }
 
         // -------------- Utility Types -------------------------------------------------------------------------------
