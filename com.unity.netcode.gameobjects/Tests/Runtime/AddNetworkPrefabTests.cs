@@ -11,6 +11,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public class EmptyComponent : NetworkBehaviour
         {
+
         }
         protected override int NumberOfClients => 1;
 
