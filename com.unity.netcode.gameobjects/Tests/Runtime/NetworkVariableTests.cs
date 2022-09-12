@@ -540,7 +540,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Runs tests that network variables sync on client whatever the local value of <see cref="Time.timeScale"/>.
         /// </summary>
         [UnityTest]
-        public IEnumerator NetworkVariableSync_WithDifferentTimeScale([Values(true, false)] bool useHost, [Values(0.0f, 0.1f, 0.5f, 1.0f, 2.0f, 5.0f)] float timeScale)
+        public IEnumerator NetworkVariableSync_WithDifferentTimeScale([Values(true, false)] bool useHost, [Values(0.0f, 1.0f, 2.0f)] float timeScale)
         {
             Time.timeScale = timeScale;
 
