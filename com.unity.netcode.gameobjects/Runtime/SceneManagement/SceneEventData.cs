@@ -628,7 +628,7 @@ namespace Unity.Netcode
                             {
                                 m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
                             }
-                            NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                            m_NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                         }
                         else
                         {
