@@ -1292,6 +1292,11 @@ namespace Unity.Netcode
             ShutdownInternal();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
+            if (Singleton == this)
+            {
+                Singleton = null;
+            }
         }
 
         private void DisconnectRemoteClient(ulong clientId)
@@ -1401,11 +1406,6 @@ namespace Unity.Netcode
             IsClient = false;
 
             this.UnregisterAllNetworkUpdates();
-
-            if (Singleton == this)
-            {
-                Singleton = null;
-            }
 
             if (NetworkTickSystem != null)
             {

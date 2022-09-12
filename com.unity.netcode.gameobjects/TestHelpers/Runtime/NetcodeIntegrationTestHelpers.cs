@@ -309,7 +309,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             foreach (var networkManager in NetworkManagerInstances)
             {
                 networkManager.Shutdown();
-                networkManager.ShutdownInternal();
                 s_Hooks.Remove(networkManager);
             }
 
