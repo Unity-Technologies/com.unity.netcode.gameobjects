@@ -23,10 +23,9 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -34,7 +33,6 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 return null;
             }
-
 
             m_Diagnostics.Clear();
 
@@ -46,11 +44,27 @@ namespace Unity.Netcode.Editor.CodeGen
                 return null;
             }
 
+            // modules
+            (_, m_UnityModule, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+
+            if (m_UnityModule == null)
+            {
+                m_Diagnostics.AddError($"Cannot find Unity module: {CodeGenHelpers.UnityModuleName}");
+                return null;
+            }
+
+            if (m_NetcodeModule == null)
+            {
+                m_Diagnostics.AddError($"Cannot find Netcode module: {CodeGenHelpers.NetcodeModuleName}");
+                return null;
+            }
+
             // process
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
                 m_MainModule = mainModule;
+
                 if (ImportReferences(mainModule))
                 {
                     // process `NetworkBehaviour` types
@@ -93,6 +107,8 @@ namespace Unity.Netcode.Editor.CodeGen
         }
 
         private ModuleDefinition m_MainModule;
+        private ModuleDefinition m_UnityModule;
+        private ModuleDefinition m_NetcodeModule;
         private PostProcessorAssemblyResolver m_AssemblyResolver;
 
         private MethodReference m_Debug_LogError_MethodRef;
@@ -125,12 +141,12 @@ namespace Unity.Netcode.Editor.CodeGen
         private TypeReference m_ClientRpcParams_TypeRef;
 
         private TypeReference m_FastBufferWriter_TypeRef;
-        private Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new Dictionary<string, MethodReference>();
-        private List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new List<MethodReference>();
+        private readonly Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new();
+        private readonly List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new();
 
         private TypeReference m_FastBufferReader_TypeRef;
-        private Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new Dictionary<string, MethodReference>();
-        private List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new List<MethodReference>();
+        private readonly Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new();
+        private readonly List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new();
 
         private const string k_Debug_LogError = nameof(Debug.LogError);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
@@ -159,15 +175,24 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            var debugType = typeof(Debug);
-            foreach (var methodInfo in debugType.GetMethods())
+            TypeDefinition debugTypeDef = null;
+            foreach (var unityTypeDef in m_UnityModule.GetAllTypes())
             {
-                switch (methodInfo.Name)
+                if (debugTypeDef == null && unityTypeDef.TypeNameMatch<Debug>())
+                {
+                    debugTypeDef = unityTypeDef;
+                    continue;
+                }
+            }
+
+            foreach (var methodDef in debugTypeDef.Methods)
+            {
+                switch (methodDef.Name)
                 {
                     case k_Debug_LogError:
-                        if (methodInfo.GetParameters().Length == 1)
+                        if (methodDef.Parameters.Count == 1)
                         {
-                            m_Debug_LogError_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                            m_Debug_LogError_MethodRef = moduleDefinition.ImportReference(methodDef);
                         }
 
                         break;
