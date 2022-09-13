@@ -1385,7 +1385,8 @@ namespace Unity.Netcode.Transports.UTP
             else
             {
 #if UNITY_WEBGL
-                driver = NetworkDriver.Create(new BaselibNetworkInterface(), m_NetworkSettings);
+                Debug.LogWarning("WebSockets were used even though they're not selected in NetworkManager. You should adjust the setting, to silence this warning.");
+                driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
 #else
                 driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
 #endif
