@@ -1383,10 +1383,12 @@ namespace Unity.Netcode.Transports.UTP
                 driver = NetworkDriver.Create(new WebSocketNetworkInterface(), m_NetworkSettings);
             }
             else
-#endif
             {
-                driver = NetworkDriver.Create(new BaselibNetworkInterface(), m_NetworkSettings);
+                driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
             }
+#else
+            driver = NetworkDriver.Create(m_NetworkSettings);
+#endif
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
 #if UTP_TRANSPORT_2_0_ABOVE
