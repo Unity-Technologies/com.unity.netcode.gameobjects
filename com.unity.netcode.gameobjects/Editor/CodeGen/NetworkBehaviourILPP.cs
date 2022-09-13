@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -187,6 +186,12 @@ namespace Unity.Netcode.Editor.CodeGen
 
             TypeDefinition networkManagerTypeDef = null;
             TypeDefinition networkBehaviourTypeDef = null;
+            TypeDefinition networkHandlerDelegateTypeDef = null;
+            TypeDefinition rpcParamsTypeDef = null;
+            TypeDefinition serverRpcParamsTypeDef = null;
+            TypeDefinition clientRpcParamsTypeDef = null;
+            TypeDefinition fastBufferWriterTypeDef = null;
+            TypeDefinition fastBufferReaderTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
                 if (networkManagerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkManager))
@@ -198,6 +203,42 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (networkBehaviourTypeDef == null && netcodeTypeDef.Name == nameof(NetworkBehaviour))
                 {
                     networkBehaviourTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (networkHandlerDelegateTypeDef == null && netcodeTypeDef.Name == nameof(NetworkManager.RpcReceiveHandler))
+                {
+                    networkHandlerDelegateTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (rpcParamsTypeDef == null && netcodeTypeDef.Name == nameof(__RpcParams))
+                {
+                    rpcParamsTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (serverRpcParamsTypeDef == null && netcodeTypeDef.Name == nameof(ServerRpcParams))
+                {
+                    serverRpcParamsTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (clientRpcParamsTypeDef == null && netcodeTypeDef.Name == nameof(ClientRpcParams))
+                {
+                    clientRpcParamsTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (fastBufferWriterTypeDef == null && netcodeTypeDef.Name == nameof(FastBufferWriter))
+                {
+                    fastBufferWriterTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (fastBufferReaderTypeDef == null && netcodeTypeDef.Name == nameof(FastBufferReader))
+                {
+                    fastBufferReaderTypeDef = netcodeTypeDef;
                     continue;
                 }
             }
@@ -216,7 +257,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkManagerType = typeof(NetworkManager); // todo: remove entirely
             m_NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerTypeDef);
             foreach (var propertyDef in networkManagerTypeDef.Properties)
             {
@@ -240,20 +280,26 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            foreach (var fieldInfo in networkManagerType.GetFields(BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var fieldDef in networkManagerTypeDef.Fields)
             {
-                switch (fieldInfo.Name)
+                switch (fieldDef.Name)
                 {
                     case k_NetworkManager_LogLevel:
-                        m_NetworkManager_LogLevel_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_NetworkManager_LogLevel_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                     case k_NetworkManager_rpc_func_table:
-                        m_NetworkManager_rpc_func_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        m_NetworkManager_rpc_func_table_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
+                        m_NetworkManager_rpc_func_table_FieldRef = moduleDefinition.ImportReference(fieldDef);
+
+                        m_NetworkManager_rpc_func_table_Add_MethodRef = fieldDef.FieldType.Resolve().Methods.First(m => m.Name == "Add");
+                        m_NetworkManager_rpc_func_table_Add_MethodRef.DeclaringType = fieldDef.FieldType;
+                        m_NetworkManager_rpc_func_table_Add_MethodRef = moduleDefinition.ImportReference(m_NetworkManager_rpc_func_table_Add_MethodRef);
                         break;
                     case k_NetworkManager_rpc_name_table:
-                        m_NetworkManager_rpc_name_table_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        m_NetworkManager_rpc_name_table_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
+                        m_NetworkManager_rpc_name_table_FieldRef = moduleDefinition.ImportReference(fieldDef);
+
+                        m_NetworkManager_rpc_name_table_Add_MethodRef = fieldDef.FieldType.Resolve().Methods.First(m => m.Name == "Add");
+                        m_NetworkManager_rpc_name_table_Add_MethodRef.DeclaringType = fieldDef.FieldType;
+                        m_NetworkManager_rpc_name_table_Add_MethodRef = moduleDefinition.ImportReference(m_NetworkManager_rpc_name_table_Add_MethodRef);
                         break;
                 }
             }
@@ -301,57 +347,58 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(NetworkManager.RpcReceiveHandler);
-            m_NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
-
-            var rpcParamsType = typeof(__RpcParams);
-            m_RpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsType);
-            foreach (var fieldInfo in rpcParamsType.GetFields())
+            foreach (var ctor in networkHandlerDelegateTypeDef.Resolve().GetConstructors())
             {
-                switch (fieldInfo.Name)
+                if (ctor.HasParameters &&
+                    ctor.Parameters.Count == 2 &&
+                    ctor.Parameters[0].ParameterType.Name == nameof(System.Object) &&
+                    ctor.Parameters[1].ParameterType.Name == nameof(IntPtr))
+                {
+                    m_NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(ctor);
+                    break;
+                }
+            }
+
+            m_RpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsTypeDef);
+            foreach (var fieldDef in rpcParamsTypeDef.Fields)
+            {
+                switch (fieldDef.Name)
                 {
                     case k_RpcParams_Server:
-                        m_RpcParams_Server_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_RpcParams_Server_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                     case k_RpcParams_Client:
-                        m_RpcParams_Client_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_RpcParams_Client_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                 }
             }
 
-            var serverRpcParamsType = typeof(ServerRpcParams);
-            m_ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
-            foreach (var fieldInfo in serverRpcParamsType.GetFields())
+            m_ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsTypeDef);
+            foreach (var fieldDef in serverRpcParamsTypeDef.Fields)
             {
-                switch (fieldInfo.Name)
+                switch (fieldDef.Name)
                 {
                     case k_ServerRpcParams_Receive:
-                        foreach (var recvFieldInfo in fieldInfo.FieldType.GetFields())
+                        foreach (var recvFieldDef in fieldDef.FieldType.Resolve().Fields)
                         {
-                            switch (recvFieldInfo.Name)
+                            switch (recvFieldDef.Name)
                             {
                                 case k_ServerRpcReceiveParams_SenderClientId:
-                                    m_ServerRpcParams_Receive_SenderClientId_FieldRef = moduleDefinition.ImportReference(recvFieldInfo);
+                                    m_ServerRpcParams_Receive_SenderClientId_FieldRef = moduleDefinition.ImportReference(recvFieldDef);
                                     break;
                             }
                         }
 
-                        m_ServerRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_ServerRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                 }
             }
 
-            var clientRpcParamsType = typeof(ClientRpcParams);
-            m_ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
+            m_ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsTypeDef);
+            m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterTypeDef);
+            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(fastBufferReaderTypeDef);
 
-            var fastBufferWriterType = typeof(FastBufferWriter);
-            m_FastBufferWriter_TypeRef = moduleDefinition.ImportReference(fastBufferWriterType);
-
-            var fastBufferReaderType = typeof(FastBufferReader);
-            m_FastBufferReader_TypeRef = moduleDefinition.ImportReference(fastBufferReaderType);
-
-            // Find all extension methods for FastBufferReader and FastBufferWriter to enable user-implemented
-            // methods to be called.
+            // Find all extension methods for FastBufferReader and FastBufferWriter to enable user-implemented methods to be called
             var assemblies = new List<AssemblyDefinition> { m_MainModule.Assembly };
             foreach (var reference in m_MainModule.AssemblyReferences)
             {
