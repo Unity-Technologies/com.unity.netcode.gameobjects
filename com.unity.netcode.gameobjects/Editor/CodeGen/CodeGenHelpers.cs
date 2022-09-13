@@ -56,12 +56,6 @@ namespace Unity.Netcode.Editor.CodeGen
             }
         }
 
-        public static bool TypeNameMatch<T>(this TypeDefinition typeDefinition)
-        {
-            var type = typeof(T);
-            return typeDefinition.Name == type.Name && (string.IsNullOrEmpty(type.Namespace) || typeDefinition.FullName.StartsWith(type.Namespace));
-        }
-
         public static bool IsSubclassOf(this TypeDefinition typeDefinition, string classTypeFullName)
         {
             if (!typeDefinition.IsClass)

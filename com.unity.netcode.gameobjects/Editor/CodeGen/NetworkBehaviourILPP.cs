@@ -178,7 +178,7 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition debugTypeDef = null;
             foreach (var unityTypeDef in m_UnityModule.GetAllTypes())
             {
-                if (debugTypeDef == null && unityTypeDef.TypeNameMatch<Debug>())
+                if (debugTypeDef == null && unityTypeDef.FullName == typeof(Debug).FullName)
                 {
                     debugTypeDef = unityTypeDef;
                     continue;
@@ -189,13 +189,13 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition networkBehaviourTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
-                if (networkManagerTypeDef == null && netcodeTypeDef.TypeNameMatch<NetworkManager>())
+                if (networkManagerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkManager))
                 {
                     networkManagerTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (networkBehaviourTypeDef == null && netcodeTypeDef.TypeNameMatch<NetworkBehaviour>())
+                if (networkBehaviourTypeDef == null && netcodeTypeDef.Name == nameof(NetworkBehaviour))
                 {
                     networkBehaviourTypeDef = netcodeTypeDef;
                     continue;

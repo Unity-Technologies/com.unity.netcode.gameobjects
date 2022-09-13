@@ -144,25 +144,25 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition messagingSystemTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
-                if (messageHandlerTypeDef == null && netcodeTypeDef.TypeNameMatch<MessagingSystem.MessageHandler>())
+                if (messageHandlerTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.MessageHandler))
                 {
                     messageHandlerTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (messageWithHandlerTypeDef == null && netcodeTypeDef.TypeNameMatch<MessagingSystem.MessageWithHandler>())
+                if (messageWithHandlerTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.MessageWithHandler))
                 {
                     messageWithHandlerTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (ilppMessageProviderTypeDef == null && netcodeTypeDef.TypeNameMatch<ILPPMessageProvider>())
+                if (ilppMessageProviderTypeDef == null && netcodeTypeDef.Name == nameof(ILPPMessageProvider))
                 {
                     ilppMessageProviderTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (messagingSystemTypeDef == null && netcodeTypeDef.TypeNameMatch<MessagingSystem>())
+                if (messagingSystemTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem))
                 {
                     messagingSystemTypeDef = netcodeTypeDef;
                     continue;
