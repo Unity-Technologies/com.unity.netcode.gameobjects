@@ -22,17 +22,18 @@ namespace Unity.Netcode.RuntimeTests
             // Host is irrelevant, messages don't get sent to the host "client"
             m_UseHost = false;
 
+            yield return null;
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
             m_Prefab = new GameObject("Object");
             var networkObject = m_Prefab.AddComponent<NetworkObject>();
             m_Prefab.AddComponent<EmptyComponent>();
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            yield return null;
-        }
 
-        protected override void OnServerAndClientsCreated()
-        {
             m_ServerNetworkManager.NetworkConfig.SpawnTimeout = 0;
             m_ServerNetworkManager.NetworkConfig.ForceSamePrefabs = false;
             foreach (var client in m_ClientNetworkManagers)
