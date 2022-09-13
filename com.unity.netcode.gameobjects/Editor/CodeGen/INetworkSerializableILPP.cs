@@ -10,7 +10,6 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 
 namespace Unity.Netcode.Editor.CodeGen
 {
-
     internal sealed class INetworkSerializableILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;
@@ -19,7 +18,7 @@ namespace Unity.Netcode.Editor.CodeGen
             compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
             compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new();
 
         private TypeReference ResolveGenericType(TypeReference type, List<TypeReference> typeStack)
         {

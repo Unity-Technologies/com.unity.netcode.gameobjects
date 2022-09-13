@@ -29,21 +29,21 @@ namespace Unity.Netcode
         internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
+        internal static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, string> __rpc_name_table = new Dictionary<uint, string>();
+        internal static readonly Dictionary<uint, string> __rpc_name_table = new();
 #endif
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
-        private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
-        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
-        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
+        private static ProfilerMarker s_SyncTime = new($"{nameof(NetworkManager)}.SyncTime");
+        private static ProfilerMarker s_TransportPoll = new($"{nameof(NetworkManager)}.TransportPoll");
+        private static ProfilerMarker s_TransportConnect = new($"{nameof(NetworkManager)}.TransportConnect");
+        private static ProfilerMarker s_HandleIncomingData = new($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
+        private static ProfilerMarker s_TransportDisconnect = new($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
         private const double k_TimeSyncFrequency = 1.0d; // sync every second

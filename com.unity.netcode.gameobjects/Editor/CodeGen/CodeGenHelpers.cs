@@ -15,6 +15,10 @@ namespace Unity.Netcode.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {
+        public const string DotnetModuleName = "netstandard.dll";
+        public const string UnityModuleName = "UnityEngine.CoreModule.dll";
+        public const string NetcodeModuleName = "Unity.Netcode.Runtime.dll";
+
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
@@ -107,6 +111,20 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             return name;
+        }
+
+        public static bool IsOfType<T>(this TypeReference typeReference)
+        {
+            var type = typeof(T);
+            var hasNamespace = !string.IsNullOrEmpty(type.Namespace);
+            return typeReference.Name == type.Name && (!hasNamespace || typeReference.FullName.StartsWith(type.Namespace));
+        }
+
+        public static bool IsOfType<T>(this TypeDefinition typeDefinition)
+        {
+            var type = typeof(T);
+            var hasNamespace = !string.IsNullOrEmpty(type.Namespace);
+            return typeDefinition.Name == type.Name && (!hasNamespace || typeDefinition.FullName.StartsWith(type.Namespace));
         }
 
         public static bool HasInterface(this TypeReference typeReference, string interfaceTypeFullName)
@@ -379,6 +397,69 @@ namespace Unity.Netcode.Editor.CodeGen
             assemblyResolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
 
             return assemblyDefinition;
+        }
+
+        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        {
+            ModuleDefinition dotnetModule = null;
+            ModuleDefinition unityModule = null;
+            ModuleDefinition netcodeModule = null;
+
+            foreach (var module in assemblyDefinition.Modules)
+            {
+                if (dotnetModule == null && module.Name == DotnetModuleName)
+                {
+                    dotnetModule = module;
+                    continue;
+                }
+
+                if (unityModule == null && module.Name == UnityModuleName)
+                {
+                    unityModule = module;
+                    continue;
+                }
+
+                if (netcodeModule == null && module.Name == NetcodeModuleName)
+                {
+                    netcodeModule = module;
+                    continue;
+                }
+            }
+
+            if (dotnetModule != null && unityModule != null && netcodeModule != null)
+            {
+                return (dotnetModule, unityModule, netcodeModule);
+            }
+
+            foreach (var assemblyNameReference in assemblyDefinition.MainModule.AssemblyReferences)
+            {
+                foreach (var module in assemblyResolver.Resolve(assemblyNameReference).Modules)
+                {
+                    if (dotnetModule == null && module.Name == DotnetModuleName)
+                    {
+                        dotnetModule = module;
+                        continue;
+                    }
+                    if (unityModule == null && module.Name == UnityModuleName)
+                    {
+                        unityModule = module;
+                        continue;
+                    }
+
+                    if (netcodeModule == null && module.Name == NetcodeModuleName)
+                    {
+                        netcodeModule = module;
+                        continue;
+                    }
+                }
+
+                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                {
+                    return (dotnetModule, unityModule, netcodeModule);
+                }
+            }
+
+            return (dotnetModule, unityModule, netcodeModule);
         }
     }
 }

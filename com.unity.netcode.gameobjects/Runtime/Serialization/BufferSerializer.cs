@@ -25,7 +25,7 @@ namespace Unity.Netcode
     /// <typeparam name="TReaderWriter">The implementation struct</typeparam>
     public ref struct BufferSerializer<TReaderWriter> where TReaderWriter : IReaderWriter
     {
-        private TReaderWriter m_Implementation;
+        private readonly TReaderWriter m_Implementation;
 
         /// <summary>
         /// Check if the contained implementation is a reader
