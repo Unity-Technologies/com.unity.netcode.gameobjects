@@ -14,7 +14,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
 
-        private readonly List<DiagnosticMessage> m_Diagnostics = new();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {

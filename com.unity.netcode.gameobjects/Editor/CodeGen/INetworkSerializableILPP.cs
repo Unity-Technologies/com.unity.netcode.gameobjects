@@ -18,7 +18,7 @@ namespace Unity.Netcode.Editor.CodeGen
             compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
             compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> m_Diagnostics = new();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         private TypeReference ResolveGenericType(TypeReference type, List<TypeReference> typeStack)
         {

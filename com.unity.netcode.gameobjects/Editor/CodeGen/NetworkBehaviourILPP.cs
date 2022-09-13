@@ -24,7 +24,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> m_Diagnostics = new();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
@@ -140,12 +140,12 @@ namespace Unity.Netcode.Editor.CodeGen
         private TypeReference m_ClientRpcParams_TypeRef;
 
         private TypeReference m_FastBufferWriter_TypeRef;
-        private readonly Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new();
-        private readonly List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new();
+        private readonly Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new Dictionary<string, MethodReference>();
+        private readonly List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new List<MethodReference>();
 
         private TypeReference m_FastBufferReader_TypeRef;
-        private readonly Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new();
-        private readonly List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new();
+        private readonly Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new Dictionary<string, MethodReference>();
+        private readonly List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new List<MethodReference>();
 
         private const string k_Debug_LogError = nameof(Debug.LogError);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
