@@ -185,6 +185,23 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
+            TypeDefinition networkManagerTypeDef = null;
+            TypeDefinition networkBehaviourTypeDef = null;
+            foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
+            {
+                if (networkManagerTypeDef == null && netcodeTypeDef.TypeNameMatch<NetworkManager>())
+                {
+                    networkManagerTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (networkBehaviourTypeDef == null && netcodeTypeDef.TypeNameMatch<NetworkBehaviour>())
+                {
+                    networkBehaviourTypeDef = netcodeTypeDef;
+                    continue;
+                }
+            }
+
             foreach (var methodDef in debugTypeDef.Methods)
             {
                 switch (methodDef.Name)
@@ -199,26 +216,26 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkManagerType = typeof(NetworkManager);
-            m_NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
-            foreach (var propertyInfo in networkManagerType.GetProperties())
+            var networkManagerType = typeof(NetworkManager); // todo: remove entirely
+            m_NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerTypeDef);
+            foreach (var propertyDef in networkManagerTypeDef.Properties)
             {
-                switch (propertyInfo.Name)
+                switch (propertyDef.Name)
                 {
                     case k_NetworkManager_LocalClientId:
-                        m_NetworkManager_getLocalClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkManager_getLocalClientId_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                     case k_NetworkManager_IsListening:
-                        m_NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                     case k_NetworkManager_IsHost:
-                        m_NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                     case k_NetworkManager_IsServer:
-                        m_NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                     case k_NetworkManager_IsClient:
-                        m_NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                 }
             }
@@ -241,46 +258,45 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            var networkBehaviourType = typeof(NetworkBehaviour);
-            m_NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourType);
-            foreach (var propertyInfo in networkBehaviourType.GetProperties())
+            m_NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourTypeDef);
+            foreach (var propertyDef in networkBehaviourTypeDef.Properties)
             {
-                switch (propertyInfo.Name)
+                switch (propertyDef.Name)
                 {
                     case k_NetworkBehaviour_NetworkManager:
-                        m_NetworkBehaviour_getNetworkManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkBehaviour_getNetworkManager_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                     case k_NetworkBehaviour_OwnerClientId:
-                        m_NetworkBehaviour_getOwnerClientId_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        m_NetworkBehaviour_getOwnerClientId_MethodRef = moduleDefinition.ImportReference(propertyDef.GetMethod);
                         break;
                 }
             }
 
-            foreach (var methodInfo in networkBehaviourType.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var methodDef in networkBehaviourTypeDef.Methods)
             {
-                switch (methodInfo.Name)
+                switch (methodDef.Name)
                 {
                     case k_NetworkBehaviour_beginSendServerRpc:
-                        m_NetworkBehaviour_beginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        m_NetworkBehaviour_beginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodDef);
                         break;
                     case k_NetworkBehaviour_endSendServerRpc:
-                        m_NetworkBehaviour_endSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        m_NetworkBehaviour_endSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodDef);
                         break;
                     case k_NetworkBehaviour_beginSendClientRpc:
-                        m_NetworkBehaviour_beginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        m_NetworkBehaviour_beginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodDef);
                         break;
                     case k_NetworkBehaviour_endSendClientRpc:
-                        m_NetworkBehaviour_endSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                        m_NetworkBehaviour_endSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodDef);
                         break;
                 }
             }
 
-            foreach (var fieldInfo in networkBehaviourType.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
+            foreach (var fieldDef in networkBehaviourTypeDef.Fields)
             {
-                switch (fieldInfo.Name)
+                switch (fieldDef.Name)
                 {
                     case k_NetworkBehaviour_rpc_exec_stage:
-                        m_NetworkBehaviour_rpc_exec_stage_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        m_NetworkBehaviour_rpc_exec_stage_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                 }
             }
