@@ -349,7 +349,7 @@ namespace Unity.Netcode.Transports.UTP
             PacketDropRate = 0
         };
 
-        internal uint DebugSimulatorRandomSeed { get; set; } = 0;
+        internal uint? DebugSimulatorRandomSeed { get; set; } = null;
 
         private struct PacketLossCache
         {
@@ -1337,7 +1337,7 @@ namespace Unity.Netcode.Transports.UTP
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
                 packetDropPercentage: DebugSimulator.PacketDropRate,
-                randomSeed: DebugSimulatorRandomSeed
+                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
 #if UTP_TRANSPORT_2_0_ABOVE
                 , mode: ApplyMode.AllPackets
 #endif
