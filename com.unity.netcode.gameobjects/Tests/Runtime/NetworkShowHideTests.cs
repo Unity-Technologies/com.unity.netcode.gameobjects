@@ -17,6 +17,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public static List<ShowHideObject> ClientTargetedNetworkObjects = new List<ShowHideObject>();
         public static ulong ClientIdToTarget;
+        public static bool Silent;
 
         public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
         {
@@ -36,6 +37,17 @@ namespace Unity.Netcode.RuntimeTests
             {
                 ClientTargetedNetworkObjects.Add(this);
             }
+
+            if (IsServer)
+            {
+                MyListSetOnSpawn.Add(45);
+            }
+            else
+            {
+                Debug.Assert(MyListSetOnSpawn.Count == 1);
+                Debug.Assert(MyListSetOnSpawn[0] == 45);
+            }
+
             base.OnNetworkSpawn();
         }
 
@@ -49,16 +61,22 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public NetworkVariable<int> MyNetworkVariable;
+        public NetworkList<int> MyListSetOnSpawn;
 
         private void Awake()
         {
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;
+
+            MyListSetOnSpawn = new NetworkList<int>();
         }
 
         public void Changed(int before, int after)
         {
-            Debug.Log($"Value changed from {before} to {after}");
+            if (!Silent)
+            {
+                Debug.Log($"Value changed from {before} to {after}");
+            }
         }
     }
 
@@ -263,6 +281,30 @@ namespace Unity.Netcode.RuntimeTests
                 // verify they become visible
                 yield return CheckVisible(true);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkHideDespawnTest()
+        {
+            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientId0;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
+            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
+
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value++;
+            m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+            m_NetSpawnedObject1.Despawn();
+
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+
+            LogAssert.NoUnexpectedReceived();
         }
     }
 }

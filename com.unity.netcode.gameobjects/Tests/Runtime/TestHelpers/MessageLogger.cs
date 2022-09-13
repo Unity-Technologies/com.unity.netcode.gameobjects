@@ -1,22 +1,19 @@
 using System;
+using UnityEngine;
 
-namespace Unity.Netcode.TestHelpers.Runtime
+namespace Unity.Netcode.RuntimeTests
 {
-    internal class MessageHooks : INetworkHooks
+    internal class MessageLogger : INetworkHooks
     {
-        public bool IsWaiting = true;
-        public delegate bool MessageReceiptCheck(object receivedMessage);
-        public MessageReceiptCheck ReceiptCheck;
-
-        public static bool CurrentMessageHasTriggerdAHook = false;
-
-        public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+        private NetworkManager m_OwningNetworkManager;
+        public MessageLogger(NetworkManager owningNetworkManager)
         {
-            return receivedMessage is T;
+            m_OwningNetworkManager = owningNetworkManager;
         }
 
         public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
         {
+            Debug.Log($"{(m_OwningNetworkManager.IsServer ? "Server" : "Client")} {m_OwningNetworkManager.LocalClientId}: Sending {message.GetType().FullName} to {clientId} with {delivery}");
         }
 
         public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
@@ -25,6 +22,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
         {
+            Debug.Log($"{(m_OwningNetworkManager.IsServer ? "Server" : "Client")} {m_OwningNetworkManager.LocalClientId}: Receiving {messageType.FullName} from {senderId}");
         }
 
         public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
@@ -33,6 +31,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
         {
+            Debug.Log($"{(m_OwningNetworkManager.IsServer ? "Server" : "Client")} {m_OwningNetworkManager.LocalClientId}: Sending a batch of to {clientId}: {messageCount} messages, {batchSizeInBytes} bytes, with {delivery}");
         }
 
         public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
@@ -41,6 +40,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
         {
+            Debug.Log($"{(m_OwningNetworkManager.IsServer ? "Server" : "Client")} {m_OwningNetworkManager.LocalClientId}: Received a batch from {senderId}, {messageCount} messages, {batchSizeInBytes} bytes");
         }
 
         public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
@@ -59,24 +59,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            // The way the system works, it goes through all hooks and calls OnBeforeHandleMessage, then handles the message,
-            // then goes thorugh all hooks and calls OnAfterHandleMessage.
-            // This ensures each message only manages to activate a single message hook - because we know that only
-            // one message will ever be handled between OnBeforeHandleMessage and OnAfterHandleMessage,
-            // we can reset the flag here, and then in OnAfterHandleMessage, the moment the message matches a hook,
-            // it'll flip this flag back on, and then other hooks will stop checking that message.
-            // Without this flag, waiting for 10 messages of the same type isn't possible - all 10 hooks would get
-            // tripped by the first message.
-            CurrentMessageHasTriggerdAHook = false;
+            Debug.Log($"{(m_OwningNetworkManager.IsServer ? "Server" : "Client")} {m_OwningNetworkManager.LocalClientId}: Handling message {message.GetType().FullName}");
         }
 
         public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            if (!CurrentMessageHasTriggerdAHook && IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
-            {
-                IsWaiting = false;
-                CurrentMessageHasTriggerdAHook = true;
-            }
         }
     }
 }

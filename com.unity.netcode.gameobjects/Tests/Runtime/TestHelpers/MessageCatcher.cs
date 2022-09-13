@@ -1,19 +1,39 @@
 using System;
+using System.Collections.Generic;
+using Unity.Collections;
 
-namespace Unity.Netcode.TestHelpers.Runtime
+namespace Unity.Netcode.RuntimeTests
 {
-    internal class MessageHooks : INetworkHooks
+    internal class MessageCatcher<TMessageType> : INetworkHooks where TMessageType : INetworkMessage
     {
-        public bool IsWaiting = true;
-        public delegate bool MessageReceiptCheck(object receivedMessage);
-        public MessageReceiptCheck ReceiptCheck;
+        private NetworkManager m_OwnerNetworkManager;
 
-        public static bool CurrentMessageHasTriggerdAHook = false;
-
-        public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+        public MessageCatcher(NetworkManager ownerNetworkManager)
         {
-            return receivedMessage is T;
+            m_OwnerNetworkManager = ownerNetworkManager;
         }
+
+        private struct TriggerData
+        {
+            public FastBufferReader Reader;
+            public MessageHeader Header;
+            public ulong SenderId;
+            public float Timestamp;
+            public int SerializedHeaderSize;
+        }
+        private readonly List<TriggerData> m_CaughtMessages = new List<TriggerData>();
+
+        public void ReleaseMessages()
+        {
+
+            foreach (var caughtSpawn in m_CaughtMessages)
+            {
+                // Reader will be disposed within HandleMessage
+                m_OwnerNetworkManager.MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
+            }
+        }
+
+        public int CaughtMessageCount => m_CaughtMessages.Count;
 
         public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
         {
@@ -54,29 +74,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
         {
+            if (messageType == typeof(TMessageType))
+            {
+                m_CaughtMessages.Add(new TriggerData
+                {
+                    Reader = new FastBufferReader(messageContent, Allocator.Persistent),
+                    Header = context.Header,
+                    Timestamp = context.Timestamp,
+                    SenderId = context.SenderId,
+                    SerializedHeaderSize = context.SerializedHeaderSize
+                });
+                return false;
+            }
+
             return true;
         }
 
         public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            // The way the system works, it goes through all hooks and calls OnBeforeHandleMessage, then handles the message,
-            // then goes thorugh all hooks and calls OnAfterHandleMessage.
-            // This ensures each message only manages to activate a single message hook - because we know that only
-            // one message will ever be handled between OnBeforeHandleMessage and OnAfterHandleMessage,
-            // we can reset the flag here, and then in OnAfterHandleMessage, the moment the message matches a hook,
-            // it'll flip this flag back on, and then other hooks will stop checking that message.
-            // Without this flag, waiting for 10 messages of the same type isn't possible - all 10 hooks would get
-            // tripped by the first message.
-            CurrentMessageHasTriggerdAHook = false;
         }
 
         public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            if (!CurrentMessageHasTriggerdAHook && IsWaiting && (ReceiptCheck == null || ReceiptCheck.Invoke(message)))
-            {
-                IsWaiting = false;
-                CurrentMessageHasTriggerdAHook = true;
-            }
         }
     }
 }

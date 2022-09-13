@@ -39,6 +39,11 @@
             "name": "com.unity.modules.physics",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS"
+        },
+        {
+            "name": "com.unity.transport",
+            "expression": "2.0.0-exp",
+            "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
     ]
 }

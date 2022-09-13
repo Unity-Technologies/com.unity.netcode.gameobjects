@@ -536,6 +536,23 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Throws<InvalidOperationException>(() => m_Player1OnClient1.TheScalar.Value = k_TestVal1);
         }
 
+        /// <summary>
+        /// Runs tests that network variables sync on client whatever the local value of <see cref="Time.timeScale"/>.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator NetworkVariableSync_WithDifferentTimeScale([Values(true, false)] bool useHost, [Values(0.0f, 1.0f, 2.0f)] float timeScale)
+        {
+            Time.timeScale = timeScale;
+
+            yield return InitializeServerAndClients(useHost);
+
+            m_Player1OnServer.TheScalar.Value = k_TestVal1;
+
+            // Now wait for the client side version to be updated to k_TestVal1
+            yield return WaitForConditionOrTimeOut(() => m_Player1OnClient1.TheScalar.Value == k_TestVal1);
+            Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, "Timed out waiting for client-side NetworkVariable to update!");
+        }
+
         [UnityTest]
         public IEnumerator FixedString32Test([Values(true, false)] bool useHost)
         {
@@ -758,9 +775,18 @@ namespace Unity.Netcode.RuntimeTests
         }
         #endregion
 
+        private float m_OriginalTimeScale = 1.0f;
+
+        protected override IEnumerator OnSetup()
+        {
+            m_OriginalTimeScale = Time.timeScale;
+            yield return null;
+        }
 
         protected override IEnumerator OnTearDown()
         {
+            Time.timeScale = m_OriginalTimeScale;
+
             m_NetworkListPredicateHandler = null;
             yield return base.OnTearDown();
         }
@@ -818,8 +844,8 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         private string ConditionFailedInfo()
         {
-            return $"{m_NetworkListTestState} condition test failed:\n Server List Count: { m_Player1OnServer.TheList.Count} vs  Client List Count: { m_Player1OnClient1.TheList.Count}\n" +
-                $"Server List Count: { m_Player1OnServer.TheLargeList.Count} vs  Client List Count: { m_Player1OnClient1.TheLargeList.Count}\n" +
+            return $"{m_NetworkListTestState} condition test failed:\n Server List Count: {m_Player1OnServer.TheList.Count} vs  Client List Count: {m_Player1OnClient1.TheList.Count}\n" +
+                $"Server List Count: {m_Player1OnServer.TheLargeList.Count} vs  Client List Count: {m_Player1OnClient1.TheLargeList.Count}\n" +
                 $"Server Delegate Triggered: {m_Player1OnServer.ListDelegateTriggered} | Client Delegate Triggered: {m_Player1OnClient1.ListDelegateTriggered}\n";
         }
 

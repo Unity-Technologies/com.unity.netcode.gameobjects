@@ -9,9 +9,24 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Changed
+
+- The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
+
 ### Fixed
 
-- Fixed RPC codegen failing to choose the correct extension methods for FastBufferReader and FastBufferWriter when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+- Fixed ILPP `TypeLoadException` on WebGL on MacOS Editor and potentially other platforms. (#2199)
+- Fixed issue where `NetworkTransform` was not ending extrapolation for the previous state causing non-authoritative instances to become out of sync. (#2170)
+- Fixed issue where `NetworkTransform` was not continuing to interpolate for the remainder of the associated tick period. (#2170)
+- Fixed issue during `NetworkTransform.OnNetworkSpawn` for non-authoritative instances where it was initializing interpolators with the replicated network state which now only contains the transform deltas that occurred during a network tick and not the entire transform state. (#2170)
+- Fixed issue where `NetworkTransform` was not honoring the InLocalSpace property on the authority side during OnNetworkSpawn. (#2170)
+- Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
+- Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
+- Fixed Connection Approval Timeout not working client side. (#2164)
+- Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
+- Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+- Fixed throwing an exception in `OnNetworkUpdate` causing other `OnNetworkUpdate` calls to not be executed. (#1739)
+- Fixed synchronisation when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independant from the local time scale. (#2171)
 
 ## [1.0.1] - 2022-08-23
 
@@ -20,7 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed version to 1.0.1. (#2131)
 - Updated dependency on `com.unity.transport` to 1.2.0. (#2129)
 - When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
-- Preformance improvements for cases with large number of NetworkObjects, by not iterating over all unchanged NetworkObjects 
+- Performance improvements for cases with large number of NetworkObjects, by not iterating over all unchanged NetworkObjects
 
 ### Fixed
 
@@ -239,7 +254,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - ResetTrigger function to NetworkAnimator (#1327)
 
-### Fixed 
+### Fixed
 
 - Overflow exception when syncing Animator state. (#1327)
 - Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
@@ -264,7 +279,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `ClientNetworkTransform` sample to the SDK package (#1168)
 - Added `Bootstrap` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
-  - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
+  - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
 - Added a jitter-resistent `BufferedLinearInterpolator<T>` for `NetworkTransform` (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
@@ -321,7 +336,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `NetworkDictionary`, `NetworkSet` (#1149)
 - Removed `NetworkVariableSettings` (#1097)
 - Removed predefined `NetworkVariable<T>` types (#1093)
-    - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
+  - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
 - Removed `NetworkChannel` and `MultiplexTransportAdapter` (#1133)
 - Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 - `NetworkManager.NetworkConfig` had the following properties removed: (#1080)
@@ -393,14 +408,14 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - Integrated MLAPI with the Unity Profiler for versions 2020.2 and later:
   - Added new profiler modules for MLAPI that report important network data.
   - Attached the profiler to a remote player to view network data over the wire.
-- A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject). 
+- A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject).
 - Added a [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) new GitHub repository to accept extensions from the MLAPI community. Current extensions include moved MLAPI features for lag compensation (useful for Server Authoritative actions) and `TrackedObject`.
 
 ### Changed
 
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): MLAPI now uses the Unity Package Manager for installation management.
-- Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s. 
-- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented `NetworkAnimator`, which synchronizes animation states for networked objects. 
+- Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s.
+- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented `NetworkAnimator`, which synchronizes animation states for networked objects.
 - GitHub [444](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/444) and [455](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/455): Channels are now represented as bytes instead of strings.
 
 For users of previous versions of MLAPI, this release renames APIs due to refactoring. All obsolete marked APIs have been removed as per [GitHub 513](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/513) and [GitHub 514](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/514).
@@ -433,7 +448,7 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 
 ### Fixed
 
-- [GitHub 460](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/460): Fixed an issue for RPC where the host-server was not receiving RPCs from the host-client and vice versa without the loopback flag set in `NetworkingManager`. 
+- [GitHub 460](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/460): Fixed an issue for RPC where the host-server was not receiving RPCs from the host-client and vice versa without the loopback flag set in `NetworkingManager`.
 - Fixed an issue where data in the Profiler was incorrectly aggregated and drawn, which caused the profiler data to increment indefinitely instead of resetting each frame.
 - Fixed an issue the client soft-synced causing PlayMode client-only scene transition issues, caused when running the client in the editor and the host as a release build. Users may have encountered a soft sync of `NetworkedInstanceId` issues in the `SpawnManager.ClientCollectSoftSyncSceneObjectSweep` method.
 - [GitHub 458](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/458): Fixed serialization issues in `NetworkList` and `NetworkDictionary` when running in Server mode.
@@ -448,10 +463,10 @@ With a new release of MLAPI in Unity, some features have been removed:
 - SyncVars have been removed from MLAPI. Use `NetworkVariable`s in place of this functionality. <!-- MTT54 -->
 - [GitHub 527](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/527): Lag compensation systems and `TrackedObject` have moved to the new [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) repo.
 - [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
-    - Removed `SecuritySendFlags` from all APIs.
-    - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
-    - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
-    - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
+  - Removed `SecuritySendFlags` from all APIs.
+  - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
+  - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
+  - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 - Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
 - Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
@@ -464,7 +479,7 @@ With a new release of MLAPI in Unity, some features have been removed:
 - For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
 - `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
 - `NetworkTransform` have the following issues:
-  - Replicated objects may have jitter. 
+  - Replicated objects may have jitter.
   - The owner is always authoritative about the object's position.
   - Scale is not synchronized.
 - Connection Approval is not called on the host client.

@@ -235,14 +235,42 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                foreach (var client in NetworkManager.ConnectedClients)
+                if (clientRpcParams.Send.TargetClientIds != null)
                 {
-                    NetworkManager.NetworkMetrics.TrackRpcSent(
-                        client.Key,
-                        NetworkObject,
-                        rpcMethodName,
-                        __getTypeName(),
-                        rpcWriteSize);
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
+                {
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else
+                {
+                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                    while (observerEnumerator.MoveNext())
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            observerEnumerator.Current,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
                 }
             }
 #endif
@@ -440,14 +468,37 @@ namespace Unity.Netcode
 
         internal void VisibleOnNetworkSpawn()
         {
-            OnNetworkSpawn();
+            try
+            {
+                OnNetworkSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+
+            InitializeVariables();
+            if (IsServer)
+            {
+                // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
+                // NetworkList, we need to mark the object as free of updates.
+                // This should happen for all objects on the machine triggering the spawn.
+                PostNetworkVariableWrite(true);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
             UpdateNetworkProperties();
-            OnNetworkDespawn();
+            try
+            {
+                OnNetworkDespawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
@@ -580,12 +631,24 @@ namespace Unity.Netcode
             NetworkVariableIndexesToResetSet.Clear();
         }
 
-        internal void PostNetworkVariableWrite()
+        internal void PostNetworkVariableWrite(bool forced = false)
         {
-            // mark any variables we wrote as no longer dirty
-            for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+            if (forced)
             {
-                NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                // Mark every variable as no longer dirty. We just spawned the object and whatever the game code did
+                // during OnNetworkSpawn has been sent and needs to be cleared
+                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                {
+                    NetworkVariableFields[i].ResetDirty();
+                }
+            }
+            else
+            {
+                // mark any variables we wrote as no longer dirty
+                for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+                {
+                    NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                }
             }
 
             MarkVariablesDirty(false);

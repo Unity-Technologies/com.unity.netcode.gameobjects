@@ -10,12 +10,13 @@ namespace Unity.Netcode.EditorTests.Metrics
 {
     public class NetworkMetricsRegistrationTests
     {
-        static Type[] s_MetricTypes = AppDomain.CurrentDomain.GetAssemblies()
+        private static Type[] s_MetricTypes = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(x => x.GetTypes())
             .Where(x => x.GetInterfaces().Contains(typeof(INetworkMetricEvent)))
             .ToArray();
 
-        [TestCaseSource(nameof(s_MetricTypes))][Ignore("Disable test while we reevaluate the assumption that INetworkMetricEvent interfaces must be reported from MLAPI.")]
+        [TestCaseSource(nameof(s_MetricTypes))]
+        [Ignore("Disable test while we reevaluate the assumption that INetworkMetricEvent interfaces must be reported from MLAPI.")]
         public void ValidateThatAllMetricTypesAreRegistered(Type metricType)
         {
             var dispatcher = new NetworkMetrics().Dispatcher as MetricDispatcher;
