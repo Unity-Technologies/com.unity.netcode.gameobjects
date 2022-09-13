@@ -9,6 +9,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Added
+
+- WebSocket supports. When using UTP 2.0, a property `UseWebSockets` in the `UtpTransport` component of the `NetworkManager` allows picking WebSockets for communication. When building for WebGL, this selection happens automatically.
+
 ### Changed
 
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
