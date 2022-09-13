@@ -1384,7 +1384,11 @@ namespace Unity.Netcode.Transports.UTP
             }
             else
             {
+#if UNITY_WEBGL
+                driver = NetworkDriver.Create(new BaselibNetworkInterface(), m_NetworkSettings);
+#else
                 driver = NetworkDriver.Create(new UDPNetworkInterface(), m_NetworkSettings);
+#endif
             }
 #else
             driver = NetworkDriver.Create(m_NetworkSettings);
