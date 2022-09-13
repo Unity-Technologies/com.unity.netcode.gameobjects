@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- - Fixed ILPP `TypeLoadException` on WebGL on MacOS Editor and potentially other platforms. (#2199)
 - Fixed issue where `NetworkTransform` was not ending extrapolation for the previous state causing non-authoritative instances to become out of synch. (#2170)
 - Fixed issue where `NetworkTransform` was not continuing to interpolate for the remainder of the associated tick period. (#2170)
 - Fixed issue during `NetworkTransform.OnNetworkSpawn` for non-authoritative instances where it was initializing interpolators with the replicated network state which now only contains the transform deltas that occurred during a network tick and not the entire transform state. (#2170)
