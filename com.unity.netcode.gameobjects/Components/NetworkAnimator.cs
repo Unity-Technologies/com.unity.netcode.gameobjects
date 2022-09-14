@@ -177,7 +177,6 @@ namespace Unity.Netcode.Components
         }
     }
 
-
     /// <summary>
     /// NetworkAnimator enables remote synchronization of <see cref="UnityEngine.Animator"/> state for on network objects.
     /// </summary>
@@ -206,15 +205,18 @@ namespace Unity.Netcode.Components
         /// </summary>
         [HideInInspector]
         [SerializeField]
-        internal List<TransitionStateinfo> TableData;
+        internal List<TransitionStateinfo> TransitionStateInfoList;
 
         // Used to get the associated transition information required to synchronize late joining clients with transitions
         // [Layer][DestinationState][TransitionStateInfo]
         private Dictionary<int, Dictionary<int, TransitionStateinfo>> m_DestinationStateToTransitioninfo = new Dictionary<int, Dictionary<int, TransitionStateinfo>>();
 
+        /// <summary>
+        /// Builds the m_DestinationStateToTransitioninfo lookup table
+        /// </summary>
         private void BuildDestinationToTransitionInfoTable()
         {
-            foreach (var entry in TableData)
+            foreach (var entry in TransitionStateInfoList)
             {
                 if (!m_DestinationStateToTransitioninfo.ContainsKey(entry.Layer))
                 {
@@ -230,9 +232,12 @@ namespace Unity.Netcode.Components
 
 
 #if UNITY_EDITOR
+        /// <summary>
+        /// Creates the
+        /// </summary>
         private void BuildTransitionStateInfoList()
         {
-            TableData = new List<TransitionStateinfo>();
+            TransitionStateInfoList = new List<TransitionStateinfo>();
             var animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
             if (animatorController == null)
             {
@@ -278,9 +283,7 @@ namespace Unity.Netcode.Components
                                                     TriggerNameHash = parameter.nameHash,
                                                     TransitionIndex = z
                                                 };
-                                                TableData.Add(transitionInfo);
-                                                // TODO: Remove me
-                                                //Debug.Log($"[{name}] Layer ({x}) contains state {animatorState.name} with transition index ({z}) that transitions to state {transition.destinationState.name} by trigger {parameter.name}.");
+                                                TransitionStateInfoList.Add(transitionInfo);
                                             }
                                             break;
                                         }
@@ -307,7 +310,7 @@ namespace Unity.Netcode.Components
             BuildTransitionStateInfoList();
         }
 #else
-        // For now, we can build this table during awake
+        // For now, we can build this table during Awake
         private void Awake()
         {
             BuildDestinationToTransitionInfoTable();
@@ -679,7 +682,6 @@ namespace Unity.Netcode.Components
                 // Synchronizing transitions with trigger conditions for late joining clients is now
                 // handled by cross fading between the late joining client's current layer's AnimationState
                 // and the transition's destination AnimationState.
-                // TODO: Explain more about duration and the transition state's current normalized time on the server
                 if (isInTransition)
                 {
                     var tt = m_Animator.GetAnimatorTransitionInfo(layer);
@@ -699,19 +701,23 @@ namespace Unity.Netcode.Components
                         normalizedTime = 0.0f;
                     }
                     stateHash = nextState.fullPathHash;
+
+                    // Use the destination state to transition info lookup table to see if this is a transition we can
+                    // synchronize using cross fading
                     if (m_DestinationStateToTransitioninfo.ContainsKey(layer))
                     {
                         if (m_DestinationStateToTransitioninfo[layer].ContainsKey(nextState.shortNameHash))
                         {
                             var destinationInfo = m_DestinationStateToTransitioninfo[layer][nextState.shortNameHash];
                             stateHash = destinationInfo.OriginatingState;
+                            // Set the destination state to cross fade to from the originating state
                             animMsg.DestinationStateHash = destinationInfo.DestinationState;
                         }
                     }
                 }
 
-                animMsg.Transition = isInTransition;
-                animMsg.StateHash = stateHash;
+                animMsg.Transition = isInTransition;        // The only time this could be set to true
+                animMsg.StateHash = stateHash;              // When a transition, this is the originating/starting state
                 animMsg.NormalizedTime = normalizedTime;
                 animMsg.Layer = layer;
                 animMsg.Weight = m_LayerWeights[layer];
@@ -1074,21 +1080,19 @@ namespace Unity.Netcode.Components
                             // Cross fade from the current to the destination state for the transitions duration while starting at the server's current normalized time of the transition
                             m_Animator.CrossFade(transitionStateInfo.DestinationState, transitionStateInfo.TransitionDuration, transitionStateInfo.Layer, 0.0f, animationState.NormalizedTime);
                         }
-                        else
+                        else if (NetworkManager.LogLevel == LogLevel.Developer)
                         {
-                            Debug.LogWarning($"Current State Hash ({currentState.fullPathHash}) != AnimationState.StateHash ({animationState.StateHash})");
+                            NetworkLog.LogWarning($"Current State Hash ({currentState.fullPathHash}) != AnimationState.StateHash ({animationState.StateHash})");
                         }
                     }
-                    else
+                    else if (NetworkManager.LogLevel == LogLevel.Developer)
                     {
-                        // TODO: Make this a NetworkLog Error
-                        Debug.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) sub-table does not contain destination state ({animationState.DestinationStateHash})!");
+                        NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) sub-table does not contain destination state ({animationState.DestinationStateHash})!");
                     }
                 }
-                else
+                else if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    // TODO: Make this a NetworkLog Error
-                    Debug.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
+                    NetworkLog.LogError($"[DestinationState To Transition Info] Layer ({animationState.Layer}) does not exist!");
                 }
             }
             else
@@ -1189,7 +1193,10 @@ namespace Unity.Netcode.Components
             // This should never happen
             if (IsHost)
             {
-                // TODO: network log error message
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning("Detected the Host is sending itself animation updates! Please report this issue.");
+                }
                 return;
             }
 
@@ -1218,9 +1225,9 @@ namespace Unity.Netcode.Components
                 {
                     m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage);
                 }
-                else
+                else if (NetworkManager.LogLevel == LogLevel.Developer)
                 {
-                    // TODO: developer log level warning message
+                    NetworkLog.LogWarning($"[Server Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
                 }
             }
             else
@@ -1228,7 +1235,10 @@ namespace Unity.Netcode.Components
                 // Ignore if a non-owner sent this.
                 if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
                 {
-                    // TODO: developer log level warning message
+                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"[Owner Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
+                    }
                     return;
                 }
 
