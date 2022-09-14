@@ -19,7 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where the `SetStateServerRpc` and `SetStateClientRpc` were not honoring local vs world space settings when applying the position and rotation. (#2203)
+- Fixed issue where `NetworkTransform.SetStateServerRpc` and `NetworkTransform.SetStateClientRpc` were not honoring local vs world space settings when applying the position and rotation. (#2203)
 - Fixed ILPP `TypeLoadException` on WebGL on MacOS Editor and potentially other platforms. (#2199)
 - Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
 - Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
