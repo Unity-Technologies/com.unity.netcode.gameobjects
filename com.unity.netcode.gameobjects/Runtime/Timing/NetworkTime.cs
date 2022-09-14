@@ -25,7 +25,7 @@ namespace Unity.Netcode
         public double TickOffset => m_CachedTickOffset;
 
         /// <summary>
-        /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>
+        /// Gets the current time. This is a non fixed time value and similar to <see cref="Time.time"/>.
         /// </summary>
         public double Time => m_TimeSec;
 
@@ -35,13 +35,13 @@ namespace Unity.Netcode
         public float TimeAsFloat => (float)m_TimeSec;
 
         /// <summary>
-        /// Gets he current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.fixedTime"/>
+        /// Gets he current fixed network time. This is the time value of the last network tick. Similar to <see cref="Time.fixedUnscaledTime"/>.
         /// </summary>
         public double FixedTime => m_CachedTick * m_TickInterval;
 
         /// <summary>
         /// Gets the fixed delta time. This value is based on the <see cref="TickRate"/> and stays constant.
-        /// Similar to <see cref="Time.fixedDeltaTime"/> There is no equivalent to <see cref="Time.deltaTime"/>
+        /// Similar to <see cref="Time.fixedUnscaledTime"/> There is no equivalent to <see cref="Time.deltaTime"/>.
         /// </summary>
         public float FixedDeltaTime => (float)m_TickInterval;
 
