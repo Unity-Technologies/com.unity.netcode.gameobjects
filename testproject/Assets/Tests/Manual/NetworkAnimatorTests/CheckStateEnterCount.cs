@@ -106,10 +106,10 @@ namespace TestProject.RuntimeTests
                 OnStateEnterCounter[localClientId][layerIndex].Add(stateInfo);
                 LogMessage($"[{layerIndex}][{stateInfo.shortNameHash}][{stateInfo.normalizedTime}][{animator.IsInTransition(layerIndex)}]");
             }
-            else if (IsManualTestEnabled)
-            {
-                Debug.Log($"[{layerIndex}][{stateInfo.shortNameHash}][{stateInfo.normalizedTime}][{animator.IsInTransition(layerIndex)}]");
-            }
+            //else if (IsManualTestEnabled)
+            //{
+            //    Debug.Log($"[{layerIndex}][{stateInfo.shortNameHash}][{stateInfo.normalizedTime}][{animator.IsInTransition(layerIndex)}]");
+            //}
         }
 
         //public override void OnStateUpdate(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)

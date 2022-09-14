@@ -30,12 +30,14 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         public override void OnNetworkSpawn()
         {
-            if (HasAuthority())
+            DetermineNetworkAnimatorComponentType();
+
+            if (!IsOwner)
             {
                 enabled = false;
             }
             m_Animator = GetComponent<Animator>();
-            DetermineNetworkAnimatorComponentType();
+
             m_Rotate = m_Animator.GetBool("Rotate");
         }
 
@@ -106,7 +108,8 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 if (!IsServer && IsOwner)
                 {
-                    PlayPulseAnimationServerRpc(m_Rotate);
+                    m_NetworkAnimator.SetTrigger("Pulse");
+                    //PlayPulseAnimationServerRpc(m_Rotate);
                 }
                 else if (IsServer && IsOwner)
                 {
@@ -151,6 +154,25 @@ namespace Tests.Manual.NetworkAnimatorTests
                 interations++;
             }
             yield return null;
+        }
+
+
+        private void LateUpdate()
+        {
+            if (!IsSpawned || !IsOwner)
+            {
+                return;
+            }
+
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                ToggleRotateAnimation();
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                PlayPulseAnimation();
+            }
         }
     }
 }

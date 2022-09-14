@@ -21,6 +21,7 @@ namespace TestProject.ManualTests
         {
             if (IsServer)
             {
+
                 if (IsOwner)
                 {
                     transform.position = Vector3.zero;
@@ -42,5 +43,28 @@ namespace TestProject.ManualTests
 
             base.OnNetworkSpawn();
         }
+
+
+        public override void OnNetworkDespawn()
+        {
+            if (IsServer)
+            {
+                if (s_PositionIndex == 0)
+                {
+                    if (s_Layers > 0)
+                    {
+                        s_Layers--;
+                        s_PositionIndex = (uint)(m_Positions.Length - 1);
+                    }
+                }
+                else
+                {
+                    s_PositionIndex--;
+                }
+
+                s_PositionIndex = (uint)(s_PositionIndex % m_Positions.Length);
+            }
+        }
+
     }
 }
