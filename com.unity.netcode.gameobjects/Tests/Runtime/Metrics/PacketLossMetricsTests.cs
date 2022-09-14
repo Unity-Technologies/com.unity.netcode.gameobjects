@@ -37,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             // results in an effective packet loss percentage between 22% and 28%. Future UTP
             // updates may change the RNG call patterns and cause this test to fail, in which
             // case the value should be modified again.
-            clientTransport.NetworkSimulatorRandomSeed = 4;
+            clientTransport.DebugSimulatorRandomSeed = 4;
 
             base.OnServerAndClientsCreated();
         }
