@@ -146,13 +146,26 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
+            // Clean up in reverse order (also makes sure we can despawn parents before children)
+            m_ServerSideParent.GetComponent<NetworkObject>().Despawn();
+            // Now despawn the children
+            // (and clean up our test)
+            for (int i = 0; i < k_NestedChildren; i++)
+            {
+                var serverSideChild = m_ServerSideChildren[i];
+                serverSideChild.GetComponent<NetworkObject>().Despawn();
+            }
+
+            // Just allow the clients to run through despawning (also assures nothing throws an exception when destroying)
+            yield return new WaitForSeconds(0.2f);
+
             m_ServerSideChildren.Clear();
             TestComponentHelper.ClientsRegistered.Clear();
             TestComponentHelper.NetworkObjectIdToIndex.Clear();
             m_ParentPrefabObject = null;
             m_ChildPrefabObject = null;
             m_ServerSideParent = null;
-            return base.OnTearDown();
+            yield return base.OnTearDown();
         }
 
         protected override void OnServerAndClientsCreated()
@@ -375,18 +388,7 @@ namespace TestProject.RuntimeTests
             }
             VerboseDebug($"[{Time.realtimeSinceStartup - startTime}] Late joined client was validated.");
 
-            // Clean up in reverse order (also makes sure we can despawn parents before children)
-            m_ServerSideParent.GetComponent<NetworkObject>().Despawn();
-            // Now despawn the children
-            // (and clean up our test)
-            for (int i = 0; i < k_NestedChildren; i++)
-            {
-                var serverSideChild = m_ServerSideChildren[i];
-                serverSideChild.GetComponent<NetworkObject>().Despawn();
-            }
 
-            // Just allow the clients to run through despawning (also assures nothing throws an exception when destroying)
-            yield return new WaitForSeconds(0.2f);
             VerboseDebug($"[{Time.realtimeSinceStartup - startTime}] Test completed!");
         }
     }

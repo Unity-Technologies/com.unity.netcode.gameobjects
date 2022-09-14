@@ -250,6 +250,18 @@ namespace Unity.Netcode
             // Sort by INetworkPrefabInstanceHandler implementation before the
             // NetworkObjects spawned by the implementation
             m_NetworkObjectsSync.Sort(SortNetworkObjects);
+
+            // This is useful to know what NetworkObjects a client is going to be synchronized with
+            // as well as the order in which they will be deserialized
+            if (m_NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                var message = "[Server-Side Client-Synchronization] NetworkObject serialization order:\n";
+                foreach (var networkObject in m_NetworkObjectsSync)
+                {
+                    message += $"{networkObject.name}\n";
+                }
+                NetworkLog.LogInfo(message);
+            }
         }
 
         internal void AddDespawnedInSceneNetworkObjects()
