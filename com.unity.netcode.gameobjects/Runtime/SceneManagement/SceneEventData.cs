@@ -340,13 +340,13 @@ namespace Unity.Netcode
         /// </remarks>
         private int SortParentedNetworkObjects(NetworkObject first, NetworkObject second)
         {
-            // If the second is the parent to the first or the first has a parent, then move down
-            if (second.transform == first.transform.parent || first.transform.parent != null)
+            // If the first has a parent, move the first down
+            if (first.transform.parent != null)
             {
                 return 1;
             }
-            else // If the first is the parent to the second or the second has no parent, then move up
-            if (first.transform == second.transform.parent || second.transform.parent != null)
+            else // If the second has a parent and the first does not, then move the first up
+            if (second.transform.parent != null)
             {
                 return -1;
             }
