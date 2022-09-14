@@ -189,7 +189,8 @@ namespace Unity.Netcode.RuntimeTests
         public enum OverrideState
         {
             Update,
-            CommitToTransform
+            CommitToTransform,
+            SetState
         }
 
         /// <summary>
@@ -299,9 +300,8 @@ namespace Unity.Netcode.RuntimeTests
         /// parented under another NetworkTransform
         /// </summary>
         [UnityTest]
-        public IEnumerator NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation, [Values] OverrideState overideState)
+        public IEnumerator NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             var authoritativeChildObject = SpawnObject(m_ChildObjectToBeParented.gameObject, m_AuthoritativeTransform.NetworkManager);
@@ -334,15 +334,28 @@ namespace Unity.Netcode.RuntimeTests
         /// Validates that moving, rotating, and scaling the authority side with a single
         /// tick will properly synchronize the non-authoritative side with the same values.
         /// </summary>
-        private IEnumerator MoveRotateAndScaleAuthority(Vector3 position, Vector3 rotation, Vector3 scale)
+        private IEnumerator MoveRotateAndScaleAuthority(Vector3 position, Vector3 rotation, Vector3 scale, OverrideState overrideState)
         {
-            m_AuthoritativeTransform.transform.position = position;
-            yield return null;
-            var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
-            authoritativeRotation.eulerAngles = rotation;
-            m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
-            yield return null;
-            m_AuthoritativeTransform.transform.localScale = scale;
+            switch (overrideState)
+            {
+                case OverrideState.SetState:
+                    {
+                        m_AuthoritativeTransform.SetState(position, Quaternion.Euler(rotation), scale);
+                        break;
+                    }
+                case OverrideState.Update:
+                default:
+                    {
+                        m_AuthoritativeTransform.transform.position = position;
+                        yield return null;
+                        var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
+                        authoritativeRotation.eulerAngles = rotation;
+                        m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
+                        yield return null;
+                        m_AuthoritativeTransform.transform.localScale = scale;
+                        break;
+                    }
+            }
         }
 
         /// <summary>
@@ -400,7 +413,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState)
         {
-            var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
 
             var positionStart = new Vector3(1.0f, 0.5f, 2.0f);
@@ -422,7 +434,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return WaitForNextTick();
 
                 // Apply deltas
-                MoveRotateAndScaleAuthority(position, rotation, scale);
+                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
 
                 // Wait for deltas to synchronize on non-authoritative side
                 yield return WaitForPositionRotationAndScaleToMatch(4);
@@ -455,7 +467,7 @@ namespace Unity.Netcode.RuntimeTests
                 // to apply both deltas within the same tick period.
                 yield return WaitForNextTick();
 
-                MoveRotateAndScaleAuthority(position, rotation, scale);
+                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
                 yield return WaitForPositionRotationAndScaleToMatch(4);
             }
 
@@ -471,7 +483,7 @@ namespace Unity.Netcode.RuntimeTests
                 rotation = rotationStart * i;
                 scale = scaleStart * i;
 
-                MoveRotateAndScaleAuthority(position, rotation, scale);
+                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
             }
 
             yield return WaitForPositionRotationAndScaleToMatch(1);
@@ -486,7 +498,7 @@ namespace Unity.Netcode.RuntimeTests
                 position = positionStart * i;
                 rotation = rotationStart * i;
                 scale = scaleStart * i;
-                MoveRotateAndScaleAuthority(position, rotation, scale);
+                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
             }
             yield return WaitForPositionRotationAndScaleToMatch(1);
         }
@@ -513,10 +525,15 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
-            authPlayerTransform.position = new Vector3(10, 20, 30);
-            if (overrideUpdate)
+            var nextPosition = new Vector3(10, 20, 30);
+            if (overideState != OverrideState.SetState)
             {
+                authPlayerTransform.position = nextPosition;
                 m_OwnerTransform.CommitToTransform();
+            }
+            else if (overideState == OverrideState.SetState)
+            {
+                m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
             }
 
             yield return WaitForConditionOrTimeOut(PositionsMatch);
@@ -525,19 +542,29 @@ namespace Unity.Netcode.RuntimeTests
             // test rotation
             Assert.AreEqual(Quaternion.identity, m_NonAuthoritativeTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
 
-            authPlayerTransform.rotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
-            if (overrideUpdate)
+            var nextRotation = Quaternion.Euler(45, 40, 35); // using euler angles instead of quaternions directly to really see issues users might encounter
+            if (overideState != OverrideState.SetState)
             {
+                authPlayerTransform.rotation = nextRotation;
                 m_OwnerTransform.CommitToTransform();
+            }
+            else
+            {
+                m_OwnerTransform.SetState(null, nextRotation, null, m_AuthoritativeTransform.Interpolate);
             }
 
             yield return WaitForConditionOrTimeOut(RotationsMatch);
             AssertOnTimeout($"Timed out waiting for rotations to match");
 
-            authPlayerTransform.localScale = new Vector3(2, 3, 4);
+            var nextScale = new Vector3(2, 3, 4);
             if (overrideUpdate)
             {
+                authPlayerTransform.localScale = nextScale;
                 m_OwnerTransform.CommitToTransform();
+            }
+            else
+            {
+                m_OwnerTransform.SetState(null, null, nextScale, m_AuthoritativeTransform.Interpolate);
             }
 
             yield return WaitForConditionOrTimeOut(ScaleValuesMatch);
