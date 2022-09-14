@@ -54,7 +54,7 @@ namespace Unity.Netcode.RuntimeTests
             for (int x = 0; x < k_SpawnedObjects; x++)
             {
                 NetworkObject serverObject = Object.Instantiate(m_PrefabToSpawn.Prefab).GetComponent<NetworkObject>();
-                serverObject.NetworkManagerOwner = m_ServerNetworkManager;
+                serverObject.NetworkManager = m_ServerNetworkManager;
                 serverObject.Spawn();
             }
             // ensure all objects are replicated before spawning more

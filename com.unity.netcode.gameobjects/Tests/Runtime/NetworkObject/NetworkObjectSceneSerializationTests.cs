@@ -39,6 +39,7 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsNotNull(gameObject);
 
                         var networkObject = gameObject.AddComponent<NetworkObject>();
+                        networkObject.NetworkManager = NetworkManagerHelper.NetworkManagerObject;
 
                         Assert.IsNotNull(networkObject);
 
@@ -75,6 +76,7 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsNotNull(gameObject);
 
                         var networkObject = gameObject.AddComponent<NetworkObject>();
+                        networkObject.NetworkManager = NetworkManagerHelper.NetworkManagerObject;
 
                         var networkVariableComponent = gameObject.AddComponent<NetworkBehaviourWithNetworkVariables>();
                         Assert.IsNotNull(networkVariableComponent);

@@ -95,7 +95,7 @@ namespace TestProject.RuntimeTests
             NetcodeIntegrationTestHelpers.RegisterHandlers(m_ServerNetworkManager);
             var objectInstance = Object.Instantiate(m_DontDestroyOnLoadObject);
             var instanceNetworkObject = objectInstance.GetComponent<NetworkObject>();
-            instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            instanceNetworkObject.NetworkManager = m_ServerNetworkManager;
             instanceNetworkObject.Spawn();
             var serverobjectToNotDestroyBehaviour = objectInstance.GetComponent<ObjectToNotDestroyBehaviour>();
             var waitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);

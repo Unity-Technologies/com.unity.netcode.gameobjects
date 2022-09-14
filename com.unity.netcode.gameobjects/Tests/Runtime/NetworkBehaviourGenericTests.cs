@@ -98,7 +98,7 @@ namespace Unity.Netcode.RuntimeTests
             LogAssert.Expect(LogType.Warning, $"[Netcode] Could not get {nameof(NetworkObject)} for the {nameof(NetworkBehaviour)}. Are you missing a {nameof(NetworkObject)} component?");
 
             var networkObjectToTest = objectToTest.AddComponent<NetworkObject>();
-            networkObjectToTest.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectToTest.NetworkManager = m_ServerNetworkManager;
             networkObjectToTest.Spawn();
 
             // Assure no log messages are logged when they should not be logged

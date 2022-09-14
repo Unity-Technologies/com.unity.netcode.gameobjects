@@ -30,7 +30,7 @@ namespace TestProject.RuntimeTests
             var inScenePrefab = CreateNetworkObjectPrefab("NewSceneObject");
             var networkObject = inScenePrefab.GetComponent<NetworkObject>();
             networkObject.IsSceneObject = null;
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObject.NetworkManager = m_ServerNetworkManager;
             m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
 
             // Create one that simulates when an in-scene placed NetworkObject has already been instantiated
@@ -39,7 +39,7 @@ namespace TestProject.RuntimeTests
             inScenePrefab = CreateNetworkObjectPrefab("SetInSceneObject");
             networkObject = inScenePrefab.GetComponent<NetworkObject>();
             networkObject.IsSceneObject = true;
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObject.NetworkManager = m_ServerNetworkManager;
             m_InSceneObjectList.Add(networkObject.GlobalObjectIdHash, inScenePrefab);
         }
 

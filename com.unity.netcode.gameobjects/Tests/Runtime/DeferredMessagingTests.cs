@@ -441,7 +441,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return SpawnClients();
             CatchSpawns();
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -464,7 +464,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return SpawnClients();
             CatchSpawns();
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -487,7 +487,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return SpawnClients();
             CatchSpawns();
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -515,7 +515,7 @@ namespace Unity.Netcode.RuntimeTests
             var coroutines = StartMultiple(waiters);
 
             var serverObject = Object.Instantiate(m_NetworkVariablePrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -541,7 +541,7 @@ namespace Unity.Netcode.RuntimeTests
             m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
 
             yield return RunMultiple(WaitForAllClientsToReceive<CreateObjectMessage>());
@@ -703,7 +703,7 @@ namespace Unity.Netcode.RuntimeTests
             var coroutines = StartMultiple(waiters);
 
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -767,11 +767,11 @@ namespace Unity.Netcode.RuntimeTests
             m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
 
             var serverObject2 = Object.Instantiate(m_RpcPrefab);
-            serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject2.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
 
             yield return RunMultiple(WaitForAllClientsToReceive<CreateObjectMessage, CreateObjectMessage>());
@@ -843,7 +843,7 @@ namespace Unity.Netcode.RuntimeTests
             var coroutines = StartMultiple(waiters);
 
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
 
             serverObject.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().SendTestClientRpc();
@@ -911,7 +911,7 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = timeout;
             }
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -989,7 +989,7 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = timeout;
             }
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -1070,11 +1070,11 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = timeout;
             }
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
 
             var serverObject2 = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
-            serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject2.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
 
             yield return WaitForClientsToCatchSpawns(2);
@@ -1153,7 +1153,7 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = timeout;
             }
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns();
 
@@ -1245,10 +1245,10 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.SpawnTimeout = timeout;
             }
             var serverObject = Object.Instantiate(m_RpcPrefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             var serverObject2 = Object.Instantiate(m_RpcPrefab);
-            serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject2.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
             yield return WaitForClientsToCatchSpawns(2);
 

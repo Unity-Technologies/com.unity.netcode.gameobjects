@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
@@ -248,12 +249,14 @@ namespace Unity.Netcode
 
         internal void AddDespawnedInSceneNetworkObjects()
         {
+
             m_DespawnedInSceneObjectsSync.Clear();
             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
                 {
+                    Debug.Log($"Will despawn {sobj.name} - has network manager? {sobj.NetworkManager == null} {m_NetworkManager == null}");
                     m_DespawnedInSceneObjectsSync.Add(sobj);
                 }
             }
@@ -604,7 +607,7 @@ namespace Unity.Netcode
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
-                    if (!networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
+                    if (networkObject.NetworkManager == m_NetworkManager && !networkObjectIdToNetworkObject.ContainsKey(networkObject.NetworkObjectId))
                     {
                         networkObjectIdToNetworkObject.Add(networkObject.NetworkObjectId, networkObject);
                     }
@@ -628,7 +631,7 @@ namespace Unity.Netcode
                             {
                                 m_NetworkManager.SpawnManager.SpawnedObjectsList.Remove(networkObject);
                             }
-                            NetworkManager.Singleton.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
+                            m_NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(networkObject);
                         }
                         else
                         {
@@ -754,7 +757,7 @@ namespace Unity.Netcode
                             {
                                 var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
                                 var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) =>
-                                c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+                                c.NetworkManager == m_NetworkManager && c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                                 foreach (var inSceneObject in inSceneNetworkObjects)
                                 {

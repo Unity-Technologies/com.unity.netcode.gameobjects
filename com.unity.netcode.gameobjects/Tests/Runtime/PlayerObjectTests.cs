@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
             // Create a new player prefab instance
             var newPlayer = Object.Instantiate(m_NewPlayerToSpawn);
             var newPlayerNetworkObject = newPlayer.GetComponent<NetworkObject>();
-            newPlayerNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            newPlayerNetworkObject.NetworkManager = m_ServerNetworkManager;
             // Spawn this instance as a new player object for the client who already has an assigned player object
             newPlayerNetworkObject.SpawnAsPlayerObject(m_ClientNetworkManagers[0].LocalClientId);
 

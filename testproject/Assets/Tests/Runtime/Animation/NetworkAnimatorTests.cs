@@ -60,7 +60,7 @@ namespace TestProject.RuntimeTests
         {
             // Server authority prefab
             var networkObjectServer = (m_AnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
-            networkObjectServer.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectServer.NetworkManager = m_ServerNetworkManager;
             networkObjectServer.name = "ServerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectServer);
             var networkAnimatorServerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectServer.gameObject };
@@ -68,7 +68,7 @@ namespace TestProject.RuntimeTests
 
             // Owner authority prefab
             var networkObjectOwner = (m_OwnerAnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
-            networkObjectOwner.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObjectOwner.NetworkManager = m_ServerNetworkManager;
             networkObjectOwner.name = "OwnerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOwner);
             var networkAnimatorOwnerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectOwner.gameObject };

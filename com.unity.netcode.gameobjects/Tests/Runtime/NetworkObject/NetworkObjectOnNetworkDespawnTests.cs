@@ -106,7 +106,7 @@ namespace Unity.Netcode.RuntimeTests
             // Spawn the test object
             var spawnedObject = Object.Instantiate(m_NetworkObject);
             var spawnedNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            spawnedNetworkObject.NetworkManagerOwner = m_ServerHost;
+            spawnedNetworkObject.NetworkManager = m_ServerHost;
             spawnedNetworkObject.Spawn(true);
 
             // Get the spawned object relative to which NetworkManager instance we are testing.
@@ -130,4 +130,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-

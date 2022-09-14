@@ -79,11 +79,11 @@ namespace Unity.Netcode.RuntimeTests
 
             m_BaseOnClient = s_GlobalNetworkObjects[clientId][m_BaseAsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
-            m_BaseOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            m_BaseOnClient.NetworkManager = m_ClientNetworkManagers[0];
 
             m_SpawnedObjectOnClient = s_GlobalNetworkObjects[clientId][m_SpawnedAsNetworkObject.NetworkObjectId];
             // make sure the objects are set with the right network manager
-            m_SpawnedObjectOnClient.NetworkManagerOwner = m_ClientNetworkManagers[0];
+            m_SpawnedObjectOnClient.NetworkManager = m_ClientNetworkManagers[0];
         }
 
         [UnityTest]
@@ -92,14 +92,14 @@ namespace Unity.Netcode.RuntimeTests
             // create an object
             var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
             var baseObject = Object.Instantiate(m_PrefabToSpawn);
-            baseObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            baseObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             baseObject.GetComponent<NetworkObject>().Spawn();
 
             m_SpawnedAsNetworkObject = spawnedObject.GetComponent<NetworkObject>();
-            m_SpawnedAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_SpawnedAsNetworkObject.NetworkManager = m_ServerNetworkManager;
 
             m_BaseAsNetworkObject = baseObject.GetComponent<NetworkObject>();
-            m_BaseAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            m_BaseAsNetworkObject.NetworkManager = m_ServerNetworkManager;
 
 
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);

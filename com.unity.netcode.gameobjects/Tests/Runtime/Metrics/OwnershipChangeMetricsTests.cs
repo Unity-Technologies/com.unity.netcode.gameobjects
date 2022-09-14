@@ -37,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             // Spawn another network object so we can hide multiple.
             var gameObject = Object.Instantiate(m_NewNetworkPrefab); // new GameObject(NewNetworkObjectName);
             var networkObject = gameObject.GetComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = Server;
+            networkObject.NetworkManager = Server;
             networkObject.Spawn();
 
             return networkObject;

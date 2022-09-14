@@ -56,7 +56,7 @@ namespace TestProject.RuntimeTests
             {
                 var instance = Object.Instantiate(gameObject);
                 var instanceNetworkObject = instance.GetComponent<NetworkObject>();
-                instanceNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                instanceNetworkObject.NetworkManager = m_ServerNetworkManager;
                 instanceNetworkObject.Spawn();
                 spawnedNetworkObjects.Add(instance);
             }

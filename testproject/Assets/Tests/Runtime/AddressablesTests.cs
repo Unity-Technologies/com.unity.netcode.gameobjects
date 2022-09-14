@@ -64,7 +64,7 @@ namespace TestProject.RuntimeTests
         {
             // Have to spawn it ourselves.
             var serverObj = Object.Instantiate(prefab);
-            serverObj.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObj.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObj.GetComponent<NetworkObject>().Spawn();
 
             var objs = Object.FindObjectsOfType<AddressableTestScript>();

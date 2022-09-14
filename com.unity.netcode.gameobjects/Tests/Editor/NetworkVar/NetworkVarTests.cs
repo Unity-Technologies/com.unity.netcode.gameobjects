@@ -17,7 +17,7 @@ namespace Unity.Netcode.EditorTests.NetworkVar
             networkManager.BehaviourUpdater = new NetworkBehaviourUpdater();
             var gameObject = new GameObject();
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = networkManager;
+            networkObject.NetworkManager = networkManager;
             var networkVarComponent = gameObject.AddComponent<NetworkVarComponent>();
             networkVarComponent.NetworkVariable.Initialize(networkVarComponent);
             networkVarComponent.NetworkVariable.Value = 314159265;
@@ -38,7 +38,7 @@ namespace Unity.Netcode.EditorTests.NetworkVar
             var gameObject = new GameObject();
             var networkObject = gameObject.AddComponent<NetworkObject>();
             var networkVarComponent = gameObject.AddComponent<NetworkVarComponent>();
-            networkObject.NetworkManagerOwner = networkManager;
+            networkObject.NetworkManager = networkManager;
             networkVarComponent.NetworkVariable.Initialize(networkVarComponent);
             networkVarComponent.NetworkVariable.Value = 314159265;
             var changed = false;

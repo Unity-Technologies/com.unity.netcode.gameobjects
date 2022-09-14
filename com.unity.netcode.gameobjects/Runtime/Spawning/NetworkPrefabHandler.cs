@@ -106,11 +106,11 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="sourceNetworkPrefab">source NetworkPrefab to be overridden</param>
         /// <param name="networkPrefabOverrides">one or more NetworkPrefabs could be used to override the source NetworkPrefab</param>
-        public void RegisterHostGlobalObjectIdHashValues(GameObject sourceNetworkPrefab, List<GameObject> networkPrefabOverrides)
+        public void RegisterHostGlobalObjectIdHashValues(GameObject sourceNetworkPrefab, List<GameObject> networkPrefabOverrides, NetworkManager networkManager)
         {
-            if (NetworkManager.Singleton.IsListening)
+            if (networkManager.IsListening)
             {
-                if (NetworkManager.Singleton.IsHost)
+                if (networkManager.IsHost)
                 {
                     var sourceNetworkObject = sourceNetworkPrefab.GetComponent<NetworkObject>();
                     if (sourceNetworkPrefab != null)

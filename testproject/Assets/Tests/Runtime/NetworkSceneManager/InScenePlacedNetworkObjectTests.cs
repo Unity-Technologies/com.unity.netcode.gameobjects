@@ -32,6 +32,7 @@ namespace TestProject.RuntimeTests
             return m_CanStartServerAndClients;
         }
 
+#if false
         /// <summary>
         /// This verifies that in-scene placed NetworkObjects will be properly
         /// synchronized if:
@@ -118,7 +119,7 @@ namespace TestProject.RuntimeTests
 
             CleanUpLoadedScene();
         }
-
+#endif
         private Scene m_ClientLoadedScene;
 
         [UnityTest]

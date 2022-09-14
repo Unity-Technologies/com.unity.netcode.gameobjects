@@ -56,7 +56,7 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
             if (IsHost)
             {
                 // While this seems redundant, we could theoretically have several objects that we could potentially be spawning
-                NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(m_ObjectToOverride, m_ObjectOverrides);
+                NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(m_ObjectToOverride, m_ObjectOverrides, NetworkManager);
             }
         }
 
@@ -180,4 +180,3 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
         }
     }
 }
-

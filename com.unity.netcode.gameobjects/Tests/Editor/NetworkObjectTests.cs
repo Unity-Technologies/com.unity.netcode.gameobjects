@@ -21,7 +21,7 @@ namespace Unity.Netcode.EditorTests
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             // Set override
-            networkObject.NetworkManagerOwner = networkManager;
+            networkObject.NetworkManager = networkManager;
 
             Debug.Assert(networkObject.NetworkManager == networkManager);
 

@@ -79,7 +79,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator WhenSpawningBeforeAddingPrefab_SpawnFails()
         {
             var serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
             Assert.IsNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
@@ -91,7 +91,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.AddNetworkPrefab(m_Prefab);
 
             var serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
             Assert.IsNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
@@ -103,7 +103,7 @@ namespace Unity.Netcode.RuntimeTests
             RegisterPrefab();
 
             var serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeHandled<CreateObjectMessage>(m_ClientNetworkManagers[0]);
             Assert.IsNotNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
@@ -115,7 +115,7 @@ namespace Unity.Netcode.RuntimeTests
             RegisterPrefab();
 
             var serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
             Assert.IsNotNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));
@@ -127,7 +127,7 @@ namespace Unity.Netcode.RuntimeTests
             DeregisterPrefab();
 
             serverObject = Object.Instantiate(m_Prefab);
-            serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.GetComponent<NetworkObject>().NetworkManager = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
             yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
             Assert.IsNull(GetObjectForClient(m_ClientNetworkManagers[0].LocalClientId));

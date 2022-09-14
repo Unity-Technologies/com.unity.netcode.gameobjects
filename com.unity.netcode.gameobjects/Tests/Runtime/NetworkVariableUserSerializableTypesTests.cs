@@ -201,7 +201,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var serverObject = Object.Instantiate(m_NonWorkingPrefab);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverNetworkObject.NetworkManager = m_ServerNetworkManager;
             Assert.Throws<ArgumentException>(
                 () =>
                 {

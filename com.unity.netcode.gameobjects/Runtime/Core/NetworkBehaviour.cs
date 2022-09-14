@@ -286,7 +286,7 @@ namespace Unity.Netcode
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
         ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
         /// </summary>
-        public NetworkManager NetworkManager => NetworkObject.NetworkManager;
+        public NetworkManager NetworkManager { get; internal set; }
 
         /// <summary>
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
@@ -360,7 +360,7 @@ namespace Unity.Netcode
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
                 // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
-                if (IsSpawned && m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
+                if (IsSpawned && m_NetworkObject == null && (NetworkManager == null || !NetworkManager.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {

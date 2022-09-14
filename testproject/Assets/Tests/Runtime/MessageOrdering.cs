@@ -80,7 +80,7 @@ namespace TestProject.RuntimeTests
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.NetworkManager = server;
             serverNetworkObject.Spawn();
             serverNetworkObject.ChangeOwnership(clients[0].LocalClientId);
 
@@ -137,7 +137,7 @@ namespace TestProject.RuntimeTests
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverNetworkObject.NetworkManager = m_ServerNetworkManager;
             serverNetworkObject.Spawn();
 
             SpawnRpcDespawn srdComponent = serverObject.GetComponent<SpawnRpcDespawn>();
@@ -239,7 +239,7 @@ namespace TestProject.RuntimeTests
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.NetworkManager = server;
             serverNetworkObject.Spawn();
 
             // Wait until all objects have spawned.

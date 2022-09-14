@@ -71,7 +71,7 @@ namespace TestProject.RuntimeTests
 
             // Prefabs should always be owned by the server
             // This assures that if a client is shutdown it will not destroy the prefab
-            networkObject.NetworkManagerOwner = server;
+            networkObject.NetworkManager = server;
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
@@ -84,7 +84,7 @@ namespace TestProject.RuntimeTests
                 var networkObjectOverride = m_PlayerPrefabOverride.AddComponent<NetworkObject>();
                 // Prefabs should always be owned by the server
                 // This assures that if a client is shutdown it will not destroy the prefab
-                networkObjectOverride.NetworkManagerOwner = server;
+                networkObjectOverride.NetworkManager = server;
                 NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
 

@@ -495,7 +495,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             for (int i = 0; i < serverNetworkObjects.Length; i++)
             {
-                serverNetworkObjects[i].NetworkManagerOwner = server;
+                serverNetworkObjects[i].NetworkManager = server;
             }
 
             for (int i = 0; i < clients.Length; i++)
@@ -507,7 +507,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                 for (int j = 0; j < clientNetworkObjects.Length; j++)
                 {
-                    clientNetworkObjects[j].NetworkManagerOwner = clients[i];
+                    clientNetworkObjects[j].NetworkManager = clients[i];
                 }
             }
         }

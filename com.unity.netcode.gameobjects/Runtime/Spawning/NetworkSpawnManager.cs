@@ -343,7 +343,7 @@ namespace Unity.Netcode
                     // Let the handler spawn the NetworkObject
                     var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
 
-                    networkObject.NetworkManagerOwner = NetworkManager;
+                    networkObject.NetworkManager = NetworkManager;
 
                     if (parentNetworkObject != null)
                     {
@@ -390,7 +390,7 @@ namespace Unity.Netcode
                     // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
                     var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 
-                    networkObject.NetworkManagerOwner = NetworkManager;
+                    networkObject.NetworkManager = NetworkManager;
 
                     if (parentNetworkObject != null)
                     {
@@ -449,6 +449,7 @@ namespace Unity.Netcode
                     Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
                 }
             }
+            networkObject.NetworkManager = NetworkManager;
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
         }
@@ -466,6 +467,7 @@ namespace Unity.Netcode
             {
                 throw new SpawnStateException("Object is already spawned");
             }
+            networkObject.NetworkManager = NetworkManager;
 
             networkObject.SetNetworkVariableData(variableData);
 
@@ -492,9 +494,9 @@ namespace Unity.Netcode
 
             // For integration testing, this makes sure that the appropriate NetworkManager is assigned to
             // the NetworkObject since it uses the NetworkManager.Singleton when not set
-            if (networkObject.NetworkManagerOwner != NetworkManager)
+            if (networkObject.NetworkManager != NetworkManager)
             {
-                networkObject.NetworkManagerOwner = NetworkManager;
+                networkObject.NetworkManager = NetworkManager;
             }
 
             networkObject.NetworkObjectId = networkId;
@@ -612,7 +614,7 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.NetworkManager == NetworkManager && c.IsSceneObject != null && c.IsSceneObject == true);
             foreach (var sobj in networkObjects)
             {
                 sobj.IsSpawned = false;
@@ -705,10 +707,11 @@ namespace Unity.Netcode
 
             for (int i = 0; i < networkObjects.Length; i++)
             {
-                if (networkObjects[i].NetworkManager == NetworkManager)
+                if (networkObjects[i].NetworkManager == null || networkObjects[i].NetworkManager == NetworkManager)
                 {
                     if (networkObjects[i].IsSceneObject == null)
                     {
+                        networkObjects[i].NetworkManager = NetworkManager;
                         networkObjectsToSpawn.Add(networkObjects[i]);
                     }
                 }
@@ -827,6 +830,8 @@ namespace Unity.Netcode
                     UnityEngine.Object.Destroy(gobj);
                 }
             }
+
+            networkObject.NetworkManager = null;
         }
 
         /// <summary>

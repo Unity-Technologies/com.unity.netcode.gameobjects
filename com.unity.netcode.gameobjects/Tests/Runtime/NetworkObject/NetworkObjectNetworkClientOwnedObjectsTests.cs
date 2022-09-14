@@ -35,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator ChangeOwnershipOwnedObjectsAddTest()
         {
             NetworkObject serverObject = Object.Instantiate(m_NetworkPrefab.Prefab).GetComponent<NetworkObject>();
-            serverObject.NetworkManagerOwner = m_ServerNetworkManager;
+            serverObject.NetworkManager = m_ServerNetworkManager;
             serverObject.Spawn();
 
             // Provide enough time for the client to receive and process the spawned message.

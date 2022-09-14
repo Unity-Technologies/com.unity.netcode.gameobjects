@@ -99,7 +99,7 @@ namespace TestProject.RuntimeTests
                 if (childTransform0.name == "Dude (NetObj)")
                 {
                     m_Dude_NetObjs[setIndex] = childTransform0;
-                    m_Dude_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                    m_Dude_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                     foreach (Transform childTransform1 in childTransform0)
                     {
                         if (childTransform1.name == "Arms")
@@ -109,12 +109,12 @@ namespace TestProject.RuntimeTests
                                 if (childTransform2.name == "LeftArm (NetObj)")
                                 {
                                     m_Dude_LeftArm_NetObjs[setIndex] = childTransform2;
-                                    m_Dude_LeftArm_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                                    m_Dude_LeftArm_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                                 }
                                 else if (childTransform2.name == "RightArm (NetObj)")
                                 {
                                     m_Dude_RightArm_NetObjs[setIndex] = childTransform2;
-                                    m_Dude_RightArm_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                                    m_Dude_RightArm_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                                 }
                             }
                         }
@@ -125,12 +125,12 @@ namespace TestProject.RuntimeTests
                                 if (childTransform2.name == "LeftLeg (NetObj)")
                                 {
                                     m_Dude_LeftLeg_NetObjs[setIndex] = childTransform2;
-                                    m_Dude_LeftLeg_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                                    m_Dude_LeftLeg_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                                 }
                                 else if (childTransform2.name == "RightLeg (NetObj)")
                                 {
                                     m_Dude_RightLeg_NetObjs[setIndex] = childTransform2;
-                                    m_Dude_RightLeg_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                                    m_Dude_RightLeg_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                                 }
                             }
                         }
@@ -143,13 +143,13 @@ namespace TestProject.RuntimeTests
                     var networkObject = childTransform0.GetComponent<NetworkObject>();
                     var networkBehaviour = childTransform0.GetComponent<ReparentingCubeNetBhv>();
 
-                    networkObject.NetworkManagerOwner = networkManager;
+                    networkObject.NetworkManager = networkManager;
                     m_Cube_NetBhvs[setIndex] = networkBehaviour;
                 }
                 else if (childTransform0.name == "Pickup (NetObj)")
                 {
                     m_Pickup_NetObjs[setIndex] = childTransform0;
-                    m_Pickup_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                    m_Pickup_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                     foreach (Transform childTransform1 in childTransform0)
                     {
                         if (childTransform1.name == "Body")
@@ -159,7 +159,7 @@ namespace TestProject.RuntimeTests
                                 if (childTransform2.name == "Back (NetObj)")
                                 {
                                     m_Pickup_Back_NetObjs[setIndex] = childTransform2;
-                                    m_Pickup_Back_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManagerOwner = networkManager;
+                                    m_Pickup_Back_NetObjs[setIndex].GetComponent<NetworkObject>().NetworkManager = networkManager;
                                 }
                             }
                         }

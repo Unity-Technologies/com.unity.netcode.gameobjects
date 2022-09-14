@@ -150,9 +150,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
             foreach (var sobj in inSceneNetworkObjects)
             {
-                if (sobj.NetworkManagerOwner != networkManager)
+                if (sobj.NetworkManager != networkManager)
                 {
-                    sobj.NetworkManagerOwner = networkManager;
+                    sobj.NetworkManager = networkManager;
                 }
                 if (sobj.GetComponent<ObjectNameIdentifier>() == null && sobj.GetComponentInChildren<ObjectNameIdentifier>() == null)
                 {

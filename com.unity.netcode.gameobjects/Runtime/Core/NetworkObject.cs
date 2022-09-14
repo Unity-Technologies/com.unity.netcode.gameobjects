@@ -45,7 +45,20 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets the NetworkManager that owns this NetworkObject instance
         /// </summary>
-        public NetworkManager NetworkManager => NetworkManagerOwner ?? NetworkManager.Singleton;
+        public NetworkManager NetworkManager
+        {
+            get { return NetworkManagerOwner; }
+            set {
+                NetworkManagerOwner = value;
+                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                {
+                    if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                    {
+                        ChildNetworkBehaviours[i].NetworkManager = value;
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// The NetworkManager that owns this NetworkObject.
@@ -53,7 +66,7 @@ namespace Unity.Netcode
         /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
-        internal NetworkManager NetworkManagerOwner;
+        private NetworkManager NetworkManagerOwner;
 
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
@@ -474,12 +487,35 @@ namespace Unity.Netcode
             }
         }
 
+        private void FindNetworkManager()
+        {
+            NetworkManager = null;
+            var networkManagers = GameObject.FindObjectsOfType<NetworkManager>();
+            foreach (var networkManager in networkManagers)
+            {
+                if (networkManager.IsServer && networkManager.IsListening)
+                {
+                    if (NetworkManagerOwner)
+                    {
+                        throw new Exception($"More than one server {nameof(NetworkManager)} exists. Please pass the desired {nameof(NetworkManager)} into the spawn method.");
+                    }
+                    NetworkManager = networkManager;
+                }
+            }
+
+            if (NetworkManagerOwner == null)
+            {
+                throw new Exception($"Could not find a running server {nameof(NetworkManager)} to spawn this object.");
+            }
+        }
+
         /// <summary>
         /// Spawns this <see cref="NetworkObject"/> across the network. Can only be called from the Server
         /// </summary>
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void Spawn(bool destroyWithScene = false)
         {
+            FindNetworkManager();
             SpawnInternal(destroyWithScene, NetworkManager.ServerClientId, false);
         }
 
@@ -490,6 +526,7 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void SpawnWithOwnership(ulong clientId, bool destroyWithScene = false)
         {
+            FindNetworkManager();
             SpawnInternal(destroyWithScene, clientId, false);
         }
 
@@ -500,6 +537,52 @@ namespace Unity.Netcode
         /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
         public void SpawnAsPlayerObject(ulong clientId, bool destroyWithScene = false)
         {
+            FindNetworkManager();
+            SpawnInternal(destroyWithScene, clientId, true);
+        }
+
+        /// <summary>
+        /// Spawns this <see cref="NetworkObject"/> across the network. Can only be called from the Server
+        /// </summary>
+        /// <param name="owningNetworkManager">The network manager server instance to which this object should be assigned</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
+        public void Spawn(NetworkManager owningNetworkManager, bool destroyWithScene = false)
+        {
+            if (!owningNetworkManager.IsServer)
+            {
+                throw new Exception("Only server NetworkManagers can spawn objects");
+            }
+            NetworkManager = owningNetworkManager;
+            SpawnInternal(destroyWithScene, NetworkManager.ServerClientId, false);
+        }
+
+        /// <summary>
+        /// Spawns a <see cref="NetworkObject"/> across the network with a given owner. Can only be called from server
+        /// </summary>
+        /// <param name="clientId">The clientId to own the object</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
+        public void SpawnWithOwnership(NetworkManager owningNetworkManager, ulong clientId, bool destroyWithScene = false)
+        {
+            if (!owningNetworkManager.IsServer)
+            {
+                throw new Exception("Only server NetworkManagers can spawn objects");
+            }
+            NetworkManager = owningNetworkManager;
+            SpawnInternal(destroyWithScene, clientId, false);
+        }
+
+        /// <summary>
+        /// Spawns a <see cref="NetworkObject"/> across the network and makes it the player object for the given client
+        /// </summary>
+        /// <param name="clientId">The clientId who's player object this is</param>
+        /// <param name="destroyWithScene">Should the object be destroyed when the scene is changed</param>
+        public void SpawnAsPlayerObject(NetworkManager owningNetworkManager, ulong clientId, bool destroyWithScene = false)
+        {
+            if (!owningNetworkManager.IsServer)
+            {
+                throw new Exception("Only server NetworkManagers can spawn objects");
+            }
+            NetworkManager = owningNetworkManager;
             SpawnInternal(destroyWithScene, clientId, true);
         }
 

@@ -133,7 +133,7 @@ namespace TestProject.RuntimeTests
                     ++numExceptionFreeSpawnsExpected;
                 }
                 var networkObject = instance.GetComponent<NetworkObject>();
-                networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                networkObject.NetworkManager = m_ServerNetworkManager;
                 networkObject.Spawn();
 
                 var messageHook = new MessageHookEntry(m_ClientNetworkManagers[0]);
@@ -187,7 +187,7 @@ namespace TestProject.RuntimeTests
                     ++numExceptionFreeDespawnsExpected;
                 }
                 var networkObject = instance.GetComponent<NetworkObject>();
-                networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                networkObject.NetworkManager = m_ServerNetworkManager;
                 networkObject.Spawn();
 
                 allObjects.Add(networkObject);

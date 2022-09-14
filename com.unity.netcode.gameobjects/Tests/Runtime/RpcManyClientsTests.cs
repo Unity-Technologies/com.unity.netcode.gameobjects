@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var spawnedObject = UnityEngine.Object.Instantiate(m_PrefabToSpawn);
             var netSpawnedObject = spawnedObject.GetComponent<NetworkObject>();
-            netSpawnedObject.NetworkManagerOwner = m_ServerNetworkManager;
+            netSpawnedObject.NetworkManager = m_ServerNetworkManager;
 
             netSpawnedObject.Spawn();
 

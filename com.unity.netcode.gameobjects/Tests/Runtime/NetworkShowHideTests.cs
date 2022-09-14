@@ -192,9 +192,9 @@ namespace Unity.Netcode.RuntimeTests
             {
                 return false;
             }
-            Assert.True(m_Object1OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
-            Assert.True(m_Object2OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
-            Assert.True(m_Object3OnClient0.NetworkManagerOwner == m_ClientNetworkManagers[0]);
+            Assert.True(m_Object1OnClient0.NetworkManager == m_ClientNetworkManagers[0]);
+            Assert.True(m_Object2OnClient0.NetworkManager == m_ClientNetworkManagers[0]);
+            Assert.True(m_Object3OnClient0.NetworkManager == m_ClientNetworkManagers[0]);
             return true;
         }
 

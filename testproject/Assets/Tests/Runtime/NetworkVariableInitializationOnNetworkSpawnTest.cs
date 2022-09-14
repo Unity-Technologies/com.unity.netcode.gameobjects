@@ -79,7 +79,7 @@ namespace TestProject.RuntimeTests
 
             var serverObject = Object.Instantiate(m_Prefab, Vector3.zero, Quaternion.identity);
             NetworkObject serverNetworkObject = serverObject.GetComponent<NetworkObject>();
-            serverNetworkObject.NetworkManagerOwner = server;
+            serverNetworkObject.NetworkManager = server;
             serverNetworkObject.Spawn();
             // Wait 1 tick for client side spawn
             yield return waitForTickInterval;

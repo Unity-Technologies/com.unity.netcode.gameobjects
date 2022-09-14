@@ -51,16 +51,19 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_WEBGL
                 Debug.LogError("Cannot use queued sending mode for WebGL");
 #else
-                if (NetworkManager != null && NetworkManager.IsServer)
+                if(NetworkManager != null)
                 {
-                    foreach (var targetClient in NetworkManager.Singleton.ConnectedClientsList)
+                    if (NetworkManager.IsServer)
                     {
-                        SendQueued(targetClient.ClientId);
+                        foreach (var targetClient in NetworkManager.ConnectedClientsList)
+                        {
+                            SendQueued(targetClient.ClientId);
+                        }
                     }
-                }
-                else
-                {
-                    SendQueued(NetworkManager.Singleton.LocalClientId);
+                    else
+                    {
+                        SendQueued(NetworkManager.LocalClientId);
+                    }
                 }
 #endif
             }

@@ -353,7 +353,7 @@ namespace TestProject.ManualTests
                 if (IsHost && EnableHandler && ServerObjectToPool != m_ObjectToSpawn)
                 {
                     // While this seems redundant, we could theoretically have several objects that we could potentially be spawning
-                    NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(ServerObjectToPool, new List<GameObject>() { m_ObjectToSpawn });
+                    NetworkManager.PrefabHandler.RegisterHostGlobalObjectIdHashValues(ServerObjectToPool, new List<GameObject>() { m_ObjectToSpawn }, NetworkManager);
                 }
             }
 

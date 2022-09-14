@@ -269,7 +269,7 @@ namespace Unity.Netcode.Components
                 m_NetworkAnimatorStateChangeHandler = null;
             }
 
-            if (IsServer)
+            if (NetworkManager != null && IsServer)
             {
                 NetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
             }

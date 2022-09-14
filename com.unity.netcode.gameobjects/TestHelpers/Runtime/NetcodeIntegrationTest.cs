@@ -668,7 +668,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                    networkObject.NetworkManager = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
@@ -779,7 +779,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var gameObject = new GameObject();
             gameObject.name = baseName;
             var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+            networkObject.NetworkManager = m_ServerNetworkManager;
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
             var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
             m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
@@ -812,7 +812,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
-            networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
+            networkObjectToSpawn.NetworkManager = m_ServerNetworkManager; // Required to assure the server does the spawning
             if (owner == m_ServerNetworkManager)
             {
                 if (m_UseHost)
