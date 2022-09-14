@@ -531,7 +531,7 @@ namespace Unity.Netcode.RuntimeTests
                 authPlayerTransform.position = nextPosition;
                 m_OwnerTransform.CommitToTransform();
             }
-            else if (overideState == OverrideState.SetState)
+            else
             {
                 m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
             }
