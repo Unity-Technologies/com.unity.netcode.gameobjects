@@ -356,7 +356,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a3556fb5f3bee4e8a0fb88acff87ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableData:
+  TransitionStateInfoList:
   - Layer: 0
     OriginatingState: 2081823275
     DestinationState: -570305638
@@ -492,7 +492,6 @@ GameObject:
   - component: {fileID: 3214090169675393153}
   - component: {fileID: 5628721071472145353}
   - component: {fileID: 2564457647300903827}
-  - component: {fileID: 3406550028494568410}
   m_Layer: 0
   m_Name: NetworkAnimatorTestPrefab
   m_TagString: Untagged
@@ -574,18 +573,6 @@ MonoBehaviour:
   ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 0
---- !u!114 &3406550028494568410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3214090169675393154}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c869ae2381a7034469e7b4d4f165c72a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &3953046479900177945
 GameObject:
   m_ObjectHideFlags: 0
@@ -666,7 +653,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableData:
+  TransitionStateInfoList:
   - Layer: 0
     OriginatingState: 2081823275
     DestinationState: -570305638

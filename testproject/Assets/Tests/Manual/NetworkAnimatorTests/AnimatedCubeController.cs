@@ -109,7 +109,6 @@ namespace Tests.Manual.NetworkAnimatorTests
                 if (!IsServer && IsOwner)
                 {
                     m_NetworkAnimator.SetTrigger("Pulse");
-                    //PlayPulseAnimationServerRpc(m_Rotate);
                 }
                 else if (IsServer && IsOwner)
                 {
