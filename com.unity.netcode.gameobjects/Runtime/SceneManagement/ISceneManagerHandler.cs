@@ -14,7 +14,8 @@ namespace Unity.Netcode
         struct SceneEventAction
         {
             internal uint SceneEventId;
-            internal Action<uint> EventAction;
+            internal Scene Scene;
+            internal Action<uint, Scene> EventAction;
             /// <summary>
             /// Used server-side for integration testing in order to
             /// invoke the SceneEventProgress once done loading
@@ -23,7 +24,7 @@ namespace Unity.Netcode
             internal void Invoke()
             {
                 Completed?.Invoke();
-                EventAction.Invoke(SceneEventId);
+                EventAction.Invoke(SceneEventId, Scene);
             }
         }
 

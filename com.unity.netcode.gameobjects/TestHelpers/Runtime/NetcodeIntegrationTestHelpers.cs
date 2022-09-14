@@ -368,7 +368,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // scene to synchronize NetworkObjects.  Next, add the currently active test runner scene to the scenes
                 // loaded and register the server to client scene handle since host-server shares the test runner scene
                 // with the clients.
-                networkManager.SceneManager.GetAndAddNewlyLoadedSceneByName(scene.name);
+                networkManager.SceneManager.ScenesLoaded.Add(scene.handle, scene);
                 networkManager.SceneManager.ServerSceneHandleToClientSceneHandle.Add(scene.handle, scene.handle);
             }
         }

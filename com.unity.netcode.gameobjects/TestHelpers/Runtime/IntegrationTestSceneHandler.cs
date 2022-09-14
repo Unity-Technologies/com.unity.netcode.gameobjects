@@ -107,6 +107,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             // We always load additively for all scenes during integration tests
             SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
+            queuedSceneJob.SceneAction.Scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
 
             // Wait for it to finish
             while (queuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed)
@@ -254,6 +255,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 SceneManager.sceneLoaded += Sever_SceneLoaded;
             }
             var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
+            sceneEventAction.Scene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
 
             operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
             return operation;
@@ -309,49 +311,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return null;
         }
 
-        /// <summary>
-        /// Replacement callback takes other NetworkManagers into consideration
-        /// </summary>
-        internal Scene GetAndAddNewlyLoadedSceneByName(string sceneName)
-        {
-            for (int i = 0; i < SceneManager.sceneCount; i++)
-            {
-                var sceneLoaded = SceneManager.GetSceneAt(i);
-                if (sceneLoaded.name == sceneName)
-                {
-                    var skip = false;
-                    foreach (var networkManager in NetworkManagers)
-                    {
-                        if (NetworkManager.LocalClientId == networkManager.LocalClientId || !networkManager.IsListening)
-                        {
-                            continue;
-                        }
-                        if (networkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
-                        {
-                            if (NetworkManager.LogLevel == LogLevel.Developer)
-                            {
-                                NetworkLog.LogInfo($"{NetworkManager.name}'s ScenesLoaded contains {sceneLoaded.name} with a handle of {sceneLoaded.handle}.  Skipping over scene.");
-                            }
-                            skip = true;
-                            break;
-                        }
-                    }
-
-                    if (!skip && !NetworkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
-                    {
-                        if (NetworkManager.LogLevel == LogLevel.Developer)
-                        {
-                            NetworkLog.LogInfo($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
-                        }
-                        NetworkManager.SceneManager.ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
-                        return sceneLoaded;
-                    }
-                }
-            }
-
-            throw new Exception($"Failed to find any loaded scene named {sceneName}!");
-        }
-
         private bool ExcludeSceneFromSynchronizationCheck(Scene scene)
         {
             if (!NetworkManager.SceneManager.ScenesLoaded.ContainsKey(scene.handle) && SceneManager.GetActiveScene().handle != scene.handle)
@@ -366,7 +325,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public IntegrationTestSceneHandler(NetworkManager networkManager)
         {
-            networkManager.SceneManager.OverrideGetAndAddNewlyLoadedSceneByName = GetAndAddNewlyLoadedSceneByName;
             networkManager.SceneManager.ExcludeSceneFromSychronization = ExcludeSceneFromSynchronizationCheck;
             NetworkManagers.Add(networkManager);
             NetworkManagerName = networkManager.name;
