@@ -1091,10 +1091,7 @@ namespace Unity.Netcode
                 if (Header.IsReparented)
                 {
                     readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        readSize += FastBufferWriter.GetWriteSize<ulong>();
-                    }
+                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
                 }
 
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
