@@ -1079,14 +1079,24 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
                 reader.ReadValue(out Header);
-                var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
+                var readSize = 0;
+                if (Header.HasParent)
+                {
+                    readSize += FastBufferWriter.GetWriteSize(ParentObjectId);
+                    readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
+                }
+
                 readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
+
                 if (Header.IsReparented)
                 {
-                    readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
                     readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                    if (IsLatestParentSet)
+                    {
+                        readSize += FastBufferWriter.GetWriteSize<ulong>();
+                    }
                 }
+
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!reader.TryBeginRead(readSize))
