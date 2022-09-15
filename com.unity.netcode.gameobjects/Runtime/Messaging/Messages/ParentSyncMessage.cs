@@ -16,8 +16,14 @@ namespace Unity.Netcode
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
-        // Used to synchronize clients with the current local position and rotation
-        // when WorldPositionStays is false
+        // These additional properties are used to synchronize clients with the current
+        // local position and rotation only when WorldPositionStays is false.  This allows
+        // a user to not be required to use a NetworkTransform for NetworkObjects that rarely
+        // change their default local space position and rotation (i.e. an item that is picked
+        // up and parented under a player).  Upon de-parenting (dropped), the user might want
+        // to re-apply the original local space position and rotation upon the object being
+        // picked up again.  These values are set by the NetworkObject's transform when being
+        // serialized and sets the NetworkObject's transform when being deserialized.
         public Vector3 LocalPosition;
         public Quaternion LocalRotation;
 
