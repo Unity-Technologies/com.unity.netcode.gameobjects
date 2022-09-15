@@ -1161,10 +1161,7 @@ namespace Unity.Netcode.Components
         private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
         {
             // Server dictated state is always applied
-            transform.SetPositionAndRotation(pos, rot);
-            transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            SetStateInternal(pos, rot, scale, shouldTeleport);
         }
 
         /// <summary>
@@ -1181,11 +1178,7 @@ namespace Unity.Netcode.Components
             {
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
             }
-
-            transform.SetPositionAndRotation(pos, rot);
-            transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            SetStateInternal(pos, rot, scale, shouldTeleport);
         }
 
         /// <summary>
