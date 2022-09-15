@@ -21,8 +21,6 @@ namespace Unity.Netcode
         public Vector3 LocalPosition;
         public Quaternion LocalRotation;
 
-
-
         public void Serialize(FastBufferWriter writer)
         {
             writer.WriteValueSafe(NetworkObjectId);
