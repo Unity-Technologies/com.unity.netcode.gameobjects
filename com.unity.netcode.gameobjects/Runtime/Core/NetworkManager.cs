@@ -693,7 +693,7 @@ namespace Unity.Netcode
             }
             else if (networkPrefab.Override == NetworkPrefabOverride.None)
             {
-                if (!networkPrefab.Prefab.TryGetComponent<NetworkObject>(out networkObject))
+                if (!networkPrefab.Prefab.TryGetComponent(out networkObject))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -739,7 +739,7 @@ namespace Unity.Netcode
                             }
                             else
                             {
-                                if (!networkPrefab.SourcePrefabToOverride.TryGetComponent<NetworkObject>(out networkObject))
+                                if (!networkPrefab.SourcePrefabToOverride.TryGetComponent(out networkObject))
                                 {
                                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                                     {

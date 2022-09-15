@@ -109,7 +109,7 @@ namespace Unity.Netcode.Editor
         public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false)
         {
             // Check for any NetworkObject at the same gameObject relative layer
-            
+
             if (!networkManager.gameObject.TryGetComponent<NetworkObject>(out var networkObject))
             {
                 // if none is found, check to see if any children have a NetworkObject
