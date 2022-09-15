@@ -17,28 +17,45 @@ namespace TestProject.ManualTests
                 {
                     DropItemServerRpc();
                 }
+                if (Input.GetKeyDown(KeyCode.F))
+                {
+                    PickupItemServerRpc(false);
+                }
+                if (Input.GetKeyDown(KeyCode.E))
+                {
+                    DropItemServerRpc();
+                }
             }
         }
 
-        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        private Vector3 m_OriginalLocalPosition;
+
+        public override void OnNetworkSpawn()
         {
-            if (parentNetworkObject != null)
+            if (IsServer)
             {
-                transform.localPosition = Vector3.up * transform.localPosition.y;
+                m_OriginalLocalPosition = transform.localPosition;
             }
-
-            base.OnNetworkObjectParentChanged(parentNetworkObject);
+            base.OnNetworkSpawn();
         }
 
-        private void PickUpItem(NetworkObject player)
+        private void PickUpItem(NetworkObject player, bool worldPositionStays = true)
         {
             if (transform.parent == null)
             {
-                transform.parent = player.transform;
-
-                transform.localPosition = Vector3.up * transform.localPosition.y;
-
-                Debug.Log($"{name} is now parented under {player.name}!");
+                if (!worldPositionStays)
+                {
+                    // We do this because when not parented the local position is the "world space position".
+                    transform.localPosition = m_OriginalLocalPosition;
+                }
+                if (NetworkObject.TrySetParent(player.transform, worldPositionStays))
+                {
+                    Debug.Log($"{name} is now parented under {player.name}!");
+                }
+                else
+                {
+                    Debug.Log($"{name} failed to get parented under {player.name}!");
+                }
             }
             else
             {
@@ -74,11 +91,11 @@ namespace TestProject.ManualTests
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void PickupItemServerRpc(ServerRpcParams serverRpcParams = default)
+        public void PickupItemServerRpc(bool wordlPositionStays = true, ServerRpcParams serverRpcParams = default)
         {
             if (NetworkManager.ConnectedClients.ContainsKey(serverRpcParams.Receive.SenderClientId))
             {
-                PickUpItem(NetworkManager.ConnectedClients[serverRpcParams.Receive.SenderClientId].PlayerObject);
+                PickUpItem(NetworkManager.ConnectedClients[serverRpcParams.Receive.SenderClientId].PlayerObject, wordlPositionStays);
             }
         }
 
