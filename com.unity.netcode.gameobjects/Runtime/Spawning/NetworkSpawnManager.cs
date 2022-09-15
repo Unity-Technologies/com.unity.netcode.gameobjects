@@ -709,7 +709,7 @@ namespace Unity.Netcode
             {
                 if (networkObjects[i].NetworkManager == null || networkObjects[i].NetworkManager == NetworkManager)
                 {
-                    if (networkObjects[i].IsSceneObject == null)
+                    if (networkObjects[i].IsSceneObject != false)
                     {
                         networkObjects[i].NetworkManager = NetworkManager;
                         networkObjectsToSpawn.Add(networkObjects[i]);

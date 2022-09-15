@@ -21,7 +21,6 @@ namespace TestProject.RuntimeTests
             {
                 ServerNetworkObjectInstance = NetworkObject;
             }
-            Debug.Log($"Spawnnititrated {name}");
             SpawnedInstances.Add(this);
             base.OnNetworkSpawn();
         }
@@ -32,8 +31,6 @@ namespace TestProject.RuntimeTests
         {
             OnInSceneObjectDespawned?.Invoke(NetworkObject);
             m_HasNotifiedSpawned = false;
-            Debug.Log($"{gameObject.name}");
-            Debug.Log($"{IsSpawned}");
             Debug.Log($"{NetworkManager.name} de-spawned {gameObject.name}.");
             SpawnedInstances.Remove(this);
             base.OnNetworkDespawn();

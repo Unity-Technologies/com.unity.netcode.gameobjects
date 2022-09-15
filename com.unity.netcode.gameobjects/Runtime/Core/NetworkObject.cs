@@ -50,11 +50,12 @@ namespace Unity.Netcode
             get { return NetworkManagerOwner; }
             set {
                 NetworkManagerOwner = value;
-                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
+                for (int i = 0; i < networkBehaviours.Length; i++)
                 {
-                    if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                    if (networkBehaviours[i].NetworkObject == this)
                     {
-                        ChildNetworkBehaviours[i].NetworkManager = value;
+                        networkBehaviours[i].NetworkManager = value;
                     }
                 }
             }
