@@ -413,11 +413,11 @@ namespace Unity.Netcode
                     {
                         if (worldPostionStays)
                         {
-                            networkObject.transform.localRotation = rotation.Value;
+                            networkObject.transform.rotation = rotation.Value;
                         }
                         else
                         {
-                            networkObject.transform.rotation = rotation.Value;
+                            networkObject.transform.localRotation = rotation.Value;
                         }
                     }
 
@@ -464,11 +464,11 @@ namespace Unity.Netcode
                 {
                     if (worldPostionStays)
                     {
-                        networkObject.transform.localRotation = rotation.Value;
+                        networkObject.transform.rotation = rotation.Value;
                     }
                     else
                     {
-                        networkObject.transform.rotation = rotation.Value;
+                        networkObject.transform.localRotation = rotation.Value;
                     }
                 }
 
