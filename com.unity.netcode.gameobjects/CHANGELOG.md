@@ -23,7 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
 - Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
 - Fixed Connection Approval Timeout not working client side. (#2164)
-- Fixed issue where parenting with the `WorldPositionStays` parameter set to false was not being synchronized with clients. (#2146)
+- Fixed issue where the `WorldPositionStays` parenting parameter was not being synchronized with clients. (#2146)
 - Fixed issue where parented in-scene placed `NetworkObject`s would fail to parent for late joining clients. (#2146)
 - Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
 - Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
