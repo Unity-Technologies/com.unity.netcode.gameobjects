@@ -314,15 +314,25 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Should only run on the client
+        /// Creates a local NetowrkObject to be spawned.
         /// </summary>
-        /// TODO: Make CreateLocalNetworkObject just accept the entire sceneObject which now contains everything needed to create the NetworkObject locally
-        internal NetworkObject CreateLocalNetworkObject(bool isSceneObject, uint globalObjectIdHash, ulong ownerClientId, ulong? parentNetworkId, int? networkSceneHandle, Vector3? position, Quaternion? rotation, bool isReparented = false, bool hasParent = false, bool worldPostionStays = true)
+        /// <remarks>
+        /// For most cases this is client-side only, with the exception of when the server
+        /// is spawning a player.
+        /// </remarks>
+        internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject)
         {
             NetworkObject parentNetworkObject = null;
-            if (parentNetworkId != null && hasParent)
+            var globalObjectIdHash = sceneObject.Header.Hash;
+            var position = sceneObject.Header.HasTransform ? sceneObject.Transform.Position : default;
+            var rotation = sceneObject.Header.HasTransform ? sceneObject.Transform.Rotation : default;
+            var isReparented = sceneObject.Header.IsReparented;
+            var parentNetworkId = sceneObject.Header.HasParent ? sceneObject.ParentObjectId : default;
+            var worldPositionStays = sceneObject.Header.HasParent ? sceneObject.WorldPositionStays : true;
+
+            if (sceneObject.Header.HasParent)
             {
-                if (SpawnedObjects.TryGetValue(parentNetworkId.Value, out NetworkObject networkObject))
+                if (SpawnedObjects.TryGetValue(sceneObject.ParentObjectId, out NetworkObject networkObject))
                 {
                     parentNetworkObject = networkObject;
                 }
@@ -335,20 +345,21 @@ namespace Unity.Netcode
                 }
             }
 
-            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !isSceneObject)
+            if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.Header.IsSceneObject)
             {
                 // If the prefab hash has a registered INetworkPrefabInstanceHandler derived class
                 if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
                 {
+
                     // Let the handler spawn the NetworkObject
-                    var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, ownerClientId, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    var networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, sceneObject.Header.OwnerClientId, position, rotation);
                     networkObject.NetworkManagerOwner = NetworkManager;
 
                     // Go ahead and set network parenting properties
-                    networkObject.SetNetworkParenting(isReparented, parentNetworkId != null ? parentNetworkId.Value : default, worldPostionStays);
+                    networkObject.SetNetworkParenting(isReparented, parentNetworkId, worldPositionStays);
                     if (parentNetworkObject != null)
                     {
-                        networkObject.TrySetParent(parentNetworkObject.transform, worldPostionStays);
+                        networkObject.TrySetParent(parentNetworkObject.transform, worldPositionStays);
                     }
 
                     if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
@@ -388,42 +399,31 @@ namespace Unity.Netcode
                         return null;
                     }
 
-
                     // Create prefab instance
                     // Note: We used to set position here, see comments below.
                     var networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
                     networkObject.NetworkManagerOwner = NetworkManager;
 
                     // Go ahead and set network parenting properties
-                    networkObject.SetNetworkParenting(isReparented, parentNetworkId != null ? parentNetworkId.Value : default, worldPostionStays);
+                    networkObject.SetNetworkParenting(isReparented, parentNetworkId, worldPositionStays);
 
-                    if (position != null && position.HasValue)
+                    if (sceneObject.Header.HasTransform)
                     {
-                        if (worldPostionStays)
+                        if (worldPositionStays)
                         {
-                            networkObject.transform.position = position.Value;
+                            networkObject.transform.position = position;
+                            networkObject.transform.rotation = rotation;
                         }
                         else
                         {
-                            networkObject.transform.localPosition = position.Value;
-                        }
-                    }
-
-                    if (rotation != null && rotation.HasValue)
-                    {
-                        if (worldPostionStays)
-                        {
-                            networkObject.transform.rotation = rotation.Value;
-                        }
-                        else
-                        {
-                            networkObject.transform.localRotation = rotation.Value;
+                            networkObject.transform.localPosition = position;
+                            networkObject.transform.localRotation = rotation;
                         }
                     }
 
                     if (parentNetworkObject != null)
                     {
-                        networkObject.TrySetParent(parentNetworkObject.transform, worldPostionStays);
+                        networkObject.TrySetParent(parentNetworkObject.transform, worldPositionStays);
                     }
 
                     if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
@@ -436,7 +436,7 @@ namespace Unity.Netcode
             }
             else
             {
-                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, networkSceneHandle);
+                var networkObject = NetworkManager.SceneManager.GetSceneRelativeInSceneNetworkObject(globalObjectIdHash, sceneObject.NetworkSceneHandle);
 
                 if (networkObject == null)
                 {
@@ -448,37 +448,27 @@ namespace Unity.Netcode
                     return null;
                 }
 
-                if (position != null && position.HasValue)
+                if (sceneObject.Header.HasTransform)
                 {
-                    if (worldPostionStays)
+                    if (worldPositionStays)
                     {
-                        networkObject.transform.position = position.Value;
+                        networkObject.transform.position = position;
+                        networkObject.transform.rotation = rotation;
                     }
                     else
                     {
-                        networkObject.transform.localPosition = position.Value;
-                    }
-                }
-
-                if (rotation != null && rotation.HasValue)
-                {
-                    if (worldPostionStays)
-                    {
-                        networkObject.transform.rotation = rotation.Value;
-                    }
-                    else
-                    {
-                        networkObject.transform.localRotation = rotation.Value;
+                        networkObject.transform.localPosition = position;
+                        networkObject.transform.localRotation = rotation;
                     }
                 }
 
                 // Go ahead and set network parenting properties
-                networkObject.SetNetworkParenting(isReparented, parentNetworkId != null ? parentNetworkId.Value : default, worldPostionStays);
+                networkObject.SetNetworkParenting(isReparented, parentNetworkId, worldPositionStays);
 
                 // SceneObject parenting is handled later
                 if (parentNetworkObject != null)
                 {
-                    networkObject.TrySetParent(parentNetworkObject.transform, worldPostionStays);
+                    networkObject.TrySetParent(parentNetworkObject.transform, worldPositionStays);
                 }
 
                 return networkObject;
