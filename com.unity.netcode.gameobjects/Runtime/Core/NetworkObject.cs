@@ -1208,32 +1208,8 @@ namespace Unity.Netcode
         /// <returns>optional to use NetworkObject deserialized</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader variableData, NetworkManager networkManager)
         {
-            Vector3? position = null;
-            Quaternion? rotation = null;
-            ulong? parentNetworkId = null;
-            int? networkSceneHandle = null;
-
-            if (sceneObject.Header.HasTransform)
-            {
-                position = sceneObject.Transform.Position;
-                rotation = sceneObject.Transform.Rotation;
-            }
-
-            if (sceneObject.Header.HasParent)
-            {
-                parentNetworkId = sceneObject.ParentObjectId;
-            }
-
-            if (sceneObject.Header.IsSceneObject)
-            {
-                networkSceneHandle = sceneObject.NetworkSceneHandle;
-            }
-
-            // TODO: Make CreateLocalNetworkObject just accept the entire sceneObject which now contains everything needed to create the NetworkObject locally
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
-                sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented, sceneObject.Header.HasParent, sceneObject.WorldPositionStays);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
 
             if (networkObject == null)
             {
