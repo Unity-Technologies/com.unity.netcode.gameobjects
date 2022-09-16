@@ -383,6 +383,13 @@ namespace Unity.Netcode
 
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
+        public event EventHandler OnInitializedEvent;
+
+        protected void RaiseInitializedEvent()
+        {
+            OnInitializedEvent?.Invoke(this, EventArgs.Empty);
+        }
+
         /// <summary>
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
@@ -993,6 +1000,8 @@ namespace Unity.Netcode
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.Initialize(this);
+
+            RaiseInitializedEvent();
         }
 
         private void ClearClients()
