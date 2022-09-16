@@ -600,7 +600,10 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
-            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+            var networkObject = parent.GetComponent<NetworkObject>();
+
+            // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
+            return networkObject == null ? false : TrySetParent(networkObject, worldPositionStays);
         }
 
         /// <summary>
@@ -611,7 +614,16 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
-            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+            // If we are removing ourself from a parent
+            if (parent == null)
+            {
+                return TrySetParent((NetworkObject)null, worldPositionStays);
+            }
+
+            var networkObject = parent.GetComponent<NetworkObject>();
+
+            // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
+            return networkObject == null ? false : TrySetParent(networkObject, worldPositionStays);
         }
 
         /// <summary>
@@ -642,17 +654,13 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (parent == null)
-            {
-                return false;
-            }
-
-            if (!parent.IsSpawned)
+            if (parent != null && !parent.IsSpawned)
             {
                 return false;
             }
             m_WorldPositionStays = worldPositionStays;
-            transform.SetParent(parent.transform, worldPositionStays);
+
+            transform.SetParent(parent ? parent.transform : null, worldPositionStays);
             return true;
         }
 
@@ -712,26 +720,34 @@ namespace Unity.Netcode
             else
             {
                 m_LatestParent = null;
-                m_WorldPositionStays = true; // Reset to the default setting of true
             }
 
+            // We always set this true to be able to apply the parenting
+            // If it is being de-parented, then m_IsReparented will be set
+            // to false.
+            // TODO: Determine if m_IsReparented is still needed.
             m_IsReparented = true;
+
             ApplyNetworkParenting();
 
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                IsReparented = m_IsReparented,
                 IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
                 LatestParent = m_LatestParent,
                 WorldPositionStays = m_WorldPositionStays,
-                // if the world position is not "staying" we want to set the current local position and
-                // rotation of the NetworkObject before parenting (to preserve any changes made if there
-                // is no NetworkTransform component attached to the child).
-                LocalPosition = !m_WorldPositionStays ? transform.localPosition : default,
-                LocalRotation = !m_WorldPositionStays ? transform.localRotation : default
+                Position = m_WorldPositionStays ? transform.position : transform.localPosition,
+                Rotation = m_WorldPositionStays ? transform.rotation : transform.localRotation,
+                Scale = transform.localScale,
             };
 
+            // We need to preserve the m_WorldPositionStays value until after we create the message
+            // in order to assure any local space values changed/reset get applied properly. If our
+            // parent is null then go ahead and reset the m_WorldPositionStays the default value.
+            if (parentTransform == null)
+            {
+                m_WorldPositionStays = true;
+            }
 
             unsafe
             {
@@ -772,6 +788,7 @@ namespace Unity.Netcode
                 return false;
             }
 
+            // TODO: Determine if m_IsReparented is still needed.
             if (!m_IsReparented)
             {
                 return true;
@@ -780,9 +797,13 @@ namespace Unity.Netcode
             if (m_LatestParent == null || !m_LatestParent.HasValue)
             {
                 m_CachedParent = null;
-                transform.parent = null;
-                m_WorldPositionStays = true;  // Reset to the default setting of true
-
+                // We must use Transform.SetParent when taking WorldPositionStays into
+                // consideration, otherwise just setting transform.parent = null defaults
+                // to WorldPositionStays which can cause scaling issues if the parent's
+                // scale is not the default (Vetctor3.one) value.
+                transform.SetParent(null, m_WorldPositionStays);
+                // TODO: Determine if m_IsReparented is still needed.
+                m_IsReparented = false;
                 InvokeBehaviourOnNetworkObjectParentChanged(null);
                 return true;
             }
