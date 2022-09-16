@@ -113,6 +113,9 @@ public class PlayerMovement : NetworkTransform
 
     private void FixedUpdate()
     {
+        if (IsOwner)
+            Debug.Log("Testing commit hooks!");
+        
         if (!IsSpawned || !IsOwner)
         {
             return;
