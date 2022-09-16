@@ -7,6 +7,11 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -6757728931092222887, guid: 286f65b05cb270345948340b8908b7e2,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: -3775814466963834669, guid: 286f65b05cb270345948340b8908b7e2,
         type: 3}
       propertyPath: GlobalObjectIdHash
@@ -70,7 +75,7 @@ PrefabInstance:
     - target: {fileID: 4079352819444256614, guid: 286f65b05cb270345948340b8908b7e2,
         type: 3}
       propertyPath: m_Name
-      value: PhysicsPlayer
+      value: PhysicsPlayer Variant
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 286f65b05cb270345948340b8908b7e2, type: 3}
