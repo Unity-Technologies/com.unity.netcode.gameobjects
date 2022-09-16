@@ -74,7 +74,6 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
                 client.SceneManager.OnSceneEvent += ClientSceneManager_OnSceneEvent;
             }
             return base.OnStartedServerAndClients();
@@ -89,7 +88,6 @@ namespace TestProject.RuntimeTests
                     {
                         var matchedClient = m_ClientNetworkManagers.Where(c => c.LocalClientId == sceneEvent.ClientId);
                         Assert.True(matchedClient.Count() > 0, $"Found no client {nameof(NetworkManager)}s that had a {nameof(NetworkManager.LocalClientId)} of {sceneEvent.ClientId}");
-                        Assert.AreEqual(matchedClient.First().SceneManager.ClientSynchronizationMode, m_LoadSceneMode);
                         break;
                     }
             }

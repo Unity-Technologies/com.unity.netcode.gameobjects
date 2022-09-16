@@ -58,7 +58,7 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
+                //client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
                 client.SceneManager.DisableValidationWarnings(true);
             }
             return base.OnStartedServerAndClients();
@@ -152,7 +152,6 @@ namespace TestProject.RuntimeTests
             {
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
                 manager.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
-                manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             }
         }
 
