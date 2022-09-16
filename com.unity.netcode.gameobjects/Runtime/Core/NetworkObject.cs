@@ -1209,8 +1209,8 @@ namespace Unity.Netcode
                 obj.Header.HasTransform = true;
                 obj.Transform = new SceneObject.TransformData
                 {
-                    // If we are parented and we have the m_WorldPositionStays disabled, then use the default
-                    // values as opposed to the world space values and adjust relative to the parent.
+                    // If we are parented and we have the m_WorldPositionStays disabled, then use local space
+                    // values as opposed world space values.
                     Position = parentNetworkObject && !m_WorldPositionStays ? transform.localPosition : transform.position,
                     Rotation = parentNetworkObject && !m_WorldPositionStays ? transform.localRotation : transform.rotation
                 };
