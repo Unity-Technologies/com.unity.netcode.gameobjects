@@ -18,7 +18,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Scene reference to whichever scene was requested as loaded in single mode
         /// </summary>
-        private Scene SingleScene;
+        public Scene SingleScene;
 
         /// <summary>
         /// Used to detect if a scene event is underway

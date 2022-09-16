@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
@@ -388,7 +389,18 @@ namespace Unity.Netcode
                     }
 
                     // Otherwise, instantiate an instance of the NetworkPrefab linked to the prefabHash
-                    var networkObject = ((position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
+                    var gameObject = (position == null && rotation == null) ? UnityEngine.Object.Instantiate(networkPrefabReference) : UnityEngine.Object.Instantiate(networkPrefabReference, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    // TODO(jesseo): Hack. Moving object to primary scene maybe shoudl be smarter?
+                    SceneManager.MoveGameObjectToScene(gameObject, NetworkManager.SceneManager.SingleScene);
+                    // TODO(jesseo): Hack. Layer stuff is temporary until unity gives better control here
+                    int layer = NetworkManager.IsServer ? LayerMask.NameToLayer("Server") : LayerMask.NameToLayer("Client");
+                    if (gameObject.layer != 0 && layer != 0)
+                    {
+                        Debug.LogWarning($"Hackweek: Networking overriding object layer from {LayerMask.LayerToName(gameObject.layer)}");
+                    }
+
+                    gameObject.layer = layer;
+                    var networkObject = gameObject.GetComponent<NetworkObject>();
 
                     networkObject.NetworkManager = NetworkManager;
 
