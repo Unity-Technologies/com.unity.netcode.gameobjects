@@ -1,0 +1,3 @@
+#!/bin/bash
+
+netcode-standards --fix
