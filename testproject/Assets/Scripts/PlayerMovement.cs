@@ -119,7 +119,18 @@ public class PlayerMovement : NetworkTransform
         }
         else
         {
-            transform.position = Vector3.Lerp(transform.position, transform.position + Input.GetAxis("Vertical") * Speed * transform.forward, Time.fixedDeltaTime);
+            Transform transform = this.transform;
+            Vector3 position = transform.position;
+            Vector3 forward = transform.forward;
+            Vector3 moveDirection = Input.GetAxis("Vertical") * Speed * forward;
+            Vector3 moveDistance = moveDirection * Time.fixedDeltaTime;
+            if (moveDirection.sqrMagnitude > 0)
+            {
+                Debug.Log($"Moving in {moveDirection} direction, scaled {moveDistance}. {Time.fixedDeltaTime}");
+            }
+
+            transform.position = Vector3.Lerp(position, position + moveDirection, Time.fixedDeltaTime);
+
             var rotation = transform.rotation;
             var euler = rotation.eulerAngles;
             euler.y += Input.GetAxis("Horizontal") * 90 * RotSpeed * Time.fixedDeltaTime;
