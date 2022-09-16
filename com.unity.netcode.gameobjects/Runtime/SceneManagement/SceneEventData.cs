@@ -347,8 +347,9 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// This only handles late joining players. Spawning and nesting several children
-        /// dynamically is still handled by the orphaned child list when done out of
-        /// hierarchical order.
+        /// dynamically is still handled by the orphaned child list when deserialized out of
+        /// hierarchical order (i.e. Spawn parent and child dynamically, parent message is
+        /// dropped and re-sent but child object is received and processed)
         /// </remarks>
         private int SortParentedNetworkObjects(NetworkObject first, NetworkObject second)
         {
