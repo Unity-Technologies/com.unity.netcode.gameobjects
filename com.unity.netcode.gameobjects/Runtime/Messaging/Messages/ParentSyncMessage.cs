@@ -6,8 +6,6 @@ namespace Unity.Netcode
     {
         public ulong NetworkObjectId;
 
-        public bool IsReparented;
-
         public bool WorldPositionStays;
 
         //If(Metadata.IsReparented)
@@ -16,40 +14,30 @@ namespace Unity.Netcode
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
-        // These additional properties are used to synchronize clients with the current
-        // local position and rotation only when WorldPositionStays is false.  This allows
-        // a user to not be required to use a NetworkTransform for NetworkObjects that rarely
-        // change their default local space position and rotation (i.e. an item that is picked
-        // up and parented under a player).  Upon de-parenting (dropped), the user might want
-        // to re-apply the original local space position and rotation upon the object being
-        // picked up again.  These values are set by the NetworkObject's transform when being
-        // serialized and sets the NetworkObject's transform when being deserialized.
-        public Vector3 LocalPosition;
-        public Quaternion LocalRotation;
+        // These additional properties are used to synchronize clients with the current position
+        // , rotation, and scale after parenting/de-parenting (world/local space relative). This
+        // allows users to control the final child's transform values without having to have
+        // a NetworkTransform component on the child. (i.e. picking something up)
+        // NOTE: Packing and unpacking all serialized properties helps to offset the
+        // additional increased message size.
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public Vector3 Scale;
 
         public void Serialize(FastBufferWriter writer)
         {
-            writer.WriteValueSafe(NetworkObjectId);
-            writer.WriteValueSafe(IsReparented);
-            writer.WriteValueSafe(WorldPositionStays);
+            BytePacker.WriteValuePacked(writer, NetworkObjectId);
+            BytePacker.WriteValuePacked(writer, WorldPositionStays);
+            BytePacker.WriteValuePacked(writer, IsLatestParentSet);
 
-            // if the world position is not "staying" we want to write the current local position and
-            // rotation of the NetworkObject before parenting (to preserve any changes made if there
-            // is no NetworkTransform component attached to the child).
-            if (!WorldPositionStays)
+            if (IsLatestParentSet)
             {
-                writer.WriteValueSafe(LocalPosition);
-                writer.WriteValueSafe(LocalRotation);
+                BytePacker.WriteValuePacked(writer, (ulong)LatestParent);
             }
 
-            if (IsReparented)
-            {
-                writer.WriteValueSafe(IsLatestParentSet);
-                if (IsLatestParentSet)
-                {
-                    writer.WriteValueSafe((ulong)LatestParent);
-                }
-            }
+            BytePacker.WriteValuePacked(writer, Position);
+            BytePacker.WriteValuePacked(writer, Rotation);
+            BytePacker.WriteValuePacked(writer, Scale);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
@@ -59,33 +47,25 @@ namespace Unity.Netcode
             {
                 return false;
             }
+            ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
+            ByteUnpacker.ReadValuePacked(reader, out WorldPositionStays);
+            ByteUnpacker.ReadValuePacked(reader, out IsLatestParentSet);
 
-            reader.ReadValueSafe(out NetworkObjectId);
-            reader.ReadValueSafe(out IsReparented);
-            reader.ReadValueSafe(out WorldPositionStays);
-            if (!WorldPositionStays)
+            if (IsLatestParentSet)
             {
-                reader.ReadValueSafe(out LocalPosition);
-                reader.ReadValueSafe(out LocalRotation);
+                ByteUnpacker.ReadValuePacked(reader, out ulong latestParent);
+                LatestParent = latestParent;
             }
 
-            if (IsReparented)
-            {
-
-                reader.ReadValueSafe(out IsLatestParentSet);
-                if (IsLatestParentSet)
-                {
-                    reader.ReadValueSafe(out ulong latestParent);
-                    LatestParent = latestParent;
-                }
-            }
+            ByteUnpacker.ReadValuePacked(reader, out Position);
+            ByteUnpacker.ReadValuePacked(reader, out Rotation);
+            ByteUnpacker.ReadValuePacked(reader, out Scale);
 
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
                 return false;
             }
-
             return true;
         }
 
@@ -93,17 +73,22 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-            networkObject.SetNetworkParenting(IsReparented, LatestParent, WorldPositionStays);
-
-            // if the world position is not "staying" we want to set the local position and rotation
-            // of the NetworkObject before parenting (to preserve any changes made if there is no
-            // NetworkTransform component attached to the child)
+            // We always set m_IsReparented to true, ApplyNetworkParenting will reset this
+            // value if it is removing the parent.
+            // TODO: Determine if m_IsReparented is still needed.
+            networkObject.SetNetworkParenting(true, LatestParent, WorldPositionStays);
+            networkObject.ApplyNetworkParenting();
             if (!WorldPositionStays)
             {
-                networkObject.transform.localPosition = LocalPosition;
-                networkObject.transform.localRotation = LocalRotation;
+                networkObject.transform.localPosition = Position;
+                networkObject.transform.localRotation = Rotation;
             }
-            networkObject.ApplyNetworkParenting();
+            else
+            {
+                networkObject.transform.position = Position;
+                networkObject.transform.rotation = Rotation;
+            }
+            networkObject.transform.localScale = Scale;
         }
     }
 }
