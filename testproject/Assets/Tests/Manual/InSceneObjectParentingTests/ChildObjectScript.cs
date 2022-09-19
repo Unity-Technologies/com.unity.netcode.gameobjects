@@ -27,6 +27,7 @@ namespace TestProject.ManualTests
                     PickupItemServerRpc(false);
                 }
 
+                // Drops the object using the last WorldPositionStays setting
                 if (Input.GetKeyDown(KeyCode.D))
                 {
                     DropItemServerRpc();
@@ -73,9 +74,8 @@ namespace TestProject.ManualTests
             else
             if (parentNetworkObject == null && m_LastParent)
             {
-                // This example will drop the object at the current world position while
-                // also preserving the original local position.
-                transform.position = m_LastParent.transform.position + m_OriginalLocalPosition;
+                // This example will drop the object at the current world position
+                transform.position = m_LastParent.transform.position;
             }
 
             m_LastParent = parentNetworkObject;
@@ -84,7 +84,7 @@ namespace TestProject.ManualTests
 
         private void PickUpDropItem(NetworkObject player, bool worldPositionStays = true)
         {
-            if (transform.parent != null && player != null )
+            if (transform.parent != null && player != null)
             {
                 Debug.Log(transform.parent == player.transform ? $"{player.name} already picked up {name}!" : $"{name} cannot be picked up by {player.name}! It is already parented under another player!");
                 return;
