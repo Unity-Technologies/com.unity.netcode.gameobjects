@@ -660,7 +660,15 @@ namespace Unity.Netcode
             }
             m_WorldPositionStays = worldPositionStays;
 
-            transform.SetParent(parent ? parent.transform : null, worldPositionStays);
+            if (parent == null)
+            {
+                transform.SetParent(null, worldPositionStays);
+            }
+            else
+            {
+                transform.SetParent(parent.transform, worldPositionStays);
+            }
+
             return true;
         }
 
@@ -810,10 +818,7 @@ namespace Unity.Netcode
 
             if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
-                if (!OrphanChildren.Contains(this))
-                {
-                    OrphanChildren.Add(this);
-                }
+                OrphanChildren.Add(this);
                 return false;
             }
 
@@ -1038,7 +1043,6 @@ namespace Unity.Netcode
             public unsafe void Serialize(FastBufferWriter writer)
             {
                 var writeSize = sizeof(HeaderData);
-                writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
                 if (Header.HasParent)
                 {
                     writeSize += FastBufferWriter.GetWriteSize(ParentObjectId);
