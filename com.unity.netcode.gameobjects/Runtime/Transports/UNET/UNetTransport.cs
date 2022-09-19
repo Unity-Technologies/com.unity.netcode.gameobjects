@@ -7,6 +7,7 @@ using UnityEngine.Networking;
 
 namespace Unity.Netcode.Transports.UNET
 {
+    [AddComponentMenu("Netcode/UNet Transport")]
     public class UNetTransport : NetworkTransport
     {
         public enum SendMode
