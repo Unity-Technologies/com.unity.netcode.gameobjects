@@ -1433,7 +1433,7 @@ namespace Unity.Netcode.Transports.UTP
 #endif
 
 #if !UTP_TRANSPORT_2_0_ABOVE
-            SetupPipelinesForUtp1(river,
+            SetupPipelinesForUtp1(driver,
                 out unreliableFragmentedPipeline,
                 out unreliableSequencedFragmentedPipeline,
                 out reliableSequencedPipeline);
