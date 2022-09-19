@@ -51,7 +51,7 @@ namespace Unity.Netcode.Transports.UNET
 #if UNITY_WEBGL
                 Debug.LogError("Cannot use queued sending mode for WebGL");
 #else
-                if(NetworkManager != null)
+                if (NetworkManager != null)
                 {
                     if (NetworkManager.IsServer)
                     {

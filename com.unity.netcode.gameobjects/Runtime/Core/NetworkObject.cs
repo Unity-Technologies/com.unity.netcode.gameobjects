@@ -47,9 +47,10 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkManager NetworkManager
         {
-            get { return NetworkManagerOwner; }
-            set {
-                NetworkManagerOwner = value;
+            get { return m_NetworkManagerOwner; }
+            set
+            {
+                m_NetworkManagerOwner = value;
                 var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
                 for (int i = 0; i < networkBehaviours.Length; i++)
                 {
@@ -67,7 +68,7 @@ namespace Unity.Netcode
         /// This property is null by default currently, which means that the above NetworkManager getter will return the Singleton.
         /// In the future this is the path where alternative NetworkManagers should be injected for running multi NetworkManagers
         /// </summary>
-        private NetworkManager NetworkManagerOwner;
+        private NetworkManager m_NetworkManagerOwner;
 
         /// <summary>
         /// Gets the unique Id of this object that is synced across the network
@@ -491,12 +492,12 @@ namespace Unity.Netcode
         private void FindNetworkManager()
         {
             NetworkManager = null;
-            var networkManagers = GameObject.FindObjectsOfType<NetworkManager>();
+            var networkManagers = FindObjectsOfType<NetworkManager>();
             foreach (var networkManager in networkManagers)
             {
                 if (networkManager.IsServer && networkManager.IsListening)
                 {
-                    if (NetworkManagerOwner)
+                    if (m_NetworkManagerOwner)
                     {
                         throw new Exception($"More than one server {nameof(NetworkManager)} exists. Please pass the desired {nameof(NetworkManager)} into the spawn method.");
                     }
@@ -504,7 +505,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkManagerOwner == null)
+            if (m_NetworkManagerOwner == null)
             {
                 throw new Exception($"Could not find a running server {nameof(NetworkManager)} to spawn this object.");
             }

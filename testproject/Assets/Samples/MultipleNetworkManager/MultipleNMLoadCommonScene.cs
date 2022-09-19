@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using Unity.Burst.Intrinsics;
 using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
@@ -11,7 +8,7 @@ public class MultipleNMLoadCommonScene : MonoBehaviour
     public SceneAsset CommonScene;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         if (CommonScene == null)
         {

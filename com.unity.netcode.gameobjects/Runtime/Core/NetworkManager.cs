@@ -1476,8 +1476,8 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            var previousSingleton = NetworkManager.Singleton;
-            NetworkManager.Singleton = this;
+            var previousSingleton = Singleton;
+            Singleton = this;
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
@@ -1491,7 +1491,7 @@ namespace Unity.Netcode
                     break;
             }
 
-            NetworkManager.Singleton = previousSingleton;
+            Singleton = previousSingleton;
         }
 
         private void ProcessPendingApprovals()
