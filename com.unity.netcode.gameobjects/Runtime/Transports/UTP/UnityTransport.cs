@@ -315,7 +315,6 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public ConnectionAddressData ConnectionData = s_DefaultConnectionAddressData;
 
-#if !UTP_TRANSPORT_2_0_ABOVE
         /// <summary>
         /// Parameters for the Network Simulator
         /// </summary>
@@ -350,13 +349,15 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet jitter (variances in latency, see: https://en.wikipedia.org/wiki/Jitter)
         /// - packet drop rate (packet loss)
         /// </summary>
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Obsolete("DebugSimulator is no longer supported and has no effect.")]
+#endif
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
             PacketDelayMS = 0,
             PacketJitterMS = 0,
             PacketDropRate = 0
         };
-#endif
 
         internal uint? DebugSimulatorRandomSeed { get; set; } = null;
 
