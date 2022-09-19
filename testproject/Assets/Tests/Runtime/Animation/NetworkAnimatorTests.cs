@@ -26,7 +26,7 @@ namespace TestProject.RuntimeTests
         private const string k_AnimatorObjectName = "AnimatorObject";
         private const string k_OwnerAnimatorObjectName = "OwnerAnimatorObject";
 
-        protected override int NumberOfClients => 2;
+        protected override int NumberOfClients => 3;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
         private GameObject m_AnimationOwnerTestPrefab => m_OwnerAnimatorObjectPrefab ? m_OwnerAnimatorObjectPrefab as GameObject : null;
 
@@ -475,7 +475,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
             AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
-            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
