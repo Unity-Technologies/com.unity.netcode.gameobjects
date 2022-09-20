@@ -576,7 +576,7 @@ namespace Unity.Netcode
         private bool m_IsReparented; // Did initial parent (came from the scene hierarchy) change at runtime?
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
-        private bool m_WorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
+        private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -589,7 +589,7 @@ namespace Unity.Netcode
         {
             m_IsReparented = isReparented;
             m_LatestParent = latestParent;
-            m_WorldPositionStays = worldPositionStays;
+            m_CachedWorldPositionStays = worldPositionStays;
         }
 
         /// <summary>
@@ -658,7 +658,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            m_WorldPositionStays = worldPositionStays;
+            m_CachedWorldPositionStays = worldPositionStays;
 
             if (parent == null)
             {
@@ -743,9 +743,9 @@ namespace Unity.Netcode
                 NetworkObjectId = NetworkObjectId,
                 IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
                 LatestParent = m_LatestParent,
-                WorldPositionStays = m_WorldPositionStays,
-                Position = m_WorldPositionStays ? transform.position : transform.localPosition,
-                Rotation = m_WorldPositionStays ? transform.rotation : transform.localRotation,
+                WorldPositionStays = m_CachedWorldPositionStays,
+                Position = m_CachedWorldPositionStays ? transform.position : transform.localPosition,
+                Rotation = m_CachedWorldPositionStays ? transform.rotation : transform.localRotation,
                 Scale = transform.localScale,
             };
 
@@ -754,7 +754,7 @@ namespace Unity.Netcode
             // parent is null then go ahead and reset the m_WorldPositionStays the default value.
             if (parentTransform == null)
             {
-                m_WorldPositionStays = true;
+                m_CachedWorldPositionStays = true;
             }
 
             unsafe
@@ -809,7 +809,7 @@ namespace Unity.Netcode
                 // consideration, otherwise just setting transform.parent = null defaults
                 // to WorldPositionStays which can cause scaling issues if the parent's
                 // scale is not the default (Vetctor3.one) value.
-                transform.SetParent(null, m_WorldPositionStays);
+                transform.SetParent(null, m_CachedWorldPositionStays);
                 // TODO: Determine if m_IsReparented is still needed.
                 m_IsReparented = false;
                 InvokeBehaviourOnNetworkObjectParentChanged(null);
@@ -825,7 +825,7 @@ namespace Unity.Netcode
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
-            transform.SetParent(parentObject.transform, m_WorldPositionStays);
+            transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
 
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
@@ -1194,7 +1194,7 @@ namespace Unity.Netcode
             {
                 obj.Header.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
-                obj.WorldPositionStays = m_WorldPositionStays;
+                obj.WorldPositionStays = m_CachedWorldPositionStays;
             }
             var (isReparented, latestParent) = GetNetworkParenting();
             obj.Header.IsReparented = isReparented;
@@ -1215,8 +1215,8 @@ namespace Unity.Netcode
                 {
                     // If we are parented and we have the m_WorldPositionStays disabled, then use local space
                     // values as opposed world space values.
-                    Position = parentNetworkObject && !m_WorldPositionStays ? transform.localPosition : transform.position,
-                    Rotation = parentNetworkObject && !m_WorldPositionStays ? transform.localRotation : transform.rotation
+                    Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
+                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation
                 };
             }
 
