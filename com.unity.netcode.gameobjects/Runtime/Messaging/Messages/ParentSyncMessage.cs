@@ -18,8 +18,6 @@ namespace Unity.Netcode
         // , rotation, and scale after parenting/de-parenting (world/local space relative). This
         // allows users to control the final child's transform values without having to have
         // a NetworkTransform component on the child. (i.e. picking something up)
-        // NOTE: Packing and unpacking all serialized properties helps to offset the
-        // additional increased message size.
         public Vector3 Position;
         public Quaternion Rotation;
         public Vector3 Scale;
@@ -27,17 +25,17 @@ namespace Unity.Netcode
         public void Serialize(FastBufferWriter writer)
         {
             BytePacker.WriteValuePacked(writer, NetworkObjectId);
-            BytePacker.WriteValuePacked(writer, WorldPositionStays);
-            BytePacker.WriteValuePacked(writer, IsLatestParentSet);
+            writer.WriteValueSafe(WorldPositionStays);
+            writer.WriteValueSafe(IsLatestParentSet);
 
             if (IsLatestParentSet)
             {
                 BytePacker.WriteValuePacked(writer, (ulong)LatestParent);
             }
 
-            BytePacker.WriteValuePacked(writer, Position);
-            BytePacker.WriteValuePacked(writer, Rotation);
-            BytePacker.WriteValuePacked(writer, Scale);
+            writer.WriteValueSafe(Position);
+            writer.WriteValueSafe(Rotation);
+            writer.WriteValueSafe(Scale);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
@@ -47,9 +45,10 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
             ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
-            ByteUnpacker.ReadValuePacked(reader, out WorldPositionStays);
-            ByteUnpacker.ReadValuePacked(reader, out IsLatestParentSet);
+            reader.ReadValueSafe(out WorldPositionStays);
+            reader.ReadValueSafe(out IsLatestParentSet);
 
             if (IsLatestParentSet)
             {
@@ -57,9 +56,9 @@ namespace Unity.Netcode
                 LatestParent = latestParent;
             }
 
-            ByteUnpacker.ReadValuePacked(reader, out Position);
-            ByteUnpacker.ReadValuePacked(reader, out Rotation);
-            ByteUnpacker.ReadValuePacked(reader, out Scale);
+            reader.ReadValueSafe(out Position);
+            reader.ReadValueSafe(out Rotation);
+            reader.ReadValueSafe(out Scale);
 
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
