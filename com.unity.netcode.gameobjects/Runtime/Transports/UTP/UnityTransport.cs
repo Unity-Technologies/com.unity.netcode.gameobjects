@@ -666,11 +666,13 @@ namespace Unity.Netcode.Transports.UTP
             SetConnectionData(serverAddress, endPoint.Port, listenAddress);
         }
 
-#if !UTP_TRANSPORT_2_0_ABOVE
         /// <summary>Set the parameters for the debug simulator.</summary>
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect.")]
+#endif
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)
@@ -686,7 +688,6 @@ namespace Unity.Netcode.Transports.UTP
                 PacketDropRate = dropRate
             };
         }
-#endif
 
         private bool StartRelayServer()
         {
