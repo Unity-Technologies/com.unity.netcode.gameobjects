@@ -332,7 +332,7 @@ namespace Unity.Netcode
 
             if (sceneObject.Header.HasParent)
             {
-                if (SpawnedObjects.TryGetValue(sceneObject.ParentObjectId, out NetworkObject networkObject))
+                if (SpawnedObjects.TryGetValue(parentNetworkId, out NetworkObject networkObject))
                 {
                     parentNetworkObject = networkObject;
                 }
@@ -400,12 +400,8 @@ namespace Unity.Netcode
                     }
 
                     // Create prefab instance
-                    // Note: We used to set position here, see comments below.
                     var networkObject = UnityEngine.Object.Instantiate(networkPrefabReference).GetComponent<NetworkObject>();
                     networkObject.NetworkManagerOwner = NetworkManager;
-
-                    // Go ahead and set network parenting properties
-                    networkObject.SetNetworkParenting(isReparented, parentNetworkId, worldPositionStays);
 
                     if (sceneObject.Header.HasTransform)
                     {
@@ -420,6 +416,9 @@ namespace Unity.Netcode
                             networkObject.transform.localRotation = rotation;
                         }
                     }
+
+                    // Go ahead and set network parenting properties
+                    networkObject.SetNetworkParenting(isReparented, parentNetworkId, worldPositionStays);
 
                     if (parentNetworkObject != null)
                     {
