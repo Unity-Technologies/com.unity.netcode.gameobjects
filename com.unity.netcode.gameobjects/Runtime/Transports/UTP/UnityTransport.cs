@@ -411,14 +411,23 @@ namespace Unity.Netcode.Transports.UTP
                 m_Driver.Dispose();
             }
 
-            m_NetworkSettings.Dispose();
-
             foreach (var queue in m_SendQueue.Values)
             {
                 queue.Dispose();
             }
 
             m_SendQueue.Clear();
+        }
+
+        ~UnityTransport()
+        {
+            // Safeguard if we didn't dispose of the driver/settings through OnDestroy.
+            if (m_Driver.IsCreated)
+            {
+                m_Driver.Dispose();
+            }
+
+            m_NetworkSettings.Dispose();
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -881,6 +890,7 @@ namespace Unity.Netcode.Transports.UTP
         private void OnDestroy()
         {
             DisposeInternals();
+            m_NetworkSettings.Dispose();
         }
 
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
