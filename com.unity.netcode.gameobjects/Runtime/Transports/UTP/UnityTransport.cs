@@ -7,6 +7,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
+using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
 
 #if !UTP_TRANSPORT_2_0_ABOVE
@@ -152,14 +153,26 @@ namespace Unity.Netcode.Transports.UTP
         private ProtocolType m_ProtocolType;
 
 #if UTP_TRANSPORT_2_0_ABOVE
-        [Tooltip("Whether or not to use WebSockets as Network Interface")]
+        [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
         [SerializeField]
         private bool m_UseWebSockets = false;
 
         public bool UseWebSockets
         {
-            set => m_UseWebSockets = value;
             get => m_UseWebSockets;
+            set => m_UseWebSockets = value;
+        }
+
+        /// <summary>
+        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
+        /// </summary>
+        [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
+        [SerializeField]
+        private bool m_UseEncryption = false;
+        public bool UseEncryption
+        {
+            get => m_UseEncryption;
+            set => m_UseEncryption = value;
         }
 #endif
 
@@ -1377,6 +1390,44 @@ namespace Unity.Netcode.Transports.UTP
                 receiveQueueCapacity: m_MaxPacketQueueSize,
 #endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (m_UseEncryption)
+            {
+                try
+                {
+                    SecureAccessor secureAccessor = gameObject.GetComponent<SecureAccessor>();
+                    if (NetworkManager.IsServer)
+                    {
+#if UNITY_WEBGL
+                        throw new Exception("WebGL as a server is not supported by Unity Transport.");
+#else
+                        FixedString4096Bytes serverPrivate     = secureAccessor.ServerPrivate;
+                        FixedString4096Bytes serverCertificate = secureAccessor.ServerCertificate;
+                        m_NetworkSettings.WithSecureServerParameters( certificate: ref serverCertificate,
+                            privateKey: ref serverPrivate);
+#endif
+                    }
+                    else
+                    {
+
+                        FixedString512Bytes commonName = secureAccessor.ServerCommonName;
+#if !UNITY_WEBGL
+                        FixedString4096Bytes clientCa = secureAccessor.ClientCA;
+#endif
+                        m_NetworkSettings.WithSecureClientParameters(serverName: ref commonName
+#if !UNITY_WEBGL
+                            ,caCertificate: ref clientCa
+#endif
+                        );
+                    }
+                }
+                catch(Exception e)
+                {
+                    Debug.LogException(e,this);
+                }
+            }
+#endif
 
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)
