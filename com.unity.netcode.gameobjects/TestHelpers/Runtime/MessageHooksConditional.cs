@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -86,10 +87,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Initialize();
         }
 
+        internal void AssignMessageType(Type type)
+        {
+            MessageType = type.Name;
+            m_MessageReceiptCheck = (message) =>
+            {
+                return message.GetType() == type;
+            };
+            Initialize();
+        }
+
         public MessageHookEntry(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
         }
     }
 }
-
