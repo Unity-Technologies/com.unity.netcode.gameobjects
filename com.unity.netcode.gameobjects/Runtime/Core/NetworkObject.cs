@@ -728,6 +728,9 @@ namespace Unity.Netcode
                 m_LatestParent = null;
             }
 
+            // NSS TODO PR-2146: As opposed to checking a bunch of things later, let's check our m_CachedParent
+            // vs the new parent. If the new parent is null, then why not just send a single bool that
+            // tells clients to "de-parent" the NetworkObject?
             ApplyNetworkParenting();
 
             var message = new ParentSyncMessage
@@ -786,6 +789,12 @@ namespace Unity.Netcode
             if (!IsSpawned)
             {
                 return false;
+            }
+
+            // If our cached parent is not null and our latest parent has not been set, then preserve the current parenting
+            if (transform.parent != null && transform.parent.GetComponent<NetworkObject>() == null && !m_LatestParent.HasValue)
+            {
+                return true;
             }
 
             if (m_LatestParent == null || !m_LatestParent.HasValue)
