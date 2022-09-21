@@ -351,7 +351,7 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet drop rate (packet loss)
         /// </summary>
 #if UTP_TRANSPORT_2_0_ABOVE
-        [Obsolete("DebugSimulator is no longer supported and has no effect.")]
+        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
 #endif
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
