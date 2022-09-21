@@ -1358,6 +1358,33 @@ namespace Unity.Netcode.Transports.UTP
             );
         }
 
+        private FixedString4096Bytes m_ServerPrivate;
+        private FixedString4096Bytes m_ServerCertificate;
+
+        private FixedString512Bytes m_ServerCommonName;
+        private FixedString4096Bytes m_ClientCertificate;
+
+        public void SetServerPrivateKey(FixedString4096Bytes key)
+        {
+            m_ServerPrivate = key;
+        }
+
+        public void SetServerCertificate(FixedString4096Bytes certificate)
+        {
+            m_ServerCertificate = certificate;
+        }
+
+        public void SetServerCommonName(FixedString512Bytes serverCommonName)
+        {
+            m_ServerCommonName = serverCommonName;
+        }
+
+        public void SetClientCertificate(FixedString4096Bytes certificate)
+        {
+            m_ClientCertificate = certificate;
+        }
+
+
         /// <summary>
         /// Creates the internal NetworkDriver
         /// </summary>
@@ -1396,30 +1423,36 @@ namespace Unity.Netcode.Transports.UTP
             {
                 try
                 {
-                    SecureAccessor secureAccessor = gameObject.GetComponent<SecureAccessor>();
                     if (NetworkManager.IsServer)
                     {
 #if UNITY_WEBGL
                         throw new Exception("WebGL as a server is not supported by Unity Transport.");
 #else
-                        FixedString4096Bytes serverPrivate     = secureAccessor.ServerPrivate;
-                        FixedString4096Bytes serverCertificate = secureAccessor.ServerCertificate;
-                        m_NetworkSettings.WithSecureServerParameters( certificate: ref serverCertificate,
-                            privateKey: ref serverPrivate);
+                        if (m_ServerCertificate.Length == 0 ||
+                            m_ServerPrivate.Length == 0)
+                        {
+                            throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
+                        }
+                        m_NetworkSettings.WithSecureServerParameters( certificate: ref m_ServerCertificate,
+                            privateKey: ref m_ServerPrivate);
 #endif
                     }
                     else
                     {
-
-                        FixedString512Bytes commonName = secureAccessor.ServerCommonName;
 #if !UNITY_WEBGL
-                        FixedString4096Bytes clientCa = secureAccessor.ClientCA;
+                        if (m_ServerCommonName.Length == 0 ||
+                            m_ClientCertificate.Length == 0)
+                        {
+                            throw new Exception("In order to use encrypted communications, clients must set the server common name and client certificate.");
+                        }
+                        m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
+#else
+                        if (m_ServerCommonName.Length == 0)
+                        {
+                            throw new Exception("In order to use encrypted communications, on WebGL, clients must set the server common name.");
+                        }
+                        m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName);
 #endif
-                        m_NetworkSettings.WithSecureClientParameters(serverName: ref commonName
-#if !UNITY_WEBGL
-                            ,caCertificate: ref clientCa
-#endif
-                        );
                     }
                 }
                 catch(Exception e)

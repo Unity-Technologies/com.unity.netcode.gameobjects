@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
@@ -6,6 +7,15 @@ namespace Unity.Netcode.Transports.UTP
 {
     public class SecureAccessor : MonoBehaviour
     {
+        private void Awake()
+        {
+            GetComponent<UnityTransport>().SetServerPrivateKey(ServerPrivate);
+            GetComponent<UnityTransport>().SetServerCertificate(ServerCertificate);
+
+            GetComponent<UnityTransport>().SetServerCommonName(ServerCommonName);
+            GetComponent<UnityTransport>().SetClientCertificate(ClientCA);
+        }
+
         [Tooltip("Hostname")]
         [SerializeField]
         public string  m_ServerCommonNameString = "localhost";
