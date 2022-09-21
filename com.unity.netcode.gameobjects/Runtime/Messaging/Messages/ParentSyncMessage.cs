@@ -14,6 +14,9 @@ namespace Unity.Netcode
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
+        // Is set when the parent should be removed (similar to IsReparented functionality but only for removing the parent)
+        public bool RemoveParent;
+
         // These additional properties are used to synchronize clients with the current position
         // , rotation, and scale after parenting/de-parenting (world/local space relative). This
         // allows users to control the final child's transform values without having to have
@@ -25,14 +28,19 @@ namespace Unity.Netcode
         public void Serialize(FastBufferWriter writer)
         {
             BytePacker.WriteValuePacked(writer, NetworkObjectId);
+            writer.WriteValueSafe(RemoveParent);
             writer.WriteValueSafe(WorldPositionStays);
-            writer.WriteValueSafe(IsLatestParentSet);
-
-            if (IsLatestParentSet)
+            if (!RemoveParent)
             {
-                BytePacker.WriteValuePacked(writer, (ulong)LatestParent);
+                writer.WriteValueSafe(IsLatestParentSet);
+
+                if (IsLatestParentSet)
+                {
+                    BytePacker.WriteValuePacked(writer, (ulong)LatestParent);
+                }
             }
 
+            // Whether parenting or removing a parent, we always update the position, rotation, and scale
             writer.WriteValueSafe(Position);
             writer.WriteValueSafe(Rotation);
             writer.WriteValueSafe(Scale);
@@ -47,15 +55,20 @@ namespace Unity.Netcode
             }
 
             ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
+            reader.ReadValueSafe(out RemoveParent);
             reader.ReadValueSafe(out WorldPositionStays);
-            reader.ReadValueSafe(out IsLatestParentSet);
-
-            if (IsLatestParentSet)
+            if (!RemoveParent)
             {
-                ByteUnpacker.ReadValuePacked(reader, out ulong latestParent);
-                LatestParent = latestParent;
+                reader.ReadValueSafe(out IsLatestParentSet);
+
+                if (IsLatestParentSet)
+                {
+                    ByteUnpacker.ReadValuePacked(reader, out ulong latestParent);
+                    LatestParent = latestParent;
+                }
             }
 
+            // Whether parenting or removing a parent, we always update the position, rotation, and scale
             reader.ReadValueSafe(out Position);
             reader.ReadValueSafe(out Rotation);
             reader.ReadValueSafe(out Scale);
@@ -73,7 +86,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
             networkObject.SetNetworkParenting(LatestParent, WorldPositionStays);
-            networkObject.ApplyNetworkParenting();
+            networkObject.ApplyNetworkParenting(RemoveParent);
             if (!WorldPositionStays)
             {
                 networkObject.transform.localPosition = Position;

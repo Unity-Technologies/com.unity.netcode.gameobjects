@@ -702,7 +702,7 @@ namespace Unity.Netcode
                 Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
                 return;
             }
-
+            var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
@@ -726,18 +726,17 @@ namespace Unity.Netcode
             else
             {
                 m_LatestParent = null;
+                removeParent = m_CachedParent != null;
             }
 
-            // NSS TODO PR-2146: As opposed to checking a bunch of things later, let's check our m_CachedParent
-            // vs the new parent. If the new parent is null, then why not just send a single bool that
-            // tells clients to "de-parent" the NetworkObject?
-            ApplyNetworkParenting();
+            ApplyNetworkParenting(removeParent);
 
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
                 IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
                 LatestParent = m_LatestParent,
+                RemoveParent = removeParent,
                 WorldPositionStays = m_CachedWorldPositionStays,
                 Position = m_CachedWorldPositionStays ? transform.position : transform.localPosition,
                 Rotation = m_CachedWorldPositionStays ? transform.rotation : transform.localRotation,
@@ -779,7 +778,7 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting()
+        internal bool ApplyNetworkParenting(bool removeParent = false)
         {
             if (!AutoObjectParentSync)
             {
@@ -791,13 +790,20 @@ namespace Unity.Netcode
                 return false;
             }
 
-            // If our cached parent is not null and our latest parent has not been set, then preserve the current parenting
-            if (transform.parent != null && transform.parent.GetComponent<NetworkObject>() == null && !m_LatestParent.HasValue)
+            // If we are parented under a GameObject with no NetworkObject and we are not removing the parent and there is no latest parent set,
+            // then preserve the parenting relationship. (This scenario only happens during client synchronization)
+            if (transform.parent != null && transform.parent.GetComponent<NetworkObject>() == null && !m_LatestParent.HasValue && !removeParent)
             {
                 return true;
             }
 
-            if (m_LatestParent == null || !m_LatestParent.HasValue)
+            // If we are removing the parent or our latest parent is not set, then remove the parent
+            // removeParent is only set when:
+            //  - The server-side NetworkObject.OnTransformParentChanged is invoked and the parent is being removed
+            //  - The client-side when handling a ParentSyncMessage
+            // When clients are synchronizing only the m_LatestParent.HasValue will not have a value if there is no parent
+            // or a parent was removed prior to the client connecting (i.e. in-scene placed NetworkObjects)
+            if (removeParent || !m_LatestParent.HasValue)
             {
                 m_CachedParent = null;
                 // We must use Transform.SetParent when taking WorldPositionStays into
@@ -809,12 +815,15 @@ namespace Unity.Netcode
                 return true;
             }
 
-            if (m_LatestParent != null && m_LatestParent.HasValue && !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
+            // If we have a latest parent id but it hasn't been spawned yet, then add this instance to the orphanChildren
+            // HashSet and return false (i.e. parenting not applied yet)
+            if (m_LatestParent.HasValue && !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
                 OrphanChildren.Add(this);
                 return false;
             }
 
+            // If we made it here, then parent this instance under the parentObject
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
