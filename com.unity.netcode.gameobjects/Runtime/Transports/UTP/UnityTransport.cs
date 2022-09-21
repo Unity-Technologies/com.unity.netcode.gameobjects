@@ -672,7 +672,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
 #if UTP_TRANSPORT_2_0_ABOVE
-        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect.")]
+        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
 #endif
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
@@ -1357,6 +1357,8 @@ namespace Unity.Netcode.Transports.UTP
             m_NetworkSettings.WithSimulatorStageParameters(
                 maxPacketCount: 300, // TODO Is there any way to compute a better value?
                 maxPacketSize: NetworkParameterConstants.MTU,
+                // As DebugSimulator is deprecated, the following values are set to the default and are
+                // supposed to be changed using Network Simulator tool instead.
                 packetDelayMs: 0,
                 packetJitterMs: 0,
                 packetDropPercentage: 0,
