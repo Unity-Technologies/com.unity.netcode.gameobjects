@@ -7,8 +7,10 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
-using Unity.Networking.Transport.TLS;
 using Unity.Networking.Transport.Utilities;
+#if UTP_TRANSPORT_2_0_ABOVE
+using Unity.Networking.Transport.TLS;
+#endif
 
 #if !UTP_TRANSPORT_2_0_ABOVE
 using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;

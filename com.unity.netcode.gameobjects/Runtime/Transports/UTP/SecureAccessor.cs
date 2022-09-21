@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
@@ -18,16 +17,16 @@ namespace Unity.Netcode.Transports.UTP
 
         [Tooltip("Hostname")]
         [SerializeField]
-        public string  m_ServerCommonNameString = "localhost";
+        private string m_ServerCommonNameString = "localhost";
         public string ServerCommonNameString
         {
             get => m_ServerCommonNameString;
             set => m_ServerCommonNameString = value;
         }
-        private FixedString512Bytes  m_ServerCommonName;
+        private FixedString512Bytes m_ServerCommonName;
         public FixedString512Bytes ServerCommonName
         {
-            get => (FixedString512Bytes) m_ServerCommonNameString;
+            get => (FixedString512Bytes)m_ServerCommonNameString;
         }
         [Tooltip("Client CA filepath")]
         [SerializeField]
@@ -58,27 +57,27 @@ namespace Unity.Netcode.Transports.UTP
         private FixedString4096Bytes m_ClientCA;
         public FixedString4096Bytes ClientCA
         {
-            get => (FixedString4096Bytes) ReadFile(m_ClientCAFilePath,"Client Certificate");
+            get => (FixedString4096Bytes)ReadFile(m_ClientCAFilePath, "Client Certificate");
             set => m_ClientCA = value;
         }
         private FixedString4096Bytes m_ServerCertificate;
         public FixedString4096Bytes ServerCertificate
         {
-            get => (FixedString4096Bytes) ReadFile(m_ServerCertificateFilePath,"Server Certificate");
+            get => (FixedString4096Bytes)ReadFile(m_ServerCertificateFilePath, "Server Certificate");
             set => m_ServerCertificate = value;
         }
         private FixedString4096Bytes m_ServerPrivate;
         public FixedString4096Bytes ServerPrivate
         {
-            get =>  (FixedString4096Bytes) ReadFile(m_ServerPrivateFilePath,"Server Key");
+            get => (FixedString4096Bytes)ReadFile(m_ServerPrivateFilePath, "Server Key");
             set => m_ServerPrivate = value;
         }
 
-        static string ReadFile(string path, string label)
+        private static string ReadFile(string path, string label)
         {
-            StreamReader reader = new StreamReader(path);
+            var reader = new StreamReader(path);
             string fileContent = reader.ReadToEnd();
-            Debug.Log((fileContent.Length > 1)?("Successfully loaded " + fileContent.Length + " byte(s) from " + label):("Could not read " + label + " file"));
+            Debug.Log((fileContent.Length > 1) ? ("Successfully loaded " + fileContent.Length + " byte(s) from " + label) : ("Could not read " + label + " file"));
             return fileContent;
         }
     }
