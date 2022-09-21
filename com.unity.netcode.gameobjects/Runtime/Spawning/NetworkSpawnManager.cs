@@ -419,7 +419,8 @@ namespace Unity.Netcode
                     // Go ahead and set network parenting properties
                     networkObject.SetNetworkParenting(parentNetworkId, worldPositionStays);
 
-                    // SceneObject parenting is handled later
+                    // Only if we have a NetworkObject as a parent do we apply parenting.
+                    // Non-NetworkObject parents are preserved and parenting here is skipped.
                     if (parentNetworkObject != null)
                     {
                         networkObject.TrySetParent(parentNetworkObject.transform, worldPositionStays);
