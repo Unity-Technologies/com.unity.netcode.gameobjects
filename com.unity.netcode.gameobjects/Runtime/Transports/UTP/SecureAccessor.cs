@@ -8,11 +8,21 @@ namespace Unity.Netcode.Transports.UTP
     {
         private void Awake()
         {
-            GetComponent<UnityTransport>().SetServerPrivateKey(ServerPrivate);
-            GetComponent<UnityTransport>().SetServerCertificate(ServerCertificate);
+            ServerSecrets serverSecrets = new ServerSecrets()
+            {
+                ServerCertificate = ServerCertificate,
+                ServerPrivate = ServerPrivate
+            };
 
-            GetComponent<UnityTransport>().SetServerCommonName(ServerCommonName);
-            GetComponent<UnityTransport>().SetClientCertificate(ClientCA);
+            GetComponent<UnityTransport>().SetServerSecrets(serverSecrets);
+
+            ClientSecrets clientSecrets = new ClientSecrets()
+            {
+                ClientCertificate = ClientCA,
+                ServerCommonName = ServerCommonName
+            };
+
+            GetComponent<UnityTransport>().SetClientSecrets(clientSecrets);
         }
 
         [Tooltip("Hostname")]
@@ -23,10 +33,10 @@ namespace Unity.Netcode.Transports.UTP
             get => m_ServerCommonNameString;
             set => m_ServerCommonNameString = value;
         }
-        private FixedString512Bytes m_ServerCommonName;
-        public FixedString512Bytes ServerCommonName
+        private string m_ServerCommonName;
+        public string ServerCommonName
         {
-            get => (FixedString512Bytes)m_ServerCommonNameString;
+            get => m_ServerCommonNameString;
         }
         [Tooltip("Client CA filepath")]
         [SerializeField]
@@ -54,22 +64,22 @@ namespace Unity.Netcode.Transports.UTP
             set => m_ServerPrivate = value;
         }
 
-        private FixedString4096Bytes m_ClientCA;
-        public FixedString4096Bytes ClientCA
+        private string m_ClientCA;
+        public string ClientCA
         {
-            get => (FixedString4096Bytes)ReadFile(m_ClientCAFilePath, "Client Certificate");
+            get => ReadFile(m_ClientCAFilePath, "Client Certificate");
             set => m_ClientCA = value;
         }
-        private FixedString4096Bytes m_ServerCertificate;
-        public FixedString4096Bytes ServerCertificate
+        private string m_ServerCertificate;
+        public string ServerCertificate
         {
-            get => (FixedString4096Bytes)ReadFile(m_ServerCertificateFilePath, "Server Certificate");
+            get => ReadFile(m_ServerCertificateFilePath, "Server Certificate");
             set => m_ServerCertificate = value;
         }
-        private FixedString4096Bytes m_ServerPrivate;
-        public FixedString4096Bytes ServerPrivate
+        private string m_ServerPrivate;
+        public string ServerPrivate
         {
-            get => (FixedString4096Bytes)ReadFile(m_ServerPrivateFilePath, "Server Key");
+            get => ReadFile(m_ServerPrivateFilePath, "Server Key");
             set => m_ServerPrivate = value;
         }
 

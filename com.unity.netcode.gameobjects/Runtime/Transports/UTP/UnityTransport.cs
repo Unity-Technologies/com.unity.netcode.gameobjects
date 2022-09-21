@@ -18,6 +18,18 @@ using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
 
 namespace Unity.Netcode.Transports.UTP
 {
+    public struct ServerSecrets
+    {
+        public string ServerPrivate;
+        public string ServerCertificate;
+    };
+
+    public struct ClientSecrets
+    {
+        public string ServerCommonName;
+        public string ClientCertificate;
+    };
+
     /// <summary>
     /// Provides an interface that overrides the ability to create your own drivers and pipelines
     /// </summary>
@@ -1366,26 +1378,17 @@ namespace Unity.Netcode.Transports.UTP
         private FixedString512Bytes m_ServerCommonName;
         private FixedString4096Bytes m_ClientCertificate;
 
-        public void SetServerPrivateKey(FixedString4096Bytes key)
+        public void SetServerSecrets(ServerSecrets secrets)
         {
-            m_ServerPrivate = key;
+            m_ServerPrivate = secrets.ServerPrivate;
+            m_ServerCertificate = secrets.ServerCertificate;
         }
 
-        public void SetServerCertificate(FixedString4096Bytes certificate)
+        public void SetClientSecrets(ClientSecrets secrets)
         {
-            m_ServerCertificate = certificate;
+            m_ServerCommonName = secrets.ServerCommonName;
+            m_ClientCertificate = secrets.ClientCertificate;
         }
-
-        public void SetServerCommonName(FixedString512Bytes serverCommonName)
-        {
-            m_ServerCommonName = serverCommonName;
-        }
-
-        public void SetClientCertificate(FixedString4096Bytes certificate)
-        {
-            m_ClientCertificate = certificate;
-        }
-
 
         /// <summary>
         /// Creates the internal NetworkDriver
