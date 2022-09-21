@@ -1,5 +1,4 @@
 using System.IO;
-using Unity.Collections;
 using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
@@ -8,7 +7,7 @@ namespace Unity.Netcode.Transports.UTP
     {
         private void Awake()
         {
-            ServerSecrets serverSecrets = new ServerSecrets()
+            var serverSecrets = new ServerSecrets()
             {
                 ServerCertificate = ServerCertificate,
                 ServerPrivate = ServerPrivate
@@ -16,7 +15,7 @@ namespace Unity.Netcode.Transports.UTP
 
             GetComponent<UnityTransport>().SetServerSecrets(serverSecrets);
 
-            ClientSecrets clientSecrets = new ClientSecrets()
+            var clientSecrets = new ClientSecrets()
             {
                 ClientCertificate = ClientCA,
                 ServerCommonName = ServerCommonName
