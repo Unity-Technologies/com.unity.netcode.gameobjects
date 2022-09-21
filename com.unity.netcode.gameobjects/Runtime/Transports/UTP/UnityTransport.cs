@@ -1380,12 +1380,24 @@ namespace Unity.Netcode.Transports.UTP
 
         public void SetServerSecrets(ServerSecrets secrets)
         {
+            if (secrets.ServerPrivate.Length > m_ServerPrivate.Capacity ||
+                secrets.ServerCertificate.Length > m_ServerCertificate.Capacity)
+            {
+                throw new Exception("Secret lengths are above what Unity Transport allows.");
+            }
+
             m_ServerPrivate = secrets.ServerPrivate;
             m_ServerCertificate = secrets.ServerCertificate;
         }
 
         public void SetClientSecrets(ClientSecrets secrets)
         {
+            if (secrets.ServerCommonName.Length > m_ServerCommonName.Capacity ||
+                secrets.ClientCertificate.Length > m_ClientCertificate.Capacity)
+            {
+                throw new Exception("Secret lengths are above what Unity Transport allows.");
+            }
+
             m_ServerCommonName = secrets.ServerCommonName;
             m_ClientCertificate = secrets.ClientCertificate;
         }
