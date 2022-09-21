@@ -72,10 +72,7 @@ namespace Unity.Netcode
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
-            // We always set m_IsReparented to true, ApplyNetworkParenting will reset this
-            // value if it is removing the parent.
-            // TODO: Determine if m_IsReparented is still needed.
-            networkObject.SetNetworkParenting(true, LatestParent, WorldPositionStays);
+            networkObject.SetNetworkParenting(LatestParent, WorldPositionStays);
             networkObject.ApplyNetworkParenting();
             if (!WorldPositionStays)
             {
