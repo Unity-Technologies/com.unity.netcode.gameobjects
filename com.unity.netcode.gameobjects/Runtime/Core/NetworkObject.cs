@@ -741,9 +741,9 @@ namespace Unity.Netcode
                 Scale = transform.localScale,
             };
 
-            // We need to preserve the m_WorldPositionStays value until after we create the message
+            // We need to preserve the m_CachedWorldPositionStays value until after we create the message
             // in order to assure any local space values changed/reset get applied properly. If our
-            // parent is null then go ahead and reset the m_WorldPositionStays the default value.
+            // parent is null then go ahead and reset the m_CachedWorldPositionStays the default value.
             if (parentTransform == null)
             {
                 m_CachedWorldPositionStays = true;
@@ -1183,7 +1183,7 @@ namespace Unity.Netcode
                 obj.Header.HasTransform = true;
                 obj.Transform = new SceneObject.TransformData
                 {
-                    // If we are parented and we have the m_WorldPositionStays disabled, then use local space
+                    // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
                     Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
                     Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation
