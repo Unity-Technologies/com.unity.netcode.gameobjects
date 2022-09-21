@@ -92,6 +92,7 @@ namespace Unity.Netcode.Transports.UTP
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
+    [AddComponentMenu("Netcode/Unity Transport")]
     public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         /// <summary>

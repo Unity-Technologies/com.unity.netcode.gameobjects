@@ -20,7 +20,7 @@ namespace Unity.Netcode
     /// <summary>
     /// The main component of the library
     /// </summary>
-    [AddComponentMenu("Netcode/" + nameof(NetworkManager), -100)]
+    [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
