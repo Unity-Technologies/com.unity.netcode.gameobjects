@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
+- Added `TransportInitialized` and `TransportDisposed` events into the `UnityTransport` class. (#2215)
 
 ### Changed
 

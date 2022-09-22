@@ -369,8 +369,16 @@ namespace Unity.Netcode.Transports.UTP
             public float PacketLoss;
         };
 
-        internal static event Action<int, NetworkDriver> TransportInitialized;
-        internal static event Action<int> TransportDisposed;
+        /// <summary>
+        ///  This event is invoked each after the Server or Client starts.
+        /// </summary>
+        public static event Action<int, NetworkDriver> TransportInitialized;
+
+        /// <summary>
+        ///  This event is invoked each after the Server or Client stops running.
+        /// </summary>
+        public static event Action<int> TransportDisposed;
+
         internal NetworkDriver NetworkDriver => m_Driver;
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
