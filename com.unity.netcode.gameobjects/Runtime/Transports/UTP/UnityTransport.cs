@@ -1354,11 +1354,11 @@ namespace Unity.Netcode.Transports.UTP
 #if UTP_TRANSPORT_2_0_ABOVE
         private void ConfigureSimulatorForUtp2()
         {
+            // As DebugSimulator is deprecated, the 'packetDelayMs', 'packetJitterMs' and 'packetDropPercentage'
+            // parameters are set to the default and are supposed to be changed using Network Simulator tool instead.
             m_NetworkSettings.WithSimulatorStageParameters(
                 maxPacketCount: 300, // TODO Is there any way to compute a better value?
                 maxPacketSize: NetworkParameterConstants.MTU,
-                // As DebugSimulator is deprecated, the following values are set to the default and are
-                // supposed to be changed using Network Simulator tool instead.
                 packetDelayMs: 0,
                 packetJitterMs: 0,
                 packetDropPercentage: 0,
