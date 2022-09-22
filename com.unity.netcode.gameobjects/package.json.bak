@@ -6,6 +6,6 @@
     "unity": "2020.3",
     "dependencies": {
         "com.unity.nuget.mono-cecil": "1.10.1",
-        "com.unity.transport": "2.0.0-exp.6"
+        "com.unity.transport": "1.2.0"
     }
 }
