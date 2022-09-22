@@ -1442,8 +1442,8 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     if (NetworkManager.IsServer)
                     {
-#if UNITY_WEBGL
-                        throw new Exception("WebGL as a server is not supported by Unity Transport.");
+#if UNITY_WEBGL && !UNITY_EDITOR
+                        throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
 #else
                         if (m_ServerCertificate.Length == 0 ||
                             m_ServerPrivate.Length == 0)
