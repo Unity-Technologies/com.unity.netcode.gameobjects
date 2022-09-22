@@ -8,7 +8,7 @@ namespace Unity.Netcode.EditorTests
 {
     public class BatchedSendQueueTests
     {
-        private const int k_TestQueueCapacity = 1024;
+        private const int k_TestQueueCapacity = 16 * 1024;
         private const int k_TestMessageSize = 42;
 
         private ArraySegment<byte> m_TestMessage;
