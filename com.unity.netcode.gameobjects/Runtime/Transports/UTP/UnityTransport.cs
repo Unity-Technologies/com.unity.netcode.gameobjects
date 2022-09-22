@@ -2,7 +2,7 @@
 // All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
 // as any discrepancies are likely to result in build failures
 #if UNITY_EDITOR || (DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE)
-    #define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+#define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
 #endif
 
 using System;
@@ -1451,7 +1451,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
 #if !UTP_TRANSPORT_2_0_ABOVE
-        void SetupPipelinesForUtp1(NetworkDriver driver,
+        private void SetupPipelinesForUtp1(NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
@@ -1510,7 +1510,7 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 #else
-        void SetupPipelinesForUtp2(NetworkDriver driver,
+        private void SetupPipelinesForUtp2(NetworkDriver driver,
             out NetworkPipeline unreliableFragmentedPipeline,
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
