@@ -7,7 +7,6 @@ namespace Unity.Netcode.Components
     /// NetworkRigidbody allows for the use of <see cref="Rigidbody2D"/> on network objects. By controlling the kinematic
     /// mode of the rigidbody and disabling it on all peers but the authoritative one.
     /// </summary>
-    [AddComponentMenu("Netcode/" + nameof(NetworkRigidbody2D))]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(NetworkTransform))]
     [AddComponentMenu("Netcode/Network Rigidbody 2D")]
