@@ -130,8 +130,12 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// The default maximum send queue size
         /// </summary>
-        [Obsolete("MaxSendQueueSize is now determined dynamically. This initial value is not used anymore.", false)]
+        [Obsolete("MaxSendQueueSize is now determined dynamically (can still be set programmatically using the MaxSendQueueSize property). This initial value is not used anymore.", false)]
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
+
+        // Maximum reliable throughput, assuming the full reliable window can be sent on every
+        // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
+        private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 32 * 60) / 1000; // bytes per millisecond
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
@@ -1203,7 +1207,7 @@ namespace Unity.Netcode.Transports.UTP
                 // the only case where a full send queue causes a connection loss. Full unreliable
                 // send queues are dealt with by flushing it out to the network or simply dropping
                 // new messages if that fails.
-                var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * 2688;
+                var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * k_MaxReliableThroughput;
 
                 queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
