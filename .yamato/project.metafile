@@ -66,6 +66,14 @@ projects:
       - 2022.2
       - trunk
 
+# Package dependencies
+dependencies: 
+  - name: com.unity.transport
+    version: 2.0.0-exp.6
+    test_editors:
+      - 2022.2
+      - trunk
+
 # Scripting backends used by Standalone Playmode Tests
 scripting_backends: 
   - mono

@@ -10,7 +10,7 @@ namespace Unity.Netcode.Components
     /// The replicated value will be automatically be interpolated (if active) and applied to the underlying GameObject's transform.
     /// </summary>
     [DisallowMultipleComponent]
-    [AddComponentMenu("Netcode/" + nameof(NetworkTransform))]
+    [AddComponentMenu("Netcode/Network Transform")]
     [DefaultExecutionOrder(100000)] // this is needed to catch the update time after the transform was updated by user scripts
     public class NetworkTransform : NetworkBehaviour
     {
@@ -207,7 +207,12 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
 
+            // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
+            // dirty or not.
             internal bool IsDirty;
+
+            // Non-Authoritative side uses this for ending extrapolation of the last applied state
+            internal int EndExtrapolationTick;
 
             /// <summary>
             /// This will reset the NetworkTransform BitSet
@@ -301,6 +306,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of position will be replicated
         /// </summary>
         public bool SyncPositionZ = true;
+
+        private bool SynchronizePosition
+        {
+            get
+            {
+                return SyncPositionX || SyncPositionY || SyncPositionZ;
+            }
+        }
+
         /// <summary>
         /// Whether or not x component of rotation will be replicated
         /// </summary>
@@ -313,6 +327,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of rotation will be replicated
         /// </summary>
         public bool SyncRotAngleZ = true;
+
+        private bool SynchronizeRotation
+        {
+            get
+            {
+                return SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ;
+            }
+        }
+
         /// <summary>
         /// Whether or not x component of scale will be replicated
         /// </summary>
@@ -325,6 +348,15 @@ namespace Unity.Netcode.Components
         /// Whether or not z component of scale will be replicated
         /// </summary>
         public bool SyncScaleZ = true;
+
+
+        private bool SynchronizeScale
+        {
+            get
+            {
+                return SyncScaleX || SyncScaleY || SyncScaleZ;
+            }
+        }
 
         /// <summary>
         /// The current position threshold value
@@ -346,7 +378,6 @@ namespace Unity.Netcode.Components
         /// Any changes to the scale that exceeds the current threshold value will be replicated
         /// </summary>
         public float ScaleThreshold = ScaleThresholdDefault;
-
 
         /// <summary>
         /// Sets whether the transform should be treated as local (true) or world (false) space.
@@ -390,7 +421,6 @@ namespace Unity.Netcode.Components
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-
         internal NetworkVariable<NetworkTransformState> ReplicatedNetworkState
         {
             get
@@ -404,9 +434,9 @@ namespace Unity.Netcode.Components
             }
         }
 
+        // Used by both authoritative and non-authoritative instances.
+        // This represents the most recent local authoritative state.
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
-
-        private bool m_HasSentLastValue = false; // used to send one last value, so clients can make the difference between lost replication data (clients extrapolate) and no more data to send.
 
         private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
         private List<ulong> m_ClientIds = new List<ulong>() { 0 };
@@ -420,13 +450,26 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
-        private int m_LastSentTick;
+        // Used by integration test
         private NetworkTransformState m_LastSentState;
 
         internal NetworkTransformState GetLastSentState()
         {
             return m_LastSentState;
         }
+
+        /// <summary>
+        /// Calculated when spawned, this is used to offset a newly received non-authority side state by 1 tick duration
+        /// in order to end the extrapolation for that state's values.
+        /// </summary>
+        /// <remarks>
+        /// Example:
+        /// NetworkState-A is received, processed, and measurements added
+        /// NetworkState-A is duplicated (NetworkState-A-Post) and its sent time is offset by the tick frequency
+        /// One tick later, NetworkState-A-Post is applied to end that delta's extrapolation.
+        /// <see cref="OnNetworkStateChanged"/> to see how NetworkState-A-Post doesn't get excluded/missed
+        /// </remarks>
+        private double m_TickFrequency;
 
         /// <summary>
         /// This will try to send/commit the current transform delta states (if any)
@@ -445,19 +488,12 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            /// If authority is invoking this, then treat it like we do with <see cref="Update"/>
+            // If we are authority, update the authoritative state
             if (CanCommitToTransform)
             {
-                // If our replicated state is not dirty and our local authority state is dirty, clear it.
-                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
-                {
-                    // Now clear our bitset and prepare for next network tick state update
-                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                }
-
-                TryCommitTransform(transformToCommit, m_CachedNetworkManager.LocalTime.Time);
+                UpdateAuthoritativeState(transform);
             }
-            else
+            else // Non-Authority
             {
                 // We are an owner requesting to update our state
                 if (!m_CachedIsServer)
@@ -483,47 +519,46 @@ namespace Unity.Netcode.Components
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
             }
-            var isDirty = ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit);
 
-            // if dirty, send
-            // if not dirty anymore, but hasn't sent last value for limiting extrapolation, still set isDirty
-            // if not dirty and has already sent last value, don't do anything
-            // extrapolation works by using last two values. if it doesn't receive anything anymore, it'll continue to extrapolate.
-            // This is great in case there's message loss, not so great if we just don't have new values to send.
-            // the following will send one last "copied" value so unclamped interpolation tries to extrapolate between two identical values, effectively
-            // making it immobile.
-            if (isDirty)
+            // If the transform has deltas (returns dirty) then...
+            if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
-                // Commit the state
+                // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
-                m_HasSentLastValue = false;
-                m_LastSentTick = m_CachedNetworkManager.LocalTime.Tick;
-                m_LastSentState = m_LocalAuthoritativeNetworkState;
-            }
-            else if (!m_HasSentLastValue && m_CachedNetworkManager.LocalTime.Tick >= m_LastSentTick + 1) // check for state.IsDirty since update can happen more than once per tick. No need for client, RPCs will just queue up
-            {
-                // Since the last m_LocalAuthoritativeNetworkState could have included a IsTeleportingNextFrame
-                // we need to reset this here so only the deltas are applied and interpolation is not reset again.
-                m_LastSentState.IsTeleportingNextFrame = false;
-                m_LastSentState.SentTime = m_CachedNetworkManager.LocalTime.Time; // time 1+ tick later
-                // Commit the state
-                ReplicatedNetworkState.Value = m_LastSentState;
-                m_HasSentLastValue = true;
             }
         }
 
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-            m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
-            m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
-            m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.RotAngleX, m_LocalAuthoritativeNetworkState.RotAngleY, m_LocalAuthoritativeNetworkState.RotAngleZ), serverTime);
+            // TODO: Look into a better way to communicate the entire state for late joining clients.
+            // Since the replicated network state will just be the most recent deltas and not the entire state.
+            //m_PositionXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionX, serverTime);
+            //m_PositionYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionY, serverTime);
+            //m_PositionZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.PositionZ, serverTime);
 
-            m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
-            m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
-            m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
+            //m_RotationInterpolator.ResetTo(Quaternion.Euler(m_LocalAuthoritativeNetworkState.RotAngleX, m_LocalAuthoritativeNetworkState.RotAngleY, m_LocalAuthoritativeNetworkState.RotAngleZ), serverTime);
+
+            //m_ScaleXInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleX, serverTime);
+            //m_ScaleYInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleY, serverTime);
+            //m_ScaleZInterpolator.ResetTo(m_LocalAuthoritativeNetworkState.ScaleZ, serverTime);
+
+            // NOTE ABOUT THIS CHANGE:
+            // !!! This will exclude any scale changes because we currently do not spawn network objects with scale !!!
+            // Regarding Scale: It will be the same scale as the default scale for the object being spawned.
+            var position = InLocalSpace ? transform.localPosition : transform.position;
+            m_PositionXInterpolator.ResetTo(position.x, serverTime);
+            m_PositionYInterpolator.ResetTo(position.y, serverTime);
+            m_PositionZInterpolator.ResetTo(position.z, serverTime);
+            var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            m_RotationInterpolator.ResetTo(rotation, serverTime);
+
+            // TODO: (Create Jira Ticket) Synchronize local scale during NetworkObject synchronization
+            // (We will probably want to byte pack TransformData to offset the 3 float addition)
+            m_ScaleXInterpolator.ResetTo(transform.localScale.x, serverTime);
+            m_ScaleYInterpolator.ResetTo(transform.localScale.y, serverTime);
+            m_ScaleZInterpolator.ResetTo(transform.localScale.z, serverTime);
         }
 
         /// <summary>
@@ -656,104 +691,92 @@ namespace Unity.Netcode.Components
         private void ApplyAuthoritativeState()
         {
             var networkState = ReplicatedNetworkState.Value;
-            var interpolatedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
+            var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
 
-            // todo: we should store network state w/ quats vs. euler angles
-            var interpolatedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
-            var interpolatedScale = transform.localScale;
-            var isTeleporting = networkState.IsTeleportingNextFrame;
+            // TODO: We should store network state w/ quats vs. euler angles
+            var adjustedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var adjustedScale = transform.localScale;
 
             // InLocalSpace Read:
             InLocalSpace = networkState.InLocalSpace;
 
-            // Update the position values that were changed in this state update
-            if (networkState.HasPositionX)
+            // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
+            // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
+            // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
+            var useInterpolatedValue = !networkState.IsTeleportingNextFrame && Interpolate;
+            if (useInterpolatedValue)
             {
-                interpolatedPosition.x = isTeleporting || !Interpolate ? networkState.PositionX : m_PositionXInterpolator.GetInterpolatedValue();
-            }
+                if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
 
-            if (networkState.HasPositionY)
-            {
-                interpolatedPosition.y = isTeleporting || !Interpolate ? networkState.PositionY : m_PositionYInterpolator.GetInterpolatedValue();
-            }
+                if (SyncScaleX) { adjustedScale.x = m_ScaleXInterpolator.GetInterpolatedValue(); }
+                if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
+                if (SyncScaleZ) { adjustedScale.z = m_ScaleZInterpolator.GetInterpolatedValue(); }
 
-            if (networkState.HasPositionZ)
-            {
-                interpolatedPosition.z = isTeleporting || !Interpolate ? networkState.PositionZ : m_PositionZInterpolator.GetInterpolatedValue();
-            }
-
-            // Update the rotation values that were changed in this state update
-            if (networkState.HasRotAngleChange)
-            {
-                var eulerAngles = new Vector3();
-                if (Interpolate)
+                if (SynchronizeRotation)
                 {
-                    eulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                }
-
-                if (networkState.HasRotAngleX)
-                {
-                    interpolatedRotAngles.x = isTeleporting || !Interpolate ? networkState.RotAngleX : eulerAngles.x;
-                }
-
-                if (networkState.HasRotAngleY)
-                {
-                    interpolatedRotAngles.y = isTeleporting || !Interpolate ? networkState.RotAngleY : eulerAngles.y;
-                }
-
-                if (networkState.HasRotAngleZ)
-                {
-                    interpolatedRotAngles.z = isTeleporting || !Interpolate ? networkState.RotAngleZ : eulerAngles.z;
+                    var interpolatedEulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
+                    if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
+                    if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
+                    if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
                 }
             }
-
-            // Update all scale axis that were changed in this state update
-            if (networkState.HasScaleX)
+            else
             {
-                interpolatedScale.x = isTeleporting || !Interpolate ? networkState.ScaleX : m_ScaleXInterpolator.GetInterpolatedValue();
+                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
+                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
+                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
+
+                if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
+                if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
+                if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
+
+                if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
+                if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
+                if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
             }
 
-            if (networkState.HasScaleY)
-            {
-                interpolatedScale.y = isTeleporting || !Interpolate ? networkState.ScaleY : m_ScaleYInterpolator.GetInterpolatedValue();
-            }
+            // NOTE: The below conditional checks for applying axial values are required in order to
+            // prevent the non-authoritative side from making adjustments when interpolation is off.
 
-            if (networkState.HasScaleZ)
-            {
-                interpolatedScale.z = isTeleporting || !Interpolate ? networkState.ScaleZ : m_ScaleZInterpolator.GetInterpolatedValue();
-            }
+            // TODO: Determine if we want to enforce, frame by frame, the non-authoritative transform values.
+            // We would want save the position, rotation, and scale (each individually) after applying each
+            // authoritative transform state received. Otherwise, the non-authoritative side could make
+            // changes to an axial value (if interpolation is turned off) until authority sends an update for
+            // that same axial value. When interpolation is on, the state's values being synchronized are
+            // always applied each frame.
 
-            // Apply the new position
-            if (networkState.HasPositionChange)
+            // Apply the new position if it has changed or we are interpolating and synchronizing position
+            if (networkState.HasPositionChange || (useInterpolatedValue && SynchronizePosition))
             {
                 if (InLocalSpace)
                 {
-
-                    transform.localPosition = interpolatedPosition;
+                    transform.localPosition = adjustedPosition;
                 }
                 else
                 {
-                    transform.position = interpolatedPosition;
+                    transform.position = adjustedPosition;
                 }
             }
 
-            // Apply the new rotation
-            if (networkState.HasRotAngleChange)
+            // Apply the new rotation if it has changed or we are interpolating and synchronizing rotation
+            if (networkState.HasRotAngleChange || (useInterpolatedValue && SynchronizeRotation))
             {
                 if (InLocalSpace)
                 {
-                    transform.localRotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.localRotation = Quaternion.Euler(adjustedRotAngles);
                 }
                 else
                 {
-                    transform.rotation = Quaternion.Euler(interpolatedRotAngles);
+                    transform.rotation = Quaternion.Euler(adjustedRotAngles);
                 }
             }
 
-            // Apply the new scale
-            if (networkState.HasScaleChange)
+            // Apply the new scale if it has changed or we are interpolating and synchronizing scale
+            if (networkState.HasScaleChange || (useInterpolatedValue && SynchronizeScale))
             {
-                transform.localScale = interpolatedScale;
+                transform.localScale = adjustedScale;
             }
         }
 
@@ -910,6 +933,7 @@ namespace Unity.Netcode.Components
                 }
 
                 currentRotation.eulerAngles = currentEulerAngles;
+
                 m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
             }
         }
@@ -932,6 +956,7 @@ namespace Unity.Netcode.Components
 
             if (Interpolate)
             {
+                // Add measurements for the new state's deltas
                 AddInterpolatedState(newState);
             }
         }
@@ -954,18 +979,25 @@ namespace Unity.Netcode.Components
             m_ScaleZInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
+        /// <summary>
+        /// Create interpolators when first instantiated to avoid memory allocations if the
+        /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
+        /// </summary>
         private void Awake()
         {
-            // we only want to create our interpolators during Awake so that, when pooled, we do not create tons
-            //  of gc thrash each time objects wink out and are re-used
+            // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
+            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
+
+            // All other interpolators are BufferedLinearInterpolatorFloats
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionYInterpolator = new BufferedLinearInterpolatorFloat();
             m_PositionZInterpolator = new BufferedLinearInterpolatorFloat();
-            m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion(); // rotation is a single Quaternion since each euler axis will affect the quaternion's final value
             m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
             m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
 
+            // Used to quickly iteration over the BufferedLinearInterpolatorFloat
+            // instances
             if (m_AllFloatInterpolators.Count == 0)
             {
                 m_AllFloatInterpolators.Add(m_PositionXInterpolator);
@@ -982,6 +1014,7 @@ namespace Unity.Netcode.Components
         {
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
+            m_TickFrequency = 1.0 / NetworkManager.NetworkConfig.TickRate;
 
             Initialize();
 
@@ -990,8 +1023,10 @@ namespace Unity.Netcode.Components
             // that can be invoked when ownership changes.
             if (CanCommitToTransform)
             {
+                var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
+                var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
                 // Teleport to current position
-                SetStateInternal(transform.position, transform.rotation, transform.localScale, true);
+                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
@@ -1134,11 +1169,7 @@ namespace Unity.Netcode.Components
         private void SetStateClientRpc(Vector3 pos, Quaternion rot, Vector3 scale, bool shouldTeleport, ClientRpcParams clientRpcParams = default)
         {
             // Server dictated state is always applied
-            transform.position = pos;
-            transform.rotation = rot;
-            transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            SetStateInternal(pos, rot, scale, shouldTeleport);
         }
 
         /// <summary>
@@ -1155,16 +1186,28 @@ namespace Unity.Netcode.Components
             {
                 (pos, rot, scale) = OnClientRequestChange(pos, rot, scale);
             }
-
-            transform.position = pos;
-            transform.rotation = rot;
-            transform.localScale = scale;
-            m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            SetStateInternal(pos, rot, scale, shouldTeleport);
         }
 
-        // todo: this is currently in update, to be able to catch any transform changes. A FixedUpdate mode could be added to be less intense, but it'd be
-        // conditional to users only making transform update changes in FixedUpdate.
+        /// <summary>
+        /// Will update the authoritative transform state if any deltas are detected.
+        /// This will also reset the m_LocalAuthoritativeNetworkState if it is still dirty
+        /// but the replicated network state is not.
+        /// </summary>
+        /// <param name="transformSource">transform to be updated</param>
+        private void UpdateAuthoritativeState(Transform transformSource)
+        {
+            // If our replicated state is not dirty and our local authority state is dirty, clear it.
+            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
+            {
+                m_LastSentState = m_LocalAuthoritativeNetworkState;
+                // Now clear our bitset and prepare for next network tick state update
+                m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+            }
+
+            TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// If you override this method, be sure that:
@@ -1179,21 +1222,15 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // If we are authority, update the authoritative state
             if (CanCommitToTransform)
             {
-                // If our replicated state is not dirty and our local authority state is dirty, clear it.
-                if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
-                {
-                    // Now clear our bitset and prepare for next network tick state update
-                    m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                }
-                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+                UpdateAuthoritativeState(transform);
             }
-            else
+            else // Non-Authority
             {
                 if (Interpolate)
                 {
-                    // eventually, we could hoist this calculation so that it happens once for all objects, not once per object
                     var serverTime = NetworkManager.ServerTime;
                     var cachedDeltaTime = Time.deltaTime;
                     var cachedServerTime = serverTime.Time;
@@ -1205,7 +1242,8 @@ namespace Unity.Netcode.Components
 
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
-                // Now apply the current authoritative state
+
+                // Apply the current authoritative state
                 ApplyAuthoritativeState();
             }
         }

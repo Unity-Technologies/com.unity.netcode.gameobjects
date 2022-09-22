@@ -95,6 +95,7 @@ namespace Unity.Netcode.Transports.UTP
     /// The Netcode for GameObjects NetworkTransport for UnityTransport.
     /// Note: This is highly recommended to use over UNet.
     /// </summary>
+    [AddComponentMenu("Netcode/Unity Transport")]
     public partial class UnityTransport : NetworkTransport, INetworkStreamDriverConstructor
     {
         /// <summary>
@@ -152,6 +153,18 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Which protocol should be selected (Relay/Non-Relay).")]
         [SerializeField]
         private ProtocolType m_ProtocolType;
+
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Tooltip("Whether or not to use WebSockets as Network Interface")]
+        [SerializeField]
+        private bool m_UseWebSockets = false;
+
+        public bool UseWebSockets
+        {
+            set => m_UseWebSockets = value;
+            get => m_UseWebSockets;
+        }
+#endif
 
         [Tooltip("The maximum amount of packets that can be in the internal send/receive queues. Basically this is how many packets can be sent/received in a single update/frame.")]
         [SerializeField]
@@ -374,7 +387,7 @@ namespace Unity.Netcode.Transports.UTP
             PacketDropRate = 0
         };
 
-        internal uint DebugSimulatorRandomSeed { get; set; } = 0;
+        internal uint? DebugSimulatorRandomSeed { get; set; } = null;
 
         private struct PacketLossCache
         {
@@ -603,7 +616,6 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
-            m_RelayServerData.ComputeNewNonce();
 
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
@@ -1363,7 +1375,7 @@ namespace Unity.Netcode.Transports.UTP
                 packetDelayMs: DebugSimulator.PacketDelayMS,
                 packetJitterMs: DebugSimulator.PacketJitterMS,
                 packetDropPercentage: DebugSimulator.PacketDropRate,
-                randomSeed: DebugSimulatorRandomSeed
+                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
 #if UTP_TRANSPORT_2_0_ABOVE
                 , mode: ApplyMode.AllPackets
 #endif

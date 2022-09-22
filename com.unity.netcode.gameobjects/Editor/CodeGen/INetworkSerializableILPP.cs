@@ -10,7 +10,6 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 
 namespace Unity.Netcode.Editor.CodeGen
 {
-
     internal sealed class INetworkSerializableILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;

@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
-    [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
+    [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
@@ -1091,6 +1091,14 @@ namespace Unity.Netcode
                 {
                     reader.ReadValueSafe(out NetworkSceneHandle);
                 }
+            }
+        }
+
+        internal void PostNetworkVariableWrite()
+        {
+            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
+            {
+                ChildNetworkBehaviours[k].PostNetworkVariableWrite();
             }
         }
 
