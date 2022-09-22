@@ -73,8 +73,6 @@ namespace Unity.Netcode.Transports.UTP
 
             m_Data.ResizeUninitialized(m_MinimumCapacity);
 
-            UnityEngine.Debug.Log($"min: {m_MinimumCapacity}, max: {m_MaximumCapacity}");
-
             HeadIndex = 0;
             TailIndex = 0;
         }

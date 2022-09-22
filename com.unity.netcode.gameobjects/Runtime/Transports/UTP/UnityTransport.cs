@@ -130,6 +130,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// The default maximum send queue size
         /// </summary>
+        [Obsolete("MaxSendQueueSize is now determined dynamically. This initial value is not used anymore.", false)]
         public const int InitialMaxSendQueueSize = 16 * InitialMaxPayloadSize;
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
@@ -186,15 +187,17 @@ namespace Unity.Netcode.Transports.UTP
             set => m_MaxPayloadSize = value;
         }
 
-        [Tooltip("The maximum size in bytes of the transport send queue. The send queue accumulates messages for batching and stores messages when other internal send queues are full. If you routinely observe an error about too many in-flight packets, try increasing this.")]
-        [SerializeField]
-        private int m_MaxSendQueueSize = InitialMaxSendQueueSize;
+        private int m_MaxSendQueueSize = 0;
 
         /// <summary>The maximum size in bytes of the transport send queue.</summary>
         /// <remarks>
         /// The send queue accumulates messages for batching and stores messages when other internal
-        /// send queues are full. If you routinely observe an error about too many in-flight packets,
-        /// try increasing this.
+        /// send queues are full. Note that there should not be any need to set this value manually
+        /// since the send queue size is dynamically sized based on need.
+        ///
+        /// This value should only be set if you have particular requirements (e.g. if you want to
+        /// limit the memory usage of the send queues). Note however that setting this value too low
+        /// can easily lead to disconnections under heavy traffic.
         /// </remarks>
         public int MaxSendQueueSize
         {
@@ -531,11 +534,6 @@ namespace Unity.Netcode.Transports.UTP
                     return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
                 }
             }
-        }
-
-        internal void SetMaxPayloadSize(int maxPayloadSize)
-        {
-            m_MaxPayloadSize = maxPayloadSize;
         }
 
         private void SetProtocol(ProtocolType inProtocol)
@@ -1191,7 +1189,23 @@ namespace Unity.Netcode.Transports.UTP
             var sendTarget = new SendTarget(clientId, pipeline);
             if (!m_SendQueue.TryGetValue(sendTarget, out var queue))
             {
-                queue = new BatchedSendQueue(Math.Max(m_MaxSendQueueSize, m_MaxPayloadSize));
+                // The maximum size of a send queue is determined according to the disconnection
+                // timeout. The idea being that if the send queue contains enough reliable data that
+                // sending it all out would take longer than the disconnection timeout, then there's
+                // no point storing even more in the queue (it would be like having a ping higher
+                // than the disconnection timeout, which is far into the realm of unplayability).
+                //
+                // The throughput used to determine what consists the maximum send queue size is
+                // the maximum theoritical throughput of the reliable pipeline assuming we only send
+                // on each update at 60 FPS, which turns out to be around 2.688 MB/s.
+                //
+                // Note that we only care about reliable throughput for send queues because that's
+                // the only case where a full send queue causes a connection loss. Full unreliable
+                // send queues are dealt with by flushing it out to the network or simply dropping
+                // new messages if that fails.
+                var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * 2688;
+
+                queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));
                 m_SendQueue.Add(sendTarget, queue);
             }
 
@@ -1205,8 +1219,7 @@ namespace Unity.Netcode.Transports.UTP
 
                     var ngoClientId = NetworkManager?.TransportIdToClientId(clientId) ?? clientId;
                     Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
-                        $"Closing connection {ngoClientId} as reliability guarantees can't be maintained. " +
-                        $"Perhaps 'Max Send Queue Size' ({m_MaxSendQueueSize}) is too small for workload.");
+                        $"Closing connection {ngoClientId} as reliability guarantees can't be maintained.");
 
                     if (clientId == m_ServerClientId)
                     {
