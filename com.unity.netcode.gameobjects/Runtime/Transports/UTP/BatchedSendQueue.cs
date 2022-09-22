@@ -18,7 +18,7 @@ namespace Unity.Netcode.Transports.UTP
     /// </remarks>
     internal struct BatchedSendQueue : IDisposable
     {
-        private NativeList<byte> m_Data;
+        internal NativeList<byte> m_Data;
         private NativeArray<int> m_HeadTailIndices;
         private int m_MaximumCapacity;
         private int m_MinimumCapacity;
@@ -26,7 +26,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>Overhead that is added to each message in the queue.</summary>
         public const int PerMessageOverhead = sizeof(int);
 
-        private const int k_MinimumMinimumCapacity = 4096;
+        internal const int k_MinimumMinimumCapacity = 4096;
 
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;

@@ -9,7 +9,8 @@ namespace Unity.Netcode.EditorTests
     public class BatchedSendQueueTests
     {
         private const int k_TestQueueCapacity = 16 * 1024;
-        private const int k_TestMessageSize = 42;
+        private const int k_TestMessageSize = 1020;
+        private const int k_NumMessagesToFillQueue = k_TestQueueCapacity / (k_TestMessageSize + BatchedSendQueue.PerMessageOverhead);
 
         private ArraySegment<byte> m_TestMessage;
 
@@ -52,7 +53,14 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_PushMessageReturnValue()
+        public void BatchedSendQueue_InitialCapacityLessThanMaximum()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+        }
+
+        [Test]
+        public void BatchedSendQueue_PushMessage_ReturnValue()
         {
             // Will fit a single test message, but not two (with overhead included).
             var queueCapacity = (k_TestMessageSize * 2) + BatchedSendQueue.PerMessageOverhead;
@@ -64,7 +72,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_LengthIncreasedAfterPush()
+        public void BatchedSendQueue_PushMessage_IncreasesLength()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
 
@@ -73,13 +81,12 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_PushedMessageGeneratesCopy()
+        public void BatchedSendQueue_PushMessage_SucceedsAfterConsume()
         {
             var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
             var queueCapacity = messageLength * 2;
 
             using var q = new BatchedSendQueue(queueCapacity);
-            using var data = new NativeArray<byte>(k_TestQueueCapacity, Allocator.Temp);
 
             q.PushMessage(m_TestMessage);
             q.PushMessage(m_TestMessage);
@@ -87,6 +94,60 @@ namespace Unity.Netcode.EditorTests
             q.Consume(messageLength);
             Assert.IsTrue(q.PushMessage(m_TestMessage));
             Assert.AreEqual(queueCapacity, q.Length);
+        }
+
+        [Test]
+        public void BatchedSendQueue_PushMessage_GrowsDataIfNeeded()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+
+            var numMessagesToFillMinimum = BatchedSendQueue.k_MinimumMinimumCapacity / messageLength;
+            for (int i = 0; i < numMessagesToFillMinimum; i++)
+            {
+                q.PushMessage(m_TestMessage);
+            }
+
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+
+            q.PushMessage(m_TestMessage);
+
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity * 2);
+        }
+
+        [Test]
+        public void BatchedSendQueue_PushMessage_DoesNotGrowDataPastMaximum()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+
+            for (int i = 0; i < k_NumMessagesToFillQueue; i++)
+            {
+                Assert.IsTrue(q.PushMessage(m_TestMessage));
+            }
+
+            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            Assert.IsFalse(q.PushMessage(m_TestMessage));
+            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+        }
+
+        [Test]
+        public void BatchedSendQueue_PushMessage_TrimsDataAfterGrowing()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+            var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
+
+            for (int i = 0; i < k_NumMessagesToFillQueue; i++)
+            {
+                Assert.IsTrue(q.PushMessage(m_TestMessage));
+            }
+
+            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            q.Consume(messageLength * (k_NumMessagesToFillQueue - 1));
+            Assert.IsTrue(q.PushMessage(m_TestMessage));
+            Assert.AreEqual(messageLength * 2, q.Length);
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity * 2);
         }
 
         [Test]
@@ -227,7 +288,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_ConsumeLessThanLength()
+        public void BatchedSendQueue_Consume_LessThanLength()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
 
@@ -240,7 +301,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_ConsumeExactLength()
+        public void BatchedSendQueue_Consume_ExactLength()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
 
@@ -252,7 +313,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void BatchedSendQueue_ConsumeMoreThanLength()
+        public void BatchedSendQueue_Consume_MoreThanLength()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
 
@@ -261,6 +322,21 @@ namespace Unity.Netcode.EditorTests
             q.Consume(k_TestQueueCapacity);
             Assert.AreEqual(0, q.Length);
             Assert.True(q.IsEmpty);
+        }
+
+        [Test]
+        public void BatchedSendQueue_Consume_TrimsDataOnEmpty()
+        {
+            using var q = new BatchedSendQueue(k_TestQueueCapacity);
+
+            for (int i = 0; i < k_NumMessagesToFillQueue; i++)
+            {
+                q.PushMessage(m_TestMessage);
+            }
+
+            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            q.Consume(k_TestQueueCapacity);
+            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
         }
     }
 }
