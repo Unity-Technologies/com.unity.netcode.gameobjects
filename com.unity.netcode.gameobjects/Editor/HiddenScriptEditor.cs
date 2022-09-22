@@ -20,7 +20,7 @@ namespace Unity.Netcode.Editor
             EditorGUI.EndChangeCheck();
         }
     }
-
+#if UNITY_UNET_PRESENT
     /// <summary>
     /// Internal use. Hides the script field for UNetTransport.
     /// </summary>
@@ -29,6 +29,7 @@ namespace Unity.Netcode.Editor
     {
 
     }
+#endif
 
     /// <summary>
     /// Internal use. Hides the script field for UnityTransport.
