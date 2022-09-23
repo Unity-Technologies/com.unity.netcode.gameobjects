@@ -51,7 +51,7 @@ namespace Unity.Netcode
 
         internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
         {
-            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.gameObject.name}\"";
+            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.name}\"";
         }
 
         internal NetworkBehaviourUpdater BehaviourUpdater { get; set; }
@@ -187,8 +187,7 @@ namespace Unity.Netcode
         /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
         public GameObject GetNetworkPrefabOverride(GameObject gameObject)
         {
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-            if (networkObject != null)
+            if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
             {
                 if (NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
                 {
@@ -519,8 +518,7 @@ namespace Unity.Netcode
                 var networkPrefabGo = networkPrefab?.Prefab;
                 if (networkPrefabGo != null)
                 {
-                    var networkObject = networkPrefabGo.GetComponent<NetworkObject>();
-                    if (networkObject == null)
+                    if (!networkPrefabGo.TryGetComponent<NetworkObject>(out var networkObject))
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
@@ -695,8 +693,7 @@ namespace Unity.Netcode
             }
             else if (networkPrefab.Override == NetworkPrefabOverride.None)
             {
-                networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-                if (networkObject == null)
+                if (!networkPrefab.Prefab.TryGetComponent(out networkObject))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
@@ -742,8 +739,7 @@ namespace Unity.Netcode
                             }
                             else
                             {
-                                networkObject = networkPrefab.SourcePrefabToOverride.GetComponent<NetworkObject>();
-                                if (networkObject == null)
+                                if (!networkPrefab.SourcePrefabToOverride.TryGetComponent(out networkObject))
                                 {
                                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                                     {
@@ -968,8 +964,7 @@ namespace Unity.Netcode
             // If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
             if (NetworkConfig.PlayerPrefab != null)
             {
-                var playerPrefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
-                if (playerPrefabNetworkObject != null)
+                if (NetworkConfig.PlayerPrefab.TryGetComponent<NetworkObject>(out var playerPrefabNetworkObject))
                 {
                     //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
                     if (!NetworkConfig.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject
