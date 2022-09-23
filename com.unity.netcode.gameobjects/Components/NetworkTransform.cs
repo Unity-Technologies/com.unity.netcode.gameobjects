@@ -497,16 +497,14 @@ namespace Unity.Netcode.Components
             {
                 var position = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
                 var rotation = InLocalSpace ? transformToCommit.localRotation : transformToCommit.rotation;
-                var scale = transformToCommit.localScale;
                 // We are an owner requesting to update our state
                 if (!m_CachedIsServer)
                 {
-
-                    SetStateServerRpc(position, rotation, scale, false);
+                    SetStateServerRpc(position, rotation, transformToCommit.localScale, false);
                 }
                 else // Server is always authoritative (including owner authoritative)
                 {
-                    SetStateClientRpc(position, rotation, scale, false);
+                    SetStateClientRpc(position, rotation, transformToCommit.localScale, false);
                 }
             }
         }

@@ -15,6 +15,8 @@ namespace Unity.Netcode.Editor
         private NetworkObject m_NetworkObject;
         private bool m_ShowObservers;
 
+        private static readonly string[] k_HiddenFields = { "m_Script" };
+
         private void Initialize()
         {
             if (m_Initialized)
@@ -95,7 +97,11 @@ namespace Unity.Netcode.Editor
             }
             else
             {
-                base.OnInspectorGUI();
+                EditorGUI.BeginChangeCheck();
+                serializedObject.UpdateIfRequiredOrScript();
+                DrawPropertiesExcluding(serializedObject, k_HiddenFields);
+                serializedObject.ApplyModifiedProperties();
+                EditorGUI.EndChangeCheck();
 
                 var guiEnabled = GUI.enabled;
                 GUI.enabled = false;
