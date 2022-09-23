@@ -5,11 +5,13 @@ using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
 {
+    [TestFixture(TestTypes.WorldPositionStays)]
     public class ParentingTestsGeneral : NetcodeIntegrationTest
     {
         private const string k_ParentName = "Parent";
@@ -17,6 +19,13 @@ namespace TestProject.RuntimeTests
         private const float k_AproximateDeltaVariance = 0.01f;
 
         protected override int NumberOfClients => 2;
+
+        public enum TestTypes
+        {
+            WorldPositionStays,
+            InSceneGameObjectParent,
+            InSceneNestedChildren
+        }
 
         internal class TestComponentHelper : NetworkBehaviour
         {
@@ -36,6 +45,9 @@ namespace TestProject.RuntimeTests
             public static Dictionary<ulong, int> NetworkObjectIdToIndex = new Dictionary<ulong, int>();
 
             public static Dictionary<ulong, ParentChildInfo> ClientsRegistered = new Dictionary<ulong, ParentChildInfo>();
+
+            public Vector3 Scale;
+            public bool WorldPositionStays;
 
             public override void OnNetworkSpawn()
             {
@@ -98,6 +110,11 @@ namespace TestProject.RuntimeTests
                 base.OnNetworkObjectParentChanged(parentNetworkObject);
                 if (parentNetworkObject == null || IsServer)
                 {
+                    if (WorldPositionStays)
+                    {
+                        Debug.Log($"[Server][{NetworkManager.IsServer}] Setting Scale of {Scale} for NetworkObjectId ({NetworkObjectId})");
+                        transform.localScale = Scale;
+                    }
                     return;
                 }
                 var localClientId = NetworkManager.LocalClientId;
@@ -107,6 +124,9 @@ namespace TestProject.RuntimeTests
                 }
 
                 var netObjId = NetworkObject.NetworkObjectId;
+                var childIndex = NetworkObjectIdToIndex[netObjId];
+                var childInfo = ClientsRegistered[localClientId].Children[childIndex];
+
                 if (!NetworkObjectIdToIndex.ContainsKey(netObjId))
                 {
                     if (netObjId == 0)
@@ -116,9 +136,10 @@ namespace TestProject.RuntimeTests
                     //This should never happen (sanity check)
                     throw new Exception($"Client spawned {NetworkObjectId} but there was no index lookup table!");
                 }
-                var childIndex = NetworkObjectIdToIndex[netObjId];
-                var childInfo = ClientsRegistered[localClientId].Children[childIndex];
+
                 childInfo.HasBeenParented = true;
+
+
             }
         }
 
@@ -132,9 +153,16 @@ namespace TestProject.RuntimeTests
         private Quaternion m_ParentStartRotation = Quaternion.Euler(0.0f, 90.0f, 0.0f);
         private Vector3 m_ChildStartPosition = new Vector3(100.0f, -100.0f, 100.0f);
         private Quaternion m_ChildStartRotation = Quaternion.Euler(-35.0f, 0.0f, -180.0f);
+        private Vector3 m_ChildStartScale = Vector3.one;
+        private TestTypes m_TestType;
+        public ParentingTestsGeneral(TestTypes testTypes)
+        {
+            m_TestType = testTypes;
+        }
 
         protected override IEnumerator OnSetup()
         {
+            m_EnableVerboseDebug = true;
             TestComponentHelper.ClientsRegistered.Clear();
             TestComponentHelper.NetworkObjectIdToIndex.Clear();
             for (int i = 0; i < k_NestedChildren; i++)
@@ -146,6 +174,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
+            m_EnableVerboseDebug = false;
             if (m_ServerSideParent != null && m_ServerSideParent.GetComponent<NetworkObject>().IsSpawned)
             {
                 // Clean up in reverse order (also makes sure we can despawn parents before children)
@@ -185,6 +214,9 @@ namespace TestProject.RuntimeTests
             m_ChildPrefabObject.AddComponent<TestComponentHelper>();
             m_ChildPrefabObject.transform.position = m_ChildStartPosition;
             m_ChildPrefabObject.transform.rotation = m_ChildStartRotation;
+            m_ChildPrefabObject.transform.localScale = m_ChildStartScale;
+            m_ServerNetworkManager.LogLevel = m_EnableVerboseDebug ? LogLevel.Developer : LogLevel.Normal;
+
             base.OnServerAndClientsCreated();
         }
 
@@ -247,14 +279,35 @@ namespace TestProject.RuntimeTests
             WorldPositionStays
         }
 
+        public enum NetworkTransformSettings
+        {
+            None,
+            NetworkTransformInterpolate,
+            NetworkTransformImmediate
+        }
+
+        [UnityTest]
+        public IEnumerator ParentingTest([Values] ParentingTestModes mode, [Values] NetworkTransformSettings networkTransformSettings)
+        {
+            switch (m_TestType)
+            {
+                case TestTypes.WorldPositionStays:
+                    {
+                        yield return WorldPositionStaysTest(mode, networkTransformSettings);
+                        break;
+                    }
+            }
+        }
+
         /// <summary>
         /// Verifies that using worldPositionStays when parenting via NetworkObject.TrySetParent,
         /// that the client-side transform values match that of the server-side.
         /// This also tests nested parenting and out of hierarchical order child spawning.
         /// </summary>
-        [UnityTest]
-        public IEnumerator WorldPositionStaysTest([Values] ParentingTestModes mode)
+        public IEnumerator WorldPositionStaysTest(ParentingTestModes mode, NetworkTransformSettings networkTransformSettings)
         {
+            var useNetworkTransform = networkTransformSettings != NetworkTransformSettings.None;
+            var interpolate = networkTransformSettings == NetworkTransformSettings.NetworkTransformInterpolate;
             var worldPositionStays = mode == ParentingTestModes.WorldPositionStays;
             var startTime = Time.realtimeSinceStartup;
             m_ServerSideParent = Object.Instantiate(m_ParentPrefabObject);
@@ -262,36 +315,65 @@ namespace TestProject.RuntimeTests
             var serverSideChildNetworkObjects = new List<NetworkObject>();
             var childPosition = m_ChildStartPosition;
             var childRotation = m_ChildStartRotation;
+            var childScale = m_ChildStartScale;
             // Used to store the expected position and rotation for children (local space relative)
             var childPositionList = new List<Vector3>();
             var childRotationList = new List<Vector3>();
+            var childScaleList = new List<Vector3>();
+            var childLarger = 1.15f;
+            var childSmaller = 0.85f;
+            if (useNetworkTransform)
+            {
+                var networkTransform = m_ChildPrefabObject.AddComponent<NetworkTransform>();
+                networkTransform.InLocalSpace = !worldPositionStays;
+            }
+
             // Instantiate the children
             for (int i = 0; i < k_NestedChildren; i++)
             {
-
-                var serverSideChild = Object.Instantiate(m_ChildPrefabObject, childPosition, childRotation);
-                m_ServerSideChildren[i] = serverSideChild;
+                m_ServerSideChildren[i] = Object.Instantiate(m_ChildPrefabObject);
                 childPositionList.Add(childPosition);
                 childRotationList.Add(childRotation.eulerAngles);
-                // Change up each child's position and rotation to assure it isn't the same as the last
+                childScaleList.Add(childScale);
+                // Change each child's position, rotation, and scale
                 childRotation = Quaternion.Euler(childRotation.eulerAngles * 0.80f);
                 childPosition = childPosition * 0.80f;
+                if ((i % 2) == 0)
+                {
+                    childScale = m_ChildStartScale * childLarger;
+                    childLarger *= childLarger;
+                }
+                else
+                {
+                    childScale = m_ChildStartScale * childSmaller;
+                    childSmaller *= childSmaller;
+                }
             }
 
             // Spawn in reverse order (i.e. the last child is first to spawn) to assure spawn order does
             // not impact parenting along with each child's world and local space values.
             // (also tests the parent child sorting for late joining players)
-            for (int i = k_NestedChildren - 1; i >= 0; i--)
+            //for (int i = k_NestedChildren - 1; i >= 0; i--)
+            for (int i = 0; i < k_NestedChildren; i++)
             {
                 var serverSideChild = m_ServerSideChildren[i];
+
                 var serverSideChildNetworkObject = serverSideChild.GetComponent<NetworkObject>();
+                serverSideChild.transform.position = childPositionList[i];
+                serverSideChild.transform.rotation = Quaternion.Euler(childRotationList[i]);
+
+                serverSideChild.transform.localScale = childScaleList[i];
+                VerboseDebug($"[Server][PreSpawn] Set scale of NetworkObject to ({childScaleList[i]})");
                 serverSideChildNetworkObject.Spawn();
+                VerboseDebug($"[Server] Set scale of NetworkObjectID ({serverSideChildNetworkObject.NetworkObjectId}) to ({childScaleList[i]}) and is currently {serverSideChild.transform.localScale}");
+
                 TestComponentHelper.NetworkObjectIdToIndex.Add(serverSideChildNetworkObject.NetworkObjectId, i);
 
                 Assert.IsTrue(Aproximately(m_ServerSideParent.transform.position, m_ParentStartPosition));
                 Assert.IsTrue(Aproximately(m_ServerSideParent.transform.rotation.eulerAngles, m_ParentStartRotation.eulerAngles));
                 Assert.IsTrue(Aproximately(serverSideChild.transform.position, childPositionList[i]));
                 Assert.IsTrue(Aproximately(serverSideChild.transform.rotation.eulerAngles, childRotationList[i]));
+                Assert.IsTrue(Aproximately(serverSideChild.transform.localScale, childScaleList[i]), $"[Initial Scale] Server-side child scale ({serverSideChild.transform.localScale}) does not equal the expected scale ({childScaleList[i]})");
             }
 
             // Spawn the root parent last
@@ -318,18 +400,23 @@ namespace TestProject.RuntimeTests
 
                     Assert.IsFalse(clientChildInfo.HasBeenParented, $"Client-{clientEntry.Key} has already been parented!");
 
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position));
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles));
+                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"[Client-{clientEntry.Key}][{clientChildInfo.Child.name}] Child position ({clientChildInfo.Child.transform.position}) does not" +
+                        $" equal the server-side child's position ({serverChild.transform.position})");
+                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.eulerAngles), $"[Client-{clientEntry.Key}][{clientChildInfo.Child.name}] Child rotation ({clientChildInfo.Child.transform.eulerAngles}) does not" +
+                        $" equal the server-side child's rotation ({serverChild.transform.eulerAngles})");
+                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"[Client-{clientEntry.Key}][{clientChildInfo.Child.name}] Child scale ({clientChildInfo.Child.transform.localScale}) does not" +
+                        $" equal the server-side child's scale ({serverChild.transform.localScale})");
                 }
             }
 
-            // parent the nested children
+            // parent the nested children in the reverse order in which they were spawned
             var currentParent = serverSideParentNetworkObject;
             for (int i = 0; i < k_NestedChildren; i++)
             {
                 var childNetworkObject = m_ServerSideChildren[i].GetComponent<NetworkObject>();
-                // Do not keep the world position by setting WorldPositionStays to false
+                Debug.Log($"[Server Parenting][Before] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is currently {childNetworkObject.transform.localScale}");
                 Assert.True(childNetworkObject.TrySetParent(currentParent, worldPositionStays));
+                Debug.Log($"[Server Parenting][After] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is now {childNetworkObject.transform.localScale}");
                 currentParent = childNetworkObject;
             }
 
@@ -341,7 +428,6 @@ namespace TestProject.RuntimeTests
             VerboseDebug($"[{Time.realtimeSinceStartup - startTime}] All clients parented the child.");
 
             var serverParentTransform = m_ServerSideParent.transform;
-
             // Verify the positions are identical to the default values
             foreach (var clientEntry in TestComponentHelper.ClientsRegistered)
             {
@@ -357,7 +443,9 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-
+                    yield return WaitForConditionOrTimeOut(() => Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale));
+                    AssertOnTimeout($"Timed out waiting for client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
+                    //Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
                     // Assure we still have the same local space values when not preserving the world position
                     if (!worldPositionStays)
                     {
@@ -394,7 +482,7 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"[LateJoin] Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"[LateJoin] Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-
+                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"[LateJoin] Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
                     // Assure we still have the same local space values when not preserving the world position
                     if (!worldPositionStays)
                     {
