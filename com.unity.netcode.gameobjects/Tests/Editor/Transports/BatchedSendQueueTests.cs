@@ -56,7 +56,7 @@ namespace Unity.Netcode.EditorTests
         public void BatchedSendQueue_InitialCapacityLessThanMaximum()
         {
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity);
         }
 
         [Test]
@@ -102,19 +102,19 @@ namespace Unity.Netcode.EditorTests
             using var q = new BatchedSendQueue(k_TestQueueCapacity);
             var messageLength = k_TestMessageSize + BatchedSendQueue.PerMessageOverhead;
 
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity);
 
-            var numMessagesToFillMinimum = BatchedSendQueue.k_MinimumMinimumCapacity / messageLength;
+            var numMessagesToFillMinimum = BatchedSendQueue.MinimumMinimumCapacity / messageLength;
             for (int i = 0; i < numMessagesToFillMinimum; i++)
             {
                 q.PushMessage(m_TestMessage);
             }
 
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity);
 
             q.PushMessage(m_TestMessage);
 
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity * 2);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity * 2);
         }
 
         [Test]
@@ -127,9 +127,9 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(q.PushMessage(m_TestMessage));
             }
 
-            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            Assert.AreEqual(q.BackingListLength, k_TestQueueCapacity);
             Assert.IsFalse(q.PushMessage(m_TestMessage));
-            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            Assert.AreEqual(q.BackingListLength, k_TestQueueCapacity);
         }
 
         [Test]
@@ -143,11 +143,11 @@ namespace Unity.Netcode.EditorTests
                 Assert.IsTrue(q.PushMessage(m_TestMessage));
             }
 
-            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            Assert.AreEqual(q.BackingListLength, k_TestQueueCapacity);
             q.Consume(messageLength * (k_NumMessagesToFillQueue - 1));
             Assert.IsTrue(q.PushMessage(m_TestMessage));
             Assert.AreEqual(messageLength * 2, q.Length);
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity * 2);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity * 2);
         }
 
         [Test]
@@ -334,9 +334,9 @@ namespace Unity.Netcode.EditorTests
                 q.PushMessage(m_TestMessage);
             }
 
-            Assert.AreEqual(q.m_Data.Length, k_TestQueueCapacity);
+            Assert.AreEqual(q.BackingListLength, k_TestQueueCapacity);
             q.Consume(k_TestQueueCapacity);
-            Assert.AreEqual(q.m_Data.Length, BatchedSendQueue.k_MinimumMinimumCapacity);
+            Assert.AreEqual(q.BackingListLength, BatchedSendQueue.MinimumMinimumCapacity);
         }
     }
 }

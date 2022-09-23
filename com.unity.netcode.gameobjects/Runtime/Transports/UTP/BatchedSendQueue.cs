@@ -18,7 +18,7 @@ namespace Unity.Netcode.Transports.UTP
     /// </remarks>
     internal struct BatchedSendQueue : IDisposable
     {
-        internal NativeList<byte> m_Data;
+        private NativeList<byte> m_Data;
         private NativeArray<int> m_HeadTailIndices;
         private int m_MaximumCapacity;
         private int m_MinimumCapacity;
@@ -26,11 +26,14 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>Overhead that is added to each message in the queue.</summary>
         public const int PerMessageOverhead = sizeof(int);
 
-        internal const int k_MinimumMinimumCapacity = 4096;
+        internal const int MinimumMinimumCapacity = 4096;
 
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;
         private const int k_TailInternalIndex = 1;
+
+        // Only used for testing purposes.
+        internal int BackingListLength => m_Data.Length;
 
         /// <summary>Index of the first byte of the oldest data in the queue.</summary>
         private int HeadIndex
@@ -63,7 +66,7 @@ namespace Unity.Netcode.Transports.UTP
             // since we expect maximum capacities to be in the megabytes range). The approach taken
             // here avoids this issue, at the cost of not having allocations of nice round sizes.
             m_MinimumCapacity = m_MaximumCapacity;
-            while (m_MinimumCapacity / 2 >= k_MinimumMinimumCapacity)
+            while (m_MinimumCapacity / 2 >= MinimumMinimumCapacity)
             {
                 m_MinimumCapacity /= 2;
             }
