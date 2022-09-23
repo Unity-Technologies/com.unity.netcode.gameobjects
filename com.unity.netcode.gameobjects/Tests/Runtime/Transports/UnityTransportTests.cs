@@ -343,6 +343,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
+#if !UTP_TRANSPORT_2_0_ABOVE
         // Check that simulator parameters are effective. We only check with the drop rate, because
         // that's easy to check and we only really want to make sure the simulator parameters are
         // configured properly (the simulator pipeline stage is already well-tested in UTP).
@@ -397,6 +398,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return null;
         }
+#endif
 
         [UnityTest]
         public IEnumerator SendQueuesFlushedOnShutdown([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)

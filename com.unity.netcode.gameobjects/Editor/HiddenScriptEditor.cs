@@ -1,5 +1,7 @@
 using Unity.Netcode.Components;
+#if UNITY_UNET_PRESENT
 using Unity.Netcode.Transports.UNET;
+#endif
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 
@@ -20,7 +22,7 @@ namespace Unity.Netcode.Editor
             EditorGUI.EndChangeCheck();
         }
     }
-
+#if UNITY_UNET_PRESENT
     /// <summary>
     /// Internal use. Hides the script field for UNetTransport.
     /// </summary>
@@ -29,6 +31,7 @@ namespace Unity.Netcode.Editor
     {
 
     }
+#endif
 
     /// <summary>
     /// Internal use. Hides the script field for UnityTransport.
