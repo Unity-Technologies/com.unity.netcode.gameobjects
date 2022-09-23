@@ -112,7 +112,6 @@ namespace TestProject.RuntimeTests
                 {
                     if (WorldPositionStays)
                     {
-                        Debug.Log($"[Server][{NetworkManager.IsServer}] Setting Scale of {Scale} for NetworkObjectId ({NetworkObjectId})");
                         transform.localScale = Scale;
                     }
                     return;
@@ -162,7 +161,6 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            m_EnableVerboseDebug = true;
             TestComponentHelper.ClientsRegistered.Clear();
             TestComponentHelper.NetworkObjectIdToIndex.Clear();
             for (int i = 0; i < k_NestedChildren; i++)
@@ -174,7 +172,6 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            m_EnableVerboseDebug = false;
             if (m_ServerSideParent != null && m_ServerSideParent.GetComponent<NetworkObject>().IsSpawned)
             {
                 // Clean up in reverse order (also makes sure we can despawn parents before children)
@@ -328,6 +325,9 @@ namespace TestProject.RuntimeTests
                 networkTransform.InLocalSpace = !worldPositionStays;
             }
 
+            var serverSideParentNetworkObject = m_ServerSideParent.GetComponent<NetworkObject>();
+            serverSideParentNetworkObject.Spawn();
+
             // Instantiate the children
             for (int i = 0; i < k_NestedChildren; i++)
             {
@@ -348,14 +348,6 @@ namespace TestProject.RuntimeTests
                     childScale = m_ChildStartScale * childSmaller;
                     childSmaller *= childSmaller;
                 }
-            }
-
-            // Spawn in reverse order (i.e. the last child is first to spawn) to assure spawn order does
-            // not impact parenting along with each child's world and local space values.
-            // (also tests the parent child sorting for late joining players)
-            //for (int i = k_NestedChildren - 1; i >= 0; i--)
-            for (int i = 0; i < k_NestedChildren; i++)
-            {
                 var serverSideChild = m_ServerSideChildren[i];
 
                 var serverSideChildNetworkObject = serverSideChild.GetComponent<NetworkObject>();
@@ -368,7 +360,6 @@ namespace TestProject.RuntimeTests
                 VerboseDebug($"[Server] Set scale of NetworkObjectID ({serverSideChildNetworkObject.NetworkObjectId}) to ({childScaleList[i]}) and is currently {serverSideChild.transform.localScale}");
 
                 TestComponentHelper.NetworkObjectIdToIndex.Add(serverSideChildNetworkObject.NetworkObjectId, i);
-
                 Assert.IsTrue(Aproximately(m_ServerSideParent.transform.position, m_ParentStartPosition));
                 Assert.IsTrue(Aproximately(m_ServerSideParent.transform.rotation.eulerAngles, m_ParentStartRotation.eulerAngles));
                 Assert.IsTrue(Aproximately(serverSideChild.transform.position, childPositionList[i]));
@@ -376,9 +367,6 @@ namespace TestProject.RuntimeTests
                 Assert.IsTrue(Aproximately(serverSideChild.transform.localScale, childScaleList[i]), $"[Initial Scale] Server-side child scale ({serverSideChild.transform.localScale}) does not equal the expected scale ({childScaleList[i]})");
             }
 
-            // Spawn the root parent last
-            var serverSideParentNetworkObject = m_ServerSideParent.GetComponent<NetworkObject>();
-            serverSideParentNetworkObject.Spawn();
             VerboseDebug($"[{Time.realtimeSinceStartup - startTime}] Spawned parent and child objects.");
 
             // Wait for clients to spawn the NetworkObjects
@@ -409,14 +397,13 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            // parent the nested children in the reverse order in which they were spawned
             var currentParent = serverSideParentNetworkObject;
             for (int i = 0; i < k_NestedChildren; i++)
             {
                 var childNetworkObject = m_ServerSideChildren[i].GetComponent<NetworkObject>();
-                Debug.Log($"[Server Parenting][Before] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is currently {childNetworkObject.transform.localScale}");
+                VerboseDebug($"[Server Parenting][Before] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is currently {childNetworkObject.transform.localScale}");
                 Assert.True(childNetworkObject.TrySetParent(currentParent, worldPositionStays));
-                Debug.Log($"[Server Parenting][After] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is now {childNetworkObject.transform.localScale}");
+                VerboseDebug($"[Server Parenting][After] Scale of NetworkObjectID ({childNetworkObject.NetworkObjectId}) is now {childNetworkObject.transform.localScale}");
                 currentParent = childNetworkObject;
             }
 
@@ -443,9 +430,16 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-                    yield return WaitForConditionOrTimeOut(() => Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale));
-                    AssertOnTimeout($"Timed out waiting for client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
-                    //Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
+                    if (useNetworkTransform)
+                    {
+                        yield return WaitForConditionOrTimeOut(() => Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale));
+                        AssertOnTimeout($"Timed out waiting for client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) to equal the server child's scale ({serverChild.transform.localScale}) [Has NetworkTransform]");
+                    }
+                    else
+                    {
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
+                    }
+
                     // Assure we still have the same local space values when not preserving the world position
                     if (!worldPositionStays)
                     {
@@ -482,7 +476,17 @@ namespace TestProject.RuntimeTests
                     // Assure we mirror the server
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.position, serverChild.transform.position), $"[LateJoin] Client-{clientEntry.Key} child's position ({clientChildInfo.Child.transform.position}) does not equal the server child's position ({serverChild.transform.position})!");
                     Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.eulerAngles, serverChild.transform.rotation.eulerAngles), $"[LateJoin] Client-{clientEntry.Key} child's rotation ({clientChildInfo.Child.transform.rotation.eulerAngles}) does not equal the server child's rotation ({serverChild.transform.rotation.eulerAngles})!");
-                    Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"[LateJoin] Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
+
+                    if (useNetworkTransform)
+                    {
+                        yield return WaitForConditionOrTimeOut(() => Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale));
+                        AssertOnTimeout($"[Late Join] Timed out waiting for client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) to equal the server child's scale ({serverChild.transform.localScale}) [Has NetworkTransform]");
+                    }
+                    else
+                    {
+                        Assert.IsTrue(Aproximately(clientChildInfo.Child.transform.localScale, serverChild.transform.localScale), $"[LateJoin] Client-{clientEntry.Key} child's scale ({clientChildInfo.Child.transform.localScale}) does not equal the server child's scale ({serverChild.transform.localScale})");
+                    }
+
                     // Assure we still have the same local space values when not preserving the world position
                     if (!worldPositionStays)
                     {
