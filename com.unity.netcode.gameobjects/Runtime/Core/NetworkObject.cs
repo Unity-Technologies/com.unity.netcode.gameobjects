@@ -789,13 +789,18 @@ namespace Unity.Netcode
                 return false;
             }
 
+            // Handle the first in-scene placed NetworkObject parenting scenarios. Once the m_LatestParent
+            // has been set, this will not be entered into again (i.e. the later code will be invoked and
+            // users will get notifications when the parent changes).
             var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            // If we are parented under a GameObject with no NetworkObject and we are not removing the parent and there is no latest parent set,
-            // then preserve the parenting relationship. (This scenario only happens during client synchronization)
             if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
-                // If the parent is a GameObject and we are in-scene placed, then preserve that hierarchy
+
+                // If the parent is a GameObject then preserve that hierarchy
+                // Note: We only preserve the hierarchy but we don't keep track of the parenting.
+                // only if the user removes the child from the parent and the re-parents under a
+                // valid NetworkObject will we begin to track parenting.
                 if (parentNetworkObject == null)
                 {
                     return true;
@@ -808,8 +813,8 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // If we made it this far, the in-scene objects are spawning and so go ahead and
-                    // set the network parenting values using the WorldPoisitonSays default value of true
+                    // If we made it this far, go ahead and set the network parenting values
+                    // with the default WorldPoisitonSays value
                     SetNetworkParenting(parentNetworkObject.NetworkObjectId, true);
 
                     // Set the cached parent
