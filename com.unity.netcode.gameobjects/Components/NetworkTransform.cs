@@ -282,14 +282,7 @@ namespace Unity.Netcode.Components
                 {
                     // Go ahead and mark the local state dirty or not dirty as well
                     /// <see cref="TryCommitTransformToServer"/>
-                    if (HasPositionChange || HasRotAngleChange || HasScaleChange)
-                    {
-                        IsDirty = true;
-                    }
-                    else
-                    {
-                        IsDirty = false;
-                    }
+                    IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
                 }
             }
         }
@@ -1150,8 +1143,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                transform.position = pos;
-                transform.rotation = rot;
+                transform.SetPositionAndRotation(pos, rot);
             }
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
