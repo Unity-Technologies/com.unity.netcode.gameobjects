@@ -789,11 +789,34 @@ namespace Unity.Netcode
                 return false;
             }
 
+            var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
             // If we are parented under a GameObject with no NetworkObject and we are not removing the parent and there is no latest parent set,
             // then preserve the parenting relationship. (This scenario only happens during client synchronization)
-            if (transform.parent != null && transform.parent.GetComponent<NetworkObject>() == null && !m_LatestParent.HasValue && !removeParent)
+            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
-                return true;
+                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+                // If the parent is a GameObject and we are in-scene placed, then preserve that hierarchy
+                if (parentNetworkObject == null)
+                {
+                    return true;
+                }
+                else // If the parent still isn't spawned add this to the orphaned children and return false
+                if (!parentNetworkObject.IsSpawned)
+                {
+                    OrphanChildren.Add(this);
+                    return false;
+                }
+                else
+                {
+                    // If we made it this far, the in-scene objects are spawning and so go ahead and
+                    // set the network parenting values using the WorldPoisitonSays default value of true
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, true);
+
+                    // Set the cached parent
+                    m_CachedParent = parentNetworkObject.transform;
+
+                    return true;
+                }
             }
 
             // If we are removing the parent or our latest parent is not set, then remove the parent
