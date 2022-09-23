@@ -1024,6 +1024,7 @@ namespace Unity.Netcode
             {
                 public Vector3 Position;
                 public Quaternion Rotation;
+                public Vector3 Scale;
             }
 
             public TransformData Transform;
@@ -1204,7 +1205,12 @@ namespace Unity.Netcode
                     // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
                     Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
-                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation
+                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
+
+                    // We only use the lossyScale when we are parented as nested multi-generational children scales can impact
+                    // the final scale of the child NetworkObject in question. The solution is to use the lossy scale to get the
+                    // child's scale as if it wasn't parented because we set scale on the client before parenting the child.
+                    Scale = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localScale : transform.lossyScale,
                 };
             }
 
