@@ -87,6 +87,9 @@ namespace Unity.Netcode
             var networkObject = networkManager.SpawnManager.SpawnedObjects[NetworkObjectId];
             networkObject.SetNetworkParenting(LatestParent, WorldPositionStays);
             networkObject.ApplyNetworkParenting(RemoveParent);
+
+            // We set all of the transform values after parenting as they are
+            // the values of the server-side post-parenting transform values
             if (!WorldPositionStays)
             {
                 networkObject.transform.localPosition = Position;

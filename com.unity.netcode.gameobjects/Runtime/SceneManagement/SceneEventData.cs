@@ -255,12 +255,13 @@ namespace Unity.Netcode
             // as well as the order in which they will be deserialized
             if (m_NetworkManager.LogLevel == LogLevel.Developer)
             {
-                var message = "[Server-Side Client-Synchronization] NetworkObject serialization order:\n";
+                var messageBuilder = new System.Text.StringBuilder(0xFFFF);
+                messageBuilder.Append("[Server-Side Client-Synchronization] NetworkObject serialization order:");
                 foreach (var networkObject in m_NetworkObjectsSync)
                 {
-                    message += $"{networkObject.name}\n";
+                    messageBuilder.Append($"{networkObject.name}");
                 }
-                NetworkLog.LogInfo(message);
+                NetworkLog.LogInfo(messageBuilder.ToString());
             }
         }
 
