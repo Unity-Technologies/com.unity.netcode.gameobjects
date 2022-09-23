@@ -200,7 +200,7 @@ namespace TestProject.RuntimeTests
             }
 
             // De-parent
-            if(Input.GetKeyDown(KeyCode.D) && IsRootParent)
+            if (Input.GetKeyDown(KeyCode.D) && IsRootParent)
             {
                 DeparentAllChildren(WorldPositionStays);
             }
