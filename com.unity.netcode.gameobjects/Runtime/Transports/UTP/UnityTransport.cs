@@ -1,3 +1,10 @@
+// NetSim Implementation compilation boilerplate
+// All references to UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED should be defined in the same way,
+// as any discrepancies are likely to result in build failures
+#if UNITY_EDITOR || (DEVELOPMENT_BUILD && !UNITY_MP_TOOLS_NETSIM_DISABLED_IN_DEVELOP) || (!DEVELOPMENT_BUILD && UNITY_MP_TOOLS_NETSIM_ENABLED_IN_RELEASE)
+#define UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+#endif
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -299,7 +306,7 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress == string.Empty) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? Address : ServerListenAddress, Port);
         }
 
         /// <summary>
@@ -343,6 +350,9 @@ namespace Unity.Netcode.Transports.UTP
         /// - packet jitter (variances in latency, see: https://en.wikipedia.org/wiki/Jitter)
         /// - packet drop rate (packet loss)
         /// </summary>
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Obsolete("DebugSimulator is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+#endif
         public SimulatorParameters DebugSimulator = new SimulatorParameters
         {
             PacketDelayMS = 0,
@@ -358,6 +368,10 @@ namespace Unity.Netcode.Transports.UTP
             public int PacketsDropped;
             public float PacketLoss;
         };
+
+        internal static event Action<int, NetworkDriver> TransportInitialized;
+        internal static event Action<int> TransportDisposed;
+        internal NetworkDriver NetworkDriver => m_Driver;
 
         private PacketLossCache m_PacketLossCache = new PacketLossCache();
 
@@ -402,6 +416,8 @@ namespace Unity.Netcode.Transports.UTP
                 out m_UnreliableFragmentedPipeline,
                 out m_UnreliableSequencedFragmentedPipeline,
                 out m_ReliableSequencedPipeline);
+
+            TransportInitialized?.Invoke(GetInstanceID(), NetworkDriver);
         }
 
         private void DisposeInternals()
@@ -419,6 +435,8 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_SendQueue.Clear();
+
+            TransportDisposed?.Invoke(GetInstanceID());
         }
 
         private NetworkPipeline SelectSendPipeline(NetworkDelivery delivery)
@@ -652,6 +670,9 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="packetDelay">Packet delay in milliseconds.</param>
         /// <param name="packetJitter">Packet jitter in milliseconds.</param>
         /// <param name="dropRate">Packet drop percentage.</param>
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Obsolete("SetDebugSimulatorParameters is no longer supported and has no effect. Use Network Simulator from the Multiplayer Tools package.", false)]
+#endif
         public void SetDebugSimulatorParameters(int packetDelay, int packetJitter, int dropRate)
         {
             if (m_Driver.IsCreated)
@@ -1329,7 +1350,25 @@ namespace Unity.Netcode.Transports.UTP
             m_ServerClientId = 0;
         }
 
-        private void ConfigureSimulator()
+#if UTP_TRANSPORT_2_0_ABOVE
+        private void ConfigureSimulatorForUtp2()
+        {
+            // As DebugSimulator is deprecated, the 'packetDelayMs', 'packetJitterMs' and 'packetDropPercentage'
+            // parameters are set to the default and are supposed to be changed using Network Simulator tool instead.
+            m_NetworkSettings.WithSimulatorStageParameters(
+                maxPacketCount: 300, // TODO Is there any way to compute a better value?
+                maxPacketSize: NetworkParameterConstants.MTU,
+                packetDelayMs: 0,
+                packetJitterMs: 0,
+                packetDropPercentage: 0,
+                randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
+                , mode: ApplyMode.AllPackets
+            );
+
+            m_NetworkSettings.WithNetworkSimulatorParameters();
+        }
+#else
+        private void ConfigureSimulatorForUtp1()
         {
             m_NetworkSettings.WithSimulatorStageParameters(
                 maxPacketCount: 300, // TODO Is there any way to compute a better value?
@@ -1338,11 +1377,9 @@ namespace Unity.Netcode.Transports.UTP
                 packetJitterMs: DebugSimulator.PacketJitterMS,
                 packetDropPercentage: DebugSimulator.PacketDropRate,
                 randomSeed: DebugSimulatorRandomSeed ?? (uint)System.Diagnostics.Stopwatch.GetTimestamp()
-#if UTP_TRANSPORT_2_0_ABOVE
-                , mode: ApplyMode.AllPackets
-#endif
             );
         }
+#endif
 
         /// <summary>
         /// Creates the internal NetworkDriver
@@ -1357,14 +1394,14 @@ namespace Unity.Netcode.Transports.UTP
             out NetworkPipeline unreliableSequencedFragmentedPipeline,
             out NetworkPipeline reliableSequencedPipeline)
         {
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-#if !UTP_TRANSPORT_2_0_ABOVE
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7 && !UTP_TRANSPORT_2_0_ABOVE
             NetworkPipelineStageCollection.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
-#endif
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            ConfigureSimulator();
+#if UTP_TRANSPORT_2_0_ABOVE && UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+            ConfigureSimulatorForUtp2();
+#elif !UTP_TRANSPORT_2_0_ABOVE && (UNITY_EDITOR || DEVELOPMENT_BUILD)
+            ConfigureSimulatorForUtp1();
 #endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
@@ -1395,21 +1432,36 @@ namespace Unity.Netcode.Transports.UTP
             driver = NetworkDriver.Create(m_NetworkSettings);
 #endif
 
-#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
-#if UTP_TRANSPORT_2_0_ABOVE
-            driver.RegisterPipelineStage<NetworkMetricsPipelineStage>(new NetworkMetricsPipelineStage());
-#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7 && UTP_TRANSPORT_2_0_ABOVE
+            driver.RegisterPipelineStage(new NetworkMetricsPipelineStage());
 #endif
 
+#if !UTP_TRANSPORT_2_0_ABOVE
+            SetupPipelinesForUtp1(driver,
+                out unreliableFragmentedPipeline,
+                out unreliableSequencedFragmentedPipeline,
+                out reliableSequencedPipeline);
+#else
+            SetupPipelinesForUtp2(driver,
+                out unreliableFragmentedPipeline,
+                out unreliableSequencedFragmentedPipeline,
+                out reliableSequencedPipeline);
+#endif
+        }
+
+#if !UTP_TRANSPORT_2_0_ABOVE
+        private void SetupPipelinesForUtp1(NetworkDriver driver,
+            out NetworkPipeline unreliableFragmentedPipeline,
+            out NetworkPipeline unreliableSequencedFragmentedPipeline,
+            out NetworkPipeline reliableSequencedPipeline)
+        {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (DebugSimulator.PacketDelayMS > 0 || DebugSimulator.PacketDropRate > 0)
             {
                 unreliableFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
-                    typeof(SimulatorPipelineStage)
-#if !UTP_TRANSPORT_2_0_ABOVE
-                    , typeof(SimulatorPipelineStageInSend)
-#endif
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
@@ -1417,20 +1469,16 @@ namespace Unity.Netcode.Transports.UTP
                 unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
                     typeof(FragmentationPipelineStage),
                     typeof(UnreliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage)
-#if !UTP_TRANSPORT_2_0_ABOVE
-                    , typeof(SimulatorPipelineStageInSend)
-#endif
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
                 );
                 reliableSequencedPipeline = driver.CreatePipeline(
                     typeof(ReliableSequencedPipelineStage),
-                    typeof(SimulatorPipelineStage)
-#if !UTP_TRANSPORT_2_0_ABOVE
-                    , typeof(SimulatorPipelineStageInSend)
-#endif
+                    typeof(SimulatorPipelineStage),
+                    typeof(SimulatorPipelineStageInSend)
 #if MULTIPLAYER_TOOLS_1_0_0_PRE_7
                     , typeof(NetworkMetricsPipelineStage)
 #endif
@@ -1460,7 +1508,45 @@ namespace Unity.Netcode.Transports.UTP
                 );
             }
         }
+#else
+        private void SetupPipelinesForUtp2(NetworkDriver driver,
+            out NetworkPipeline unreliableFragmentedPipeline,
+            out NetworkPipeline unreliableSequencedFragmentedPipeline,
+            out NetworkPipeline reliableSequencedPipeline)
+        {
 
+            unreliableFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
+
+            unreliableSequencedFragmentedPipeline = driver.CreatePipeline(
+                typeof(FragmentationPipelineStage),
+                typeof(UnreliableSequencedPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
+
+            reliableSequencedPipeline = driver.CreatePipeline(
+                typeof(ReliableSequencedPipelineStage)
+#if UNITY_MP_TOOLS_NETSIM_IMPLEMENTATION_ENABLED
+                , typeof(SimulatorPipelineStage)
+#endif
+#if MULTIPLAYER_TOOLS_1_0_0_PRE_7
+                , typeof(NetworkMetricsPipelineStage)
+#endif
+            );
+        }
+#endif
         // -------------- Utility Types -------------------------------------------------------------------------------
 
 

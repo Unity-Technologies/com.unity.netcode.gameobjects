@@ -263,8 +263,7 @@ namespace Unity.Netcode.Editor
 
             // Now get the root parent transform to the current GameObject (or itself)
             var rootTransform = GetRootParentTransform(gameObject.transform);
-            var networkManager = rootTransform.GetComponent<NetworkManager>();
-            if (networkManager == null)
+            if (!rootTransform.TryGetComponent<NetworkManager>(out var networkManager))
             {
                 networkManager = rootTransform.GetComponentInChildren<NetworkManager>();
             }
@@ -299,8 +298,7 @@ namespace Unity.Netcode.Editor
 
             // Otherwise, check to see if there is any NetworkObject from the root GameObject down to all children.
             // If not, notify the user that NetworkBehaviours require that the relative GameObject has a NetworkObject component.
-            var networkObject = rootTransform.GetComponent<NetworkObject>();
-            if (networkObject == null)
+            if (!rootTransform.TryGetComponent<NetworkObject>(out var networkObject))
             {
                 networkObject = rootTransform.GetComponentInChildren<NetworkObject>();
 
