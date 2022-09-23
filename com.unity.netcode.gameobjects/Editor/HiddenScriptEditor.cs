@@ -1,5 +1,4 @@
 using Unity.Netcode.Components;
-using Unity.Netcode.Transports.UNET;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 
@@ -21,14 +20,16 @@ namespace Unity.Netcode.Editor
         }
     }
 
+#if UNITY_UNET_PRESENT
     /// <summary>
     /// Internal use. Hides the script field for UNetTransport.
     /// </summary>
-    [CustomEditor(typeof(UNetTransport), true)]
+    [CustomEditor(typeof(Unity.Netcode.Transports.UNET), true)]
     public class UNetTransportEditor : HiddenScriptEditor
     {
 
     }
+#endif
 
     /// <summary>
     /// Internal use. Hides the script field for UnityTransport.
