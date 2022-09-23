@@ -323,18 +323,13 @@ namespace Unity.Netcode
         internal NetworkObject CreateLocalNetworkObject(NetworkObject.SceneObject sceneObject)
         {
             NetworkObject networkObject = null;
-            NetworkObject parentNetworkObject = null;
             var globalObjectIdHash = sceneObject.Header.Hash;
             var position = sceneObject.Header.HasTransform ? sceneObject.Transform.Position : default;
             var rotation = sceneObject.Header.HasTransform ? sceneObject.Transform.Rotation : default;
+            var scale = sceneObject.Header.HasTransform ? sceneObject.Transform.Scale : default;
             var parentNetworkId = sceneObject.Header.HasParent ? sceneObject.ParentObjectId : default;
             var worldPositionStays = sceneObject.Header.HasParent ? sceneObject.WorldPositionStays : true;
             var isSpawnedByPrefabHandler = false;
-
-            if (sceneObject.Header.HasParent)
-            {
-                SpawnedObjects.TryGetValue(parentNetworkId, out parentNetworkObject);
-            }
 
             // If scene management is disabled or the NetworkObject was dynamically spawned
             if (!NetworkManager.NetworkConfig.EnableSceneManagement || !sceneObject.Header.IsSceneObject)
@@ -412,19 +407,23 @@ namespace Unity.Netcode
                         networkObject.transform.localPosition = position;
                         networkObject.transform.localRotation = rotation;
                     }
+
+                    // Since players are created uniquely we don't apply scale because
+                    // the ConnectionApprovalResponse does not currently provide the
+                    // ability to specify scale. So, we just use the default scale of
+                    // the network prefab used to represent the player.
+                    // Note: not doing this would set the player's scale to zero since
+                    // that is the default value of Vector3.
+                    if (!sceneObject.Header.IsPlayerObject)
+                    {
+                        networkObject.transform.localScale = scale;
+                    }
                 }
 
                 if (sceneObject.Header.HasParent)
                 {
                     // Go ahead and set network parenting properties
                     networkObject.SetNetworkParenting(parentNetworkId, worldPositionStays);
-
-                    // Only if we have a NetworkObject as a parent do we apply parenting.
-                    // Non-NetworkObject parents are preserved and parenting here is skipped.
-                    if (parentNetworkObject != null)
-                    {
-                        networkObject.TrySetParent(parentNetworkObject.transform, worldPositionStays);
-                    }
                 }
 
                 // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
@@ -554,7 +553,6 @@ namespace Unity.Netcode
                 }
             }
 
-            networkObject.SetCachedParent(networkObject.transform.parent);
             networkObject.ApplyNetworkParenting();
             NetworkObject.CheckOrphanChildren();
 
