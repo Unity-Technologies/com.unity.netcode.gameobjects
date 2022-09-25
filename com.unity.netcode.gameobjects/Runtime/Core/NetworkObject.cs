@@ -1248,6 +1248,11 @@ namespace Unity.Netcode
                     NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
                 }
                 ChildNetworkBehaviours.Remove(networkBehaviour);
+                for(ushort i = 0; i < ChildNetworkBehaviours.Count; i++)
+                {
+                    var childBehaviour = ChildNetworkBehaviours[i];
+                    childBehaviour.NetworkBehaviourId = childBehaviour.NetworkBehaviourIdCache = i;
+                }
             }
         }
     }
