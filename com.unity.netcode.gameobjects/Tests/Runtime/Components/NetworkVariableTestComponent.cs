@@ -344,7 +344,6 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
-                Debug.Log($"{NetworkVariableBaseHelper.VarChangedCount} of {NetworkVariableBaseHelper.InstanceCount} values updated.");
                 return false;
             }
         }
