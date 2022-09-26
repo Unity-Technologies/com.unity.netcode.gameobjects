@@ -1,7 +1,5 @@
 using UnityEngine;
 using System;
-using System.Runtime.CompilerServices;
-using Unity.Collections.LowLevel.Unsafe;
 
 namespace Unity.Netcode
 {
@@ -10,7 +8,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
     [Serializable]
-    public class NetworkVariable<T> : NetworkVariableBase where T : unmanaged
+    public class NetworkVariable<T> : NetworkVariableBase
     {
         /// <summary>
         /// Delegate type for value changed event
@@ -52,7 +50,7 @@ namespace Unity.Netcode
             set
             {
                 // Compare bitwise
-                if (ValueEquals(ref m_InternalValue, ref value))
+                if (NetworkVariableSerialization<T>.Equals(ref m_InternalValue, ref value))
                 {
                     return;
                 }
@@ -64,20 +62,6 @@ namespace Unity.Netcode
 
                 Set(value);
             }
-        }
-
-        // Compares two values of the same unmanaged type by underlying memory
-        // Ignoring any overridden value checks
-        // Size is fixed
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static unsafe bool ValueEquals(ref T a, ref T b)
-        {
-            // get unmanaged pointers
-            var aptr = UnsafeUtility.AddressOf(ref a);
-            var bptr = UnsafeUtility.AddressOf(ref b);
-
-            // compare addresses
-            return UnsafeUtility.MemCmp(aptr, bptr, sizeof(T)) == 0;
         }
 
         /// <summary>
@@ -115,7 +99,7 @@ namespace Unity.Netcode
             // would be stored in different fields
 
             T previousValue = m_InternalValue;
-            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
 
             if (keepDirtyDelta)
             {
@@ -128,7 +112,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
-            NetworkVariableSerialization<T>.Read(reader, out m_InternalValue);
+            NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
         }
 
         /// <inheritdoc />

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 
 namespace Unity.Netcode
@@ -18,7 +20,7 @@ namespace Unity.Netcode
         // Taking T as an in parameter like we do in other places would require making a copy
         // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
-        public void Read(FastBufferReader reader, out T value);
+        public void Read(FastBufferReader reader, ref T value);
     }
 
     /// <summary>
@@ -29,15 +31,31 @@ namespace Unity.Netcode
     /// the specific constraints that the various generic WriteValue calls require.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class UnmanagedTypeSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    internal class UnmanagedTypeSerializer<T> : INetworkVariableSerializer<T>
     {
-        public void Write(FastBufferWriter writer, ref T value)
+        internal delegate void WriteValueDelegate(FastBufferWriter writer, ref T value);
+        internal delegate void ReadValueDelegate(FastBufferReader reader, ref T value);
+
+        internal WriteValueDelegate WriteValue;
+        internal ReadValueDelegate ReadValue;
+
+        internal static void DefaultWrite<TValueType>(FastBufferWriter writer, ref TValueType value) where TValueType : unmanaged
         {
             writer.WriteUnmanagedSafe(value);
         }
-        public void Read(FastBufferReader reader, out T value)
+
+        internal static void DefaultRead<TValueType>(FastBufferReader reader, ref TValueType value) where TValueType : unmanaged
         {
             reader.ReadUnmanagedSafe(out value);
+        }
+
+        public void Write(FastBufferWriter writer, ref T value)
+        {
+            WriteValue(writer, ref value);
+        }
+        public void Read(FastBufferReader reader, ref T value)
+        {
+            ReadValue(reader, ref value);
         }
     }
 
@@ -53,7 +71,7 @@ namespace Unity.Netcode
     /// aren't known to actually contain those methods.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class FixedStringSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    internal class FixedStringSerializer<T> : INetworkVariableSerializer<T>
     {
         internal delegate int GetLengthDelegate(ref T value);
         internal delegate void SetLengthDelegate(ref T value, int length);
@@ -70,9 +88,8 @@ namespace Unity.Netcode
             writer.WriteUnmanagedSafe(length);
             writer.WriteBytesSafe(data, length);
         }
-        public unsafe void Read(FastBufferReader reader, out T value)
+        public unsafe void Read(FastBufferReader reader, ref T value)
         {
-            value = new T();
             reader.ReadValueSafe(out int length);
             SetLength(ref value, length);
             reader.ReadBytesSafe(GetUnsafePtr(ref value), length);
@@ -91,8 +108,35 @@ namespace Unity.Netcode
     /// aren't known to actually contain those methods.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class NetworkSerializableSerializer<T> : INetworkVariableSerializer<T> where T : unmanaged
+    internal class NetworkSerializableSerializer<T> : INetworkVariableSerializer<T>
     {
+        internal static void WriteInternalObject<TValueType>(ref TValueType value, BufferSerializer<BufferSerializerWriter> serializer) where TValueType : class, INetworkSerializable
+        {
+            bool isNull = (value == null);
+            serializer.SerializeValue(ref isNull);
+            if (!isNull)
+            {
+                value.NetworkSerialize(serializer);
+            }
+        }
+        internal static void ReadInternalObject<TValueType>(ref TValueType value, BufferSerializer<BufferSerializerReader> serializer) where TValueType : class, INetworkSerializable, new()
+        {
+            bool isNull = false;
+            serializer.SerializeValue(ref isNull);
+            if (isNull)
+            {
+                value = null;
+            }
+            else
+            {
+                if (value == null)
+                {
+                    value = new TValueType();
+                }
+                value.NetworkSerialize(serializer);
+            }
+        }
+
         internal delegate void WriteValueDelegate(ref T value, BufferSerializer<BufferSerializerWriter> serializer);
         internal delegate void ReadValueDelegate(ref T value, BufferSerializer<BufferSerializerReader> serializer);
 
@@ -103,9 +147,8 @@ namespace Unity.Netcode
             var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
             WriteValue(ref value, bufferSerializer);
         }
-        public void Read(FastBufferReader reader, out T value)
+        public void Read(FastBufferReader reader, ref T value)
         {
-            value = new T();
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             ReadValue(ref value, bufferSerializer);
         }
@@ -164,7 +207,7 @@ namespace Unity.Netcode
             }
             UserNetworkVariableSerialization<T>.WriteValue(writer, value);
         }
-        public void Read(FastBufferReader reader, out T value)
+        public void Read(FastBufferReader reader, ref T value)
         {
             if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null)
             {
@@ -212,33 +255,47 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">The type the associated NetworkVariable is templated on</typeparam>
     [Serializable]
-    public static class NetworkVariableSerialization<T> where T : unmanaged
+    public static class NetworkVariableSerialization<T>
     {
         private static INetworkVariableSerializer<T> s_Serializer = GetSerializer();
 
+        private delegate bool EqualsDelegate(ref T a, ref T b);
+        private static EqualsDelegate s_Equals = GetEqualityChecker();
+
         private static INetworkVariableSerializer<T> GetSerializer()
         {
-            if (NetworkVariableSerializationTypes.BaseSupportedTypes.Contains(typeof(T)))
+            if (NetworkVariableSerializationTypes.BaseSupportedTypes.Contains(typeof(T)) || typeof(INetworkSerializeByMemcpy).IsAssignableFrom(typeof(T)) || typeof(Enum).IsAssignableFrom(typeof(T)))
             {
-                return new UnmanagedTypeSerializer<T>();
-            }
-            if (typeof(INetworkSerializeByMemcpy).IsAssignableFrom(typeof(T)))
-            {
-                return new UnmanagedTypeSerializer<T>();
-            }
-            if (typeof(Enum).IsAssignableFrom(typeof(T)))
-            {
-                return new UnmanagedTypeSerializer<T>();
+
+                var writeMethod = (UnmanagedTypeSerializer<T>.WriteValueDelegate)Delegate.CreateDelegate(typeof(UnmanagedTypeSerializer<T>.WriteValueDelegate), null, typeof(UnmanagedTypeSerializer<T>).GetMethod(nameof(UnmanagedTypeSerializer<T>.DefaultWrite), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+                var readMethod = (UnmanagedTypeSerializer<T>.ReadValueDelegate)Delegate.CreateDelegate(typeof(UnmanagedTypeSerializer<T>.ReadValueDelegate), null, typeof(UnmanagedTypeSerializer<T>).GetMethod(nameof(UnmanagedTypeSerializer<T>.DefaultRead), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+                return new UnmanagedTypeSerializer<T> { WriteValue = writeMethod, ReadValue = readMethod };
             }
 
             if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
             {
-                // Obtains "Open Instance Delegates" for the type's NetworkSerialize() methods -
-                // one for an instance of the generic method taking BufferSerializerWriter as T,
-                // one for an instance of the generic method taking BufferSerializerReader as T
-                var writeMethod = (NetworkSerializableSerializer<T>.WriteValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.WriteValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerWriter)));
-                var readMethod = (NetworkSerializableSerializer<T>.ReadValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.ReadValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerReader)));
-                return new NetworkSerializableSerializer<T> { WriteValue = writeMethod, ReadValue = readMethod };
+                if (typeof(T).IsValueType)
+                {
+                    // Obtains "Open Instance Delegates" for the type's NetworkSerialize() methods -
+                    // one for an instance of the generic method taking BufferSerializerWriter as T,
+                    // one for an instance of the generic method taking BufferSerializerReader as T
+                    var writeMethod = (NetworkSerializableSerializer<T>.WriteValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.WriteValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerWriter)));
+                    var readMethod = (NetworkSerializableSerializer<T>.ReadValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.ReadValueDelegate), null, typeof(T).GetMethod(nameof(INetworkSerializable.NetworkSerialize)).MakeGenericMethod(typeof(BufferSerializerReader)));
+                    return new NetworkSerializableSerializer<T> { WriteValue = writeMethod, ReadValue = readMethod };
+
+                }
+                else
+                {
+                    if (typeof(T).GetConstructor(new Type[] { }) == null)
+                    {
+                        throw new Exception($"{typeof(T).Name}: Managed types must satisfy new() constraint to be used with {nameof(NetworkVariable<T>)}");
+                    }
+                    var genericWriter = typeof(NetworkSerializableSerializer<T>).GetMethod(nameof(NetworkSerializableSerializer<T>.WriteInternalObject), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T));
+                    var writeMethod = (NetworkSerializableSerializer<T>.WriteValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.WriteValueDelegate), null, genericWriter);
+                    var genericReader = typeof(NetworkSerializableSerializer<T>).GetMethod(nameof(NetworkSerializableSerializer<T>.ReadInternalObject), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T));
+                    var readMethod = (NetworkSerializableSerializer<T>.ReadValueDelegate)Delegate.CreateDelegate(typeof(NetworkSerializableSerializer<T>.ReadValueDelegate), null, genericReader);
+                    return new NetworkSerializableSerializer<T> { WriteValue = writeMethod, ReadValue = readMethod };
+                }
             }
 
             if (typeof(IUTF8Bytes).IsAssignableFrom(typeof(T)) && typeof(INativeList<byte>).IsAssignableFrom(typeof(T)))
@@ -254,14 +311,77 @@ namespace Unity.Netcode
             return new FallbackSerializer<T>();
         }
 
+        private static EqualsDelegate GetEqualityChecker()
+        {
+            if (typeof(IEquatable<T>).IsAssignableFrom(typeof(T)))
+            {
+                if (typeof(T).IsValueType)
+                {
+                    return (EqualsDelegate)Delegate.CreateDelegate(typeof(EqualsDelegate), null, typeof(NetworkVariableSerialization<T>).GetMethod(nameof(NetworkVariableSerialization<T>.EqualityEquals), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+                }
+                return (EqualsDelegate)Delegate.CreateDelegate(typeof(EqualsDelegate), null, typeof(NetworkVariableSerialization<T>).GetMethod(nameof(NetworkVariableSerialization<T>.EqualityEqualsObject), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+            }
+            if (typeof(T).IsValueType)
+            {
+                return (EqualsDelegate)Delegate.CreateDelegate(typeof(EqualsDelegate), null, typeof(NetworkVariableSerialization<T>).GetMethod(nameof(NetworkVariableSerialization<T>.ValueEquals), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+            }
+            return (EqualsDelegate)Delegate.CreateDelegate(typeof(EqualsDelegate), null, typeof(NetworkVariableSerialization<T>).GetMethod(nameof(NetworkVariableSerialization<T>.ClassEquals), BindingFlags.Static | BindingFlags.NonPublic).MakeGenericMethod(typeof(T)));
+        }
+
+        // Compares two values of the same unmanaged type by underlying memory
+        // Ignoring any overridden value checks
+        // Size is fixed
+        private static unsafe bool ValueEquals<TValueType>(ref TValueType a, ref TValueType b) where TValueType : unmanaged
+        {
+            // get unmanaged pointers
+            var aptr = UnsafeUtility.AddressOf(ref a);
+            var bptr = UnsafeUtility.AddressOf(ref b);
+
+            // compare addresses
+            return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType)) == 0;
+        }
+
+        private static bool EqualityEqualsObject<TValueType>(ref TValueType a, ref TValueType b) where TValueType : IEquatable<TValueType>
+        {
+            if (a == null)
+            {
+                return b == null;
+            }
+
+            if (b == null)
+            {
+                return false;
+            }
+
+            return a.Equals(b);
+        }
+
+        private static bool EqualityEquals<TValueType>(ref TValueType a, ref TValueType b) where TValueType : IEquatable<TValueType>
+        {
+            return a.Equals(b);
+        }
+
+        private static bool ClassEquals<TValueType>(ref TValueType a, ref TValueType b) where TValueType : class
+        {
+            return a == b;
+        }
+
+        // Compares two values of the same unmanaged type by underlying memory
+        // Ignoring any overridden value checks
+        // Size is fixed
+        internal static bool Equals(ref T a, ref T b)
+        {
+            return s_Equals(ref a, ref b);
+        }
+
         internal static void Write(FastBufferWriter writer, ref T value)
         {
             s_Serializer.Write(writer, ref value);
         }
 
-        internal static void Read(FastBufferReader reader, out T value)
+        internal static void Read(FastBufferReader reader, ref T value)
         {
-            s_Serializer.Read(reader, out value);
+            s_Serializer.Read(reader, ref value);
         }
     }
 }

@@ -147,7 +147,8 @@ namespace Unity.Netcode
             reader.ReadValueSafe(out ushort count);
             for (int i = 0; i < count; i++)
             {
-                NetworkVariableSerialization<T>.Read(reader, out T value);
+                var value = new T();
+                NetworkVariableSerialization<T>.Read(reader, ref value);
                 m_List.Add(value);
             }
         }
@@ -163,7 +164,8 @@ namespace Unity.Netcode
                 {
                     case NetworkListEvent<T>.EventType.Add:
                         {
-                            NetworkVariableSerialization<T>.Read(reader, out T value);
+                            var value = new T();
+                            NetworkVariableSerialization<T>.Read(reader, ref value);
                             m_List.Add(value);
 
                             if (OnListChanged != null)
@@ -191,7 +193,8 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Insert:
                         {
                             reader.ReadValueSafe(out int index);
-                            NetworkVariableSerialization<T>.Read(reader, out T value);
+                            var value = new T();
+                            NetworkVariableSerialization<T>.Read(reader, ref value);
 
                             if (index < m_List.Length)
                             {
@@ -227,7 +230,8 @@ namespace Unity.Netcode
                         break;
                     case NetworkListEvent<T>.EventType.Remove:
                         {
-                            NetworkVariableSerialization<T>.Read(reader, out T value);
+                            var value = new T();
+                            NetworkVariableSerialization<T>.Read(reader, ref value);
                             int index = m_List.IndexOf(value);
                             if (index == -1)
                             {
@@ -289,7 +293,8 @@ namespace Unity.Netcode
                     case NetworkListEvent<T>.EventType.Value:
                         {
                             reader.ReadValueSafe(out int index);
-                            NetworkVariableSerialization<T>.Read(reader, out T value);
+                            var value = new T();
+                            NetworkVariableSerialization<T>.Read(reader, ref value);
                             if (index >= m_List.Length)
                             {
                                 throw new Exception("Shouldn't be here, index is higher than list length");

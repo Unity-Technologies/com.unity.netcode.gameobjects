@@ -462,6 +462,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Read an INetworkSerializable in-place, without constructing a new one
+        /// Note that this will NOT check for null before calling NetworkSerialize
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializableInPlace<T>(ref T value) where T : INetworkSerializable
+        {
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(this));
+            value.NetworkSerialize(bufferSerializer);
+        }
+
+        /// <summary>
         /// Reads a string
         /// NOTE: ALLOCATES
         /// </summary>

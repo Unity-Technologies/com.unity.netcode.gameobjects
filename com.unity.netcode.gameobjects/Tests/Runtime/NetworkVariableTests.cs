@@ -370,6 +370,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
+        public readonly NetworkVariable<ManagedNetworkSerializableType> TheClass = new NetworkVariable<ManagedNetworkSerializableType>();
         public readonly NetworkList<TestStruct> TheListOfStructs = new NetworkList<TestStruct>();
 
         public bool ListDelegateTriggered;
@@ -517,6 +518,7 @@ namespace Unity.Netcode.RuntimeTests
             networkVariableTestComponent.EnableTesting = false;
 
             Assert.IsTrue(networkVariableTestComponent.DidAllValuesChange());
+            networkVariableTestComponent.AssertAllValuesAreCorrect();
 
             // Disable this once we are done.
             networkVariableTestComponent.gameObject.SetActive(false);
@@ -690,6 +692,31 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        public IEnumerator TestNetworkVariableClass([Values(true, false)] bool useHost)
+        {
+            yield return InitializeServerAndClients(useHost);
+
+            bool VerifyClass()
+            {
+                return m_Player1OnClient1.TheClass.Value != null && m_Player1OnClient1.TheClass.Value.Equals(new ManagedNetworkSerializableType
+                {
+                    Str = "Test String",
+                    Ints = new[] { 0, 1, 2, 3, 4, 5 }
+                });
+            }
+
+            m_Player1OnServer.TheClass.Value = new ManagedNetworkSerializableType
+            {
+                Str = "Test String",
+                Ints = new[] { 0, 1, 2, 3, 4, 5 }
+            };
+            m_Player1OnServer.TheClass.SetDirty(true);
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            yield return WaitForConditionOrTimeOut(VerifyClass);
+        }
+
+        [UnityTest]
         public IEnumerator TestNetworkVariableStruct([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
@@ -725,7 +752,25 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestINetworkSerializableCallsNetworkSerialize([Values(true, false)] bool useHost)
+        public IEnumerator TestINetworkSerializableClassCallsNetworkSerialize([Values(true, false)] bool useHost)
+        {
+            yield return InitializeServerAndClients(useHost);
+            ManagedNetworkSerializableType.NetworkSerializeCalledOnWrite = false;
+            ManagedNetworkSerializableType.NetworkSerializeCalledOnRead = false;
+            m_Player1OnServer.TheClass.Value = new ManagedNetworkSerializableType
+            {
+                Str = "Test String",
+                Ints = new[] { 0, 1, 2, 3, 4, 5 }
+            };
+
+            static bool VerifyCallback() => ManagedNetworkSerializableType.NetworkSerializeCalledOnWrite && ManagedNetworkSerializableType.NetworkSerializeCalledOnRead;
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            yield return WaitForConditionOrTimeOut(VerifyCallback);
+        }
+
+        [UnityTest]
+        public IEnumerator TestINetworkSerializableStructCallsNetworkSerialize([Values(true, false)] bool useHost)
         {
             yield return InitializeServerAndClients(useHost);
             TestStruct.NetworkSerializeCalledOnWrite = false;
@@ -772,6 +817,181 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail();
                 }
             }
+        }
+
+        [Test]
+        public void TestUnsupportedManagedTypesThrowExceptions()
+        {
+            var variable = new NetworkVariable<string>();
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            // Just making sure these are null, just in case.
+            UserNetworkVariableSerialization<string>.ReadValue = null;
+            UserNetworkVariableSerialization<string>.WriteValue = null;
+            Assert.Throws<ArgumentException>(() =>
+            {
+                variable.WriteField(writer);
+            });
+            Assert.Throws<ArgumentException>(() =>
+            {
+                variable.ReadField(reader);
+            });
+        }
+
+        [Test]
+        public void TestUnsupportedManagedTypesWithUserSerializationDoNotThrowExceptions()
+        {
+            var variable = new NetworkVariable<string>();
+            UserNetworkVariableSerialization<string>.ReadValue = (FastBufferReader reader, out string value) =>
+            {
+                reader.ReadValueSafe(out value);
+            };
+            UserNetworkVariableSerialization<string>.WriteValue = (FastBufferWriter writer, in string value) =>
+            {
+                writer.WriteValueSafe(value);
+            };
+            try
+            {
+                using var writer = new FastBufferWriter(1024, Allocator.Temp);
+                variable.Value = "012345";
+                variable.WriteField(writer);
+                variable.Value = "";
+
+                using var reader = new FastBufferReader(writer, Allocator.None);
+                variable.ReadField(reader);
+                Assert.AreEqual("012345", variable.Value);
+            }
+            finally
+            {
+                UserNetworkVariableSerialization<string>.ReadValue = null;
+                UserNetworkVariableSerialization<string>.WriteValue = null;
+            }
+        }
+
+        [Test]
+        public void TestUnsupportedUnmanagedTypesThrowExceptions()
+        {
+            var variable = new NetworkVariable<Guid>();
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            // Just making sure these are null, just in case.
+            UserNetworkVariableSerialization<Guid>.ReadValue = null;
+            UserNetworkVariableSerialization<Guid>.WriteValue = null;
+            Assert.Throws<ArgumentException>(() =>
+            {
+                variable.WriteField(writer);
+            });
+            Assert.Throws<ArgumentException>(() =>
+            {
+                variable.ReadField(reader);
+            });
+        }
+
+        [Test]
+        public void TestUnsupportedUnmanagedTypesWithUserSerializationDoNotThrowExceptions()
+        {
+            var variable = new NetworkVariable<Guid>();
+            UserNetworkVariableSerialization<Guid>.ReadValue = (FastBufferReader reader, out Guid value) =>
+            {
+                var tmpValue = new ForceNetworkSerializeByMemcpy<Guid>();
+                reader.ReadValueSafe(out tmpValue);
+                value = tmpValue.Value;
+            };
+            UserNetworkVariableSerialization<Guid>.WriteValue = (FastBufferWriter writer, in Guid value) =>
+            {
+                var tmpValue = new ForceNetworkSerializeByMemcpy<Guid>(value);
+                writer.WriteValueSafe(tmpValue);
+            };
+            try
+            {
+                using var writer = new FastBufferWriter(1024, Allocator.Temp);
+                var guid = Guid.NewGuid();
+                variable.Value = guid;
+                variable.WriteField(writer);
+                variable.Value = Guid.Empty;
+
+                using var reader = new FastBufferReader(writer, Allocator.None);
+                variable.ReadField(reader);
+                Assert.AreEqual(guid, variable.Value);
+            }
+            finally
+            {
+                UserNetworkVariableSerialization<Guid>.ReadValue = null;
+                UserNetworkVariableSerialization<Guid>.WriteValue = null;
+            }
+        }
+
+        [Test]
+        public void TestManagedINetworkSerializableNetworkVariablesDeserializeInPlace()
+        {
+            var variable = new NetworkVariable<ManagedNetworkSerializableType>();
+            variable.Value = new ManagedNetworkSerializableType
+            {
+                InMemoryValue = 1,
+                Ints = new[] { 2, 3, 4 },
+                Str = "five"
+            };
+
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            variable.WriteField(writer);
+            Assert.AreEqual(1, variable.Value.InMemoryValue);
+            Assert.AreEqual(new[] { 2, 3, 4 }, variable.Value.Ints);
+            Assert.AreEqual("five", variable.Value.Str);
+            variable.Value = new ManagedNetworkSerializableType
+            {
+                InMemoryValue = 10,
+                Ints = new[] { 20, 30, 40, 50 },
+                Str = "sixty"
+            };
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            variable.ReadField(reader);
+            Assert.AreEqual(10, variable.Value.InMemoryValue, "In-memory value was not the same - in-place deserialization should not change this");
+            Assert.AreEqual(new[] { 2, 3, 4 }, variable.Value.Ints, "Ints were not correctly deserialized");
+            Assert.AreEqual("five", variable.Value.Str, "Str was not correctly deserialized");
+        }
+
+        [Test]
+        public void TestUnmnagedINetworkSerializableNetworkVariablesDeserializeInPlace()
+        {
+            var variable = new NetworkVariable<UnmanagedNetworkSerializableType>();
+            variable.Value = new UnmanagedNetworkSerializableType
+            {
+                InMemoryValue = 1,
+                Ints = new NativeList<int>(Allocator.Temp), // will be {2, 3, 4}
+                Str = "five"
+            };
+            variable.Value.Ints.Add(2);
+            variable.Value.Ints.Add(3);
+            variable.Value.Ints.Add(4);
+
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            variable.WriteField(writer);
+            Assert.AreEqual(1, variable.Value.InMemoryValue);
+            Assert.AreEqual(3, variable.Value.Ints.Length);
+            Assert.AreEqual(2, variable.Value.Ints[0]);
+            Assert.AreEqual(3, variable.Value.Ints[1]);
+            Assert.AreEqual(4, variable.Value.Ints[2]);
+            Assert.AreEqual("five", variable.Value.Str);
+            variable.Value = new UnmanagedNetworkSerializableType
+            {
+                InMemoryValue = 10,
+                Ints = new NativeList<int>(Allocator.Temp), // will be { 20, 30, 40, 50 },
+                Str = "sixty"
+            };
+            variable.Value.Ints.Add(20);
+            variable.Value.Ints.Add(30);
+            variable.Value.Ints.Add(40);
+            variable.Value.Ints.Add(50);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            variable.ReadField(reader);
+            Assert.AreEqual(10, variable.Value.InMemoryValue, "In-memory value was not the same - in-place deserialization should not change this");
+            Assert.AreEqual(3, variable.Value.Ints.Length, "Ints were not correctly deserialized");
+            Assert.AreEqual(2, variable.Value.Ints[0], "Ints were not correctly deserialized");
+            Assert.AreEqual(3, variable.Value.Ints[1], "Ints were not correctly deserialized");
+            Assert.AreEqual(4, variable.Value.Ints[2], "Ints were not correctly deserialized");
+            Assert.AreEqual("five", variable.Value.Str, "Str was not correctly deserialized");
         }
         #endregion
 
