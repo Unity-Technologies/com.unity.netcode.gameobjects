@@ -95,7 +95,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Str, Ints);
+            return 0;
         }
     }
     public struct UnmanagedNetworkSerializableType : INetworkSerializable, IEquatable<ManagedNetworkSerializableType>
@@ -175,7 +175,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Str, Ints);
+            return 0;
         }
     }
     /// <summary>
