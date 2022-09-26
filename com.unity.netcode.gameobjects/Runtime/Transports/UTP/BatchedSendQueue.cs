@@ -18,6 +18,10 @@ namespace Unity.Netcode.Transports.UTP
     /// </remarks>
     internal struct BatchedSendQueue : IDisposable
     {
+        // Note that we're using NativeList basically like a growable NativeArray, where the length
+        // of the list is the capacity of our array. (We can't use the capacity of the list as our
+        // queue capacity because NativeList may elect to set it higher than what we'd set it to
+        // with SetCapacity, which breaks the logic of our code.)
         private NativeList<byte> m_Data;
         private NativeArray<int> m_HeadTailIndices;
         private int m_MaximumCapacity;
@@ -31,9 +35,6 @@ namespace Unity.Netcode.Transports.UTP
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;
         private const int k_TailInternalIndex = 1;
-
-        // Only used for testing purposes.
-        internal int BackingListLength => m_Data.Length;
 
         /// <summary>Index of the first byte of the oldest data in the queue.</summary>
         private int HeadIndex
@@ -50,6 +51,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         public int Length => TailIndex - HeadIndex;
+        public int Capacity => m_Data.Length;
         public bool IsEmpty => HeadIndex == TailIndex;
         public bool IsCreated => m_Data.IsCreated;
 
@@ -104,7 +106,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             unsafe
             {
-                var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, m_Data.Length - TailIndex);
+                var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, Capacity - TailIndex);
 
                 writer.WriteInt(data.Count);
 
@@ -131,7 +133,7 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             // Check if there's enough room after the current tail index.
-            if (m_Data.Length - TailIndex >= sizeof(int) + message.Count)
+            if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
                 AppendDataAtTail(message);
                 return true;
@@ -153,28 +155,28 @@ namespace Unity.Netcode.Transports.UTP
             // If there's enough space left at the end for the message, now is a good time to trim
             // the capacity of m_Data if it got very large. We define "very large" here as having
             // more than 75% of m_Data unused after adding the new message.
-            if (m_Data.Length - TailIndex >= sizeof(int) + message.Count)
+            if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
                 AppendDataAtTail(message);
 
-                while (TailIndex < m_Data.Length / 4 && m_Data.Length > m_MinimumCapacity)
+                while (TailIndex < Capacity / 4 && Capacity > m_MinimumCapacity)
                 {
-                    m_Data.ResizeUninitialized(m_Data.Length / 2);
+                    m_Data.ResizeUninitialized(Capacity / 2);
                 }
 
                 return true;
             }
 
             // If we get here we need to grow m_Data until the data fits (or it's too large).
-            while (m_Data.Length - TailIndex < sizeof(int) + message.Count)
+            while (Capacity - TailIndex < sizeof(int) + message.Count)
             {
                 // Can't grow m_Data anymore. Message simply won't fit.
-                if (m_Data.Length * 2 > m_MaximumCapacity)
+                if (Capacity * 2 > m_MaximumCapacity)
                 {
                     return false;
                 }
 
-                m_Data.ResizeUninitialized(m_Data.Length * 2);
+                m_Data.ResizeUninitialized(Capacity * 2);
             }
 
             // If we get here we know there's now enough room for the message.
