@@ -1292,9 +1292,9 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             var succeeded = ClientBindAndConnect();
-            if (!succeeded)
+            if (!succeeded && m_Driver.IsCreated)
             {
-                Shutdown();
+                m_Driver.Dispose();
             }
             return succeeded;
         }
@@ -1319,16 +1319,16 @@ namespace Unity.Netcode.Transports.UTP
             {
                 case ProtocolType.UnityTransport:
                     succeeded = ServerBindAndListen(ConnectionData.ListenEndPoint);
-                    if (!succeeded)
+                    if (!succeeded && m_Driver.IsCreated)
                     {
-                        Shutdown();
+                        m_Driver.Dispose();
                     }
                     return succeeded;
                 case ProtocolType.RelayUnityTransport:
                     succeeded = StartRelayServer();
-                    if (!succeeded)
+                    if (!succeeded && m_Driver.IsCreated)
                     {
-                        Shutdown();
+                        m_Driver.Dispose();
                     }
                     return succeeded;
                 default:
