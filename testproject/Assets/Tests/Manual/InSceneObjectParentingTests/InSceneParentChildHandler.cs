@@ -1,14 +1,16 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using TestProject.ManualTests;
 using Random = UnityEngine.Random;
 
 namespace TestProject.RuntimeTests
 {
     public class InSceneParentChildHandler : NetworkBehaviour
     {
-
+        public static InSceneParentChildHandler ServerRootParent;
         public static bool EnableVerboseDebug = true;
         public static bool AddNetworkTransform;
         public static bool WorldPositionStays;
@@ -35,6 +37,16 @@ namespace TestProject.RuntimeTests
         private Vector3 m_TargetLocalScale;
 
         private NetworkTransform m_NetworkTransform;
+
+        public static Dictionary<ulong, InSceneParentChildHandler> ServerRelativeInstances = new Dictionary<ulong, InSceneParentChildHandler>();
+        public static Dictionary<ulong, Dictionary<ulong, InSceneParentChildHandler>> ClientRelativeInstances = new Dictionary<ulong, Dictionary<ulong, InSceneParentChildHandler>>();
+
+        public static void ResetInstancesTracking(bool enableVerboseDebug)
+        {
+            EnableVerboseDebug = enableVerboseDebug;
+            ServerRelativeInstances.Clear();
+            ClientRelativeInstances.Clear();
+        }
 
         private Vector3 GenerateVector3(Vector3 min, Vector3 max)
         {
@@ -153,11 +165,27 @@ namespace TestProject.RuntimeTests
                     m_NetworkTransform = gameObject.AddComponent<NetworkTransform>();
                     m_NetworkTransform.InLocalSpace = PreserveLocalSpace;
                 }
+                if (IsRootParent)
+                {
+                    ServerRootParent = this;
+                }
             }
+            else
+            {
+                if (!ClientRelativeInstances.ContainsKey(NetworkManager.LocalClientId))
+                {
+                    ClientRelativeInstances.Add(NetworkManager.LocalClientId, new Dictionary<ulong, InSceneParentChildHandler>());
+                }
+                if (!ClientRelativeInstances[NetworkManager.LocalClientId].ContainsKey(NetworkObjectId))
+                {
+                    ClientRelativeInstances[NetworkManager.LocalClientId].Add(NetworkObjectId, this);
+                }
+            }
+
             base.OnNetworkSpawn();
         }
 
-        private void DeparentSetValuesAndReparent()
+        public void DeparentSetValuesAndReparent()
         {
             if (IsServer && IsRootParent)
             {
@@ -194,7 +222,7 @@ namespace TestProject.RuntimeTests
 
         private void LateUpdate()
         {
-            if (!IsSpawned || !IsServer)
+            if (!IsSpawned || !IsServer || NetworkManagerTestDisabler.IsIntegrationTest)
             {
                 return;
             }
