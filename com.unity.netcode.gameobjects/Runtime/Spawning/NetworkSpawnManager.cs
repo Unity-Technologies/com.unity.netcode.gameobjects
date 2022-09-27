@@ -392,11 +392,11 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
+                // SPECIAL CASE:
                 // This is a special case scenario where a late joining client has joined and loaded one or
-                // more scenes where there are nested in-scene placed NetworkObject children yet the server's
-                // synchronization information does not say the NetworkObject in question has an in-scene placed
-                // NetworkObject. Under this scenario, we want to remove the parent before spawning and setting
-                // the transform values
+                // more scenes that contain nested in-scene placed NetworkObject children yet the server's
+                // synchronization information does not indicate the NetworkObject in question has a parent.
+                // Under this scenario, we want to remove the parent before spawning and setting the transform values.
                 if (sceneObject.Header.IsSceneObject && !sceneObject.Header.HasParent && networkObject.transform.parent != null)
                 {
                     // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
@@ -424,6 +424,7 @@ namespace Unity.Netcode
                         networkObject.transform.localRotation = rotation;
                     }
 
+                    // SPECIAL CASE:
                     // Since players are created uniquely we don't apply scale because
                     // the ConnectionApprovalResponse does not currently provide the
                     // ability to specify scale. So, we just use the default scale of

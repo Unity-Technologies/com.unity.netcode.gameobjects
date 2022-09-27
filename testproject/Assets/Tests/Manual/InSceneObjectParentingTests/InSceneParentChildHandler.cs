@@ -105,7 +105,7 @@ namespace TestProject.RuntimeTests
             var parentOfChild = child.parent;
             if (parentOfChild != null)
             {
-                if (!childNetworkObject.TrySetParent((NetworkObject)null, worldPositionStays))
+                if (!childNetworkObject.TryRemoveParent(worldPositionStays))
                 {
                     throw new Exception($"[RemoveParent] {child.name} Failed to remove itself from parent {parentOfChild.name}!");
                 }
@@ -191,9 +191,9 @@ namespace TestProject.RuntimeTests
             {
                 // Back to back de-parenting and re-parenting
                 s_GenerateRandomValues = true;
-                DeparentAllChildren(false);
+                DeparentAllChildren(WorldPositionStays);
                 s_GenerateRandomValues = false;
-                ReParentAllChildren(false);
+                ReParentAllChildren(WorldPositionStays);
             }
         }
 

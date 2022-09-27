@@ -12,8 +12,12 @@ namespace TestProject.RuntimeTests
     {
         private const string k_BaseSceneToLoad = "UnitTestBaseScene";
         private const string k_TestSceneToLoad = "ParentingInSceneObjects";
+        private const string k_NestedUndeGameObjectName = "RootParent_GameObject";
         private const int k_NumIterationsDeparentReparent = 100;
         private const float k_AproximateThresholdValue = 0.001f;
+
+        private bool m_InitialClientsLoadedScene;
+        private StringBuilder m_ErrorValidationLog = new StringBuilder(0x2000);
 
         protected override int NumberOfClients => 2;
 
@@ -36,6 +40,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             InSceneParentChildHandler.ResetInstancesTracking(m_EnableVerboseDebug);
+            InSceneParentedUnderGameObjectHandler.Instances.Clear();
             return base.OnSetup();
         }
 
@@ -57,8 +62,6 @@ namespace TestProject.RuntimeTests
             yield return base.OnTearDown();
         }
 
-        private bool m_InitialClientsLoadedScene;
-        private StringBuilder m_ErrorValidationLog = new StringBuilder(0x2000);
 
         private void GeneratePositionDoesNotMatch(InSceneParentChildHandler serverHandler, InSceneParentChildHandler clientHandler)
         {
@@ -169,9 +172,26 @@ namespace TestProject.RuntimeTests
             return k_AproximateThresholdValue;
         }
 
-        [UnityTest]
-        public IEnumerator InSceneParentingTest()
+        public enum ParentingSpace
         {
+            WorldPositionStays,
+            WorldPositionDoesNotStay
+        }
+
+        /// <summary>
+        /// This tests various nested children scenarios where it tests:
+        /// Children have their parent removed
+        /// The associated children and root parent have their position, rotation, and scale changed
+        /// Children are placed back under their respective parents
+        /// Verifying a late joining client's cloned version of the in-scene placed NetworkObject children
+        /// have the correct transform values and parent set (or no parent)
+        /// That users can remove parents, assign parents, and set transform values in the same pass.
+        /// All of the above is tested with WorldPositionStays set to both true and false.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator InSceneParentingTest([Values] ParentingSpace parentingSpace)
+        {
+            InSceneParentChildHandler.WorldPositionStays = parentingSpace == ParentingSpace.WorldPositionStays;
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
@@ -194,7 +214,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
             AssertOnTimeout($"Timed out waiting for the late joining client's transform values to match the server transform values!\n {m_ErrorValidationLog}");
 
-            // Remove the parents from al of the children
+            // Remove the parents from all of the children
             InSceneParentChildHandler.ServerRootParent.DeparentAllChildren();
             yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
             AssertOnTimeout($"[Late Join 1] Timed out waiting for all clients transform values to match the server transform values!\n {m_ErrorValidationLog}");
@@ -243,7 +263,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
             AssertOnTimeout($"[Final Pass] Timed out waiting for all clients transform values to match the server transform values after the second generation child's parent was removed!\n {m_ErrorValidationLog}");
 
-            // Now run through one last deparent, reparent, and set new values pass to make sure everything still synchronizes
+            // Now run through one last de-parent, re-parent, and set new values pass to make sure everything still synchronizes
             InSceneParentChildHandler.ServerRootParent.DeparentSetValuesAndReparent();
 
             yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
@@ -263,6 +283,29 @@ namespace TestProject.RuntimeTests
             if (sceneEvent.ClientId == m_ServerNetworkManager.LocalClientId && sceneEvent.SceneEventType == SceneEventType.LoadEventCompleted)
             {
                 m_InitialClientsLoadedScene = true;
+            }
+        }
+
+        /// <summary>
+        /// This verifies in-scene placed NetworkObject's nested under a GameObject without a NetworkObject
+        /// component will preserve that parent hierarchy.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator InSceneNestedUnderGameObjectTest()
+        {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
+            m_InitialClientsLoadedScene = false;
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+
+            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
+            yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
+
+            foreach (var instance in InSceneParentedUnderGameObjectHandler.Instances)
+            {
+                Assert.False(instance.transform.parent == null, $"{instance.name}'s parent is null when it should not be!");
             }
         }
     }

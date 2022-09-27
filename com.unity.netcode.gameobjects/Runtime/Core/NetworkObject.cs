@@ -625,6 +625,19 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Removes the parent of the NetworkObject's transform
+        /// </summary>
+        /// <remarks>
+        /// This is a more convenient way to remove the parent without  having to cast the null value to either <see cref="GameObject"/> or <see cref="NetworkObject"/>
+        /// </remarks>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns></returns>
+        public bool TryRemoveParent(bool worldPositionStays = true)
+        {
+            return TrySetParent((NetworkObject)null, worldPositionStays);
+        }
+
+        /// <summary>
         /// Set the parent of the NetworkObject transform.
         /// </summary>
         /// <param name="parent">The new parent for this NetworkObject transform will be the child of.</param>
@@ -784,11 +797,12 @@ namespace Unity.Netcode
                 return false;
             }
 
+            // SPECIAL CASE:
             // The ignoreNotSpawned is a special case scenario where a late joining client has joined
-            // and loaded one or more scenes where there are nested in-scene placed NetworkObject children
-            // yet the server's synchronization information does not say the NetworkObject in question has
-            // an in-scene placed NetworkObject. Under this scenario, we want to remove the parent before
-            // spawning and setting the transform values
+            // and loaded one or more scenes that contain nested in-scene placed NetworkObject children
+            // yet the server's synchronization information does not indicate the NetworkObject in question
+            // has a parent. Under this scenario, we want to remove the parent before spawning and setting
+            // the transform values. This is the only scenario where the ignoreNotSpawned parameter is used.
             if (!IsSpawned && !ignoreNotSpawned)
             {
                 return false;
@@ -1239,9 +1253,11 @@ namespace Unity.Netcode
                     Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
                     Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
 
-                    // We only use the lossyScale when we are parented as nested multi-generational children scales can impact
-                    // the final scale of the child NetworkObject in question. The solution is to use the lossy scale to get the
-                    // child's scale as if it wasn't parented because we set scale on the client before parenting the child.
+                    // We only use the lossyScale the NetworkObject has a parent. Multi-generation nested children scales can
+                    // impact the final scale of the child NetworkObject in question. The solution is to use the lossy scale
+                    // which can be thought of as "world space scale".
+                    // More information:
+                    // https://docs.unity3d.com/ScriptReference/Transform-lossyScale.html
                     Scale = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localScale : transform.lossyScale,
                 };
             }

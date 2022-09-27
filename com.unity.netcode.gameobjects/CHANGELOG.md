@@ -13,9 +13,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
 - Added position, rotation, and scale to the `ParentSyncMessage` which provides users the ability to specify the final values on the server-side when `OnNetworkObjectParentChanged` is invoked just before the message is created (when the `Transform` values are applied to the message). (#2146)
+- Added `NetworkObject.TryRemoveParent` method for convenience purposes opposed to having to cast null to either `GameObject` or `NetworkObject`. (#2146)
 
 ### Changed
 
+- The send queues of `UnityTransport` are now dynamically-sized. This means that there shouldn't be any need anymore to tweak the 'Max Send Queue Size' value. In fact, this field is now removed from the inspector and will not be serialized anymore. It is still possible to set it manually using the `MaxSendQueueSize` property, but it is not recommended to do so aside from some specific needs (e.g. limiting the amount of memory used by the send queues in very constrained environments). (#2212)
+- As a consequence of the above change, the `UnityTransport.InitialMaxSendQueueSize` field is now deprecated. There is no default value anymore since send queues are dynamically-sized. (#2212)
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
 
 ### Fixed
