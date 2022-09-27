@@ -59,6 +59,7 @@ namespace Unity.Netcode
         /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
         internal Dictionary<ulong, bool> ClientsProcessingSceneEvent { get; } = new Dictionary<ulong, bool>();
+        internal List<ulong> ClientsThatDisconnected = new List<ulong>();
 
         /// <summary>
         /// This is the time when the current scene event will have timed out
@@ -85,7 +86,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool HasTimedOut()
         {
-            return !IsCompleted && WhenSceneEventHasTimedOut <= Time.realtimeSinceStartup;
+            return WhenSceneEventHasTimedOut <= Time.realtimeSinceStartup;
         }
 
         /// <summary>
@@ -116,6 +117,10 @@ namespace Unity.Netcode
                     clients.Add(clientStatus.Key);
                 }
             }
+            if (!completedSceneEvent)
+            {
+                clients.AddRange(ClientsThatDisconnected);
+            }
             return clients;
         }
 
@@ -140,6 +145,7 @@ namespace Unity.Netcode
         {
             if (ClientsProcessingSceneEvent.ContainsKey(clientId))
             {
+                ClientsThatDisconnected.Add(clientId);
                 ClientsProcessingSceneEvent.Remove(clientId);
             }
         }
