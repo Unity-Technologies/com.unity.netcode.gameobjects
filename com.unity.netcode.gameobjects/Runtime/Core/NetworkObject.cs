@@ -777,14 +777,19 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting(bool removeParent = false)
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false)
         {
             if (!AutoObjectParentSync)
             {
                 return false;
             }
 
-            if (!IsSpawned)
+            // The ignoreNotSpawned is a special case scenario where a late joining client has joined
+            // and loaded one or more scenes where there are nested in-scene placed NetworkObject children
+            // yet the server's synchronization information does not say the NetworkObject in question has
+            // an in-scene placed NetworkObject. Under this scenario, we want to remove the parent before
+            // spawning and setting the transform values
+            if (!IsSpawned && !ignoreNotSpawned)
             {
                 return false;
             }

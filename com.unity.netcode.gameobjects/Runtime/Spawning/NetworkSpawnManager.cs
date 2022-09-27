@@ -392,6 +392,22 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
+                // This is a special case scenario where a late joining client has joined and loaded one or
+                // more scenes where there are nested in-scene placed NetworkObject children yet the server's
+                // synchronization information does not say the NetworkObject in question has an in-scene placed
+                // NetworkObject. Under this scenario, we want to remove the parent before spawning and setting
+                // the transform values
+                if (sceneObject.Header.IsSceneObject && !sceneObject.Header.HasParent && networkObject.transform.parent != null)
+                {
+                    // if the in-scene placed NetworkObject has a parent NetworkObject but the synchronization information does not
+                    // include parenting, then we need to force the removal of that parent
+                    if (networkObject.transform.parent.GetComponent<NetworkObject>() != null)
+                    {
+                        // remove the parent
+                        networkObject.ApplyNetworkParenting(true, true);
+                    }
+                }
+
                 // Set the transform unless we were spawned by a prefab handler
                 // Note: prefab handlers are provided the position and rotation
                 // but it is up to the user to set those values
@@ -425,6 +441,7 @@ namespace Unity.Netcode
                     // Go ahead and set network parenting properties
                     networkObject.SetNetworkParenting(parentNetworkId, worldPositionStays);
                 }
+
 
                 // Dynamically spawned NetworkObjects that occur during a LoadSceneMode.Single load scene event are migrated into the DDOL
                 // until the scene is loaded. They are then migrated back into the newly loaded and currently active scene.
