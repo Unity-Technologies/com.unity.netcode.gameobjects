@@ -77,9 +77,9 @@ namespace Unity.Netcode
         internal OnCompletedDelegate OnComplete;
 
         /// <summary>
-        /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occurred.
+        /// When set the scene event is considered completed locally
         /// </summary>
-        internal bool IsCompleted { get; private set; }
+        internal bool IsSceneEventCompleted { get; private set; }
 
         /// <summary>
         /// This will make sure that we only have timed out if we never completed
@@ -117,6 +117,10 @@ namespace Unity.Netcode
                     clients.Add(clientStatus.Key);
                 }
             }
+
+            // If we are getting the list of clients that have not completed the
+            // scene event, then add any clients that disconnected during this
+            // scene event.
             if (!completedSceneEvent)
             {
                 clients.AddRange(ClientsThatDisconnected);
@@ -141,6 +145,10 @@ namespace Unity.Netcode
             Status = status;
         }
 
+        /// <summary>
+        /// Remove the client from the clients processing the current scene event
+        /// Add this client to the clients that disconnected list
+        /// </summary>
         private void OnClientDisconnectCallback(ulong clientId)
         {
             if (ClientsProcessingSceneEvent.ContainsKey(clientId))
@@ -163,19 +171,26 @@ namespace Unity.Netcode
             {
                 yield return waitForNetworkTick;
 
-                CheckCompletion();
+                TryFinishingSceneEventProgress();
             }
         }
 
-        internal void MarkClientAsDone(ulong clientId)
+        /// <summary>
+        /// Sets the client's scene event progress to finished/true
+        /// </summary>
+        internal void ClientFinishedSceneEvent(ulong clientId)
         {
             if (ClientsProcessingSceneEvent.ContainsKey(clientId))
             {
                 ClientsProcessingSceneEvent[clientId] = true;
-                CheckCompletion();
+                TryFinishingSceneEventProgress();
             }
         }
 
+        /// <summary>
+        /// Checks if all known clients processing this scene event
+        /// are finished.
+        /// </summary>
         private bool AreAllClientsFinished()
         {
             foreach (var clientStatus in ClientsProcessingSceneEvent)
@@ -191,7 +206,7 @@ namespace Unity.Netcode
         internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
             m_SceneLoadOperation = sceneLoadOperation;
-            m_SceneLoadOperation.completed += operation => CheckCompletion();
+            m_SceneLoadOperation.completed += operation => TryFinishingSceneEventProgress();
         }
 
         /// <summary>
@@ -206,42 +221,36 @@ namespace Unity.Netcode
         /// </summary>
         internal void SetSceneLoadOperation(ISceneManagerHandler.SceneEventAction sceneEventAction)
         {
-            sceneEventAction.Completed = SetComplete;
+            sceneEventAction.Completed = SetLoadCompleted;
         }
 
         /// <summary>
-        /// Finalizes the SceneEventProgress
+        /// For integration tests
         /// </summary>
-        internal void SetComplete()
+        internal void SetLoadCompleted()
         {
-            // Mark the local scene event as having been completed
-            IsCompleted = true;
+            IsSceneEventCompleted = true;
+            TryFinishingSceneEventProgress();
+        }
 
-            // If OnComplete is not registered or it is and returns true then remove this from the progress tracking
-            if (AreAllClientsFinished() && (OnComplete == null || (OnComplete != null && OnComplete.Invoke(this))))
+        /// <summary>
+        /// Will try to finish the current scene event in progress as long as all conditions are met.
+        /// </summary>
+        internal void TryFinishingSceneEventProgress()
+        {
+            // If all of our clients are finished loading and the local m_SceneLoadOperation is complete or
+            // we have timed out, then finish this SceneEventProgress
+            if (m_SceneLoadOperation != null && !IsSceneEventCompleted)
             {
+                IsSceneEventCompleted = m_SceneLoadOperation.isDone;
+            }
+
+            if (AreAllClientsFinished() && (IsSceneEventCompleted || HasTimedOut()))
+            {
+                OnComplete?.Invoke(this);
                 m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
                 m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
                 m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
-            }
-
-        }
-
-        internal void CheckCompletion()
-        {
-            try
-            {
-                // If we have completed the scene event locally, all clients are finished processing the scene event, and if the m_SceneLoadOperation
-                // is valid and done then the scene event is completed.
-                // If we have timed out then we force the scene event progress to complete
-                if ((IsCompleted && AreAllClientsFinished() && (m_SceneLoadOperation == null || m_SceneLoadOperation.isDone)) || HasTimedOut())
-                {
-                    SetComplete();
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
             }
         }
     }

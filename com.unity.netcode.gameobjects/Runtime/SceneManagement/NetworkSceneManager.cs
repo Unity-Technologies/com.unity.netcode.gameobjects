@@ -1072,7 +1072,7 @@ namespace Unity.Netcode
                 //Only if we are a host do we want register having loaded for the associated SceneEventProgress
                 if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
                 {
-                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(NetworkManager.ServerClientId);
+                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(NetworkManager.ServerClientId);
                 }
             }
 
@@ -1490,7 +1490,7 @@ namespace Unity.Netcode
             //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
             if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
             {
-                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(NetworkManager.ServerClientId);
+                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(NetworkManager.ServerClientId);
             }
             EndSceneEvent(sceneEventId);
         }
@@ -1882,7 +1882,7 @@ namespace Unity.Netcode
 
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(clientId);
                         }
                         EndSceneEvent(sceneEventId);
                         break;
@@ -1891,7 +1891,7 @@ namespace Unity.Netcode
                     {
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(clientId);
                         }
                         // Notify the local server that the client has finished unloading a scene
                         OnSceneEvent?.Invoke(new SceneEvent()
