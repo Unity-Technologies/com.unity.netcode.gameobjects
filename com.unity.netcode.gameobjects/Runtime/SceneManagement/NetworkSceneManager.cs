@@ -887,12 +887,14 @@ namespace Unity.Netcode
         private bool OnSceneEventProgressCompleted(SceneEventProgress sceneEventProgress)
         {
             var sceneEventData = BeginSceneEvent();
+            var clientsThatCompleted = sceneEventProgress.GetClientsWithStatus(true);
+            var clientsThatTimedOut = sceneEventProgress.GetClientsWithStatus(false);
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
             sceneEventData.SceneHash = sceneEventProgress.SceneHash;
             sceneEventData.SceneEventType = sceneEventProgress.SceneEventType;
-            sceneEventData.ClientsCompleted = sceneEventProgress.DoneClients;
+            sceneEventData.ClientsCompleted = clientsThatCompleted;
             sceneEventData.LoadSceneMode = sceneEventProgress.LoadSceneMode;
-            sceneEventData.ClientsTimedOut = sceneEventProgress.ClientsThatStartedSceneEvent.Except(sceneEventProgress.DoneClients).ToList();
+            sceneEventData.ClientsTimedOut = clientsThatTimedOut;
 
             var message = new SceneEventMessage
             {
@@ -913,8 +915,8 @@ namespace Unity.Netcode
                 SceneName = SceneNameFromHash(sceneEventProgress.SceneHash),
                 ClientId = NetworkManager.ServerClientId,
                 LoadSceneMode = sceneEventProgress.LoadSceneMode,
-                ClientsThatCompleted = sceneEventProgress.DoneClients,
-                ClientsThatTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList(),
+                ClientsThatCompleted = clientsThatCompleted,
+                ClientsThatTimedOut = clientsThatTimedOut,
             });
 
             if (sceneEventData.SceneEventType == SceneEventType.LoadEventCompleted)
@@ -1070,7 +1072,7 @@ namespace Unity.Netcode
                 //Only if we are a host do we want register having loaded for the associated SceneEventProgress
                 if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
                 {
-                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(NetworkManager.ServerClientId);
+                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(NetworkManager.ServerClientId);
                 }
             }
 
@@ -1488,7 +1490,7 @@ namespace Unity.Netcode
             //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
             if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
             {
-                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(NetworkManager.ServerClientId);
+                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(NetworkManager.ServerClientId);
             }
             EndSceneEvent(sceneEventId);
         }
@@ -1880,7 +1882,7 @@ namespace Unity.Netcode
 
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(clientId);
                         }
                         EndSceneEvent(sceneEventId);
                         break;
@@ -1889,7 +1891,7 @@ namespace Unity.Netcode
                     {
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].MarkClientAsDone(clientId);
                         }
                         // Notify the local server that the client has finished unloading a scene
                         OnSceneEvent?.Invoke(new SceneEvent()

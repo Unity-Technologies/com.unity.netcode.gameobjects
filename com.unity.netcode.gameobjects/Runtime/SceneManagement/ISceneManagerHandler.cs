@@ -11,7 +11,7 @@ namespace Unity.Netcode
     internal interface ISceneManagerHandler
     {
         // Generic action to call when a scene is finished loading/unloading
-        struct SceneEventAction
+        class SceneEventAction
         {
             internal uint SceneEventId;
             internal Action<uint> EventAction;
