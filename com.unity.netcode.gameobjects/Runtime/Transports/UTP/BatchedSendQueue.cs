@@ -208,19 +208,12 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
-                var dataPtr = (byte*)m_Data.GetUnsafePtr() + HeadIndex;
-
-#if UTP_TRANSPORT_2_0_ABOVE
-                var slice = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPtr, Length, Allocator.None);
-                var reader = new DataStreamReader(slice);
-#else
-                var reader = new DataStreamReader(dataPtr, Length);
-#endif
+                var reader = new DataStreamReader(m_Data.AsArray());
 
                 var writerAvailable = writer.Capacity;
-                var readerOffset = 0;
+                var readerOffset = HeadIndex;
 
-                while (readerOffset < Length)
+                while (readerOffset < TailIndex)
                 {
                     reader.SeekSet(readerOffset);
                     var messageLength = reader.ReadInt();
