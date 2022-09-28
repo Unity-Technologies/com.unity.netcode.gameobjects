@@ -211,7 +211,7 @@ namespace Unity.Netcode.Transports.UTP
                 var dataPtr = (byte*)m_Data.GetUnsafePtr() + HeadIndex;
 
 #if UTP_TRANSPORT_2_0_ABOVE
-                var slice = NativeArray.ConvertExistingDataToNativeArray<byte>(dataPtr, Length, Allocator.None);
+                var slice = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPtr, Length, Allocator.None);
                 var reader = new DataStreamReader(slice);
 #else
                 var reader = new DataStreamReader(dataPtr, Length);
