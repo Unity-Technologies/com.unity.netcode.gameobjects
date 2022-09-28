@@ -113,10 +113,9 @@ namespace TestProject.RuntimeTests
 
             for (int i = 0; i < NumberOfClients; i++)
             {
-                var shouldFinish = Random.Range(0, 100);
+                // Every other client fails to finish
+                var clientFinished = i % 2 == 0;
                 var currentClientNetworkManager = m_ClientNetworkManagers[i];
-                // Only let two clients finish
-                var clientFinished = shouldFinish >= 50 && m_ClientThatShouldNotHaveCompleted.Count < 2;
                 SetClientFinished(currentClientNetworkManager.LocalClientId, clientFinished);
             }
 
@@ -138,10 +137,9 @@ namespace TestProject.RuntimeTests
 
             for (int i = 0; i < NumberOfClients; i++)
             {
-                var shouldDisconnect = Random.Range(0, 100);
                 var currentClientNetworkManager = m_ClientNetworkManagers[i];
                 // Two clients will disconnect
-                var clientFinished = shouldDisconnect >= 50 && m_ClientThatShouldNotHaveCompleted.Count < 2;
+                var clientFinished = i % 2 == 0;
                 SetClientFinished(currentClientNetworkManager.LocalClientId, clientFinished);
 
                 if (!clientFinished)
@@ -168,15 +166,14 @@ namespace TestProject.RuntimeTests
 
             for (int i = 0; i < NumberOfClients; i++)
             {
-                var shouldNewClientJoin = Random.Range(0, 100);
-                var currentClientNetworkManager = m_ClientNetworkManagers[i];
                 // Two clients will connect during a SceneEventProgress
-                var joinNewClient = shouldNewClientJoin >= 50 && m_ClientThatShouldNotHaveCompleted.Count < 2;
+                var shouldNewClientJoin = i % 2 == 0;
+                var currentClientNetworkManager = m_ClientNetworkManagers[i];
 
                 // All connected clients will finish their SceneEventProgress
                 SetClientFinished(currentClientNetworkManager.LocalClientId, true);
 
-                if (joinNewClient)
+                if (shouldNewClientJoin)
                 {
                     yield return CreateAndStartNewClient();
                 }
