@@ -29,8 +29,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed Connection Approval Timeout not working client side. (#2164)
 - Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
 - Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+- Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)
+- Fixed issue where late-joining client transition synchronization could fail when more than one transition was occurring.(#2127)
 - Fixed throwing an exception in `OnNetworkUpdate` causing other `OnNetworkUpdate` calls to not be executed. (#1739)
-- Fixed synchronisation when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independant from the local time scale. (#2171)
+- Fixed synchronization when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independent from the local time scale. (#2171)
 - Fixed not sending all NetworkVariables to all clients when a client connects to a server. (#1987)
 
 ## [1.0.2] - 2022-09-12
