@@ -16,8 +16,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
-- `NetworkVariable<>` now supports managed INetworkSerializable types, as well as other managed types with serialization/deserialization delegates registered to `UserNetworkVariableSerialization<T>.WriteValue` and `UserNetworkVariableSerialization<T>.ReadValue` (#2219)
-- `NetworkVariable<>` and `BufferSerializer<BufferSerializerReader>` now deserialize `INetworkSerializable` types in-place, rather than constructing new ones. This makes using native collections (such as `NativeArray<>`) easier as they can be reused once they're constructed rather than having to construct new ones and free old ones on every update, and prevents unnecessary GC allocations with managed types. (#2219)
+- Added a new `ManagedNetworkVariable<>` with support for managed INetworkSerializable types, as well as other managed types with serialization/deserialization delegates registered to `UserNetworkVariableSerialization<T>.WriteValue` and `UserNetworkVariableSerialization<T>.ReadValue` (#2219)
+- `NetworkVariable<>`, `ManagedNetworkVariable<>`, and `BufferSerializer<BufferSerializerReader>` now deserialize `INetworkSerializable` types in-place, rather than constructing new ones. (#2219)
 
 ### Fixed
 
