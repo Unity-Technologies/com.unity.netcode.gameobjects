@@ -598,7 +598,7 @@ namespace Unity.Netcode.Transports.UTP
                 hostConnectionData = connectionData;
             }
 
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
+            m_RelayServerData = new RelayServerData(ref serverEndpoint, 1, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
 
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
