@@ -182,12 +182,8 @@ namespace Unity.Netcode.Components
     /// </summary>
     [AddComponentMenu("Netcode/Network Animator")]
     [RequireComponent(typeof(Animator))]
-    // TODO: Enable the serialization callback receiver whenever we do a minor version update.
-#if USE_SERIALIZATION_CALLBACK_RECEIVER
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
-#else
-    public class NetworkAnimator : NetworkBehaviour
-#endif
+
     {
         [Serializable]
         internal class TransitionStateinfo
@@ -230,13 +226,12 @@ namespace Unity.Netcode.Components
             }
         }
 
-
-#if UNITY_EDITOR
         /// <summary>
         /// Creates the
         /// </summary>
         private void BuildTransitionStateInfoList()
         {
+#if UNITY_EDITOR
             TransitionStateInfoList = new List<TransitionStateinfo>();
             var animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
             if (animatorController == null)
@@ -295,11 +290,9 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-        }
 #endif
+        }
 
-        // TODO: Enable the callback receiver when we do a minor version update
-#if USE_SERIALIZATION_CALLBACK_RECEIVER
         public void OnAfterDeserialize()
         {
             BuildDestinationToTransitionInfoTable();
@@ -309,28 +302,6 @@ namespace Unity.Netcode.Components
         {
             BuildTransitionStateInfoList();
         }
-#else
-        // For now, we can build this table during Awake
-        private void Awake()
-        {
-            BuildDestinationToTransitionInfoTable();
-        }
-
-#if UNITY_EDITOR
-        /// <summary>
-        /// For now we can build the TransitionState list during OnValidate
-        /// </summary>
-        private void OnValidate()
-        {
-            // Only if we are entering into play mode, about to update the asset database, or compiling/building do we want to build the transition state info list
-            if ((UnityEditor.EditorApplication.isPlaying || !UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode) && !UnityEditor.EditorApplication.isUpdating && !UnityEditor.EditorApplication.isCompiling)
-            {
-                return;
-            }
-            BuildTransitionStateInfoList();
-        }
-#endif // UNITY_EDITOR
-#endif // USE_SERIALIZATION_CALLBACK_RECEIVER
 
         internal struct AnimationState : INetworkSerializable
         {
