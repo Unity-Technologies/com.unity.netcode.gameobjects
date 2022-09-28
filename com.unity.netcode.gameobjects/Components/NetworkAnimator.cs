@@ -324,27 +324,64 @@ namespace Unity.Netcode.Components
                 if (serializer.IsWriter)
                 {
                     var writer = serializer.GetFastBufferWriter();
-                    BytePacker.WriteValuePacked(writer, StateHash);
-                    BytePacker.WriteValuePacked(writer, NormalizedTime);
-                    BytePacker.WriteValuePacked(writer, Layer);
-                    BytePacker.WriteValuePacked(writer, Weight);
-                    BytePacker.WriteValuePacked(writer, Transition);
+                    var writeSize = FastBufferWriter.GetWriteSize(Transition);
+                    writeSize += FastBufferWriter.GetWriteSize(StateHash);
+                    writeSize += FastBufferWriter.GetWriteSize(NormalizedTime);
+                    writeSize += FastBufferWriter.GetWriteSize(Layer);
+                    writeSize += FastBufferWriter.GetWriteSize(Weight);
                     if (Transition)
                     {
-                        BytePacker.WriteValuePacked(writer, DestinationStateHash);
+                        writeSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
+                    }
+
+                    if (!writer.TryBeginWrite(writeSize))
+                    {
+                        throw new OverflowException($"[{GetType().Name}] Could not serialize: Out of buffer space.");
+                    }
+
+                    writer.WriteValue(Transition);
+                    writer.WriteValue(StateHash);
+                    writer.WriteValue(NormalizedTime);
+                    writer.WriteValue(Layer);
+                    writer.WriteValue(Weight);
+                    if (Transition)
+                    {
+                        writer.WriteValue(DestinationStateHash);
                     }
                 }
                 else
                 {
                     var reader = serializer.GetFastBufferReader();
-                    ByteUnpacker.ReadValuePacked(reader, out StateHash);
-                    ByteUnpacker.ReadValuePacked(reader, out NormalizedTime);
-                    ByteUnpacker.ReadValuePacked(reader, out Layer);
-                    ByteUnpacker.ReadValuePacked(reader, out Weight);
-                    ByteUnpacker.ReadValuePacked(reader, out Transition);
+                    // Begin reading the Transition flag
+                    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Transition)))
+                    {
+                        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
+                    }
+                    reader.ReadValue(out Transition);
+
+                    // Now determine what remains to be read
+                    var readSize = FastBufferWriter.GetWriteSize(StateHash);
+                    readSize += FastBufferWriter.GetWriteSize(NormalizedTime);
+                    readSize += FastBufferWriter.GetWriteSize(Layer);
+                    readSize += FastBufferWriter.GetWriteSize(Weight);
                     if (Transition)
                     {
-                        ByteUnpacker.ReadValuePacked(reader, out DestinationStateHash);
+                        readSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
+                    }
+
+                    // Now read the remaining information about this AnimationState
+                    if (!reader.TryBeginRead(readSize))
+                    {
+                        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
+                    }
+
+                    reader.ReadValue(out StateHash);
+                    reader.ReadValue(out NormalizedTime);
+                    reader.ReadValue(out Layer);
+                    reader.ReadValue(out Weight);
+                    if (Transition)
+                    {
+                        reader.ReadValue(out DestinationStateHash);
                     }
                 }
             }
@@ -502,10 +539,10 @@ namespace Unity.Netcode.Components
                 m_NetworkAnimatorStateChangeHandler = null;
             }
 
-            // The safest way to be assured that you get a NetworkManager instance when also
-            // taking integration testing into consideration (multiple NetworkManager instances)
-            var networkManager = HasNetworkObject ? NetworkManager : NetworkManager.Singleton;
-            networkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            if (m_CachedNetworkManager != null)
+            {
+                m_CachedNetworkManager.OnClientConnectedCallback -= OnClientConnectedCallback;
+            }
 
             if (m_CachedAnimatorParameters != null && m_CachedAnimatorParameters.IsCreated)
             {
@@ -528,6 +565,9 @@ namespace Unity.Netcode.Components
         private ClientRpcParams m_ClientRpcParams;
         private List<AnimationState> m_AnimationMessageStates;
 
+        // Only used in Cleanup
+        private NetworkManager m_CachedNetworkManager;
+
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
@@ -545,6 +585,9 @@ namespace Unity.Netcode.Components
                 m_ClientRpcParams = new ClientRpcParams();
                 m_ClientRpcParams.Send = new ClientRpcSendParams();
                 m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+
+                // Cache the NetworkManager instance to remove the OnClientConnectedCallback subscription
+                m_CachedNetworkManager = NetworkManager;
                 NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
             }
 
@@ -626,7 +669,6 @@ namespace Unity.Netcode.Components
             m_ClientSendList.Clear();
             m_ClientSendList.Add(playerId);
             m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-
             // With synchronization we send all parameters
             m_ParametersToUpdate.Clear();
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
@@ -648,7 +690,6 @@ namespace Unity.Netcode.Components
                 var normalizedTime = st.normalizedTime;
                 var isInTransition = m_Animator.IsInTransition(layer);
                 var animMsg = m_AnimationMessageStates[layer];
-
 
                 // Synchronizing transitions with trigger conditions for late joining clients is now
                 // handled by cross fading between the late joining client's current layer's AnimationState
@@ -728,7 +769,10 @@ namespace Unity.Netcode.Components
 
             if (m_Animator.runtimeAnimatorController == null)
             {
-                // TODO: While this should never happen, add a NetworkLog warning message
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    Debug.LogError($"[{GetType().Name}] Could not find an assigned {nameof(RuntimeAnimatorController)}! Cannot check {nameof(Animator)} for changes in state!");
+                }
                 return;
             }
 
