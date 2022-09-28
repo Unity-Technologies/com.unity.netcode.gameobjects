@@ -482,6 +482,7 @@ namespace Unity.Netcode.Transports.UTP
                 }
 
                 m_NetworkSettings.WithRelayParameters(ref m_RelayServerData, m_HeartbeatTimeoutMS);
+                serverEndpoint = m_RelayServerData.Endpoint;
             }
             else
             {
