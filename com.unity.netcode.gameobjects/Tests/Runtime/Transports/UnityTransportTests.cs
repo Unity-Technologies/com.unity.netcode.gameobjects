@@ -273,8 +273,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DisconnectOnReliableSendQueueOverflow()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            const int maxSendQueueSize = 16 * 1024;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, maxSendQueueSize: maxSendQueueSize);
+            InitializeTransport(out m_Client1, out m_Client1Events, maxSendQueueSize: maxSendQueueSize);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -283,7 +285,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Server.Shutdown();
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024);
+            var numSends = (maxSendQueueSize / 1024);
 
             for (int i = 0; i < numSends; i++)
             {
@@ -292,8 +294,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             LogAssert.Expect(LogType.Error, "Couldn't add payload of size 1024 to reliable send queue. " +
-                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained. " +
-                $"Perhaps 'Max Send Queue Size' ({UnityTransport.InitialMaxSendQueueSize}) is too small for workload.");
+                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained.");
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
@@ -308,15 +309,17 @@ namespace Unity.Netcode.RuntimeTests
         [UnityPlatform(exclude = new[] { RuntimePlatform.Switch, RuntimePlatform.PS4, RuntimePlatform.PS5 })]
         public IEnumerator SendCompletesOnUnreliableSendQueueOverflow()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            const int maxSendQueueSize = 16 * 1024;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, maxSendQueueSize: maxSendQueueSize);
+            InitializeTransport(out m_Client1, out m_Client1Events, maxSendQueueSize: maxSendQueueSize);
 
             m_Server.StartServer();
             m_Client1.StartClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024) + 1;
+            var numSends = (maxSendQueueSize / 1024) + 1;
 
             for (int i = 0; i < numSends; i++)
             {

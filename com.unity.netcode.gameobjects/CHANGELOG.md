@@ -15,20 +15,28 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- The send queues of `UnityTransport` are now dynamically-sized. This means that there shouldn't be any need anymore to tweak the 'Max Send Queue Size' value. In fact, this field is now removed from the inspector and will not be serialized anymore. It is still possible to set it manually using the `MaxSendQueueSize` property, but it is not recommended to do so aside from some specific needs (e.g. limiting the amount of memory used by the send queues in very constrained environments). (#2212)
+- As a consequence of the above change, the `UnityTransport.InitialMaxSendQueueSize` field is now deprecated. There is no default value anymore since send queues are dynamically-sized. (#2212)
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
+
 
 ### Fixed
 
+- Fixed issue #1924 where `UnityTransport` would fail to restart after a first failure (even if what caused the initial failure was addressed). (#2220)
 - Fixed issue where `NetworkTransform.SetStateServerRpc` and `NetworkTransform.SetStateClientRpc` were not honoring local vs world space settings when applying the position and rotation. (#2203)
 - Fixed ILPP `TypeLoadException` on WebGL on MacOS Editor and potentially other platforms. (#2199)
 - Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
 - Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
 - Fixed Connection Approval Timeout not working client side. (#2164)
+
 - Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
 - Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+- Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)
+- Fixed issue where late-joining client transition synchronization could fail when more than one transition was occurring.(#2127)
 - Fixed throwing an exception in `OnNetworkUpdate` causing other `OnNetworkUpdate` calls to not be executed. (#1739)
-- Fixed synchronisation when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independant from the local time scale. (#2171)
+- Fixed synchronization when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independent from the local time scale. (#2171)
 - Fixed not sending all NetworkVariables to all clients when a client connects to a server. (#1987)
+
 
 ## [1.0.2] - 2022-09-12
 
@@ -51,7 +59,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed an issue where reading/writing more than 8 bits at a time with BitReader/BitWriter would write/read from the wrong place, returning and incorrect result. (#2130)
-- Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)
 - Fixed issue with the internal `NetworkTransformState.m_Bitset` flag not getting cleared upon the next tick advancement. (#2110)
 - Fixed interpolation issue with `NetworkTransform.Teleport`. (#2110)
 - Fixed issue where the authoritative side was interpolating its transform. (#2110)
