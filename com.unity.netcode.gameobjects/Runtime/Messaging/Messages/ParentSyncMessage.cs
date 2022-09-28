@@ -17,10 +17,10 @@ namespace Unity.Netcode
         // Is set when the parent should be removed (similar to IsReparented functionality but only for removing the parent)
         public bool RemoveParent;
 
-        // These additional properties are used to synchronize clients with the current position
-        // , rotation, and scale after parenting/de-parenting (world/local space relative). This
-        // allows users to control the final child's transform values without having to have
-        // a NetworkTransform component on the child. (i.e. picking something up)
+        // These additional properties are used to synchronize clients with the current position,
+        // rotation, and scale after parenting/de-parenting (world/local space relative). This
+        // allows users to control the final child's transform values without having to have a
+        // NetworkTransform component on the child. (i.e. picking something up)
         public Vector3 Position;
         public Quaternion Rotation;
         public Vector3 Scale;
