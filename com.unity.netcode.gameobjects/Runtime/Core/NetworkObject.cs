@@ -1253,7 +1253,7 @@ namespace Unity.Netcode
                     Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
                     Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
 
-                    // We only use the lossyScale the NetworkObject has a parent. Multi-generation nested children scales can
+                    // We only use the lossyScale if the NetworkObject has a parent. Multi-generation nested children scales can
                     // impact the final scale of the child NetworkObject in question. The solution is to use the lossy scale
                     // which can be thought of as "world space scale".
                     // More information:
