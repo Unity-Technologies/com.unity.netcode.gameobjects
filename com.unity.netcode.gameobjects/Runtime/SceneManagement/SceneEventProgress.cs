@@ -225,10 +225,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// For integration tests
+        /// Server is the only one who invokes this during integration tests
+        /// This is triggered once the server-side is done loading its scene.
         /// </summary>
         internal void SetLoadCompleted()
         {
+            // If this method is invoked, then we know the server already loaded the scene.
             IsSceneEventCompleted = true;
             TryFinishingSceneEventProgress();
         }
@@ -238,14 +240,16 @@ namespace Unity.Netcode
         /// </summary>
         internal void TryFinishingSceneEventProgress()
         {
-            // If all of our clients are finished loading and the local m_SceneLoadOperation is complete or
-            // we have timed out, then finish this SceneEventProgress
+            // m_SceneLoadOperation is set on the server side and so
+            // we always make sure the server has completed the scene
+            // event before we check to see if the clients have finished
+            // or we have timed out.
             if (m_SceneLoadOperation != null && !IsSceneEventCompleted)
             {
                 IsSceneEventCompleted = m_SceneLoadOperation.isDone;
             }
 
-            if (AreAllClientsFinished() && (IsSceneEventCompleted || HasTimedOut()))
+            if (IsSceneEventCompleted && (AreAllClientsFinished() || HasTimedOut()))
             {
                 OnComplete?.Invoke(this);
                 m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
