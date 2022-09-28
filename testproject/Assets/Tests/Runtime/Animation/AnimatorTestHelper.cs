@@ -108,9 +108,25 @@ namespace TestProject.RuntimeTests
             return m_Animator.GetBool("TestTrigger");
         }
 
-        public void SetTrigger(string name = "TestTrigger")
+        public void SetTrigger(string name = "TestTrigger", bool monitorTrigger = false)
         {
             m_NetworkAnimator.SetTrigger(name);
+            if (monitorTrigger && IsServer)
+            {
+                StartCoroutine(TriggerMonitor(name));
+            }
+        }
+
+        private System.Collections.IEnumerator TriggerMonitor(string triggerName)
+        {
+            var triggerStatus = m_Animator.GetBool(triggerName);
+            var waitTime = new WaitForSeconds(2 * (1.0f / NetworkManager.NetworkConfig.TickRate));
+            while (triggerStatus)
+            {
+                Debug.Log($"[{triggerName}] is still triggered.");
+                yield return waitTime;
+            }
+            Debug.Log($"[{triggerName}] is no longer triggered.");
         }
 
         public void SetLateJoinParam(bool isEnabled)
