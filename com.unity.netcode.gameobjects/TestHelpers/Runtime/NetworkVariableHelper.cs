@@ -13,7 +13,70 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
+    public class ManagedNetworkVariableHelper<T> : NetworkVariableBaseHelper where T: new()
+    {
+        private readonly ManagedNetworkVariable<T> m_NetworkVariable;
+        public delegate void OnMyValueChangedDelegateHandler(T previous, T next);
+        public event OnMyValueChangedDelegateHandler OnValueChanged;
+
+        /// <summary>
+        /// IEquatable<T> Equals Check
+        /// </summary>
+        private void CheckVariableChanged(IEquatable<T> previous, IEquatable<T> next)
+        {
+            if (!previous.Equals(next))
+            {
+                ValueChanged();
+            }
+        }
+
+        /// <summary>
+        /// ValueType Equals Check
+        /// </summary>
+        private void CheckVariableChanged(ValueType previous, ValueType next)
+        {
+            if (!previous.Equals(next))
+            {
+                ValueChanged();
+            }
+        }
+
+        /// <summary>
+        /// INetworkVariable's OnVariableChanged delegate callback
+        /// </summary>
+        /// <param name="previous"></param>
+        /// <param name="next"></param>
+        private void OnVariableChanged(T previous, T next)
+        {
+            if (previous is ValueType testValueType)
+            {
+                CheckVariableChanged(previous as ValueType, next as ValueType);
+            }
+            else
+            {
+                CheckVariableChanged(previous as IEquatable<T>, next as IEquatable<T>);
+            }
+
+            OnValueChanged?.Invoke(previous, next);
+        }
+
+        public ManagedNetworkVariableHelper(NetworkVariableBase networkVariable) : base(networkVariable)
+        {
+            m_NetworkVariable = networkVariable as ManagedNetworkVariable<T>;
+            m_NetworkVariable.OnValueChanged = OnVariableChanged;
+        }
+    }
+    /// <summary>
+    /// Will automatically register for the NetworkVariable OnValueChanged
+    /// delegate handler.  It then will expose that single delegate invocation
+    /// to anything that registers for this NetworkVariableHelper's instance's OnValueChanged event.
+    /// This allows us to register any NetworkVariable type as well as there are basically two "types of types":
+    /// IEquatable<T>
+    /// ValueType
+    /// From both we can then at least determine if the value indeed changed
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class NetworkVariableHelper<T> : NetworkVariableBaseHelper where T: unmanaged
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);

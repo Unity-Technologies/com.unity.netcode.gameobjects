@@ -4,11 +4,11 @@ using System;
 namespace Unity.Netcode
 {
     /// <summary>
-    /// A variable that can be synchronized over the network.
+    /// A managed variable that can be synchronized over the network.
     /// </summary>
-    /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
+    /// <typeparam name="T">the managed type for <see cref="ManagedNetworkVariable{T}"/> </typeparam>
     [Serializable]
-    public class NetworkVariable<T> : NetworkVariableBase where T: unmanaged
+    public class ManagedNetworkVariable<T> : NetworkVariableBase where T: new()
     {
         /// <summary>
         /// Delegate type for value changed event
@@ -27,11 +27,15 @@ namespace Unity.Netcode
         /// <param name="value">initial value set that is of type T</param>
         /// <param name="readPerm">the <see cref="NetworkVariableReadPermission"/> for this <see cref="NetworkVariable{T}"/></param>
         /// <param name="writePerm">the <see cref="NetworkVariableWritePermission"/> for this <see cref="NetworkVariable{T}"/></param>
-        public NetworkVariable(T value = default,
+        public ManagedNetworkVariable(T value = default,
             NetworkVariableReadPermission readPerm = DefaultReadPerm,
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
             : base(readPerm, writePerm)
         {
+            if (typeof(T).IsValueType)
+            {
+                throw new ArgumentException($"Do not use {typeof(ManagedNetworkVariable<>).Name} for unmanaged types. Doing so will cause performance issues. Use {typeof(NetworkVariable<>).Name} instead");
+            }
             m_InternalValue = value;
         }
 
@@ -50,7 +54,7 @@ namespace Unity.Netcode
             set
             {
                 // Compare bitwise
-                if (NetworkVariableSerialization<T>.Equals(ref m_InternalValue, ref value))
+                if (ManagedNetworkVariableSerialization<T>.Equals(ref m_InternalValue, ref value))
                 {
                     return;
                 }
@@ -99,7 +103,7 @@ namespace Unity.Netcode
             // would be stored in different fields
 
             T previousValue = m_InternalValue;
-            NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
+            ManagedNetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
 
             if (keepDirtyDelta)
             {
@@ -112,13 +116,13 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public override void ReadField(FastBufferReader reader)
         {
-            NetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
+            ManagedNetworkVariableSerialization<T>.Read(reader, ref m_InternalValue);
         }
 
         /// <inheritdoc />
         public override void WriteField(FastBufferWriter writer)
         {
-            NetworkVariableSerialization<T>.Write(writer, ref m_InternalValue);
+            ManagedNetworkVariableSerialization<T>.Write(writer, ref m_InternalValue);
         }
     }
 }

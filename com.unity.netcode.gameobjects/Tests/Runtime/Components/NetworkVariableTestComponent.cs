@@ -98,29 +98,19 @@ namespace Unity.Netcode.RuntimeTests
             return 0;
         }
     }
-    public struct UnmanagedNetworkSerializableType : INetworkSerializable, IEquatable<ManagedNetworkSerializableType>
+    public struct UnmanagedNetworkSerializableType : INetworkSerializable, IEquatable<UnmanagedNetworkSerializableType>
     {
         public FixedString32Bytes Str;
-        public NativeList<int> Ints;
+        public int Int;
         public int InMemoryValue;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref Str);
-            var length = Ints.Length;
-            serializer.SerializeValue(ref length);
-            if (serializer.IsReader)
-            {
-                Ints.ResizeUninitialized(length);
-            }
-
-            for (var i = 0; i < length; ++i)
-            {
-                serializer.SerializeValue(ref Ints.ElementAt(i));
-            }
+            serializer.SerializeValue(ref Int);
         }
 
-        public bool Equals(ManagedNetworkSerializableType other)
+        public bool Equals(UnmanagedNetworkSerializableType other)
         {
             if (ReferenceEquals(null, other))
             {
@@ -132,22 +122,9 @@ namespace Unity.Netcode.RuntimeTests
                 return true;
             }
 
-            if (Str != other.Str)
+            if (Str != other.Str || Int != other.Int)
             {
                 return false;
-            }
-
-            if (Ints.Length != other.Ints.Length)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < Ints.Length; ++i)
-            {
-                if (Ints[i] != other.Ints[i])
-                {
-                    return false;
-                }
             }
 
             return true;
@@ -170,7 +147,7 @@ namespace Unity.Netcode.RuntimeTests
                 return false;
             }
 
-            return Equals((ManagedNetworkSerializableType)obj);
+            return Equals((UnmanagedNetworkSerializableType)obj);
         }
 
         public override int GetHashCode()
@@ -210,7 +187,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkVariable<FixedString128Bytes> m_NetworkVariableFixedString128 = new NetworkVariable<FixedString128Bytes>();
         private NetworkVariable<FixedString512Bytes> m_NetworkVariableFixedString512 = new NetworkVariable<FixedString512Bytes>();
         private NetworkVariable<FixedString4096Bytes> m_NetworkVariableFixedString4096 = new NetworkVariable<FixedString4096Bytes>();
-        private NetworkVariable<ManagedNetworkSerializableType> m_NetworkVariableManaged = new NetworkVariable<ManagedNetworkSerializableType>();
+        private ManagedNetworkVariable<ManagedNetworkSerializableType> m_NetworkVariableManaged = new ManagedNetworkVariable<ManagedNetworkSerializableType>();
 
 
         public NetworkVariableHelper<bool> Bool_Var;
@@ -236,7 +213,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariableHelper<FixedString128Bytes> FixedString128_Var;
         public NetworkVariableHelper<FixedString512Bytes> FixedString512_Var;
         public NetworkVariableHelper<FixedString4096Bytes> FixedString4096_Var;
-        public NetworkVariableHelper<ManagedNetworkSerializableType> Managed_Var;
+        public ManagedNetworkVariableHelper<ManagedNetworkSerializableType> Managed_Var;
 
 
         public bool EnableTesting;
@@ -272,7 +249,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableFixedString128 = new NetworkVariable<FixedString128Bytes>();
             m_NetworkVariableFixedString512 = new NetworkVariable<FixedString512Bytes>();
             m_NetworkVariableFixedString4096 = new NetworkVariable<FixedString4096Bytes>();
-            m_NetworkVariableManaged = new NetworkVariable<ManagedNetworkSerializableType>();
+            m_NetworkVariableManaged = new ManagedNetworkVariable<ManagedNetworkSerializableType>();
 
 
             // NetworkVariable Value Type Constructor Test Coverage
@@ -299,7 +276,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableFixedString128 = new NetworkVariable<FixedString128Bytes>("1234567890");
             m_NetworkVariableFixedString512 = new NetworkVariable<FixedString512Bytes>("1234567890");
             m_NetworkVariableFixedString4096 = new NetworkVariable<FixedString4096Bytes>("1234567890");
-            m_NetworkVariableManaged = new NetworkVariable<ManagedNetworkSerializableType>(new ManagedNetworkSerializableType
+            m_NetworkVariableManaged = new ManagedNetworkVariable<ManagedNetworkSerializableType>(new ManagedNetworkSerializableType
             {
                 Str = "1234567890",
                 Ints = new[] { 1, 2, 3, 4, 5 }
@@ -330,7 +307,7 @@ namespace Unity.Netcode.RuntimeTests
             FixedString128_Var = new NetworkVariableHelper<FixedString128Bytes>(m_NetworkVariableFixedString128);
             FixedString512_Var = new NetworkVariableHelper<FixedString512Bytes>(m_NetworkVariableFixedString512);
             FixedString4096_Var = new NetworkVariableHelper<FixedString4096Bytes>(m_NetworkVariableFixedString4096);
-            Managed_Var = new NetworkVariableHelper<ManagedNetworkSerializableType>(m_NetworkVariableManaged);
+            Managed_Var = new ManagedNetworkVariableHelper<ManagedNetworkSerializableType>(m_NetworkVariableManaged);
         }
 
         /// <summary>
