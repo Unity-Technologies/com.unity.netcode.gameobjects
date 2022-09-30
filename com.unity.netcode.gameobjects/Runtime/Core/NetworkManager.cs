@@ -1946,13 +1946,20 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
-                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        if (!playerObject.DontDestroyWithOwner)
                         {
-                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                            {
+                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            }
+                            else
+                            {
+                                Destroy(playerObject.gameObject);
+                            }
                         }
                         else
                         {
-                            Destroy(playerObject.gameObject);
+                            playerObject.RemoveOwnership();
                         }
                     }
 
