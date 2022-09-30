@@ -19,18 +19,25 @@ namespace TestProject.RuntimeTests
     /// Possibly we could build this at runtime, but for now it uses the same animator controller as the manual
     /// test does.
     /// </summary>
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
         private const string k_OwnerAnimatorObjectName = "OwnerAnimatorObject";
 
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 3;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
         private GameObject m_AnimationOwnerTestPrefab => m_OwnerAnimatorObjectPrefab ? m_OwnerAnimatorObjectPrefab as GameObject : null;
 
         private AnimatorTestHelper.ParameterValues m_ParameterValues;
         private Object m_AnimatorObjectPrefab;
         private Object m_OwnerAnimatorObjectPrefab;
+
+        public NetworkAnimatorTests(HostOrServer hostOrServer)
+        {
+            m_UseHost = hostOrServer == HostOrServer.Host;
+        }
 
         protected override void OnOneTimeSetup()
         {
@@ -315,6 +322,7 @@ namespace TestProject.RuntimeTests
         {
             VerboseDebug($" ++++++++++++++++++ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
+            CheckStateEnterCount.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
 
@@ -339,7 +347,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 // Set the animation trigger via the server
-                AnimatorTestHelper.ServerSideInstance.SetTrigger();
+                AnimatorTestHelper.ServerSideInstance.SetTrigger("TestTrigger", m_EnableVerboseDebug);
             }
 
             // Wait for all triggers to fire
@@ -367,14 +375,15 @@ namespace TestProject.RuntimeTests
 
             yield return CreateAndStartNewClient();
 
-            Assert.IsTrue(m_ClientNetworkManagers.Length == 2, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
+            Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
-            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
-            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+            // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
+            var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
+            Assert.True(calculatedClients == TotalClients, $"Number of client");
 
             // Now check that the late joining client and all other clients are synchronized to the trigger
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
@@ -393,7 +402,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
-            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -448,16 +457,17 @@ namespace TestProject.RuntimeTests
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
-            Assert.IsTrue(m_ClientNetworkManagers.Length == 2, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
+            Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for the client to have spawned and the spawned prefab to be instantiated
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
-            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
-            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+            // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
+            var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
+            Assert.True(calculatedClients == TotalClients, $"Number of client");
 
-            var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[1].LocalClientId];
+            var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
 
@@ -465,7 +475,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
             AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
-            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -496,18 +506,18 @@ namespace TestProject.RuntimeTests
         /// </summary>
         private bool LateJoinClientSynchronized()
         {
-            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
+            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[NumberOfClients].LocalClientId))
             {
                 VerboseDebug($"Late join client has not had any states synchronized yet!");
                 return false;
             }
 
             var serverStates = StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId];
-            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[1].LocalClientId];
+            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
 
             if (serverStates.Count() != clientStates.Count())
             {
-                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[1].LocalClientId}]{clientStates.Count}");
+                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[NumberOfClients].LocalClientId}]{clientStates.Count}");
                 return false;
             }
 
