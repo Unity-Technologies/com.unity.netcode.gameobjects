@@ -267,7 +267,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private HashSet<TypeReference> m_WrappedNetworkVariableTypes = new HashSet<TypeReference>();
 
-        internal static readonly Type[] BaseSupportedTypes = new []
+        internal static readonly Type[] BaseSupportedTypes = new[]
         {
             typeof(bool),
             typeof(byte),
