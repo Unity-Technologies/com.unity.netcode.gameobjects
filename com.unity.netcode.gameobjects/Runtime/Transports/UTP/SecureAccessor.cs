@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -7,20 +8,46 @@ namespace Unity.Netcode.Transports.UTP
     {
         private void Awake()
         {
-            var serverSecrets = new ServerSecrets()
+            var serverSecrets = new ServerSecrets();
+
+            try
             {
-                ServerCertificate = ServerCertificate,
-                ServerPrivate = ServerPrivate
-            };
+                serverSecrets.ServerCertificate = ServerCertificate;
+            }
+            catch(Exception exception)
+            {
+                Debug.Log(exception);
+            }
+
+            try
+            {
+                serverSecrets.ServerPrivate = ServerPrivate;
+            }
+            catch(Exception exception)
+            {
+                Debug.Log(exception);
+            }
+
+            var clientSecrets = new ClientSecrets();
+            try
+            {
+                clientSecrets.ClientCertificate = ClientCA;
+            }
+            catch(Exception exception)
+            {
+                Debug.Log(exception);
+            }
+
+            try
+            {
+                clientSecrets.ServerCommonName = ServerCommonName;
+            }
+            catch(Exception exception)
+            {
+                Debug.Log(exception);
+            }
 
             GetComponent<UnityTransport>().SetServerSecrets(serverSecrets);
-
-            var clientSecrets = new ClientSecrets()
-            {
-                ClientCertificate = ClientCA,
-                ServerCommonName = ServerCommonName
-            };
-
             GetComponent<UnityTransport>().SetClientSecrets(clientSecrets);
         }
 
@@ -46,6 +73,15 @@ namespace Unity.Netcode.Transports.UTP
             set => m_ClientCAFilePath = value;
         }
 
+        [Tooltip("Client CA Override")]
+        [SerializeField]
+        private string m_ClientCAOverride = "";
+        public string ClientCAOverride
+        {
+            get => m_ClientCAOverride;
+            set => m_ClientCAOverride = value;
+        }
+
         [Tooltip("Server Certificate filepath")]
         [SerializeField]
         private string m_ServerCertificateFilePath = "Assets/Secure/myGameServerCertificate.pem";
@@ -66,7 +102,14 @@ namespace Unity.Netcode.Transports.UTP
         private string m_ClientCA;
         public string ClientCA
         {
-            get => ReadFile(m_ClientCAFilePath, "Client Certificate");
+            get
+            {
+                if (m_ClientCAOverride != "")
+                {
+                    return m_ClientCAOverride;
+                }
+                return ReadFile(m_ClientCAFilePath, "Client Certificate");
+            }
             set => m_ClientCA = value;
         }
         private string m_ServerCertificate;
