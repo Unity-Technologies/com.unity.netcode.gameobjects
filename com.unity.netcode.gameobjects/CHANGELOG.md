@@ -15,7 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
-- Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `isNotTeleporting` for better clarity of what that parameter does.
+- Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `isNotTeleporting` for better clarity of what that parameter does. (#2228)
 - The send queues of `UnityTransport` are now dynamically-sized. This means that there shouldn't be any need anymore to tweak the 'Max Send Queue Size' value. In fact, this field is now removed from the inspector and will not be serialized anymore. It is still possible to set it manually using the `MaxSendQueueSize` property, but it is not recommended to do so aside from some specific needs (e.g. limiting the amount of memory used by the send queues in very constrained environments). (#2212)
 - As a consequence of the above change, the `UnityTransport.InitialMaxSendQueueSize` field is now deprecated. There is no default value anymore since send queues are dynamically-sized. (#2212)
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
