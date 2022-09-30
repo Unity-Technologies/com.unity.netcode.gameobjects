@@ -1510,20 +1510,12 @@ namespace Unity.Netcode.Transports.UTP
                     }
                     else
                     {
-#if !UNITY_WEBGL
                         if (m_ServerCommonName.Length == 0 ||
                             m_ClientCertificate.Length == 0)
                         {
                             throw new Exception("In order to use encrypted communications, clients must set the server common name and client certificate.");
                         }
                         m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
-#else
-                        if (m_ServerCommonName.Length == 0)
-                        {
-                            throw new Exception("In order to use encrypted communications, on WebGL, clients must set the server common name.");
-                        }
-                        m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName);
-#endif
                     }
                 }
                 catch(Exception e)
