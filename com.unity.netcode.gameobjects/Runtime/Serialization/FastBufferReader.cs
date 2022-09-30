@@ -1323,5 +1323,24 @@ namespace Unity.Netcode
             value.Length = length;
             ReadBytesSafe(value.GetUnsafePtr(), length);
         }
+
+
+        /// <summary>
+        /// Read a FixedString value.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafeInPlace<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value.Length = length;
+            ReadBytesSafe(value.GetUnsafePtr(), length);
+        }
     }
 }

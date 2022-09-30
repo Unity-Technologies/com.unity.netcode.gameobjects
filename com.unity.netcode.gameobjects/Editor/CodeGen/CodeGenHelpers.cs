@@ -123,6 +123,19 @@ namespace Unity.Netcode.Editor.CodeGen
             try
             {
                 var typeDef = typeReference.Resolve();
+                // Note: this won't catch generics correctly.
+                //
+                //     class Foo<T>: IInterface<T> {}
+                //     class Bar: Foo<int> {}
+                //
+                // Bar.HasInterface(IInterface<int>) -> returns false even though it should be true.
+                //
+                // This can be fixed (see GetAllFieldsNested() in NetworkBehaviourILPP to understand how)
+                // but right now we don't need that to work so it's left alone to reduce complexity
+                if (typeDef.BaseType.HasInterface(interfaceTypeFullName))
+                {
+                    return true;
+                }
                 var typeFaces = typeDef.Interfaces;
                 return typeFaces.Any(iface => iface.InterfaceType.FullName == interfaceTypeFullName);
             }

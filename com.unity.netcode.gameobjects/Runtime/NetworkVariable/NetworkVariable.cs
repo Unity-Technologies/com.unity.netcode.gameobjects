@@ -8,7 +8,7 @@ namespace Unity.Netcode
     /// </summary>
     /// <typeparam name="T">the unmanaged type for <see cref="NetworkVariable{T}"/> </typeparam>
     [Serializable]
-    public class NetworkVariable<T> : NetworkVariableBase where T: unmanaged
+    public class NetworkVariable<T> : NetworkVariableBase
     {
         /// <summary>
         /// Delegate type for value changed event
@@ -50,7 +50,7 @@ namespace Unity.Netcode
             set
             {
                 // Compare bitwise
-                if (NetworkVariableSerialization<T>.Equals(ref m_InternalValue, ref value))
+                if (NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value))
                 {
                     return;
                 }
