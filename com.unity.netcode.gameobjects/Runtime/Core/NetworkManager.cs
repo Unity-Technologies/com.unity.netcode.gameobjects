@@ -1609,7 +1609,9 @@ namespace Unity.Netcode
         {
             var message = new ConnectionRequestMessage
             {
-                ConfigHash = NetworkConfig.GetConfig(),
+                // Since only a remote client will send a connection request,
+                // we should always force the rebuilding of the NetworkConfig hash value
+                ConfigHash = NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
