@@ -14,7 +14,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 serverSecrets.ServerCertificate = ServerCertificate;
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Debug.Log(exception);
             }
@@ -23,7 +23,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 serverSecrets.ServerPrivate = ServerPrivate;
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Debug.Log(exception);
             }
@@ -33,7 +33,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 clientSecrets.ClientCertificate = ClientCA;
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Debug.Log(exception);
             }
@@ -42,7 +42,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 clientSecrets.ServerCommonName = ServerCommonName;
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 Debug.Log(exception);
             }
