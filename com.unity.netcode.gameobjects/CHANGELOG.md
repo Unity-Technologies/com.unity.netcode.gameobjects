@@ -23,6 +23,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where clients were not rebuilding the `NetworkConfig` hash value for each unique connection request. (#2226)
 - Fixed the issue where player objects were not taking the `DontDestroyWithOwner` property into consideration when a client disconnected. (#2225)
 - Fixed issue #1924 where `UnityTransport` would fail to restart after a first failure (even if what caused the initial failure was addressed). (#2220)
 - Fixed issue where `NetworkTransform.SetStateServerRpc` and `NetworkTransform.SetStateClientRpc` were not honoring local vs world space settings when applying the position and rotation. (#2203)
