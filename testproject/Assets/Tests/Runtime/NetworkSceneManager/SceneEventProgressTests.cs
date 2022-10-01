@@ -48,7 +48,7 @@ namespace TestProject.RuntimeTests
             m_CurrentSceneEventProgress = new SceneEventProgress(m_ServerNetworkManager, SceneEventProgressStatus.Started);
             m_CurrentSceneEventProgress.OnComplete = SceneEventProgressComplete;
             SceneManager.sceneLoaded += MockServerLoadedSene;
-            m_CurrentSceneEventProgress.SetSceneLoadOperation(SceneManager.LoadSceneAsync(k_SceneUsedToGetAsyncOperation, LoadSceneMode.Additive));
+            m_CurrentSceneEventProgress.SetSceneAsyncOperation(SceneManager.LoadSceneAsync(k_SceneUsedToGetAsyncOperation, LoadSceneMode.Additive));
         }
 
         private void MockServerLoadedSene(Scene scene, LoadSceneMode loadSceneMode)
