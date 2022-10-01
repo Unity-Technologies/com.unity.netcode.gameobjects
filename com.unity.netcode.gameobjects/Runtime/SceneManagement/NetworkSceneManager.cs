@@ -1649,10 +1649,10 @@ namespace Unity.Netcode
 
             if (!shouldPassThrough)
             {
+                // If not, then load the scene
                 var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
                 sceneEventProgress.SceneEventId = sceneEventId;
                 sceneEventProgress.OnSceneEventCompleted = ClientLoadedSynchronization;
-                // If not, then load the scene
                 sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
 
                 // Notify local client that a scene load has begun
