@@ -341,14 +341,14 @@ namespace Unity.Netcode
             public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
             {
                 var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-                sceneEventProgress.SetSceneAsyncOperation(operation);
+                sceneEventProgress.SetAsyncOperation(operation);
                 return operation;
             }
 
             public AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
             {
                 var operation = SceneManager.UnloadSceneAsync(scene);
-                sceneEventProgress.SetSceneAsyncOperation(operation);
+                sceneEventProgress.SetAsyncOperation(operation);
                 return operation;
             }
         }

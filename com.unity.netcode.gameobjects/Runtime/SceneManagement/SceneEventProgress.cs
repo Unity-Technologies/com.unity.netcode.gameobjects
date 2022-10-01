@@ -95,7 +95,7 @@ namespace Unity.Netcode
         internal uint SceneEventId;
 
         private Coroutine m_TimeOutCoroutine;
-        private AsyncOperation m_SceneLoadOperation;
+        private AsyncOperation m_AsyncOperation;
 
         private NetworkManager m_NetworkManager { get; }
 
@@ -211,16 +211,16 @@ namespace Unity.Netcode
             }
 
             // Return the local scene event's AsyncOperation status
-            return m_SceneLoadOperation.isDone;
+            return m_AsyncOperation.isDone;
         }
 
         /// <summary>
         /// Sets the AsyncOperation for the scene load/unload event
         /// </summary>
-        internal void SetSceneAsyncOperation(AsyncOperation asyncOperation)
+        internal void SetAsyncOperation(AsyncOperation asyncOperation)
         {
-            m_SceneLoadOperation = asyncOperation;
-            m_SceneLoadOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
+            m_AsyncOperation = asyncOperation;
+            m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
             {
                 OnSceneEventCompleted?.Invoke(SceneEventId);
                 TryFinishingSceneEventProgress();

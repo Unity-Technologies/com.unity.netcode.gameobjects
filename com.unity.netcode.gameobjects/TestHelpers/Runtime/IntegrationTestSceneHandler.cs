@@ -107,7 +107,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             // We always load additively for all scenes during integration tests
             var asyncOperation = SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
-            queuedSceneJob.SceneEventProgress.SetSceneAsyncOperation(asyncOperation);
+            queuedSceneJob.SceneEventProgress.SetAsyncOperation(asyncOperation);
 
             // Wait for it to finish
             while (queuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed)
@@ -177,7 +177,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded && !queuedSceneJob.Scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
             {
                 var asyncOperation = SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
-                queuedSceneJob.SceneEventProgress.SetSceneAsyncOperation(asyncOperation);
+                queuedSceneJob.SceneEventProgress.SetAsyncOperation(asyncOperation);
             }
             else
             {
@@ -254,7 +254,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 SceneManager.sceneLoaded += Sever_SceneLoaded;
             }
             var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-            sceneEventProgress.SetSceneAsyncOperation(operation);
+            sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
 
@@ -273,7 +273,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public AsyncOperation GenericUnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
         {
             var operation = SceneManager.UnloadSceneAsync(scene);
-            sceneEventProgress.SetSceneAsyncOperation(operation);
+            sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
 
