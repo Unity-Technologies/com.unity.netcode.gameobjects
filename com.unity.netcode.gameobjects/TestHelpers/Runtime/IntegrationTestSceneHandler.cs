@@ -107,7 +107,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             // We always load additively for all scenes during integration tests
             var asyncOperation = SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
-
             queuedSceneJob.SceneEventProgress.SetSceneAsyncOperation(asyncOperation);
 
             // Wait for it to finish
@@ -179,7 +178,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 var asyncOperation = SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
                 queuedSceneJob.SceneEventProgress.SetSceneAsyncOperation(asyncOperation);
-
             }
             else
             {

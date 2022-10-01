@@ -215,9 +215,8 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Sets the AsyncOperation from for the scene load/unload event
+        /// Sets the AsyncOperation for the scene load/unload event
         /// </summary>
-        /// <param name="sceneLoadOperation"></param>
         internal void SetSceneAsyncOperation(AsyncOperation asyncOperation)
         {
             m_SceneLoadOperation = asyncOperation;
