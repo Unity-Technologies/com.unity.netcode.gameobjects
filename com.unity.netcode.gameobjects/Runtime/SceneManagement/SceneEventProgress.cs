@@ -62,7 +62,7 @@ namespace Unity.Netcode
         internal List<ulong> ClientsThatDisconnected = new List<ulong>();
 
         /// <summary>
-        /// This is the time when the current scene event will have timed out
+        /// This is when the current scene event will have timed out
         /// </summary>
         internal float WhenSceneEventHasTimedOut;
 
