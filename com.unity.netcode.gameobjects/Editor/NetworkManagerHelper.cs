@@ -64,7 +64,7 @@ namespace Unity.Netcode.Editor
         {
             var scenesList = EditorBuildSettings.scenes.ToList();
             var activeScene = SceneManager.GetActiveScene();
-            var isSceneInBuildSettings = scenesList.Where((c) => c.path == activeScene.path).Count() == 1;
+            var isSceneInBuildSettings = scenesList.Count((c) => c.path == activeScene.path) == 1;
             var networkManager = Object.FindObjectOfType<NetworkManager>();
             if (!isSceneInBuildSettings && networkManager != null)
             {
@@ -109,9 +109,8 @@ namespace Unity.Netcode.Editor
         public void CheckAndNotifyUserNetworkObjectRemoved(NetworkManager networkManager, bool editorTest = false)
         {
             // Check for any NetworkObject at the same gameObject relative layer
-            var networkObject = networkManager.gameObject.GetComponent<NetworkObject>();
 
-            if (networkObject == null)
+            if (!networkManager.gameObject.TryGetComponent<NetworkObject>(out var networkObject))
             {
                 // if none is found, check to see if any children have a NetworkObject
                 networkObject = networkManager.gameObject.GetComponentInChildren<NetworkObject>();
