@@ -816,10 +816,10 @@ namespace Unity.Netcode
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
-                // If the parent is a GameObject then preserve that hierarchy
-                // Note: We only preserve the hierarchy but we don't keep track of the parenting.
-                // only if the user removes the child from the parent and the re-parents under a
-                // valid NetworkObject will we begin to track parenting.
+                // If parentNetworkObject is null then the parent is a GameObject without a NetworkObject component
+                // attached. Under this case, we preserve the hierarchy but we don't keep track of the parenting.
+                // Note: We only start tracking parenting if the user removes the child from the standard GameObject
+                // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
                 if (parentNetworkObject == null)
                 {
                     return true;
