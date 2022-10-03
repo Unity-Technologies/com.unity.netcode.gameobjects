@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- IPv6 is now supported for direction connections when using `UnityTransport`. However, note that Unity Relay is still limited to IPv4.
 - Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
 
 ### Changed
