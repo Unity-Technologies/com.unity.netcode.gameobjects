@@ -36,6 +36,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed throwing an exception in `OnNetworkUpdate` causing other `OnNetworkUpdate` calls to not be executed. (#1739)
 - Fixed synchronization when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independent from the local time scale. (#2171)
 - Fixed not sending all NetworkVariables to all clients when a client connects to a server. (#1987)
+- Fixed IsOwner/IsOwnedByServer being wrong on the server after calling RemoveOwnership (#2211)
 
 ## [1.0.2] - 2022-09-12
 
