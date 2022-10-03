@@ -12,6 +12,8 @@ openssl req -new -key myGameServerPrivate.pem -out myGameServerCertificateSignin
 openssl x509 -req -in myGameServerCertificateSigningRequest.pem -CA myGameClientCA.pem -CAkey clientPrivateKeyForRootCA.pem -CAcreateserial -out myGameServerCertificate.pem -days 365 -sha256
 ```
 
+Source: https://docs-multiplayer.unity3d.com/transport/current/secure-connection
+
 ### Naming
 
 We will refer to

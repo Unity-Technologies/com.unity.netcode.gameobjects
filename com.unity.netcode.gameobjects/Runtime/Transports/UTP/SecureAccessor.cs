@@ -73,7 +73,7 @@ namespace Unity.Netcode.Transports.UTP
             set => m_ClientCAFilePath = value;
         }
 
-        [Tooltip("Client CA Override")]
+        [Tooltip("Client CA Override. Certificate content, for platforms that lack file access (WebGL)")]
         [SerializeField]
         private string m_ClientCAOverride = "";
         public string ClientCAOverride
