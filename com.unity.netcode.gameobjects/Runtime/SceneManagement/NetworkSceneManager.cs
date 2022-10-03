@@ -338,17 +338,17 @@ namespace Unity.Netcode
         /// </summary>
         private class DefaultSceneManagerHandler : ISceneManagerHandler
         {
-            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
+            public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
             {
                 var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-                operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+                sceneEventProgress.SetAsyncOperation(operation);
                 return operation;
             }
 
-            public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
+            public AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
             {
                 var operation = SceneManager.UnloadSceneAsync(scene);
-                operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+                sceneEventProgress.SetAsyncOperation(operation);
                 return operation;
             }
         }
@@ -887,12 +887,14 @@ namespace Unity.Netcode
         private bool OnSceneEventProgressCompleted(SceneEventProgress sceneEventProgress)
         {
             var sceneEventData = BeginSceneEvent();
+            var clientsThatCompleted = sceneEventProgress.GetClientsWithStatus(true);
+            var clientsThatTimedOut = sceneEventProgress.GetClientsWithStatus(false);
             sceneEventData.SceneEventProgressId = sceneEventProgress.Guid;
             sceneEventData.SceneHash = sceneEventProgress.SceneHash;
             sceneEventData.SceneEventType = sceneEventProgress.SceneEventType;
-            sceneEventData.ClientsCompleted = sceneEventProgress.DoneClients;
+            sceneEventData.ClientsCompleted = clientsThatCompleted;
             sceneEventData.LoadSceneMode = sceneEventProgress.LoadSceneMode;
-            sceneEventData.ClientsTimedOut = sceneEventProgress.ClientsThatStartedSceneEvent.Except(sceneEventProgress.DoneClients).ToList();
+            sceneEventData.ClientsTimedOut = clientsThatTimedOut;
 
             var message = new SceneEventMessage
             {
@@ -913,8 +915,8 @@ namespace Unity.Netcode
                 SceneName = SceneNameFromHash(sceneEventProgress.SceneHash),
                 ClientId = NetworkManager.ServerClientId,
                 LoadSceneMode = sceneEventProgress.LoadSceneMode,
-                ClientsThatCompleted = sceneEventProgress.DoneClients,
-                ClientsThatTimedOut = m_NetworkManager.ConnectedClients.Keys.Except(sceneEventProgress.DoneClients).ToList(),
+                ClientsThatCompleted = clientsThatCompleted,
+                ClientsThatTimedOut = clientsThatTimedOut,
             });
 
             if (sceneEventData.SceneEventType == SceneEventType.LoadEventCompleted)
@@ -969,18 +971,9 @@ namespace Unity.Netcode
             sceneEventProgress.SceneEventType = SceneEventType.UnloadEventCompleted;
 
             ScenesLoaded.Remove(scene.handle);
-            var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded };
-            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventAction);
-
-            // If integration testing, IntegrationTestSceneHandler returns null
-            if (sceneUnload == null)
-            {
-                sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
-            }
-            else
-            {
-                sceneEventProgress.SetSceneLoadOperation(sceneUnload);
-            }
+            sceneEventProgress.SceneEventId = sceneEventData.SceneEventId;
+            sceneEventProgress.OnSceneEventCompleted = OnSceneUnloaded;
+            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
 
             // Notify local server that a scene is going to be unloaded
             OnSceneEvent?.Invoke(new SceneEvent()
@@ -1024,9 +1017,10 @@ namespace Unity.Netcode
                     $"because the client scene handle {sceneHandle} was not found in ScenesLoaded!");
             }
             m_IsSceneEventActive = true;
-
-            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle],
-                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventData.SceneEventId, EventAction = OnSceneUnloaded });
+            var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
+            sceneEventProgress.SceneEventId = sceneEventData.SceneEventId;
+            sceneEventProgress.OnSceneEventCompleted = OnSceneUnloaded;
+            var sceneUnload = SceneManagerHandler.UnloadSceneAsync(ScenesLoaded[sceneHandle], sceneEventProgress);
 
             ScenesLoaded.Remove(sceneHandle);
 
@@ -1070,7 +1064,7 @@ namespace Unity.Netcode
                 //Only if we are a host do we want register having loaded for the associated SceneEventProgress
                 if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
                 {
-                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(NetworkManager.ServerClientId);
+                    SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(NetworkManager.ServerClientId);
                 }
             }
 
@@ -1119,8 +1113,10 @@ namespace Unity.Netcode
                 // Validate the scene as well as ignore the DDOL (which will have a negative buildIndex)
                 if (currentActiveScene.name != keyHandleEntry.Value.name && keyHandleEntry.Value.buildIndex >= 0)
                 {
-                    var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value,
-                        new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = EmptySceneUnloadedOperation });
+                    var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
+                    sceneEventProgress.SceneEventId = sceneEventId;
+                    sceneEventProgress.OnSceneEventCompleted = EmptySceneUnloadedOperation;
+                    var sceneUnload = SceneManagerHandler.UnloadSceneAsync(keyHandleEntry.Value, sceneEventProgress);
                     SceneUnloadEventHandler.RegisterScene(this, keyHandleEntry.Value, LoadSceneMode.Additive, sceneUnload);
                 }
             }
@@ -1180,18 +1176,9 @@ namespace Unity.Netcode
             }
 
             // Now start loading the scene
-            var sceneEventAction = new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded };
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
-            // If integration testing, IntegrationTestSceneHandler returns null
-            if (sceneLoad == null)
-            {
-                sceneEventProgress.SetSceneLoadOperation(sceneEventAction);
-            }
-            else
-            {
-                sceneEventProgress.SetSceneLoadOperation(sceneLoad);
-            }
-
+            sceneEventProgress.SceneEventId = sceneEventId;
+            sceneEventProgress.OnSceneEventCompleted = OnSceneLoaded;
+            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
             // Notify the local server that a scene loading event has begun
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1355,9 +1342,10 @@ namespace Unity.Netcode
                 SceneUnloadEventHandler.RegisterScene(this, SceneManager.GetActiveScene(), LoadSceneMode.Single);
 
             }
-
-            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode,
-                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = OnSceneLoaded });
+            var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
+            sceneEventProgress.SceneEventId = sceneEventId;
+            sceneEventProgress.OnSceneEventCompleted = OnSceneLoaded;
+            var sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, sceneEventData.LoadSceneMode, sceneEventProgress);
 
             OnSceneEvent?.Invoke(new SceneEvent()
             {
@@ -1488,7 +1476,7 @@ namespace Unity.Netcode
             //Second, only if we are a host do we want register having loaded for the associated SceneEventProgress
             if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId) && m_NetworkManager.IsHost)
             {
-                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(NetworkManager.ServerClientId);
+                SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(NetworkManager.ServerClientId);
             }
             EndSceneEvent(sceneEventId);
         }
@@ -1662,8 +1650,10 @@ namespace Unity.Netcode
             if (!shouldPassThrough)
             {
                 // If not, then load the scene
-                sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode,
-                new ISceneManagerHandler.SceneEventAction() { SceneEventId = sceneEventId, EventAction = ClientLoadedSynchronization });
+                var sceneEventProgress = new SceneEventProgress(m_NetworkManager);
+                sceneEventProgress.SceneEventId = sceneEventId;
+                sceneEventProgress.OnSceneEventCompleted = ClientLoadedSynchronization;
+                sceneLoad = SceneManagerHandler.LoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
 
                 // Notify local client that a scene load has begun
                 OnSceneEvent?.Invoke(new SceneEvent()
@@ -1880,7 +1870,7 @@ namespace Unity.Netcode
 
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(clientId);
                         }
                         EndSceneEvent(sceneEventId);
                         break;
@@ -1889,7 +1879,7 @@ namespace Unity.Netcode
                     {
                         if (SceneEventProgressTracking.ContainsKey(sceneEventData.SceneEventProgressId))
                         {
-                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].AddClientAsDone(clientId);
+                            SceneEventProgressTracking[sceneEventData.SceneEventProgressId].ClientFinishedSceneEvent(clientId);
                         }
                         // Notify the local server that the client has finished unloading a scene
                         OnSceneEvent?.Invoke(new SceneEvent()
