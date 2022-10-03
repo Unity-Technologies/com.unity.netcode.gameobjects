@@ -762,6 +762,39 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
         }
 
+        internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy) where T : INetworkMessage
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                var messageHook = new MessageHookEntry(clientNetworkManager);
+                messageHook.AssignMessageType<T>();
+                messageHookEntriesForSpawn.Add(messageHook);
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
+        }
+
+        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy)
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                foreach (var message in messagesInOrder)
+                {
+                    var messageHook = new MessageHookEntry(clientNetworkManager);
+                    messageHook.AssignMessageType(message);
+                    messageHookEntriesForSpawn.Add(messageHook);
+                }
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
+        }
+
         /// <summary>
         /// Creates a basic NetworkObject test prefab, assigns it to a new
         /// NetworkPrefab entry, and then adds it to the server and client(s)
