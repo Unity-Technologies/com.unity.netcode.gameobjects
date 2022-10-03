@@ -130,7 +130,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 //
                 // Bar.HasInterface(IInterface<int>) -> returns false even though it should be true.
                 //
-                // This can be fixed (see GetAllFieldsNested() in NetworkBehaviourILPP to understand how)
+                // This can be fixed (see GetAllFieldsAndResolveGenerics() in NetworkBehaviourILPP to understand how)
                 // but right now we don't need that to work so it's left alone to reduce complexity
                 if (typeDef.BaseType.HasInterface(interfaceTypeFullName))
                 {
