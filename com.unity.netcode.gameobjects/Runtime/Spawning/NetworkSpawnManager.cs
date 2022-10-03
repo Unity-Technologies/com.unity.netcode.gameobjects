@@ -213,10 +213,10 @@ namespace Unity.Netcode
                 return;
             }
 
+            networkObject.OwnerClientId = NetworkManager.ServerClientId;
+
             // Server removes the entry and takes over ownership before notifying
             UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
-
-            networkObject.OwnerClientId = NetworkManager.ServerClientId;
 
             var message = new ChangeOwnershipMessage
             {
