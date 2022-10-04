@@ -36,7 +36,7 @@ namespace Unity.Netcode
 
                 if (IsLatestParentSet)
                 {
-                    BytePacker.WriteValuePacked(writer, (ulong)LatestParent);
+                    BytePacker.WriteValueBitPacked(writer, (ulong)LatestParent);
                 }
             }
 
@@ -63,7 +63,7 @@ namespace Unity.Netcode
 
                 if (IsLatestParentSet)
                 {
-                    ByteUnpacker.ReadValuePacked(reader, out ulong latestParent);
+                    ByteUnpacker.ReadValueBitPacked(reader, out ulong latestParent);
                     LatestParent = latestParent;
                 }
             }
