@@ -48,7 +48,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             public JobTypes JobType;
             public string SceneName;
             public Scene Scene;
-            public ISceneManagerHandler.SceneEventAction SceneAction;
+            public SceneEventProgress SceneEventProgress;
             public IntegrationTestSceneHandler IntegrationTestSceneHandler;
         }
 
@@ -106,7 +106,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             // We always load additively for all scenes during integration tests
-            SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
+            var asyncOperation = SceneManager.LoadSceneAsync(queuedSceneJob.SceneName, LoadSceneMode.Additive);
+            queuedSceneJob.SceneEventProgress.SetAsyncOperation(asyncOperation);
 
             // Wait for it to finish
             while (queuedSceneJob.JobType != QueuedSceneJob.JobTypes.Completed)
@@ -114,7 +115,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 yield return s_WaitForSeconds;
             }
             yield return s_WaitForSeconds;
-            CurrentQueuedSceneJob.SceneAction.Invoke();
         }
 
         /// <summary>
@@ -176,7 +176,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             SceneManager.sceneUnloaded += SceneManager_sceneUnloaded;
             if (queuedSceneJob.Scene.IsValid() && queuedSceneJob.Scene.isLoaded && !queuedSceneJob.Scene.name.Contains(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
             {
-                SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
+                var asyncOperation = SceneManager.UnloadSceneAsync(queuedSceneJob.Scene);
+                queuedSceneJob.SceneEventProgress.SetAsyncOperation(asyncOperation);
             }
             else
             {
@@ -188,7 +189,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 yield return s_WaitForSeconds;
             }
-            CurrentQueuedSceneJob.SceneAction.Invoke();
         }
 
         /// <summary>
@@ -246,7 +246,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Server always loads like it normally would
         /// </summary>
-        public AsyncOperation GenericLoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation GenericLoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
         {
             m_ServerSceneBeingLoaded = sceneName;
             if (NetcodeIntegrationTest.IsRunning)
@@ -254,8 +254,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 SceneManager.sceneLoaded += Sever_SceneLoaded;
             }
             var operation = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
-
-            operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+            sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
 
@@ -271,39 +270,39 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Server always unloads like it normally would
         /// </summary>
-        public AsyncOperation GenericUnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation GenericUnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
         {
             var operation = SceneManager.UnloadSceneAsync(scene);
-            operation.completed += new Action<AsyncOperation>(asyncOp2 => { sceneEventAction.Invoke(); });
+            sceneEventProgress.SetAsyncOperation(operation);
             return operation;
         }
 
 
-        public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation LoadSceneAsync(string sceneName, LoadSceneMode loadSceneMode, SceneEventProgress sceneEventProgress)
         {
             // Server and non NetcodeIntegrationTest tests use the generic load scene method
             if (!NetcodeIntegrationTest.IsRunning)
             {
-                return GenericLoadSceneAsync(sceneName, loadSceneMode, sceneEventAction);
+                return GenericLoadSceneAsync(sceneName, loadSceneMode, sceneEventProgress);
             }
             else // NetcodeIntegrationTest Clients always get added to the jobs queue
             {
-                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Loading });
+                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, SceneName = sceneName, SceneEventProgress = sceneEventProgress, JobType = QueuedSceneJob.JobTypes.Loading });
             }
 
             return null;
         }
 
-        public AsyncOperation UnloadSceneAsync(Scene scene, ISceneManagerHandler.SceneEventAction sceneEventAction)
+        public AsyncOperation UnloadSceneAsync(Scene scene, SceneEventProgress sceneEventProgress)
         {
             // Server and non NetcodeIntegrationTest tests use the generic unload scene method
             if (!NetcodeIntegrationTest.IsRunning)
             {
-                return GenericUnloadSceneAsync(scene, sceneEventAction);
+                return GenericUnloadSceneAsync(scene, sceneEventProgress);
             }
             else // NetcodeIntegrationTest Clients always get added to the jobs queue
             {
-                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneAction = sceneEventAction, JobType = QueuedSceneJob.JobTypes.Unloading });
+                AddJobToQueue(new QueuedSceneJob() { IntegrationTestSceneHandler = this, Scene = scene, SceneEventProgress = sceneEventProgress, JobType = QueuedSceneJob.JobTypes.Unloading });
             }
             // This is OK to return a "nothing" AsyncOperation since we are simulating client loading
             return null;
