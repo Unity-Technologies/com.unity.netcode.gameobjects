@@ -214,8 +214,6 @@ namespace Unity.Netcode.RuntimeTests
                     OwnerPermissionObject.VerifyConsistency();
                 }
             }
-
-            yield return null;
         }
     }
 }
