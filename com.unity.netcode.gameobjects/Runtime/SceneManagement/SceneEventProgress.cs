@@ -58,12 +58,13 @@ namespace Unity.Netcode
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
-        internal List<ulong> DoneClients { get; } = new List<ulong>();
+        internal Dictionary<ulong, bool> ClientsProcessingSceneEvent { get; } = new Dictionary<ulong, bool>();
+        internal List<ulong> ClientsThatDisconnected = new List<ulong>();
 
         /// <summary>
-        /// The local time when the scene event was "roughly started"
+        /// This is when the current scene event will have timed out
         /// </summary>
-        internal float TimeAtInitiation { get; }
+        internal float WhenSceneEventHasTimedOut;
 
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
@@ -75,17 +76,15 @@ namespace Unity.Netcode
         /// </summary>
         internal OnCompletedDelegate OnComplete;
 
-        /// <summary>
-        /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occurred.
-        /// </summary>
-        internal bool IsCompleted { get; private set; }
-
-        internal bool TimedOut { get; private set; }
+        internal Action<uint> OnSceneEventCompleted;
 
         /// <summary>
-        /// If all clients are done loading the scene, at the moment of completed.
+        /// This will make sure that we only have timed out if we never completed
         /// </summary>
-        internal bool AreAllClientsDoneLoading { get; private set; }
+        internal bool HasTimedOut()
+        {
+            return WhenSceneEventHasTimedOut <= Time.realtimeSinceStartup;
+        }
 
         /// <summary>
         /// The hash value generated from the full scene path
@@ -93,9 +92,10 @@ namespace Unity.Netcode
         internal uint SceneHash { get; set; }
 
         internal Guid Guid { get; } = Guid.NewGuid();
+        internal uint SceneEventId;
 
         private Coroutine m_TimeOutCoroutine;
-        private AsyncOperation m_SceneLoadOperation;
+        private AsyncOperation m_AsyncOperation;
 
         private NetworkManager m_NetworkManager { get; }
 
@@ -105,19 +105,60 @@ namespace Unity.Netcode
 
         internal LoadSceneMode LoadSceneMode;
 
-        internal List<ulong> ClientsThatStartedSceneEvent;
+        internal List<ulong> GetClientsWithStatus(bool completedSceneEvent)
+        {
+            var clients = new List<ulong>();
+            foreach (var clientStatus in ClientsProcessingSceneEvent)
+            {
+                if (clientStatus.Value == completedSceneEvent)
+                {
+                    clients.Add(clientStatus.Key);
+                }
+            }
+
+            // If we are getting the list of clients that have not completed the
+            // scene event, then add any clients that disconnected during this
+            // scene event.
+            if (!completedSceneEvent)
+            {
+                clients.AddRange(ClientsThatDisconnected);
+            }
+            return clients;
+        }
 
         internal SceneEventProgress(NetworkManager networkManager, SceneEventProgressStatus status = SceneEventProgressStatus.Started)
         {
             if (status == SceneEventProgressStatus.Started)
             {
-                // Track the clients that were connected when we started this event
-                ClientsThatStartedSceneEvent = new List<ulong>(networkManager.ConnectedClientsIds);
                 m_NetworkManager = networkManager;
-                m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
-                TimeAtInitiation = Time.realtimeSinceStartup;
+
+                if (networkManager.IsServer)
+                {
+                    m_NetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
+                    // Track the clients that were connected when we started this event
+                    foreach (var connectedClientId in networkManager.ConnectedClientsIds)
+                    {
+                        ClientsProcessingSceneEvent.Add(connectedClientId, false);
+                    }
+
+                    WhenSceneEventHasTimedOut = Time.realtimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
+                    m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
+                }
             }
             Status = status;
+        }
+
+        /// <summary>
+        /// Remove the client from the clients processing the current scene event
+        /// Add this client to the clients that disconnected list
+        /// </summary>
+        private void OnClientDisconnectCallback(ulong clientId)
+        {
+            if (ClientsProcessingSceneEvent.ContainsKey(clientId))
+            {
+                ClientsThatDisconnected.Add(clientId);
+                ClientsProcessingSceneEvent.Remove(clientId);
+            }
         }
 
         /// <summary>
@@ -129,79 +170,78 @@ namespace Unity.Netcode
         internal IEnumerator TimeOutSceneEventProgress()
         {
             var waitForNetworkTick = new WaitForSeconds(1.0f / m_NetworkManager.NetworkConfig.TickRate);
-            while (!TimedOut && !IsCompleted)
+            while (!HasTimedOut())
             {
                 yield return waitForNetworkTick;
 
-                CheckCompletion();
-                if (!IsCompleted)
-                {
-                    TimedOut = TimeAtInitiation - Time.realtimeSinceStartup >= m_NetworkManager.NetworkConfig.LoadSceneTimeOut;
-                }
+                TryFinishingSceneEventProgress();
             }
         }
 
-        internal void AddClientAsDone(ulong clientId)
-        {
-            DoneClients.Add(clientId);
-            CheckCompletion();
-        }
-
-        internal void RemoveClientAsDone(ulong clientId)
-        {
-            DoneClients.Remove(clientId);
-            CheckCompletion();
-        }
-
-        internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
-        {
-            m_SceneLoadOperation = sceneLoadOperation;
-            m_SceneLoadOperation.completed += operation => CheckCompletion();
-        }
-
         /// <summary>
-        /// Called only on the server-side during integration test (NetcodeIntegrationTest specific)
-        /// scene loading and unloading.
-        ///
-        /// Note: During integration testing we must queue all scene loading and unloading requests for
-        /// both the server and all clients so they can be processed in a FIFO/linear fashion to avoid
-        /// conflicts when the  <see cref="SceneManager.sceneLoaded"/> and <see cref="SceneManager.sceneUnloaded"/>
-        /// events are triggered. The Completed action simulates the <see cref="AsyncOperation.completed"/> event.
-        /// (See: Unity.Netcode.TestHelpers.Runtime.IntegrationTestSceneHandler)
+        /// Sets the client's scene event progress to finished/true
         /// </summary>
-        internal void SetSceneLoadOperation(ISceneManagerHandler.SceneEventAction sceneEventAction)
+        internal void ClientFinishedSceneEvent(ulong clientId)
         {
-            sceneEventAction.Completed = SetComplete;
-        }
-
-        /// <summary>
-        /// Finalizes the SceneEventProgress
-        /// </summary>
-        internal void SetComplete()
-        {
-            IsCompleted = true;
-            AreAllClientsDoneLoading = true;
-
-            // If OnComplete is not registered or it is and returns true then remove this from the progress tracking
-            if (OnComplete == null || (OnComplete != null && OnComplete.Invoke(this)))
+            if (ClientsProcessingSceneEvent.ContainsKey(clientId))
             {
+                ClientsProcessingSceneEvent[clientId] = true;
+                TryFinishingSceneEventProgress();
+            }
+        }
+
+        /// <summary>
+        /// Determines if the scene event has finished for both
+        /// client(s) and server.
+        /// </summary>
+        /// <remarks>
+        /// The server checks if all known clients processing this scene event
+        /// have finished and then it returns its local AsyncOperation status.
+        /// Clients finish when their AsyncOperation finishes.
+        /// </remarks>
+        private bool HasFinished()
+        {
+            // Clients skip over this
+            foreach (var clientStatus in ClientsProcessingSceneEvent)
+            {
+                if (!clientStatus.Value)
+                {
+                    return false;
+                }
+            }
+
+            // Return the local scene event's AsyncOperation status
+            return m_AsyncOperation.isDone;
+        }
+
+        /// <summary>
+        /// Sets the AsyncOperation for the scene load/unload event
+        /// </summary>
+        internal void SetAsyncOperation(AsyncOperation asyncOperation)
+        {
+            m_AsyncOperation = asyncOperation;
+            m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
+            {
+                OnSceneEventCompleted?.Invoke(SceneEventId);
+                TryFinishingSceneEventProgress();
+            });
+        }
+
+        /// <summary>
+        /// Will try to finish the current scene event in progress as long as
+        /// all conditions are met.
+        /// </summary>
+        internal void TryFinishingSceneEventProgress()
+        {
+            if (HasFinished() || HasTimedOut())
+            {
+                OnComplete?.Invoke(this);
                 m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
-            }
-            m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
-        }
-
-        internal void CheckCompletion()
-        {
-            try
-            {
-                if ((!IsCompleted && DoneClients.Count == m_NetworkManager.ConnectedClientsList.Count && (m_SceneLoadOperation == null || m_SceneLoadOperation.isDone)) || (!IsCompleted && TimedOut))
+                m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                if (m_NetworkManager.IsServer)
                 {
-                    SetComplete();
+                    m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
             }
         }
     }
