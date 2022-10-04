@@ -1501,32 +1501,44 @@ namespace Unity.Netcode.Transports.UTP
             {
                 if (m_ProtocolType == ProtocolType.RelayUnityTransport)
                 {
-                    throw new Exception("Secure Relay transport is not supported in Netcode For GameObjects for now.");
-                }
-                try
-                {
-                    if (NetworkManager.IsServer)
+                    if (m_RelayServerData.IsSecure != 0)
                     {
-                        if (m_ServerCertificate.Length == 0 ||
-                            m_ServerPrivate.Length == 0)
-                        {
-                            throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
-                        }
-                        m_NetworkSettings.WithSecureServerParameters( certificate: ref m_ServerCertificate,
-                            privateKey: ref m_ServerPrivate);
+                        // log an error because we have mismatched configuration
+                        Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
                     }
                     else
                     {
-                        if (m_ServerCommonName.Length == 0)
-                        {
-                            throw new Exception("In order to use encrypted communications, clients must set the server common name.");
-                        }
-                        m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
+                        // Todo: new code to support Relay+WSS
+                        throw new NotImplementedException();
                     }
                 }
-                catch(Exception e)
+                else
                 {
-                    Debug.LogException(e,this);
+                    try
+                    {
+                        if (NetworkManager.IsServer)
+                        {
+                            if (m_ServerCertificate.Length == 0 ||
+                                m_ServerPrivate.Length == 0)
+                            {
+                                throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
+                            }
+                            m_NetworkSettings.WithSecureServerParameters(certificate: ref m_ServerCertificate,
+                                privateKey: ref m_ServerPrivate);
+                        }
+                        else
+                        {
+                            if (m_ServerCommonName.Length == 0)
+                            {
+                                throw new Exception("In order to use encrypted communications, clients must set the server common name.");
+                            }
+                            m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        Debug.LogException(e,this);
+                    }
                 }
             }
 #endif
