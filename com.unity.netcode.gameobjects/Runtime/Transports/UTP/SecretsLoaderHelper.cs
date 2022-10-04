@@ -15,6 +15,18 @@ namespace Unity.Netcode.Transports.UTP
     /// </summary>
     public class SecretsLoaderHelper : MonoBehaviour
     {
+        internal struct ServerSecrets
+        {
+            public string ServerPrivate;
+            public string ServerCertificate;
+        };
+
+        internal struct ClientSecrets
+        {
+            public string ServerCommonName;
+            public string ClientCertificate;
+        };
+
         private void Awake()
         {
             var serverSecrets = new ServerSecrets();
@@ -64,8 +76,8 @@ namespace Unity.Netcode.Transports.UTP
                 return;
             }
 
-            unityTransportComponent.SetServerSecrets(serverSecrets);
-            unityTransportComponent.SetClientSecrets(clientSecrets);
+            unityTransportComponent.SetServerSecrets(serverSecrets.ServerCertificate, serverSecrets.ServerPrivate);
+            unityTransportComponent.SetClientSecrets(clientSecrets.ServerCommonName, clientSecrets.ClientCertificate);
         }
 
         [Tooltip("Hostname")]

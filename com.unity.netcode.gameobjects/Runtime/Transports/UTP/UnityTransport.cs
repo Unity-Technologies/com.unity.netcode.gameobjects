@@ -25,18 +25,6 @@ using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
 
 namespace Unity.Netcode.Transports.UTP
 {
-    public struct ServerSecrets
-    {
-        public string ServerPrivate;
-        public string ServerCertificate;
-    };
-
-    public struct ClientSecrets
-    {
-        public string ServerCommonName;
-        public string ClientCertificate;
-    };
-
     /// <summary>
     /// Provides an interface that overrides the ability to create your own drivers and pipelines
     /// </summary>
@@ -1432,28 +1420,28 @@ namespace Unity.Netcode.Transports.UTP
         private FixedString512Bytes m_ServerCommonName;
         private FixedString4096Bytes m_ClientCertificate;
 
-        public void SetServerSecrets(ServerSecrets secrets)
+        public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
         {
-            if (secrets.ServerPrivate.Length > m_ServerPrivate.Capacity ||
-                secrets.ServerCertificate.Length > m_ServerCertificate.Capacity)
+            if (serverPrivateKey.Length > m_ServerPrivate.Capacity ||
+                serverCertificate.Length > m_ServerCertificate.Capacity)
             {
                 throw new Exception("Secret lengths are above what Unity Transport allows.");
             }
 
-            m_ServerPrivate = secrets.ServerPrivate;
-            m_ServerCertificate = secrets.ServerCertificate;
+            m_ServerPrivate = serverPrivateKey;
+            m_ServerCertificate = serverCertificate;
         }
 
-        public void SetClientSecrets(ClientSecrets secrets)
+        public void SetClientSecrets(string serverCommonName, string clientCertificate = null)
         {
-            if (secrets.ServerCommonName.Length > m_ServerCommonName.Capacity ||
-                secrets.ClientCertificate.Length > m_ClientCertificate.Capacity)
+            if (serverCommonName.Length > m_ServerCommonName.Capacity ||
+                clientCertificate?.Length > m_ClientCertificate.Capacity)
             {
                 throw new Exception("Secret lengths are above what Unity Transport allows.");
             }
 
-            m_ServerCommonName = secrets.ServerCommonName;
-            m_ClientCertificate = secrets.ClientCertificate;
+            m_ServerCommonName = serverCommonName;
+            m_ClientCertificate = clientCertificate;
         }
 
         /// <summary>
