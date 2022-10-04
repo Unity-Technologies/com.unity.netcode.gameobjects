@@ -8,8 +8,6 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    using NetworkEvent = Unity.Netcode.NetworkEvent;
-
     public static class UnityTransportTestHelpers
     {
         // Half a second might seem like a very long time to wait for a network event, but in CI

@@ -12,8 +12,6 @@ using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    using NetworkEvent = Unity.Netcode.NetworkEvent;
-
     public class UnityTransportTests
     {
         // No need to test all reliable delivery methods since they all map to the same pipeline.
