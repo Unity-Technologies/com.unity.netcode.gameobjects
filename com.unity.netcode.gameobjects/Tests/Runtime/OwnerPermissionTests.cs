@@ -7,11 +7,6 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class OwnerPermissionTestComponent : NetworkBehaviour
-    {
-
-    }
-
     public class OwnerPermissionObject : NetworkBehaviour
     {
         // indexed by [object, machine]
@@ -95,11 +90,6 @@ namespace Unity.Netcode.RuntimeTests
         protected override int NumberOfClients => 2;
 
         private GameObject m_PrefabToSpawn;
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            var networkTransform = m_PlayerPrefab.AddComponent<OwnerPermissionTestComponent>();
-        }
 
         protected override void OnServerAndClientsCreated()
         {
