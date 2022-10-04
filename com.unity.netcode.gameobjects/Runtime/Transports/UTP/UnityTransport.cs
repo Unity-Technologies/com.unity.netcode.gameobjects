@@ -1496,8 +1496,11 @@ namespace Unity.Netcode.Transports.UTP
                     }
                     else
                     {
-                        // Todo: new code to support Relay+WSS
-                        throw new NotImplementedException();
+                        if (m_UseWebSockets)
+                        {
+                            // Todo: new code to support Relay+WSS
+                            throw new NotImplementedException();
+                        }
                     }
                 }
                 else
