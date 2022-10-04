@@ -1489,16 +1489,24 @@ namespace Unity.Netcode.Transports.UTP
 #endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (NetworkManager.IsServer)
+            {
+                throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
+            }
+#endif
+
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseEncryption)
             {
+                if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+                {
+                    throw new Exception("Secure Relay transport is not supported in Netcode For GameObjects for now.");
+                }
                 try
                 {
                     if (NetworkManager.IsServer)
                     {
-#if UNITY_WEBGL && !UNITY_EDITOR
-                        throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
-#else
                         if (m_ServerCertificate.Length == 0 ||
                             m_ServerPrivate.Length == 0)
                         {
@@ -1506,14 +1514,12 @@ namespace Unity.Netcode.Transports.UTP
                         }
                         m_NetworkSettings.WithSecureServerParameters( certificate: ref m_ServerCertificate,
                             privateKey: ref m_ServerPrivate);
-#endif
                     }
                     else
                     {
-                        if (m_ServerCommonName.Length == 0 ||
-                            m_ClientCertificate.Length == 0)
+                        if (m_ServerCommonName.Length == 0)
                         {
-                            throw new Exception("In order to use encrypted communications, clients must set the server common name and client certificate.");
+                            throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                         }
                         m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
                     }

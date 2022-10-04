@@ -4,7 +4,16 @@ using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
 {
-    public class SecureAccessor : MonoBehaviour
+    /// <summary>
+    /// Component to add to a NetworkManager if you want the certificates to be loaded from files.
+    /// Mostly helpful to ease development and testing, especially with self-signed certificates
+    ///
+    /// Shipping code should make the calls to
+    /// - SetServerSecrets
+    /// - SetClientSecrets
+    /// directly, instead of relying on this.
+    /// </summary>
+    public class SecretsLoaderHelper : MonoBehaviour
     {
         private void Awake()
         {
@@ -47,24 +56,28 @@ namespace Unity.Netcode.Transports.UTP
                 Debug.Log(exception);
             }
 
-            GetComponent<UnityTransport>().SetServerSecrets(serverSecrets);
-            GetComponent<UnityTransport>().SetClientSecrets(clientSecrets);
+            var unityTransportComponent = GetComponent<UnityTransport>();
+
+            if (unityTransportComponent == null)
+            {
+                Debug.LogError($"You need to select the UnityTransport protocol, in the NetworkManager, in order for the SecretsLoaderHelper component to be useful.");
+                return;
+            }
+
+            unityTransportComponent.SetServerSecrets(serverSecrets);
+            unityTransportComponent.SetClientSecrets(clientSecrets);
         }
 
         [Tooltip("Hostname")]
         [SerializeField]
-        private string m_ServerCommonNameString = "localhost";
-        public string ServerCommonNameString
-        {
-            get => m_ServerCommonNameString;
-            set => m_ServerCommonNameString = value;
-        }
-        private string m_ServerCommonName;
+        private string m_ServerCommonName = "localhost";
         public string ServerCommonName
         {
-            get => m_ServerCommonNameString;
+            get => m_ServerCommonName;
+            set => m_ServerCommonName = value;
         }
-        [Tooltip("Client CA filepath")]
+
+        [Tooltip("Client CA filepath. Useful with self-signed certificates")]
         [SerializeField]
         private string m_ClientCAFilePath = "Assets/Secure/myGameClientCA.pem";
         public string ClientCAFilePath
@@ -73,7 +86,7 @@ namespace Unity.Netcode.Transports.UTP
             set => m_ClientCAFilePath = value;
         }
 
-        [Tooltip("Client CA Override. Certificate content, for platforms that lack file access (WebGL)")]
+        [Tooltip("Client CA Override. Only useful for development with self-signed certificates. Certificate content, for platforms that lack file access (WebGL)")]
         [SerializeField]
         private string m_ClientCAOverride = "";
         public string ClientCAOverride
