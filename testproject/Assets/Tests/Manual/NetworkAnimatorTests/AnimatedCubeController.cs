@@ -9,7 +9,6 @@ namespace Tests.Manual.NetworkAnimatorTests
     [RequireComponent(typeof(Animator))]
     public class AnimatedCubeController : NetworkBehaviour
     {
-        public int TestIterations = 20;
         private Animator m_Animator;
         private bool m_Rotate;
         private NetworkAnimator m_NetworkAnimator;
@@ -30,12 +29,10 @@ namespace Tests.Manual.NetworkAnimatorTests
 
         public override void OnNetworkSpawn()
         {
-            if (HasAuthority())
-            {
-                enabled = false;
-            }
-            m_Animator = GetComponent<Animator>();
             DetermineNetworkAnimatorComponentType();
+
+            m_Animator = GetComponent<Animator>();
+
             m_Rotate = m_Animator.GetBool("Rotate");
         }
 
@@ -106,7 +103,7 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 if (!IsServer && IsOwner)
                 {
-                    PlayPulseAnimationServerRpc(m_Rotate);
+                    m_NetworkAnimator.SetTrigger("Pulse");
                 }
                 else if (IsServer && IsOwner)
                 {
@@ -118,7 +115,6 @@ namespace Tests.Manual.NetworkAnimatorTests
                 m_NetworkAnimator.SetTrigger("Pulse");
             }
         }
-
 
         private Coroutine m_TestAnimatorRoutine;
 
@@ -133,24 +129,89 @@ namespace Tests.Manual.NetworkAnimatorTests
             }
         }
 
-
         private IEnumerator TestAnimatorRoutine()
         {
-            var interations = 0;
-            while (interations < TestIterations)
+            var waitForSeconds = new WaitForSeconds(0.016f);
+            var counter = 1.0f;
+            Debug.Log("Linearly increase test:");
+            while (counter < 100)
             {
-                var counter = 1.0f;
-                m_NetworkAnimator.SetTrigger("TestTrigger");
-                while (counter < 100)
-                {
-                    m_Animator.SetFloat("TestFloat", counter);
-                    m_Animator.SetInteger("TestInt", (int)counter);
-                    counter++;
-                    yield return null;
-                }
-                interations++;
+                m_Animator.SetFloat("TestFloat", counter);
+                m_Animator.SetInteger("TestInt", (int)counter);
+                counter++;
+                yield return waitForSeconds;
             }
-            yield return null;
+            Debug.Log("Random value assignment test:");
+            counter = 0.0f;
+            while (counter < 100)
+            {
+                m_Animator.SetFloat("TestFloat", UnityEngine.Random.Range(0.0f, 100.0f));
+                m_Animator.SetInteger("TestInt", UnityEngine.Random.Range(0, 100));
+                counter++;
+                yield return waitForSeconds;
+            }
+            StopCoroutine(m_TestAnimatorRoutine);
+            m_TestAnimatorRoutine = null;
+        }
+
+        private int m_TestIntValue;
+        private float m_TestFloatValue;
+
+        private void DisplayTestIntValueIfChanged()
+        {
+            var testIntValue = m_Animator.GetInteger("TestInt");
+            if (m_TestIntValue != testIntValue)
+            {
+                m_TestIntValue = testIntValue;
+                Debug.Log($"[{name}]TestInt value changed to = {m_TestIntValue}");
+            }
+            var testFloatValue = m_Animator.GetInteger("TestFloat");
+            if (m_TestFloatValue != testFloatValue)
+            {
+                m_TestFloatValue = testFloatValue;
+                Debug.Log($"[{name}]TestFloat value changed to = {m_TestIntValue}");
+            }
+        }
+
+        private void LateUpdate()
+        {
+
+            if (!IsSpawned || !IsOwner)
+            {
+                if (!IsOwner && IsSpawned)
+                {
+                    DisplayTestIntValueIfChanged();
+                    return;
+                }
+
+                return;
+            }
+
+            DisplayTestIntValueIfChanged();
+
+            // Rotates the cube
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                ToggleRotateAnimation();
+            }
+
+            // Pulse animation (scale down and up slowly)
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                PlayPulseAnimation();
+            }
+
+            // Test changing Animator parameters over time
+            if (Input.GetKeyDown(KeyCode.T))
+            {
+                TestAnimator();
+            }
+
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
+                Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
+            }
         }
     }
 }
