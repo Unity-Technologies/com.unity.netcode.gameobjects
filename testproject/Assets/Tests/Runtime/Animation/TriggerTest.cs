@@ -73,17 +73,20 @@ public class TriggerTest : StateMachineBehaviour
     override public void OnStateExit(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         var networkObject = animator.GetComponent<NetworkObject>();
-        var clientId = networkObject.NetworkManager.LocalClientId;
-        Debug.Log($"Client-{clientId} state exited (trigger reset)!");
-        if (ClientsThatTriggered.Contains(clientId) && networkObject.OwnerClientId == clientId)
+        if (networkObject != null)
         {
-            ClientsThatTriggered.Remove(clientId);
-        }
+            var clientId = networkObject.NetworkManager.LocalClientId;
+            Debug.Log($"Client-{clientId} state exited (trigger reset)!");
+            if (ClientsThatTriggered.Contains(clientId) && networkObject.OwnerClientId == clientId)
+            {
+                ClientsThatTriggered.Remove(clientId);
+            }
 
 
-        if (!ClientsThatResetTrigger.Contains(clientId) && networkObject.OwnerClientId == clientId)
-        {
-            ClientsThatResetTrigger.Add(clientId);
+            if (!ClientsThatResetTrigger.Contains(clientId) && networkObject.OwnerClientId == clientId)
+            {
+                ClientsThatResetTrigger.Add(clientId);
+            }
         }
     }
 
