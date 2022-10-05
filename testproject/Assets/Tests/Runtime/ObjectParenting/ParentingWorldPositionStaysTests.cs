@@ -157,7 +157,6 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            m_EnableVerboseDebug = true;
             TestComponentHelper.ClientsRegistered.Clear();
             TestComponentHelper.NetworkObjectIdToIndex.Clear();
             for (int i = 0; i < k_NestedChildren; i++)
@@ -169,7 +168,6 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            m_EnableVerboseDebug = false;
             if (m_ServerSideParent != null && m_ServerSideParent.GetComponent<NetworkObject>().IsSpawned)
             {
                 // Clean up in reverse order (also makes sure we can despawn parents before children)
