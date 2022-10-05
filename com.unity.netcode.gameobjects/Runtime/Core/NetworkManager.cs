@@ -2070,14 +2070,31 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(
-                        isSceneObject: false,
-                        response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash,
-                        ownerClientId,
-                        parentNetworkId: null,
-                        networkSceneHandle: null,
-                        response.Position,
-                        response.Rotation);
+                    var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+
+                    // Generate a SceneObject for the player object to spawn
+                    var sceneObject = new NetworkObject.SceneObject
+                    {
+                        Header = new NetworkObject.SceneObject.HeaderData
+                        {
+                            IsPlayerObject = true,
+                            OwnerClientId = ownerClientId,
+                            IsSceneObject = false,
+                            HasTransform = true,
+                            Hash = playerPrefabHash,
+                        },
+                        TargetClientId = ownerClientId,
+                        Transform = new NetworkObject.SceneObject.TransformData
+                        {
+                            Position = response.Position.GetValueOrDefault(),
+                            Rotation = response.Rotation.GetValueOrDefault()
+                        }
+                    };
+
+                    // Create the player NetworkObject locally
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(sceneObject);
+
+                    // Spawn the player NetworkObject locally
                     SpawnManager.SpawnNetworkObjectLocally(
                         networkObject,
                         SpawnManager.GetNetworkObjectId(),
