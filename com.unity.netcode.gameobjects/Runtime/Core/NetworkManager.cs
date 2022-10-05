@@ -1019,23 +1019,37 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (NetworkConfig.NetworkTransport.StartServer())
+            IsServer = true;
+            IsClient = false;
+            IsListening = true;
+
+            try
             {
-                IsServer = true;
-                IsClient = false;
-                IsListening = true;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (NetworkConfig.NetworkTransport.StartServer())
+                {
+                    SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-                SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+                    OnServerStarted?.Invoke();
+                    return true;
+                }
+                else
+                {
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
 
-                OnServerStarted?.Invoke();
-                return true;
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+                }
             }
-            else
+            catch (Exception)
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             return false;
@@ -1093,22 +1107,37 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (!NetworkConfig.NetworkTransport.StartServer())
+            IsServer = true;
+            IsClient = true;
+            IsListening = true;
+
+            try
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
-                return false;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (!NetworkConfig.NetworkTransport.StartServer())
+                {
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
+
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
-
-            IsServer = true;
-            IsClient = true;
-            IsListening = true;
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
@@ -2070,14 +2099,31 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(
-                        isSceneObject: false,
-                        response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash,
-                        ownerClientId,
-                        parentNetworkId: null,
-                        networkSceneHandle: null,
-                        response.Position,
-                        response.Rotation);
+                    var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+
+                    // Generate a SceneObject for the player object to spawn
+                    var sceneObject = new NetworkObject.SceneObject
+                    {
+                        Header = new NetworkObject.SceneObject.HeaderData
+                        {
+                            IsPlayerObject = true,
+                            OwnerClientId = ownerClientId,
+                            IsSceneObject = false,
+                            HasTransform = true,
+                            Hash = playerPrefabHash,
+                        },
+                        TargetClientId = ownerClientId,
+                        Transform = new NetworkObject.SceneObject.TransformData
+                        {
+                            Position = response.Position.GetValueOrDefault(),
+                            Rotation = response.Rotation.GetValueOrDefault()
+                        }
+                    };
+
+                    // Create the player NetworkObject locally
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(sceneObject);
+
+                    // Spawn the player NetworkObject locally
                     SpawnManager.SpawnNetworkObjectLocally(
                         networkObject,
                         SpawnManager.GetNetworkObjectId(),

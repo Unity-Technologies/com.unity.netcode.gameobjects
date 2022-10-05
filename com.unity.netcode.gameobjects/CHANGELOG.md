@@ -14,9 +14,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - `UnityTransport` now provides a way to set the Relay server data directly from the `RelayServerData` structure (provided by the Unity Transport package) throuh its `SetRelayServerData` method. This allows making use of the new APIs in UTP 1.3 that simplify integration of the Relay SDK. (#2235)
 - IPv6 is now supported for direct connections when using `UnityTransport`. (#2232)
 - Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
+- Added position, rotation, and scale to the `ParentSyncMessage` which provides users the ability to specify the final values on the server-side when `OnNetworkObjectParentChanged` is invoked just before the message is created (when the `Transform` values are applied to the message). (#2146)
+- Added `NetworkObject.TryRemoveParent` method for convenience purposes opposed to having to cast null to either `GameObject` or `NetworkObject`. (#2146)
 
 ### Changed
 
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.0. (#2231)
 - The send queues of `UnityTransport` are now dynamically-sized. This means that there shouldn't be any need anymore to tweak the 'Max Send Queue Size' value. In fact, this field is now removed from the inspector and will not be serialized anymore. It is still possible to set it manually using the `MaxSendQueueSize` property, but it is not recommended to do so aside from some specific needs (e.g. limiting the amount of memory used by the send queues in very constrained environments). (#2212)
 - As a consequence of the above change, the `UnityTransport.InitialMaxSendQueueSize` field is now deprecated. There is no default value anymore since send queues are dynamically-sized. (#2212)
 - The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
@@ -34,6 +37,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
 - Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
 - Fixed Connection Approval Timeout not working client side. (#2164)
+- Fixed issue where the `WorldPositionStays` parenting parameter was not being synchronized with clients. (#2146)
+- Fixed issue where parented in-scene placed `NetworkObject`s would fail for late joining clients. (#2146)
+- Fixed issue where scale was not being synchronized which caused issues with nested parenting and scale when `WorldPositionStays` was true. (#2146)
+- Fixed issue with `NetworkTransform.ApplyTransformToNetworkStateWithInfo` where it was not honoring axis sync settings when `NetworkTransformState.IsTeleportingNextFrame` was true. (#2146)
+- Fixed issue with `NetworkTransform.TryCommitTransformToServer` where it was not honoring the `InLocalSpace` setting. (#2146)
 - Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
 - Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
 - Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)

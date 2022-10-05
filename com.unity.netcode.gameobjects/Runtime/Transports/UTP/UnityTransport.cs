@@ -15,6 +15,9 @@ using Unity.Collections;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
+#if UTP_TRANSPORT_2_0_ABOVE
+using Unity.Networking.Transport.TLS;
+#endif
 
 #if !UTP_TRANSPORT_2_0_ABOVE
 using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
@@ -164,14 +167,26 @@ namespace Unity.Netcode.Transports.UTP
         private ProtocolType m_ProtocolType;
 
 #if UTP_TRANSPORT_2_0_ABOVE
-        [Tooltip("Whether or not to use WebSockets as Network Interface")]
+        [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
         [SerializeField]
         private bool m_UseWebSockets = false;
 
         public bool UseWebSockets
         {
-            set => m_UseWebSockets = value;
             get => m_UseWebSockets;
+            set => m_UseWebSockets = value;
+        }
+
+        /// <summary>
+        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
+        /// </summary>
+        [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
+        [SerializeField]
+        private bool m_UseEncryption = false;
+        public bool UseEncryption
+        {
+            get => m_UseEncryption;
+            set => m_UseEncryption = value;
         }
 #endif
 
@@ -602,7 +617,7 @@ namespace Unity.Netcode.Transports.UTP
                 hostConnectionData = connectionData;
             }
 
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 1, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
+            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
 
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
@@ -1410,6 +1425,36 @@ namespace Unity.Netcode.Transports.UTP
         }
 #endif
 
+        private FixedString4096Bytes m_ServerPrivate;
+        private FixedString4096Bytes m_ServerCertificate;
+
+        private FixedString512Bytes m_ServerCommonName;
+        private FixedString4096Bytes m_ClientCertificate;
+
+        public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
+        {
+            if (serverPrivateKey.Length > m_ServerPrivate.Capacity ||
+                serverCertificate.Length > m_ServerCertificate.Capacity)
+            {
+                throw new Exception("Secret lengths are above what Unity Transport allows.");
+            }
+
+            m_ServerPrivate = serverPrivateKey;
+            m_ServerCertificate = serverCertificate;
+        }
+
+        public void SetClientSecrets(string serverCommonName, string clientCertificate = null)
+        {
+            if (serverCommonName.Length > m_ServerCommonName.Capacity ||
+                clientCertificate?.Length > m_ClientCertificate.Capacity)
+            {
+                throw new Exception("Secret lengths are above what Unity Transport allows.");
+            }
+
+            m_ServerCommonName = serverCommonName;
+            m_ClientCertificate = clientCertificate;
+        }
+
         /// <summary>
         /// Creates the internal NetworkDriver
         /// </summary>
@@ -1442,6 +1487,63 @@ namespace Unity.Netcode.Transports.UTP
                 receiveQueueCapacity: m_MaxPacketQueueSize,
 #endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (NetworkManager.IsServer)
+            {
+                throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
+            }
+#endif
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (m_UseEncryption)
+            {
+                if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+                {
+                    if (m_RelayServerData.IsSecure != 0)
+                    {
+                        // log an error because we have mismatched configuration
+                        Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
+                    }
+                    else
+                    {
+                        if (m_UseWebSockets)
+                        {
+                            // Todo: new code to support Relay+WSS
+                            throw new NotImplementedException();
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        if (NetworkManager.IsServer)
+                        {
+                            if (m_ServerCertificate.Length == 0 ||
+                                m_ServerPrivate.Length == 0)
+                            {
+                                throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
+                            }
+                            m_NetworkSettings.WithSecureServerParameters(certificate: ref m_ServerCertificate,
+                                privateKey: ref m_ServerPrivate);
+                        }
+                        else
+                        {
+                            if (m_ServerCommonName.Length == 0)
+                            {
+                                throw new Exception("In order to use encrypted communications, clients must set the server common name.");
+                            }
+                            m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
+                        }
+                    }
+                    catch(Exception e)
+                    {
+                        Debug.LogException(e,this);
+                    }
+                }
+            }
+#endif
 
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)
