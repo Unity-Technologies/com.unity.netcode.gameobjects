@@ -622,6 +622,14 @@ namespace Unity.Netcode.Transports.UTP
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
+        /// <summary>Set the relay server data (using the lower-level Unity Transport data structure).</summary>
+        /// <param name="serverData">Data for the Relay server to use.</param>
+        public void SetRelayServerData(RelayServerData serverData)
+        {
+            m_RelayServerData = serverData;
+            SetProtocol(ProtocolType.RelayUnityTransport);
+        }
+
         /// <summary>Set the relay server data for the host.</summary>
         /// <param name="ipAddress">IP address of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
