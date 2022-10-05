@@ -1429,8 +1429,11 @@ namespace Unity.Netcode.Transports.UTP
         private FixedString4096Bytes m_ServerCertificate;
 
         private FixedString512Bytes m_ServerCommonName;
-        private FixedString4096Bytes m_ClientCertificate;
+        private FixedString4096Bytes m_ClientCaCertificate;
 
+        /// <summary>Set the server parameters for encryption.</summary>
+        /// <param name="serverCertificate">Public certificate for the server (PEM format).</param>
+        /// <param name="serverPrivateKey">Private key for the server (PEM format).</param>
         public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
         {
             if (serverPrivateKey.Length > m_ServerPrivate.Capacity ||
@@ -1443,16 +1446,24 @@ namespace Unity.Netcode.Transports.UTP
             m_ServerCertificate = serverCertificate;
         }
 
-        public void SetClientSecrets(string serverCommonName, string clientCertificate = null)
+        /// <summary>Set the client parameters for encryption.</summary>
+        /// <remarks>
+        /// If the CA certificate is not provided, validation will be done against the OS/browser
+        /// certificate store. This is what you'd want if using certificates from a known provider.
+        /// For self-signed certificates, the CA certificate needs to be provided.
+        /// </remarks>
+        /// <param name="serverCommonName">Common name of the server (typically hostname).</param>
+        /// <param name="caCertificate">CA certificate used to validate the server's authenticity.</param>
+        public void SetClientSecrets(string serverCommonName, string caCertificate = null)
         {
             if (serverCommonName.Length > m_ServerCommonName.Capacity ||
-                clientCertificate?.Length > m_ClientCertificate.Capacity)
+                caCertificate?.Length > m_ClientCaCertificate.Capacity)
             {
                 throw new Exception("Secret lengths are above what Unity Transport allows.");
             }
 
             m_ServerCommonName = serverCommonName;
-            m_ClientCertificate = clientCertificate;
+            m_ClientCaCertificate = caCertificate;
         }
 
         /// <summary>
@@ -1534,7 +1545,7 @@ namespace Unity.Netcode.Transports.UTP
                             {
                                 throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                             }
-                            m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCertificate);
+                            m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCaCertificate);
                         }
                     }
                     catch(Exception e)

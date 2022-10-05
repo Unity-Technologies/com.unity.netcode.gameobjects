@@ -83,6 +83,8 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Hostname")]
         [SerializeField]
         private string m_ServerCommonName = "localhost";
+
+        /// <summary>Common name of the server (typically its hostname).</summary>
         public string ServerCommonName
         {
             get => m_ServerCommonName;
@@ -92,6 +94,8 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Client CA filepath. Useful with self-signed certificates")]
         [SerializeField]
         private string m_ClientCAFilePath = "Assets/Secure/myGameClientCA.pem";
+
+        /// <summary>Client CA filepath. Useful with self-signed certificates</summary>
         public string ClientCAFilePath
         {
             get => m_ClientCAFilePath;
@@ -101,6 +105,11 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Client CA Override. Only useful for development with self-signed certificates. Certificate content, for platforms that lack file access (WebGL)")]
         [SerializeField]
         private string m_ClientCAOverride = "";
+
+        /// <summary>
+        /// Client CA Override. Only useful for development with self-signed certificates.
+        /// Certificate content, for platforms that lack file access (WebGL)
+        /// </summary>
         public string ClientCAOverride
         {
             get => m_ClientCAOverride;
@@ -110,14 +119,19 @@ namespace Unity.Netcode.Transports.UTP
         [Tooltip("Server Certificate filepath")]
         [SerializeField]
         private string m_ServerCertificateFilePath = "Assets/Secure/myGameServerCertificate.pem";
+
+        /// <summary>Server Certificate filepath</summary>
         public string ServerCertificateFilePath
         {
             get => m_ServerCertificateFilePath;
             set => m_ServerCertificateFilePath = value;
         }
-        [Tooltip("Server Private Keyfilepath")]
+
+        [Tooltip("Server Private Key filepath")]
         [SerializeField]
         private string m_ServerPrivateFilePath = "Assets/Secure/myGameServerPrivate.pem";
+
+        /// <summary>Server Private Key filepath</summary>
         public string ServerPrivateFilePath
         {
             get => m_ServerPrivateFilePath;
@@ -125,6 +139,8 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         private string m_ClientCA;
+
+        /// <summary>CA certificate used by the client.</summary>
         public string ClientCA
         {
             get
@@ -137,13 +153,19 @@ namespace Unity.Netcode.Transports.UTP
             }
             set => m_ClientCA = value;
         }
+
         private string m_ServerCertificate;
+
+        /// <summary>Certificate used by the server.</summary>
         public string ServerCertificate
         {
             get => ReadFile(m_ServerCertificateFilePath, "Server Certificate");
             set => m_ServerCertificate = value;
         }
+
         private string m_ServerPrivate;
+
+        /// <summary>Private key used by the server.</summary>
         public string ServerPrivate
         {
             get => ReadFile(m_ServerPrivateFilePath, "Server Key");
