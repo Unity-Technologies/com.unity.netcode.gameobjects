@@ -122,7 +122,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public override int GetHashCode()
         {
-            return 0;
+            return Str.GetHashCode() ^ Int.GetHashCode() ^ InMemoryValue.GetHashCode();
         }
     }
 
