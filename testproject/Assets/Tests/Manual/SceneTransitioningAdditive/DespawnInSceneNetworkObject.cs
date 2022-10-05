@@ -8,53 +8,52 @@ namespace TestProject.ManualTests
     /// <summary>
     /// Used for manually testing spawning and despawning in-scene
     /// placed NetworkObjects
-    ///
-    /// Note: We do not destroy in-scene placed NetworkObjects, but
-    /// users must handle visibility (rendering wise) when the in-scene
-    /// NetworkObject is spawned and despawned.  This class just enables
-    /// or disabled the mesh renderer.
     /// </summary>
     public class DespawnInSceneNetworkObject : NetworkBehaviour
     {
-        private Coroutine m_ScanInputHandle;
-        private MeshRenderer m_MeshRenderer;
+        [Tooltip("When set, the server will despawn the NetworkObject upon its first spawn.")]
+        public bool StartDespawned;
 
-        private void Start()
-        {
-            if (!IsSpawned)
-            {
-                m_MeshRenderer = GetComponent<MeshRenderer>();
-                if (m_MeshRenderer != null)
-                {
-                    m_MeshRenderer.enabled = false;
-                }
-            }
-        }
+        private Coroutine m_ScanInputHandle;
+
+        // Used to prevent the server from despawning
+        // the in-scene placed NetworkObject after the
+        // first spawn (only if StartDespawned is true)
+        private bool m_ServerDespawnedOnFirstSpawn;
 
         public override void OnNetworkSpawn()
         {
             Debug.Log($"{name} spawned!");
-            m_MeshRenderer = GetComponent<MeshRenderer>();
-            if (m_MeshRenderer != null)
-            {
-                m_MeshRenderer.enabled = true;
-            }
+
             if (!IsServer)
             {
                 return;
             }
+
             if (m_ScanInputHandle == null)
             {
-                m_ScanInputHandle = StartCoroutine(ScanInput());
+                // Using the NetworkManager to create the coroutine so it is not deactivated
+                // when the GameObject this NetworkBehaviour is attached to is disabled.
+                m_ScanInputHandle = NetworkManager.StartCoroutine(ScanInput(NetworkObject));
+            }
+
+            // m_ServerDespawnedOnFirstSpawn prevents the server from always
+            // despawning on the server-side after the first spawn.
+            if (StartDespawned && !m_ServerDespawnedOnFirstSpawn)
+            {
+                m_ServerDespawnedOnFirstSpawn = true;
+                NetworkObject.Despawn(false);
             }
         }
 
         public override void OnNetworkDespawn()
         {
-            if (m_MeshRenderer != null)
-            {
-                m_MeshRenderer.enabled = false;
-            }
+            // It is OK to disable in-scene placed NetworkObjects upon
+            // despawning.  When re-spawned the client-side will re-activate
+            // the GameObject, while the server-side must set the GameObject
+            // active itself.
+            gameObject.SetActive(false);
+
             Debug.Log($"{name} despawned!");
             base.OnNetworkDespawn();
         }
@@ -63,24 +62,24 @@ namespace TestProject.ManualTests
         {
             if (m_ScanInputHandle != null)
             {
-                StopCoroutine(m_ScanInputHandle);
+                NetworkManager.StopCoroutine(m_ScanInputHandle);
             }
             m_ScanInputHandle = null;
             base.OnDestroy();
         }
 
-        private IEnumerator ScanInput()
+        private IEnumerator ScanInput(NetworkObject networkObject)
         {
             while (true)
             {
                 try
                 {
-                    if (IsSpawned)
+                    if (networkObject.IsSpawned)
                     {
                         if (Input.GetKeyDown(KeyCode.Backspace))
                         {
                             Debug.Log($"{name} should despawn.");
-                            NetworkObject.Despawn(false);
+                            networkObject.Despawn(false);
                         }
                     }
                     else if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening)
@@ -88,7 +87,8 @@ namespace TestProject.ManualTests
                         if (Input.GetKeyDown(KeyCode.Backspace))
                         {
                             Debug.Log($"{name} should spawn.");
-                            NetworkObject.Spawn();
+                            networkObject.gameObject.SetActive(true);
+                            networkObject.Spawn();
                         }
                     }
                 }
@@ -99,7 +99,6 @@ namespace TestProject.ManualTests
 
                 yield return null;
             }
-
         }
     }
 }
