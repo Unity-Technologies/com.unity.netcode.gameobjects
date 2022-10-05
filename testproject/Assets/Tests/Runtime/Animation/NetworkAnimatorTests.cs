@@ -239,6 +239,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator TriggerUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             CheckStateEnterCount.ResetTest();
+
             VerboseDebug($" ++++++++++++++++++ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
@@ -254,6 +255,10 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            var layerCount = animatorTestHelper.GetAnimator().layerCount;
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+
+            Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
             if (authoritativeMode == AuthoritativeMode.ServerAuth)
             {
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
@@ -299,6 +304,19 @@ namespace TestProject.RuntimeTests
             // Verify we only entered each state once
             yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
+
+            // Now, update some states for several seconds to assure the AnimationState count does not grow
+            var waitForSeconds = new WaitForSeconds(0.25f);
+            bool rotateToggle = true;
+            for (int i = 0; i < 10; i++)
+            {
+                animatorTestHelper.SetBool("Rotate", rotateToggle);
+                animatorTestHelper.SetTrigger("Pulse");
+                animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+                Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+                yield return waitForSeconds;
+                rotateToggle = !rotateToggle;
+            }
 
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");

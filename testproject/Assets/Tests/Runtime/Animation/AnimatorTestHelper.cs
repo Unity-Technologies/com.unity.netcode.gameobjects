@@ -29,6 +29,11 @@ namespace TestProject.RuntimeTests
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
         }
 
+        internal int GetAnimatorStateCount()
+        {
+            return m_NetworkAnimator.GetAnimationMessage().AnimationStates.Count;
+        }
+
         public override void OnNetworkSpawn()
         {
             if (IsTriggerTest)
@@ -115,6 +120,11 @@ namespace TestProject.RuntimeTests
             {
                 StartCoroutine(TriggerMonitor(name));
             }
+        }
+
+        public void SetBool(string name, bool valueToSet)
+        {
+            m_Animator.SetBool(name, valueToSet);
         }
 
         private System.Collections.IEnumerator TriggerMonitor(string triggerName)
