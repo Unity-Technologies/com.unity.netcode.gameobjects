@@ -685,7 +685,7 @@ namespace Unity.Netcode.Components
 
                 // Grab one of the available AnimationState entries so we can fill it with the current
                 // layer's animation state.
-                var animMsg = m_AnimationMessage.AnimationStates[layer];
+                var animationState = m_AnimationMessage.AnimationStates[layer];
 
                 // Synchronizing transitions with trigger conditions for late joining clients is now
                 // handled by cross fading between the late joining client's current layer's AnimationState
@@ -719,19 +719,19 @@ namespace Unity.Netcode.Components
                             var destinationInfo = m_DestinationStateToTransitioninfo[layer][nextState.shortNameHash];
                             stateHash = destinationInfo.OriginatingState;
                             // Set the destination state to cross fade to from the originating state
-                            animMsg.DestinationStateHash = destinationInfo.DestinationState;
+                            animationState.DestinationStateHash = destinationInfo.DestinationState;
                         }
                     }
                 }
 
-                animMsg.Transition = isInTransition;        // The only time this could be set to true
-                animMsg.StateHash = stateHash;              // When a transition, this is the originating/starting state
-                animMsg.NormalizedTime = normalizedTime;
-                animMsg.Layer = layer;
-                animMsg.Weight = m_LayerWeights[layer];
+                animationState.Transition = isInTransition;        // The only time this could be set to true
+                animationState.StateHash = stateHash;              // When a transition, this is the originating/starting state
+                animationState.NormalizedTime = normalizedTime;
+                animationState.Layer = layer;
+                animationState.Weight = m_LayerWeights[layer];
 
                 // Apply the changes
-                m_AnimationMessage.AnimationStates[layer] = animMsg;
+                m_AnimationMessage.AnimationStates[layer] = animationState;
             }
             // Send all animation states
             m_AnimationMessage.IsDirtyCount = m_Animator.layerCount;
