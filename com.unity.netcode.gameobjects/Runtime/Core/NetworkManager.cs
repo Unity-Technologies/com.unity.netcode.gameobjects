@@ -1019,23 +1019,37 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (NetworkConfig.NetworkTransport.StartServer())
+            IsServer = true;
+            IsClient = false;
+            IsListening = true;
+
+            try
             {
-                IsServer = true;
-                IsClient = false;
-                IsListening = true;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (NetworkConfig.NetworkTransport.StartServer())
+                {
+                    SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-                SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+                    OnServerStarted?.Invoke();
+                    return true;
+                }
+                else
+                {
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
 
-                OnServerStarted?.Invoke();
-                return true;
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+                }
             }
-            else
+            catch (Exception)
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             return false;
@@ -1093,22 +1107,37 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (!NetworkConfig.NetworkTransport.StartServer())
+            IsServer = true;
+            IsClient = true;
+            IsListening = true;
+
+            try
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
-                return false;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (!NetworkConfig.NetworkTransport.StartServer())
+                {
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
+
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
-
-            IsServer = true;
-            IsClient = true;
-            IsListening = true;
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
