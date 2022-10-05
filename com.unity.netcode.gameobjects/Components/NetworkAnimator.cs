@@ -227,7 +227,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Creates the
+        /// Creates the TransitionStateInfoList table
         /// </summary>
         private void BuildTransitionStateInfoList()
         {
@@ -305,7 +305,6 @@ namespace Unity.Netcode.Components
 
         internal struct AnimationState : INetworkSerializable
         {
-            internal bool IsDirty;
             // Not to be serialized, used for processing the animation state
             internal bool HasBeenProcessed;
             internal int StateHash;
@@ -392,56 +391,41 @@ namespace Unity.Netcode.Components
             // Not to be serialized, used for processing the animation message
             internal bool HasBeenProcessed;
 
-            // state hash per layer.  if non-zero, then Play() this animation, skipping transitions
+            // This is preallocated/populated in OnNetworkSpawn for all instances in the event ownership or
+            // authority changes.  When serializing, IsDirtyCount determines how many AnimationState entries
+            // should be serialized from the list.  When deserializing the list is created and populated with
+            // only the number of AnimationStates received which is dictated by the deserialized IsDirtyCount.
             internal List<AnimationState> AnimationStates;
 
-            /// <summary>
-            /// Resets all AnimationStates' IsDirty flag
-            /// </summary>
-            internal void ClearDirty()
-            {
-                if (AnimationStates == null)
-                {
-                    return;
-                }
-                for (int i = 0; i < AnimationStates.Count; i++)
-                {
-                    var animationState = AnimationStates[i];
-                    animationState.IsDirty = false;
-                    AnimationStates[i] = animationState;
-                }
-            }
+            // Used to determine how many AnimationState entries we are sending or receiving
+            internal int IsDirtyCount;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
+                var animationState = new AnimationState();
                 if (serializer.IsReader)
                 {
-                    if (AnimationStates == null)
+                    AnimationStates = new List<AnimationState>();
+
+                    serializer.SerializeValue(ref IsDirtyCount);
+                    // Since we create a new AnimationMessage when deserializing
+                    // we need to create new animation states for each incoming
+                    // AnimationState being updated
+                    for (int i = 0; i < IsDirtyCount; i++)
                     {
-                        AnimationStates = new List<AnimationState>();
-                    }
-                    else if (AnimationStates.Count > 0)
-                    {
-                        AnimationStates.Clear();
+                        animationState = new AnimationState();
+                        serializer.SerializeValue(ref animationState);
+                        AnimationStates.Add(animationState);
                     }
                 }
-                var count = AnimationStates.Count;
-                serializer.SerializeValue(ref count);
-
-                var animationState = new AnimationState();
-                for (int i = 0; i < count; i++)
+                else
                 {
-                    if (serializer.IsWriter)
+                    // When writing, only send the counted dirty animation states
+                    serializer.SerializeValue(ref IsDirtyCount);
+                    for (int i = 0; i < IsDirtyCount; i++)
                     {
-                        if (AnimationStates[i].IsDirty)
-                        {
-                            animationState = AnimationStates[i];
-                        }
-                    }
-                    serializer.SerializeNetworkSerializable(ref animationState);
-                    if (serializer.IsReader)
-                    {
-                        AnimationStates.Add(animationState);
+                        animationState = AnimationStates[i];
+                        serializer.SerializeNetworkSerializable(ref animationState);
                     }
                 }
             }
@@ -563,7 +547,17 @@ namespace Unity.Netcode.Components
         private List<int> m_ParametersToUpdate;
         private List<ulong> m_ClientSendList;
         private ClientRpcParams m_ClientRpcParams;
-        private List<AnimationState> m_AnimationMessageStates;
+        private AnimationMessage m_AnimationMessage;
+
+        /// <summary>
+        /// Used for integration test to validate that the
+        /// AnimationMessage.AnimationStates remains the same
+        /// size as the layer count.
+        /// </summary>
+        internal AnimationMessage GetAnimationMessage()
+        {
+            return m_AnimationMessage;
+        }
 
         // Only used in Cleanup
         private NetworkManager m_CachedNetworkManager;
@@ -590,17 +584,19 @@ namespace Unity.Netcode.Components
                 m_CachedNetworkManager = NetworkManager;
                 NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
             }
-
-            // !! Note !!
-            // Do not clear this list. We re-use the AnimationState entries
-            // initialized below
-            m_AnimationMessageStates = new List<AnimationState>();
+            // We initialize the m_AnimationMessage for all instances in the event that
+            // ownership or authority changes during runtime.
+            m_AnimationMessage = new AnimationMessage();
+            m_AnimationMessage.AnimationStates = new List<AnimationState>();
 
             // Store off our current layer weights and create our animation
             // state entries per layer.
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
-                m_AnimationMessageStates.Add(new AnimationState());
+                // We create an AnimationState per layer to preallocate the maximum
+                // number of possible AnimationState changes we could send in one
+                // AnimationMessage.
+                m_AnimationMessage.AnimationStates.Add(new AnimationState());
                 float layerWeightNow = m_Animator.GetLayerWeight(layer);
                 if (layerWeightNow != m_LayerWeights[layer])
                 {
@@ -677,11 +673,8 @@ namespace Unity.Netcode.Components
             }
             SendParametersUpdate(m_ClientRpcParams);
 
-            var animationMessage = new AnimationMessage
-            {
-                // Assign the existing m_AnimationMessageStates list
-                AnimationStates = m_AnimationMessageStates
-            };
+            // Reset the dirty count before synchronizing the newly connected client with all layers
+            m_AnimationMessage.IsDirtyCount = 0;
 
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
@@ -689,7 +682,10 @@ namespace Unity.Netcode.Components
                 var stateHash = st.fullPathHash;
                 var normalizedTime = st.normalizedTime;
                 var isInTransition = m_Animator.IsInTransition(layer);
-                var animMsg = m_AnimationMessageStates[layer];
+
+                // Grab one of the available AnimationState entries so we can fill it with the current
+                // layer's animation state.
+                var animationState = m_AnimationMessage.AnimationStates[layer];
 
                 // Synchronizing transitions with trigger conditions for late joining clients is now
                 // handled by cross fading between the late joining client's current layer's AnimationState
@@ -723,25 +719,23 @@ namespace Unity.Netcode.Components
                             var destinationInfo = m_DestinationStateToTransitioninfo[layer][nextState.shortNameHash];
                             stateHash = destinationInfo.OriginatingState;
                             // Set the destination state to cross fade to from the originating state
-                            animMsg.DestinationStateHash = destinationInfo.DestinationState;
+                            animationState.DestinationStateHash = destinationInfo.DestinationState;
                         }
                     }
                 }
 
-                animMsg.Transition = isInTransition;        // The only time this could be set to true
-                animMsg.StateHash = stateHash;              // When a transition, this is the originating/starting state
-                animMsg.NormalizedTime = normalizedTime;
-                animMsg.Layer = layer;
-                animMsg.Weight = m_LayerWeights[layer];
-                animMsg.IsDirty = true;
-                m_AnimationMessageStates[layer] = animMsg;
+                animationState.Transition = isInTransition;        // The only time this could be set to true
+                animationState.StateHash = stateHash;              // When a transition, this is the originating/starting state
+                animationState.NormalizedTime = normalizedTime;
+                animationState.Layer = layer;
+                animationState.Weight = m_LayerWeights[layer];
+
+                // Apply the changes
+                m_AnimationMessage.AnimationStates[layer] = animationState;
             }
-            if (animationMessage.AnimationStates.Count > 0)
-            {
-                // Server always send via client RPC
-                SendAnimStateClientRpc(animationMessage, m_ClientRpcParams);
-                animationMessage.ClearDirty();
-            }
+            // Send all animation states
+            m_AnimationMessage.IsDirtyCount = m_Animator.layerCount;
+            SendAnimStateClientRpc(m_AnimationMessage, m_ClientRpcParams);
         }
 
         /// <summary>
@@ -779,13 +773,10 @@ namespace Unity.Netcode.Components
             int stateHash;
             float normalizedTime;
 
-            var animationMessage = new AnimationMessage
-            {
-                // Assign the existing m_AnimationMessageStates list
-                AnimationStates = m_AnimationMessageStates
-            };
+            // Reset the dirty count before checking for AnimationState updates
+            m_AnimationMessage.IsDirtyCount = 0;
 
-            // This sends updates only if a layer's AnimationState changes
+            // This sends updates only if a layer's state has changed
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
@@ -797,31 +788,33 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
-                var animationState = new AnimationState
-                {
-                    IsDirty = true,
-                    Transition = false, // Only used during synchronization
-                    StateHash = stateHash,
-                    NormalizedTime = normalizedTime,
-                    Layer = layer,
-                    Weight = m_LayerWeights[layer]
-                };
+                // If we made it here, then we need to synchronize this layer's animation state.
+                // Get one of the preallocated AnimationState entries and populate it with the
+                // current layer's state.
+                var animationState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
 
-                animationMessage.AnimationStates.Add(animationState);
+                animationState.Transition = false; // Only used during synchronization
+                animationState.StateHash = stateHash;
+                animationState.NormalizedTime = normalizedTime;
+                animationState.Layer = layer;
+                animationState.Weight = m_LayerWeights[layer];
+
+                // Apply the changes
+                m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount] = animationState;
+                m_AnimationMessage.IsDirtyCount++;
             }
 
-            // Make sure there is something to send
-            if (animationMessage.AnimationStates.Count > 0)
+            // Send an AnimationMessage only if there are dirty AnimationStates to send
+            if (m_AnimationMessage.IsDirtyCount > 0)
             {
                 if (!IsServer && IsOwner)
                 {
-                    SendAnimStateServerRpc(animationMessage);
+                    SendAnimStateServerRpc(m_AnimationMessage);
                 }
                 else
                 {
-                    SendAnimStateClientRpc(animationMessage);
+                    SendAnimStateClientRpc(m_AnimationMessage);
                 }
-                animationMessage.ClearDirty();
             }
         }
 

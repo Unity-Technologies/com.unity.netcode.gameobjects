@@ -74,6 +74,7 @@ namespace TestProject.ManualTests
                     position += (m_Direction * m_CurrentSpeed);
                     position.y = yAxis;
                     m_Rigidbody.position = Vector3.Lerp(m_Rigidbody.position, position, Time.fixedDeltaTime);
+                    m_Rigidbody.rotation = Quaternion.LookRotation(m_Direction);
                 }
             }
         }

@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- `UnityTransport` now provides a way to set the Relay server data directly from the `RelayServerData` structure (provided by the Unity Transport package) throuh its `SetRelayServerData` method. This allows making use of the new APIs in UTP 1.3 that simplify integration of the Relay SDK. (#2235)
 - IPv6 is now supported for direct connections when using `UnityTransport`. (#2232)
 - Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
 - Added position, rotation, and scale to the `ParentSyncMessage` which provides users the ability to specify the final values on the server-side when `OnNetworkObjectParentChanged` is invoked just before the message is created (when the `Transform` values are applied to the message). (#2146)
