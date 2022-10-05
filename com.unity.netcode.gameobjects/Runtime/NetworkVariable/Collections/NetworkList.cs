@@ -39,9 +39,13 @@ namespace Unity.Netcode
             NetworkVariableWritePermission writePerm = DefaultWritePerm)
             : base(readPerm, writePerm)
         {
-            foreach (var value in values)
+            // allow null IEnumerable<T> to mean "no values"
+            if (values != null)
             {
-                m_List.Add(value);
+                foreach (var value in values)
+                {
+                    m_List.Add(value);
+                }
             }
         }
 
@@ -369,6 +373,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Add(T item)
         {
+            // check write permissions
+            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            {
+                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+            }
+
             m_List.Add(item);
 
             var listEvent = new NetworkListEvent<T>()
@@ -384,6 +394,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Clear()
         {
+            // check write permissions
+            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            {
+                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+            }
+
             m_List.Clear();
 
             var listEvent = new NetworkListEvent<T>()
@@ -404,6 +420,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Remove(T item)
         {
+            // check write permissions
+            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            {
+                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+            }
+
             int index = NativeArrayExtensions.IndexOf(m_List, item);
             if (index == -1)
             {
@@ -433,6 +455,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
+            // check write permissions
+            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            {
+                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+            }
+
             if (index < m_List.Length)
             {
                 m_List.InsertRangeWithBeginEnd(index, index + 1);
@@ -456,6 +484,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
+            // check write permissions
+            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            {
+                throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+            }
+
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
@@ -473,6 +507,12 @@ namespace Unity.Netcode
             get => m_List[index];
             set
             {
+                // check write permissions
+                if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                {
+                    throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
+                }
+
                 var previousValue = m_List[index];
                 m_List[index] = value;
 
