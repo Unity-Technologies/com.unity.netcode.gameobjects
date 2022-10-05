@@ -268,7 +268,8 @@ namespace Unity.Netcode
         internal void AddDespawnedInSceneNetworkObjects()
         {
             m_DespawnedInSceneObjectsSync.Clear();
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.NetworkManager == m_NetworkManager);
+            // Find all active and non-active in-scene placed NetworkObjects
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(true).Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
@@ -798,12 +799,17 @@ namespace Unity.Netcode
                             if (m_NetworkManager.SceneManager.ScenesLoaded.ContainsKey(localSceneHandle))
                             {
                                 var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
-                                var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) =>
+
+                                // Find all active and non-active in-scene placed NetworkObjects
+                                var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(true).Where((c) =>
                                 c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                                 foreach (var inSceneObject in inSceneNetworkObjects)
                                 {
-                                    sceneRelativeNetworkObjects.Add(inSceneObject.GlobalObjectIdHash, inSceneObject);
+                                    if (!sceneRelativeNetworkObjects.ContainsKey(inSceneObject.GlobalObjectIdHash))
+                                    {
+                                        sceneRelativeNetworkObjects.Add(inSceneObject.GlobalObjectIdHash, inSceneObject);
+                                    }
                                 }
                                 // Add this to a cache so we don't have to run this potentially multiple times (nothing will spawn or despawn during this time
                                 sceneCache.Add(networkSceneHandle, sceneRelativeNetworkObjects);
