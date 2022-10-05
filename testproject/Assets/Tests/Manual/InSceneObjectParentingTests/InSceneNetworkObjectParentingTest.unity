@@ -439,7 +439,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 1950573270}
   m_TrackSceneEvents: 1
-  m_LogSceneEventsToConsole: 1
 --- !u!4 &294628599
 Transform:
   m_ObjectHideFlags: 0
@@ -623,8 +622,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 17}
-  m_SizeDelta: {x: 600, y: 35}
+  m_AnchoredPosition: {x: 0, y: 16}
+  m_SizeDelta: {x: 800, y: 70}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &596094238
 MonoBehaviour:
@@ -648,7 +647,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 25
+    m_FontSize: 22
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -659,7 +658,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Press "G" to pickup and "D" to drop the object.
+  m_Text: 'Press "G" WorldPositionStays (true)  pickup, "F" WorldPositionStays (false),
+
+    and
+    "D" to drops the object at its current location.'
 --- !u!222 &596094239
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1337,7 +1339,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ActivateOnLoad: 0
-  m_SceneToLoad: In-SceneNetworkObjectToLoad
+  m_SceneToLoad: InSceneNetworkObjectToLoad
   m_SceneAsset: {fileID: 102900000, guid: f06a8525a4b5200459f62905c29ce09e, type: 3}
 --- !u!114 &1153518163
 MonoBehaviour:
