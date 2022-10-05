@@ -391,10 +391,13 @@ namespace Unity.Netcode.Components
             // Not to be serialized, used for processing the animation message
             internal bool HasBeenProcessed;
 
+            // This is preallocated/populated in OnNetworkSpawn for all instances in the event ownership or
+            // authority changes.  When serializing, IsDirtyCount determines how many AnimationState entries
+            // should be serialized from the list.  When deserializing the list is created and populated with
+            // only the number of AnimationStates received which is dictated by the deserialized IsDirtyCount.
             internal List<AnimationState> AnimationStates;
 
-            // Determines how many AnimationState entries are dirty
-            // this is a 1:1 mapping of the AnimationStates indices
+            // Used to determine how many AnimationState entries we are sending or receiving
             internal int IsDirtyCount;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -402,14 +405,8 @@ namespace Unity.Netcode.Components
                 var animationState = new AnimationState();
                 if (serializer.IsReader)
                 {
-                    if (AnimationStates == null)
-                    {
-                        AnimationStates = new List<AnimationState>();
-                    }
-                    else if (AnimationStates.Count > 0)
-                    {
-                        AnimationStates.Clear();
-                    }
+                    AnimationStates = new List<AnimationState>();
+
                     serializer.SerializeValue(ref IsDirtyCount);
                     // Since we create a new AnimationMessage when deserializing
                     // we need to create new animation states for each incoming
@@ -423,9 +420,7 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    // When writing, only send the count of dirty animation states
-                    // Note: at this level it is not a 1:1 mapping of AnimationState
-                    // to layer.
+                    // When writing, only send the counted dirty animation states
                     serializer.SerializeValue(ref IsDirtyCount);
                     for (int i = 0; i < IsDirtyCount; i++)
                     {
@@ -589,7 +584,8 @@ namespace Unity.Netcode.Components
                 m_CachedNetworkManager = NetworkManager;
                 NetworkManager.OnClientConnectedCallback += OnClientConnectedCallback;
             }
-
+            // We initialize the m_AnimationMessage for all instances in the event that
+            // ownership or authority changes during runtime.
             m_AnimationMessage = new AnimationMessage();
             m_AnimationMessage.AnimationStates = new List<AnimationState>();
 
@@ -597,6 +593,9 @@ namespace Unity.Netcode.Components
             // state entries per layer.
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
+                // We create an AnimationState per layer to preallocate the maximum
+                // number of possible AnimationState changes we could send in one
+                // AnimationMessage.
                 m_AnimationMessage.AnimationStates.Add(new AnimationState());
                 float layerWeightNow = m_Animator.GetLayerWeight(layer);
                 if (layerWeightNow != m_LayerWeights[layer])
@@ -684,8 +683,8 @@ namespace Unity.Netcode.Components
                 var normalizedTime = st.normalizedTime;
                 var isInTransition = m_Animator.IsInTransition(layer);
 
-                // We are using the layer index here only because we are synchronizing
-                // all layer animation states for newly joined clients
+                // Grab one of the available AnimationState entries so we can fill it with the current
+                // layer's animation state.
                 var animMsg = m_AnimationMessage.AnimationStates[layer];
 
                 // Synchronizing transitions with trigger conditions for late joining clients is now
@@ -777,7 +776,7 @@ namespace Unity.Netcode.Components
             // Reset the dirty count before checking for AnimationState updates
             m_AnimationMessage.IsDirtyCount = 0;
 
-            // This sends updates only if a layer's AnimationState changes
+            // This sends updates only if a layer's state has changed
             for (int layer = 0; layer < m_Animator.layerCount; layer++)
             {
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
@@ -789,8 +788,9 @@ namespace Unity.Netcode.Components
                     continue;
                 }
 
-                // We use the IsDirtyCount here because we are only updating the AnimationStates that
-                // need to be updated
+                // If we made it here, then we need to synchronize this layer's animation state.
+                // Get one of the preallocated AnimationState entries and populate it with the
+                // current layer's state.
                 var animationState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
 
                 animationState.Transition = false; // Only used during synchronization
@@ -804,7 +804,7 @@ namespace Unity.Netcode.Components
                 m_AnimationMessage.IsDirtyCount++;
             }
 
-            // If we have dirty AnimationStates to send
+            // Send an AnimationMessage only if there are dirty AnimationStates to send
             if (m_AnimationMessage.IsDirtyCount > 0)
             {
                 if (!IsServer && IsOwner)
