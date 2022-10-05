@@ -391,7 +391,7 @@ namespace Unity.Netcode
 
                 // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
                 // NetworkBehaviours will have their OnNetworkSpawn method invoked
-                if (!networkObject.gameObject.activeInHierarchy)
+                if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
                 {
                     networkObject.gameObject.SetActive(true);
                 }
