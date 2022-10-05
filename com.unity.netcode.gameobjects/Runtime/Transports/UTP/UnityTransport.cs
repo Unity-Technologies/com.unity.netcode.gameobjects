@@ -544,46 +544,13 @@ namespace Unity.Netcode.Transports.UTP
             return true;
         }
 
-        private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = allocationIdBytes)
-                {
-                    return RelayAllocationId.FromBytePointer(ptr, allocationIdBytes.Length);
-                }
-            }
-        }
-
-        private static RelayHMACKey ConvertFromHMAC(byte[] hmac)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = hmac)
-                {
-                    return RelayHMACKey.FromBytePointer(ptr, RelayHMACKey.k_Length);
-                }
-            }
-        }
-
-        private static RelayConnectionData ConvertConnectionData(byte[] connectionData)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = connectionData)
-                {
-                    return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
-                }
-            }
-        }
-
         private void SetProtocol(ProtocolType inProtocol)
         {
             m_ProtocolType = inProtocol;
         }
 
         /// <summary>Set the relay server data for the server.</summary>
-        /// <param name="ipv4Address">IP address of the relay server.</param>
+        /// <param name="ipv4Address">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationIdBytes">Allocation ID as a byte array.</param>
         /// <param name="keyBytes">Allocation key as a byte array.</param>
@@ -592,33 +559,8 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
         public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
-            RelayConnectionData hostConnectionData;
-
-            if (!NetworkEndpoint.TryParse(ipv4Address, port, out var serverEndpoint))
-            {
-                Debug.LogError($"Invalid address {ipv4Address}:{port}");
-
-                // We set this to default to cause other checks to fail to state you need to call this
-                // function again.
-                m_RelayServerData = default;
-                return;
-            }
-
-            var allocationId = ConvertFromAllocationIdBytes(allocationIdBytes);
-            var key = ConvertFromHMAC(keyBytes);
-            var connectionData = ConvertConnectionData(connectionDataBytes);
-
-            if (hostConnectionDataBytes != null)
-            {
-                hostConnectionData = ConvertConnectionData(hostConnectionDataBytes);
-            }
-            else
-            {
-                hostConnectionData = connectionData;
-            }
-
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 0, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
-
+            var hostConnectionData = hostConnectionDataBytes ?? connectionDataBytes;
+            m_RelayServerData = new RelayServerData(ipv4Address, port, allocationIdBytes, connectionDataBytes, hostConnectionData, keyBytes, isSecure);
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
@@ -631,7 +573,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>Set the relay server data for the host.</summary>
-        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="ipAddress">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationId">Allocation ID as a byte array.</param>
         /// <param name="key">Allocation key as a byte array.</param>
@@ -643,7 +585,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>Set the relay server data for the host.</summary>
-        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="ipAddress">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationId">Allocation ID as a byte array.</param>
         /// <param name="key">Allocation key as a byte array.</param>
