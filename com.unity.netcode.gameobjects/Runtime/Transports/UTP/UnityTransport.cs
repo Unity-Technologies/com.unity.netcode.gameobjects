@@ -1425,24 +1425,18 @@ namespace Unity.Netcode.Transports.UTP
         }
 #endif
 
-        private FixedString4096Bytes m_ServerPrivate;
-        private FixedString4096Bytes m_ServerCertificate;
+        private string m_ServerPrivateKey;
+        private string m_ServerCertificate;
 
-        private FixedString512Bytes m_ServerCommonName;
-        private FixedString4096Bytes m_ClientCaCertificate;
+        private string m_ServerCommonName;
+        private string m_ClientCaCertificate;
 
         /// <summary>Set the server parameters for encryption.</summary>
         /// <param name="serverCertificate">Public certificate for the server (PEM format).</param>
         /// <param name="serverPrivateKey">Private key for the server (PEM format).</param>
         public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
         {
-            if (serverPrivateKey.Length > m_ServerPrivate.Capacity ||
-                serverCertificate.Length > m_ServerCertificate.Capacity)
-            {
-                throw new Exception("Secret lengths are above what Unity Transport allows.");
-            }
-
-            m_ServerPrivate = serverPrivateKey;
+            m_ServerPrivateKey = serverPrivateKey;
             m_ServerCertificate = serverCertificate;
         }
 
@@ -1456,12 +1450,6 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="caCertificate">CA certificate used to validate the server's authenticity.</param>
         public void SetClientSecrets(string serverCommonName, string caCertificate = null)
         {
-            if (serverCommonName.Length > m_ServerCommonName.Capacity ||
-                caCertificate?.Length > m_ClientCaCertificate.Capacity)
-            {
-                throw new Exception("Secret lengths are above what Unity Transport allows.");
-            }
-
             m_ServerCommonName = serverCommonName;
             m_ClientCaCertificate = caCertificate;
         }
@@ -1516,14 +1504,9 @@ namespace Unity.Netcode.Transports.UTP
                         // log an error because we have mismatched configuration
                         Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
                     }
-                    else
-                    {
-                        if (m_UseWebSockets)
-                        {
-                            // Todo: new code to support Relay+WSS
-                            throw new NotImplementedException();
-                        }
-                    }
+
+                    // No need to to anything else if using Relay because UTP will handle the
+                    // configuration of the security parameters on its own.
                 }
                 else
                 {
@@ -1531,13 +1514,11 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         if (NetworkManager.IsServer)
                         {
-                            if (m_ServerCertificate.Length == 0 ||
-                                m_ServerPrivate.Length == 0)
+                            if (m_ServerCertificate.Length == 0 || m_ServerPrivateKey.Length == 0)
                             {
                                 throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
                             }
-                            m_NetworkSettings.WithSecureServerParameters(certificate: ref m_ServerCertificate,
-                                privateKey: ref m_ServerPrivate);
+                            m_NetworkSettings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
                         }
                         else
                         {
@@ -1545,12 +1526,19 @@ namespace Unity.Netcode.Transports.UTP
                             {
                                 throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                             }
-                            m_NetworkSettings.WithSecureClientParameters(serverName: ref m_ServerCommonName, caCertificate: ref m_ClientCaCertificate);
+                            else if (m_ClientCaCertificate == null)
+                            {
+                                m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
+                            }
+                            else
+                            {
+                                m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName));
+                            }
                         }
                     }
                     catch(Exception e)
                     {
-                        Debug.LogException(e,this);
+                        Debug.LogException(e, this);
                     }
                 }
             }
