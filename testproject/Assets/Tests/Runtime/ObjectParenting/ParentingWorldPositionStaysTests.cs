@@ -86,7 +86,7 @@ namespace TestProject.RuntimeTests
                         }
                         else
                         {
-                            throw new Exception($"Failed to assigned {gameObject.name} already assigned!  {nameof(GameObject)} { ClientsRegistered[localClientId].Children[childIndex].Child.name} is already assigned to Client-{localClientId}'s child entry!");
+                            throw new Exception($"Failed to assigned {gameObject.name} already assigned!  {nameof(GameObject)} {ClientsRegistered[localClientId].Children[childIndex].Child.name} is already assigned to Client-{localClientId}'s child entry!");
                         }
                     }
                     // We should never reach this point
