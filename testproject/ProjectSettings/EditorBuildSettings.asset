@@ -110,6 +110,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Samples/Teleport/TeleportSample.unity
     guid: efa247d1f78ca694f8d2dcb5672e8f8b
+  - enabled: 1
+    path: Assets/Tests/Runtime/ObjectParenting/ParentingInSceneObjects.unity
+    guid: 49fd14bff1eceda4f9299721a9029750
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
