@@ -21,6 +21,8 @@ namespace TestProject.ManualTests
         // first spawn (only if StartDespawned is true)
         private bool m_ServerDespawnedOnFirstSpawn;
 
+        private NetworkManager m_CachedNetworkManager;
+
         public override void OnNetworkSpawn()
         {
             Debug.Log($"{name} spawned!");
@@ -29,6 +31,8 @@ namespace TestProject.ManualTests
             {
                 return;
             }
+
+            m_CachedNetworkManager = NetworkManager;
 
             if (m_ScanInputHandle == null)
             {
@@ -60,9 +64,9 @@ namespace TestProject.ManualTests
 
         public override void OnDestroy()
         {
-            if (m_ScanInputHandle != null)
+            if (m_ScanInputHandle != null && m_CachedNetworkManager != null)
             {
-                NetworkManager.StopCoroutine(m_ScanInputHandle);
+                m_CachedNetworkManager.StopCoroutine(m_ScanInputHandle);
             }
             m_ScanInputHandle = null;
             base.OnDestroy();
