@@ -12,16 +12,35 @@ namespace TestProject.RuntimeTests
     /// </summary>
     public class NetworkObjectTestComponent : NetworkBehaviour
     {
+        public static bool DisableOnDespawn;
+        public static bool DisableOnSpawn;
         public static NetworkObject ServerNetworkObjectInstance;
         public static List<NetworkObjectTestComponent> SpawnedInstances = new List<NetworkObjectTestComponent>();
+        public static List<NetworkObjectTestComponent> DespawnedInstances = new List<NetworkObjectTestComponent>();
 
+        // When disabling on spawning we only want this to happen on the initial spawn.
+        // This is used to track this so the server only does it once upon spawning.
+        public bool ObjectWasDisabledUponSpawn;
         public override void OnNetworkSpawn()
         {
+            SpawnedInstances.Add(this);
+            if (DisableOnDespawn)
+            {
+                if (DespawnedInstances.Contains(this))
+                {
+                    DespawnedInstances.Remove(this);
+                }
+            }
+
             if (IsServer)
             {
                 ServerNetworkObjectInstance = NetworkObject;
+                if (DisableOnSpawn && !ObjectWasDisabledUponSpawn)
+                {
+                    NetworkObject.Despawn(false);
+                    ObjectWasDisabledUponSpawn = true;
+                }
             }
-            SpawnedInstances.Add(this);
             base.OnNetworkSpawn();
         }
 
@@ -33,6 +52,11 @@ namespace TestProject.RuntimeTests
             m_HasNotifiedSpawned = false;
             Debug.Log($"{NetworkManager.name} de-spawned {gameObject.name}.");
             SpawnedInstances.Remove(this);
+            if (DisableOnDespawn)
+            {
+                DespawnedInstances.Add(this);
+                gameObject.SetActive(false);
+            }
             base.OnNetworkDespawn();
         }
 

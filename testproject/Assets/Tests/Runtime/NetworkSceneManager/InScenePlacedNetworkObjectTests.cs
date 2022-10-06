@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using NUnit.Framework;
@@ -181,7 +182,6 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"Timed out waiting for the client-side id ({m_ClientNetworkManagers[0].LocalClientId}) server player transform to be set on the client-side in-scene object!");
         }
 
-
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
             if (sceneEvent.SceneEventType == SceneEventType.LoadComplete && sceneEvent.SceneName == k_SceneToLoad && sceneEvent.ClientId == m_ClientNetworkManagers[0].LocalClientId)
@@ -227,6 +227,172 @@ namespace TestProject.RuntimeTests
                 m_ServerNetworkManager.SceneManager.OnSceneEvent -= Unload_OnSceneEvent;
             }
         }
+
+
+        private bool m_AllClientsLoadedScene;
+        private bool m_AllClientsUnloadedScene;
+
+        private int m_NumberOfInstancesCheck;
+
+        private Scene m_SceneLoaded;
+
+        private bool HaveAllClientsDespawnedInSceneObject()
+        {
+            // Make sure we despawned all instances
+            if (NetworkObjectTestComponent.DespawnedInstances.Count < m_NumberOfInstancesCheck)
+            {
+                return false;
+            }
+
+            foreach (var despawnedInstance in NetworkObjectTestComponent.DespawnedInstances)
+            {
+                if (despawnedInstance.gameObject.activeInHierarchy)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool HaveAllClientsSpawnedInSceneObject()
+        {
+            // Make sure we despawned all instances
+            if (NetworkObjectTestComponent.SpawnedInstances.Count < m_NumberOfInstancesCheck)
+            {
+                return false;
+            }
+
+            foreach (var despawnedInstance in NetworkObjectTestComponent.SpawnedInstances)
+            {
+                if (!despawnedInstance.gameObject.activeInHierarchy)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// This validates that users can despawn in-scene placed NetworkObjects and disable the
+        /// associated GameObject when OnNetworkDespawn is invoked while still being able to
+        /// re-spawn the same in-scene placed NetworkObject.
+        /// This test validates this for:
+        /// - Currently connected clients
+        /// - Late joining client
+        /// - Scene switching and having the server despawn the NetworkObject the first time it is spawned.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator EnableDisableInSceneObjectTests()
+        {
+            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
+            // Enabled disabling the NetworkObject when it is despawned
+            NetworkObjectTestComponent.DisableOnDespawn = true;
+            // Set the number of instances to expect
+            m_NumberOfInstancesCheck = NumberOfClients + (m_UseHost ? 1 : 0);
+
+            // Start the host and clients and load the in-scene object scene additively
+            m_CanStartServerAndClients = true;
+            yield return StartServerAndClients();
+            m_ServerNetworkManager.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
+            m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
+            yield return WaitForConditionOrTimeOut(() => m_AllClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded on all clients!");
+            m_ServerNetworkManager.SceneManager.OnLoadEventCompleted -= SceneManager_OnLoadEventCompleted;
+
+            // Verify all connected clients spawned the in-scene placed NetworkObject
+            yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
+            AssertOnTimeout($"Timed out waiting for all instances to be spawned and enabled!");
+
+            var serverInSceneObjectInstance = NetworkObjectTestComponent.ServerNetworkObjectInstance;
+            Assert.IsNotNull(serverInSceneObjectInstance, $"Could not get the server-side registration of {nameof(NetworkObjectTestComponent)}!");
+
+            // Test #1: Despawn the in-scene placed NetworkObject and verify it is despawned and disabled on the clients
+            serverInSceneObjectInstance.Despawn(false);
+
+            yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
+            AssertOnTimeout($"[Test #1] Timed out waiting for all instances to be despawned and disabled!");
+
+            // Test #2: Late-join a client and re-verify that all in-scene placed object instances are still disabled
+            yield return CreateAndStartNewClient();
+
+            m_NumberOfInstancesCheck++;
+            yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
+            AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be despawned and disabled!");
+
+            // Test #3: Now spawn the same in-scene placed NetworkObject
+            serverInSceneObjectInstance.gameObject.SetActive(true);
+            serverInSceneObjectInstance.Spawn();
+            yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
+            AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be enabled and spawned!");
+
+            // Test #4: Now unload the in-scene object's scene and scene switch to the same scene while
+            // also having the server-side disable the in-scene placed NetworkObject and verify all
+            // connected clients completed the scene switch and that all in-scene placed NetworkObjects
+            // are despawned and disabled.
+            m_AllClientsLoadedScene = false;
+            m_AllClientsUnloadedScene = false;
+
+            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
+            NetworkObjectTestComponent.DisableOnSpawn = true;
+            m_ServerNetworkManager.SceneManager.OnUnloadEventCompleted += SceneManager_OnUnloadEventCompleted;
+            m_ServerNetworkManager.SceneManager.UnloadScene(m_SceneLoaded);
+            yield return WaitForConditionOrTimeOut(() => m_AllClientsUnloadedScene);
+            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be unloaded on all clients!");
+            m_ServerNetworkManager.SceneManager.OnUnloadEventCompleted -= SceneManager_OnUnloadEventCompleted;
+
+            // Verify the spawned instances list is empty
+            Assert.True(NetworkObjectTestComponent.SpawnedInstances.Count == 0, $"There are {NetworkObjectTestComponent.SpawnedInstances.Count} that did not despawn when the scene was unloaded!");
+
+            // Go ahead and clear out the despawned instances list
+            NetworkObjectTestComponent.DespawnedInstances.Clear();
+
+            // Now scene switch (LoadSceneMode.Single) into the scene with the in-scene placed NetworkObject we have been testing
+            m_ServerNetworkManager.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
+            m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Single);
+            yield return WaitForConditionOrTimeOut(() => m_AllClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for {k_SceneToLoad} scene to be loaded on all clients!");
+            m_ServerNetworkManager.SceneManager.OnLoadEventCompleted -= SceneManager_OnLoadEventCompleted;
+
+            // Verify all client instances are disabled and despawned when done scene switching
+            yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
+            AssertOnTimeout($"[Test #4] Timed out waiting for all instances to be despawned and disabled!");
+
+            serverInSceneObjectInstance = NetworkObjectTestComponent.ServerNetworkObjectInstance;
+            Assert.IsNotNull(serverInSceneObjectInstance, $"[Test #4] Could not get the server-side registration of {nameof(NetworkObjectTestComponent)}!");
+
+            // Test #5: Now spawn the in-scene placed NetworkObject
+            serverInSceneObjectInstance.gameObject.SetActive(true);
+            serverInSceneObjectInstance.Spawn();
+
+            // Verify all clients spawned their in-scene NetworkObject relative instance
+            yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
+            AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be enabled and spawned!");
+
+            // Tests complete!
+        }
+
+        private void SceneManager_OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+        {
+            foreach (var clientId in clientsCompleted)
+            {
+                Assert.True(m_ServerNetworkManager.ConnectedClientsIds.Contains(clientId));
+            }
+            m_AllClientsUnloadedScene = true;
+        }
+
+        private void SceneManager_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
+        {
+            foreach (var clientId in clientsCompleted)
+            {
+                Assert.True(m_ServerNetworkManager.ConnectedClientsIds.Contains(clientId));
+            }
+            m_AllClientsLoadedScene = true;
+            m_SceneLoaded = SceneManager.GetSceneByName(sceneName);
+        }
+
+
 
         /// <summary>
         /// Very important to always have a backup "unloading" catch
