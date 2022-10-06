@@ -18,6 +18,15 @@ namespace TestProject.RuntimeTests
         public static List<NetworkObjectTestComponent> SpawnedInstances = new List<NetworkObjectTestComponent>();
         public static List<NetworkObjectTestComponent> DespawnedInstances = new List<NetworkObjectTestComponent>();
 
+        public static void Reset()
+        {
+            DisableOnDespawn = false;
+            DisableOnSpawn = false;
+            ServerNetworkObjectInstance = null;
+            SpawnedInstances.Clear();
+            DespawnedInstances.Clear();
+        }
+
         // When disabling on spawning we only want this to happen on the initial spawn.
         // This is used to track this so the server only does it once upon spawning.
         public bool ObjectWasDisabledUponSpawn;

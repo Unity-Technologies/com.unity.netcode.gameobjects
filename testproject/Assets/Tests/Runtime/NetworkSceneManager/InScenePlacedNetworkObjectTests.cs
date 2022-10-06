@@ -22,8 +22,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
-            NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
-            NetworkObjectTestComponent.SpawnedInstances.Clear();
+            NetworkObjectTestComponent.Reset();
             m_CanStartServerAndClients = false;
             return base.OnSetup();
         }
@@ -317,6 +316,8 @@ namespace TestProject.RuntimeTests
             // Test #2: Late-join a client and re-verify that all in-scene placed object instances are still disabled
             yield return CreateAndStartNewClient();
 
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
+
             m_NumberOfInstancesCheck++;
             yield return WaitForConditionOrTimeOut(HaveAllClientsDespawnedInSceneObject);
             AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be despawned and disabled!");
@@ -369,6 +370,7 @@ namespace TestProject.RuntimeTests
             // Verify all clients spawned their in-scene NetworkObject relative instance
             yield return WaitForConditionOrTimeOut(HaveAllClientsSpawnedInSceneObject);
             AssertOnTimeout($"[Test #2] Timed out waiting for all instances to be enabled and spawned!");
+            yield return StopOneClient(newlyJoinedClient, true);
 
             // Tests complete!
         }
