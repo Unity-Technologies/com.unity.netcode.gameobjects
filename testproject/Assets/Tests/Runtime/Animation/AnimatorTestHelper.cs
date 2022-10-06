@@ -29,10 +29,12 @@ namespace TestProject.RuntimeTests
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
         }
 
+#if UNITY_EDITOR
         internal int GetAnimatorStateCount()
         {
             return m_NetworkAnimator.GetAnimationMessage().AnimationStates.Count;
         }
+#endif
 
         public override void OnNetworkSpawn()
         {
