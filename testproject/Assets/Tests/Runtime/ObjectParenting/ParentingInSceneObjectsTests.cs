@@ -83,11 +83,11 @@ namespace TestProject.RuntimeTests
             var serverOrClient = handler.NetworkManager.IsServer ? "Server" : "Client";
             if (!shouldHaveParent)
             {
-                m_ErrorValidationLog.Append($"[{serverOrClient }-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s still has the parent {handler.transform.parent.name} when it should be null!");
+                m_ErrorValidationLog.Append($"[{serverOrClient}-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s still has the parent {handler.transform.parent.name} when it should be null!");
             }
             else
             {
-                m_ErrorValidationLog.Append($"[{serverOrClient }-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s does not have a parent when it should!");
+                m_ErrorValidationLog.Append($"[{serverOrClient}-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s does not have a parent when it should!");
             }
         }
 
