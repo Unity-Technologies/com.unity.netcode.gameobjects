@@ -269,7 +269,7 @@ namespace Unity.Netcode
         {
             m_DespawnedInSceneObjectsSync.Clear();
             // Find all active and non-active in-scene placed NetworkObjects
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(true).Where((c) => c.NetworkManager == m_NetworkManager);
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
@@ -784,7 +784,7 @@ namespace Unity.Netcode
                             var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
 
                             // Find all active and non-active in-scene placed NetworkObjects
-                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(true).Where((c) =>
+                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) =>
                             c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 
                             foreach (var inSceneObject in inSceneNetworkObjects)
