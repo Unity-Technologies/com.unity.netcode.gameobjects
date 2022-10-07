@@ -256,6 +256,9 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
+
+            // Since the com.unity.netcode.components does not allow test project to access its internals
+            // during runtime, this is only used when running test runner from within the editor
 #if UNITY_EDITOR
             var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
             Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
@@ -305,6 +308,8 @@ namespace TestProject.RuntimeTests
             // Verify we only entered each state once
             yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
+            // Since the com.unity.netcode.components does not allow test project to access its internals
+            // during runtime, this is only used when running test runner from within the editor
 #if UNITY_EDITOR
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);

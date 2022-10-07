@@ -549,7 +549,6 @@ namespace Unity.Netcode.Components
         private ClientRpcParams m_ClientRpcParams;
         private AnimationMessage m_AnimationMessage;
 
-#if UNITY_EDITOR
         /// <summary>
         /// Used for integration test to validate that the
         /// AnimationMessage.AnimationStates remains the same
@@ -559,7 +558,6 @@ namespace Unity.Netcode.Components
         {
             return m_AnimationMessage;
         }
-#endif
 
         // Only used in Cleanup
         private NetworkManager m_CachedNetworkManager;
