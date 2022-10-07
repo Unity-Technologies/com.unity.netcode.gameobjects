@@ -268,7 +268,8 @@ namespace Unity.Netcode
         internal void AddDespawnedInSceneNetworkObjects()
         {
             m_DespawnedInSceneObjectsSync.Clear();
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.NetworkManager == m_NetworkManager);
+            // Find all active and non-active in-scene placed NetworkObjects
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) => c.NetworkManager == m_NetworkManager);
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
@@ -461,7 +462,6 @@ namespace Unity.Netcode
             for (var i = 0; i < m_DespawnedInSceneObjectsSync.Count; ++i)
             {
                 var noStart = writer.Position;
-                var sceneObject = m_DespawnedInSceneObjectsSync[i].GetMessageSceneObject(TargetClientId);
                 BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
                 BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
                 var noStop = writer.Position;
@@ -505,6 +505,15 @@ namespace Unity.Netcode
                         numberOfObjects++;
                     }
                 }
+            }
+
+            // Write the number of despawned in-scene placed NetworkObjects
+            writer.WriteValueSafe(m_DespawnedInSceneObjectsSync.Count);
+            // Write the scene handle and GlobalObjectIdHash value
+            for (var i = 0; i < m_DespawnedInSceneObjectsSync.Count; ++i)
+            {
+                BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
+                BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
             }
 
             var tailPosition = writer.Position;
@@ -624,6 +633,8 @@ namespace Unity.Netcode
                     sceneObject.Deserialize(InternalBuffer);
                     NetworkObject.AddSceneObject(sceneObject, InternalBuffer, m_NetworkManager);
                 }
+                // Now deserialize the despawned in-scene placed NetworkObjects list (if any)
+                DeserializeDespawnedInScenePlacedNetworkObjects();
             }
             finally
             {
@@ -747,6 +758,84 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// For synchronizing any despawned in-scene placed NetworkObjects that were
+        /// despawned by the server during synchronization or scene loading
+        /// </summary>
+        private void DeserializeDespawnedInScenePlacedNetworkObjects()
+        {
+            // Process all de-spawned in-scene NetworkObjects for this network session
+            m_DespawnedInSceneObjects.Clear();
+            InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
+            var sceneCache = new Dictionary<int, Dictionary<uint, NetworkObject>>();
+
+            for (int i = 0; i < despawnedObjectsCount; i++)
+            {
+                // We just need to get the scene
+                ByteUnpacker.ReadValuePacked(InternalBuffer, out int networkSceneHandle);
+                ByteUnpacker.ReadValuePacked(InternalBuffer, out uint globalObjectIdHash);
+                var sceneRelativeNetworkObjects = new Dictionary<uint, NetworkObject>();
+                if (!sceneCache.ContainsKey(networkSceneHandle))
+                {
+                    if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkSceneHandle))
+                    {
+                        var localSceneHandle = m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle[networkSceneHandle];
+                        if (m_NetworkManager.SceneManager.ScenesLoaded.ContainsKey(localSceneHandle))
+                        {
+                            var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
+
+                            // Find all active and non-active in-scene placed NetworkObjects
+                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) =>
+                            c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+
+                            foreach (var inSceneObject in inSceneNetworkObjects)
+                            {
+                                if (!sceneRelativeNetworkObjects.ContainsKey(inSceneObject.GlobalObjectIdHash))
+                                {
+                                    sceneRelativeNetworkObjects.Add(inSceneObject.GlobalObjectIdHash, inSceneObject);
+                                }
+                            }
+                            // Add this to a cache so we don't have to run this potentially multiple times (nothing will spawn or despawn during this time
+                            sceneCache.Add(networkSceneHandle, sceneRelativeNetworkObjects);
+                        }
+                        else
+                        {
+                            UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
+                        }
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
+                    }
+                }
+                else // Use the cached NetworkObjects if they exist
+                {
+                    sceneRelativeNetworkObjects = sceneCache[networkSceneHandle];
+                }
+
+                // Now find the in-scene NetworkObject with the current GlobalObjectIdHash we are looking for
+                if (sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
+                {
+                    // Since this is a NetworkObject that was never spawned, we just need to send a notification
+                    // out that it was despawned so users can make adjustments
+                    sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
+                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
+                    {
+                        m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
+                    }
+
+                    if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
+                    {
+                        m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle(), sceneRelativeNetworkObjects[globalObjectIdHash]);
+                    }
+                }
+                else
+                {
+                    UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
+                }
+            }
+        }
+
+        /// <summary>
         /// Client Side:
         /// During the processing of a server sent Event_Sync, this method will be called for each scene once
         /// it is finished loading.  The client will also build a list of NetworkObjects that it spawned during
@@ -779,72 +868,9 @@ namespace Unity.Netcode
                     }
                 }
 
-                // Process all de-spawned in-scene NetworkObjects for this network session
-                m_DespawnedInSceneObjects.Clear();
-                InternalBuffer.ReadValueSafe(out int despawnedObjectsCount);
-                var sceneCache = new Dictionary<int, Dictionary<uint, NetworkObject>>();
+                // Now deserialize the despawned in-scene placed NetworkObjects list (if any)
+                DeserializeDespawnedInScenePlacedNetworkObjects();
 
-                for (int i = 0; i < despawnedObjectsCount; i++)
-                {
-                    // We just need to get the scene
-                    ByteUnpacker.ReadValuePacked(InternalBuffer, out int networkSceneHandle);
-                    ByteUnpacker.ReadValuePacked(InternalBuffer, out uint globalObjectIdHash);
-                    var sceneRelativeNetworkObjects = new Dictionary<uint, NetworkObject>();
-                    if (!sceneCache.ContainsKey(networkSceneHandle))
-                    {
-                        if (m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkSceneHandle))
-                        {
-                            var localSceneHandle = m_NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle[networkSceneHandle];
-                            if (m_NetworkManager.SceneManager.ScenesLoaded.ContainsKey(localSceneHandle))
-                            {
-                                var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
-                                var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) =>
-                                c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
-
-                                foreach (var inSceneObject in inSceneNetworkObjects)
-                                {
-                                    sceneRelativeNetworkObjects.Add(inSceneObject.GlobalObjectIdHash, inSceneObject);
-                                }
-                                // Add this to a cache so we don't have to run this potentially multiple times (nothing will spawn or despawn during this time
-                                sceneCache.Add(networkSceneHandle, sceneRelativeNetworkObjects);
-                            }
-                            else
-                            {
-                                UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative local scene handle {localSceneHandle}!");
-                            }
-                        }
-                        else
-                        {
-                            UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) cannot find its relative NetworkSceneHandle {networkSceneHandle}!");
-                        }
-                    }
-                    else // Use the cached NetworkObjects if they exist
-                    {
-                        sceneRelativeNetworkObjects = sceneCache[networkSceneHandle];
-                    }
-
-                    // Now find the in-scene NetworkObject with the current GlobalObjectIdHash we are looking for
-                    if (sceneRelativeNetworkObjects.ContainsKey(globalObjectIdHash))
-                    {
-                        // Since this is a NetworkObject that was never spawned, we just need to send a notification
-                        // out that it was despawned so users can make adjustments
-                        sceneRelativeNetworkObjects[globalObjectIdHash].InvokeBehaviourNetworkDespawn();
-                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects.ContainsKey(globalObjectIdHash))
-                        {
-                            m_NetworkManager.SceneManager.ScenePlacedObjects.Add(globalObjectIdHash, new Dictionary<int, NetworkObject>());
-                        }
-
-                        if (!m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].ContainsKey(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle()))
-                        {
-                            m_NetworkManager.SceneManager.ScenePlacedObjects[globalObjectIdHash].Add(sceneRelativeNetworkObjects[globalObjectIdHash].GetSceneOriginHandle(), sceneRelativeNetworkObjects[globalObjectIdHash]);
-                        }
-
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.LogError($"In-Scene NetworkObject GlobalObjectIdHash ({globalObjectIdHash}) could not be found!");
-                    }
-                }
             }
             finally
             {
