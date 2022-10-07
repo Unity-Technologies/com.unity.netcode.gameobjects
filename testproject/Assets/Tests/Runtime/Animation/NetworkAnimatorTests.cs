@@ -256,9 +256,13 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
-            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
 
+            // Since the com.unity.netcode.components does not allow test project to access its internals
+            // during runtime, this is only used when running test runner from within the editor
+#if UNITY_EDITOR
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
             Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+#endif
             if (authoritativeMode == AuthoritativeMode.ServerAuth)
             {
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
@@ -304,7 +308,9 @@ namespace TestProject.RuntimeTests
             // Verify we only entered each state once
             yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
-
+            // Since the com.unity.netcode.components does not allow test project to access its internals
+            // during runtime, this is only used when running test runner from within the editor
+#if UNITY_EDITOR
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);
             bool rotateToggle = true;
@@ -317,7 +323,7 @@ namespace TestProject.RuntimeTests
                 yield return waitForSeconds;
                 rotateToggle = !rotateToggle;
             }
-
+#endif
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
