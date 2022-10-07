@@ -5,17 +5,14 @@ using Unity.Multiplayer.Tools;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Profiling;
-using UnityEngine;
 
 namespace Unity.Netcode
 {
     internal class NetworkMetrics : INetworkMetrics
     {
-        const ulong k_MaxMetricsPerFrame = 1000L;
-
-        static Dictionary<uint, string> s_SceneEventTypeNames;
-
-        static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
+        private const ulong k_MaxMetricsPerFrame = 1000L;
+        private static Dictionary<uint, string> s_SceneEventTypeNames;
+        private static ProfilerMarker s_FrameDispatch = new ProfilerMarker($"{nameof(NetworkMetrics)}.DispatchFrame");
 
         static NetworkMetrics()
         {
@@ -531,7 +528,7 @@ namespace Unity.Netcode
         }
     }
 
-        internal class NetcodeObserver
+    internal class NetcodeObserver
     {
         public static IMetricObserver Observer { get; } = MetricObserverFactory.Construct();
     }

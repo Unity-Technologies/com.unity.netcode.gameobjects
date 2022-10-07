@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.TestTools;
 using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
@@ -19,6 +20,15 @@ namespace Unity.Netcode.RuntimeTests
             NetworkDelivery.Unreliable,
             NetworkDelivery.UnreliableSequenced,
             NetworkDelivery.Reliable
+        };
+
+        private static readonly NetworkFamily[] k_NetworkFamiltyParameters =
+        {
+            NetworkFamily.Ipv4,
+#if !(UNITY_SWITCH || UNITY_PS4 || UNITY_PS5)
+            // IPv6 is not supported on Switch, PS4, and PS5.
+            NetworkFamily.Ipv6
+#endif
         };
 
         private UnityTransport m_Server, m_Client1, m_Client2;
@@ -60,10 +70,12 @@ namespace Unity.Netcode.RuntimeTests
 
         // Check if can make a simple data exchange.
         [UnityTest]
-        public IEnumerator PingPong([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator PingPong(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            InitializeTransport(out m_Server, out m_ServerEvents, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -89,10 +101,12 @@ namespace Unity.Netcode.RuntimeTests
 
         // Check if can make a simple data exchange (both ways at a time).
         [UnityTest]
-        public IEnumerator PingPongSimultaneous([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator PingPongSimultaneous(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            InitializeTransport(out m_Server, out m_ServerEvents, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -126,13 +140,15 @@ namespace Unity.Netcode.RuntimeTests
         // loopback traffic are too small for the amount of data sent in a single update here.
         [UnityTest]
         [UnityPlatform(exclude = new[] { RuntimePlatform.Switch, RuntimePlatform.PS4, RuntimePlatform.PS5 })]
-        public IEnumerator SendMaximumPayloadSize([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator SendMaximumPayloadSize(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
             // We want something that's over the old limit of ~44KB for reliable payloads.
             var payloadSize = 64 * 1024;
 
-            InitializeTransport(out m_Server, out m_ServerEvents, payloadSize);
-            InitializeTransport(out m_Client1, out m_Client1Events, payloadSize);
+            InitializeTransport(out m_Server, out m_ServerEvents, payloadSize, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, payloadSize, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -164,10 +180,12 @@ namespace Unity.Netcode.RuntimeTests
 
         // Check making multiple sends to a client in a single frame.
         [UnityTest]
-        public IEnumerator MultipleSendsSingleFrame([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator MultipleSendsSingleFrame(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            InitializeTransport(out m_Server, out m_ServerEvents, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -193,11 +211,13 @@ namespace Unity.Netcode.RuntimeTests
 
         // Check sending data to multiple clients.
         [UnityTest]
-        public IEnumerator SendMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator SendMultipleClients(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-            InitializeTransport(out m_Client2, out m_Client2Events);
+            InitializeTransport(out m_Server, out m_ServerEvents, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, family: family);
+            InitializeTransport(out m_Client2, out m_Client2Events, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -234,11 +254,13 @@ namespace Unity.Netcode.RuntimeTests
 
         // Check receiving data from multiple clients.
         [UnityTest]
-        public IEnumerator ReceiveMultipleClients([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)
+        public IEnumerator ReceiveMultipleClients(
+            [ValueSource("k_DeliveryParameters")] NetworkDelivery delivery,
+            [ValueSource("k_NetworkFamiltyParameters")] NetworkFamily family)
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
-            InitializeTransport(out m_Client2, out m_Client2Events);
+            InitializeTransport(out m_Server, out m_ServerEvents, family: family);
+            InitializeTransport(out m_Client1, out m_Client1Events, family: family);
+            InitializeTransport(out m_Client2, out m_Client2Events, family: family);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -273,8 +295,10 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator DisconnectOnReliableSendQueueOverflow()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            const int maxSendQueueSize = 16 * 1024;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, maxSendQueueSize: maxSendQueueSize);
+            InitializeTransport(out m_Client1, out m_Client1Events, maxSendQueueSize: maxSendQueueSize);
 
             m_Server.StartServer();
             m_Client1.StartClient();
@@ -283,7 +307,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_Server.Shutdown();
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024);
+            var numSends = (maxSendQueueSize / 1024);
 
             for (int i = 0; i < numSends; i++)
             {
@@ -292,8 +316,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             LogAssert.Expect(LogType.Error, "Couldn't add payload of size 1024 to reliable send queue. " +
-                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained. " +
-                $"Perhaps 'Max Send Queue Size' ({UnityTransport.InitialMaxSendQueueSize}) is too small for workload.");
+                $"Closing connection {m_Client1.ServerClientId} as reliability guarantees can't be maintained.");
 
             Assert.AreEqual(2, m_Client1Events.Count);
             Assert.AreEqual(NetworkEvent.Disconnect, m_Client1Events[1].Type);
@@ -308,15 +331,17 @@ namespace Unity.Netcode.RuntimeTests
         [UnityPlatform(exclude = new[] { RuntimePlatform.Switch, RuntimePlatform.PS4, RuntimePlatform.PS5 })]
         public IEnumerator SendCompletesOnUnreliableSendQueueOverflow()
         {
-            InitializeTransport(out m_Server, out m_ServerEvents);
-            InitializeTransport(out m_Client1, out m_Client1Events);
+            const int maxSendQueueSize = 16 * 1024;
+
+            InitializeTransport(out m_Server, out m_ServerEvents, maxSendQueueSize: maxSendQueueSize);
+            InitializeTransport(out m_Client1, out m_Client1Events, maxSendQueueSize: maxSendQueueSize);
 
             m_Server.StartServer();
             m_Client1.StartClient();
 
             yield return WaitForNetworkEvent(NetworkEvent.Connect, m_Client1Events);
 
-            var numSends = (UnityTransport.InitialMaxSendQueueSize / 1024) + 1;
+            var numSends = (maxSendQueueSize / 1024) + 1;
 
             for (int i = 0; i < numSends; i++)
             {
@@ -340,6 +365,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return null;
         }
 
+#if !UTP_TRANSPORT_2_0_ABOVE
         // Check that simulator parameters are effective. We only check with the drop rate, because
         // that's easy to check and we only really want to make sure the simulator parameters are
         // configured properly (the simulator pipeline stage is already well-tested in UTP).
@@ -394,6 +420,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return null;
         }
+#endif
 
         [UnityTest]
         public IEnumerator SendQueuesFlushedOnShutdown([ValueSource("k_DeliveryParameters")] NetworkDelivery delivery)

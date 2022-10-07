@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport;
 using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
@@ -36,14 +37,23 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         // Common code to initialize a UnityTransport that logs its events.
-        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events, int maxPayloadSize = UnityTransport.InitialMaxPayloadSize)
+        public static void InitializeTransport(out UnityTransport transport, out List<TransportEvent> events,
+            int maxPayloadSize = UnityTransport.InitialMaxPayloadSize, int maxSendQueueSize = 0, NetworkFamily family = NetworkFamily.Ipv4)
         {
             var logger = new TransportEventLogger();
             events = logger.Events;
 
             transport = new GameObject().AddComponent<UnityTransport>();
+
             transport.OnTransportEvent += logger.HandleEvent;
-            transport.SetMaxPayloadSize(maxPayloadSize);
+            transport.MaxPayloadSize = maxPayloadSize;
+            transport.MaxSendQueueSize = maxSendQueueSize;
+
+            if (family == NetworkFamily.Ipv6)
+            {
+                transport.SetConnectionData("::1", 7777);
+            }
+
             transport.Initialize();
         }
 

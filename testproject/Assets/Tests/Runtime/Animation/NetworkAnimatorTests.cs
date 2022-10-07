@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
@@ -18,18 +19,25 @@ namespace TestProject.RuntimeTests
     /// Possibly we could build this at runtime, but for now it uses the same animator controller as the manual
     /// test does.
     /// </summary>
+    [TestFixture(HostOrServer.Host)]
+    [TestFixture(HostOrServer.Server)]
     public class NetworkAnimatorTests : NetcodeIntegrationTest
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
         private const string k_OwnerAnimatorObjectName = "OwnerAnimatorObject";
 
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 3;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
         private GameObject m_AnimationOwnerTestPrefab => m_OwnerAnimatorObjectPrefab ? m_OwnerAnimatorObjectPrefab as GameObject : null;
 
         private AnimatorTestHelper.ParameterValues m_ParameterValues;
         private Object m_AnimatorObjectPrefab;
         private Object m_OwnerAnimatorObjectPrefab;
+
+        public NetworkAnimatorTests(HostOrServer hostOrServer)
+        {
+            m_UseHost = hostOrServer == HostOrServer.Host;
+        }
 
         protected override void OnOneTimeSetup()
         {
@@ -43,6 +51,7 @@ namespace TestProject.RuntimeTests
         protected override IEnumerator OnSetup()
         {
             AnimatorTestHelper.Initialize();
+            CheckStateEnterCount.ResetTest();
             TriggerTest.ResetTest();
             StateSyncTest.ResetTest();
             yield return base.OnSetup();
@@ -229,6 +238,8 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator TriggerUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
+            CheckStateEnterCount.ResetTest();
+
             VerboseDebug($" ++++++++++++++++++ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
@@ -244,6 +255,10 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            var layerCount = animatorTestHelper.GetAnimator().layerCount;
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+
+            Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
             if (authoritativeMode == AuthoritativeMode.ServerAuth)
             {
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
@@ -278,6 +293,31 @@ namespace TestProject.RuntimeTests
                 AssertOnTimeout($"Timed out waiting for all triggers to match!");
             }
 
+            yield return s_DefaultWaitForTick;
+
+            var clientIdList = new List<ulong>();
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                clientIdList.Add(client.LocalClientId);
+            }
+
+            // Verify we only entered each state once
+            yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
+            AssertOnTimeout($"Timed out waiting for all states entered to match!");
+
+            // Now, update some states for several seconds to assure the AnimationState count does not grow
+            var waitForSeconds = new WaitForSeconds(0.25f);
+            bool rotateToggle = true;
+            for (int i = 0; i < 10; i++)
+            {
+                animatorTestHelper.SetBool("Rotate", rotateToggle);
+                animatorTestHelper.SetTrigger("Pulse");
+                animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+                Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+                yield return waitForSeconds;
+                rotateToggle = !rotateToggle;
+            }
+
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -300,6 +340,7 @@ namespace TestProject.RuntimeTests
         {
             VerboseDebug($" ++++++++++++++++++ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
             TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
+            CheckStateEnterCount.IsVerboseDebug = m_EnableVerboseDebug;
             AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
             bool isClientOwner = ownerShipMode == OwnerShipMode.ClientOwner;
 
@@ -324,7 +365,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 // Set the animation trigger via the server
-                AnimatorTestHelper.ServerSideInstance.SetTrigger();
+                AnimatorTestHelper.ServerSideInstance.SetTrigger("TestTrigger", m_EnableVerboseDebug);
             }
 
             // Wait for all triggers to fire
@@ -352,14 +393,15 @@ namespace TestProject.RuntimeTests
 
             yield return CreateAndStartNewClient();
 
-            Assert.IsTrue(m_ClientNetworkManagers.Length == 2, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
+            Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for it to spawn client-side
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
-            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
-            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+            // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
+            var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
+            Assert.True(calculatedClients == TotalClients, $"Number of client");
 
             // Now check that the late joining client and all other clients are synchronized to the trigger
             yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
@@ -378,7 +420,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
             AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
-            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -433,16 +475,17 @@ namespace TestProject.RuntimeTests
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
-            Assert.IsTrue(m_ClientNetworkManagers.Length == 2, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
+            Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for the client to have spawned and the spawned prefab to be instantiated
             yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
             AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
-            // Make sure the AnimatorTestHelper client side instances (plus host) is the same as the TotalClients
-            Assert.True((AnimatorTestHelper.ClientSideInstances.Count + 1) == TotalClients);
+            // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
+            var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
+            Assert.True(calculatedClients == TotalClients, $"Number of client");
 
-            var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[1].LocalClientId];
+            var lateJoinObjectInstance = AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(lateJoinObjectInstance.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
 
@@ -450,7 +493,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
             AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
-            var newlyJoinedClient = m_ClientNetworkManagers[1];
+            var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
             yield return StopOneClient(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -464,13 +507,14 @@ namespace TestProject.RuntimeTests
         {
             m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
             var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
-            for (int i = 0; i < serverAnimator.layerCount; i++)
-            {
-                Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {i}!");
-                var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(i);
-                StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][i] = animationStateInfo;
-                VerboseDebug($"[{i}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
-            }
+
+            // Only update the 3rd layer since this is where we want to assure all values are synchronized to the
+            // same values upon the client connecting.
+            var index = 2;
+            Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {index}!");
+            var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(index);
+            StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][index] = animationStateInfo;
+            VerboseDebug($"[{index}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
         }
 
         /// <summary>
@@ -480,35 +524,39 @@ namespace TestProject.RuntimeTests
         /// </summary>
         private bool LateJoinClientSynchronized()
         {
-            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[1].LocalClientId))
+            if (!StateSyncTest.StatesEntered.ContainsKey(m_ClientNetworkManagers[NumberOfClients].LocalClientId))
             {
+                VerboseDebug($"Late join client has not had any states synchronized yet!");
                 return false;
             }
 
             var serverStates = StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId];
-            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[1].LocalClientId];
+            var clientStates = StateSyncTest.StatesEntered[m_ClientNetworkManagers[NumberOfClients].LocalClientId];
 
             if (serverStates.Count() != clientStates.Count())
             {
-                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[1].LocalClientId}]{clientStates.Count}");
+                VerboseDebug($"[Count][Server] {serverStates.Count} | [Client-{m_ClientNetworkManagers[NumberOfClients].LocalClientId}]{clientStates.Count}");
                 return false;
             }
 
-            // Basically a sanity check to make sure they all match
-            for (int i = 0; i < serverStates.Count; i++)
+            // We only check the last layer for this test as the other layers will have their normalized time slightly out of sync
+            var index = 2;
+            var serverAnimState = serverStates[index];
+            if (clientStates[index].shortNameHash != serverAnimState.shortNameHash)
             {
-                var serverAnimState = serverStates[i];
-                if (clientStates[i].shortNameHash != serverAnimState.shortNameHash)
-                {
-                    VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[i].shortNameHash}) ");
-                    return false;
-                }
-                if (clientStates[i].normalizedTime != serverAnimState.normalizedTime)
-                {
-                    VerboseDebug($"[NormalizedTime Fail] Server({serverAnimState.normalizedTime}) | Client({clientStates[i].normalizedTime})");
-                    return false;
-                }
+                VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[index].shortNameHash}) ");
+                return false;
             }
+
+            var clientNormalizedTime = clientStates[index].normalizedTime;
+            var serverNormalizedTime = serverAnimState.normalizedTime;
+            if (!Mathf.Approximately(clientNormalizedTime, serverNormalizedTime))
+            {
+                VerboseDebug($"[NormalizedTime Fail][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
+                return false;
+            }
+            VerboseDebug($"[NormalizedTime][{index}][{serverStates.Count}:{clientStates.Count}] Server({serverNormalizedTime}) | Client-{m_ClientNetworkManagers[1].LocalClientId}({clientNormalizedTime})");
+
             return true;
         }
 

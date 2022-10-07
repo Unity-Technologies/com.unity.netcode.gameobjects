@@ -9,7 +9,7 @@ namespace Unity.Netcode
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
-    [AddComponentMenu("Netcode/" + nameof(NetworkObject), -99)]
+    [AddComponentMenu("Netcode/Network Object", -99)]
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
@@ -129,7 +129,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Whether or not to destroy this object if it's owner is destroyed.
-        /// If false, the objects ownership will be given to the server.
+        /// If true, the objects ownership will be given to the server.
         /// </summary>
         public bool DontDestroyWithOwner;
 
@@ -435,7 +435,7 @@ namespace Unity.Netcode
         private void OnDestroy()
         {
             if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject != null && IsSceneObject.Value != true)))
+                (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
             }
@@ -509,6 +509,7 @@ namespace Unity.Netcode
         /// <param name="destroy">(true) the <see cref="GameObject"/> will be destroyed (false) the <see cref="GameObject"/> will persist after being despawned</param>
         public void Despawn(bool destroy = true)
         {
+            MarkVariablesDirty(false);
             NetworkManager.SpawnManager.DespawnObject(this, destroy);
         }
 
@@ -572,21 +573,21 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_IsReparented; // Did initial parent (came from the scene hierarchy) change at runtime?
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
+        private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
         internal void SetCachedParent(Transform parentTransform)
         {
             m_CachedParent = parentTransform;
         }
 
-        internal (bool IsReparented, ulong? LatestParent) GetNetworkParenting() => (m_IsReparented, m_LatestParent);
+        internal ulong? GetNetworkParenting() => m_LatestParent;
 
-        internal void SetNetworkParenting(bool isReparented, ulong? latestParent)
+        internal void SetNetworkParenting(ulong? latestParent, bool worldPositionStays)
         {
-            m_IsReparented = isReparented;
             m_LatestParent = latestParent;
+            m_CachedWorldPositionStays = worldPositionStays;
         }
 
         /// <summary>
@@ -597,7 +598,10 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
-            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+            var networkObject = parent.GetComponent<NetworkObject>();
+
+            // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
+            return networkObject == null ? false : TrySetParent(networkObject, worldPositionStays);
         }
 
         /// <summary>
@@ -608,7 +612,29 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(GameObject parent, bool worldPositionStays = true)
         {
-            return TrySetParent(parent.GetComponent<NetworkObject>(), worldPositionStays);
+            // If we are removing ourself from a parent
+            if (parent == null)
+            {
+                return TrySetParent((NetworkObject)null, worldPositionStays);
+            }
+
+            var networkObject = parent.GetComponent<NetworkObject>();
+
+            // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
+            return networkObject == null ? false : TrySetParent(networkObject, worldPositionStays);
+        }
+
+        /// <summary>
+        /// Removes the parent of the NetworkObject's transform
+        /// </summary>
+        /// <remarks>
+        /// This is a more convenient way to remove the parent without  having to cast the null value to either <see cref="GameObject"/> or <see cref="NetworkObject"/>
+        /// </remarks>
+        /// <param name="worldPositionStays">If true, the parent-relative position, scale and rotation are modified such that the object keeps the same world space position, rotation and scale as before.</param>
+        /// <returns></returns>
+        public bool TryRemoveParent(bool worldPositionStays = true)
+        {
+            return TrySetParent((NetworkObject)null, worldPositionStays);
         }
 
         /// <summary>
@@ -639,17 +665,21 @@ namespace Unity.Netcode
                 return false;
             }
 
+            if (parent != null && !parent.IsSpawned)
+            {
+                return false;
+            }
+            m_CachedWorldPositionStays = worldPositionStays;
+
             if (parent == null)
             {
-                return false;
+                transform.SetParent(null, worldPositionStays);
             }
-
-            if (!parent.IsSpawned)
+            else
             {
-                return false;
+                transform.SetParent(parent.transform, worldPositionStays);
             }
 
-            transform.SetParent(parent.transform, worldPositionStays);
             return true;
         }
 
@@ -685,12 +715,11 @@ namespace Unity.Netcode
                 Debug.LogException(new SpawnStateException($"{nameof(NetworkObject)} can only be reparented after being spawned"));
                 return;
             }
-
+            var removeParent = false;
             var parentTransform = transform.parent;
             if (parentTransform != null)
             {
-                var parentObject = transform.parent.GetComponent<NetworkObject>();
-                if (parentObject == null)
+                if (!transform.parent.TryGetComponent<NetworkObject>(out var parentObject))
                 {
                     transform.parent = m_CachedParent;
                     Debug.LogException(new InvalidParentException($"Invalid parenting, {nameof(NetworkObject)} moved under a non-{nameof(NetworkObject)} parent"));
@@ -709,18 +738,30 @@ namespace Unity.Netcode
             else
             {
                 m_LatestParent = null;
+                removeParent = m_CachedParent != null;
             }
 
-            m_IsReparented = true;
-            ApplyNetworkParenting();
+            ApplyNetworkParenting(removeParent);
 
             var message = new ParentSyncMessage
             {
                 NetworkObjectId = NetworkObjectId,
-                IsReparented = m_IsReparented,
                 IsLatestParentSet = m_LatestParent != null && m_LatestParent.HasValue,
-                LatestParent = m_LatestParent
+                LatestParent = m_LatestParent,
+                RemoveParent = removeParent,
+                WorldPositionStays = m_CachedWorldPositionStays,
+                Position = m_CachedWorldPositionStays ? transform.position : transform.localPosition,
+                Rotation = m_CachedWorldPositionStays ? transform.rotation : transform.localRotation,
+                Scale = transform.localScale,
             };
+
+            // We need to preserve the m_CachedWorldPositionStays value until after we create the message
+            // in order to assure any local space values changed/reset get applied properly. If our
+            // parent is null then go ahead and reset the m_CachedWorldPositionStays the default value.
+            if (parentTransform == null)
+            {
+                m_CachedWorldPositionStays = true;
+            }
 
             unsafe
             {
@@ -749,42 +790,90 @@ namespace Unity.Netcode
         // we call CheckOrphanChildren() method and quickly iterate over OrphanChildren set and see if we can reparent/adopt one.
         internal static HashSet<NetworkObject> OrphanChildren = new HashSet<NetworkObject>();
 
-        internal bool ApplyNetworkParenting()
+        internal bool ApplyNetworkParenting(bool removeParent = false, bool ignoreNotSpawned = false)
         {
             if (!AutoObjectParentSync)
             {
                 return false;
             }
 
-            if (!IsSpawned)
+            // SPECIAL CASE:
+            // The ignoreNotSpawned is a special case scenario where a late joining client has joined
+            // and loaded one or more scenes that contain nested in-scene placed NetworkObject children
+            // yet the server's synchronization information does not indicate the NetworkObject in question
+            // has a parent. Under this scenario, we want to remove the parent before spawning and setting
+            // the transform values. This is the only scenario where the ignoreNotSpawned parameter is used.
+            if (!IsSpawned && !ignoreNotSpawned)
             {
                 return false;
             }
 
-            if (!m_IsReparented)
+            // Handle the first in-scene placed NetworkObject parenting scenarios. Once the m_LatestParent
+            // has been set, this will not be entered into again (i.e. the later code will be invoked and
+            // users will get notifications when the parent changes).
+            var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
+            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && isInScenePlaced)
             {
-                return true;
+                var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+
+                // If parentNetworkObject is null then the parent is a GameObject without a NetworkObject component
+                // attached. Under this case, we preserve the hierarchy but we don't keep track of the parenting.
+                // Note: We only start tracking parenting if the user removes the child from the standard GameObject
+                // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
+                if (parentNetworkObject == null)
+                {
+                    return true;
+                }
+                else // If the parent still isn't spawned add this to the orphaned children and return false
+                if (!parentNetworkObject.IsSpawned)
+                {
+                    OrphanChildren.Add(this);
+                    return false;
+                }
+                else
+                {
+                    // If we made it this far, go ahead and set the network parenting values
+                    // with the default WorldPoisitonSays value
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, true);
+
+                    // Set the cached parent
+                    m_CachedParent = parentNetworkObject.transform;
+
+                    return true;
+                }
             }
 
-            if (m_LatestParent == null || !m_LatestParent.HasValue)
+            // If we are removing the parent or our latest parent is not set, then remove the parent
+            // removeParent is only set when:
+            //  - The server-side NetworkObject.OnTransformParentChanged is invoked and the parent is being removed
+            //  - The client-side when handling a ParentSyncMessage
+            // When clients are synchronizing only the m_LatestParent.HasValue will not have a value if there is no parent
+            // or a parent was removed prior to the client connecting (i.e. in-scene placed NetworkObjects)
+            if (removeParent || !m_LatestParent.HasValue)
             {
                 m_CachedParent = null;
-                transform.parent = null;
-
+                // We must use Transform.SetParent when taking WorldPositionStays into
+                // consideration, otherwise just setting transform.parent = null defaults
+                // to WorldPositionStays which can cause scaling issues if the parent's
+                // scale is not the default (Vetctor3.one) value.
+                transform.SetParent(null, m_CachedWorldPositionStays);
                 InvokeBehaviourOnNetworkObjectParentChanged(null);
                 return true;
             }
 
-            if (!NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
+            // If we have a latest parent id but it hasn't been spawned yet, then add this instance to the orphanChildren
+            // HashSet and return false (i.e. parenting not applied yet)
+            if (m_LatestParent.HasValue && !NetworkManager.SpawnManager.SpawnedObjects.ContainsKey(m_LatestParent.Value))
             {
                 OrphanChildren.Add(this);
                 return false;
             }
 
+            // If we made it here, then parent this instance under the parentObject
             var parentObject = NetworkManager.SpawnManager.SpawnedObjects[m_LatestParent.Value];
 
             m_CachedParent = parentObject.transform;
-            transform.parent = parentObject.transform;
+            transform.SetParent(parentObject.transform, m_CachedWorldPositionStays);
 
             InvokeBehaviourOnNetworkObjectParentChanged(parentObject);
             return true;
@@ -819,6 +908,13 @@ namespace Unity.Netcode
                 else
                 {
                     Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during spawn!");
+                }
+            }
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].VisibleOnNetworkSpawn();
                 }
             }
         }
@@ -868,12 +964,12 @@ namespace Unity.Netcode
             }
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behavior = ChildNetworkBehaviours[i];
-                behavior.MarkVariablesDirty();
+                behavior.MarkVariablesDirty(dirty);
             }
         }
 
@@ -962,7 +1058,6 @@ namespace Unity.Netcode
                 public bool HasParent;
                 public bool IsSceneObject;
                 public bool HasTransform;
-                public bool IsReparented;
             }
 
             public HeaderData Header;
@@ -975,6 +1070,7 @@ namespace Unity.Netcode
             {
                 public Vector3 Position;
                 public Quaternion Rotation;
+                public Vector3 Scale;
             }
 
             public TransformData Transform;
@@ -990,12 +1086,19 @@ namespace Unity.Netcode
 
             public int NetworkSceneHandle;
 
+            public bool WorldPositionStays;
+
             public unsafe void Serialize(FastBufferWriter writer)
             {
                 var writeSize = sizeof(HeaderData);
-                writeSize += Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
-                writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                writeSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                if (Header.HasParent)
+                {
+                    writeSize += FastBufferWriter.GetWriteSize(ParentObjectId);
+                    writeSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
+                    writeSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
+                    writeSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                }
+                writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!writer.TryBeginWrite(writeSize))
@@ -1008,20 +1111,17 @@ namespace Unity.Netcode
                 if (Header.HasParent)
                 {
                     writer.WriteValue(ParentObjectId);
+                    writer.WriteValue(WorldPositionStays);
+                    writer.WriteValue(IsLatestParentSet);
+                    if (IsLatestParentSet)
+                    {
+                        writer.WriteValue(LatestParent.Value);
+                    }
                 }
 
                 if (Header.HasTransform)
                 {
                     writer.WriteValue(Transform);
-                }
-
-                if (Header.IsReparented)
-                {
-                    writer.WriteValue(IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        writer.WriteValue((ulong)LatestParent);
-                    }
                 }
 
                 // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
@@ -1044,34 +1144,46 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
                 reader.ReadValue(out Header);
-                var readSize = Header.HasParent ? FastBufferWriter.GetWriteSize(ParentObjectId) : 0;
-                readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize(Transform) : 0;
-                readSize += Header.IsReparented ? FastBufferWriter.GetWriteSize(IsLatestParentSet) + (IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0) : 0;
+                var readSize = 0;
+                if (Header.HasParent)
+                {
+                    readSize += FastBufferWriter.GetWriteSize(ParentObjectId);
+                    readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
+                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
+                    // We need to read at this point in order to get the IsLatestParentSet value
+                    if (!reader.TryBeginRead(readSize))
+                    {
+                        throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                    }
+
+                    // Read the initial parenting related properties
+                    reader.ReadValue(out ParentObjectId);
+                    reader.ReadValue(out WorldPositionStays);
+                    reader.ReadValue(out IsLatestParentSet);
+
+                    // Now calculate the remaining bytes to read
+                    readSize = 0;
+                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                }
+
+                readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
+                // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
                     throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
                 }
 
-                if (Header.HasParent)
+                if (IsLatestParentSet)
                 {
-                    reader.ReadValue(out ParentObjectId);
+                    reader.ReadValueSafe(out ulong latestParent);
+                    LatestParent = latestParent;
                 }
 
                 if (Header.HasTransform)
                 {
                     reader.ReadValue(out Transform);
-                }
-
-                if (Header.IsReparented)
-                {
-                    reader.ReadValue(out IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        reader.ReadValueSafe(out ulong latestParent);
-                        LatestParent = latestParent;
-                    }
                 }
 
                 // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
@@ -1083,6 +1195,14 @@ namespace Unity.Netcode
                 {
                     reader.ReadValueSafe(out NetworkSceneHandle);
                 }
+            }
+        }
+
+        internal void PostNetworkVariableWrite()
+        {
+            for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
+            {
+                ChildNetworkBehaviours[k].PostNetworkVariableWrite();
             }
         }
 
@@ -1109,31 +1229,37 @@ namespace Unity.Netcode
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
             }
 
-            if (parentNetworkObject)
+            if (parentNetworkObject != null)
             {
                 obj.Header.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
-            }
-            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
-            {
-                obj.Header.HasTransform = true;
-                obj.Transform = new SceneObject.TransformData
-                {
-                    Position = transform.position,
-                    Rotation = transform.rotation
-                };
-            }
-
-            var (isReparented, latestParent) = GetNetworkParenting();
-            obj.Header.IsReparented = isReparented;
-            if (isReparented)
-            {
+                obj.WorldPositionStays = m_CachedWorldPositionStays;
+                var latestParent = GetNetworkParenting();
                 var isLatestParentSet = latestParent != null && latestParent.HasValue;
                 obj.IsLatestParentSet = isLatestParentSet;
                 if (isLatestParentSet)
                 {
                     obj.LatestParent = latestParent.Value;
                 }
+            }
+
+            if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
+            {
+                obj.Header.HasTransform = true;
+                obj.Transform = new SceneObject.TransformData
+                {
+                    // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
+                    // values as opposed world space values.
+                    Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
+                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
+
+                    // We only use the lossyScale if the NetworkObject has a parent. Multi-generation nested children scales can
+                    // impact the final scale of the child NetworkObject in question. The solution is to use the lossy scale
+                    // which can be thought of as "world space scale".
+                    // More information:
+                    // https://docs.unity3d.com/ScriptReference/Transform-lossyScale.html
+                    Scale = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localScale : transform.lossyScale,
+                };
             }
 
             return obj;
@@ -1149,33 +1275,8 @@ namespace Unity.Netcode
         /// <returns>optional to use NetworkObject deserialized</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader variableData, NetworkManager networkManager)
         {
-            Vector3? position = null;
-            Quaternion? rotation = null;
-            ulong? parentNetworkId = null;
-            int? networkSceneHandle = null;
-
-            if (sceneObject.Header.HasTransform)
-            {
-                position = sceneObject.Transform.Position;
-                rotation = sceneObject.Transform.Rotation;
-            }
-
-            if (sceneObject.Header.HasParent)
-            {
-                parentNetworkId = sceneObject.ParentObjectId;
-            }
-
-            if (sceneObject.Header.IsSceneObject)
-            {
-                networkSceneHandle = sceneObject.NetworkSceneHandle;
-            }
-
             //Attempt to create a local NetworkObject
-            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(
-                sceneObject.Header.IsSceneObject, sceneObject.Header.Hash,
-                sceneObject.Header.OwnerClientId, parentNetworkId, networkSceneHandle, position, rotation, sceneObject.Header.IsReparented);
-
-            networkObject?.SetNetworkParenting(sceneObject.Header.IsReparented, sceneObject.LatestParent);
+            var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
 
             if (networkObject == null)
             {
@@ -1190,7 +1291,7 @@ namespace Unity.Netcode
                 return null;
             }
 
-            // Spawn the NetworkObject(
+            // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, variableData, false);
 
             return networkObject;
@@ -1218,6 +1319,22 @@ namespace Unity.Netcode
             }
 
             return GlobalObjectIdHash;
+        }
+
+        /// <summary>
+        /// Removes a NetworkBehaviour from the ChildNetworkBehaviours list when destroyed
+        /// while the NetworkObject is still spawned.
+        /// </summary>
+        internal void OnNetworkBehaviourDestroyed(NetworkBehaviour networkBehaviour)
+        {
+            if (networkBehaviour.IsSpawned && IsSpawned)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"{nameof(NetworkBehaviour)}-{networkBehaviour.name} is being destroyed while {nameof(NetworkObject)}-{name} is still spawned! (could break state synchronization)");
+                }
+                ChildNetworkBehaviours.Remove(networkBehaviour);
+            }
         }
     }
 }

@@ -10,7 +10,6 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 
 namespace Unity.Netcode.Editor.CodeGen
 {
-
     internal sealed class INetworkSerializableILPP : ILPPInterface
     {
         public override ILPPInterface GetInstance() => this;
@@ -92,7 +91,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 catch (Exception e)
                 {
-                    m_Diagnostics.AddError((e.ToString() + e.StackTrace.ToString()).Replace("\n", "|").Replace("\r", "|"));
+                    m_Diagnostics.AddError((e.ToString() + e.StackTrace).Replace("\n", "|").Replace("\r", "|"));
                 }
             }
             else

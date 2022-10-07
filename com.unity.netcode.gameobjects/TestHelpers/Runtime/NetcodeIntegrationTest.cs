@@ -7,7 +7,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using System.Runtime.CompilerServices;
-
+using Unity.Netcode.RuntimeTests;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -23,7 +23,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         internal static bool IsRunning { get; private set; }
         protected static TimeoutHelper s_GlobalTimeoutHelper = new TimeoutHelper(8.0f);
-        protected static WaitForSeconds s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+        protected static WaitForSecondsRealtime s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
+
+        public NetcodeLogAssert NetcodeLogAssert;
 
         /// <summary>
         /// Registered list of all NetworkObjects spawned.
@@ -207,6 +209,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             VerboseDebug($"Entering {nameof(SetUp)}");
 
+            NetcodeLogAssert = new NetcodeLogAssert();
             yield return OnSetup();
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
                 m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
@@ -336,7 +339,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (m_ServerNetworkManager != null)
             {
-                s_DefaultWaitForTick = new WaitForSeconds(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
+                s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / m_ServerNetworkManager.NetworkConfig.TickRate);
             }
 
             // Set the player prefab for the server and clients
@@ -571,7 +574,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             UnloadRemainingScenes();
 
             // reset the m_ServerWaitForTick for the next test to initialize
-            s_DefaultWaitForTick = new WaitForSeconds(1.0f / k_DefaultTickRate);
+            s_DefaultWaitForTick = new WaitForSecondsRealtime(1.0f / k_DefaultTickRate);
             VerboseDebug($"Exiting {nameof(ShutdownAndCleanUp)}");
         }
 
@@ -596,6 +599,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             VerboseDebug($"Exiting {nameof(TearDown)}");
+            NetcodeLogAssert.Dispose();
         }
 
         /// <summary>
@@ -756,6 +760,39 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator WaitForClientsConnectedOrTimeOut()
         {
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
+        }
+
+        internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy) where T : INetworkMessage
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                var messageHook = new MessageHookEntry(clientNetworkManager);
+                messageHook.AssignMessageType<T>();
+                messageHookEntriesForSpawn.Add(messageHook);
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
+        }
+
+        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy)
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                foreach (var message in messagesInOrder)
+                {
+                    var messageHook = new MessageHookEntry(clientNetworkManager);
+                    messageHook.AssignMessageType(message);
+                    messageHookEntriesForSpawn.Add(messageHook);
+                }
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
         }
 
         /// <summary>

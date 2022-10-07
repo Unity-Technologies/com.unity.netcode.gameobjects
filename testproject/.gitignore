@@ -72,6 +72,10 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/BuildInfo.json
 /[Aa]ssets/[Ss]treamingAssets/BuildInfo.json.meta
 
+# Secrets
+*.pem
+*.pem.meta
+
 InitTestScene*
 
 boot.config

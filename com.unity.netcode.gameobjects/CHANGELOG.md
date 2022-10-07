@@ -1,3 +1,4 @@
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -5,24 +6,89 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+
 ## [Unreleased]
+
+### Added
+
+- `UnityTransport` now provides a way to set the Relay server data directly from the `RelayServerData` structure (provided by the Unity Transport package) throuh its `SetRelayServerData` method. This allows making use of the new APIs in UTP 1.3 that simplify integration of the Relay SDK. (#2235)
+- IPv6 is now supported for direct connections when using `UnityTransport`. (#2232)
+- Added WebSocket support when using UTP 2.0 with `UseWebSockets` property in the `UnityTransport` component of the `NetworkManager` allowing to pick WebSockets for communication. When building for WebGL, this selection happens automatically. (#2201)
+- Added position, rotation, and scale to the `ParentSyncMessage` which provides users the ability to specify the final values on the server-side when `OnNetworkObjectParentChanged` is invoked just before the message is created (when the `Transform` values are applied to the message). (#2146)
+- Added `NetworkObject.TryRemoveParent` method for convenience purposes opposed to having to cast null to either `GameObject` or `NetworkObject`. (#2146)
 
 ### Changed
 
-- When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
-
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.0. (#2231)
+- The send queues of `UnityTransport` are now dynamically-sized. This means that there shouldn't be any need anymore to tweak the 'Max Send Queue Size' value. In fact, this field is now removed from the inspector and will not be serialized anymore. It is still possible to set it manually using the `MaxSendQueueSize` property, but it is not recommended to do so aside from some specific needs (e.g. limiting the amount of memory used by the send queues in very constrained environments). (#2212)
+- As a consequence of the above change, the `UnityTransport.InitialMaxSendQueueSize` field is now deprecated. There is no default value anymore since send queues are dynamically-sized. (#2212)
+- The debug simulator in `UnityTransport` is now non-deterministic. Its random number generator used to be seeded with a constant value, leading to the same pattern of packet drops, delays, and jitter in every run. (#2196)
+- `NetworkVariable<>` now supports managed `INetworkSerializable` types, as well as other managed types with serialization/deserialization delegates registered to `UserNetworkVariableSerialization<T>.WriteValue` and `UserNetworkVariableSerialization<T>.ReadValue` (#2219)
+- `NetworkVariable<>` and `BufferSerializer<BufferSerializerReader>` now deserialize `INetworkSerializable` types in-place, rather than constructing new ones. (#2219)
 
 ### Fixed
 
+- Fixed issue where clients were not rebuilding the `NetworkConfig` hash value for each unique connection request. (#2226)
+- Fixed the issue where player objects were not taking the `DontDestroyWithOwner` property into consideration when a client disconnected. (#2225)
+- Fixed issue where `SceneEventProgress` would not complete if a client late joins while it is still in progress. (#2222)
+- Fixed issue where `SceneEventProgress` would not complete if a client disconnects. (#2222)
+- Fixed issues with detecting if a `SceneEventProgress` has timed out. (#2222)
+- Fixed issue #1924 where `UnityTransport` would fail to restart after a first failure (even if what caused the initial failure was addressed). (#2220)
+- Fixed issue where `NetworkTransform.SetStateServerRpc` and `NetworkTransform.SetStateClientRpc` were not honoring local vs world space settings when applying the position and rotation. (#2203)
+- Fixed ILPP `TypeLoadException` on WebGL on MacOS Editor and potentially other platforms. (#2199)
+- Implicit conversion of NetworkObjectReference to GameObject will now return null instead of throwing an exception if the referenced object could not be found (i.e., was already despawned) (#2158)
+- Fixed warning resulting from a stray NetworkAnimator.meta file (#2153)
+- Fixed Connection Approval Timeout not working client side. (#2164)
+- Fixed issue where the `WorldPositionStays` parenting parameter was not being synchronized with clients. (#2146)
+- Fixed issue where parented in-scene placed `NetworkObject`s would fail for late joining clients. (#2146)
+- Fixed issue where scale was not being synchronized which caused issues with nested parenting and scale when `WorldPositionStays` was true. (#2146)
+- Fixed issue with `NetworkTransform.ApplyTransformToNetworkStateWithInfo` where it was not honoring axis sync settings when `NetworkTransformState.IsTeleportingNextFrame` was true. (#2146)
+- Fixed issue with `NetworkTransform.TryCommitTransformToServer` where it was not honoring the `InLocalSpace` setting. (#2146)
+- Fixed ClientRpcs always reporting in the profiler view as going to all clients, even when limited to a subset of clients by `ClientRpcParams`. (#2144)
+- Fixed RPC codegen failing to choose the correct extension methods for `FastBufferReader` and `FastBufferWriter` when the parameters were a generic type (i.e., List<int>) and extensions for multiple instantiations of that type have been defined (i.e., List<int> and List<string>) (#2142)
+- Fixed the issue where running a server (i.e. not host) the second player would not receive updates (unless a third player joined). (#2127)
+- Fixed issue where late-joining client transition synchronization could fail when more than one transition was occurring.(#2127)
+- Fixed throwing an exception in `OnNetworkUpdate` causing other `OnNetworkUpdate` calls to not be executed. (#1739)
+- Fixed synchronization when Time.timeScale is set to 0. This changes timing update to use unscaled deltatime. Now network updates rate are independent from the local time scale. (#2171)
+- Fixed not sending all NetworkVariables to all clients when a client connects to a server. (#1987)
+- Fixed IsOwner/IsOwnedByServer being wrong on the server after calling RemoveOwnership (#2211)
+
+## [1.0.2] - 2022-09-12
+
+### Fixed
+
+- Fixed issue where `NetworkTransform` was not honoring the InLocalSpace property on the authority side during OnNetworkSpawn. (#2170)
+- Fixed issue where `NetworkTransform` was not ending extrapolation for the previous state causing non-authoritative instances to become out of synch. (#2170)
+- Fixed issue where `NetworkTransform` was not continuing to interpolate for the remainder of the associated tick period. (#2170)
+- Fixed issue during `NetworkTransform.OnNetworkSpawn` for non-authoritative instances where it was initializing interpolators with the replicated network state which now only contains the transform deltas that occurred during a network tick and not the entire transform state. (#2170)
+
+## [1.0.1] - 2022-08-23
+
+### Changed
+
+- Changed version to 1.0.1. (#2131)
+- Updated dependency on `com.unity.transport` to 1.2.0. (#2129)
+- When using `UnityTransport`, _reliable_ payloads are now allowed to exceed the configured 'Max Payload Size'. Unreliable payloads remain bounded by this setting. (#2081)
+- Performance improvements for cases with large number of NetworkObjects, by not iterating over all unchanged NetworkObjects
+
+### Fixed
+
+- Fixed an issue where reading/writing more than 8 bits at a time with BitReader/BitWriter would write/read from the wrong place, returning and incorrect result. (#2130)
+- Fixed issue with the internal `NetworkTransformState.m_Bitset` flag not getting cleared upon the next tick advancement. (#2110)
+- Fixed interpolation issue with `NetworkTransform.Teleport`. (#2110)
+- Fixed issue where the authoritative side was interpolating its transform. (#2110)
+- Fixed Owner-written NetworkVariable infinitely write themselves (#2109)
+- Fixed NetworkList issue that showed when inserting at the very end of a NetworkList (#2099)
 - Fixed issue where a client owner of a `NetworkVariable` with both owner read and write permissions would not update the server side when changed. (#2097)
 - Fixed issue when attempting to spawn a parent `GameObject`, with `NetworkObject` component attached, that has one or more child `GameObject`s, that are inactive in the hierarchy, with `NetworkBehaviour` components it will no longer attempt to spawn the associated `NetworkBehaviour`(s) or invoke ownership changed notifications but will log a warning message. (#2096)
+- Fixed an issue where destroying a NetworkBehaviour would not deregister it from the parent NetworkObject, leading to exceptions when the parent was later destroyed. (#2091)
 - Fixed issue where `NetworkObject.NetworkHide` was despawning and destroying, as opposed to only despawning, in-scene placed `NetworkObject`s. (#2086)
+- Fixed `NetworkAnimator` synchronizing transitions twice due to it detecting the change in animation state once a transition is started by a trigger. (#2084)
 - Fixed issue where `NetworkAnimator` would not synchronize a looping animation for late joining clients if it was at the very end of its loop. (#2076)
 - Fixed issue where `NetworkAnimator` was not removing its subscription from `OnClientConnectedCallback` when despawned during the shutdown sequence. (#2074)
 - Fixed IsServer and IsClient being set to false before object despawn during the shutdown sequence. (#2074)
-- Fixed NetworkLists not populating on client. NetworkList now uses the most recent list as opposed to the list at the end of previous frame, when sending full updates to dynamically spawned NetworkObject. The difference in behaviour is required as scene management spawns those objects at a different time in the frame, relative to updates. (#2062)
 - Fixed NetworkList Value event on the server. PreviousValue is now set correctly when a new value is set through property setter. (#2067)
-- Fixed NetworkList issue that showed when inserting at the very end of a NetworkList (#2099)
+- Fixed NetworkLists not populating on client. NetworkList now uses the most recent list as opposed to the list at the end of previous frame, when sending full updates to dynamically spawned NetworkObject. The difference in behaviour is required as scene management spawns those objects at a different time in the frame, relative to updates. (#2062)
 
 ## [1.0.0] - 2022-06-27
 
@@ -220,7 +286,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - ResetTrigger function to NetworkAnimator (#1327)
 
-### Fixed 
+### Fixed
 
 - Overflow exception when syncing Animator state. (#1327)
 - Added `try`/`catch` around RPC calls, preventing exception from causing further RPC calls to fail (#1329)
@@ -245,7 +311,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `ClientNetworkTransform` sample to the SDK package (#1168)
 - Added `Bootstrap` sample to the SDK package (#1140)
 - Enhanced `NetworkSceneManager` implementation with additive scene loading capabilities (#1080, #955, #913)
-  - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons  
+  - `NetworkSceneManager.OnSceneEvent` provides improved scene event notificaitons
 - Enhanced `NetworkTransform` implementation with per axis/component based and threshold based state replication (#1042, #1055, #1061, #1084, #1101)
 - Added a jitter-resistent `BufferedLinearInterpolator<T>` for `NetworkTransform` (#1060)
 - Implemented `NetworkPrefabHandler` that provides support for object pooling and `NetworkPrefab` overrides (#1073, #1004, #977, #905,#749, #727)
@@ -302,7 +368,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `NetworkDictionary`, `NetworkSet` (#1149)
 - Removed `NetworkVariableSettings` (#1097)
 - Removed predefined `NetworkVariable<T>` types (#1093)
-    - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
+  - Removed `NetworkVariableBool`, `NetworkVariableByte`, `NetworkVariableSByte`, `NetworkVariableUShort`, `NetworkVariableShort`, `NetworkVariableUInt`, `NetworkVariableInt`, `NetworkVariableULong`, `NetworkVariableLong`, `NetworkVariableFloat`, `NetworkVariableDouble`, `NetworkVariableVector2`, `NetworkVariableVector3`, `NetworkVariableVector4`, `NetworkVariableColor`, `NetworkVariableColor32`, `NetworkVariableRay`, `NetworkVariableQuaternion`
 - Removed `NetworkChannel` and `MultiplexTransportAdapter` (#1133)
 - Removed ILPP backend for 2019.4, minimum required version is 2020.3+ (#895)
 - `NetworkManager.NetworkConfig` had the following properties removed: (#1080)
@@ -374,14 +440,14 @@ This is the initial experimental Unity MLAPI Package, v0.1.0.
 - Integrated MLAPI with the Unity Profiler for versions 2020.2 and later:
   - Added new profiler modules for MLAPI that report important network data.
   - Attached the profiler to a remote player to view network data over the wire.
-- A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject). 
+- A test project is available for building and experimenting with MLAPI features. This project is available in the MLAPI GitHub [testproject folder](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/tree/release/0.1.0/testproject).
 - Added a [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) new GitHub repository to accept extensions from the MLAPI community. Current extensions include moved MLAPI features for lag compensation (useful for Server Authoritative actions) and `TrackedObject`.
 
 ### Changed
 
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): MLAPI now uses the Unity Package Manager for installation management.
-- Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s. 
-- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented `NetworkAnimator`, which synchronizes animation states for networked objects. 
+- Added functionality and usability to `NetworkVariable`, previously called `NetworkVar`. Updates enhance options and fully replace the need for `SyncedVar`s.
+- [GitHub 507](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/507): Reimplemented `NetworkAnimator`, which synchronizes animation states for networked objects.
 - GitHub [444](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/444) and [455](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/455): Channels are now represented as bytes instead of strings.
 
 For users of previous versions of MLAPI, this release renames APIs due to refactoring. All obsolete marked APIs have been removed as per [GitHub 513](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/513) and [GitHub 514](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/514).
@@ -414,7 +480,7 @@ For users of previous versions of MLAPI, this release renames APIs due to refact
 
 ### Fixed
 
-- [GitHub 460](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/460): Fixed an issue for RPC where the host-server was not receiving RPCs from the host-client and vice versa without the loopback flag set in `NetworkingManager`. 
+- [GitHub 460](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/460): Fixed an issue for RPC where the host-server was not receiving RPCs from the host-client and vice versa without the loopback flag set in `NetworkingManager`.
 - Fixed an issue where data in the Profiler was incorrectly aggregated and drawn, which caused the profiler data to increment indefinitely instead of resetting each frame.
 - Fixed an issue the client soft-synced causing PlayMode client-only scene transition issues, caused when running the client in the editor and the host as a release build. Users may have encountered a soft sync of `NetworkedInstanceId` issues in the `SpawnManager.ClientCollectSoftSyncSceneObjectSweep` method.
 - [GitHub 458](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/458): Fixed serialization issues in `NetworkList` and `NetworkDictionary` when running in Server mode.
@@ -429,10 +495,10 @@ With a new release of MLAPI in Unity, some features have been removed:
 - SyncVars have been removed from MLAPI. Use `NetworkVariable`s in place of this functionality. <!-- MTT54 -->
 - [GitHub 527](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/527): Lag compensation systems and `TrackedObject` have moved to the new [MLAPI Community Contributions](https://github.com/Unity-Technologies/mlapi-community-contributions/tree/master/com.mlapi.contrib.extensions) repo.
 - [GitHub 509](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/509): Encryption has been removed from MLAPI. The `Encryption` option in `NetworkConfig` on the `NetworkingManager` is not available in this release. This change will not block game creation or running. A current replacement for this functionality is not available, and may be developed in future releases. See the following changes:
-    - Removed `SecuritySendFlags` from all APIs.
-    - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
-    - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
-    - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
+  - Removed `SecuritySendFlags` from all APIs.
+  - Removed encryption, cryptography, and certificate configurations from APIs including `NetworkManager` and `NetworkConfig`.
+  - Removed "hail handshake", including `NetworkManager` implementation and `NetworkConstants` entries.
+  - Modified `RpcQueue` and `RpcBatcher` internals to remove encryption and authentication from reading and writing.
 - Removed the previous MLAPI Profiler editor window from Unity versions 2020.2 and later.
 - Removed previous MLAPI Convenience and Performance RPC APIs with the new standard RPC API. See [RFC #1](https://github.com/Unity-Technologies/com.unity.multiplayer.rfcs/blob/master/text/0001-std-rpc-api.md) for details.
 - [GitHub 520](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/pull/520): Removed the MLAPI Installer.
@@ -445,7 +511,7 @@ With a new release of MLAPI in Unity, some features have been removed:
 - For `NetworkVariable`, the `NetworkDictionary` `List` and `Set` must use the `reliableSequenced` channel.
 - `NetworkObjects`s are supported but when spawning a prefab with nested child network objects you have to manually call spawn on them
 - `NetworkTransform` have the following issues:
-  - Replicated objects may have jitter. 
+  - Replicated objects may have jitter.
   - The owner is always authoritative about the object's position.
   - Scale is not synchronized.
 - Connection Approval is not called on the host client.

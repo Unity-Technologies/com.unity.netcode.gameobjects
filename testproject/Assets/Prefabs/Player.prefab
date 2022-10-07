@@ -34,8 +34,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4079352819444256614}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 0.625, z: 5}
+  m_LocalPosition: {x: 0, y: 0.55, z: 0}
   m_LocalScale: {x: 1.25, y: 1.25, z: 1.25}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3519470446676406143}
   m_Father: {fileID: 0}
@@ -62,12 +63,11 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  PositionThreshold: 0
-  RotAngleThreshold: 0
-  ScaleThreshold: 0
+  PositionThreshold: 0.01
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 1
-  FixedSendsPerSecond: 15
 --- !u!114 &-3775814466963834669
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,6 +103,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -239,6 +240,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.045, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4079352819444256611}
   m_RootOrder: 0
@@ -262,6 +264,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1

@@ -343,7 +343,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b322be05414199349ae9d1aea28228a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TestIterations: 20
+  TestIterations: 10
 --- !u!114 &3632991713004262889
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,6 +356,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a3556fb5f3bee4e8a0fb88acff87ff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TransitionStateInfoList:
+  - Layer: 0
+    OriginatingState: 2081823275
+    DestinationState: -570305638
+    TransitionDuration: 0.30227518
+    TriggerNameHash: 1033918907
+    TransitionIndex: 1
+  - Layer: 0
+    OriginatingState: 2081823275
+    DestinationState: -1509639022
+    TransitionDuration: 0.25
+    TriggerNameHash: 1033918907
+    TransitionIndex: 2
+  - Layer: 1
+    OriginatingState: 2081823275
+    DestinationState: -623385122
+    TransitionDuration: 2.2832582
+    TriggerNameHash: -623385122
+    TransitionIndex: 0
   m_Animator: {fileID: 3078684837575715027}
 --- !u!1 &3214090169133903718
 GameObject:
@@ -473,7 +492,6 @@ GameObject:
   - component: {fileID: 3214090169675393153}
   - component: {fileID: 5628721071472145353}
   - component: {fileID: 2564457647300903827}
-  - component: {fileID: 3406550028494568410}
   m_Layer: 0
   m_Name: NetworkAnimatorTestPrefab
   m_TagString: Untagged
@@ -555,18 +573,6 @@ MonoBehaviour:
   ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 0
---- !u!114 &3406550028494568410
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3214090169675393154}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c869ae2381a7034469e7b4d4f165c72a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &3953046479900177945
 GameObject:
   m_ObjectHideFlags: 0
@@ -578,7 +584,7 @@ GameObject:
   - component: {fileID: 3604323723684300772}
   - component: {fileID: 6047057957339659638}
   - component: {fileID: 8104648428997222210}
-  - component: {fileID: 5157980021080854601}
+  - component: {fileID: 1245349943772079751}
   m_Layer: 0
   m_Name: NetworkAnimatedCube-Server
   m_TagString: Untagged
@@ -635,7 +641,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   TestIterations: 20
---- !u!114 &5157980021080854601
+--- !u!114 &1245349943772079751
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -647,6 +653,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  TransitionStateInfoList:
+  - Layer: 0
+    OriginatingState: 2081823275
+    DestinationState: -570305638
+    TransitionDuration: 0.30227518
+    TriggerNameHash: 1033918907
+    TransitionIndex: 1
+  - Layer: 0
+    OriginatingState: 2081823275
+    DestinationState: -1509639022
+    TransitionDuration: 0.25
+    TriggerNameHash: 1033918907
+    TransitionIndex: 2
+  - Layer: 1
+    OriginatingState: 2081823275
+    DestinationState: -623385122
+    TransitionDuration: 2.2832582
+    TriggerNameHash: -623385122
+    TransitionIndex: 0
   m_Animator: {fileID: 6047057957339659638}
 --- !u!1 &4033769488171516769
 GameObject:

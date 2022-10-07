@@ -119,8 +119,7 @@ namespace Unity.Netcode
                         // Now we register all
                         foreach (var gameObject in networkPrefabOverrides)
                         {
-                            var targetNetworkObject = gameObject.GetComponent<NetworkObject>();
-                            if (targetNetworkObject != null)
+                            if (gameObject.TryGetComponent<NetworkObject>(out var targetNetworkObject))
                             {
                                 if (!m_PrefabInstanceToPrefabAsset.ContainsKey(targetNetworkObject.GlobalObjectIdHash))
                                 {

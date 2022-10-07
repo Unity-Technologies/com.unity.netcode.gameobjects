@@ -8,21 +8,29 @@ namespace Unity.Netcode.Transports.UTP
     /// <summary>Queue for batched messages meant to be sent through UTP.</summary>
     /// <remarks>
     /// Messages should be pushed on the queue with <see cref="PushMessage"/>. To send batched
-    /// messages, call <see cref="FillWriter"> with the <see cref="DataStreamWriter"/> obtained from
-    /// <see cref="NetworkDriver.BeginSend"/>. This will fill the writer with as many messages as
-    /// possible. If the send is successful, call <see cref="Consume"/> to remove the data from the
-    /// queue.
+    /// messages, call <see cref="FillWriterWithMessages"/> or <see cref="FillWriterWithBytes"/>
+    /// with the <see cref="DataStreamWriter"/> obtained from <see cref="NetworkDriver.BeginSend"/>.
+    /// This will fill the writer with as many messages/bytes as possible. If the send is
+    /// successful, call <see cref="Consume"/> to remove the data from the queue.
     ///
     /// This is meant as a companion to <see cref="BatchedReceiveQueue"/>, which should be used to
     /// read messages sent with this queue.
     /// </remarks>
     internal struct BatchedSendQueue : IDisposable
     {
-        private NativeArray<byte> m_Data;
+        // Note that we're using NativeList basically like a growable NativeArray, where the length
+        // of the list is the capacity of our array. (We can't use the capacity of the list as our
+        // queue capacity because NativeList may elect to set it higher than what we'd set it to
+        // with SetCapacity, which breaks the logic of our code.)
+        private NativeList<byte> m_Data;
         private NativeArray<int> m_HeadTailIndices;
+        private int m_MaximumCapacity;
+        private int m_MinimumCapacity;
 
         /// <summary>Overhead that is added to each message in the queue.</summary>
         public const int PerMessageOverhead = sizeof(int);
+
+        internal const int MinimumMinimumCapacity = 4096;
 
         // Indices into m_HeadTailIndicies.
         private const int k_HeadInternalIndex = 0;
@@ -43,17 +51,32 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         public int Length => TailIndex - HeadIndex;
-
+        public int Capacity => m_Data.Length;
         public bool IsEmpty => HeadIndex == TailIndex;
-
         public bool IsCreated => m_Data.IsCreated;
 
         /// <summary>Construct a new empty send queue.</summary>
         /// <param name="capacity">Maximum capacity of the send queue.</param>
         public BatchedSendQueue(int capacity)
         {
-            m_Data = new NativeArray<byte>(capacity, Allocator.Persistent);
+            // Make sure the maximum capacity will be even.
+            m_MaximumCapacity = capacity + (capacity & 1);
+
+            // We pick the minimum capacity such that if we keep doubling it, we'll eventually hit
+            // the maximum capacity exactly. The alternative would be to use capacities that are
+            // powers of 2, but this can lead to over-allocating quite a bit of memory (especially
+            // since we expect maximum capacities to be in the megabytes range). The approach taken
+            // here avoids this issue, at the cost of not having allocations of nice round sizes.
+            m_MinimumCapacity = m_MaximumCapacity;
+            while (m_MinimumCapacity / 2 >= MinimumMinimumCapacity)
+            {
+                m_MinimumCapacity /= 2;
+            }
+
+            m_Data = new NativeList<byte>(m_MinimumCapacity, Allocator.Persistent);
             m_HeadTailIndices = new NativeArray<int>(2, Allocator.Persistent);
+
+            m_Data.ResizeUninitialized(m_MinimumCapacity);
 
             HeadIndex = 0;
             TailIndex = 0;
@@ -68,18 +91,28 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        /// <summary>Write a raw buffer to a DataStreamWriter.</summary>
+        private unsafe void WriteBytes(ref DataStreamWriter writer, byte* data, int length)
+        {
+#if UTP_TRANSPORT_2_0_ABOVE
+            writer.WriteBytesUnsafe(data, length);
+#else
+            writer.WriteBytes(data, length);
+#endif
+        }
+
         /// <summary>Append data at the tail of the queue. No safety checks.</summary>
         private void AppendDataAtTail(ArraySegment<byte> data)
         {
             unsafe
             {
-                var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, m_Data.Length - TailIndex);
+                var writer = new DataStreamWriter((byte*)m_Data.GetUnsafePtr() + TailIndex, Capacity - TailIndex);
 
                 writer.WriteInt(data.Count);
 
                 fixed (byte* dataPtr = data.Array)
                 {
-                    writer.WriteBytes(dataPtr + data.Offset, data.Count);
+                    WriteBytes(ref writer, dataPtr + data.Offset, data.Count);
                 }
             }
 
@@ -100,16 +133,16 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             // Check if there's enough room after the current tail index.
-            if (m_Data.Length - TailIndex >= sizeof(int) + message.Count)
+            if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
                 AppendDataAtTail(message);
                 return true;
             }
 
-            // Check if there would be enough room if we moved data at the beginning of m_Data.
-            if (m_Data.Length - TailIndex + HeadIndex >= sizeof(int) + message.Count)
+            // Move the data at the beginning of of m_Data. Either it will leave enough space for
+            // the message, or we'll grow m_Data and will want the data at the beginning anyway.
+            if (HeadIndex > 0 && Length > 0)
             {
-                // Move the data back at the beginning of m_Data.
                 unsafe
                 {
                     UnsafeUtility.MemMove(m_Data.GetUnsafePtr(), (byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
@@ -117,12 +150,38 @@ namespace Unity.Netcode.Transports.UTP
 
                 TailIndex = Length;
                 HeadIndex = 0;
+            }
 
+            // If there's enough space left at the end for the message, now is a good time to trim
+            // the capacity of m_Data if it got very large. We define "very large" here as having
+            // more than 75% of m_Data unused after adding the new message.
+            if (Capacity - TailIndex >= sizeof(int) + message.Count)
+            {
                 AppendDataAtTail(message);
+
+                while (TailIndex < Capacity / 4 && Capacity > m_MinimumCapacity)
+                {
+                    m_Data.ResizeUninitialized(Capacity / 2);
+                }
+
                 return true;
             }
 
-            return false;
+            // If we get here we need to grow m_Data until the data fits (or it's too large).
+            while (Capacity - TailIndex < sizeof(int) + message.Count)
+            {
+                // Can't grow m_Data anymore. Message simply won't fit.
+                if (Capacity * 2 > m_MaximumCapacity)
+                {
+                    return false;
+                }
+
+                m_Data.ResizeUninitialized(Capacity * 2);
+            }
+
+            // If we get here we know there's now enough room for the message.
+            AppendDataAtTail(message);
+            return true;
         }
 
         /// <summary>
@@ -149,12 +208,12 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
-                var reader = new DataStreamReader((byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
+                var reader = new DataStreamReader(m_Data.AsArray());
 
                 var writerAvailable = writer.Capacity;
-                var readerOffset = 0;
+                var readerOffset = HeadIndex;
 
-                while (readerOffset < Length)
+                while (readerOffset < TailIndex)
                 {
                     reader.SeekSet(readerOffset);
                     var messageLength = reader.ReadInt();
@@ -168,7 +227,7 @@ namespace Unity.Netcode.Transports.UTP
                         writer.WriteInt(messageLength);
 
                         var messageOffset = HeadIndex + reader.GetBytesRead();
-                        writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
+                        WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
 
                         writerAvailable -= sizeof(int) + messageLength;
                         readerOffset += sizeof(int) + messageLength;
@@ -205,7 +264,7 @@ namespace Unity.Netcode.Transports.UTP
 
             unsafe
             {
-                writer.WriteBytes((byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
+                WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + HeadIndex, copyLength);
             }
 
             return copyLength;
@@ -219,10 +278,14 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="size">Number of bytes to consume from the queue.</param>
         public void Consume(int size)
         {
+            // Adjust the head/tail indices such that we consume the given size.
             if (size >= Length)
             {
                 HeadIndex = 0;
                 TailIndex = 0;
+
+                // This is a no-op if m_Data is already at minimum capacity.
+                m_Data.ResizeUninitialized(m_MinimumCapacity);
             }
             else
             {

@@ -62,11 +62,27 @@ namespace Unity.Netcode.RuntimeTests
             response.PlayerPrefabHash = null;
         }
 
+
+        [Test]
+        public void VerifyUniqueNetworkConfigPerRequest()
+        {
+            var networkConfig = new NetworkConfig();
+            networkConfig.EnableSceneManagement = true;
+            networkConfig.TickRate = 30;
+            var currentHash = networkConfig.GetConfig();
+            networkConfig.EnableSceneManagement = false;
+            networkConfig.TickRate = 60;
+            var newHash = networkConfig.GetConfig(false);
+
+            Assert.True(currentHash != newHash, $"Hashed {nameof(NetworkConfig)} values {currentHash} and {newHash} should not be the same!");
+        }
+
         [TearDown]
         public void TearDown()
         {
             // Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
         }
+
     }
 }

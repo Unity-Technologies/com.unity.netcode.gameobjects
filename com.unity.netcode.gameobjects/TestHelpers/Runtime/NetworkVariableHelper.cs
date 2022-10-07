@@ -13,7 +13,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// From both we can then at least determine if the value indeed changed
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class NetworkVariableHelper<T> : NetworkVariableBaseHelper where T : unmanaged
+    public class NetworkVariableHelper<T> : NetworkVariableBaseHelper
     {
         private readonly NetworkVariable<T> m_NetworkVariable;
         public delegate void OnMyValueChangedDelegateHandler(T previous, T next);
@@ -50,7 +50,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (previous is ValueType testValueType)
             {
-                CheckVariableChanged(previous, next);
+                CheckVariableChanged(previous as ValueType, next as ValueType);
             }
             else
             {

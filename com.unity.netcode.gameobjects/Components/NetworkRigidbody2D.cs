@@ -9,6 +9,7 @@ namespace Unity.Netcode.Components
     /// </summary>
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(NetworkTransform))]
+    [AddComponentMenu("Netcode/Network Rigidbody 2D")]
     public class NetworkRigidbody2D : NetworkBehaviour
     {
         private Rigidbody2D m_Rigidbody;

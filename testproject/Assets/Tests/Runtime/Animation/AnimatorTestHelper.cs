@@ -29,6 +29,11 @@ namespace TestProject.RuntimeTests
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
         }
 
+        internal int GetAnimatorStateCount()
+        {
+            return m_NetworkAnimator.GetAnimationMessage().AnimationStates.Count;
+        }
+
         public override void OnNetworkSpawn()
         {
             if (IsTriggerTest)
@@ -108,9 +113,30 @@ namespace TestProject.RuntimeTests
             return m_Animator.GetBool("TestTrigger");
         }
 
-        public void SetTrigger(string name = "TestTrigger")
+        public void SetTrigger(string name = "TestTrigger", bool monitorTrigger = false)
         {
             m_NetworkAnimator.SetTrigger(name);
+            if (monitorTrigger && IsServer)
+            {
+                StartCoroutine(TriggerMonitor(name));
+            }
+        }
+
+        public void SetBool(string name, bool valueToSet)
+        {
+            m_Animator.SetBool(name, valueToSet);
+        }
+
+        private System.Collections.IEnumerator TriggerMonitor(string triggerName)
+        {
+            var triggerStatus = m_Animator.GetBool(triggerName);
+            var waitTime = new WaitForSeconds(2 * (1.0f / NetworkManager.NetworkConfig.TickRate));
+            while (triggerStatus)
+            {
+                Debug.Log($"[{triggerName}] is still triggered.");
+                yield return waitTime;
+            }
+            Debug.Log($"[{triggerName}] is no longer triggered.");
         }
 
         public void SetLateJoinParam(bool isEnabled)

@@ -15,6 +15,10 @@ namespace Unity.Netcode.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {
+        public const string DotnetModuleName = "netstandard.dll";
+        public const string UnityModuleName = "UnityEngine.CoreModule.dll";
+        public const string NetcodeModuleName = "Unity.Netcode.Runtime.dll";
+
         public const string RuntimeAssemblyName = "Unity.Netcode.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkBehaviour).FullName;
@@ -119,6 +123,19 @@ namespace Unity.Netcode.Editor.CodeGen
             try
             {
                 var typeDef = typeReference.Resolve();
+                // Note: this won't catch generics correctly.
+                //
+                //     class Foo<T>: IInterface<T> {}
+                //     class Bar: Foo<int> {}
+                //
+                // Bar.HasInterface(IInterface<int>) -> returns false even though it should be true.
+                //
+                // This can be fixed (see GetAllFieldsAndResolveGenerics() in NetworkBehaviourILPP to understand how)
+                // but right now we don't need that to work so it's left alone to reduce complexity
+                if (typeDef.BaseType.HasInterface(interfaceTypeFullName))
+                {
+                    return true;
+                }
                 var typeFaces = typeDef.Interfaces;
                 return typeFaces.Any(iface => iface.InterfaceType.FullName == interfaceTypeFullName);
             }
@@ -379,6 +396,69 @@ namespace Unity.Netcode.Editor.CodeGen
             assemblyResolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
 
             return assemblyDefinition;
+        }
+
+        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        {
+            ModuleDefinition dotnetModule = null;
+            ModuleDefinition unityModule = null;
+            ModuleDefinition netcodeModule = null;
+
+            foreach (var module in assemblyDefinition.Modules)
+            {
+                if (dotnetModule == null && module.Name == DotnetModuleName)
+                {
+                    dotnetModule = module;
+                    continue;
+                }
+
+                if (unityModule == null && module.Name == UnityModuleName)
+                {
+                    unityModule = module;
+                    continue;
+                }
+
+                if (netcodeModule == null && module.Name == NetcodeModuleName)
+                {
+                    netcodeModule = module;
+                    continue;
+                }
+            }
+
+            if (dotnetModule != null && unityModule != null && netcodeModule != null)
+            {
+                return (dotnetModule, unityModule, netcodeModule);
+            }
+
+            foreach (var assemblyNameReference in assemblyDefinition.MainModule.AssemblyReferences)
+            {
+                foreach (var module in assemblyResolver.Resolve(assemblyNameReference).Modules)
+                {
+                    if (dotnetModule == null && module.Name == DotnetModuleName)
+                    {
+                        dotnetModule = module;
+                        continue;
+                    }
+                    if (unityModule == null && module.Name == UnityModuleName)
+                    {
+                        unityModule = module;
+                        continue;
+                    }
+
+                    if (netcodeModule == null && module.Name == NetcodeModuleName)
+                    {
+                        netcodeModule = module;
+                        continue;
+                    }
+                }
+
+                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                {
+                    return (dotnetModule, unityModule, netcodeModule);
+                }
+            }
+
+            return (dotnetModule, unityModule, netcodeModule);
         }
     }
 }

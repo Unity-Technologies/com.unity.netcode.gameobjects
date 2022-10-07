@@ -235,14 +235,42 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
-                foreach (var client in NetworkManager.ConnectedClients)
+                if (clientRpcParams.Send.TargetClientIds != null)
                 {
-                    NetworkManager.NetworkMetrics.TrackRpcSent(
-                        client.Key,
-                        NetworkObject,
-                        rpcMethodName,
-                        __getTypeName(),
-                        rpcWriteSize);
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIds)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
+                {
+                    foreach (var targetClientId in clientRpcParams.Send.TargetClientIdsNativeArray)
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            targetClientId,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
+                }
+                else
+                {
+                    var observerEnumerator = NetworkObject.Observers.GetEnumerator();
+                    while (observerEnumerator.MoveNext())
+                    {
+                        NetworkManager.NetworkMetrics.TrackRpcSent(
+                            observerEnumerator.Current,
+                            NetworkObject,
+                            rpcMethodName,
+                            __getTypeName(),
+                            rpcWriteSize);
+                    }
                 }
             }
 #endif
@@ -331,7 +359,8 @@ namespace Unity.Netcode
                 // in Update and/or in FixedUpdate could still be checking NetworkBehaviour.NetworkObject directly (i.e. does it exist?)
                 // or NetworkBehaviour.IsSpawned (i.e. to early exit if not spawned) which, in turn, could generate several Warning messages
                 // per spawned NetworkObject.  Checking for ShutdownInProgress prevents these unnecessary LogWarning messages.
-                if (m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
+                // We must check IsSpawned, otherwise a warning will be logged under certain valid conditions (see OnDestroy)
+                if (IsSpawned && m_NetworkObject == null && (NetworkManager.Singleton == null || !NetworkManager.Singleton.ShutdownInProgress))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
@@ -435,14 +464,41 @@ namespace Unity.Netcode
             IsSpawned = true;
             InitializeVariables();
             UpdateNetworkProperties();
-            OnNetworkSpawn();
+        }
+
+        internal void VisibleOnNetworkSpawn()
+        {
+            try
+            {
+                OnNetworkSpawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
+
+            InitializeVariables();
+            if (IsServer)
+            {
+                // Since we just spawned the object and since user code might have modified their NetworkVariable, esp.
+                // NetworkList, we need to mark the object as free of updates.
+                // This should happen for all objects on the machine triggering the spawn.
+                PostNetworkVariableWrite(true);
+            }
         }
 
         internal void InternalOnNetworkDespawn()
         {
             IsSpawned = false;
             UpdateNetworkProperties();
-            OnNetworkDespawn();
+            try
+            {
+                OnNetworkDespawn();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>
@@ -575,16 +631,30 @@ namespace Unity.Netcode
             NetworkVariableIndexesToResetSet.Clear();
         }
 
-        internal void PostNetworkVariableWrite()
+        internal void PostNetworkVariableWrite(bool forced = false)
         {
-            // mark any variables we wrote as no longer dirty
-            for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+            if (forced)
             {
-                NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                // Mark every variable as no longer dirty. We just spawned the object and whatever the game code did
+                // during OnNetworkSpawn has been sent and needs to be cleared
+                for (int i = 0; i < NetworkVariableFields.Count; i++)
+                {
+                    NetworkVariableFields[i].ResetDirty();
+                }
             }
+            else
+            {
+                // mark any variables we wrote as no longer dirty
+                for (int i = 0; i < NetworkVariableIndexesToReset.Count; i++)
+                {
+                    NetworkVariableFields[NetworkVariableIndexesToReset[i]].ResetDirty();
+                }
+            }
+
+            MarkVariablesDirty(false);
         }
 
-        internal void VariableUpdate(ulong targetClientId)
+        internal void PreVariableUpdate()
         {
             if (!m_VarInit)
             {
@@ -592,6 +662,10 @@ namespace Unity.Netcode
             }
 
             PreNetworkVariableWrite();
+        }
+
+        internal void VariableUpdate(ulong targetClientId)
+        {
             NetworkVariableUpdate(targetClientId, NetworkBehaviourId);
         }
 
@@ -663,11 +737,11 @@ namespace Unity.Netcode
             return false;
         }
 
-        internal void MarkVariablesDirty()
+        internal void MarkVariablesDirty(bool dirty)
         {
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                NetworkVariableFields[j].SetDirty(true);
+                NetworkVariableFields[j].SetDirty(dirty);
             }
         }
 
@@ -759,6 +833,14 @@ namespace Unity.Netcode
         /// </summary>
         public virtual void OnDestroy()
         {
+            if (NetworkObject != null && NetworkObject.IsSpawned && IsSpawned)
+            {
+                // If the associated NetworkObject is still spawned then this
+                // NetworkBehaviour will be removed from the NetworkObject's
+                // ChildNetworkBehaviours list.
+                NetworkObject.OnNetworkBehaviourDestroyed(this);
+            }
+
             // this seems odd to do here, but in fact especially in tests we can find ourselves
             //  here without having called InitializedVariables, which causes problems if any
             //  of those variables use native containers (e.g. NetworkList) as they won't be
@@ -769,6 +851,7 @@ namespace Unity.Netcode
             {
                 InitializeVariables();
             }
+
 
             for (int i = 0; i < NetworkVariableFields.Count; i++)
             {
