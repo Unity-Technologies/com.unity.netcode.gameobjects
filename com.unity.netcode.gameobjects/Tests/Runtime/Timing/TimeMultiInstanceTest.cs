@@ -46,6 +46,7 @@ namespace Unity.Netcode.RuntimeTests
         [TestCase(10, 30u, ExpectedResult = null)]
         [TestCase(60, 60u, ExpectedResult = null)]
         [TestCase(60, 10u, ExpectedResult = null)]
+        [Ignore("Test is unstable - MTT-4859")]
         public IEnumerator TestTimeIntegrationTest(int targetFrameRate, uint tickRate)
         {
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NumberOfClients, targetFrameRate, tickRate);

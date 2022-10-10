@@ -142,6 +142,7 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
+        [Ignore("Test is unstable - MTT-4860")]
         public void NetworkTimeAdvanceTest()
         {
             var random = new Random(42);
