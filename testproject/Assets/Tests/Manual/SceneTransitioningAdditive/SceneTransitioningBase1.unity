@@ -2250,6 +2250,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: InSceneObjectToDespawn
       objectReference: {fileID: 0}
+    - target: {fileID: 4518755925279129999, guid: 3a854a190ab5b1b4fb00bec725fdda9e,
+        type: 3}
+      propertyPath: StartDespawned
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3a854a190ab5b1b4fb00bec725fdda9e, type: 3}
 --- !u!1 &1008611498
@@ -2466,7 +2471,6 @@ MonoBehaviour:
   m_ProtocolType: 0
   m_MaxPacketQueueSize: 128
   m_MaxPayloadSize: 512000
-  m_MaxSendQueueSize: 4096000
   m_HeartbeatTimeoutMS: 500
   m_ConnectTimeoutMS: 1000
   m_MaxConnectAttempts: 60

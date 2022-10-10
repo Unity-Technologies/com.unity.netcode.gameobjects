@@ -388,6 +388,13 @@ namespace Unity.Netcode
                         NetworkLog.LogError($"{nameof(NetworkPrefab)} hash was not found! In-Scene placed {nameof(NetworkObject)} soft synchronization failure for Hash: {globalObjectIdHash}!");
                     }
                 }
+
+                // Since this NetworkObject is an in-scene placed NetworkObject, if it is disabled then enable it so
+                // NetworkBehaviours will have their OnNetworkSpawn method invoked
+                if (networkObject != null && !networkObject.gameObject.activeInHierarchy)
+                {
+                    networkObject.gameObject.SetActive(true);
+                }
             }
 
             if (networkObject != null)

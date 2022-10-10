@@ -1441,6 +1441,9 @@ namespace Unity.Netcode
                 }
             }
 
+            // Add any despawned when spawned in-scene placed NetworkObjects to the scene event data
+            sceneEventData.AddDespawnedInSceneNetworkObjects();
+
             // Set the server's scene's handle so the client can build a look up table
             sceneEventData.SceneHandle = scene.handle;
 

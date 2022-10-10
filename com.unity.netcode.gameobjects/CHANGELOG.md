@@ -28,6 +28,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where an in-scene placed NetworkObject would not invoke NetworkBehaviour.OnNetworkSpawn if the GameObject was disabled when it was despawned. (#2239)
 - Fixed issue where clients were not rebuilding the `NetworkConfig` hash value for each unique connection request. (#2226)
 - Fixed the issue where player objects were not taking the `DontDestroyWithOwner` property into consideration when a client disconnected. (#2225)
 - Fixed issue where `SceneEventProgress` would not complete if a client late joins while it is still in progress. (#2222)
