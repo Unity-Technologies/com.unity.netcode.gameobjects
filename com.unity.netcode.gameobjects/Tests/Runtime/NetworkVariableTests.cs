@@ -845,8 +845,8 @@ namespace Unity.Netcode.RuntimeTests
                        m_Player1OnClient1.TheStructList[1].Value == m_Player1OnServer.TheStructList[1].Value;
             }
 
-            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList{Value = 1});
-            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList{Value = 2});
+            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList { Value = 1 });
+            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList { Value = 2 });
             m_Player1OnServer.TheStructList.SetDirty(true);
 
             // Wait for the client-side to notify it is finished initializing and spawning.
