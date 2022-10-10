@@ -762,22 +762,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
         }
 
-        internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy) where T : INetworkMessage
+        internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled) where T : INetworkMessage
         {
             // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
             var messageHookEntriesForSpawn = new List<MessageHookEntry>();
             foreach (var clientNetworkManager in wiatForReceivedBy)
             {
-                var messageHook = new MessageHookEntry(clientNetworkManager);
+                var messageHook = new MessageHookEntry(clientNetworkManager, type);
                 messageHook.AssignMessageType<T>();
                 messageHookEntriesForSpawn.Add(messageHook);
             }
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
             yield return WaitForConditionOrTimeOut(hooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut);
         }
 
-        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy)
+        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled)
         {
             // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
             var messageHookEntriesForSpawn = new List<MessageHookEntry>();
@@ -785,7 +786,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 foreach (var message in messagesInOrder)
                 {
-                    var messageHook = new MessageHookEntry(clientNetworkManager);
+                    Debug.Log($"Waiting for message of type {message.Name} on client {clientNetworkManager.LocalClientId}");
+                    var messageHook = new MessageHookEntry(clientNetworkManager, type);
                     messageHook.AssignMessageType(message);
                     messageHookEntriesForSpawn.Add(messageHook);
                 }
@@ -793,6 +795,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Used to determine if all clients received the CreateObjectMessage
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
             yield return WaitForConditionOrTimeOut(hooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut);
         }
 
         /// <summary>
