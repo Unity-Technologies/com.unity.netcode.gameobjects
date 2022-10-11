@@ -922,8 +922,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             CatchSpawns();
-            //var waiters = WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>();
-            //var coroutines = StartMultiple(waiters);
 
             foreach (var client in m_ClientNetworkManagers)
             {
@@ -953,7 +951,6 @@ namespace Unity.Netcode.RuntimeTests
             serverObject.GetComponent<DeferredMessageTestRpcAndNetworkVariableComponent>().TestNetworkVariable.Value = 1;
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            //yield return WaitMultiple(coroutines);
             yield return WaitForMessagesReceived(
                 new List<Type> {typeof(ClientRpcMessage), typeof(NetworkVariableDeltaMessage), typeof(ChangeOwnershipMessage),
                 }, m_ClientNetworkManagers.ToList(), ReceiptType.Received);
@@ -1003,11 +1000,6 @@ namespace Unity.Netcode.RuntimeTests
             m_SkipAddingPrefabsToClient = true;
             yield return SpawnClients();
             CatchSpawns();
-
-            // Since there are two unique objects we need to look for two sets of messages
-            //var waiters = WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>();
-            //waiters.AddRange(WaitForAllClientsToReceive<ClientRpcMessage, NetworkVariableDeltaMessage, ChangeOwnershipMessage>());
-            //var coroutines = StartMultiple(waiters);
 
             foreach (var client in m_ClientNetworkManagers)
             {

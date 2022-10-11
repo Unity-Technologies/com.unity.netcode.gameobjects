@@ -786,7 +786,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 foreach (var message in messagesInOrder)
                 {
-                    Debug.Log($"Waiting for message of type {message.Name} on client {clientNetworkManager.LocalClientId}");
                     var messageHook = new MessageHookEntry(clientNetworkManager, type);
                     messageHook.AssignMessageType(message);
                     messageHookEntriesForSpawn.Add(messageHook);
