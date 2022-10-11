@@ -93,7 +93,7 @@ namespace Unity.Netcode.Transports.UTP
 
         [Tooltip("Client CA filepath. Useful with self-signed certificates")]
         [SerializeField]
-        private string m_ClientCAFilePath = "Assets/Secure/myGameClientCA.pem";
+        private string m_ClientCAFilePath = ""; // "Assets/Secure/myGameClientCA.pem"
 
         /// <summary>Client CA filepath. Useful with self-signed certificates</summary>
         public string ClientCAFilePath
@@ -118,7 +118,7 @@ namespace Unity.Netcode.Transports.UTP
 
         [Tooltip("Server Certificate filepath")]
         [SerializeField]
-        private string m_ServerCertificateFilePath = "Assets/Secure/myGameServerCertificate.pem";
+        private string m_ServerCertificateFilePath = ""; // "Assets/Secure/myGameServerCertificate.pem"
 
         /// <summary>Server Certificate filepath</summary>
         public string ServerCertificateFilePath
@@ -129,7 +129,7 @@ namespace Unity.Netcode.Transports.UTP
 
         [Tooltip("Server Private Key filepath")]
         [SerializeField]
-        private string m_ServerPrivateFilePath = "Assets/Secure/myGameServerPrivate.pem";
+        private string m_ServerPrivateFilePath = ""; // "Assets/Secure/myGameServerPrivate.pem"
 
         /// <summary>Server Private Key filepath</summary>
         public string ServerPrivateFilePath
@@ -174,6 +174,11 @@ namespace Unity.Netcode.Transports.UTP
 
         private static string ReadFile(string path, string label)
         {
+            if (path == null || path == "")
+            {
+                return "";
+            }
+
             var reader = new StreamReader(path);
             string fileContent = reader.ReadToEnd();
             Debug.Log((fileContent.Length > 1) ? ("Successfully loaded " + fileContent.Length + " byte(s) from " + label) : ("Could not read " + label + " file"));
