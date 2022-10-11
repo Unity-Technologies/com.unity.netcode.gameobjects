@@ -15,9 +15,17 @@ namespace Unity.Netcode.RuntimeTests
         private int m_ConnectedTick;
         private NetworkManager m_Client;
 
-        [UnityTest]
-        public IEnumerator TestClientTimeInitializationOnConnect([Values(0, 1f)] float serverStartDelay, [Values(0, 1f)] float clientStartDelay, [Values(true, false)] bool isHost)
+        [UnitySetUp]
+        public void Setup()
         {
+            m_ClientTickCounter = 0;
+            m_ConnectedTick = 0;
+        }
+
+        [UnityTest]
+        public IEnumerator TestClientTimeInitializationOnConnect([Values(0, 1f)] float serverStartDelay, [Values(0, 1f)] float clientStartDelay, [Values(true, false)] bool useHost)
+        {
+            Debug.Log($"[TestClientTimeInitializationOnConnect] Starting with Server-StartDelay = {serverStartDelay} | Client-StartDelay = {clientStartDelay} | useHost = {useHost}");
             // Create multiple NetworkManager instances
             if (!NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients, 30))
             {
@@ -26,7 +34,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return new WaitForSeconds(serverStartDelay);
-            NetcodeIntegrationTestHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
+            NetcodeIntegrationTestHelpers.Start(useHost, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
             var serverTick = server.NetworkTickSystem.ServerTime.Tick;
@@ -75,7 +83,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(m_ClientTickCounter <= clientStartRealTickDuration);
 
-            yield return null;
+            yield return new WaitForSeconds(0.25f);
         }
 
         private void NetworkTickSystemOnTick()
@@ -95,7 +103,8 @@ namespace Unity.Netcode.RuntimeTests
         public virtual IEnumerator Teardown()
         {
             NetcodeIntegrationTestHelpers.Destroy();
-            yield return null;
+            m_Client = null;
+            yield return new WaitForSeconds(0.25f);
         }
     }
 }
