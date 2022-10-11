@@ -99,7 +99,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         internal void AssignMessageType<T>() where T : INetworkMessage
         {
             MessageType = typeof(T).Name;
-            m_MessageReceiptCheck = MessageHooks.CheckForMessageOfType<T>;
+            if (m_ReceiptType == ReceiptType.Handled)
+            {
+                m_MessageHandleCheck = MessageHooks.CheckForMessageOfTypeHandled<T>;
+            }
+            else
+            {
+                m_MessageReceiptCheck = MessageHooks.CheckForMessageOfTypeReceived<T>;
+            }
             Initialize();
         }
 

@@ -12,9 +12,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public static bool CurrentMessageHasTriggerdAHook = false;
 
-        public static bool CheckForMessageOfType<T>(object receivedMessage) where T : INetworkMessage
+        public static bool CheckForMessageOfTypeHandled<T>(object receivedMessage) where T : INetworkMessage
         {
             return receivedMessage is T;
+        }
+        public static bool CheckForMessageOfTypeReceived<T>(Type receivedMessageType) where T : INetworkMessage
+        {
+            return receivedMessageType == typeof(T);
         }
 
         public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
