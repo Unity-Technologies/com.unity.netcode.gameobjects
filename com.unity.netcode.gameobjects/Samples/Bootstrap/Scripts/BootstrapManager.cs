@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Unity.Netcode.Samples
 {
@@ -8,51 +9,64 @@ namespace Unity.Netcode.Samples
     /// </summary>
     public class BootstrapManager : MonoBehaviour
     {
-        private void OnGUI()
+        [SerializeField]
+        private GameObject m_OfflinePanel;
+
+        [SerializeField]
+        private GameObject m_OnlinePanel;
+
+        [SerializeField]
+        private GameObject m_RandomTeleportButton;
+
+        [SerializeField]
+        private Text m_ModeLabel;
+
+        public void StartHost()
         {
-            GUILayout.BeginArea(new Rect(10, 10, 300, 300));
+            NetworkManager.Singleton.StartHost();
+            OnGameStarted();
+        }
 
+        public void StartClient()
+        {
+            NetworkManager.Singleton.StartClient();
+            OnGameStarted();
+        }
+
+        public void StartServer()
+        {
+            NetworkManager.Singleton.StartServer();
+            OnGameStarted();
+        }
+
+        public void Shutdown()
+        {
+            NetworkManager.Singleton.Shutdown();
+            m_OfflinePanel.SetActive(true);
+            m_OnlinePanel.SetActive(false);
+        }
+
+        private void OnGameStarted()
+        {
+            m_OfflinePanel.SetActive(false);
+            m_OnlinePanel.SetActive(true);
             var networkManager = NetworkManager.Singleton;
-            if (!networkManager.IsClient && !networkManager.IsServer)
+            m_ModeLabel.text = $"Mode: {(networkManager.IsHost ? "Host" : networkManager.IsClient ? "Client" : "Server")}";
+            m_RandomTeleportButton.SetActive(networkManager.IsClient);
+        }
+
+        public void RandomTeleport()
+        {
+            var networkManager = NetworkManager.Singleton;
+            if (networkManager.IsClient && networkManager.LocalClient != null)
             {
-                if (GUILayout.Button("Host"))
+                // Get `BootstrapPlayer` component from the player's `PlayerObject`
+                if (networkManager.LocalClient.PlayerObject.TryGetComponent(out BootstrapPlayer bootstrapPlayer))
                 {
-                    networkManager.StartHost();
-                }
-
-                if (GUILayout.Button("Client"))
-                {
-                    networkManager.StartClient();
-                }
-
-                if (GUILayout.Button("Server"))
-                {
-                    networkManager.StartServer();
+                    // Invoke a `ServerRpc` from client-side to teleport player to a random position on the server-side
+                    bootstrapPlayer.RandomTeleportServerRpc();
                 }
             }
-            else
-            {
-                GUILayout.Label($"Mode: {(networkManager.IsHost ? "Host" : networkManager.IsServer ? "Server" : "Client")}");
-
-                // "Random Teleport" button will only be shown to clients
-                if (networkManager.IsClient)
-                {
-                    if (GUILayout.Button("Random Teleport"))
-                    {
-                        if (networkManager.LocalClient != null)
-                        {
-                            // Get `BootstrapPlayer` component from the player's `PlayerObject`
-                            if (networkManager.LocalClient.PlayerObject.TryGetComponent(out BootstrapPlayer bootstrapPlayer))
-                            {
-                                // Invoke a `ServerRpc` from client-side to teleport player to a random position on the server-side
-                                bootstrapPlayer.RandomTeleportServerRpc();
-                            }
-                        }
-                    }
-                }
-            }
-
-            GUILayout.EndArea();
         }
     }
 }
