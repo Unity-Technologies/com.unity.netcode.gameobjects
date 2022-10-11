@@ -48,6 +48,26 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
+    public struct StructUsedOnlyInNetworkList : IEquatable<StructUsedOnlyInNetworkList>, INetworkSerializeByMemcpy
+    {
+        public int Value;
+
+        public bool Equals(StructUsedOnlyInNetworkList other)
+        {
+            return Value == other.Value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is StructUsedOnlyInNetworkList other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return Value;
+        }
+    }
+
     [TestFixtureSource(nameof(TestDataSource))]
     public class NetworkVariablePermissionTests : NetcodeIntegrationTest
     {
@@ -433,6 +453,7 @@ namespace Unity.Netcode.RuntimeTests
         public readonly NetworkVariable<int> TheScalar = new NetworkVariable<int>();
         public readonly NetworkVariable<SomeEnum> TheEnum = new NetworkVariable<SomeEnum>();
         public readonly NetworkList<int> TheList = new NetworkList<int>();
+        public readonly NetworkList<StructUsedOnlyInNetworkList> TheStructList = new NetworkList<StructUsedOnlyInNetworkList>();
         public readonly NetworkList<FixedString128Bytes> TheLargeList = new NetworkList<FixedString128Bytes>();
 
         public readonly NetworkVariable<FixedString32Bytes> FixedString32 = new NetworkVariable<FixedString32Bytes>();
@@ -449,7 +470,6 @@ namespace Unity.Netcode.RuntimeTests
 
         public readonly NetworkVariable<TestStruct> TheStruct = new NetworkVariable<TestStruct>();
         public readonly NetworkVariable<TestClass> TheClass = new NetworkVariable<TestClass>();
-        public readonly NetworkList<TestStruct> TheListOfStructs = new NetworkList<TestStruct>();
 
         public NetworkVariable<UnmanagedTemplateNetworkSerializableType<TestStruct>> TheTemplateStruct = new NetworkVariable<UnmanagedTemplateNetworkSerializableType<TestStruct>>();
         public NetworkVariable<ManagedTemplateNetworkSerializableType<TestClass>> TheTemplateClass = new NetworkVariable<ManagedTemplateNetworkSerializableType<TestClass>>();
@@ -811,6 +831,26 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             yield return WaitForConditionOrTimeOut(VerifyClass);
+        }
+
+        [UnityTest]
+        public IEnumerator TestNetworkListStruct([Values(true, false)] bool useHost)
+        {
+            yield return InitializeServerAndClients(useHost);
+
+            bool VerifyList()
+            {
+                return m_Player1OnClient1.TheStructList.Count == m_Player1OnServer.TheStructList.Count &&
+                       m_Player1OnClient1.TheStructList[0].Value == m_Player1OnServer.TheStructList[0].Value &&
+                       m_Player1OnClient1.TheStructList[1].Value == m_Player1OnServer.TheStructList[1].Value;
+            }
+
+            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList { Value = 1 });
+            m_Player1OnServer.TheStructList.Add(new StructUsedOnlyInNetworkList { Value = 2 });
+            m_Player1OnServer.TheStructList.SetDirty(true);
+
+            // Wait for the client-side to notify it is finished initializing and spawning.
+            yield return WaitForConditionOrTimeOut(VerifyList);
         }
 
         [UnityTest]
