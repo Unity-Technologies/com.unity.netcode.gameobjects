@@ -108,7 +108,7 @@ namespace Unity.Netcode.RuntimeTests
                 return false;
             }
 
-            foreach(var clientNetworkManager in m_ClientNetworkManagers)
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 if (!RpcManyClientsObject.ClientInstances.ContainsKey(clientNetworkManager.LocalClientId))
                 {
