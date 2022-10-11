@@ -119,6 +119,25 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        private bool WaitForAllClientsToSendServerRpc()
+        {
+            var serverInstance = RpcManyClientsObject.ServerInstance;
+            if (TotalClients != serverInstance.Count)
+            {
+                return false;
+            }
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (!serverInstance.ReceivedFrom.Contains(clientNetworkManager.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+
         public enum RpcTestTypes
         {
             NoParameters,
@@ -131,7 +150,7 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator RpcManyClientsTest([Values] RpcTestTypes rpcTestType)
         {
             m_EnableVerboseDebug = true;
-            VerboseDebug("[RpcManyClientsTest] Starting Test....");
+            VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Starting Test...");
             var spawnedObject = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
             // Wait for the server and all clients to have spawned the test object
             yield return WaitForConditionOrTimeOut(WaitForInstancesToSpawn);
@@ -159,66 +178,76 @@ namespace Unity.Netcode.RuntimeTests
                         rpcManyClientsObject.Count = 0;
                         rpcManyClientsObject.NoParamsClientRpc(); // RPC with no params
 
+                        //VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for message hooks...");
                         // Check that all ServerRpcMessages were sent
-                        yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+                        //yield return WaitForConditionOrTimeOut(rpcMessageHooks);
 
+                        VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for all clients to have processed ClientRpc and responded with a ServerRpc");
                         // Now provide a small window of time to let the server receive and process all messages
-                        yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-                        Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.NoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+                        yield return WaitForConditionOrTimeOut(WaitForAllClientsToSendServerRpc);
+                        AssertOnTimeout($"Timed out wait for {nameof(rpcManyClientsObject.NoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
                         break;
                     }
                 case RpcTestTypes.OneParameter:
                     {
                         rpcManyClientsObject.Count = 0;
-                        rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
                         rpcMessageHooks.Reset();
-                        yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+                        rpcManyClientsObject.OneParamClientRpc(0); // RPC with one param
+                        //VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for message hooks...");
+                        //yield return WaitForConditionOrTimeOut(rpcMessageHooks);
 
+                        VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for all clients to have processed ClientRpc and responded with a ServerRpc");
                         // Now provide a small window of time to let the server receive and process all messages
-                        yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-                        Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+                        yield return WaitForConditionOrTimeOut(WaitForAllClientsToSendServerRpc);
+                        AssertOnTimeout($"Timed out wait for {nameof(rpcManyClientsObject.OneParamClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
                         break;
                     }
                 case RpcTestTypes.TwoParameters:
                     {
                         rpcManyClientsObject.Count = 0;
-                        rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
-
                         rpcMessageHooks.Reset();
-                        yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+                        rpcManyClientsObject.TwoParamsClientRpc(0, 0); // RPC with two params
+                        //VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for message hooks...");
+                        //yield return WaitForConditionOrTimeOut(rpcMessageHooks);
+
+                        VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for all clients to have processed ClientRpc and responded with a ServerRpc");
                         // Now provide a small window of time to let the server receive and process all messages
-                        yield return WaitForConditionOrTimeOut(() => TotalClients == rpcManyClientsObject.Count);
-                        Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
+                        yield return WaitForConditionOrTimeOut(WaitForAllClientsToSendServerRpc);
+                        AssertOnTimeout($"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of {TotalClients} was received!");
                         break;
                     }
                 case RpcTestTypes.WithParameters:
                     {
-
                         rpcManyClientsObject.ReceivedFrom.Clear();
                         rpcManyClientsObject.Count = 0;
                         var target = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
                         param.Send.TargetClientIds = target;
+
+                        //messageHookList.Clear();
+                        //var targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[1]);
+                        //targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+                        //messageHookList.Add(targetedClientMessageHookEntry);
+                        //targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[2]);
+                        //targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
+                        //messageHookList.Add(targetedClientMessageHookEntry);
+                        //rpcMessageHooks = new MessageHooksConditional(messageHookList);
+
                         rpcManyClientsObject.WithParamsClientRpc(param);
+                        //VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for message hooks...");
+                        //yield return WaitForConditionOrTimeOut(rpcMessageHooks);
 
-                        messageHookList.Clear();
-                        var targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[1]);
-                        targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
-                        messageHookList.Add(targetedClientMessageHookEntry);
-                        targetedClientMessageHookEntry = new MessageHookEntry(m_ClientNetworkManagers[2]);
-                        targetedClientMessageHookEntry.AssignMessageType<ServerRpcMessage>();
-                        messageHookList.Add(targetedClientMessageHookEntry);
-                        rpcMessageHooks = new MessageHooksConditional(messageHookList);
-
-                        yield return WaitForConditionOrTimeOut(rpcMessageHooks);
-
+                        VerboseDebug($"[RpcManyClientsTest-{rpcTestType}] Waiting for all clients to have processed RPC");
                         // Now provide a small window of time to let the server receive and process all messages
                         yield return WaitForConditionOrTimeOut(() => 2 == rpcManyClientsObject.Count);
-                        Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of 2 was received!");
+                        AssertOnTimeout($"Timed out wait for {nameof(rpcManyClientsObject.TwoParamsClientRpc)}! Only {rpcManyClientsObject.Count} of 2 was received!");
+                        Assert.True(rpcManyClientsObject.ReceivedFrom.Contains(m_ClientNetworkManagers[1].LocalClientId), $"Did not receive a ServerRpc from client {m_ClientNetworkManagers[1].LocalClientId}");
+                        Assert.True(rpcManyClientsObject.ReceivedFrom.Contains(m_ClientNetworkManagers[2].LocalClientId), $"Did not receive a ServerRpc from client {m_ClientNetworkManagers[2].LocalClientId}");
+
 
                         // either of the 2 selected clients can reply to the server first, due to network timing
-                        var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
-                        var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
-                        Debug.Assert(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
+                        //var possibility1 = new List<ulong> { m_ClientNetworkManagers[1].LocalClientId, m_ClientNetworkManagers[2].LocalClientId };
+                        //var possibility2 = new List<ulong> { m_ClientNetworkManagers[2].LocalClientId, m_ClientNetworkManagers[1].LocalClientId };
+                        //Assert.True(Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility1) || Enumerable.SequenceEqual(rpcManyClientsObject.ReceivedFrom, possibility2));
                         break;
                     }
             }
