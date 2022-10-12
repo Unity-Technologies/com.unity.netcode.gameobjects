@@ -24,6 +24,7 @@ namespace Unity.Netcode.Editor.CodeGen
         {
             if (!WillProcess(compiledAssembly))
             {
+                Console.WriteLine($"Not processing {compiledAssembly.Name}");
                 return null;
             }
 
@@ -64,6 +65,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     // process `INetworkMessage` types
                     if (types.Count == 0)
                     {
+                        Console.WriteLine("Couldn't find any messages to process.");
                         return null;
                     }
 
@@ -296,6 +298,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in networkMessageTypes)
                     {
+                        Console.WriteLine($"Creating initializer for {type}");
                         var receiveMethod = new GenericInstanceMethod(m_MessagingSystem_ReceiveMessage_MethodRef);
                         receiveMethod.GenericArguments.Add(type);
                         CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod);
