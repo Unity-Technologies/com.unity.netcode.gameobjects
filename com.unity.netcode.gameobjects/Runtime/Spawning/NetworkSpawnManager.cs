@@ -278,11 +278,14 @@ namespace Unity.Netcode
                 NetworkObjectId = networkObject.NetworkObjectId,
                 OwnerClientId = networkObject.OwnerClientId
             };
-            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
-            foreach (var client in NetworkManager.ConnectedClients)
+            foreach (var client in NetworkManager.ConnectedClientsIds)
             {
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
+                if (networkObject.IsNetworkVisibleTo(client))
+                {
+                    var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client);
+                    NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client, networkObject, size);
+                }
             }
         }
 
