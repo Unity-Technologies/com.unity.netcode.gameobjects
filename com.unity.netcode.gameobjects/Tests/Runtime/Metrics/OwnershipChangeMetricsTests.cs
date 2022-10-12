@@ -61,6 +61,10 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var ownershipChangeSent = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Server.LocalClientId, ownershipChangeSent.Connection.Id);
+
+            // The first metric is to the server(self), so its size is now correctly reported as 0.
+            // Let's check the last one instead, to have a valid value
+            ownershipChangeSent = metricValues.Last();
             Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + k_MessageHeaderSize, ownershipChangeSent.BytesCount);
         }
 
