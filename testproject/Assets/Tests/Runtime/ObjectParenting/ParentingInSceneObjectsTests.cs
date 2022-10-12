@@ -78,12 +78,13 @@ namespace TestProject.RuntimeTests
             m_ErrorValidationLog.Append($"[Client-{clientHandler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{clientHandler.NetworkObjectId}'s scale {clientHandler.transform.localScale} does not equal the server-side scale {serverHandler.transform.localScale}");
         }
 
-        private void GenerateParentIsNotCorrect(InSceneParentChildHandler handler, bool shouldHaveParent)
+        private void GenerateParentIsNotCorrect(InSceneParentChildHandler handler, bool shouldHaveParent, bool isStillSpawnedCheck = false)
         {
             var serverOrClient = handler.NetworkManager.IsServer ? "Server" : "Client";
+            var shouldNotBeSpawned = isStillSpawnedCheck ? " and is still spawned!" : string.Empty;
             if (!shouldHaveParent)
             {
-                m_ErrorValidationLog.Append($"[{serverOrClient}-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s still has the parent {handler.transform.parent.name} when it should be null!");
+                m_ErrorValidationLog.Append($"[{serverOrClient}-{handler.NetworkManager.LocalClientId}] {nameof(NetworkObject)}-{handler.NetworkObjectId}'s still has the parent {handler.transform.parent.name} when it should be null{shouldNotBeSpawned}!");
             }
             else
             {
@@ -127,6 +128,7 @@ namespace TestProject.RuntimeTests
 
         private bool ValidateAllChildrenParentingStatus(bool checkForParent)
         {
+            m_ErrorValidationLog.Clear();
             foreach (var instance in InSceneParentChildHandler.ServerRelativeInstances)
             {
                 if (!instance.Value.IsRootParent)
@@ -271,6 +273,79 @@ namespace TestProject.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => ValidateAllChildrenParentingStatus(true));
             AssertOnTimeout($"[Final Pass - Last Test] Timed out waiting for all children to be removed from their parent!\n {m_ErrorValidationLog}");
+        }
+
+        /// <summary>
+        ///  Validates the root parent is despawned and its child is moved to the root (null)
+        /// </summary>
+        private bool ValidateRootParentDespawnedAndChildAtRoot()
+        {
+            m_ErrorValidationLog.Clear();
+
+            var childOfRoot_ServerSide = InSceneParentChildHandler.ServerRootParent.GetChild();
+            if (InSceneParentChildHandler.ServerRootParent.IsSpawned)
+            {
+                m_ErrorValidationLog.Append("Server-Side root parent is still spawned!");
+                GenerateParentIsNotCorrect(childOfRoot_ServerSide, false, InSceneParentChildHandler.ServerRootParent.IsSpawned);
+                return false;
+            }
+
+            if (childOfRoot_ServerSide.transform.parent != null)
+            {
+                m_ErrorValidationLog.Append("Server-Side root parent is not null!");
+                return false;
+            }
+
+            foreach (var clientInstances in InSceneParentChildHandler.ClientRelativeInstances)
+            {
+                foreach (var instance in clientInstances.Value)
+                {
+                    if (instance.Value.IsRootParent)
+                    {
+                        var childHandler = instance.Value.GetChild();
+
+                        if (instance.Value.IsSpawned)
+                        {
+                            m_ErrorValidationLog.Append("Client-Side is still spawned!");
+                            return false;
+                        }
+                        if (childHandler != null && childHandler.transform.parent != null)
+                        {
+                            m_ErrorValidationLog.Append("Client-Side still has parent!");
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator DespawnParentTest([Values] ParentingSpace parentingSpace)
+        {
+            InSceneParentChildHandler.WorldPositionStays = parentingSpace == ParentingSpace.WorldPositionStays;
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
+            m_InitialClientsLoadedScene = false;
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+
+            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
+            yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
+
+            // [Currently Connected Clients]
+            // remove the parents, change all transform values, and re-parent
+            InSceneParentChildHandler.ServerRootParent.DeparentSetValuesAndReparent();
+            yield return WaitForConditionOrTimeOut(ValidateClientAgainstServerTransformValues);
+            AssertOnTimeout($"Timed out waiting for all clients transform values to match the server transform values!\n {m_ErrorValidationLog}");
+
+            // Now despawn the root parent
+            InSceneParentChildHandler.ServerRootParent.NetworkObject.Despawn(false);
+
+            // Verify all clients despawned the parent object and the child of the parent has root as its parent
+            yield return WaitForConditionOrTimeOut(ValidateRootParentDespawnedAndChildAtRoot);
+            AssertOnTimeout($"{m_ErrorValidationLog}");
         }
 
         private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
