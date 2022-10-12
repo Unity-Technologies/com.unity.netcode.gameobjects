@@ -323,16 +323,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 0);
 
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
-
             // Change ownership while the object is hidden to some
             m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
 
             // The two-second wait is actually needed as there's a potential warning of unhandled message after 1 second
             yield return new WaitForSeconds(1.25f);
