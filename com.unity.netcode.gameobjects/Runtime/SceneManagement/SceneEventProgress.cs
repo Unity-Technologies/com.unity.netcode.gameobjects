@@ -201,6 +201,12 @@ namespace Unity.Netcode
         /// </remarks>
         private bool HasFinished()
         {
+            // If we are shutting down the NetworkManager then finish this scene event progress tracking
+            if (m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            {
+                return true;
+            }
+
             // Clients skip over this
             foreach (var clientStatus in ClientsProcessingSceneEvent)
             {
@@ -235,10 +241,15 @@ namespace Unity.Netcode
         {
             if (HasFinished() || HasTimedOut())
             {
-                OnComplete?.Invoke(this);
-                m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
-                m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-                if (m_NetworkManager.IsServer)
+                // Don't attempt to finalize this scene event if we are no longer listening or a shutdown is in progress
+                if (m_NetworkManager.IsListening && !m_NetworkManager.ShutdownInProgress)
+                {
+                    OnComplete?.Invoke(this);
+                    m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
+                    m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                }
+
+                if (m_TimeOutCoroutine != null)
                 {
                     m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
                 }
