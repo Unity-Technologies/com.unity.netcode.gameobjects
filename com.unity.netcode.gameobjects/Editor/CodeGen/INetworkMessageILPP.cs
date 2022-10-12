@@ -16,7 +16,11 @@ namespace Unity.Netcode.Editor.CodeGen
     {
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
+        public override bool WillProcess(ICompiledAssembly compiledAssembly)
+        {
+            Console.WriteLine($"check {compiledAssembly.Name} == {CodeGenHelpers.RuntimeAssemblyName};");
+            return compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
+        }
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -27,6 +31,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 Console.WriteLine($"Not processing {compiledAssembly.Name}");
                 return null;
             }
+            Console.WriteLine("Running...");
 
             m_Diagnostics.Clear();
 
