@@ -310,44 +310,41 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkHideChangeOwnership()
         {
-            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
             ShowHideObject.ClientTargetedNetworkObjects.Clear();
-            ShowHideObject.ClientIdToTarget = m_ClientId0;
+            ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
             ShowHideObject.Silent = true;
 
             var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
-            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
-            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
             m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
-            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
-            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
 
             m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value++;
             // Hide an object to a client
             m_NetSpawnedObject1.NetworkHide(m_ClientNetworkManagers[1].LocalClientId);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
+            yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 0);
+
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
 
             // Change ownership while the object is hidden to some
             m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
+            //yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
 
             // The two-second wait is actually needed as there's a potential warning of unhandled message after 1 second
-            yield return new WaitForSeconds(2.0f);
+            yield return new WaitForSeconds(1.25f);
+
+            LogAssert.NoUnexpectedReceived();
 
             // Show the object again to check nothing unexpected happens
             m_NetSpawnedObject1.NetworkShow(m_ClientNetworkManagers[1].LocalClientId);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
+            yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 1);
 
-            LogAssert.NoUnexpectedReceived();
+            Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
         }
     }
 }
