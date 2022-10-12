@@ -306,5 +306,37 @@ namespace Unity.Netcode.RuntimeTests
 
             LogAssert.NoUnexpectedReceived();
         }
+
+        [UnityTest]
+        public IEnumerator NetworkHideChangeOwnership()
+        {
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyNetworkVariable.Value++;
+            // Hide an object to a client
+            m_NetSpawnedObject1.NetworkHide(m_ClientNetworkManagers[1].LocalClientId);
+
+            yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 0);
+
+            // Change ownership while the object is hidden to some
+            m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+
+            // The two-second wait is actually needed as there's a potential warning of unhandled message after 1 second
+            yield return new WaitForSeconds(1.25f);
+
+            LogAssert.NoUnexpectedReceived();
+
+            // Show the object again to check nothing unexpected happens
+            m_NetSpawnedObject1.NetworkShow(m_ClientNetworkManagers[1].LocalClientId);
+
+            yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientTargetedNetworkObjects.Count == 1);
+
+            Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+        }
     }
 }
