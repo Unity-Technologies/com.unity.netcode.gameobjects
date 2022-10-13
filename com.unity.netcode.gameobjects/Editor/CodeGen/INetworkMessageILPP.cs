@@ -49,8 +49,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
             Console.WriteLine("Got assembly definition");
 
-            // modules
-            (m_DotnetModule, _, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+            try
+            {
+                // modules
+                (m_DotnetModule, _, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Could not find base modules because {(e.ToString() + e.StackTrace).Replace("\n", "|").Replace("\r", "|")}");
+                throw;
+            }
 
             Console.WriteLine("After FindBaseModules");
 
