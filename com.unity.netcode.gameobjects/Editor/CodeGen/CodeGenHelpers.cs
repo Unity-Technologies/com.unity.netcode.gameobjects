@@ -398,15 +398,20 @@ namespace Unity.Netcode.Editor.CodeGen
             return assemblyDefinition;
         }
 
-        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        private static void SearchForBaseModulesRecursive(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver, ref ModuleDefinition dotnetModule, ref ModuleDefinition unityModule, ref ModuleDefinition netcodeModule, HashSet<string> visited)
         {
-            ModuleDefinition dotnetModule = null;
-            ModuleDefinition unityModule = null;
-            ModuleDefinition netcodeModule = null;
 
             foreach (var module in assemblyDefinition.Modules)
             {
+                if (module == null)
+                {
+                    continue;
+                }
                 Console.WriteLine($"{module.Name} == {DotnetModuleName}");
+                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                {
+                    return;
+                }
 
                 if (dotnetModule == null && module.Name == DotnetModuleName)
                 {
@@ -426,41 +431,45 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
-
             if (dotnetModule != null && unityModule != null && netcodeModule != null)
             {
-                return (dotnetModule, unityModule, netcodeModule);
+                return;
             }
 
             foreach (var assemblyNameReference in assemblyDefinition.MainModule.AssemblyReferences)
             {
-                foreach (var module in assemblyResolver.Resolve(assemblyNameReference).Modules)
+                if (assemblyNameReference == null)
                 {
-                    Console.WriteLine($"{module.Name} == {DotnetModuleName}");
-
-                    if (dotnetModule == null && module.Name == DotnetModuleName)
-                    {
-                        dotnetModule = module;
-                        continue;
-                    }
-                    if (unityModule == null && module.Name == UnityModuleName)
-                    {
-                        unityModule = module;
-                        continue;
-                    }
-
-                    if (netcodeModule == null && module.Name == NetcodeModuleName)
-                    {
-                        netcodeModule = module;
-                        continue;
-                    }
+                    continue;
                 }
+                if (visited.Contains(assemblyNameReference.Name))
+                {
+                    continue;
+                }
+
+                visited.Add(assemblyNameReference.Name);
+
+                var assembly = assemblyResolver.Resolve(assemblyNameReference);
+                if (assembly == null)
+                {
+                    continue;
+                }
+                SearchForBaseModulesRecursive(assembly, assemblyResolver, ref dotnetModule, ref unityModule, ref netcodeModule, visited);
 
                 if (dotnetModule != null && unityModule != null && netcodeModule != null)
                 {
-                    return (dotnetModule, unityModule, netcodeModule);
+                    return;
                 }
             }
+        }
+
+        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        {
+            ModuleDefinition dotnetModule = null;
+            ModuleDefinition unityModule = null;
+            ModuleDefinition netcodeModule = null;
+            var visited = new HashSet<string>();
+            SearchForBaseModulesRecursive(assemblyDefinition, assemblyResolver, ref dotnetModule, ref unityModule, ref netcodeModule, visited);
 
             return (dotnetModule, unityModule, netcodeModule);
         }

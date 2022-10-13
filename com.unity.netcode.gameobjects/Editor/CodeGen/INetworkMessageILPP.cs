@@ -64,8 +64,8 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (m_DotnetModule == null)
             {
-                var typeType = assemblyDefinition.MainModule.ImportReference(typeof(Type));
-                Console.WriteLine($"No .NET module... type module is in {typeType.Module}");
+                var listType = assemblyDefinition.MainModule.ImportReference(typeof(List<>));
+                Console.WriteLine($"No .NET module... type module is in {listType.Module}");
                 m_Diagnostics.AddError($"Cannot find .NET module: {CodeGenHelpers.DotnetModuleName}");
                 return null;
             }
