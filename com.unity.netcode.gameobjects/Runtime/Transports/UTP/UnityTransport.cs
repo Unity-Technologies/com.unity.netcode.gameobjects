@@ -1474,7 +1474,7 @@ namespace Unity.Netcode.Transports.UTP
                             }
                             else
                             {
-                                m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName));
+                                m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
                             }
                         }
                     }

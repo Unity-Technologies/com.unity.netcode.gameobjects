@@ -778,7 +778,8 @@ namespace Unity.Netcode
             }
 
             // If we are shutting down the NetworkManager, then ignore resetting the parent
-            if (!NetworkManager.ShutdownInProgress)
+            // and only attempt to remove the child's parent on the server-side
+            if (!NetworkManager.ShutdownInProgress && NetworkManager.IsServer)
             {
                 // Move child NetworkObjects to the root when parent NetworkObject is destroyed
                 foreach (var spawnedNetObj in SpawnedObjectsList)
@@ -786,7 +787,17 @@ namespace Unity.Netcode
                     var latestParent = spawnedNetObj.GetNetworkParenting();
                     if (latestParent.HasValue && latestParent.Value == networkObject.NetworkObjectId)
                     {
-                        spawnedNetObj.gameObject.transform.parent = null;
+                        // Try to remove the parent using the cached WorldPositioNStays value
+                        // Note: WorldPositionStays will still default to true if this was an
+                        // in-scene placed NetworkObject and parenting was predefined in the
+                        // scene via the editor.
+                        if (!spawnedNetObj.TryRemoveParentCachedWorldPositionStays())
+                        {
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                            {
+                                NetworkLog.LogError($"{nameof(NetworkObject)} #{spawnedNetObj.NetworkObjectId} could not be moved to the root when its parent {nameof(NetworkObject)} #{networkObject.NetworkObjectId} was being destroyed");
+                            }
+                        }
 
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {

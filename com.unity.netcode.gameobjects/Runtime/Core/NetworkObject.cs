@@ -625,6 +625,14 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Used when despawning the parent, we want to preserve the cached WorldPositionStays value
+        /// </summary>
+        internal bool TryRemoveParentCachedWorldPositionStays()
+        {
+            return TrySetParent((NetworkObject)null, m_CachedWorldPositionStays);
+        }
+
+        /// <summary>
         /// Removes the parent of the NetworkObject's transform
         /// </summary>
         /// <remarks>
