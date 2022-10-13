@@ -52,7 +52,7 @@ namespace Unity.Netcode.Editor.CodeGen
             try
             {
                 // modules
-                (m_DotnetModule, _, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+                (_, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
             }
             catch (Exception e)
             {
@@ -61,15 +61,6 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             Console.WriteLine("After FindBaseModules");
-
-            if (m_DotnetModule == null)
-            {
-                var listType = assemblyDefinition.MainModule.ImportReference(typeof(List<>));
-                Console.WriteLine($"No .NET module... type module is in {listType.Module}");
-                m_Diagnostics.AddError($"Cannot find .NET module: {CodeGenHelpers.DotnetModuleName}");
-                return null;
-            }
-            Console.WriteLine("Got .NET module");
 
             if (m_NetcodeModule == null)
             {
@@ -141,7 +132,6 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private ModuleDefinition m_DotnetModule;
         private ModuleDefinition m_NetcodeModule;
         private PostProcessorAssemblyResolver m_AssemblyResolver;
 
@@ -158,22 +148,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            TypeDefinition typeTypeDef = null;
-            TypeDefinition listTypeDef = null;
-            foreach (var dotnetTypeDef in m_DotnetModule.GetAllTypes())
-            {
-                if (typeTypeDef == null && dotnetTypeDef.Name == typeof(Type).Name)
-                {
-                    typeTypeDef = dotnetTypeDef;
-                    continue;
-                }
-
-                if (listTypeDef == null && dotnetTypeDef.Name == typeof(List<>).Name)
-                {
-                    listTypeDef = dotnetTypeDef;
-                    continue;
-                }
-            }
+            // Different environments seem to have different situations...
+            // Some have these definitions in netstandard.dll...
+            // some seem to have them elsewhere...
+            // Since they're standard .net classes they're not going to cause
+            // the same issues as referencing other assemblies, in theory, since
+            // the definitions should be standard and consistent across platforms
+            // (i.e., there's no #if UNITY_EDITOR in them that could create
+            // invalid IL code)
+            TypeDefinition typeTypeDef = moduleDefinition.ImportReference(typeof(Type)).Resolve();
+            TypeDefinition listTypeDef = moduleDefinition.ImportReference(typeof(List<>)).Resolve();
 
             TypeDefinition messageHandlerTypeDef = null;
             TypeDefinition messageWithHandlerTypeDef = null;

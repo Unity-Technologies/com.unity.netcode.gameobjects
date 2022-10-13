@@ -398,7 +398,7 @@ namespace Unity.Netcode.Editor.CodeGen
             return assemblyDefinition;
         }
 
-        private static void SearchForBaseModulesRecursive(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver, ref ModuleDefinition dotnetModule, ref ModuleDefinition unityModule, ref ModuleDefinition netcodeModule, HashSet<string> visited)
+        private static void SearchForBaseModulesRecursive(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver, ref ModuleDefinition unityModule, ref ModuleDefinition netcodeModule, HashSet<string> visited)
         {
 
             foreach (var module in assemblyDefinition.Modules)
@@ -408,15 +408,9 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
                 Console.WriteLine($"{module.Name} == {DotnetModuleName}");
-                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                if (unityModule != null && netcodeModule != null)
                 {
                     return;
-                }
-
-                if (dotnetModule == null && module.Name == DotnetModuleName)
-                {
-                    dotnetModule = module;
-                    continue;
                 }
 
                 if (unityModule == null && module.Name == UnityModuleName)
@@ -431,7 +425,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
-            if (dotnetModule != null && unityModule != null && netcodeModule != null)
+            if (unityModule != null && netcodeModule != null)
             {
                 return;
             }
@@ -454,24 +448,23 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     continue;
                 }
-                SearchForBaseModulesRecursive(assembly, assemblyResolver, ref dotnetModule, ref unityModule, ref netcodeModule, visited);
+                SearchForBaseModulesRecursive(assembly, assemblyResolver, ref unityModule, ref netcodeModule, visited);
 
-                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                if (unityModule != null && netcodeModule != null)
                 {
                     return;
                 }
             }
         }
 
-        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        public static (ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
         {
-            ModuleDefinition dotnetModule = null;
             ModuleDefinition unityModule = null;
             ModuleDefinition netcodeModule = null;
             var visited = new HashSet<string>();
-            SearchForBaseModulesRecursive(assemblyDefinition, assemblyResolver, ref dotnetModule, ref unityModule, ref netcodeModule, visited);
+            SearchForBaseModulesRecursive(assemblyDefinition, assemblyResolver, ref unityModule, ref netcodeModule, visited);
 
-            return (dotnetModule, unityModule, netcodeModule);
+            return (unityModule, netcodeModule);
         }
     }
 }

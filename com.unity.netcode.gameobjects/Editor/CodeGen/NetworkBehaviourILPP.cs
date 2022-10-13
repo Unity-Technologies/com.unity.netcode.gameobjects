@@ -44,7 +44,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             // modules
-            (_, m_UnityModule, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+            (m_UnityModule, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
 
             if (m_UnityModule == null)
             {
