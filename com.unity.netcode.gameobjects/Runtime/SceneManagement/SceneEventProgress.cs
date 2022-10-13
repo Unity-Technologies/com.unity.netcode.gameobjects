@@ -201,6 +201,13 @@ namespace Unity.Netcode
         /// </remarks>
         private bool HasFinished()
         {
+            // If the network session is terminated/terminating then finish tracking
+            // this scene event
+            if (!IsNetworkSessionActive())
+            {
+                return true;
+            }
+
             // Clients skip over this
             foreach (var clientStatus in ClientsProcessingSceneEvent)
             {
@@ -222,9 +229,23 @@ namespace Unity.Netcode
             m_AsyncOperation = asyncOperation;
             m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
             {
-                OnSceneEventCompleted?.Invoke(SceneEventId);
+                // Don't invoke the callback if the network session is disconnected
+                // during a SceneEventProgress
+                if (IsNetworkSessionActive())
+                {
+                    OnSceneEventCompleted?.Invoke(SceneEventId);
+                }
+
+                // Go ahead and try finishing even if the network session is terminated/terminating
+                // as we might need to stop the coroutine
                 TryFinishingSceneEventProgress();
             });
+        }
+
+
+        internal bool IsNetworkSessionActive()
+        {
+            return m_NetworkManager != null && m_NetworkManager.IsListening && !m_NetworkManager.ShutdownInProgress;
         }
 
         /// <summary>
@@ -235,10 +256,15 @@ namespace Unity.Netcode
         {
             if (HasFinished() || HasTimedOut())
             {
-                OnComplete?.Invoke(this);
-                m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
-                m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-                if (m_NetworkManager.IsServer)
+                // Don't attempt to finalize this scene event if we are no longer listening or a shutdown is in progress
+                if (IsNetworkSessionActive())
+                {
+                    OnComplete?.Invoke(this);
+                    m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
+                    m_NetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
+                }
+
+                if (m_TimeOutCoroutine != null)
                 {
                     m_NetworkManager.StopCoroutine(m_TimeOutCoroutine);
                 }
