@@ -35,35 +35,49 @@ namespace Unity.Netcode.Editor.CodeGen
 
             m_Diagnostics.Clear();
 
+            Console.WriteLine("Diagnostics Cleared");
+
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly, out m_AssemblyResolver);
             if (assemblyDefinition == null)
             {
+
+                Console.WriteLine("No Assembly Definition");
                 m_Diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
+            Console.WriteLine("Got assembly definition");
+
             // modules
             (m_DotnetModule, _, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
 
+            Console.WriteLine("After FindBaseModules");
+
             if (m_DotnetModule == null)
             {
+                Console.WriteLine("No .NET module");
                 m_Diagnostics.AddError($"Cannot find .NET module: {CodeGenHelpers.DotnetModuleName}");
                 return null;
             }
+            Console.WriteLine("Got .NET module");
 
             if (m_NetcodeModule == null)
             {
+                Console.WriteLine("No netcode module");
                 m_Diagnostics.AddError($"Cannot find Netcode module: {CodeGenHelpers.NetcodeModuleName}");
                 return null;
             }
+            Console.WriteLine("Got netcode module");
 
             // process
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
+                Console.WriteLine("Got main module");
                 if (ImportReferences(mainModule))
                 {
+                    Console.WriteLine("Imported references");
                     var types = mainModule.GetTypes()
                         .Where(t => t.Resolve().HasInterface(CodeGenHelpers.INetworkMessage_FullName) && !t.Resolve().IsAbstract)
                         .ToList();
@@ -76,25 +90,31 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     try
                     {
+                        Console.WriteLine("Creating module initializer");
                         CreateModuleInitializer(assemblyDefinition, types);
                     }
                     catch (Exception e)
                     {
+                        Console.WriteLine("Failed to create module initializer!");
                         m_Diagnostics.AddError((e.ToString() + e.StackTrace).Replace("\n", "|").Replace("\r", "|"));
                     }
                 }
                 else
                 {
+                    Console.WriteLine("Could not import references!");
                     m_Diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
                 }
             }
             else
             {
+                Console.WriteLine("Could not get main module!");
                 m_Diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
             }
+            Console.WriteLine("Created output");
 
             mainModule.RemoveRecursiveReferences();
 
+            Console.WriteLine("Removed recursive references");
             // write
             var pe = new MemoryStream();
             var pdb = new MemoryStream();
@@ -107,6 +127,7 @@ namespace Unity.Netcode.Editor.CodeGen
             };
 
             assemblyDefinition.Write(pe, writerParameters);
+            Console.WriteLine("Wrote new assembly definition");
 
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
