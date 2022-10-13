@@ -48,6 +48,11 @@ namespace TestProject.RuntimeTests
             ClientRelativeInstances.Clear();
         }
 
+        public InSceneParentChildHandler GetChild()
+        {
+            return m_Child;
+        }
+
         private Vector3 GenerateVector3(Vector3 min, Vector3 max)
         {
             var result = Vector3.zero;

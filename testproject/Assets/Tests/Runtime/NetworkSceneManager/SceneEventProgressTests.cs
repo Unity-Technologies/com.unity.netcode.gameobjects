@@ -13,6 +13,8 @@ namespace TestProject.RuntimeTests
     public class SceneEventProgressTests : NetcodeIntegrationTest
     {
         private const string k_SceneUsedToGetAsyncOperation = "EmptyScene";
+        private const string k_SceneUsedToGetClientAsyncOperation = "UnitTestBaseScene";
+
         protected override int NumberOfClients => 4;
 
         private bool m_SceneEventProgressCompleted;
@@ -50,6 +52,7 @@ namespace TestProject.RuntimeTests
             SceneManager.sceneLoaded += MockServerLoadedSene;
             m_CurrentSceneEventProgress.SetAsyncOperation(SceneManager.LoadSceneAsync(k_SceneUsedToGetAsyncOperation, LoadSceneMode.Additive));
         }
+
 
         private void MockServerLoadedSene(Scene scene, LoadSceneMode loadSceneMode)
         {
@@ -155,6 +158,31 @@ namespace TestProject.RuntimeTests
             VerifyClientsThatCompleted();
         }
 
+        [UnityTest]
+        public IEnumerator ClientsShutdownDuring()
+        {
+            StartNewSceneEventProgress();
+
+            for (int i = 0; i < NumberOfClients; i++)
+            {
+                var currentClientNetworkManager = m_ClientNetworkManagers[i];
+                // Two clients will shutdown
+                var clientFinished = i % 2 == 0;
+                SetClientFinished(currentClientNetworkManager.LocalClientId, clientFinished);
+
+                if (!clientFinished)
+                {
+                    currentClientNetworkManager.Shutdown();
+                }
+                // wait anywhere from 100-500ms until processing next client
+                var randomWaitPeriod = Random.Range(0.1f, 0.5f);
+                yield return new WaitForSeconds(randomWaitPeriod);
+            }
+            yield return WaitForConditionOrTimeOut(() => m_SceneEventProgressCompleted);
+            AssertOnTimeout($"Timed out waiting for SceneEventProgress to time out!");
+            VerifyClientsThatCompleted();
+        }
+
         /// <summary>
         /// This verifies that SceneEventProgress will still complete
         /// even when clients late join.
@@ -163,16 +191,13 @@ namespace TestProject.RuntimeTests
         public IEnumerator ClientsLateJoinDuring()
         {
             StartNewSceneEventProgress();
-
             for (int i = 0; i < NumberOfClients; i++)
             {
                 // Two clients will connect during a SceneEventProgress
                 var shouldNewClientJoin = i % 2 == 0;
                 var currentClientNetworkManager = m_ClientNetworkManagers[i];
-
                 // All connected clients will finish their SceneEventProgress
                 SetClientFinished(currentClientNetworkManager.LocalClientId, true);
-
                 if (shouldNewClientJoin)
                 {
                     yield return CreateAndStartNewClient();
@@ -181,11 +206,84 @@ namespace TestProject.RuntimeTests
                 var randomWaitPeriod = Random.Range(0.1f, 0.5f);
                 yield return new WaitForSeconds(randomWaitPeriod);
             }
+            yield return WaitForConditionOrTimeOut(() => m_SceneEventProgressCompleted);
+            AssertOnTimeout($"Timed out waiting for SceneEventProgress to finish!");
+            VerifyClientsThatCompleted();
+        }
+
+        private List<ulong> m_ClientsThatTimedOutAndFinished = new List<ulong>();
+
+        private SceneEventProgress StartClientSceneEventProgress(NetworkManager networkManager)
+        {
+            var sceneEventProgress = new SceneEventProgress(networkManager, SceneEventProgressStatus.Started);
+
+            // Mock Scene Loading Event for mocking timed out client
+            m_CurrentSceneEventProgress.SceneEventId = (uint)networkManager.LocalClientId;
+            var asyncOperation = SceneManager.LoadSceneAsync(k_SceneUsedToGetClientAsyncOperation, LoadSceneMode.Additive);
+            asyncOperation.completed += new System.Action<AsyncOperation>(asyncOp2 =>
+            {
+                m_ClientsThatTimedOutAndFinished.Add(networkManager.LocalClientId);
+            });
+
+            m_CurrentSceneEventProgress.SetAsyncOperation(asyncOperation);
+            return sceneEventProgress;
+        }
+
+        private Dictionary<NetworkManager, SceneEventProgress> m_ClientsToFinishAfterDisconnecting = new Dictionary<NetworkManager, SceneEventProgress>();
+        private bool TimedOutClientsFinishedSceneEventProgress()
+        {
+            // Now, verify all "mock timed out" clients still finished their SceneEventProgress
+            foreach (var entry in m_ClientsToFinishAfterDisconnecting)
+            {
+                if (!m_ClientsThatTimedOutAndFinished.Contains(entry.Key.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// This mocks a client timing out during a SceneEventProgress
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ClientsMockTimeOutDuring()
+        {
+            m_ClientsThatTimedOutAndFinished.Clear();
+            m_ClientsToFinishAfterDisconnecting.Clear();
+            StartNewSceneEventProgress();
+
+            for (int i = 0; i < NumberOfClients; i++)
+            {
+                // Two clients will mock timing out during a SceneEventProgress
+                var shouldClientFinish = i % 2 == 0;
+                var currentClientNetworkManager = m_ClientNetworkManagers[i];
+
+                // Set whether the client should or should not have finished
+                SetClientFinished(currentClientNetworkManager.LocalClientId, shouldClientFinish);
+                if (!shouldClientFinish)
+                {
+                    var sceneEventProgress = StartClientSceneEventProgress(currentClientNetworkManager);
+                    m_ClientsToFinishAfterDisconnecting.Add(currentClientNetworkManager, sceneEventProgress);
+                    currentClientNetworkManager.Shutdown();
+                }
+            }
 
             yield return WaitForConditionOrTimeOut(() => m_SceneEventProgressCompleted);
             AssertOnTimeout($"Timed out waiting for SceneEventProgress to finish!");
-
             VerifyClientsThatCompleted();
+
+            yield return WaitForConditionOrTimeOut(TimedOutClientsFinishedSceneEventProgress);
+            if (s_GlobalTimeoutHelper.TimedOut)
+            {
+                foreach (var entry in m_ClientsToFinishAfterDisconnecting)
+                {
+                    Assert.IsTrue(m_ClientsThatTimedOutAndFinished.Contains(entry.Key.LocalClientId), $"Client-{entry.Key.LocalClientId} did not complete its {nameof(SceneEventProgress)}!");
+                    // Now, as a final check we try to finish the "mock" timed out client's scene event progress
+                    entry.Value.TryFinishingSceneEventProgress();
+                }
+            }
+            m_ClientsToFinishAfterDisconnecting.Clear();
         }
     }
 }
