@@ -406,6 +406,11 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var module in assemblyDefinition.Modules)
             {
+                if (module == null)
+                {
+                    Console.WriteLine("Encountered a null module.");
+                    continue;
+                }
                 if (dotnetModule == null && module.Name == DotnetModuleName)
                 {
                     dotnetModule = module;
@@ -432,8 +437,25 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var assemblyNameReference in assemblyDefinition.MainModule.AssemblyReferences)
             {
-                foreach (var module in assemblyResolver.Resolve(assemblyNameReference).Modules)
+                if (assemblyNameReference == null)
                 {
+                    Console.WriteLine("Encountered a null assembly reference.");
+                    continue;
+                }
+
+                var assembly = assemblyResolver.Resolve(assemblyNameReference);
+                if (assembly == null)
+                {
+                    Console.WriteLine("Could not resolve an assembly.");
+                    continue;
+                }
+                foreach (var module in assembly.Modules)
+                {
+                    if (module == null)
+                    {
+                        Console.WriteLine("Encountered a null module.");
+                        continue;
+                    }
                     if (dotnetModule == null && module.Name == DotnetModuleName)
                     {
                         dotnetModule = module;
