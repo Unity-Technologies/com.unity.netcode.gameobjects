@@ -407,7 +407,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     continue;
                 }
-                Console.WriteLine($"{module.Name} == {DotnetModuleName}");
+
                 if (unityModule != null && netcodeModule != null)
                 {
                     return;
