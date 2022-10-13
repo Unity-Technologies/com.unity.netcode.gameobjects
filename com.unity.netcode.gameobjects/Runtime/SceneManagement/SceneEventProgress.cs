@@ -201,8 +201,9 @@ namespace Unity.Netcode
         /// </remarks>
         private bool HasFinished()
         {
-            // If we are shutting down the NetworkManager then finish this scene event progress tracking
-            if (m_NetworkManager.ShutdownInProgress || !m_NetworkManager.IsListening)
+            // If the network session is terminated/terminating then finish tracking
+            // this scene event
+            if (!IsNetworkSessionActive())
             {
                 return true;
             }
@@ -228,9 +229,23 @@ namespace Unity.Netcode
             m_AsyncOperation = asyncOperation;
             m_AsyncOperation.completed += new Action<AsyncOperation>(asyncOp2 =>
             {
-                OnSceneEventCompleted?.Invoke(SceneEventId);
+                // Don't invoke the callback if the network session is disconnected
+                // during a SceneEventProgress
+                if (IsNetworkSessionActive())
+                {
+                    OnSceneEventCompleted?.Invoke(SceneEventId);
+                }
+
+                // Go ahead and try finishing even if the network session is terminated/terminating
+                // as we might need to stop the coroutine
                 TryFinishingSceneEventProgress();
             });
+        }
+
+
+        internal bool IsNetworkSessionActive()
+        {
+            return m_NetworkManager != null && m_NetworkManager.IsListening && !m_NetworkManager.ShutdownInProgress;
         }
 
         /// <summary>
@@ -242,7 +257,7 @@ namespace Unity.Netcode
             if (HasFinished() || HasTimedOut())
             {
                 // Don't attempt to finalize this scene event if we are no longer listening or a shutdown is in progress
-                if (m_NetworkManager.IsListening && !m_NetworkManager.ShutdownInProgress)
+                if (IsNetworkSessionActive())
                 {
                     OnComplete?.Invoke(this);
                     m_NetworkManager.SceneManager.SceneEventProgressTracking.Remove(Guid);
