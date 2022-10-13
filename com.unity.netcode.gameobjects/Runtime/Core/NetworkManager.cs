@@ -1642,7 +1642,8 @@ namespace Unity.Netcode
                 // we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
-                ConnectionData = NetworkConfig.ConnectionData
+                ConnectionData = NetworkConfig.ConnectionData,
+                PackageVersion = NetworkConfig.PackageVersion
             };
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }

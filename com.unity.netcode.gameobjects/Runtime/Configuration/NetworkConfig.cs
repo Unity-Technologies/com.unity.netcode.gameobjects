@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using Unity.Collections;
+using UnityEditor.PackageManager;
 
 namespace Unity.Netcode
 {
@@ -160,6 +161,28 @@ namespace Unity.Netcode
         /// </summary>
         public const int RttWindowSize = 64; // number of slots to use for RTT computations (max number of in-flight packets)
 
+        private FixedString32Bytes m_PackageVersion;
+
+        internal FixedString32Bytes PackageVersion
+        {
+            get
+            {
+                if (m_PackageVersion.IsEmpty)
+                {
+                    foreach (var package in PackageInfo.GetAllRegisteredPackages())
+                    {
+                        if (package.name == "com.unity.netcode.gameobjects")
+                        {
+                            m_PackageVersion = package.version;
+                            break;
+                        }
+                    }
+                }
+
+                return m_PackageVersion;
+            }
+        }
+
         /// <summary>
         /// Returns a base64 encoded version of the configuration
         /// </summary>
@@ -275,4 +298,3 @@ namespace Unity.Netcode
         }
     }
 }
-

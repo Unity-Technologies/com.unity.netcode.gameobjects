@@ -1,3 +1,5 @@
+using Unity.Collections;
+
 namespace Unity.Netcode
 {
     internal struct ConnectionRequestMessage : INetworkMessage
@@ -8,17 +10,16 @@ namespace Unity.Netcode
 
         public bool ShouldSendConnectionData;
 
+        public FixedString32Bytes PackageVersion;
+
         public void Serialize(FastBufferWriter writer)
         {
+            writer.WriteValueSafe(ConfigHash);
             if (ShouldSendConnectionData)
             {
-                writer.WriteValueSafe(ConfigHash);
                 writer.WriteValueSafe(ConnectionData);
             }
-            else
-            {
-                writer.WriteValueSafe(ConfigHash);
-            }
+            writer.WriteValueSafe(PackageVersion);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
@@ -81,6 +82,18 @@ namespace Unity.Netcode
                     networkManager.DisconnectClient(context.SenderId);
                     return false;
                 }
+            }
+
+            reader.ReadValueSafe(out PackageVersion);
+            if(PackageVersion != networkManager.NetworkConfig.PackageVersion)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Package version mismatch. The client and server are not using the same version of Netcode for GameObjects.");
+                }
+
+                networkManager.DisconnectClient(context.SenderId);
+                return false;
             }
 
             return true;
