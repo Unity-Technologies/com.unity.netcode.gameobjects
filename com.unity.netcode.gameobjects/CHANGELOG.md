@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Changed
+
+- Client and server now need to have matching versions of Netcode for GameObjects. A client built with a different package version will now be rejected from connecting. (#2260)
+
 ## [1.1.0] - 2022-10-19
 
 ### Added
