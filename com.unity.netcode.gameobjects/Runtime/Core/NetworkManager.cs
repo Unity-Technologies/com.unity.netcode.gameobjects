@@ -366,9 +366,21 @@ namespace Unity.Netcode
         public bool IsListening { get; internal set; }
 
         /// <summary>
-        /// Gets if we are connected as a client
+        /// When true, the client is connected, approved, and synchronized with
+        /// the server.
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        /// <summary>
+        /// Is true when the client has been approved.
+        /// </summary>
+        /// <remarks>
+        /// This only reflects the client's approved status and does not mean the client
+        /// has finished the connection and synchronization process. The server-host will
+        /// always be approved upon being starting the <see cref="NetworkManager"/>
+        /// <see cref="IsConnectedClient"/>
+        /// </remarks>
+        public bool IsApproved { get; internal set; }
 
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
@@ -877,6 +889,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            IsApproved = false;
+
             ComponentFactory.SetDefaults();
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1018,7 +1032,6 @@ namespace Unity.Netcode
             }
 
             Initialize(true);
-
             IsServer = true;
             IsClient = false;
             IsListening = true;
@@ -1031,6 +1044,7 @@ namespace Unity.Netcode
                     SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
                     OnServerStarted?.Invoke();
+                    IsApproved = true;
                     return true;
                 }
                 else
@@ -1152,6 +1166,7 @@ namespace Unity.Netcode
                 }
 
                 response.Approved = true;
+                IsApproved = true;
                 HandleConnectionApproval(ServerClientId, response);
             }
             else
@@ -1413,6 +1428,7 @@ namespace Unity.Netcode
             }
 
             IsConnectedClient = false;
+            IsApproved = false;
 
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two
@@ -1678,16 +1694,11 @@ namespace Unity.Netcode
             else
             {
                 float timeStarted = Time.realtimeSinceStartup;
+                float userTimeOutMarker = Time.realtimeSinceStartup + (float)NetworkConfig.ClientConnectionBufferTimeout;
                 //We yield every frame in case a pending client disconnects and someone else gets its connection id
-                while (IsListening && (Time.realtimeSinceStartup - timeStarted) < NetworkConfig.ClientConnectionBufferTimeout && !IsConnectedClient)
+                while (IsListening && Time.realtimeSinceStartup < userTimeOutMarker && !IsApproved)
                 {
                     yield return null;
-                }
-
-                if (!IsConnectedClient && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                {
-                    // TODO: Possibly add a callback for users to be notified of this condition here?
-                    NetworkLog.LogWarning($"[ApprovalTimeout] Client timed out! You might need to increase the {nameof(NetworkConfig.ClientConnectionBufferTimeout)} duration.  Approval Check Start: {timeStarted} | Approval Check Stopped: {Time.realtimeSinceStartup}");
                 }
 
                 if (!IsListening)
@@ -1695,12 +1706,12 @@ namespace Unity.Netcode
                     yield break;
                 }
 
-                if (!IsConnectedClient)
+                if (!IsApproved)
                 {
                     // Timeout
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                     {
-                        NetworkLog.LogInfo("Server Handshake Timed Out");
+                        NetworkLog.LogWarning($"[Approval Timeout] Client timed out before it was approved! You might need to increase the {nameof(NetworkConfig.ClientConnectionBufferTimeout)} duration.  Approval Check Start: {timeStarted} | Approval Check Stopped: {Time.realtimeSinceStartup}");
                     }
                     Shutdown(true);
                 }
