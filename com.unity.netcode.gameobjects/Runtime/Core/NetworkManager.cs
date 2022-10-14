@@ -1679,11 +1679,16 @@ namespace Unity.Netcode
             else
             {
                 float timeStarted = Time.realtimeSinceStartup;
-
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
+                //We yield every frame in case a pending client disconnects and someone else gets its connection id
                 while (IsListening && (Time.realtimeSinceStartup - timeStarted) < NetworkConfig.ClientConnectionBufferTimeout && !IsConnectedClient)
                 {
                     yield return null;
+                }
+
+                if (!IsConnectedClient && NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    // TODO: Possibly add a callback for users to be notified of this condition here?
+                    NetworkLog.LogWarning($"[ApprovalTimeout] Client timed out! You might need to increase the {nameof(NetworkConfig.ClientConnectionBufferTimeout)} duration.  Approval Check Start: {timeStarted} | Approval Check Stopped: {Time.realtimeSinceStartup}");
                 }
 
                 if (!IsListening)
