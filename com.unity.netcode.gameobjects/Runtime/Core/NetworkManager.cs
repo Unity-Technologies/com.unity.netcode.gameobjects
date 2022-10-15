@@ -1685,7 +1685,7 @@ namespace Unity.Netcode
             {
                 yield return waitPeriod;
 
-                // Adjust for changes in the RTT (cap the maximum value to 1 second latency to prevent DDOS/Latency based attacks)
+                // Adjust for changes in the RTT (cap the maximum value to 1 second latency to prevent latency oriented attacks)
                 var nextlatency = Mathf.Min(1.0f, 0.001f * NetworkConfig.NetworkTransport.GetCurrentRtt(rttIdentifier));
 
                 if (nextlatency > latency)
