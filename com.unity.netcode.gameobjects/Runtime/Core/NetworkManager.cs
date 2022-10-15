@@ -1719,8 +1719,8 @@ namespace Unity.Netcode
                 }
             }
 
-            // Exit coroutine if we are no longer listening (client or server)
-            if (!IsListening)
+            // Exit coroutine if we are no longer listening or a shutdown is in progress (client or server)
+            if (!IsListening || ShutdownInProgress)
             {
                 yield break;
             }
