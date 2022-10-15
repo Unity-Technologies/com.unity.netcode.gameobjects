@@ -1681,7 +1681,7 @@ namespace Unity.Netcode
             var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout + latency;
             var rttIdentifier = IsServer ? clientId : ServerClientId;
 
-            while (IsListening && !timedOut && !connectionApproved)
+            while (IsListening && !ShutdownInProgress && !timedOut && !connectionApproved)
             {
                 yield return waitPeriod;
 
