@@ -7,21 +7,21 @@ using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    [TestFixture(ApprovalFailureTypes.ServerDoesNotRespond)]
-    [TestFixture(ApprovalFailureTypes.ClientDoesNotRequest)]
+    [TestFixture(ApprovalTimedOutTypes.ServerDoesNotRespond)]
+    [TestFixture(ApprovalTimedOutTypes.ClientDoesNotRequest)]
     public class ConnectionApprovalTimeoutTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
-        public enum ApprovalFailureTypes
+        public enum ApprovalTimedOutTypes
         {
             ClientDoesNotRequest,
             ServerDoesNotRespond
         }
 
-        private ApprovalFailureTypes m_ApprovalFailureType;
+        private ApprovalTimedOutTypes m_ApprovalFailureType;
 
-        public ConnectionApprovalTimeoutTests(ApprovalFailureTypes approvalFailureType)
+        public ConnectionApprovalTimeoutTests(ApprovalTimedOutTypes approvalFailureType)
         {
             m_ApprovalFailureType = approvalFailureType;
         }
@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnStartedServerAndClients()
         {
-            if (m_ApprovalFailureType == ApprovalFailureTypes.ServerDoesNotRespond)
+            if (m_ApprovalFailureType == ApprovalTimedOutTypes.ServerDoesNotRespond)
             {
                 // We catch (don't process) the incoming approval message to simulate the server not sending the approved message in time
                 m_ClientNetworkManagers[0].MessagingSystem.Hook(new MessageCatcher<ConnectionApprovedMessage>(m_ClientNetworkManagers[0]));
@@ -83,13 +83,13 @@ namespace Unity.Netcode.RuntimeTests
             // Delay for half of the wait period
             yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.5f);
 
-            // Verify we haven't received the time out message yet (we already waiting for half of the time out period in OnStartedServerAndClients)
+            // Verify we haven't received the time out message yet
             NetcodeLogAssert.LogWasNotReceived(LogType.Log, m_ExpectedLogMessage);
 
-            // Wait for 3/4s of the time out period to pass (totally 1.25 times the wait period)
+            // Wait for 3/4s of the time out period to pass (totaling 1.25x the wait period)
             yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.75f);
 
-            // We should have a test relative logged message by this time.
+            // We should have the test relative log message by this time.
             NetcodeLogAssert.LogWasReceived(m_LogType, m_ExpectedLogMessage);
 
             // It should only have the host client connected
