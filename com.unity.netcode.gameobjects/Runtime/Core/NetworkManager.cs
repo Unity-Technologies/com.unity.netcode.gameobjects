@@ -1665,54 +1665,98 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            if (IsServer)
+            // Use the current RTT latency between the client and server (instance relative)
+            var latency = 0.001f * NetworkConfig.NetworkTransport.GetCurrentRtt(IsServer ? clientId : ServerClientId);
+
+            // We wait for one quarter of the RTT latency time between the client and server (instance relative).
+            // This assures that if the pending client has disconnected during the wait period another client would
+            // not be able to connect, be assigned the same connection id, and then time out while we are waiting.
+            // Note: For the client side it assures the client waiting for approval isn't verified by the newly
+            // connected client assigned the same id.
+            var waitPeriod = new WaitForSeconds(latency * 0.25f);
+            var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timedOut = false;
+            var connectionApproved = false;
+            var connectionNotApproved = false;
+            var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout + latency;
+            var rttIdentifier = IsServer ? clientId : ServerClientId;
+
+            while (IsListening && !timedOut && !connectionApproved)
             {
-                NetworkTime timeStarted = LocalTime;
+                yield return waitPeriod;
 
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
-                while (IsListening && (LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+                // Adjust for changes in the RTT (cap the maximum value to 1 second latency to prevent DDOS/Latency based attacks)
+                var nextlatency = Mathf.Min(1.0f, 0.001f * NetworkConfig.NetworkTransport.GetCurrentRtt(rttIdentifier));
+
+                if (nextlatency > latency)
                 {
-                    yield return null;
+                    latency = nextlatency;
+                }
+                else if (nextlatency < latency)
+                {
+                    // If our latency drops, then reduce the wait period
+                    waitPeriod = new WaitForSeconds(latency * 0.25f);
                 }
 
-                if (!IsListening)
+                //Recalculate the timeout marker to adjust for changes in latency
+                timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout + latency;
+
+                // Check if we timed out
+                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
+
+                if (IsServer)
                 {
-                    yield break;
+                    // When the client is no longer in the pending clients list and is in the connected clients list
+                    // it has been approved
+                    connectionApproved = !PendingClients.ContainsKey(clientId) && ConnectedClients.ContainsKey(clientId);
+
+                    // For the server side, if the client is in neither list then it was declined or the client disconnected
+                    connectionNotApproved = !PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId);
                 }
-
-                if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
+                else
                 {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
-                    }
-
-                    DisconnectClient(clientId);
+                    connectionApproved = IsApproved;
                 }
             }
-            else
+
+            // Exit coroutine if we are no longer listening (client or server)
+            if (!IsListening)
             {
-                float timeStarted = Time.realtimeSinceStartup;
-                float userTimeOutMarker = Time.realtimeSinceStartup + (float)NetworkConfig.ClientConnectionBufferTimeout;
-                //We yield every frame in case a pending client disconnects and someone else gets its connection id
-                while (IsListening && Time.realtimeSinceStartup < userTimeOutMarker && !IsApproved)
-                {
-                    yield return null;
-                }
+                yield break;
+            }
 
-                if (!IsListening)
+            // If the client timed out or was not approved
+            if (timedOut || connectionNotApproved)
+            {
+                // Timeout
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    yield break;
-                }
-
-                if (!IsApproved)
-                {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (timedOut)
                     {
-                        NetworkLog.LogWarning($"[Approval Timeout] Client timed out before it was approved! You might need to increase the {nameof(NetworkConfig.ClientConnectionBufferTimeout)} duration.  Approval Check Start: {timeStarted} | Approval Check Stopped: {Time.realtimeSinceStartup}");
+                        if (IsServer)
+                        {
+                            // Log a warning that the transport detected a connection but then did not receive a follow up connection request message.
+                            // (hacking or something happened to the server's network connection)
+                            NetworkLog.LogWarning($"Server detected a transport connection from Client-{clientId}, but timed out waiting for the connection request message.");
+                        }
+                        else
+                        {
+                            // We only provide informational logging for the client side
+                            NetworkLog.LogInfo("Timed out waiting for the server to approve the connection request.");
+                        }
                     }
+                    else if (connectionNotApproved)
+                    {
+                        NetworkLog.LogInfo($"Client-{clientId} was either denied approval or disconnected while being approved.");
+                    }
+                }
+
+                if (IsServer)
+                {
+                    DisconnectClient(clientId);
+                }
+                else
+                {
                     Shutdown(true);
                 }
             }
