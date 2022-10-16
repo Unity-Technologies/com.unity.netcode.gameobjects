@@ -163,6 +163,7 @@ namespace TestProject.ManualTests
             {
                 m_ClientsToUpdate.Remove(clientId);
             }
+
         }
 
         /// <summary>
