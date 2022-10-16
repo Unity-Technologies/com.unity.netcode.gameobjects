@@ -24,6 +24,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_ScaleThresholdProperty;
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
+        private SerializedProperty m_UseQuaternionSyncProperty;
 
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
@@ -48,6 +49,7 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
+            m_UseQuaternionSyncProperty = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynch));
         }
 
         /// <inheritdoc/>
@@ -116,6 +118,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
+            EditorGUILayout.PropertyField(m_UseQuaternionSyncProperty);
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present
