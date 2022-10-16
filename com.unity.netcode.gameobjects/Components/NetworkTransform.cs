@@ -60,9 +60,11 @@ namespace Unity.Netcode.Components
             private const int k_ScaleYBit = 8;
             private const int k_ScaleZBit = 9;
             private const int k_TeleportingBit = 10;
-            // 11-15: <unused>
+            private const int k_QuaternionSync = 11;
+            // 13-15: <unused>
 
             private ushort m_Bitset;
+
 
             internal bool InLocalSpace
             {
@@ -202,10 +204,21 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool UseQuaternionSync
+            {
+                get => (m_Bitset & (1 << k_QuaternionSync)) != 0;
+                set
+                {
+                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_QuaternionSync)); }
+                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_QuaternionSync)); }
+                }
+            }
+
             internal float PositionX, PositionY, PositionZ;
             internal float RotAngleX, RotAngleY, RotAngleZ;
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
+            internal Quaternion Quaternion;
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
@@ -245,20 +258,27 @@ namespace Unity.Netcode.Components
                     serializer.SerializeValue(ref PositionZ);
                 }
 
-                // RotAngle Values
-                if (HasRotAngleX)
+                if (UseQuaternionSync)
                 {
-                    serializer.SerializeValue(ref RotAngleX);
+                    serializer.SerializeValue(ref Quaternion);
                 }
-
-                if (HasRotAngleY)
+                else
                 {
-                    serializer.SerializeValue(ref RotAngleY);
-                }
+                    // RotAngle Values
+                    if (HasRotAngleX)
+                    {
+                        serializer.SerializeValue(ref RotAngleX);
+                    }
 
-                if (HasRotAngleZ)
-                {
-                    serializer.SerializeValue(ref RotAngleZ);
+                    if (HasRotAngleY)
+                    {
+                        serializer.SerializeValue(ref RotAngleY);
+                    }
+
+                    if (HasRotAngleZ)
+                    {
+                        serializer.SerializeValue(ref RotAngleZ);
+                    }
                 }
 
                 // Scale Values
@@ -350,6 +370,8 @@ namespace Unity.Netcode.Components
                 return SyncScaleX || SyncScaleY || SyncScaleZ;
             }
         }
+
+        public bool UseQuaternionSynch;
 
         /// <summary>
         /// The current position threshold value
@@ -578,6 +600,12 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
+            if (UseQuaternionSynch != networkState.UseQuaternionSync)
+            {
+                networkState.UseQuaternionSync = UseQuaternionSynch;
+                isDirty = true;
+            }
+
             if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
             {
                 networkState.PositionX = position.x;
@@ -641,6 +669,11 @@ namespace Unity.Netcode.Components
                 isScaleDirty = true;
             }
 
+            if (networkState.UseQuaternionSync && isRotationDirty)
+            {
+                networkState.Quaternion = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            }
+
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
             if (isDirty)
@@ -683,7 +716,7 @@ namespace Unity.Netcode.Components
                 if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
                 if (SyncScaleZ) { adjustedScale.z = m_ScaleZInterpolator.GetInterpolatedValue(); }
 
-                if (SynchronizeRotation)
+                if (SynchronizeRotation && !networkState.UseQuaternionSync)
                 {
                     var interpolatedEulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
                     if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
@@ -732,13 +765,15 @@ namespace Unity.Netcode.Components
             // Apply the new rotation if it has changed or we are interpolating and synchronizing rotation
             if (networkState.HasRotAngleChange || (useInterpolatedValue && SynchronizeRotation))
             {
+
+                var updatedRotation = networkState.UseQuaternionSync ? m_RotationInterpolator.GetInterpolatedValue() : Quaternion.Euler(adjustedRotAngles);
                 if (InLocalSpace)
                 {
-                    transform.localRotation = Quaternion.Euler(adjustedRotAngles);
+                    transform.localRotation = updatedRotation;
                 }
                 else
                 {
-                    transform.rotation = Quaternion.Euler(adjustedRotAngles);
+                    transform.rotation = updatedRotation;
                 }
             }
 
@@ -804,6 +839,35 @@ namespace Unity.Netcode.Components
                 }
 
                 // Adjust based on which axis changed
+                if (newState.HasRotAngleX)
+                {
+                    currentEulerAngles.x = newState.RotAngleX;
+                }
+
+                if (newState.HasRotAngleY)
+                {
+                    currentEulerAngles.y = newState.RotAngleY;
+                }
+
+                if (newState.HasRotAngleZ)
+                {
+                    currentEulerAngles.z = newState.RotAngleZ;
+                }
+
+                // Apply the rotation
+                currentRotation.eulerAngles = currentEulerAngles;
+
+                if (newState.UseQuaternionSync)
+                {
+                    transform.rotation = newState.Quaternion;
+                    currentRotation = newState.Quaternion;
+                }
+                else
+                {
+                    transform.rotation = currentRotation;
+                }
+
+                // Adjust based on which axis changed
                 if (newState.HasScaleX)
                 {
                     m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
@@ -824,26 +888,6 @@ namespace Unity.Netcode.Components
 
                 // Apply the adjusted scale
                 transform.localScale = currentScale;
-
-                // Adjust based on which axis changed
-                if (newState.HasRotAngleX)
-                {
-                    currentEulerAngles.x = newState.RotAngleX;
-                }
-
-                if (newState.HasRotAngleY)
-                {
-                    currentEulerAngles.y = newState.RotAngleY;
-                }
-
-                if (newState.HasRotAngleZ)
-                {
-                    currentEulerAngles.z = newState.RotAngleZ;
-                }
-
-                // Apply the rotation
-                currentRotation.eulerAngles = currentEulerAngles;
-                transform.rotation = currentRotation;
 
                 // Reset the rotation interpolator
                 m_RotationInterpolator.ResetTo(currentRotation, sentTime);
@@ -886,24 +930,30 @@ namespace Unity.Netcode.Components
             // values.
             if (newState.HasRotAngleChange)
             {
-                if (newState.HasRotAngleX)
+                if (!newState.UseQuaternionSync)
                 {
-                    currentEulerAngles.x = newState.RotAngleX;
-                }
+                    if (newState.HasRotAngleX)
+                    {
+                        currentEulerAngles.x = newState.RotAngleX;
+                    }
 
-                if (newState.HasRotAngleY)
+                    if (newState.HasRotAngleY)
+                    {
+                        currentEulerAngles.y = newState.RotAngleY;
+                    }
+
+                    if (newState.HasRotAngleZ)
+                    {
+                        currentEulerAngles.z = newState.RotAngleZ;
+                    }
+
+                    currentRotation.eulerAngles = currentEulerAngles;
+                    m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
+                }
+                else
                 {
-                    currentEulerAngles.y = newState.RotAngleY;
+                    m_RotationInterpolator.AddMeasurement(newState.Quaternion, sentTime);
                 }
-
-                if (newState.HasRotAngleZ)
-                {
-                    currentEulerAngles.z = newState.RotAngleZ;
-                }
-
-                currentRotation.eulerAngles = currentEulerAngles;
-
-                m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
             }
         }
 
@@ -998,13 +1048,31 @@ namespace Unity.Netcode.Components
 
                 // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+
+                // TODO: Make spawning synchronize the Quaternion.
+                // As a work around we will "re-synch" everyone when a client connects
+                NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
             }
+        }
+
+        private void NetworkManager_OnClientConnectedCallback(ulong obj)
+        {
+            var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
+            var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            // Teleport to current position
+            SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
+
+            // Force the state update to be sent
+            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+
+            // TODO: Remove this when we start synchronizing the quaternion with spawn
+            NetworkManager.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
         }
 
         /// <inheritdoc/>
@@ -1039,6 +1107,7 @@ namespace Unity.Netcode.Components
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
+
             m_LocalAuthoritativeNetworkState = replicatedState.Value;
 
             if (CanCommitToTransform)
