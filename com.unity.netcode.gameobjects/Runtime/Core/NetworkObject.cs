@@ -1142,6 +1142,11 @@ namespace Unity.Netcode
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
+                // Synchronize NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+                OwnerObject.SynchronizeNetworkBehaviours(bufferSerializer);
+
+                // Write NetworkVariable information
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
@@ -1299,10 +1304,35 @@ namespace Unity.Netcode
                 return null;
             }
 
+            // Synchronize NetworkBehaviours
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(variableData));
+            networkObject.SynchronizeNetworkBehaviours(bufferSerializer);
+
             // Spawn the NetworkObject
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, variableData, false);
 
             return networkObject;
+        }
+
+        internal void SynchronizeNetworkBehaviours<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsWriter)
+            {
+                foreach (var childBehaviour in ChildNetworkBehaviours)
+                {
+                    childBehaviour.Synchronize(serializer);
+                }
+            }
+            else
+            {
+                var networkBehaviourId = (ushort)0;
+                for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                {
+                    serializer.SerializeValue(ref networkBehaviourId);
+                    var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                    networkBehaviour.Synchronize(serializer);
+                }
+            }
         }
 
         /// <summary>
