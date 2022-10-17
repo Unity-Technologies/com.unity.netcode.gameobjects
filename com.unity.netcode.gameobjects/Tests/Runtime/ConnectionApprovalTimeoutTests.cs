@@ -42,7 +42,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
-            m_BypassConnectionTimeout = true;
+            m_BypassConnectionTimeout = false;
             return base.OnTearDown();
         }
 
