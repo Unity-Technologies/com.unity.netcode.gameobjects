@@ -1665,42 +1665,15 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            // Use the current RTT latency between the client and server (instance relative)
-            var latency = 0.001f * NetworkConfig.NetworkTransport.GetCurrentRtt(IsServer ? clientId : ServerClientId);
-
-            // We wait for one quarter of the RTT latency time between the client and server (instance relative).
-            // This assures that if the pending client has disconnected during the wait period another client would
-            // not be able to connect, be assigned the same connection id, and then time out while we are waiting.
-            // Note: For the client side it assures the client waiting for approval isn't verified by the newly
-            // connected client assigned the same id.
-            var waitPeriod = new WaitForSeconds(latency * 0.25f);
             var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
             var timedOut = false;
             var connectionApproved = false;
             var connectionNotApproved = false;
-            var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout + latency;
-            var rttIdentifier = IsServer ? clientId : ServerClientId;
+            var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout;
 
             while (IsListening && !ShutdownInProgress && !timedOut && !connectionApproved)
             {
-                yield return waitPeriod;
-
-                // Adjust for changes in the RTT (cap the maximum value to 1 second latency to prevent latency oriented attacks)
-                var nextlatency = Mathf.Min(1.0f, 0.001f * NetworkConfig.NetworkTransport.GetCurrentRtt(rttIdentifier));
-
-                if (nextlatency > latency)
-                {
-                    latency = nextlatency;
-                }
-                else if (nextlatency < latency)
-                {
-                    // If our latency drops, then reduce the wait period
-                    waitPeriod = new WaitForSeconds(latency * 0.25f);
-                }
-
-                //Recalculate the timeout marker to adjust for changes in latency
-                timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout + latency;
-
+                yield return null;
                 // Check if we timed out
                 timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
 
