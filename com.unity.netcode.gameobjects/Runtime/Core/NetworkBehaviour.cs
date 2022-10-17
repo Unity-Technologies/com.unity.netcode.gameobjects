@@ -875,5 +875,24 @@ namespace Unity.Netcode
                 NetworkVariableFields[i].Dispose();
             }
         }
+
+        protected virtual void OnSynchronize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+        }
+
+        internal void Synchronize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            // Server is the only one that writes
+            if (serializer.IsWriter && IsServer)
+            {
+                var networkBehaviourId = NetworkBehaviourId;
+                serializer.SerializeValue(ref networkBehaviourId);
+                OnSynchronize(serializer);
+            }
+            else // Clients always read
+            {
+                OnSynchronize(serializer);
+            }
+        }
     }
 }
