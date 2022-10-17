@@ -451,6 +451,7 @@ MonoBehaviour:
     type: 3}
   RotationSpeed: 1
   WheelScale: 1.5
+  UseQuaternionSync: 1
 --- !u!4 &1568857774
 Transform:
   m_ObjectHideFlags: 0
@@ -591,8 +592,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ProtocolType: 0
-  m_MaxPacketQueueSize: 128
-  m_MaxPayloadSize: 6144
+  m_MaxPacketQueueSize: 256
+  m_MaxPayloadSize: 256000
   m_HeartbeatTimeoutMS: 500
   m_ConnectTimeoutMS: 1000
   m_MaxConnectAttempts: 60
