@@ -216,8 +216,8 @@ namespace Unity.Netcode
                     }
                 }
 
-                var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
+                //var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, m_InterpEndValue, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
             m_NbItemsReceivedThisFrame = 0;
@@ -312,6 +312,7 @@ namespace Unity.Netcode
     /// </remarks>
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+
         /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
@@ -325,7 +326,31 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            return Quaternion.Lerp(start, end, time);
+        }
+    }
+
+    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
+    {
+        /// <inheritdoc />
+        protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
+        {
+            // Disabling Extrapolation:
+            // TODO: Add Jira Ticket
+            return start;// Vector3.Lerp(start, end, time);
+        }
+
+        /// <inheritdoc />
+        protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
+        {
+            // Disabling Extrapolation:
+            // TODO: Add Jira Ticket
+            //end.x = Mathf.LerpAngle(start.x, end.x, time);
+            //end.y = Mathf.LerpAngle(start.y, end.y, time);
+            //end.z = Mathf.LerpAngle(start.z, end.z, time);
+            //return end;
+
+            return Vector3.Lerp(start, end, time);
         }
     }
 }
