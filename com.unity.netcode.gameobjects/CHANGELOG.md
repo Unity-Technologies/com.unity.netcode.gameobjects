@@ -10,6 +10,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- Added `NetworkManager.IsApproved` flag that is set to `true` a client has been approved.(#2261)
+
+### Changed
+
+
+### Fixed
+
+- Fixed `NetworkManager.ApprovalTimeout` will not timeout due to slower client synchronization times as it now uses the added `NetworkManager.IsApproved` flag to determined if the client has been approved or not.(#2261)
+
+
+## [1.1.0] - 2022-10-19
+
+### Added
 
 - `UnityTransport` now provides a way to set the Relay server data directly from the `RelayServerData` structure (provided by the Unity Transport package) throuh its `SetRelayServerData` method. This allows making use of the new APIs in UTP 1.3 that simplify integration of the Relay SDK. (#2235)
 - IPv6 is now supported for direct connections when using `UnityTransport`. (#2232)
