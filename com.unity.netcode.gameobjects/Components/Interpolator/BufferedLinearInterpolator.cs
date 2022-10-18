@@ -330,27 +330,18 @@ namespace Unity.Netcode
         }
     }
 
-    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
+    public class BufferedLinearInterpolatorAngle : BufferedLinearInterpolator<float>
     {
         /// <inheritdoc />
-        protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
+        protected override float InterpolateUnclamped(float start, float end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return start;// Vector3.Lerp(start, end, time);
+            return Mathf.LerpAngle(start, end, time);
         }
 
         /// <inheritdoc />
-        protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
+        protected override float Interpolate(float start, float end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            //end.x = Mathf.LerpAngle(start.x, end.x, time);
-            //end.y = Mathf.LerpAngle(start.y, end.y, time);
-            //end.z = Mathf.LerpAngle(start.z, end.z, time);
-            //return end;
-
-            return Vector3.Lerp(start, end, time);
+            return Mathf.LerpAngle(start, end, time);
         }
     }
 }

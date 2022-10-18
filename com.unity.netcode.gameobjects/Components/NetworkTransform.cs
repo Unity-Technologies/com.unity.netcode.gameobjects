@@ -66,45 +66,40 @@ namespace Unity.Netcode.Components
 
             private ushort m_Bitset;
 
-
             internal bool InLocalSpace
             {
-                get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
+                get => BitGet(k_InLocalSpaceBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_InLocalSpaceBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_InLocalSpaceBit)); }
+                    BitSet(value, k_InLocalSpaceBit);
                 }
             }
 
             // Position
             internal bool HasPositionX
             {
-                get => (m_Bitset & (1 << k_PositionXBit)) != 0;
+                get => BitGet(k_PositionXBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionXBit)); }
+                    BitSet(value, k_PositionXBit);
                 }
             }
 
             internal bool HasPositionY
             {
-                get => (m_Bitset & (1 << k_PositionYBit)) != 0;
+                get => BitGet(k_PositionYBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionYBit)); }
+                    BitSet(value, k_PositionYBit);
                 }
             }
 
             internal bool HasPositionZ
             {
-                get => (m_Bitset & (1 << k_PositionZBit)) != 0;
+                get => BitGet(k_PositionZBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_PositionZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_PositionZBit)); }
+                    BitSet(value, k_PositionZBit);
                 }
             }
 
@@ -119,31 +114,28 @@ namespace Unity.Netcode.Components
             // RotAngles
             internal bool HasRotAngleX
             {
-                get => (m_Bitset & (1 << k_RotAngleXBit)) != 0;
+                get => BitGet(k_RotAngleXBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleXBit)); }
+                    BitSet(value, k_RotAngleXBit);
                 }
             }
 
             internal bool HasRotAngleY
             {
-                get => (m_Bitset & (1 << k_RotAngleYBit)) != 0;
+                get => BitGet(k_RotAngleYBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleYBit)); }
+                    BitSet(value, k_RotAngleYBit);
                 }
             }
 
             internal bool HasRotAngleZ
             {
-                get => (m_Bitset & (1 << k_RotAngleZBit)) != 0;
+                get => BitGet(k_RotAngleZBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_RotAngleZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_RotAngleZBit)); }
+                    BitSet(value, k_RotAngleZBit);
                 }
             }
 
@@ -155,35 +147,31 @@ namespace Unity.Netcode.Components
                 }
             }
 
-
             // Scale
             internal bool HasScaleX
             {
-                get => (m_Bitset & (1 << k_ScaleXBit)) != 0;
+                get => BitGet(k_ScaleXBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleXBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleXBit)); }
+                    BitSet(value, k_ScaleXBit);
                 }
             }
 
             internal bool HasScaleY
             {
-                get => (m_Bitset & (1 << k_ScaleYBit)) != 0;
+                get => BitGet(k_ScaleYBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleYBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleYBit)); }
+                    BitSet(value, k_ScaleYBit);
                 }
             }
 
             internal bool HasScaleZ
             {
-                get => (m_Bitset & (1 << k_ScaleZBit)) != 0;
+                get => BitGet(k_ScaleZBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_ScaleZBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_ScaleZBit)); }
+                    BitSet(value, k_ScaleZBit);
                 }
             }
 
@@ -197,11 +185,10 @@ namespace Unity.Netcode.Components
 
             internal bool IsTeleportingNextFrame
             {
-                get => (m_Bitset & (1 << k_TeleportingBit)) != 0;
+                get => BitGet(k_TeleportingBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_TeleportingBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_TeleportingBit)); }
+                    BitSet(value, k_TeleportingBit);
                 }
             }
 
@@ -280,11 +267,12 @@ namespace Unity.Netcode.Components
                     serializer.SerializeValue(ref PositionZ);
                 }
 
+                // Only synchronize the Quaternion
                 if (UseQuaternionSync)
                 {
                     serializer.SerializeValue(ref Quaternion);
                 }
-                else
+                else // Otherwise synchronize the Euler axis with changes
                 {
                     // RotAngle Values
                     if (HasRotAngleX)
@@ -483,12 +471,21 @@ namespace Unity.Netcode.Components
         private BufferedLinearInterpolator<float> m_PositionZInterpolator;
         // Rotation as a Quaternion should only be used when synchronizing the entire Quaternion
         private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator;
-        // Rotation in Euler angles should not be used in the Quaternion interpolator (still TBD best way for this)
-        private BufferedLinearInterpolator<Vector3> m_EulerInterpolator;
+
         private BufferedLinearInterpolator<float> m_ScaleXInterpolator;
         private BufferedLinearInterpolator<float> m_ScaleYInterpolator;
         private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
+
+        // TODO: Remove BufferedLinearInterpolatorAngle
+        // Rotation in Euler angles should not be interpolated with complex child-hierarchies with different rotation and scales
+        // Transform will flip axis to prevent Gimbal locking and non-authoritative side will try to interpolate towards a value
+        // that should be applied immediately.  Additionally, the non-authoritative side will not yet have reached the point where
+        // it would naturally flip axis and the rotation will "wobble and/or do full rotations around a specific axis".
+        private readonly List<BufferedLinearInterpolatorAngle> m_EulerInterpolators = new List<BufferedLinearInterpolatorAngle>(3);
+        private BufferedLinearInterpolatorAngle m_RotXInterpolator;
+        private BufferedLinearInterpolatorAngle m_RotYInterpolator;
+        private BufferedLinearInterpolatorAngle m_RotZInterpolator;
 
         // Used by integration test
         private NetworkTransformState m_LastSentState;
@@ -592,8 +589,10 @@ namespace Unity.Netcode.Components
 
             var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
             m_RotationInterpolator.ResetTo(rotation, serverTime);
-            var eulerRotation = InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
-            m_EulerInterpolator.ResetTo(eulerRotation, serverTime);
+            var eulerRotation = rotation.eulerAngles;
+            m_RotXInterpolator.ResetTo(eulerRotation.x, serverTime);
+            m_RotXInterpolator.ResetTo(eulerRotation.y, serverTime);
+            m_RotXInterpolator.ResetTo(eulerRotation.z, serverTime);
 
             var scale = transform.localScale;
             m_ScaleXInterpolator.ResetTo(scale.x, serverTime);
@@ -640,7 +639,8 @@ namespace Unity.Netcode.Components
             var isScaleDirty = false;
 
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
-            var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
+            var currentRotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+            var rotAngles = currentRotation.eulerAngles;
             var scale = transformToUse.localScale;
 
             if (InLocalSpace != networkState.InLocalSpace)
@@ -756,7 +756,7 @@ namespace Unity.Netcode.Components
             var networkState = ReplicatedNetworkState.Value;
             var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
             var currentRotation = networkState.InLocalSpace ? transform.localRotation : transform.rotation;
-            var adjustedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var adjustedRotAngles = currentRotation.eulerAngles;
             var adjustedScale = transform.localScale;
 
             // InLocalSpace Read:
@@ -788,14 +788,10 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        var interpolatedEulerAngles = m_EulerInterpolator.GetInterpolatedValue();
-                        if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
-                        if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
-                        if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
-
-                        //if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
-                        //if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
-                        //if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+                        if (SyncRotAngleX) { adjustedRotAngles.x = m_RotXInterpolator.GetInterpolatedValue(); }
+                        if (SyncRotAngleY) { adjustedRotAngles.y = m_RotYInterpolator.GetInterpolatedValue(); }
+                        if (SyncRotAngleZ) { adjustedRotAngles.z = m_RotZInterpolator.GetInterpolatedValue(); }
+                        currentRotation.eulerAngles = adjustedRotAngles;
                     }
                 }
             }
@@ -818,11 +814,9 @@ namespace Unity.Netcode.Components
                     if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
                     if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
                     if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+                    currentRotation.eulerAngles = adjustedRotAngles;
                 }
             }
-
-            // NOTE: The below conditional checks for applying axial values are required in order to
-            // prevent the non-authoritative side from making adjustments when interpolation is off.
 
             // TODO: Determine if we want to enforce, frame by frame, the non-authoritative transform values.
             // We would want save the position, rotation, and scale (each individually) after applying each
@@ -847,27 +841,13 @@ namespace Unity.Netcode.Components
             // Apply the new rotation if it has changed or we are interpolating and synchronizing rotation
             if (networkState.HasRotAngleChange || (useInterpolatedValue && SynchronizeRotation))
             {
-                if (UseQuaternionSynch)
+                if (InLocalSpace)
                 {
-                    if (InLocalSpace)
-                    {
-                        transform.localRotation = currentRotation;
-                    }
-                    else
-                    {
-                        transform.rotation = currentRotation;
-                    }
+                    transform.localRotation = currentRotation;
                 }
                 else
                 {
-                    if (InLocalSpace)
-                    {
-                        transform.localEulerAngles = adjustedRotAngles;
-                    }
-                    else
-                    {
-                        transform.eulerAngles = adjustedRotAngles;
-                    }
+                    transform.rotation = currentRotation;
                 }
             }
 
@@ -886,13 +866,15 @@ namespace Unity.Netcode.Components
             var sentTime = newState.SentTime;
             var currentPosition = newState.InLocalSpace ? transform.localPosition : transform.position;
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
-            var currentEulerAngles = newState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var currentEulerAngles = currentRotation.eulerAngles;
 
             // When there is a change in interpolation or if teleporting, we reset
             if ((newState.InLocalSpace != InLocalSpace) || (newState.UseQuaternionSync != UseQuaternionSynch) || newState.IsTeleportingNextFrame)
             {
                 InLocalSpace = newState.InLocalSpace;
                 UseQuaternionSynch = newState.UseQuaternionSync;
+                Interpolate = newState.UseInterpolation;
+
                 var currentScale = transform.localScale;
 
                 // we should clear our float interpolators
@@ -901,9 +883,13 @@ namespace Unity.Netcode.Components
                     interpolator.Clear();
                 }
 
+                foreach (var rotInterpolator in m_EulerInterpolators)
+                {
+                    rotInterpolator.Clear();
+                }
+
                 // we should clear our quaternion interpolator
                 m_RotationInterpolator.Clear();
-                m_EulerInterpolator.Clear();
 
                 // Adjust based on which axis changed
                 if (newState.HasPositionX)
@@ -976,29 +962,41 @@ namespace Unity.Netcode.Components
                     // Adjust based on which axis changed
                     if (newState.HasRotAngleX)
                     {
+                        m_RotXInterpolator.ResetTo(newState.RotAngleX, sentTime);
                         currentEulerAngles.x = newState.RotAngleX;
                     }
 
                     if (newState.HasRotAngleY)
                     {
+                        m_RotYInterpolator.ResetTo(newState.RotAngleY, sentTime);
                         currentEulerAngles.y = newState.RotAngleY;
                     }
 
                     if (newState.HasRotAngleZ)
                     {
+                        m_RotZInterpolator.ResetTo(newState.RotAngleZ, sentTime);
                         currentEulerAngles.z = newState.RotAngleZ;
                     }
-                    m_EulerInterpolator.ResetTo(currentEulerAngles, sentTime);
-
-                    if (InLocalSpace)
-                    {
-                        transform.localEulerAngles = currentEulerAngles;
-                    }
-                    else
-                    {
-                        transform.eulerAngles = currentEulerAngles;
-                    }
+                    currentRotation.eulerAngles = currentEulerAngles;
+                    //if (InLocalSpace)
+                    //{
+                    //    transform.localEulerAngles = currentEulerAngles;
+                    //}
+                    //else
+                    //{
+                    //    transform.eulerAngles = currentEulerAngles;
+                    //}
                 }
+
+                if (InLocalSpace)
+                {
+                    transform.localRotation = currentRotation;
+                }
+                else
+                {
+                    transform.rotation = currentRotation;
+                }
+
                 return;
             }
 
@@ -1044,23 +1042,20 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    //var currentEulerRotation = Vector3.zero;
-                    // Adjust based on which axis changed
                     if (newState.HasRotAngleX)
                     {
-                        currentEulerAngles.x = newState.RotAngleX;
+                        m_RotXInterpolator.AddMeasurement(newState.RotAngleX, sentTime);
                     }
 
                     if (newState.HasRotAngleY)
                     {
-                        currentEulerAngles.y = newState.RotAngleY;
+                        m_RotYInterpolator.AddMeasurement(newState.RotAngleY, sentTime);
                     }
 
                     if (newState.HasRotAngleZ)
                     {
-                        currentEulerAngles.z = newState.RotAngleZ;
+                        m_RotZInterpolator.AddMeasurement(newState.RotAngleZ, sentTime);
                     }
-                    m_EulerInterpolator.AddMeasurement(currentEulerAngles, sentTime);
                 }
             }
         }
@@ -1115,8 +1110,10 @@ namespace Unity.Netcode.Components
             // Create a Quaternion rotation interpolator
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
 
-            // Create a Euler rotation interpolator
-            m_EulerInterpolator = new BufferedLinearInterpolatorVector3();
+            // Create a Euler rotation interpolators
+            m_RotXInterpolator = new BufferedLinearInterpolatorAngle();
+            m_RotYInterpolator = new BufferedLinearInterpolatorAngle();
+            m_RotZInterpolator = new BufferedLinearInterpolatorAngle();
 
             // All other interpolators are BufferedLinearInterpolatorFloats
             m_PositionXInterpolator = new BufferedLinearInterpolatorFloat();
@@ -1136,6 +1133,13 @@ namespace Unity.Netcode.Components
                 m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
                 m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
+            }
+
+            if (m_EulerInterpolators.Count == 0)
+            {
+                m_EulerInterpolators.Add(m_RotXInterpolator);
+                m_EulerInterpolators.Add(m_RotYInterpolator);
+                m_EulerInterpolators.Add(m_RotZInterpolator);
             }
         }
 
@@ -1393,7 +1397,10 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        m_EulerInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                        foreach(var interpolator in m_EulerInterpolators)
+                        {
+                            interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                        }
                     }
                 }
 
