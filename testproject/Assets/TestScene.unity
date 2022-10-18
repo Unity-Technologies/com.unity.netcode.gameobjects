@@ -449,9 +449,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   AssetToSpawn: {fileID: 4396119378107456972, guid: 19c9b587143a7ed44845b23b3f583106,
     type: 3}
-  RotationSpeed: 1
+  CarRotationSpeed: 0.1
+  WheelRotationSpeed: 1
   WheelScale: 1.5
   UseQuaternionSync: 1
+  Interpolate: 1
+  DebugEulerInterpolation: 0
+  DebugWheelIndex: 0
 --- !u!4 &1568857774
 Transform:
   m_ObjectHideFlags: 0
