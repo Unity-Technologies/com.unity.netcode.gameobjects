@@ -7,6 +7,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+- Added `NetworkManager.IsApproved` flag that is set to `true` a client has been approved.(#2261)
+
+### Changed
+
+
+### Fixed
+
+- Fixed `NetworkManager.ApprovalTimeout` will not timeout due to slower client synchronization times as it now uses the added `NetworkManager.IsApproved` flag to determined if the client has been approved or not.(#2261)
+
+
 ## [1.1.0] - 2022-10-19
 
 ### Added
