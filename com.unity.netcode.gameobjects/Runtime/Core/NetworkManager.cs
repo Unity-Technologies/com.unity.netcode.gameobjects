@@ -1643,7 +1643,7 @@ namespace Unity.Netcode
                 ConfigHash = NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData,
-                PackageVersion = NetworkConfig.PackageVersion
+                PackageVersion = PackageMetadata.Version
             };
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
         }

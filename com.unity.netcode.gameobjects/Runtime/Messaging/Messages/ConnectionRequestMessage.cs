@@ -85,7 +85,7 @@ namespace Unity.Netcode
             }
 
             reader.ReadValueSafe(out PackageVersion);
-            if (PackageVersion != networkManager.NetworkConfig.PackageVersion)
+            if (PackageVersion != PackageMetadata.Version)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
