@@ -65,7 +65,7 @@ namespace Unity.Netcode
             ReaderHandle* readerHandle = null;
             if (copyAllocator == Allocator.None)
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), internalAllocator);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle), UnsafeUtility.AlignOf<byte>(), internalAllocator);
                 readerHandle->BufferPointer = buffer;
                 readerHandle->Position = offset;
             }
