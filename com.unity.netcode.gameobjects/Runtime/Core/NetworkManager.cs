@@ -2146,10 +2146,10 @@ namespace Unity.Netcode
                             Hash = playerPrefabHash,
                         },
                         TargetClientId = ownerClientId,
+                        Rotation = response.Rotation.GetValueOrDefault(),
                         Transform = new NetworkObject.SceneObject.TransformData
                         {
                             Position = response.Position.GetValueOrDefault(),
-                            Rotation = response.Rotation.GetValueOrDefault()
                         }
                     };
 

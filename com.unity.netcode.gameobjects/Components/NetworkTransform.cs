@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 namespace Unity.Netcode.Components
 {
     /// <summary>
@@ -62,7 +63,8 @@ namespace Unity.Netcode.Components
             private const int k_TeleportingBit = 10;
             private const int k_QuaternionSync = 11;
             private const int k_Interpolate = 12;
-            // 13-15: <unused>
+            private const int k_CompressQuat = 13;
+            // 14-15: <unused>
 
             private ushort m_Bitset;
 
@@ -210,6 +212,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool QuaternionCompression
+            {
+                get => BitGet(k_CompressQuat);
+                set
+                {
+                    BitSet(value, k_CompressQuat);
+                }
+            }
+
             private bool BitGet(int bitPosition)
             {
                 return (m_Bitset & (1 << bitPosition)) != 0;
@@ -221,12 +232,12 @@ namespace Unity.Netcode.Components
                 else { m_Bitset = (ushort)(m_Bitset & ~(1 << bitPosition)); }
             }
 
-
             internal float PositionX, PositionY, PositionZ;
             internal float RotAngleX, RotAngleY, RotAngleZ;
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
             internal Quaternion Quaternion;
+            internal uint PackedQuat;
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
@@ -240,7 +251,7 @@ namespace Unity.Netcode.Components
             /// </summary>
             internal void ClearBitSetForNextTick()
             {
-                var preserveFlags = (1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate);
+                var preserveFlags = (1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate | 1 << k_CompressQuat);
                 // Preserve the global flags for all transform synchronization
                 m_Bitset &= (ushort)(m_Bitset & preserveFlags);
                 IsDirty = false;
@@ -248,9 +259,11 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
+
+                serializer.SerializeValue(ref SentTime);
+
                 // Position Values
                 if (HasPositionX)
                 {
@@ -268,9 +281,24 @@ namespace Unity.Netcode.Components
                 }
 
                 // Only synchronize the Quaternion
-                if (UseQuaternionSync)
+                if (UseQuaternionSync && HasRotAngleChange)
                 {
-                    serializer.SerializeValue(ref Quaternion);
+                    if (QuaternionCompression)
+                    {
+                        if (serializer.IsWriter)
+                        {
+                            PackedQuat = QuaternionCompressor.CompressQuaternion(ref Quaternion);
+                        }
+                        serializer.SerializeValue(ref PackedQuat);
+                        if (serializer.IsReader)
+                        {
+                            QuaternionCompressor.DecompressQuaternion(ref Quaternion, PackedQuat);
+                        }
+                    }
+                    else
+                    {
+                        serializer.SerializeValue(ref Quaternion);
+                    }
                 }
                 else // Otherwise synchronize the Euler axis with changes
                 {
@@ -381,7 +409,23 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public bool UseQuaternionSynch;
+        /// <summary>
+        /// Determines whether to use a Quaternion or Traditional Euler angles
+        /// to synchronize rotation
+        /// </summary>
+        /// <remarks>
+        /// Note: Euler synchronization will yield inaccurate results with complex
+        /// parent-child hierarchies with varying rotation and scales while interpolation
+        /// is enabled. It is recommended to use Quaternion Synchronization under these
+        /// conditions.
+        /// </remarks>
+        public bool UseQuaternionSynch = true;  // TODO: Remove BufferedLinearInterpolatorAngle (TBD)
+
+        /// <summary>
+        /// Controls whether to compress a quaternion or not
+        /// Default is true.
+        /// </summary>
+        public bool CompressQuaternion = true;
 
         /// <summary>
         /// The current position threshold value
@@ -667,6 +711,12 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
+            if (CompressQuaternion != networkState.QuaternionCompression)
+            {
+                networkState.QuaternionCompression = CompressQuaternion;
+                isDirty = true;
+            }
+
             if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
             {
                 networkState.PositionX = position.x;
@@ -868,6 +918,8 @@ namespace Unity.Netcode.Components
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
             var currentEulerAngles = currentRotation.eulerAngles;
 
+            CompressQuaternion = newState.QuaternionCompression;
+
             // When there is a change in interpolation or if teleporting, we reset
             if ((newState.InLocalSpace != InLocalSpace) || (newState.UseQuaternionSync != UseQuaternionSynch) || newState.IsTeleportingNextFrame)
             {
@@ -978,14 +1030,6 @@ namespace Unity.Netcode.Components
                         currentEulerAngles.z = newState.RotAngleZ;
                     }
                     currentRotation.eulerAngles = currentEulerAngles;
-                    //if (InLocalSpace)
-                    //{
-                    //    transform.localEulerAngles = currentEulerAngles;
-                    //}
-                    //else
-                    //{
-                    //    transform.eulerAngles = currentEulerAngles;
-                    //}
                 }
 
                 if (InLocalSpace)
@@ -1110,6 +1154,7 @@ namespace Unity.Netcode.Components
             // Create a Quaternion rotation interpolator
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
 
+            // TODO: Remove BufferedLinearInterpolatorAngle
             // Create a Euler rotation interpolators
             m_RotXInterpolator = new BufferedLinearInterpolatorAngle();
             m_RotYInterpolator = new BufferedLinearInterpolatorAngle();
@@ -1163,31 +1208,13 @@ namespace Unity.Netcode.Components
 
                 // Force the state update to be sent
                 TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
-
-                // TODO: Make spawning synchronize the Quaternion.
-                // As a work around we will "re-synch" everyone when a client connects
-                //NetworkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
             }
-        }
-
-        private void NetworkManager_OnClientConnectedCallback(ulong obj)
-        {
-            var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
-            var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
-            // Teleport to current position
-            SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
-
-            // Force the state update to be sent
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
-
-            // TODO: Remove this when we start synchronizing the quaternion with spawn
-            //NetworkManager.OnClientConnectedCallback -= NetworkManager_OnClientConnectedCallback;
         }
 
         /// <inheritdoc/>
@@ -1396,8 +1423,8 @@ namespace Unity.Netcode.Components
                         m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                     }
                     else
-                    {
-                        foreach(var interpolator in m_EulerInterpolators)
+                    {   // TODO: Remove BufferedLinearInterpolatorAngle
+                        foreach (var interpolator in m_EulerInterpolators)
                         {
                             interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                         }

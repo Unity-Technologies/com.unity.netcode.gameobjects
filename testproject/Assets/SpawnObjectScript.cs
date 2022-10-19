@@ -6,6 +6,8 @@ using Unity.Netcode.Components;
 
 public class SpawnObjectScript : NetworkBehaviour
 {
+    public List<Camera> Cameras;
+
     public GameObject AssetToSpawn;
 
     [Range(0.0f, 3.0f)]
@@ -19,9 +21,12 @@ public class SpawnObjectScript : NetworkBehaviour
 
     public bool UseQuaternionSync;
 
+    public bool CompressQuaternion = true;
+
     public bool Interpolate = true;
 
     public bool DebugEulerInterpolation;
+
     private NetworkVariable<bool> m_DebugEulerInterpolation = new NetworkVariable<bool>();
 
     [Range(0,3)]
@@ -39,6 +44,13 @@ public class SpawnObjectScript : NetworkBehaviour
 
     private float m_CurrentWheelScale;
 
+    private int m_CurrentCameraIndex;
+
+    private void Start()
+    {
+        SwitchToCamera();
+    }
+
     public override void OnNetworkSpawn()
     {
         if (IsServer)
@@ -54,6 +66,7 @@ public class SpawnObjectScript : NetworkBehaviour
                 m_WheelNetworkTransforms.Add(wheel, networkTransform);
                 networkTransform.UseQuaternionSynch = UseQuaternionSync;
                 networkTransform.Interpolate = Interpolate;
+                networkTransform.CompressQuaternion = CompressQuaternion;
             }
 
             m_DebugEulerInterpolation.Value = DebugEulerInterpolation;
@@ -77,6 +90,27 @@ public class SpawnObjectScript : NetworkBehaviour
         base.OnNetworkDespawn();
     }
 
+    private void SwitchToCamera()
+    {
+        var targetCamera = Cameras[m_CurrentCameraIndex];
+        foreach (var camera in Cameras)
+        {
+            if (camera == targetCamera)
+            {
+                continue;
+            }
+            camera.gameObject.SetActive(false);
+        }
+        targetCamera.gameObject.SetActive(true);
+    }
+
+    [ClientRpc]
+    private void SwitchCameraClientRpc(int index)
+    {
+        m_CurrentCameraIndex = index;
+        SwitchToCamera();
+    }
+
     private void Update()
     {
         if (!IsSpawned)
@@ -96,6 +130,12 @@ public class SpawnObjectScript : NetworkBehaviour
             if (m_DebugEulerInterpolation.Value != DebugEulerInterpolation)
             {
                 m_DebugEulerInterpolation.Value = DebugEulerInterpolation;
+            }
+
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                m_CurrentCameraIndex = ++m_CurrentCameraIndex % Cameras.Count;
+                SwitchCameraClientRpc(m_CurrentCameraIndex);
             }
         }
         else
@@ -118,6 +158,11 @@ public class SpawnObjectScript : NetworkBehaviour
         Debug.Log($"[Wheel-{DebugWheelIndex}] LocalEuler-Client {localEuler} vs LocalEuler-Server {localTransform.localEulerAngles} | Euler-Client {euler} vs Euler-Server {localTransform.eulerAngles}");
     }
 
+    private Quaternion m_OriginalQuaternion;
+    private Quaternion m_Quaternion;
+    private uint m_CompressedQuaternion;
+    private uint m_CompressedQuaternionOld;
+
     private void FixedUpdate()
     {
         if (!IsServer || !IsSpawned)
@@ -129,6 +174,7 @@ public class SpawnObjectScript : NetworkBehaviour
         {
             wheel.transform.Rotate(WheelRotationSpeed, 0.0f, 0.0f, Space.Self);
 
+
             if (WheelScale != m_CurrentWheelScale)
             {
                 wheel.transform.localScale = Vector3.one * WheelScale;
@@ -136,10 +182,21 @@ public class SpawnObjectScript : NetworkBehaviour
 
             m_WheelNetworkTransforms[wheel].UseQuaternionSynch = UseQuaternionSync;
             m_WheelNetworkTransforms[wheel].Interpolate = Interpolate;
+            m_WheelNetworkTransforms[wheel].CompressQuaternion = CompressQuaternion;
         }
+        m_OriginalQuaternion = m_WheelNetworkTransforms[m_MockCarParts.Wheels[0]].transform.rotation;
         if (WheelScale != m_CurrentWheelScale)
         {
             m_CurrentWheelScale = WheelScale;
         }
+        //DebugQuaternionCompress();
     }
+
+    private void DebugQuaternionCompress()
+    {
+        m_CompressedQuaternion = QuaternionCompressor.CompressQuaternion(ref m_OriginalQuaternion);
+        QuaternionCompressor.DecompressQuaternion(ref m_Quaternion, m_CompressedQuaternion);
+        Debug.Log($"[Comp] {m_CompressedQuaternion} vs [CompOld] {m_CompressedQuaternionOld} | [Decomp] {m_Quaternion} vs [DecompOld] {m_OriginalQuaternion}");
+    }
+
 }
