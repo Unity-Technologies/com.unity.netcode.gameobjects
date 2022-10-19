@@ -1077,11 +1077,12 @@ namespace Unity.Netcode
             public struct TransformData : INetworkSerializeByMemcpy
             {
                 public Vector3 Position;
-                public Quaternion Rotation;
                 public Vector3 Scale;
+                public uint Rotation;
             }
 
             public TransformData Transform;
+            public Quaternion Rotation;
 
             //If(Metadata.IsReparented)
             public bool IsLatestParentSet;
@@ -1129,6 +1130,7 @@ namespace Unity.Netcode
 
                 if (Header.HasTransform)
                 {
+                    Transform.Rotation = QuaternionCompressor.CompressQuaternion(ref Rotation);
                     writer.WriteValue(Transform);
                 }
 
@@ -1197,6 +1199,7 @@ namespace Unity.Netcode
                 if (Header.HasTransform)
                 {
                     reader.ReadValue(out Transform);
+                    QuaternionCompressor.DecompressQuaternion(ref Rotation, Transform.Rotation);
                 }
 
                 // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
@@ -1259,12 +1262,13 @@ namespace Unity.Netcode
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
                 obj.Header.HasTransform = true;
+                // Store off the quaternion outside of the TransformData, we compress/decompress the Quaternion to and from an unsigned int
+                obj.Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation;
                 obj.Transform = new SceneObject.TransformData
                 {
                     // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
                     Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
-                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
 
                     // We only use the lossyScale if the NetworkObject has a parent. Multi-generation nested children scales can
                     // impact the final scale of the child NetworkObject in question. The solution is to use the lossy scale
