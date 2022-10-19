@@ -286,7 +286,18 @@ namespace Unity.Netcode
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
         ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
         /// </summary>
-        public NetworkManager NetworkManager => NetworkObject.NetworkManager;
+        public NetworkManager NetworkManager
+        {
+            get
+            {
+                if (NetworkObject?.NetworkManager != null)
+                {
+                    return NetworkObject?.NetworkManager;
+                }
+
+                return NetworkManager.Singleton;
+            }
+        }
 
         /// <summary>
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
@@ -349,9 +360,16 @@ namespace Unity.Netcode
         {
             get
             {
-                if (m_NetworkObject == null)
+                try
                 {
-                    m_NetworkObject = GetComponentInParent<NetworkObject>();
+                    if (m_NetworkObject == null)
+                    {
+                        m_NetworkObject = GetComponentInParent<NetworkObject>();
+                    }
+                }
+                catch (Exception)
+                {
+                    return null;
                 }
 
                 // ShutdownInProgress check:
