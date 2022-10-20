@@ -8,6 +8,14 @@ run_all_tests:
     - .yamato/mobile-build-and-test.yml#run_{{ projects.first.name }}_tests_{{ mobile_validation_editor }}_iOS
     - .yamato/mobile-build-and-test.yml#run_{{ projects.first.name }}_tests_{{ mobile_validation_editor }}_android
     # - .yamato/_run-all.yml#all_project_tests_standalone
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+    - .yamato/webgl-build.yml#build_{{ project.name }}_tests_{{ editor }}_webgl
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+
 {% for platform in test_platforms -%}
 {% for project in projects -%}
 {% for editor in project.test_editors -%}
@@ -137,6 +145,17 @@ all_project_tests_mobile:
 {% for editor in project.test_editors -%}
     - .yamato/mobile-build-and-test.yml#run_{{ project.name }}_tests_{{ editor }}_android
     - .yamato/mobile-build-and-test.yml#run_{{ project.name }}_tests_{{ editor }}_iOS
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+
+all_project_tests_webgl:
+  name: Build All Project Tests - WebGL
+  dependencies:
+{% for project in projects -%}
+{% if project.name == "testproject" -%}
+{% for editor in project.test_editors -%}
+    - .yamato/webgl-build.yml#build_{{ project.name }}_tests_{{ editor }}_webgl
 {% endfor -%}
 {% endif -%}
 {% endfor -%}
