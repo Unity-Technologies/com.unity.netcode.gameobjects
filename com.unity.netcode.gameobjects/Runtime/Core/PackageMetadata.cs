@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class PackageMetadata : ScriptableObject
+    public class PackageMetadata
     {
         internal static string VersionString;
         internal static FixedString32Bytes VersionFixedString;
