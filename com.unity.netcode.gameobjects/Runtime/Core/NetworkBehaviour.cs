@@ -286,7 +286,18 @@ namespace Unity.Netcode
         /// Gets the NetworkManager that owns this NetworkBehaviour instance
         ///   See note around `NetworkObject` for how there is a chicken / egg problem when we are not initialized
         /// </summary>
-        public NetworkManager NetworkManager => NetworkObject.NetworkManager;
+        public NetworkManager NetworkManager
+        {
+            get
+            {
+                if (NetworkObject?.NetworkManager != null)
+                {
+                    return NetworkObject?.NetworkManager;
+                }
+
+                return NetworkManager.Singleton;
+            }
+        }
 
         /// <summary>
         /// If a NetworkObject is assigned, it will return whether or not this NetworkObject
@@ -335,23 +346,29 @@ namespace Unity.Netcode
                 m_NetworkObject.NetworkManager.IsServer;
         }
 
-        /// <summary>
-        /// Gets the NetworkObject that owns this NetworkBehaviour instance
         ///  TODO: this needs an overhaul.  It's expensive, it's ja little naive in how it looks for networkObject in
         ///   its parent and worst, it creates a puzzle if you are a NetworkBehaviour wanting to see if you're live or not
         ///   (e.g. editor code).  All you want to do is find out if NetworkManager is null, but to do that you
         ///   need NetworkObject, but if you try and grab NetworkObject and NetworkManager isn't up you'll get
         ///   the warning below.  This is why IsBehaviourEditable had to be created.  Matt was going to re-do
         ///   how NetworkObject works but it was close to the release and too risky to change
-        ///
+        /// <summary>
+        /// Gets the NetworkObject that owns this NetworkBehaviour instance
         /// </summary>
         public NetworkObject NetworkObject
         {
             get
             {
-                if (m_NetworkObject == null)
+                try
                 {
-                    m_NetworkObject = GetComponentInParent<NetworkObject>();
+                    if (m_NetworkObject == null)
+                    {
+                        m_NetworkObject = GetComponentInParent<NetworkObject>();
+                    }
+                }
+                catch (Exception)
+                {
+                    return null;
                 }
 
                 // ShutdownInProgress check:

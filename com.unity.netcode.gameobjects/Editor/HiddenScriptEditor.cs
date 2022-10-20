@@ -13,6 +13,10 @@ namespace Unity.Netcode.Editor
     public class HiddenScriptEditor : UnityEditor.Editor
     {
         private static readonly string[] k_HiddenFields = { "m_Script" };
+
+        /// <summary>
+        /// Draws inspector properties without the script field.
+        /// </summary>
         public override void OnInspectorGUI()
         {
             EditorGUI.BeginChangeCheck();

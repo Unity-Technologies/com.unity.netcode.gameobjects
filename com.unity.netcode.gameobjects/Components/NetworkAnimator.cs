@@ -232,6 +232,10 @@ namespace Unity.Netcode.Components
         private void BuildTransitionStateInfoList()
         {
 #if UNITY_EDITOR
+            if (UnityEditor.EditorApplication.isUpdating)
+            {
+                return;
+            }
             TransitionStateInfoList = new List<TransitionStateinfo>();
             var animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
             if (animatorController == null)

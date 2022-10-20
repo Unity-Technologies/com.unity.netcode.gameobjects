@@ -132,6 +132,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_EnableVerboseDebug { get; set; }
 
         /// <summary>
+        /// When set to true, this will bypass the entire
+        /// wait for clients to connect process.
+        /// </summary>
+        /// <remarks>
+        /// CAUTION:
+        /// Setting this to true will bypass other helper
+        /// identification related code, so this should only
+        /// be used for connection failure oriented testing
+        /// </remarks>
+        protected bool m_BypassConnectionTimeout { get; set; }
+
+        /// <summary>
         /// Used to display the various integration test
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
@@ -455,31 +467,36 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 // Notification that the server and clients have been started
                 yield return OnStartedServerAndClients();
 
-                // Wait for all clients to connect
-                yield return WaitForClientsConnectedOrTimeOut();
-                AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
-
-                if (m_UseHost || m_ServerNetworkManager.IsHost)
+                // When true, we skip everything else (most likely a connection oriented test)
+                if (!m_BypassConnectionTimeout)
                 {
-                    // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                    var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-                    foreach (var playerNetworkObject in serverPlayerClones)
+                    // Wait for all clients to connect
+                    yield return WaitForClientsConnectedOrTimeOut();
+
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+
+                    if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
-                        if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+                        foreach (var playerNetworkObject in serverPlayerClones)
                         {
-                            m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                            {
+                                m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            }
+                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                         }
-                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                     }
+
+                    ClientNetworkManagerPostStartInit();
+
+                    // Notification that at this time the server and client(s) are instantiated,
+                    // started, and connected on both sides.
+                    yield return OnServerAndClientsConnected();
+
+                    VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
                 }
-
-                ClientNetworkManagerPostStartInit();
-
-                // Notification that at this time the server and client(s) are instantiated,
-                // started, and connected on both sides.
-                yield return OnServerAndClientsConnected();
-
-                VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
             }
         }
 

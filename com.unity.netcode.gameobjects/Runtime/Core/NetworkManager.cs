@@ -366,9 +366,21 @@ namespace Unity.Netcode
         public bool IsListening { get; internal set; }
 
         /// <summary>
-        /// Gets if we are connected as a client
+        /// When true, the client is connected, approved, and synchronized with
+        /// the server.
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        /// <summary>
+        /// Is true when the client has been approved.
+        /// </summary>
+        /// <remarks>
+        /// This only reflects the client's approved status and does not mean the client
+        /// has finished the connection and synchronization process. The server-host will
+        /// always be approved upon being starting the <see cref="NetworkManager"/>
+        /// <see cref="IsConnectedClient"/>
+        /// </remarks>
+        public bool IsApproved { get; internal set; }
 
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
@@ -877,6 +889,8 @@ namespace Unity.Netcode
                 return;
             }
 
+            IsApproved = false;
+
             ComponentFactory.SetDefaults();
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1018,7 +1032,6 @@ namespace Unity.Netcode
             }
 
             Initialize(true);
-
             IsServer = true;
             IsClient = false;
             IsListening = true;
@@ -1031,6 +1044,7 @@ namespace Unity.Netcode
                     SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
                     OnServerStarted?.Invoke();
+                    IsApproved = true;
                     return true;
                 }
                 else
@@ -1152,6 +1166,7 @@ namespace Unity.Netcode
                 }
 
                 response.Approved = true;
+                IsApproved = true;
                 HandleConnectionApproval(ServerClientId, response);
             }
             else
@@ -1413,6 +1428,7 @@ namespace Unity.Netcode
             }
 
             IsConnectedClient = false;
+            IsApproved = false;
 
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two
@@ -1649,54 +1665,71 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            if (IsServer)
+            var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timedOut = false;
+            var connectionApproved = false;
+            var connectionNotApproved = false;
+            var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout;
+
+            while (IsListening && !ShutdownInProgress && !timedOut && !connectionApproved)
             {
-                NetworkTime timeStarted = LocalTime;
+                yield return null;
+                // Check if we timed out
+                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
 
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
-                while (IsListening && (LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+                if (IsServer)
                 {
-                    yield return null;
+                    // When the client is no longer in the pending clients list and is in the connected clients list
+                    // it has been approved
+                    connectionApproved = !PendingClients.ContainsKey(clientId) && ConnectedClients.ContainsKey(clientId);
+
+                    // For the server side, if the client is in neither list then it was declined or the client disconnected
+                    connectionNotApproved = !PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId);
                 }
-
-                if (!IsListening)
+                else
                 {
-                    yield break;
-                }
-
-                if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
-                {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
-                    }
-
-                    DisconnectClient(clientId);
+                    connectionApproved = IsApproved;
                 }
             }
-            else
+
+            // Exit coroutine if we are no longer listening or a shutdown is in progress (client or server)
+            if (!IsListening || ShutdownInProgress)
             {
-                float timeStarted = Time.realtimeSinceStartup;
+                yield break;
+            }
 
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
-                while (IsListening && (Time.realtimeSinceStartup - timeStarted) < NetworkConfig.ClientConnectionBufferTimeout && !IsConnectedClient)
+            // If the client timed out or was not approved
+            if (timedOut || connectionNotApproved)
+            {
+                // Timeout
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    yield return null;
-                }
-
-                if (!IsListening)
-                {
-                    yield break;
-                }
-
-                if (!IsConnectedClient)
-                {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (timedOut)
                     {
-                        NetworkLog.LogInfo("Server Handshake Timed Out");
+                        if (IsServer)
+                        {
+                            // Log a warning that the transport detected a connection but then did not receive a follow up connection request message.
+                            // (hacking or something happened to the server's network connection)
+                            NetworkLog.LogWarning($"Server detected a transport connection from Client-{clientId}, but timed out waiting for the connection request message.");
+                        }
+                        else
+                        {
+                            // We only provide informational logging for the client side
+                            NetworkLog.LogInfo("Timed out waiting for the server to approve the connection request.");
+                        }
                     }
+                    else if (connectionNotApproved)
+                    {
+                        NetworkLog.LogInfo($"Client-{clientId} was either denied approval or disconnected while being approved.");
+                    }
+                }
+
+                if (IsServer)
+                {
+                    DisconnectClient(clientId);
+                }
+                else
+                {
                     Shutdown(true);
                 }
             }

@@ -42,10 +42,6 @@ namespace Unity.Netcode
                         for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
                         {
                             var client = networkManager.ConnectedClientsList[i];
-                            if (networkManager.IsHost && client.ClientId == networkManager.LocalClientId)
-                            {
-                                continue;
-                            }
 
                             if (dirtyObj.IsNetworkVisibleTo(client.ClientId))
                             {
