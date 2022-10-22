@@ -80,13 +80,6 @@ public class QuaternionCompressedDebugControl : NetworkBehaviour
 
             var wheelToDebug = m_MockCarParts.Wheels[DebugWheelIndex];
             m_WheelToDebug.Value = new NetworkBehaviourReference(m_WheelNetworkTransforms[wheelToDebug]);
-
-            m_PlayerObject = NetworkManager.LocalClient.PlayerObject;
-            m_LastPosition = m_CurrentPosition = m_PlayerObject.transform.position;
-            if (DebugDeltaPositionCompression)
-            {
-                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
-            }
         }
         base.OnNetworkSpawn();
     }
@@ -162,34 +155,6 @@ public class QuaternionCompressedDebugControl : NetworkBehaviour
         }
     }
 
-    private void NetworkTickSystem_Tick()
-    {
-
-        if (Mathf.Abs((m_CurrentPosition - m_PlayerObject.transform.position).magnitude) < 0.01f)
-        {
-            return;
-        }
-        m_CurrentPosition = m_PlayerObject.transform.position;
-        DebugDeltaPositionCompress();
-
-        m_LastPosition = m_CurrentPosition;
-    }
-
-
-
-
-    private void DebugDeltaPositionCompress()
-    {
-
-        var deltaPosition = (m_CurrentPosition - m_LastPosition);
-        m_CompressedDeltaPosition = DeltaPositionCompressor.CompressDeltaPosition(ref m_LastPosition, ref m_CurrentPosition);
-
-        DeltaPositionCompressor.DecompressDeltaPosition(ref m_DecompressedPositionDelta, m_CompressedDeltaPosition);
-        var calculatedPosition = m_LastPosition + m_DecompressedPositionDelta;
-        Debug.Log($"[CalcDelta] {m_DecompressedPositionDelta} vs [RealDelta] {deltaPosition} | [CalcPos] {calculatedPosition} vs [Actual] {m_CurrentPosition}");
-
-    }
-
     [ServerRpc(RequireOwnership = false)]
     private void WheelDebugInfoServerRpc(Vector3 localEuler, Vector3 euler)
     {
@@ -203,12 +168,6 @@ public class QuaternionCompressedDebugControl : NetworkBehaviour
     private Quaternion m_Quaternion;
     private uint m_CompressedQuaternion;
     private uint m_CompressedQuaternionOld;
-
-    private NetworkObject m_PlayerObject;
-    private Vector3 m_LastPosition = Vector3.zero;
-    private Vector3 m_CurrentPosition = Vector3.zero;
-    private Vector3 m_DecompressedPositionDelta = Vector3.zero;
-    private uint m_CompressedDeltaPosition;
 
     private void FixedUpdate()
     {

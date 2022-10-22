@@ -114,7 +114,7 @@ EditorBuildSettings:
     path: Assets/Tests/Runtime/ObjectParenting/ParentingInSceneObjects.unity
     guid: 49fd14bff1eceda4f9299721a9029750
   - enabled: 1
-    path: Assets/Tests/Manual/QuaternionCompressed/TestQuaternionCompression.unity
+    path: Assets/Tests/Manual/TransformCompression/TestQuaternionCompression.unity
     guid: 36d85e0b06dde914c8c1374e80edaa30
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
