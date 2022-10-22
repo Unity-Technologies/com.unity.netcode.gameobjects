@@ -4,7 +4,7 @@ using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 
-public class SpawnObjectScript : NetworkBehaviour
+public class QuaternionCompressedDebugControl : NetworkBehaviour
 {
     public List<Camera> Cameras;
 
@@ -25,7 +25,11 @@ public class SpawnObjectScript : NetworkBehaviour
 
     public bool Interpolate = true;
 
+    public bool DebugDeltaPositionCompression;
+
     public bool DebugEulerInterpolation;
+
+    public bool DeltaPositionCompression;
 
     private NetworkVariable<bool> m_DebugEulerInterpolation = new NetworkVariable<bool>();
 
@@ -76,6 +80,13 @@ public class SpawnObjectScript : NetworkBehaviour
 
             var wheelToDebug = m_MockCarParts.Wheels[DebugWheelIndex];
             m_WheelToDebug.Value = new NetworkBehaviourReference(m_WheelNetworkTransforms[wheelToDebug]);
+
+            m_PlayerObject = NetworkManager.LocalClient.PlayerObject;
+            m_LastPosition = m_CurrentPosition = m_PlayerObject.transform.position;
+            if (DebugDeltaPositionCompression)
+            {
+                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+            }
         }
         base.OnNetworkSpawn();
     }
@@ -137,6 +148,8 @@ public class SpawnObjectScript : NetworkBehaviour
                 m_CurrentCameraIndex = ++m_CurrentCameraIndex % Cameras.Count;
                 SwitchCameraClientRpc(m_CurrentCameraIndex);
             }
+
+            NetworkTransform.UsePositionDeltaCompression = DeltaPositionCompression;
         }
         else
         if (!IsServer && m_DebugEulerInterpolation.Value)
@@ -147,6 +160,34 @@ public class SpawnObjectScript : NetworkBehaviour
                 WheelDebugInfoServerRpc(networkTransform.transform.localEulerAngles, networkTransform.transform.eulerAngles);
             }
         }
+    }
+
+    private void NetworkTickSystem_Tick()
+    {
+
+        if (Mathf.Abs((m_CurrentPosition - m_PlayerObject.transform.position).magnitude) < 0.01f)
+        {
+            return;
+        }
+        m_CurrentPosition = m_PlayerObject.transform.position;
+        DebugDeltaPositionCompress();
+
+        m_LastPosition = m_CurrentPosition;
+    }
+
+
+
+
+    private void DebugDeltaPositionCompress()
+    {
+
+        var deltaPosition = (m_CurrentPosition - m_LastPosition);
+        m_CompressedDeltaPosition = DeltaPositionCompressor.CompressDeltaPosition(ref m_LastPosition, ref m_CurrentPosition);
+
+        DeltaPositionCompressor.DecompressDeltaPosition(ref m_DecompressedPositionDelta, m_CompressedDeltaPosition);
+        var calculatedPosition = m_LastPosition + m_DecompressedPositionDelta;
+        Debug.Log($"[CalcDelta] {m_DecompressedPositionDelta} vs [RealDelta] {deltaPosition} | [CalcPos] {calculatedPosition} vs [Actual] {m_CurrentPosition}");
+
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -162,6 +203,12 @@ public class SpawnObjectScript : NetworkBehaviour
     private Quaternion m_Quaternion;
     private uint m_CompressedQuaternion;
     private uint m_CompressedQuaternionOld;
+
+    private NetworkObject m_PlayerObject;
+    private Vector3 m_LastPosition = Vector3.zero;
+    private Vector3 m_CurrentPosition = Vector3.zero;
+    private Vector3 m_DecompressedPositionDelta = Vector3.zero;
+    private uint m_CompressedDeltaPosition;
 
     private void FixedUpdate()
     {
@@ -190,6 +237,7 @@ public class SpawnObjectScript : NetworkBehaviour
             m_CurrentWheelScale = WheelScale;
         }
         //DebugQuaternionCompress();
+
     }
 
     private void DebugQuaternionCompress()
@@ -198,5 +246,7 @@ public class SpawnObjectScript : NetworkBehaviour
         QuaternionCompressor.DecompressQuaternion(ref m_Quaternion, m_CompressedQuaternion);
         Debug.Log($"[Comp] {m_CompressedQuaternion} vs [CompOld] {m_CompressedQuaternionOld} | [Decomp] {m_Quaternion} vs [DecompOld] {m_OriginalQuaternion}");
     }
+
+
 
 }
