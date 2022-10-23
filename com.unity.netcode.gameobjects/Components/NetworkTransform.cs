@@ -64,7 +64,8 @@ namespace Unity.Netcode.Components
             private const int k_QuaternionSync = 11;
             private const int k_Interpolate = 12;
             private const int k_CompressQuat = 13;
-            // 14-15: <unused>
+            private const int k_PositionDeltaCompress = 14;
+            // 15: <unused>
 
             private ushort m_Bitset;
 
@@ -221,6 +222,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool PostionDeltaCompression
+            {
+                get => BitGet(k_PositionDeltaCompress);
+                set
+                {
+                    BitSet(value, k_PositionDeltaCompress);
+                }
+            }
+
             private bool BitGet(int bitPosition)
             {
                 return (m_Bitset & (1 << bitPosition)) != 0;
@@ -239,6 +249,9 @@ namespace Unity.Netcode.Components
             internal Quaternion Quaternion;
             internal uint PackedQuat;
 
+            internal Vector3 PositionDelta;
+            internal uint PackedPositionDelta;
+
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
             internal bool IsDirty;
@@ -251,10 +264,12 @@ namespace Unity.Netcode.Components
             /// </summary>
             internal void ClearBitSetForNextTick()
             {
-                var preserveFlags = (1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate | 1 << k_CompressQuat);
+                var preserveFlags = (1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate | 1 << k_CompressQuat | 1 << k_PositionDeltaCompress);
                 // Preserve the global flags for all transform synchronization
                 m_Bitset &= (ushort)(m_Bitset & preserveFlags);
                 IsDirty = false;
+                // Clear the position delta each tick
+                PositionDelta = Vector3.zero;
             }
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -264,21 +279,42 @@ namespace Unity.Netcode.Components
 
                 serializer.SerializeValue(ref SentTime);
 
-                // Position Values
-                if (HasPositionX)
+                if (HasPositionChange)
                 {
-                    serializer.SerializeValue(ref PositionX);
+                    if (PostionDeltaCompression && !IsTeleportingNextFrame)
+                    {
+                        if (serializer.IsWriter)
+                        {
+                            PackedPositionDelta = DeltaPositionCompressor.CompressDeltaPosition(ref PositionDelta);
+                        }
+
+                        serializer.SerializeValue(ref PackedPositionDelta);
+
+                        if (serializer.IsReader)
+                        {
+                            DeltaPositionCompressor.DecompressDeltaPosition(ref PositionDelta, PackedPositionDelta);
+                        }
+                    }
+                    else
+                    {
+                        // Position Values
+                        if (HasPositionX)
+                        {
+                            serializer.SerializeValue(ref PositionX);
+                        }
+
+                        if (HasPositionY)
+                        {
+                            serializer.SerializeValue(ref PositionY);
+                        }
+
+                        if (HasPositionZ)
+                        {
+                            serializer.SerializeValue(ref PositionZ);
+                        }
+                    }
                 }
 
-                if (HasPositionY)
-                {
-                    serializer.SerializeValue(ref PositionY);
-                }
-
-                if (HasPositionZ)
-                {
-                    serializer.SerializeValue(ref PositionZ);
-                }
 
                 // Only synchronize the Quaternion
                 if (UseQuaternionSync && HasRotAngleChange)
@@ -426,6 +462,15 @@ namespace Unity.Netcode.Components
         /// Default is true.
         /// </summary>
         public bool CompressQuaternion = true;
+
+        static public bool UsePositionDeltaCompression = false;
+
+        // Last position is used to get the delta between the current and the last on the
+        // authoritative side when UsePositionDeltaCompression is enabled
+        private Vector3 m_LastPosition;
+
+        // Target position is used on the non-authoritative side when UsePositionDeltaCompression is enabled
+        private Vector3 m_TargetPosition;
 
         /// <summary>
         /// The current position threshold value
@@ -717,6 +762,13 @@ namespace Unity.Netcode.Components
                 isDirty = true;
             }
 
+            if (UsePositionDeltaCompression != networkState.PostionDeltaCompression)
+            {
+                networkState.PostionDeltaCompression = UsePositionDeltaCompression;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
             {
                 networkState.PositionX = position.x;
@@ -736,6 +788,11 @@ namespace Unity.Netcode.Components
                 networkState.PositionZ = position.z;
                 networkState.HasPositionZ = true;
                 isPositionDirty = true;
+            }
+
+            if (UsePositionDeltaCompression && networkState.IsTeleportingNextFrame)
+            {
+                m_LastPosition = position;
             }
 
             if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
@@ -785,6 +842,12 @@ namespace Unity.Netcode.Components
                 networkState.Quaternion = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
             }
 
+            if (UsePositionDeltaCompression && isPositionDirty && !networkState.IsTeleportingNextFrame)
+            {
+                networkState.PositionDelta += position - m_LastPosition;
+                m_LastPosition = position;
+            }
+
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
 
             if (isDirty)
@@ -798,6 +861,7 @@ namespace Unity.Netcode.Components
             return isDirty;
         }
 
+
         /// <summary>
         /// Applies the authoritative state to the transform
         /// </summary>
@@ -809,12 +873,11 @@ namespace Unity.Netcode.Components
             var adjustedRotAngles = currentRotation.eulerAngles;
             var adjustedScale = transform.localScale;
 
-            // InLocalSpace Read:
+            // Apply the authoritative flag states to prevent non-authority from changing it runtime
             InLocalSpace = networkState.InLocalSpace;
-
             UseQuaternionSynch = networkState.UseQuaternionSync;
-
             Interpolate = networkState.UseInterpolation;
+            UsePositionDeltaCompression = networkState.PostionDeltaCompression;
 
             // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
@@ -847,9 +910,18 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
-                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
-                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
+                if (networkState.PostionDeltaCompression && networkState.HasPositionChange)
+                {
+                    if (networkState.HasPositionX) { adjustedPosition.x = m_TargetPosition.x; }
+                    if (networkState.HasPositionY) { adjustedPosition.y = m_TargetPosition.y; }
+                    if (networkState.HasPositionZ) { adjustedPosition.z = m_TargetPosition.z; }
+                }
+                else
+                {
+                    if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
+                    if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
+                    if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
+                }
 
                 if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
                 if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
@@ -909,157 +981,177 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Only non-authoritative instances should invoke this
+        /// Handles applying the full authoritative state (i.e. teleporting)
         /// </summary>
-        private void AddInterpolatedState(NetworkTransformState newState)
+        /// <remarks>
+        /// Only non-authoritative instances should invoke this
+        /// </remarks>
+        private void ApplyTeleportingState(NetworkTransformState newState)
         {
+            if (!newState.IsTeleportingNextFrame)
+            {
+                return;
+            }
+
             var sentTime = newState.SentTime;
             var currentPosition = newState.InLocalSpace ? transform.localPosition : transform.position;
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
             var currentEulerAngles = currentRotation.eulerAngles;
+            var currentScale = transform.localScale;
 
-            CompressQuaternion = newState.QuaternionCompression;
-
-            // When there is a change in interpolation or if teleporting, we reset
-            if ((newState.InLocalSpace != InLocalSpace) || (newState.UseQuaternionSync != UseQuaternionSynch) || newState.IsTeleportingNextFrame)
+            // we should clear our float interpolators
+            foreach (var interpolator in m_AllFloatInterpolators)
             {
-                InLocalSpace = newState.InLocalSpace;
-                UseQuaternionSynch = newState.UseQuaternionSync;
-                Interpolate = newState.UseInterpolation;
-
-                var currentScale = transform.localScale;
-
-                // we should clear our float interpolators
-                foreach (var interpolator in m_AllFloatInterpolators)
-                {
-                    interpolator.Clear();
-                }
-
-                foreach (var rotInterpolator in m_EulerInterpolators)
-                {
-                    rotInterpolator.Clear();
-                }
-
-                // we should clear our quaternion interpolator
-                m_RotationInterpolator.Clear();
-
-                // Adjust based on which axis changed
-                if (newState.HasPositionX)
-                {
-                    m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
-                    currentPosition.x = newState.PositionX;
-                }
-
-                if (newState.HasPositionY)
-                {
-                    m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
-                    currentPosition.y = newState.PositionY;
-                }
-
-                if (newState.HasPositionZ)
-                {
-                    m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
-                    currentPosition.z = newState.PositionZ;
-                }
-
-                // Apply the position
-                if (newState.InLocalSpace)
-                {
-                    transform.localPosition = currentPosition;
-                }
-                else
-                {
-                    transform.position = currentPosition;
-                }
-
-                // Adjust based on which axis changed
-                if (newState.HasScaleX)
-                {
-                    m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
-                    currentScale.x = newState.ScaleX;
-                }
-
-                if (newState.HasScaleY)
-                {
-                    m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
-                    currentScale.y = newState.ScaleY;
-                }
-
-                if (newState.HasScaleZ)
-                {
-                    m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
-                    currentScale.z = newState.ScaleZ;
-                }
-
-                // Apply the adjusted scale
-                transform.localScale = currentScale;
-
-
-                if (newState.UseQuaternionSync)
-                {
-                    // Reset the rotation interpolator
-                    m_RotationInterpolator.ResetTo(newState.Quaternion, sentTime);
-
-                    if (InLocalSpace)
-                    {
-                        transform.localRotation = newState.Quaternion;
-                    }
-                    else
-                    {
-                        transform.rotation = newState.Quaternion;
-                    }
-                }
-                else
-                {
-                    // Adjust based on which axis changed
-                    if (newState.HasRotAngleX)
-                    {
-                        m_RotXInterpolator.ResetTo(newState.RotAngleX, sentTime);
-                        currentEulerAngles.x = newState.RotAngleX;
-                    }
-
-                    if (newState.HasRotAngleY)
-                    {
-                        m_RotYInterpolator.ResetTo(newState.RotAngleY, sentTime);
-                        currentEulerAngles.y = newState.RotAngleY;
-                    }
-
-                    if (newState.HasRotAngleZ)
-                    {
-                        m_RotZInterpolator.ResetTo(newState.RotAngleZ, sentTime);
-                        currentEulerAngles.z = newState.RotAngleZ;
-                    }
-                    currentRotation.eulerAngles = currentEulerAngles;
-                }
-
-                if (InLocalSpace)
-                {
-                    transform.localRotation = currentRotation;
-                }
-                else
-                {
-                    transform.rotation = currentRotation;
-                }
-
-                return;
+                interpolator.Clear();
             }
 
-            // Apply axial changes from the new state
+            foreach (var rotInterpolator in m_EulerInterpolators)
+            {
+                rotInterpolator.Clear();
+            }
+
+            // we should clear our quaternion interpolator
+            m_RotationInterpolator.Clear();
+
+            m_LastPosition = currentPosition;
+            // Adjust based on which axis changed
             if (newState.HasPositionX)
             {
-                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
+                m_PositionXInterpolator.ResetTo(newState.PositionX, sentTime);
+                currentPosition.x = newState.PositionX;
             }
 
             if (newState.HasPositionY)
             {
-                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+                m_PositionYInterpolator.ResetTo(newState.PositionY, sentTime);
+                currentPosition.y = newState.PositionY;
             }
 
             if (newState.HasPositionZ)
             {
-                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
+                m_PositionZInterpolator.ResetTo(newState.PositionZ, sentTime);
+                currentPosition.z = newState.PositionZ;
             }
 
+            m_TargetPosition = currentPosition;
+
+            // Apply the position
+            if (newState.InLocalSpace)
+            {
+                transform.localPosition = currentPosition;
+            }
+            else
+            {
+                transform.position = currentPosition;
+            }
+
+            // Adjust based on which axis changed
+            if (newState.HasScaleX)
+            {
+                m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
+                currentScale.x = newState.ScaleX;
+            }
+
+            if (newState.HasScaleY)
+            {
+                m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
+                currentScale.y = newState.ScaleY;
+            }
+
+            if (newState.HasScaleZ)
+            {
+                m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
+                currentScale.z = newState.ScaleZ;
+            }
+
+            // Apply the adjusted scale
+            transform.localScale = currentScale;
+
+            if (newState.UseQuaternionSync)
+            {
+                // Reset the rotation interpolator
+                m_RotationInterpolator.ResetTo(newState.Quaternion, sentTime);
+                currentRotation = newState.Quaternion;
+            }
+            else
+            {
+                // Adjust based on which axis changed
+                if (newState.HasRotAngleX)
+                {
+                    m_RotXInterpolator.ResetTo(newState.RotAngleX, sentTime);
+                    currentEulerAngles.x = newState.RotAngleX;
+                }
+
+                if (newState.HasRotAngleY)
+                {
+                    m_RotYInterpolator.ResetTo(newState.RotAngleY, sentTime);
+                    currentEulerAngles.y = newState.RotAngleY;
+                }
+
+                if (newState.HasRotAngleZ)
+                {
+                    m_RotZInterpolator.ResetTo(newState.RotAngleZ, sentTime);
+                    currentEulerAngles.z = newState.RotAngleZ;
+                }
+                currentRotation.eulerAngles = currentEulerAngles;
+            }
+
+            if (InLocalSpace)
+            {
+                transform.localRotation = currentRotation;
+            }
+            else
+            {
+                transform.rotation = currentRotation;
+            }
+        }
+
+        /// <summary>
+        /// Adds the new state's values to their respective interpolator
+        /// </summary>
+        /// <remarks>
+        /// Only non-authoritative instances should invoke this
+        /// </remarks>
+        private void AddInterpolatedState(NetworkTransformState newState)
+        {
+            var sentTime = newState.SentTime;
+
+            // Either apply the delta position target position or the current state's delta position
+            // depending upon whether UsePositionDeltaCompression is enabled
+            if (UsePositionDeltaCompression && newState.HasPositionChange)
+            {
+                if (newState.HasPositionX)
+                {
+                    m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
+                }
+
+                if (newState.HasPositionY)
+                {
+                    m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
+                }
+
+                if (newState.HasPositionZ)
+                {
+                    m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
+                }
+            }
+            else
+            {
+                if (newState.HasPositionX)
+                {
+                    m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
+                }
+
+                if (newState.HasPositionY)
+                {
+                    m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+                }
+
+                if (newState.HasPositionZ)
+                {
+                    m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
+                }
+            }
             if (newState.HasScaleX)
             {
                 m_ScaleXInterpolator.AddMeasurement(newState.ScaleX, sentTime);
@@ -1075,16 +1167,16 @@ namespace Unity.Netcode.Components
                 m_ScaleZInterpolator.AddMeasurement(newState.ScaleZ, sentTime);
             }
 
-            // With rotation, we check if there are any changes first and
-            // if so then apply the changes to the current Euler rotation
-            // values.
+            // If there were rotation changes then apply them
             if (newState.HasRotAngleChange)
             {
+                // If quaternion synchronization is enabled, use the state's decompressed
+                // quaternion value
                 if (newState.UseQuaternionSync)
                 {
                     m_RotationInterpolator.AddMeasurement(newState.Quaternion, sentTime);
                 }
-                else
+                else // Otherwise use the Euler rotations
                 {
                     if (newState.HasRotAngleX)
                     {
@@ -1120,6 +1212,26 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // We always set our local properties when the state is updated
+            CompressQuaternion = newState.QuaternionCompression;
+            UsePositionDeltaCompression = newState.PostionDeltaCompression;
+            InLocalSpace = newState.InLocalSpace;
+            UseQuaternionSynch = newState.UseQuaternionSync;
+            Interpolate = newState.UseInterpolation;
+
+            // If delta position compression is enabled and we had a position change,
+            // then update the target position
+            if (UsePositionDeltaCompression && newState.HasPositionChange)
+            {
+                m_TargetPosition += newState.PositionDelta;
+            }
+
+            // Teleport, interpolate, or do nothing else
+            if (newState.IsTeleportingNextFrame)
+            {
+                ApplyTeleportingState(newState);
+            }
+            else
             if (Interpolate)
             {
                 // Add measurements for the new state's deltas
@@ -1188,6 +1300,7 @@ namespace Unity.Netcode.Components
             }
         }
 
+
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
@@ -1203,6 +1316,7 @@ namespace Unity.Netcode.Components
             {
                 var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
                 var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
+
                 // Teleport to current position
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
@@ -1215,6 +1329,10 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+            }
         }
 
         /// <inheritdoc/>
@@ -1251,14 +1369,17 @@ namespace Unity.Netcode.Components
             var replicatedState = ReplicatedNetworkState;
 
             m_LocalAuthoritativeNetworkState = replicatedState.Value;
-
+            m_LastPosition = InLocalSpace ? transform.localPosition : transform.position;
+            m_TargetPosition = InLocalSpace ? transform.localPosition : transform.position;
             if (CanCommitToTransform)
             {
                 replicatedState.OnValueChanged -= OnNetworkStateChanged;
+                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
             }
             else
             {
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
@@ -1368,6 +1489,15 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Authority updates state every tick as opposed to performing calculations each frame and
+        /// collapsing the current state upon itself
+        /// </summary>
+        private void NetworkTickSystem_Tick()
+        {
+            UpdateAuthoritativeState(transform);
+        }
+
+        /// <summary>
         /// Will update the authoritative transform state if any deltas are detected.
         /// This will also reset the m_LocalAuthoritativeNetworkState if it is still dirty
         /// but the replicated network state is not.
@@ -1382,7 +1512,6 @@ namespace Unity.Netcode.Components
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
             }
-
             TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
         }
 
@@ -1400,12 +1529,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // If we are authority, update the authoritative state
-            if (CanCommitToTransform)
-            {
-                UpdateAuthoritativeState(transform);
-            }
-            else // Non-Authority
+            // Non-Authority synchronizes to the current authoritative state each frame
+            if (!CanCommitToTransform)
             {
                 if (Interpolate)
                 {

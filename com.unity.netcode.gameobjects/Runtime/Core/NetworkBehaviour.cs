@@ -882,14 +882,13 @@ namespace Unity.Netcode
 
         internal void Synchronize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            // Server is the only one that writes
-            if (serializer.IsWriter && IsServer)
+            if (serializer.IsWriter)
             {
                 var networkBehaviourId = NetworkBehaviourId;
                 serializer.SerializeValue(ref networkBehaviourId);
                 OnSynchronize(serializer);
             }
-            else // Clients always read
+            else
             {
                 OnSynchronize(serializer);
             }

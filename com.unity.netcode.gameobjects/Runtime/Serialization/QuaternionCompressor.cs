@@ -43,7 +43,7 @@ namespace Unity.Netcode
         private const ushort k_False = 0;
 
         // Used to store the absolute value of the 4 quaternion elements
-        private static Quaternion s_QuatAbsValues = new Quaternion();
+        private static Quaternion s_QuatAbsValues = Quaternion.identity;
 
         /// <summary>
         /// Compresses a Quaternion into an unsigned integer
