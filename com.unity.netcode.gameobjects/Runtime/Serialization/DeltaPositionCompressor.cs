@@ -34,7 +34,7 @@ namespace Unity.Netcode
         private const ushort k_True = 1;
         private const ushort k_False = 0;
 
-        // Used to store the absolute value of the 4 quaternion elements
+        // Used to store the absolute value of the delta position value
         private static Vector3 s_AbsValues = Vector3.zero;
 
         /// <summary>
@@ -66,17 +66,16 @@ namespace Unity.Netcode
             s_AbsValues[1] = Mathf.Abs(normalizedDir[1]);
             s_AbsValues[2] = Mathf.Abs(normalizedDir[2]);
 
-            // Get the largest element value of the quaternion to know what the remaining "Smallest Three" values are
+            // Get the largest element value of the position delta to know what the remaining "Smallest Three" values are
             var vectMax = Mathf.Max(s_AbsValues[0], s_AbsValues[1], s_AbsValues[2]);
 
             // Find the index of the largest element so we can skip that element while compressing and decompressing
             var indexToSkip = (ushort)(s_AbsValues[0] == vectMax ? 0 : s_AbsValues[1] == vectMax ? 1 : 2);
 
-            // Get the sign of the largest element which is all that is needed when calculating the sum of squares of a normalized quaternion.
-
+            // Get the sign of the largest element
             var vectMaxSign = (normalizedDir[indexToSkip] < 0 ? k_True : k_False);
 
-            // Start with the index to skip which will be shifted to the highest two bits
+            // Start with the largest value's index (shifted to the highest two bits)
             var compressed = (uint)indexToSkip;
 
             // Store the sign of the largest value with the magnitude
@@ -94,8 +93,7 @@ namespace Unity.Netcode
             // Repeat the last 3 steps for the remaining elements
             compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
             currentIndex++;
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
-            return compressed;
+            return currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
         }
 
         /// <summary>

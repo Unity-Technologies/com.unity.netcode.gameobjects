@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 
@@ -231,11 +232,13 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private bool BitGet(int bitPosition)
             {
                 return (m_Bitset & (1 << bitPosition)) != 0;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void BitSet(bool set, int bitPosition)
             {
                 if (set) { m_Bitset = (ushort)(m_Bitset | (1 << bitPosition)); }
@@ -260,13 +263,16 @@ namespace Unity.Netcode.Components
             internal int EndExtrapolationTick;
 
             /// <summary>
-            /// This will reset the NetworkTransform BitSet
+            /// This resets the NetworkTransform BitSet value while preserving property states
             /// </summary>
+            /// <remarks>
+            /// Only the authoritative side should invoke this
+            /// </remarks>
             internal void ClearBitSetForNextTick()
             {
-                var preserveFlags = (1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate | 1 << k_CompressQuat | 1 << k_PositionDeltaCompress);
+                var preserveFlags = (ushort)((1 << k_InLocalSpaceBit) | (1 << k_QuaternionSync) | (1 << k_Interpolate) | (1 << k_CompressQuat) | 1 << (k_PositionDeltaCompress));
                 // Preserve the global flags for all transform synchronization
-                m_Bitset &= (ushort)(m_Bitset & preserveFlags);
+                m_Bitset &= preserveFlags;
                 IsDirty = false;
                 // Clear the position delta each tick
                 PositionDelta = Vector3.zero;
@@ -274,7 +280,6 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
 
                 serializer.SerializeValue(ref SentTime);
@@ -336,7 +341,7 @@ namespace Unity.Netcode.Components
                         serializer.SerializeValue(ref Quaternion);
                     }
                 }
-                else // Otherwise synchronize the Euler axis with changes
+                else // Otherwise synchronize the Euler axis with changes (TODO-TBD: Remove Euler synchronization completely?)
                 {
                     // RotAngle Values
                     if (HasRotAngleX)
@@ -450,10 +455,11 @@ namespace Unity.Netcode.Components
         /// to synchronize rotation
         /// </summary>
         /// <remarks>
-        /// Note: Euler synchronization will yield inaccurate results with complex
+        /// Euler synchronization will yield inaccurate results with complex
         /// parent-child hierarchies with varying rotation and scales while interpolation
         /// is enabled. It is recommended to use Quaternion Synchronization under these
         /// conditions.
+        /// TODO: Remove this remark if we decide to switch over completely to quaternion synchronization
         /// </remarks>
         public bool UseQuaternionSynch = true;  // TODO: Remove BufferedLinearInterpolatorAngle (TBD)
 
@@ -463,10 +469,17 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool CompressQuaternion = true;
 
+        /// <summary>
+        /// When enabled, this position will be synchronized as compressed deltas
+        /// </summary>
+        /// <remarks>
+        /// Currently this is static only for testing purposes. The static prefix will
+        /// be removed if we decide to use this.
+        /// </remarks>
         static public bool UsePositionDeltaCompression = false;
 
-        // Last position is used to get the delta between the current and the last on the
-        // authoritative side when UsePositionDeltaCompression is enabled
+        // Last position is used on the authoritative side to get the delta between the
+        // current and the last position when UsePositionDeltaCompression is enabled
         private Vector3 m_LastPosition;
 
         // Target position is used on the non-authoritative side when UsePositionDeltaCompression is enabled
@@ -569,8 +582,7 @@ namespace Unity.Netcode.Components
         // TODO: Remove BufferedLinearInterpolatorAngle
         // Rotation in Euler angles should not be interpolated with complex child-hierarchies with different rotation and scales
         // Transform will flip axis to prevent Gimbal locking and non-authoritative side will try to interpolate towards a value
-        // that should be applied immediately.  Additionally, the non-authoritative side will not yet have reached the point where
-        // it would naturally flip axis and the rotation will "wobble and/or do full rotations around a specific axis".
+        // that should be applied immediately.
         private readonly List<BufferedLinearInterpolatorAngle> m_EulerInterpolators = new List<BufferedLinearInterpolatorAngle>(3);
         private BufferedLinearInterpolatorAngle m_RotXInterpolator;
         private BufferedLinearInterpolatorAngle m_RotYInterpolator;
@@ -680,8 +692,8 @@ namespace Unity.Netcode.Components
             m_RotationInterpolator.ResetTo(rotation, serverTime);
             var eulerRotation = rotation.eulerAngles;
             m_RotXInterpolator.ResetTo(eulerRotation.x, serverTime);
-            m_RotXInterpolator.ResetTo(eulerRotation.y, serverTime);
-            m_RotXInterpolator.ResetTo(eulerRotation.z, serverTime);
+            m_RotYInterpolator.ResetTo(eulerRotation.y, serverTime);
+            m_RotZInterpolator.ResetTo(eulerRotation.z, serverTime);
 
             var scale = transform.localScale;
             m_ScaleXInterpolator.ResetTo(scale.x, serverTime);
@@ -1010,10 +1022,9 @@ namespace Unity.Netcode.Components
                 rotInterpolator.Clear();
             }
 
-            // we should clear our quaternion interpolator
+            // clear the quaternion interpolator
             m_RotationInterpolator.Clear();
 
-            m_LastPosition = currentPosition;
             // Adjust based on which axis changed
             if (newState.HasPositionX)
             {
@@ -1033,7 +1044,11 @@ namespace Unity.Netcode.Components
                 currentPosition.z = newState.PositionZ;
             }
 
-            m_TargetPosition = currentPosition;
+            // assign our target position if position delta compression is enabled
+            if (newState.PostionDeltaCompression)
+            {
+                m_TargetPosition = currentPosition;
+            }
 
             // Apply the position
             if (newState.InLocalSpace)
@@ -1212,7 +1227,7 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // We always set our local properties when the state is updated
+            // Set the state's NetworkTransform properties
             CompressQuaternion = newState.QuaternionCompression;
             UsePositionDeltaCompression = newState.PostionDeltaCompression;
             InLocalSpace = newState.InLocalSpace;
@@ -1220,7 +1235,7 @@ namespace Unity.Netcode.Components
             Interpolate = newState.UseInterpolation;
 
             // If delta position compression is enabled and we had a position change,
-            // then update the target position
+            // then update the target position (teleporting will write over this)
             if (UsePositionDeltaCompression && newState.HasPositionChange)
             {
                 m_TargetPosition += newState.PositionDelta;
@@ -1524,41 +1539,39 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected virtual void Update()
         {
-            if (!IsSpawned)
+            // If not spawned or this instance has authority, exit early
+            if (!IsSpawned || CanCommitToTransform)
             {
                 return;
             }
 
-            // Non-Authority synchronizes to the current authoritative state each frame
-            if (!CanCommitToTransform)
+            if (Interpolate)
             {
-                if (Interpolate)
+                var serverTime = NetworkManager.ServerTime;
+                var cachedDeltaTime = Time.deltaTime;
+                var cachedServerTime = serverTime.Time;
+                var cachedRenderTime = serverTime.TimeTicksAgo(0).Time;
+                foreach (var interpolator in m_AllFloatInterpolators)
                 {
-                    var serverTime = NetworkManager.ServerTime;
-                    var cachedDeltaTime = Time.deltaTime;
-                    var cachedServerTime = serverTime.Time;
-                    var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
-                    foreach (var interpolator in m_AllFloatInterpolators)
+                    interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                }
+
+                if (UseQuaternionSynch)
+                {
+                    m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                }
+                else
+                {   // TODO: Remove BufferedLinearInterpolatorAngle
+                    foreach (var interpolator in m_EulerInterpolators)
                     {
                         interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                     }
-
-                    if (UseQuaternionSynch)
-                    {
-                        m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                    }
-                    else
-                    {   // TODO: Remove BufferedLinearInterpolatorAngle
-                        foreach (var interpolator in m_EulerInterpolators)
-                        {
-                            interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                        }
-                    }
                 }
-
-                // Apply the current authoritative state
-                ApplyAuthoritativeState();
             }
+
+            // Apply the current authoritative state
+            ApplyAuthoritativeState();
+
         }
 
         /// <summary>

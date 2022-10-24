@@ -216,7 +216,6 @@ namespace Unity.Netcode
                     }
                 }
 
-                //var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
                 m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, m_InterpEndValue, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
@@ -294,9 +293,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override float InterpolateUnclamped(float start, float end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return Mathf.Lerp(start, end, time);
+            return Mathf.LerpUnclamped(start, end, time);
         }
 
         /// <inheritdoc />
@@ -316,16 +313,12 @@ namespace Unity.Netcode
         /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            return Quaternion.SlerpUnclamped(start, end, time);
         }
 
         /// <inheritdoc />
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
             return Quaternion.Lerp(start, end, time);
         }
     }

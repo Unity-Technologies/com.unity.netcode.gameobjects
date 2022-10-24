@@ -876,6 +876,15 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// When overridden, this method is invoked on a NetworkBehaviour during client synchronization in order
+        /// to provide the ability to inject custom synchronization information specific to the derived class.
+        /// </summary>
+        /// <param name="serializer">The serializer to use to read and write the data.</param>
+        /// <typeparam name="T">
+        /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
+        /// is in read mode or write mode.
+        /// </typeparam>
         protected virtual void OnSynchronize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
         }
