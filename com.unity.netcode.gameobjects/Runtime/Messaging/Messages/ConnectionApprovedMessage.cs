@@ -75,6 +75,7 @@ namespace Unity.Netcode
             networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
 
             networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
+            networkManager.IsApproved = true;
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
