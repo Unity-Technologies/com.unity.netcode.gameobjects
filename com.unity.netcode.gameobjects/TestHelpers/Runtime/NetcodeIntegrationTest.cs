@@ -112,6 +112,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         protected GameObject m_PlayerPrefab;
+        private NetworkManager m_PlayerPrefabMockNetworkManager;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
 
@@ -250,6 +251,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+            m_PlayerPrefabMockNetworkManager = new NetworkManager();
+            networkObject.NetworkManagerOwner = m_PlayerPrefabMockNetworkManager;
 
             OnCreatePlayerPrefab();
 
@@ -582,6 +585,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     Object.Destroy(m_PlayerPrefab);
                     m_PlayerPrefab = null;
+                }
+
+                if (m_PlayerPrefabMockNetworkManager != null)
+                {
+                    Object.Destroy(m_PlayerPrefabMockNetworkManager);
+                    m_PlayerPrefabMockNetworkManager = null;
                 }
             }
 
