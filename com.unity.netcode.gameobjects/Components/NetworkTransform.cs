@@ -226,13 +226,6 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                if (serializer.IsWriter)
-                {
-                    Debug.Log($"Writing Position: " +
-                              $"{HasPositionX}, {HasPositionY}, {HasPositionZ}, {PositionX}, {PositionY}, {PositionZ}" +
-                              $" Rotation: {HasRotAngleX}, {HasRotAngleY}, {HasRotAngleZ}, {RotAngleX}, {RotAngleY}, {RotAngleZ}" +
-                              $" Scale: {HasScaleX}, {HasScaleY}, {HasScaleZ}, {ScaleX}, {ScaleY}, {ScaleZ}");
-                }
                 serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
@@ -290,13 +283,6 @@ namespace Unity.Netcode.Components
                     // Go ahead and mark the local state dirty or not dirty as well
                     /// <see cref="TryCommitTransformToServer"/>
                     IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
-                }
-                if (serializer.IsReader)
-                {
-                    Debug.Log($"Read Position: " +
-                              $"{HasPositionX}, {HasPositionY}, {HasPositionZ}, {PositionX}, {PositionY}, {PositionZ}" +
-                              $" Rotation: {HasRotAngleX}, {HasRotAngleY}, {HasRotAngleZ}, {RotAngleX}, {RotAngleY}, {RotAngleZ}" +
-                              $" Scale: {HasScaleX}, {HasScaleY}, {HasScaleZ}, {ScaleX}, {ScaleY}, {ScaleZ}");
                 }
             }
         }

@@ -2,7 +2,7 @@ namespace Unity.Netcode
 {
     internal struct TimeSyncMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
-        public long Tick;
+        public int Tick;
 
         public void Serialize(FastBufferWriter writer)
         {
