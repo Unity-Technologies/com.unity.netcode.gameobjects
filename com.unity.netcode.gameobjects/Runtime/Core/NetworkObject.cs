@@ -1056,16 +1056,45 @@ namespace Unity.Netcode
 
         internal struct SceneObject
         {
+            public ulong NetworkObjectId;
+            public ulong OwnerClientId;
             public struct HeaderData : INetworkSerializeByMemcpy
             {
-                public ulong NetworkObjectId;
-                public ulong OwnerClientId;
                 public uint Hash;
+                public byte m_bitField;
 
-                public bool IsPlayerObject;
-                public bool HasParent;
-                public bool IsSceneObject;
-                public bool HasTransform;
+                public bool IsPlayerObject
+                {
+                    get => (m_bitField & 1) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~BytePacker.ToByte(value)) | BytePacker.ToByte(value));
+                }
+                public bool HasParent
+                {
+                    get => (m_bitField & (1 << 1)) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 1)) | (BytePacker.ToByte(value) << 1));
+                }
+                public bool IsSceneObject
+                {
+                    get => (m_bitField & (1 << 2)) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 2)) | (BytePacker.ToByte(value) << 2));
+                }
+                public bool HasTransform
+                {
+                    get => (m_bitField & (1 << 3)) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 3)) | (BytePacker.ToByte(value) << 3));
+                }
+
+                public bool IsLatestParentSet
+                {
+                    get => (m_bitField & (1 << 4)) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 4)) | (BytePacker.ToByte(value) << 4));
+                }
+
+                public bool WorldPositionStays
+                {
+                    get => (m_bitField & (1 << 5)) != 0;
+                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 5)) | (BytePacker.ToByte(value) << 5));
+                }
             }
 
             public HeaderData Header;
@@ -1084,7 +1113,6 @@ namespace Unity.Netcode
             public TransformData Transform;
 
             //If(Metadata.IsReparented)
-            public bool IsLatestParentSet;
 
             //If(IsLatestParentSet)
             public ulong? LatestParent;
@@ -1094,37 +1122,29 @@ namespace Unity.Netcode
 
             public int NetworkSceneHandle;
 
-            public bool WorldPositionStays;
 
-            public unsafe void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
-                var writeSize = sizeof(HeaderData);
+                writer.WriteValueSafe(Header);
+                BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+                BytePacker.WriteValueBitPacked(writer, OwnerClientId);
+
                 if (Header.HasParent)
                 {
-                    writeSize += FastBufferWriter.GetWriteSize(ParentObjectId);
-                    writeSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
-                    writeSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    writeSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                    BytePacker.WriteValueBitPacked(writer, ParentObjectId);
+                    if (Header.IsLatestParentSet)
+                    {
+                        BytePacker.WriteValueBitPacked(writer, LatestParent.Value);
+                    }
                 }
+
+                var writeSize = 0;
                 writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
-                }
-
-                writer.WriteValue(Header);
-
-                if (Header.HasParent)
-                {
-                    writer.WriteValue(ParentObjectId);
-                    writer.WriteValue(WorldPositionStays);
-                    writer.WriteValue(IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        writer.WriteValue(LatestParent.Value);
-                    }
                 }
 
                 if (Header.HasTransform)
@@ -1145,48 +1165,31 @@ namespace Unity.Netcode
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
-            public unsafe void Deserialize(FastBufferReader reader)
+            public void Deserialize(FastBufferReader reader)
             {
-                if (!reader.TryBeginRead(sizeof(HeaderData)))
-                {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
-                }
-                reader.ReadValue(out Header);
-                var readSize = 0;
+                reader.ReadValueSafe(out Header);
+                var position1 = reader.Position;
+                ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+                ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+
                 if (Header.HasParent)
                 {
-                    readSize += FastBufferWriter.GetWriteSize(ParentObjectId);
-                    readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
-                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    // We need to read at this point in order to get the IsLatestParentSet value
-                    if (!reader.TryBeginRead(readSize))
+                    ByteUnpacker.ReadValueBitPacked(reader, out ParentObjectId);
+                    if (Header.IsLatestParentSet)
                     {
-                        throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                        ByteUnpacker.ReadValueBitPacked(reader, out ulong latestParent);
+                        LatestParent = latestParent;
                     }
-
-                    // Read the initial parenting related properties
-                    reader.ReadValue(out ParentObjectId);
-                    reader.ReadValue(out WorldPositionStays);
-                    reader.ReadValue(out IsLatestParentSet);
-
-                    // Now calculate the remaining bytes to read
-                    readSize = 0;
-                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
                 }
 
+                var readSize = 0;
                 readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
                 readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
-                }
-
-                if (IsLatestParentSet)
-                {
-                    reader.ReadValueSafe(out ulong latestParent);
-                    LatestParent = latestParent;
+                    throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
 
                 if (Header.HasTransform)
@@ -1201,7 +1204,7 @@ namespace Unity.Netcode
                 // NetworkObject instance.
                 if (Header.IsSceneObject)
                 {
-                    reader.ReadValueSafe(out NetworkSceneHandle);
+                    reader.ReadValue(out NetworkSceneHandle);
                 }
             }
         }
@@ -1218,11 +1221,11 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
+                NetworkObjectId = NetworkObjectId,
+                OwnerClientId = OwnerClientId,
                 Header = new SceneObject.HeaderData
                 {
                     IsPlayerObject = IsPlayerObject,
-                    NetworkObjectId = NetworkObjectId,
-                    OwnerClientId = OwnerClientId,
                     IsSceneObject = IsSceneObject ?? true,
                     Hash = HostCheckForGlobalObjectIdHashOverride(),
                 },
@@ -1241,10 +1244,10 @@ namespace Unity.Netcode
             {
                 obj.Header.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
-                obj.WorldPositionStays = m_CachedWorldPositionStays;
+                obj.Header.WorldPositionStays = m_CachedWorldPositionStays;
                 var latestParent = GetNetworkParenting();
                 var isLatestParentSet = latestParent != null && latestParent.HasValue;
-                obj.IsLatestParentSet = isLatestParentSet;
+                obj.Header.IsLatestParentSet = isLatestParentSet;
                 if (isLatestParentSet)
                 {
                     obj.LatestParent = latestParent.Value;

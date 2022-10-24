@@ -19,8 +19,8 @@ namespace Unity.Netcode
             {
                 throw new OverflowException($"Not enough space in the write buffer to serialize {nameof(ConnectionApprovedMessage)}");
             }
-            writer.WriteValue(OwnerClientId);
-            writer.WriteValue(NetworkTick);
+            BytePacker.WriteValueBitPacked(writer, OwnerClientId);
+            BytePacker.WriteValueBitPacked(writer, NetworkTick);
 
             uint sceneObjectCount = 0;
             if (SpawnedObjectsList != null)
@@ -39,13 +39,14 @@ namespace Unity.Netcode
                         ++sceneObjectCount;
                     }
                 }
+
                 writer.Seek(pos);
-                writer.WriteValue(sceneObjectCount);
+                BytePacker.WriteValueBitPacked(writer, sceneObjectCount);
                 writer.Seek(writer.Length);
             }
             else
             {
-                writer.WriteValue(sceneObjectCount);
+                BytePacker.WriteValueBitPacked(writer, sceneObjectCount);
             }
         }
 
@@ -57,13 +58,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!reader.TryBeginRead(sizeof(ulong) + sizeof(int) + sizeof(int)))
-            {
-                throw new OverflowException($"Not enough space in the buffer to read {nameof(ConnectionApprovedMessage)}");
-            }
-
-            reader.ReadValue(out OwnerClientId);
-            reader.ReadValue(out NetworkTick);
+            ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
             m_ReceivedSceneObjectData = reader;
             return true;
         }
@@ -84,7 +80,7 @@ namespace Unity.Netcode
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
                 networkManager.SpawnManager.DestroySceneObjects();
-                m_ReceivedSceneObjectData.ReadValue(out uint sceneObjectCount);
+                ByteUnpacker.ReadValueBitPacked(m_ReceivedSceneObjectData, out uint sceneObjectCount);
 
                 // Deserializing NetworkVariable data is deferred from Receive() to Handle to avoid needing
                 // to create a list to hold the data. This is a breach of convention for performance reasons.

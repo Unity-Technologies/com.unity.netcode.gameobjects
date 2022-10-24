@@ -734,7 +734,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(m_DetectedPotentialInterpolatedTeleport == 0.0f, $"Detected possible interpolation on non-authority side! NonAuthority distance: {m_DetectedPotentialInterpolatedTeleport} | Target distance: {targetDistance}");
         }
 
-
         /// <summary>
         /// This test validates the <see cref="NetworkTransform.SetState(Vector3?, Quaternion?, Vector3?, bool)"/> method
         /// usage for the non-authoritative side.  It will either be the owner or the server making/requesting state changes.
@@ -758,12 +757,14 @@ namespace Unity.Netcode.RuntimeTests
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
+            Debug.Log($"WAITING FOR POSITON = {newPosition.x}, {newPosition.y}, {newPosition.z}");
             yield return WaitForConditionOrTimeOut(() => PositionsMatchesValue(newPosition));
             AssertOnTimeout($"Timed out waiting for non-authoritative position state request to be applied!");
             Assert.True(Aproximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Aproximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
 
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
+            Debug.Log($"WAITING FOR ROTATION = {newRotation.eulerAngles.x}, {newRotation.eulerAngles.y}, {newRotation.eulerAngles.z}");
             yield return WaitForConditionOrTimeOut(() => RotationMatchesValue(newRotation.eulerAngles));
             AssertOnTimeout($"Timed out waiting for non-authoritative rotation state request to be applied!");
             Assert.True(Aproximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
@@ -842,7 +843,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             if (!nonauthorityIsEqual)
             {
-                VerboseDebug($"NonAuthority position {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
+                VerboseDebug($"NonAuthority rotation {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
             }
             return auhtorityIsEqual && nonauthorityIsEqual;
         }

@@ -331,7 +331,7 @@ namespace Unity.Netcode
             var rotation = sceneObject.Header.HasTransform ? sceneObject.Transform.Rotation : default;
             var scale = sceneObject.Header.HasTransform ? sceneObject.Transform.Scale : default;
             var parentNetworkId = sceneObject.Header.HasParent ? sceneObject.ParentObjectId : default;
-            var worldPositionStays = sceneObject.Header.HasParent ? sceneObject.WorldPositionStays : true;
+            var worldPositionStays = (!sceneObject.Header.HasParent) || sceneObject.Header.WorldPositionStays;
             var isSpawnedByPrefabHandler = false;
 
             // If scene management is disabled or the NetworkObject was dynamically spawned
@@ -341,7 +341,7 @@ namespace Unity.Netcode
                 if (NetworkManager.PrefabHandler.ContainsHandler(globalObjectIdHash))
                 {
                     // Let the handler spawn the NetworkObject
-                    networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, sceneObject.Header.OwnerClientId, position, rotation);
+                    networkObject = NetworkManager.PrefabHandler.HandleNetworkPrefabSpawn(globalObjectIdHash, sceneObject.OwnerClientId, position, rotation);
                     networkObject.NetworkManagerOwner = NetworkManager;
                     isSpawnedByPrefabHandler = true;
                 }
@@ -505,7 +505,7 @@ namespace Unity.Netcode
 
             networkObject.SetNetworkVariableData(variableData);
 
-            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.Header.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.Header.OwnerClientId, destroyWithScene);
+            SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.Header.IsSceneObject, sceneObject.Header.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
         }
 
         private void SpawnNetworkObjectLocallyCommon(NetworkObject networkObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, bool destroyWithScene)

@@ -28,8 +28,8 @@ namespace Unity.Netcode
                 throw new OverflowException($"Not enough space in the buffer to write {nameof(NetworkVariableDeltaMessage)}");
             }
 
-            writer.WriteValue(NetworkObjectId);
-            writer.WriteValue(NetworkBehaviourIndex);
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
 
             for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
@@ -38,7 +38,7 @@ namespace Unity.Netcode
                     // This var does not belong to the currently iterating delivery group.
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        writer.WriteValueSafe((ushort)0);
+                        BytePacker.WriteValueBitPacked(writer, (ushort)0);
                     }
                     else
                     {
@@ -66,7 +66,7 @@ namespace Unity.Netcode
                 {
                     if (!shouldWrite)
                     {
-                        BytePacker.WriteValueBitPacked(writer, 0);
+                        BytePacker.WriteValueBitPacked(writer, (ushort)0);
                     }
                 }
                 else
@@ -112,13 +112,8 @@ namespace Unity.Netcode
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
-            if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(NetworkObjectId) + FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
-            {
-                throw new OverflowException($"Not enough data in the buffer to read {nameof(NetworkVariableDeltaMessage)}");
-            }
-
-            reader.ReadValue(out NetworkObjectId);
-            reader.ReadValue(out NetworkBehaviourIndex);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkBehaviourIndex);
 
             m_ReceivedNetworkVariableData = reader;
 
