@@ -112,6 +112,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         protected GameObject m_PlayerPrefab;
+        // This is used to prevent the player prefab from getting destroyed if a UnityTest
+        // shuts down the NetworkManager assigned to the NetworkManager.Singleton
         private NetworkManager m_PlayerPrefabMockNetworkManager;
         protected NetworkManager m_ServerNetworkManager;
         protected NetworkManager[] m_ClientNetworkManagers;
@@ -586,7 +588,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Object.Destroy(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
-
+                // Destroy the mock NetworkManager
                 if (m_PlayerPrefabMockNetworkManager != null)
                 {
                     Object.Destroy(m_PlayerPrefabMockNetworkManager);
