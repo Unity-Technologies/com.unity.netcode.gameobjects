@@ -23,14 +23,24 @@ namespace TestProject.RuntimeTests
                 {
                     Debug.Log($"Client-{NetworkManager.LocalClientId} spawned local player object and registered to receive NetworkVariable notifications.");
                     ClientInstance = this;
-                    SomeNetworkVariable.OnValueChanged = OnSomeNetworkVariableUpdated;
+                    SomeNetworkVariable.OnValueChanged = LocalPlayerSomeNetworkVariableUpdated;
                 }
+            }
+            else if (NetworkObject.IsPlayerObject && !IsOwner)
+            {
+                Debug.Log($"[Non-Local] Client-{OwnerClientId} player object spawned and registered to receive NetworkVariable notifications.");
+                SomeNetworkVariable.OnValueChanged = NonLocalPlayerInstanceNetworkVariableUpdated;
             }
         }
 
-        private void OnSomeNetworkVariableUpdated(int previous, int current)
+        private void LocalPlayerSomeNetworkVariableUpdated(int previous, int current)
         {
             Debug.Log($"Client-{NetworkManager.LocalClientId} received update {current}");
+        }
+
+        private void NonLocalPlayerInstanceNetworkVariableUpdated(int previous, int current)
+        {
+            Debug.Log($"[Non-Local] Client-{OwnerClientId} received update {current}");
         }
     }
 
@@ -44,7 +54,7 @@ namespace TestProject.RuntimeTests
             base.OnCreatePlayerPrefab();
         }
 
-        private bool WaitForClientToUpdateValue()
+        private bool WaitForLocalClientToUpdateValue()
         {
             if(PlayerNetworkVariableTest.ServerInstance.SomeNetworkVariable.Value != PlayerNetworkVariableTest.ClientInstance.SomeNetworkVariable.Value)
             {
@@ -57,7 +67,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator TestNetworkVariableOnPlayer()
         {
             PlayerNetworkVariableTest.ServerInstance.SomeNetworkVariable.Value++;
-            yield return WaitForConditionOrTimeOut(WaitForClientToUpdateValue);
+            yield return WaitForConditionOrTimeOut(WaitForLocalClientToUpdateValue);
             AssertOnTimeout($"Client NetworkVariable value: {PlayerNetworkVariableTest.ClientInstance.SomeNetworkVariable.Value} never was updated to server value: {PlayerNetworkVariableTest.ServerInstance.SomeNetworkVariable.Value}");
         }
     }
