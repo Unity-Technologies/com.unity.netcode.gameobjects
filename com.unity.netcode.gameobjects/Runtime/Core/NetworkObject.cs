@@ -1065,35 +1065,35 @@ namespace Unity.Netcode
 
                 public bool IsPlayerObject
                 {
-                    get => (m_BitField & 1) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~ByteUtility.ToByte(value)) | ByteUtility.ToByte(value));
+                    get => ByteUtility.GetBit(m_BitField, 0);
+                    set => ByteUtility.SetBit(ref m_BitField, 0, value);
                 }
                 public bool HasParent
                 {
-                    get => (m_BitField & (1 << 1)) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~(ByteUtility.ToByte(value) << 1)) | (ByteUtility.ToByte(value) << 1));
+                    get => ByteUtility.GetBit(m_BitField, 1);
+                    set => ByteUtility.SetBit(ref m_BitField, 1, value);
                 }
                 public bool IsSceneObject
                 {
-                    get => (m_BitField & (1 << 2)) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~(ByteUtility.ToByte(value) << 2)) | (ByteUtility.ToByte(value) << 2));
+                    get => ByteUtility.GetBit(m_BitField, 2);
+                    set => ByteUtility.SetBit(ref m_BitField, 2, value);
                 }
                 public bool HasTransform
                 {
-                    get => (m_BitField & (1 << 3)) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~(ByteUtility.ToByte(value) << 3)) | (ByteUtility.ToByte(value) << 3));
+                    get => ByteUtility.GetBit(m_BitField, 3);
+                    set => ByteUtility.SetBit(ref m_BitField, 3, value);
                 }
 
                 public bool IsLatestParentSet
                 {
-                    get => (m_BitField & (1 << 4)) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~(ByteUtility.ToByte(value) << 4)) | (ByteUtility.ToByte(value) << 4));
+                    get => ByteUtility.GetBit(m_BitField, 4);
+                    set => ByteUtility.SetBit(ref m_BitField, 4, value);
                 }
 
                 public bool WorldPositionStays
                 {
-                    get => (m_BitField & (1 << 5)) != 0;
-                    set => m_BitField = (byte)((m_BitField & ~(ByteUtility.ToByte(value) << 5)) | (ByteUtility.ToByte(value) << 5));
+                    get => ByteUtility.GetBit(m_BitField, 5);
+                    set => ByteUtility.SetBit(ref m_BitField, 5, value);
                 }
             }
 
