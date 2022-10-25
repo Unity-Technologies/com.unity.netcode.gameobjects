@@ -41,7 +41,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var sentMetric = sentMetrics.First();
             Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
-            Assert.AreEqual(message.Length + k_ServerLogSentMessageOverhead, sentMetric.BytesCount);
         }
 
         [UnityTest]
@@ -64,7 +63,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var receivedMetric = receivedMetrics.First();
             Assert.AreEqual(Client.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)receivedMetric.LogLevel);
-            Assert.AreEqual(message.Length + k_ServerLogReceivedMessageOverhead, receivedMetric.BytesCount);
         }
     }
 }
