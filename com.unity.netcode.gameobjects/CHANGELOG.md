@@ -9,6 +9,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Changed
+
+- Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
+
 ### Fixed
 
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
