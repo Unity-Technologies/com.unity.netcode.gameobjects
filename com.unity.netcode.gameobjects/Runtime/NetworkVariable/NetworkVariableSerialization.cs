@@ -281,7 +281,9 @@ namespace Unity.Netcode
     public static class NetworkVariableSerializationTypes
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+#if UNITY_EDITOR
         [InitializeOnLoadMethod]
+#endif
         internal static void InitializeIntegerSerialization()
         {
             NetworkVariableSerialization<short>.Serializer = new ShortSerializer();

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -41,12 +42,13 @@ namespace Unity.Netcode
                 }
 
                 writer.Seek(pos);
-                BytePacker.WriteValueBitPacked(writer, sceneObjectCount);
+                // Can't pack this value because its space is reserved, so it needs to always use all the reserved space.
+                writer.WriteValueSafe(sceneObjectCount);
                 writer.Seek(writer.Length);
             }
             else
             {
-                BytePacker.WriteValueBitPacked(writer, sceneObjectCount);
+                writer.WriteValueSafe(sceneObjectCount);
             }
         }
 
@@ -81,7 +83,7 @@ namespace Unity.Netcode
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
                 networkManager.SpawnManager.DestroySceneObjects();
-                ByteUnpacker.ReadValueBitPacked(m_ReceivedSceneObjectData, out uint sceneObjectCount);
+                m_ReceivedSceneObjectData.ReadValueSafe(out uint sceneObjectCount);
 
                 // Deserializing NetworkVariable data is deferred from Receive() to Handle to avoid needing
                 // to create a list to hold the data. This is a breach of convention for performance reasons.
