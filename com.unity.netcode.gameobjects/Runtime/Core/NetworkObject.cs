@@ -1061,39 +1061,39 @@ namespace Unity.Netcode
             public struct HeaderData : INetworkSerializeByMemcpy
             {
                 public uint Hash;
-                public byte m_bitField;
+                private byte m_BitField;
 
                 public bool IsPlayerObject
                 {
-                    get => (m_bitField & 1) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~BytePacker.ToByte(value)) | BytePacker.ToByte(value));
+                    get => (m_BitField & 1) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~BytePacker.ToByte(value)) | BytePacker.ToByte(value));
                 }
                 public bool HasParent
                 {
-                    get => (m_bitField & (1 << 1)) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 1)) | (BytePacker.ToByte(value) << 1));
+                    get => (m_BitField & (1 << 1)) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~(BytePacker.ToByte(value) << 1)) | (BytePacker.ToByte(value) << 1));
                 }
                 public bool IsSceneObject
                 {
-                    get => (m_bitField & (1 << 2)) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 2)) | (BytePacker.ToByte(value) << 2));
+                    get => (m_BitField & (1 << 2)) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~(BytePacker.ToByte(value) << 2)) | (BytePacker.ToByte(value) << 2));
                 }
                 public bool HasTransform
                 {
-                    get => (m_bitField & (1 << 3)) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 3)) | (BytePacker.ToByte(value) << 3));
+                    get => (m_BitField & (1 << 3)) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~(BytePacker.ToByte(value) << 3)) | (BytePacker.ToByte(value) << 3));
                 }
 
                 public bool IsLatestParentSet
                 {
-                    get => (m_bitField & (1 << 4)) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 4)) | (BytePacker.ToByte(value) << 4));
+                    get => (m_BitField & (1 << 4)) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~(BytePacker.ToByte(value) << 4)) | (BytePacker.ToByte(value) << 4));
                 }
 
                 public bool WorldPositionStays
                 {
-                    get => (m_bitField & (1 << 5)) != 0;
-                    set => m_bitField = (byte)((m_bitField & ~(BytePacker.ToByte(value) << 5)) | (BytePacker.ToByte(value) << 5));
+                    get => (m_BitField & (1 << 5)) != 0;
+                    set => m_BitField = (byte)((m_BitField & ~(BytePacker.ToByte(value) << 5)) | (BytePacker.ToByte(value) << 5));
                 }
             }
 

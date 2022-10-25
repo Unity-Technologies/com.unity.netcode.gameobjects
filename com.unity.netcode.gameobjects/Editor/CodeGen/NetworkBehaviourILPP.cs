@@ -281,7 +281,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_BytePacker_WriteValueBitPacked_UInt_MethodRef;
         private MethodReference m_BytePacker_WriteValueBitPacked_Long_MethodRef;
         private MethodReference m_BytePacker_WriteValueBitPacked_ULong_MethodRef;
-        
+
         private MethodReference m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef;
         private MethodReference m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef;
         private MethodReference m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef;

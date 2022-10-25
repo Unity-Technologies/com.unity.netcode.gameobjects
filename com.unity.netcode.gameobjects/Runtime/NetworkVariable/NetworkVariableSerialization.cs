@@ -299,7 +299,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<ulong>.Serializer = new UlongSerializer();
             NetworkVariableSerialization<ulong>.AreEqual = NetworkVariableSerialization<ulong>.ValueEquals;
         }
-        
+
         /// <summary>
         /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
         /// </summary>
