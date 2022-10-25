@@ -344,7 +344,7 @@ namespace Unity.Netcode
         /// The first two bits indicate whether the value is 1, 2, or 3 bytes.
         /// If the value uses 14 bits or less, the remaining 14 bits contain the value.
         /// For performance, reasons, if the value is 15 bits or more, there will be six 0 bits, followed
-        /// by the original unmodified 16-bit value in the next 4 bytes.
+        /// by the original unmodified 16-bit value in the next 2 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
@@ -355,7 +355,7 @@ namespace Unity.Netcode
         /// The first two bits indicate whether the value is 1, 2, or 3 bytes.
         /// If the value uses 14 bits or less, the remaining 14 bits contain the value.
         /// For performance, reasons, if the value is 15 bits or more, there will be six 0 bits, followed
-        /// by the original unmodified 16-bit value in the next 4 bytes.
+        /// by the original unmodified 16-bit value in the next 2 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
