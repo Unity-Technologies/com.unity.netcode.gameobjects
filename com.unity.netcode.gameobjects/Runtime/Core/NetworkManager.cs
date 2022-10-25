@@ -1181,6 +1181,8 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            InvokeOnClientConnectedCallback(LocalClientId);
+
             OnServerStarted?.Invoke();
 
             return true;
@@ -2219,7 +2221,6 @@ namespace Unity.Netcode
                 {
                     LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
-                    InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
