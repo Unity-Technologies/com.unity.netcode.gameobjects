@@ -1181,6 +1181,9 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            // This assures that any in-scene placed NetworkObject is spawned and
+            // any associated NetworkBehaviours' netcode related properties are
+            // set prior to invoking OnClientConnected.
             InvokeOnClientConnectedCallback(LocalClientId);
 
             OnServerStarted?.Invoke();
