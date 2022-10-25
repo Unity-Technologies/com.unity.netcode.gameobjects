@@ -282,60 +282,50 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueBitPacked<T>(FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
+        /// <summary>
+        /// Obsolete value that no longer carries meaning. Do not use.
+        /// </summary>
+        public const ushort BitPackedUshortMax = (1 << 15) - 1;
 
         /// <summary>
-        /// Maximum compressable value for a BitPacked ushort (minimum for unsigned is 0)
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const ushort BitPackedUshortMax = (1 << 14) - 1;
+        public const short BitPackedShortMax = (1 << 14) - 1;
 
         /// <summary>
-        /// Maximum compressible value for a BitPacked short
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const short BitPackedShortMax = (1 << 13) - 1;
+        public const short BitPackedShortMin = -(1 << 14);
 
         /// <summary>
-        /// Minimum compressible value size for a BitPacked ushort
-        /// Anything smaller than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const short BitPackedShortMin = -(1 << 13);
+        public const uint BitPackedUintMax = (1 << 30) - 1;
 
         /// <summary>
-        /// Maximum compressible value for a BitPacked uint (minimum for unsigned is 0)
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const uint BitPackedUintMax = (1 << 29) - 1;
+        public const int BitPackedIntMax = (1 << 29) - 1;
 
         /// <summary>
-        /// Maximum compressible value for a BitPacked int
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const int BitPackedIntMax = (1 << 28) - 1;
+        public const int BitPackedIntMin = -(1 << 29);
 
         /// <summary>
-        /// Minimum compressible value size for a BitPacked int
-        /// Anything smaller than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const int BitPackedIntMin = -(1 << 28);
+        public const ulong BitPackedULongMax = (1L << 61) - 1;
 
         /// <summary>
-        /// Maximum compressible value for a BitPacked ulong (minimum for unsigned is 0)
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const ulong BitPackedULongMax = (1L << 60) - 1;
+        public const long BitPackedLongMax = (1L << 60) - 1;
 
         /// <summary>
-        /// Maximum compressible value for a BitPacked long
-        /// Anything larger than this will end up using an additional byte in the buffer compared to unpacked serialization.
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
-        public const long BitPackedLongMax = (1L << 59) - 1;
-
-        /// <summary>
-        /// Minimum compressible value size for a BitPacked long
-        /// Anything smaller than this will end up using an additional byte in the buffer compared to unpacked serialization.
-        /// </summary>
-        public const long BitPackedLongMin = -(1L << 59);
+        public const long BitPackedLongMin = -(1L << 60);
 
         /// <summary>
         /// Writes a 16-bit signed short to the buffer in a bit-encoded packed format.
@@ -361,7 +351,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(FastBufferWriter writer, ushort value)
         {
-            if (value > BitPackedUshortMax)
+            if (value > (1 << 14) - 1)
             {
                 if (!writer.TryBeginWriteInternal(3))
                 {
@@ -405,7 +395,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(FastBufferWriter writer, uint value)
         {
-            if (value > BitPackedUintMax)
+            if (value > (1 << 29) - 1)
             {
                 if (!writer.TryBeginWriteInternal(5))
                 {
@@ -449,7 +439,7 @@ namespace Unity.Netcode
         /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(FastBufferWriter writer, ulong value)
         {
-            if (value > BitPackedULongMax)
+            if (value > (1L << 60) - 1)
             {
                 if (!writer.TryBeginWriteInternal(9))
                 {
