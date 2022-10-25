@@ -11,14 +11,14 @@ namespace Unity.Netcode
         public bool WorldPositionStays
         {
             get => (m_BitField & 1) != 0;
-            set => m_BitField = (byte)((m_BitField & ~BytePacker.ToByte(value)) | (BytePacker.ToByte(value)));
+            set => m_BitField = (byte)((m_BitField & ~ByteUtility.ToByte(value)) | (ByteUtility.ToByte(value)));
         }
 
         //If(Metadata.IsReparented)
         public bool IsLatestParentSet
         {
             get => (m_BitField & 1 << 1) != 0;
-            set => m_BitField = (byte)((m_BitField & ~BytePacker.ToByte(value)) | (BytePacker.ToByte(value) << 1));
+            set => m_BitField = (byte)((m_BitField & ~ByteUtility.ToByte(value)) | (ByteUtility.ToByte(value) << 1));
         }
 
         //If(IsLatestParentSet)
@@ -28,7 +28,7 @@ namespace Unity.Netcode
         public bool RemoveParent
         {
             get => (m_BitField & 1 << 2) != 0;
-            set => m_BitField = (byte)((m_BitField & ~BytePacker.ToByte(value)) | (BytePacker.ToByte(value) << 2));
+            set => m_BitField = (byte)((m_BitField & ~ByteUtility.ToByte(value)) | (ByteUtility.ToByte(value) << 2));
         }
 
         // These additional properties are used to synchronize clients with the current position,

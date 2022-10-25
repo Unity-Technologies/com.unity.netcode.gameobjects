@@ -10,30 +10,6 @@ namespace Unity.Netcode
     /// </summary>
     public static class BytePacker
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe byte ToByte(bool b) => *(byte*)&b;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b) => (byte)(ToByte(a) | (ToByte(b) << 1));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c, bool d) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2) | (ToByte(d) << 3));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c, bool d, bool e) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2) | (ToByte(d) << 3) | (ToByte(e) << 4));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c, bool d, bool e, bool f) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2) | (ToByte(d) << 3) | (ToByte(e) << 4) | (ToByte(f) << 5));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c, bool d, bool e, bool f, bool g) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2) | (ToByte(d) << 3) | (ToByte(e) << 4) | (ToByte(f) << 5) | (ToByte(g) << 6));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte MakeBitfield(bool a, bool b, bool c, bool d, bool e, bool f, bool g, bool h) => (byte)(ToByte(a) | (ToByte(b) << 1) | (ToByte(c) << 2) | (ToByte(d) << 3) | (ToByte(e) << 4) | (ToByte(f) << 5) | (ToByte(g) << 6) | (ToByte(h) << 7));
-
 #if UNITY_NETCODE_DEBUG_NO_PACKING
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
