@@ -27,19 +27,20 @@ namespace TestProject.RuntimeTests
             DespawnedInstances.Clear();
         }
 
-        private Action<NetworkObject, bool, bool, bool> m_ActionClientConnected;
-        public void ConfigureClientConnected(NetworkManager networkManager, Action<NetworkObject, bool, bool, bool> clientConnected)
+        private Action<NetworkObject, int, bool, bool, bool> m_ActionClientConnected;
+        private int m_NumberOfTimesInvoked;
+        public void ConfigureClientConnected(NetworkManager networkManager, Action<NetworkObject, int, bool, bool, bool> clientConnected)
         {
-
             networkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
             m_ActionClientConnected = clientConnected;
         }
 
         private void NetworkManager_OnClientConnectedCallback(ulong obj)
         {
+            m_NumberOfTimesInvoked++;
             if (m_ActionClientConnected != null)
             {
-                m_ActionClientConnected.Invoke(NetworkObject, IsHost, IsClient, IsServer);
+                m_ActionClientConnected.Invoke(NetworkObject, m_NumberOfTimesInvoked, IsHost, IsClient, IsServer);
             }
         }
 
