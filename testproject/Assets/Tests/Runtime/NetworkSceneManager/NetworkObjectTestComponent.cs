@@ -27,6 +27,22 @@ namespace TestProject.RuntimeTests
             DespawnedInstances.Clear();
         }
 
+        private Action<NetworkObject, bool, bool, bool> m_ActionClientConnected;
+        public void ConfigureClientConnected(NetworkManager networkManager, Action<NetworkObject, bool, bool, bool> clientConnected)
+        {
+
+            networkManager.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+            m_ActionClientConnected = clientConnected;
+        }
+
+        private void NetworkManager_OnClientConnectedCallback(ulong obj)
+        {
+            if (m_ActionClientConnected != null)
+            {
+                m_ActionClientConnected.Invoke(NetworkObject, IsHost, IsClient, IsServer);
+            }
+        }
+
         // When disabling on spawning we only want this to happen on the initial spawn.
         // This is used to track this so the server only does it once upon spawning.
         public bool ObjectWasDisabledUponSpawn;
