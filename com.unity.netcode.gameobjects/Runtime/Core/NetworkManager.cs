@@ -1341,6 +1341,7 @@ namespace Unity.Netcode
         private void DisconnectRemoteClient(ulong clientId)
         {
             var transportId = ClientIdToTransportId(clientId);
+            MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
 
@@ -1820,6 +1821,10 @@ namespace Unity.Netcode
                     {
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
+
+                    // Process the incoming message queue so that we get everything from the server disconnecting us
+                    // or, if we are the server, so we got everything from that client.
+                    MessagingSystem.ProcessIncomingMessageQueue();
 
                     OnClientDisconnectCallback?.Invoke(clientId);
 
