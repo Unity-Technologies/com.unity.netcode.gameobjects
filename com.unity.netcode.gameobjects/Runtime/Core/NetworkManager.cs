@@ -443,6 +443,8 @@ namespace Unity.Netcode
             /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
             /// </summary>
             public bool Pending;
+
+            public String Reason;
         }
 
         /// <summary>
@@ -2118,6 +2120,35 @@ namespace Unity.Netcode
 #endif
         }
 
+        internal struct DisconnectReasonMessage : INetworkMessage
+        {
+            public String reason;
+
+            public void Serialize(FastBufferWriter writer)
+            {
+                writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(reason));
+                writer.WriteValue(reason.Length);
+                writer.WriteValue(reason);
+            }
+
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            {
+                int size;
+                reader.TryBeginRead(sizeof(int));
+                reader.ReadValue(out size);
+                reason = new String(' ', size);
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(reason));
+                reader.ReadValue(out reason);
+
+                return true;
+            }
+
+            public void Handle(ref NetworkContext context)
+            {
+                Debug.Log($"DisconnectReasonMessage.Handle {reason}");
+            }
+        };
+
         /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
@@ -2232,6 +2263,10 @@ namespace Unity.Netcode
             }
             else
             {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.reason = response.Reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+
                 PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
             }

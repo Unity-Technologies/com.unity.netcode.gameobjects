@@ -45,6 +45,26 @@ namespace TestProject.ManualTests
 
         private static GameObject s_Instance;
 
+        void bar(ulong clientId)
+        {
+            Debug.Log($"OnClientDisconnectCallback {clientId}");
+        }
+
+        void foo(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            Debug.Log("Rejecting");
+            response.Approved = true;
+            response.Reason = "blah";
+        }
+
+        void Awake()
+        {
+            Debug.Log("Adding approval callback");
+            NetworkManager.OnClientDisconnectCallback += bar;
+            NetworkManager.NetworkConfig.ConnectionApproval = true;
+            NetworkManager.ConnectionApprovalCallback += foo;
+        }
+
         /// <summary>
         /// Called when enabled, if already connected we register any custom prefab spawn handler here
         /// </summary>
