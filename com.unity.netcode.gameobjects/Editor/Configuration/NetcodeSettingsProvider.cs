@@ -44,7 +44,7 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 
-    internal class NetcodeSettingsLabel : NetcodeGuiSetings
+    internal class NetcodeSettingsLabel : NetcodeGUISettings
     {
         private string m_LabelContent;
 
@@ -61,7 +61,7 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 
-    internal class NetcodeSettingsToggle : NetcodeGuiSetings
+    internal class NetcodeSettingsToggle : NetcodeGUISettings
     {
         private GUIContent m_ToggleContent;
 
@@ -78,7 +78,7 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 
-    internal class NetcodeGuiSetings
+    internal class NetcodeGUISettings
     {
         private const float k_MaxLabelWidth = 450f;
         protected float m_LabelSize { get; private set; }
