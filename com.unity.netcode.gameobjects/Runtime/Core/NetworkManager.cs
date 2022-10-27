@@ -86,7 +86,7 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
-        internal string DisconnectionReason { get; set; }
+        public string DisconnectReason { get; internal set; }
 
         private class NetworkManagerHooks : INetworkHooks
         {
@@ -893,6 +893,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            DisconnectReason = "";
             IsApproved = false;
 
             ComponentFactory.SetDefaults();
@@ -2147,7 +2148,7 @@ namespace Unity.Netcode
 
             public void Handle(ref NetworkContext context)
             {
-                ((NetworkManager) context.SystemOwner).DisconnectionReason = reason;
+                ((NetworkManager) context.SystemOwner).DisconnectReason = reason;
             }
         };
 
