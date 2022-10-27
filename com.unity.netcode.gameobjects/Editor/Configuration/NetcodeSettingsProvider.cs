@@ -20,20 +20,26 @@ namespace Unity.Netcode.Editor.Configuration
             return provider;
         }
 
-        internal static NetcodeSettingsLabel NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObjects");
-
-        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObjects", "When enabled, Netcode for GameObjects " +
-            "will automatically add a NetworkObject to a GameObject that does not already have one.", 20);
+        internal static NetcodeSettingsLabel NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObject Helper Settings", 20);
+        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObjects", "When enabled, NetworkObjects will automatically" +
+            "be added to a GameObject when needed (i.e. adding a NetworkBehaviour to an empty GameObject)", 20);
+        internal static NetcodeSettingsLabel MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
+        internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle = new NetcodeSettingsToggle("Multiplayer Tools Install Reminder", "When enabled, the NetworkManager will display " +
+            "the notification to install the multiplayer tools package.", 20);
 
         private static void OnGuiHandler(string obj)
         {
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsSettings.GetAutoAddNetworkObjectSetting();
+            var multiplayerToolsTipStatus = NetcodeForGameObjectsSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
             EditorGUI.BeginChangeCheck();
             NetworkObjectsSectionLabel.DrawLabel();
             autoAddNetworkObjectSetting = AutoAddNetworkObjectToggle.DrawToggle(autoAddNetworkObjectSetting);
+            MultiplayerToolsLabel.DrawLabel();
+            multiplayerToolsTipStatus = MultiplayerToolTipStatusToggle.DrawToggle(multiplayerToolsTipStatus);
             if (EditorGUI.EndChangeCheck())
             {
                 NetcodeForGameObjectsSettings.SetAutoAddNetworkObjectSetting(autoAddNetworkObjectSetting);
+                NetcodeForGameObjectsSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
             }
         }
     }
@@ -44,6 +50,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         public void DrawLabel()
         {
+            EditorGUIUtility.labelWidth = m_LabelSize;
             GUILayout.Label(m_LabelContent, EditorStyles.boldLabel, m_LayoutWidth);
         }
 
@@ -58,10 +65,9 @@ namespace Unity.Netcode.Editor.Configuration
     {
         private GUIContent m_ToggleContent;
 
-        private int m_LayoutOffset;
-
         public bool DrawToggle(bool currentSetting)
         {
+            EditorGUIUtility.labelWidth = m_LabelSize;
             return EditorGUILayout.Toggle(m_ToggleContent, currentSetting, m_LayoutWidth);
         }
 
@@ -72,16 +78,17 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 
-
     internal class NetcodeGuiSetings
     {
         private const float k_MaxLabelWidth = 450f;
+        protected float m_LabelSize { get; private set; }
+
         protected GUILayoutOption m_LayoutWidth { get; private set; }
 
         protected void AdjustLableSize(string labelText, float offset = 0.0f)
         {
-            var layoutWidth = Mathf.Min(k_MaxLabelWidth, EditorStyles.label.CalcSize(new GUIContent(labelText)).x);
-            m_LayoutWidth = GUILayout.Width(layoutWidth + offset);
+            m_LabelSize = Mathf.Min(k_MaxLabelWidth, EditorStyles.label.CalcSize(new GUIContent(labelText)).x);
+            m_LayoutWidth = GUILayout.Width(m_LabelSize + offset);
         }
     }
 

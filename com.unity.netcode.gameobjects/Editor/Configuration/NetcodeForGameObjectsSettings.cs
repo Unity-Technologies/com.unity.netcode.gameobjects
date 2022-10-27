@@ -1,13 +1,26 @@
 using UnityEditor;
 
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.Editor.Configuration
 {
     internal class NetcodeForGameObjectsSettings
     {
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
+        internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
 
-        private static NetcodeForGameObjectsSettings s_Instance;
+        internal static int GetNetcodeInstallMultiplayerToolTips()
+        {
+            if (EditorPrefs.HasKey(InstallMultiplayerToolsTipDismissedPlayerPrefKey))
+            {
+                return EditorPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey);
+            }
+            return 0;
+        }
+
+        internal static void SetNetcodeInstallMultiplayerToolTips(int toolTipPrefSetting)
+        {
+            EditorPrefs.SetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, toolTipPrefSetting);
+        }
 
         internal static bool GetAutoAddNetworkObjectSetting()
         {
@@ -21,11 +34,6 @@ namespace Unity.Netcode.Editor
         internal static void SetAutoAddNetworkObjectSetting(bool autoAddSetting)
         {
             EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, autoAddSetting);
-        }
-
-        internal void ResetAutoAddKey()
-        {
-            EditorPrefs.DeleteKey(AutoAddNetworkObjectIfNoneExists);
         }
     }
 }
