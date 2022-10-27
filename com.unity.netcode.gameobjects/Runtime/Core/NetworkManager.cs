@@ -1186,6 +1186,11 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            // This assures that any in-scene placed NetworkObject is spawned and
+            // any associated NetworkBehaviours' netcode related properties are
+            // set prior to invoking OnClientConnected.
+            InvokeOnClientConnectedCallback(LocalClientId);
+
             OnServerStarted?.Invoke();
 
             return true;
@@ -2253,7 +2258,6 @@ namespace Unity.Netcode
                 {
                     LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
-                    InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
