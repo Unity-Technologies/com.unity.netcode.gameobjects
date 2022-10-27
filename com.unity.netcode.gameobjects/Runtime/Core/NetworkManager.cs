@@ -446,7 +446,7 @@ namespace Unity.Netcode
             /// </summary>
             public bool Pending;
 
-            public String Reason;
+            public string Reason;
         }
 
         /// <summary>
@@ -2130,13 +2130,13 @@ namespace Unity.Netcode
 
         internal struct DisconnectReasonMessage : INetworkMessage
         {
-            public String reason;
+            public string Reason;
 
             public void Serialize(FastBufferWriter writer)
             {
-                writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(reason));
-                writer.WriteValue(reason.Length);
-                writer.WriteValue(reason);
+                writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(Reason));
+                writer.WriteValue(Reason.Length);
+                writer.WriteValue(Reason);
             }
 
             public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
@@ -2144,16 +2144,16 @@ namespace Unity.Netcode
                 int size;
                 reader.TryBeginRead(sizeof(int));
                 reader.ReadValue(out size);
-                reason = new String(' ', size);
-                reader.TryBeginRead(FastBufferWriter.GetWriteSize(reason));
-                reader.ReadValue(out reason);
+                Reason = new string(' ', size);
+                reader.TryBeginRead(FastBufferWriter.GetWriteSize(Reason));
+                reader.ReadValue(out Reason);
 
                 return true;
             }
 
             public void Handle(ref NetworkContext context)
             {
-                ((NetworkManager) context.SystemOwner).DisconnectReason = reason;
+                ((NetworkManager)context.SystemOwner).DisconnectReason = Reason;
             }
         };
 
@@ -2271,7 +2271,7 @@ namespace Unity.Netcode
             else
             {
                 var disconnectReason = new DisconnectReasonMessage();
-                disconnectReason.reason = response.Reason;
+                disconnectReason.Reason = response.Reason;
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
 
                 PendingClients.Remove(ownerClientId);
