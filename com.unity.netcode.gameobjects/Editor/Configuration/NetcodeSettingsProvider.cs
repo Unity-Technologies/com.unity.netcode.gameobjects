@@ -21,8 +21,7 @@ namespace Unity.Netcode.Editor.Configuration
         }
 
         internal static NetcodeSettingsLabel NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObject Helper Settings", 20);
-        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObjects", "When enabled, NetworkObjects will automatically" +
-            "be added to a GameObject when needed (i.e. adding a NetworkBehaviour to an empty GameObject)", 20);
+        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObjects", "When enabled, NetworkObjects are automatically added to GameObjects when NetworkBehaviours are added first.", 20);
         internal static NetcodeSettingsLabel MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
         internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle = new NetcodeSettingsToggle("Multiplayer Tools Install Reminder", "When enabled, the NetworkManager will display " +
             "the notification to install the multiplayer tools package.", 20);
