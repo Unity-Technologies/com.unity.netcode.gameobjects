@@ -9,10 +9,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## [Unreleased]
 
+### Added
+- Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings.
+
 ### Fixed
 
 - Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
+
+### Removed
+- Removed the `NetworkObject` auto-add and Multiplayer Tools install reminder settings from the Menu interface.
+
 
 ## [1.1.0] - 2022-10-21
 
