@@ -1348,9 +1348,17 @@ namespace Unity.Netcode
             }
         }
 
-        private void DisconnectRemoteClient(ulong clientId)
+        private void DisconnectRemoteClient(ulong clientId, string reason = null)
         {
             var transportId = ClientIdToTransportId(clientId);
+
+            if (!string.IsNullOrEmpty(reason))
+            {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.Reason = reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
+            }
+
             MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
@@ -2001,7 +2009,9 @@ namespace Unity.Netcode
         /// Disconnects the remote client.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
-        public void DisconnectClient(ulong clientId)
+        /// <param name="reason">Optional reason. If set, client will receive a DisconnectReasonMessage and have the
+        /// reason available in the NetworkManager.DisconnectReason property</param>
+        public void DisconnectClient(ulong clientId, string reason = null)
         {
             if (!IsServer)
             {
@@ -2009,7 +2019,7 @@ namespace Unity.Netcode
             }
 
             OnClientDisconnectFromServer(clientId);
-            DisconnectRemoteClient(clientId);
+            DisconnectRemoteClient(clientId, reason);
         }
 
         private void OnClientDisconnectFromServer(ulong clientId)
@@ -2270,9 +2280,12 @@ namespace Unity.Netcode
             }
             else
             {
-                var disconnectReason = new DisconnectReasonMessage();
-                disconnectReason.Reason = response.Reason;
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+                if (!string.IsNullOrEmpty(response.Reason))
+                {
+                    var disconnectReason = new DisconnectReasonMessage();
+                    disconnectReason.Reason = response.Reason;
+                    SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+                }
 
                 PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
