@@ -2012,6 +2012,15 @@ namespace Unity.Netcode
         /// Disconnects the remote client.
         /// </summary>
         /// <param name="clientId">The ClientId to disconnect</param>
+        public void DisconnectClient(ulong clientId)
+        {
+            DisconnectClient(clientId, null);
+        }
+
+        /// <summary>
+        /// Disconnects the remote client.
+        /// </summary>
+        /// <param name="clientId">The ClientId to disconnect</param>
         /// <param name="reason">Optional reason. If set, client will receive a DisconnectReasonMessage and have the
         /// reason available in the NetworkManager.DisconnectReason property</param>
         public void DisconnectClient(ulong clientId, string reason = null)
