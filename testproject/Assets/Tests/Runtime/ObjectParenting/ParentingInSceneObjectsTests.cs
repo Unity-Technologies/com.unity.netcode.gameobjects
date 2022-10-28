@@ -41,7 +41,7 @@ namespace TestProject.RuntimeTests
         {
             InSceneParentChildHandler.ResetInstancesTracking(m_EnableVerboseDebug);
             InSceneParentedUnderGameObjectHandler.Instances.Clear();
-            ParentinAutoSyncManager.Reset();
+            ParentingAutoSyncManager.Reset();
             return base.OnSetup();
         }
 
@@ -391,12 +391,12 @@ namespace TestProject.RuntimeTests
         /// </summary>
         private bool AllClientInstancesMatchServerInstance()
         {
-            for (int i = 0; i < ParentinAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms.Count; i++)
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms.Count; i++)
             {
-                var serverTransformToTest = ParentinAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms[i];
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms[i];
                 for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
                 {
-                    var clientRelativeAutoSyncManager = ParentinAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
                     var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOnTransforms[i];
                     if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
                     {
@@ -415,12 +415,12 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            for (int i = 0; i < ParentinAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms.Count; i++)
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms.Count; i++)
             {
-                var serverTransformToTest = ParentinAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms[i];
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms[i];
                 for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
                 {
-                    var clientRelativeAutoSyncManager = ParentinAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
                     var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOffTransforms[i];
                     if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
                     {
@@ -439,12 +439,12 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            for (int i = 0; i < ParentinAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms.Count; i++)
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms.Count; i++)
             {
-                var serverTransformToTest = ParentinAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms[i];
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms[i];
                 for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
                 {
-                    var clientRelativeAutoSyncManager = ParentinAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
                     var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOnTransforms[i];
                     if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
                     {
@@ -463,12 +463,12 @@ namespace TestProject.RuntimeTests
                 }
             }
 
-            for (int i = 0; i < ParentinAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms.Count; i++)
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms.Count; i++)
             {
-                var serverTransformToTest = ParentinAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms[i];
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms[i];
                 for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
                 {
-                    var clientRelativeAutoSyncManager = ParentinAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
                     var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOffTransforms[i];
                     if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
                     {

@@ -9,10 +9,10 @@ namespace TestProject.RuntimeTests
     /// Helper class that builds 4 transform lists based on parent-child hierarchy
     /// for the <see cref="ParentingInSceneObjectsTests.InSceneNestedAutoSyncObjectTest"/>
     /// </summary>
-    public class ParentinAutoSyncManager : NetworkBehaviour
+    public class ParentingAutoSyncManager : NetworkBehaviour
     {
-        public static ParentinAutoSyncManager ServerInstance;
-        public static Dictionary<ulong, ParentinAutoSyncManager> ClientInstances = new Dictionary<ulong, ParentinAutoSyncManager>();
+        public static ParentingAutoSyncManager ServerInstance;
+        public static Dictionary<ulong, ParentingAutoSyncManager> ClientInstances = new Dictionary<ulong, ParentingAutoSyncManager>();
 
         public GameObject WithNetworkObjectAutoSyncOn;
         public GameObject WithNetworkObjectAutoSyncOff;
