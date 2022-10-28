@@ -446,6 +446,9 @@ namespace Unity.Netcode
             /// </summary>
             public bool Pending;
 
+            // <summary>
+            // Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            // were not approved.
             public string Reason;
         }
 
