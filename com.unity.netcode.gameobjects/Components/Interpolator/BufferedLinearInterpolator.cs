@@ -216,8 +216,8 @@ namespace Unity.Netcode
                     }
                 }
 
-                var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
-                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, target, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
+                //var target = InterpolateUnclamped(m_InterpStartValue, m_InterpEndValue, t);
+                m_CurrentInterpValue = Interpolate(m_CurrentInterpValue, m_InterpEndValue, deltaTime / MaximumInterpolationTime); // second interpolate to smooth out extrapolation jumps
             }
 
             m_NbItemsReceivedThisFrame = 0;

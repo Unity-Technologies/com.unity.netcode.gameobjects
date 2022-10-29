@@ -507,6 +507,7 @@ namespace Unity.Netcode.Components
             {
                 // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+
             }
         }
 
@@ -907,6 +908,12 @@ namespace Unity.Netcode.Components
             }
         }
 
+        protected virtual void OnNonAuthoritativeStateUpdated(bool positionUpdated, bool rotationUpdated, bool scaleUpdated)
+        {
+
+        }
+
+
         /// <summary>
         /// Only non-authoritative instances should invoke this method
         /// </summary>
@@ -927,6 +934,7 @@ namespace Unity.Netcode.Components
             {
                 // Add measurements for the new state's deltas
                 AddInterpolatedState(newState);
+                OnNonAuthoritativeStateUpdated(newState.HasPositionChange, newState.HasRotAngleChange, newState.HasScaleChange);
             }
         }
 
@@ -1005,6 +1013,7 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
         }
 
         /// <inheritdoc/>
@@ -1043,15 +1052,29 @@ namespace Unity.Netcode.Components
 
             if (CanCommitToTransform)
             {
+                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
                 replicatedState.OnValueChanged -= OnNetworkStateChanged;
             }
             else
             {
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
 
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
             }
+        }
+
+
+        protected virtual void OnAuthoritativeStateUpdated(bool positionUpdated, bool rotationUpdated, bool scaleUpdated)
+        {
+
+        }
+
+        private void NetworkTickSystem_Tick()
+        {
+            UpdateAuthoritativeState(transform);
+            OnAuthoritativeStateUpdated(m_LocalAuthoritativeNetworkState.HasPositionChange, m_LocalAuthoritativeNetworkState.HasRotAngleChange, m_LocalAuthoritativeNetworkState.HasScaleChange);
         }
 
         /// <summary>
@@ -1184,18 +1207,18 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected virtual void Update()
         {
-            if (!IsSpawned)
+            if (!IsSpawned || CanCommitToTransform)
             {
                 return;
             }
 
-            // If we are authority, update the authoritative state
-            if (CanCommitToTransform)
-            {
-                UpdateAuthoritativeState(transform);
-            }
-            else // Non-Authority
-            {
+            //// If we are authority, update the authoritative state
+            //if (CanCommitToTransform)
+            //{
+            //    UpdateAuthoritativeState(transform);
+            //}
+            //else // Non-Authority
+            //{
                 if (Interpolate)
                 {
                     var serverTime = NetworkManager.ServerTime;
@@ -1212,7 +1235,7 @@ namespace Unity.Netcode.Components
 
                 // Apply the current authoritative state
                 ApplyAuthoritativeState();
-            }
+            //}
         }
 
         /// <summary>
