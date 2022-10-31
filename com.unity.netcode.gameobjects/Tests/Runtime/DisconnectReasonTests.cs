@@ -1,4 +1,5 @@
 using System.Collections;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -40,16 +41,16 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkManagers[1].OnClientDisconnectCallback += OnClientDisconnectCallback;
 
             // Disconnect first client, from the server
-            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, "Bogus reason");
-            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId, "Bogus reason");
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, "Bogus reason 1");
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId, "Bogus reason 2");
 
             while (disconnectCount < 2 && Time.realtimeSinceStartup < startTime + 10.0f)
             {
                 yield return null;
             }
 
-            Debug.Log($"Disconnect reason is {m_ClientNetworkManagers[0].DisconnectReason}");
-            Debug.Log($"Disconnect reason is {m_ClientNetworkManagers[1].DisconnectReason}");
+            Assert.AreEqual(m_ClientNetworkManagers[0].DisconnectReason, "Bogus reason 1");
+            Assert.AreEqual(m_ClientNetworkManagers[1].DisconnectReason, "Bogus reason 2");
         }
     }
 }
