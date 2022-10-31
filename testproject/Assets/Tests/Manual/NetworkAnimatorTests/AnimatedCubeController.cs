@@ -165,7 +165,7 @@ namespace Tests.Manual.NetworkAnimatorTests
                 m_TestIntValue = testIntValue;
                 Debug.Log($"[{name}]TestInt value changed to = {m_TestIntValue}");
             }
-            var testFloatValue = m_Animator.GetInteger("TestFloat");
+            var testFloatValue = m_Animator.GetFloat("TestFloat");
             if (m_TestFloatValue != testFloatValue)
             {
                 m_TestFloatValue = testFloatValue;
@@ -212,6 +212,147 @@ namespace Tests.Manual.NetworkAnimatorTests
                 Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
                 Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
             }
+
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                if (m_IsServerAuthoritative && !IsServer)
+                {
+                    CrossFadeToStateServerRpc();
+                }
+                else
+                {
+                    CrossFadeToState();
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                TestChangingBoolOneFrame();
+            }
+
+            if (m_CheckBoolValue)
+            {
+                m_CheckBoolValue = false;
+                var testBool = m_Animator.GetBool("TestBool");
+                if (testBool != m_BoolValueToExpect)
+                {
+                    Debug.LogError($"TestBool Value was {testBool} and expected {m_BoolValueToExpect}");
+                }
+                else
+                {
+                    Debug.Log($"TestBool Value maintained its value {m_BoolValueToExpect} set in a coroutine after one frame.");
+                }
+            }
+        }
+
+        private Coroutine m_CrossFadeCoroutine;
+
+        private void CrossFadeToState()
+        {
+
+            var currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+            var currentStateHash = currentState.shortNameHash;
+            m_Animator.CrossFade("NonLoopingState", 0);
+
+            m_CrossFadeCoroutine = StartCoroutine(CrossFadeCoroutine(currentStateHash));
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void CrossFadeToStateServerRpc()
+        {
+            CrossFadeToState();
+        }
+
+        private IEnumerator CrossFadeCoroutine(int originatingState)
+        {
+            bool reachedEnd = false;
+            yield return null;
+            var nonLoopingHash = Animator.StringToHash("NonLoopingState");
+            var currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+            var currentStateHash = currentState.shortNameHash;
+            while(currentStateHash != nonLoopingHash)
+            {
+                currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+                currentStateHash = currentState.shortNameHash;
+                yield return null;
+            }
+            Debug.Log("Fist non-looping state crossfade playing!");
+            var animationClipInfo = m_Animator.GetCurrentAnimatorClipInfo(0);
+
+            while (!reachedEnd)
+            {
+                currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+                reachedEnd = currentState.normalizedTime >= 1.0f;
+                yield return null;
+            }
+            Debug.Log("First non-looping state finished! Transitioning back to originating state...");
+            reachedEnd = false;
+            currentStateHash = currentState.shortNameHash;
+            m_Animator.CrossFade(originatingState, 0);
+            while (currentStateHash != originatingState)
+            {
+                currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+                currentStateHash = currentState.shortNameHash;
+                yield return null;
+            }
+
+            Debug.Log("Transitioned to originating state! Starting second cross fade transition...");
+            m_Animator.CrossFade("NonLoopingState", 0);
+            while (currentStateHash != nonLoopingHash)
+            {
+                currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+                currentStateHash = currentState.shortNameHash;
+                yield return null;
+            }
+            Debug.Log("Started second nonlooping state!");
+            reachedEnd = false;
+            while (!reachedEnd)
+            {
+                currentState = m_Animator.GetCurrentAnimatorStateInfo(0);
+                reachedEnd = currentState.normalizedTime >= 1.0f;
+                yield return null;
+            }
+            Debug.Log("Reached the end of the second state using crossfade! Transitioning back to the originating state.");
+            m_Animator.CrossFade(originatingState, 0);
+            m_CrossFadeCoroutine = null;
+            yield break;
+        }
+
+        private bool m_BoolValueToExpect;
+        private bool m_BoolValueThatWasTemporarilySet;
+        private bool m_CheckBoolValue;
+        private Coroutine m_TestChangingBoolOneFrameCoroutine;
+
+        private void TestChangingBoolOneFrame()
+        {
+            if (m_TestChangingBoolOneFrameCoroutine == null)
+            {
+                m_CheckBoolValue = false;
+                m_BoolValueToExpect = m_Animator.GetBool("TestBool");
+                m_BoolValueThatWasTemporarilySet = !m_BoolValueToExpect;
+                m_Animator.SetBool("TestBool", m_BoolValueThatWasTemporarilySet);
+                m_TestChangingBoolOneFrameCoroutine = StartCoroutine(WaitOneFrameThenChangeBool(m_BoolValueToExpect));
+            }
+        }
+
+        private IEnumerator WaitOneFrameThenChangeBool(bool originalValue)
+        {
+            yield return null;
+            var testBool = m_Animator.GetBool("TestBool");
+            if (testBool != m_BoolValueThatWasTemporarilySet)
+            {
+                Debug.LogError($"[Coroutine] TestBool was {testBool} but expected {m_BoolValueThatWasTemporarilySet}");
+                m_TestChangingBoolOneFrameCoroutine = null;
+                yield break;
+            }
+            else
+            {
+                Debug.Log($"[Coroutine] TestBool Value maintained its 1 frame value {testBool} before being reset in this coroutine.");
+            }
+            m_Animator.SetBool("TestBool", originalValue);
+            m_CheckBoolValue = true;
+            m_TestChangingBoolOneFrameCoroutine = null;
+            yield break;
         }
     }
 }
