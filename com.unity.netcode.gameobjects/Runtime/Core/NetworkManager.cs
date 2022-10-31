@@ -1354,14 +1354,6 @@ namespace Unity.Netcode
         private void DisconnectRemoteClient(ulong clientId, string reason = null)
         {
             var transportId = ClientIdToTransportId(clientId);
-
-            if (!string.IsNullOrEmpty(reason))
-            {
-                var disconnectReason = new DisconnectReasonMessage();
-                disconnectReason.Reason = reason;
-                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
-            }
-
             MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
@@ -2028,6 +2020,13 @@ namespace Unity.Netcode
             if (!IsServer)
             {
                 throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
+            }
+
+            if (!string.IsNullOrEmpty(reason))
+            {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.Reason = reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
 
             OnClientDisconnectFromServer(clientId);
