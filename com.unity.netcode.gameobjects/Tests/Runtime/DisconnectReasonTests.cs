@@ -41,7 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Log($"{m_ServerNetworkManager.ConnectedClientsIds[0]} versus {m_ClientNetworkManagers[0].LocalClientId}");
 
             // Disconnect first client, from the server
-            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, /*"Bogus reason"*/);
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId/*, "Bogus reason"*/);
 
             while (!disconnected && Time.realtimeSinceStartup < startTime + 10.0f)
             {
