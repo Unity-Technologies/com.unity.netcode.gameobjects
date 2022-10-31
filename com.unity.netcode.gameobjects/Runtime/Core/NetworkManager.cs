@@ -1351,10 +1351,9 @@ namespace Unity.Netcode
             }
         }
 
-        private void DisconnectRemoteClient(ulong clientId, string reason = null)
+        private void DisconnectRemoteClient(ulong clientId)
         {
             var transportId = ClientIdToTransportId(clientId);
-            MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
 
@@ -2027,10 +2026,12 @@ namespace Unity.Netcode
                 var disconnectReason = new DisconnectReasonMessage();
                 disconnectReason.Reason = reason;
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
+
+                MessagingSystem.ProcessSendQueues();
             }
 
             OnClientDisconnectFromServer(clientId);
-            DisconnectRemoteClient(clientId, reason);
+            DisconnectRemoteClient(clientId);
         }
 
         private void OnClientDisconnectFromServer(ulong clientId)
@@ -2296,6 +2297,8 @@ namespace Unity.Netcode
                     var disconnectReason = new DisconnectReasonMessage();
                     disconnectReason.Reason = response.Reason;
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+
+                    MessagingSystem.ProcessSendQueues();
                 }
 
                 PendingClients.Remove(ownerClientId);
