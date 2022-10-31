@@ -23,11 +23,11 @@ namespace Unity.Netcode.RuntimeTests
             m_PrefabToSpawn.AddComponent<DisconnectReasonObject>();
         }
 
-        private int disconnectCount;
+        private int m_DisconnectCount;
 
-        void OnClientDisconnectCallback(ulong clientId)
+        public void OnClientDisconnectCallback(ulong clientId)
         {
-            disconnectCount++;
+            m_DisconnectCount++;
             Debug.Log($"Disconnected {clientId}");
         }
 
@@ -44,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, "Bogus reason 1");
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId, "Bogus reason 2");
 
-            while (disconnectCount < 2 && Time.realtimeSinceStartup < startTime + 10.0f)
+            while (m_DisconnectCount < 2 && Time.realtimeSinceStartup < startTime + 10.0f)
             {
                 yield return null;
             }
