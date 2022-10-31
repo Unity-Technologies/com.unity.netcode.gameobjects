@@ -22,11 +22,11 @@ namespace Unity.Netcode.RuntimeTests
             m_PrefabToSpawn.AddComponent<DisconnectReasonObject>();
         }
 
-        private bool disconnected;
+        private int disconnectCount;
 
         void OnClientDisconnectCallback(ulong clientId)
         {
-            disconnected = true;
+            disconnectCount++;
             Debug.Log($"Disconnected {clientId}");
         }
 
@@ -37,18 +37,19 @@ namespace Unity.Netcode.RuntimeTests
 
             // Add a callback for first client, when they get disconnected
             m_ClientNetworkManagers[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
-
-            Debug.Log($"{m_ServerNetworkManager.ConnectedClientsIds[0]} versus {m_ClientNetworkManagers[0].LocalClientId}");
+            m_ClientNetworkManagers[1].OnClientDisconnectCallback += OnClientDisconnectCallback;
 
             // Disconnect first client, from the server
-            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId/*, "Bogus reason"*/);
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, "Bogus reason");
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId, "Bogus reason");
 
-            while (!disconnected && Time.realtimeSinceStartup < startTime + 10.0f)
+            while (disconnectCount < 2 && Time.realtimeSinceStartup < startTime + 10.0f)
             {
                 yield return null;
             }
 
             Debug.Log($"Disconnect reason is {m_ClientNetworkManagers[0].DisconnectReason}");
+            Debug.Log($"Disconnect reason is {m_ClientNetworkManagers[1].DisconnectReason}");
         }
     }
 }
