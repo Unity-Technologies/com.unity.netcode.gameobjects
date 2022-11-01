@@ -1181,6 +1181,11 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            // This assures that any in-scene placed NetworkObject is spawned and
+            // any associated NetworkBehaviours' netcode related properties are
+            // set prior to invoking OnClientConnected.
+            InvokeOnClientConnectedCallback(LocalClientId);
+
             OnServerStarted?.Invoke();
 
             return true;
@@ -1341,6 +1346,7 @@ namespace Unity.Netcode
         private void DisconnectRemoteClient(ulong clientId)
         {
             var transportId = ClientIdToTransportId(clientId);
+            MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
 
@@ -1821,6 +1827,10 @@ namespace Unity.Netcode
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
 
+                    // Process the incoming message queue so that we get everything from the server disconnecting us
+                    // or, if we are the server, so we got everything from that client.
+                    MessagingSystem.ProcessIncomingMessageQueue();
+
                     OnClientDisconnectCallback?.Invoke(clientId);
 
                     if (IsServer)
@@ -2214,7 +2224,6 @@ namespace Unity.Netcode
                 {
                     LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
-                    InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
