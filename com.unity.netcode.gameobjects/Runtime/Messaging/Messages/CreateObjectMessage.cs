@@ -2,15 +2,17 @@ namespace Unity.Netcode
 {
     internal struct CreateObjectMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public NetworkObject.SceneObject ObjectInfo;
         private FastBufferReader m_ReceivedNetworkVariableData;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             ObjectInfo.Serialize(writer);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
