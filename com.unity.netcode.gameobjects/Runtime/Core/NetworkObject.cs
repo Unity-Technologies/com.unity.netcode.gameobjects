@@ -1121,7 +1121,7 @@ namespace Unity.Netcode
             public void Serialize(FastBufferWriter writer)
             {
                 writer.WriteValueSafe(m_BitField);
-                BytePacker.WriteValueBitPacked(writer, Hash);
+                writer.WriteValueSafe(Hash);
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
                 BytePacker.WriteValueBitPacked(writer, OwnerClientId);
 
@@ -1164,7 +1164,7 @@ namespace Unity.Netcode
             public void Deserialize(FastBufferReader reader)
             {
                 reader.ReadValueSafe(out m_BitField);
-                ByteUnpacker.ReadValueBitPacked(reader, out Hash);
+                reader.ReadValueSafe(out Hash);
                 ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
                 ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
 
