@@ -86,6 +86,10 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
+        // <summary>
+        // When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        // tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        // </summary>
         public string DisconnectReason { get; internal set; }
 
         private class NetworkManagerHooks : INetworkHooks
@@ -2027,9 +2031,8 @@ namespace Unity.Netcode
                 var disconnectReason = new DisconnectReasonMessage();
                 disconnectReason.Reason = reason;
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
-
-                MessagingSystem.ProcessSendQueues();
             }
+            MessagingSystem.ProcessSendQueues();
 
             OnClientDisconnectFromServer(clientId);
             DisconnectRemoteClient(clientId);
