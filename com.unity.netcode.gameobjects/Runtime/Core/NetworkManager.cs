@@ -2160,9 +2160,18 @@ namespace Unity.Netcode
 
             public void Serialize(FastBufferWriter writer)
             {
-                writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(Reason));
-                writer.WriteValue(Reason.Length);
-                writer.WriteValue(Reason);
+                if (writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(Reason)))
+                {
+                    writer.WriteValue(Reason.Length);
+                    writer.WriteValue(Reason);
+                }
+                else
+                {
+                    writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(""));
+                    writer.WriteValue(0);
+                    writer.WriteValue("");
+                    Debug.LogWarning("Disconnect reason didn't fit. Disconnected without sending a reason. Consider shortening the reason string.");
+                }
             }
 
             public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
