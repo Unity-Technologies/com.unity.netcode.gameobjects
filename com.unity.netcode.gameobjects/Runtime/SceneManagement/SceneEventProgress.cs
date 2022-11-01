@@ -138,6 +138,11 @@ namespace Unity.Netcode
                     // Track the clients that were connected when we started this event
                     foreach (var connectedClientId in networkManager.ConnectedClientsIds)
                     {
+                        // Ignore the host client
+                        if (NetworkManager.ServerClientId == connectedClientId)
+                        {
+                            continue;
+                        }
                         ClientsProcessingSceneEvent.Add(connectedClientId, false);
                     }
 
