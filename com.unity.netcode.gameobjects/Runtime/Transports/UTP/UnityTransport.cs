@@ -128,6 +128,18 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>
+        /// When setting relay server data, it asks for a string parameter that can only be one of the below values.
+        /// These are taken from the relay error message when setting the wrong string
+        /// </summary>
+        public static class RelayConnectionTypes
+        {
+            public const string UDP = "udp";
+            public const string DTLS = "dtls";
+            public const string WS = "ws";
+            public const string WSS = "wss";
+        }
+
+        /// <summary>
         /// The default maximum (receive) packet queue size
         /// </summary>
         public const int InitialMaxPacketQueueSize = 128;
