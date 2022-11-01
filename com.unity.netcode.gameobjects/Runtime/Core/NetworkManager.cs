@@ -2143,13 +2143,10 @@ namespace Unity.Netcode
                     var sceneObject = new NetworkObject.SceneObject
                     {
                         OwnerClientId = ownerClientId,
-                        Header = new NetworkObject.SceneObject.HeaderData
-                        {
-                            IsPlayerObject = true,
-                            IsSceneObject = false,
-                            HasTransform = true,
-                            Hash = playerPrefabHash,
-                        },
+                        IsPlayerObject = true,
+                        IsSceneObject = false,
+                        HasTransform = true,
+                        Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Transform = new NetworkObject.SceneObject.TransformData
                         {
@@ -2258,10 +2255,10 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Header.Hash = playerPrefabHash;
-                message.ObjectInfo.Header.IsSceneObject = false;
-                message.ObjectInfo.Header.HasParent = false;
-                message.ObjectInfo.Header.IsPlayerObject = true;
+                message.ObjectInfo.Hash = playerPrefabHash;
+                message.ObjectInfo.IsSceneObject = false;
+                message.ObjectInfo.HasParent = false;
+                message.ObjectInfo.IsPlayerObject = true;
                 message.ObjectInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);

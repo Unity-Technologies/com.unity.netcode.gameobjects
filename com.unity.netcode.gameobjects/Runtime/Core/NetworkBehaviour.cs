@@ -780,7 +780,7 @@ namespace Unity.Netcode
                     // Note: This value can't be packed because we don't know how large it will be in advance
                     // we reserve space for it, then write the data, then come back and fill in the space
                     // to pack here, we'd have to write data to a temporary buffer and copy it in - which
-                    // isn't worth possibly saving one byte IFF the data is less than 63 bytes long...
+                    // isn't worth possibly saving one byte if and only if the data is less than 63 bytes long...
                     // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
                     writer.WriteValueSafe((ushort)0);
                     var startPos = writer.Position;

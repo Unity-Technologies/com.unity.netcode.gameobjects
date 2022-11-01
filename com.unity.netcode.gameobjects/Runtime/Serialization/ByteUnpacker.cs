@@ -327,6 +327,8 @@ namespace Unity.Netcode
             ushort returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
+            // Mask out the first two bits - they contain the total byte count
+            // (1, 2, or 3)
             int numBytes = (data[0] & 0b11);
             if (!reader.TryBeginReadInternal(numBytes))
             {
@@ -336,16 +338,16 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
                 case 3:
                     // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
-                    *ptr = *(data + 1);
-                    *(ptr + 1) = *(data + 2);
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
                     value = returnValue;
                     return;
                 default:
@@ -378,6 +380,7 @@ namespace Unity.Netcode
             uint returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
+            // Mask out the first three bits - they contain the total byte count (1-5)
             int numBytes = (data[0] & 0b111);
             if (!reader.TryBeginReadInternal(numBytes))
             {
@@ -387,29 +390,29 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
                 case 3:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
                     break;
                 case 4:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
                     break;
                 case 5:
                     // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
-                    *ptr = *(data + 1);
-                    *(ptr + 1) = *(data + 2);
-                    *(ptr + 2) = *(data + 3);
-                    *(ptr + 3) = *(data + 4);
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
+                    ptr[2] = data[3];
+                    ptr[3] = data[4];
                     value = returnValue;
                     return;
             }
@@ -440,6 +443,7 @@ namespace Unity.Netcode
             ulong returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
+            // Mask out the first four bits - they contain the total byte count (1-9)
             int numBytes = (data[0] & 0b1111);
             if (!reader.TryBeginReadInternal(numBytes))
             {
@@ -449,67 +453,67 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
                 case 3:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
                     break;
                 case 4:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
                     break;
                 case 5:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
                     break;
                 case 6:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
                     break;
                 case 7:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
-                    *(ptr + 6) = *(data + 6);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
+                    ptr[6] = data[6];
                     break;
                 case 8:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
-                    *(ptr + 6) = *(data + 6);
-                    *(ptr + 7) = *(data + 7);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
+                    ptr[6] = data[6];
+                    ptr[7] = data[7];
                     break;
                 case 9:
                     // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
-                    *ptr = *(data + 1);
-                    *(ptr + 1) = *(data + 2);
-                    *(ptr + 2) = *(data + 3);
-                    *(ptr + 3) = *(data + 4);
-                    *(ptr + 4) = *(data + 5);
-                    *(ptr + 5) = *(data + 6);
-                    *(ptr + 6) = *(data + 7);
-                    *(ptr + 7) = *(data + 8);
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
+                    ptr[2] = data[3];
+                    ptr[3] = data[4];
+                    ptr[4] = data[5];
+                    ptr[5] = data[6];
+                    ptr[6] = data[7];
+                    ptr[7] = data[8];
                     value = returnValue;
                     return;
             }
