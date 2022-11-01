@@ -900,7 +900,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            DisconnectReason = "";
+            DisconnectReason = string.Empty;
             IsApproved = false;
 
             ComponentFactory.SetDefaults();
@@ -2153,44 +2153,6 @@ namespace Unity.Netcode
             s_SyncTime.End();
 #endif
         }
-
-        internal struct DisconnectReasonMessage : INetworkMessage
-        {
-            public string Reason;
-
-            public void Serialize(FastBufferWriter writer)
-            {
-                if (writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(Reason)))
-                {
-                    writer.WriteValue(Reason.Length);
-                    writer.WriteValue(Reason);
-                }
-                else
-                {
-                    writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(""));
-                    writer.WriteValue(0);
-                    writer.WriteValue("");
-                    Debug.LogWarning("Disconnect reason didn't fit. Disconnected without sending a reason. Consider shortening the reason string.");
-                }
-            }
-
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
-            {
-                int size;
-                reader.TryBeginRead(sizeof(int));
-                reader.ReadValue(out size);
-                Reason = new string(' ', size);
-                reader.TryBeginRead(FastBufferWriter.GetWriteSize(Reason));
-                reader.ReadValue(out Reason);
-
-                return true;
-            }
-
-            public void Handle(ref NetworkContext context)
-            {
-                ((NetworkManager)context.SystemOwner).DisconnectReason = Reason;
-            }
-        };
 
         /// <summary>
         /// Server Side: Handles the approval of a client
