@@ -8,11 +8,6 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkShowHideTestComponent : NetworkBehaviour
-    {
-
-    }
-
     public class ShowHideObject : NetworkBehaviour
     {
         public static List<ShowHideObject> ClientTargetedNetworkObjects = new List<ShowHideObject>();
@@ -93,11 +88,6 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object1OnClient0;
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTestComponent>();
-        }
 
         protected override void OnServerAndClientsCreated()
         {
