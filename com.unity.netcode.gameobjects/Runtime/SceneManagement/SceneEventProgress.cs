@@ -241,7 +241,10 @@ namespace Unity.Netcode
             }
 
             // Return the local scene event's AsyncOperation status
-            return m_AsyncOperation.isDone;
+            // Note: Integration tests process scene loading through a queue
+            // and the AsyncOperation could not be assigned for several
+            // network tick periods. Return false if that is the case.
+            return m_AsyncOperation == null ? false : m_AsyncOperation.isDone;
         }
 
         /// <summary>
