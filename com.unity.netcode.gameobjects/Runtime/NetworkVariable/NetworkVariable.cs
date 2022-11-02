@@ -49,6 +49,13 @@ namespace Unity.Netcode
             get => m_InternalValue;
             set
             {
+                if (!m_NetworkBehaviour)
+                {
+                    m_InternalValue = value;
+                    // Do nothing else, we are just assigning the internal value
+                    return;
+                }
+
                 // Compare bitwise
                 if (NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref value))
                 {
