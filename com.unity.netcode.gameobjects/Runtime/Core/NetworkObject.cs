@@ -1051,7 +1051,7 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+                    NetworkLog.LogError($"NetworkBehaviour index was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
                 }
 
                 return null;
