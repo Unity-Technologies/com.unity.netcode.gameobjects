@@ -14,14 +14,14 @@ namespace Unity.Netcode
                 reasonSent = string.Empty;
             }
 
-            if (writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(reasonSent)))
+            if (writer.TryBeginWrite(FastBufferWriter.GetWriteSize(reasonSent)))
             {
                 writer.WriteValueSafe(reasonSent);
             }
             else
             {
                 writer.WriteValueSafe(string.Empty);
-                Debug.LogWarning(
+                NetworkLog.LogWarning(
                     "Disconnect reason didn't fit. Disconnected without sending a reason. Consider shortening the reason string.");
             }
         }
