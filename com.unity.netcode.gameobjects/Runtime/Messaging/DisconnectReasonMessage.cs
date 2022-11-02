@@ -16,14 +16,11 @@ namespace Unity.Netcode
 
             if (writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(reasonSent)))
             {
-                writer.WriteValue(reasonSent.Length);
-                writer.WriteValue(reasonSent);
+                writer.WriteValueSafe(reasonSent);
             }
             else
             {
-                writer.TryBeginWrite(sizeof(int) + FastBufferWriter.GetWriteSize(string.Empty));
-                writer.WriteValue(0);
-                writer.WriteValue(string.Empty);
+                writer.WriteValueSafe(string.Empty);
                 Debug.LogWarning(
                     "Disconnect reason didn't fit. Disconnected without sending a reason. Consider shortening the reason string.");
             }
@@ -31,13 +28,7 @@ namespace Unity.Netcode
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
         {
-            int size;
-            reader.TryBeginRead(sizeof(int));
-            reader.ReadValue(out size);
-            Reason = new string(' ', size);
-            reader.TryBeginRead(FastBufferWriter.GetWriteSize(Reason));
-            reader.ReadValue(out Reason);
-
+            reader.ReadValueSafe(out Reason);
             return true;
         }
 
