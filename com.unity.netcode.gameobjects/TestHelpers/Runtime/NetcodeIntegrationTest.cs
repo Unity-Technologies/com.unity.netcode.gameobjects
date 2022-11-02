@@ -853,6 +853,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Override this method to do any pre-initialization prior to spawning
+        /// the instantiated network prefab
+        /// </summary>
+        /// <param name="gameObject">object instance to be spawned</param>
+        protected virtual void OnObjectInstantiatedBeforeSpawn(GameObject gameObject)
+        {
+
+        }
+
+        /// <summary>
         /// Spawn a NetworkObject prefab instance
         /// </summary>
         /// <param name="prefabNetworkObject">the prefab NetworkObject to spawn</param>
@@ -863,6 +873,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             Assert.IsTrue(prefabNetworkObject.GlobalObjectIdHash > 0, $"{nameof(GameObject)} {prefabNetworkObject.name} has a {nameof(NetworkObject.GlobalObjectIdHash)} value of 0! Make sure to make it a valid prefab before trying to spawn!");
             var newInstance = Object.Instantiate(prefabNetworkObject.gameObject);
+            OnObjectInstantiatedBeforeSpawn(newInstance);
             var networkObjectToSpawn = newInstance.GetComponent<NetworkObject>();
             networkObjectToSpawn.NetworkManagerOwner = m_ServerNetworkManager; // Required to assure the server does the spawning
             if (owner == m_ServerNetworkManager)
