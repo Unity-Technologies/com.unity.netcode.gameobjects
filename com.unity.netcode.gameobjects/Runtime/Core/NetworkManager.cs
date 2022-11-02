@@ -1837,7 +1837,7 @@ namespace Unity.Netcode
                     }
                     catch (Exception exception)
                     {
-                        Debug.LogWarning($"Exception was thrown in OnClientDisconnectCallback: {exception}");
+                        Debug.LogException(exception);
                     }
 
                     if (IsServer)

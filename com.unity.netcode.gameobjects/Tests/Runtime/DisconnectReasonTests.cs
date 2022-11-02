@@ -42,17 +42,19 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkManagers[1].OnClientDisconnectCallback += OnClientDisconnectCallback;
 
             // Disconnect first client, from the server
-            LogAssert.Expect(LogType.Warning, new Regex(".*Exception was thrown.*"));
+            LogAssert.Expect(LogType.Exception, new Regex(".*whatever.*"));
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId);
 
             // Disconnect second client, from the server
-            LogAssert.Expect(LogType.Warning, new Regex(".*Exception was thrown.*"));
+            LogAssert.Expect(LogType.Exception, new Regex(".*whatever.*"));
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId);
 
             while (m_DisconnectCount < 2 && Time.realtimeSinceStartup < startTime + 10.0f)
             {
                 yield return null;
             }
+
+            Debug.Assert(m_DisconnectCount == 2);
         }
     }
 }
