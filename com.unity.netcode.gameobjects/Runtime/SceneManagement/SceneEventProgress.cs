@@ -108,19 +108,29 @@ namespace Unity.Netcode
         internal List<ulong> GetClientsWithStatus(bool completedSceneEvent)
         {
             var clients = new List<ulong>();
-            foreach (var clientStatus in ClientsProcessingSceneEvent)
+            if (completedSceneEvent)
             {
-                if (clientStatus.Value == completedSceneEvent)
+                if (m_NetworkManager.IsHost && m_AsyncOperation != null && m_AsyncOperation.isDone)
                 {
-                    clients.Add(clientStatus.Key);
+                    clients.Add(m_NetworkManager.LocalClientId);
+                }
+                foreach (var clientStatus in ClientsProcessingSceneEvent)
+                {
+                    if (clientStatus.Value == completedSceneEvent)
+                    {
+                        clients.Add(clientStatus.Key);
+                    }
                 }
             }
-
-            // If we are getting the list of clients that have not completed the
-            // scene event, then add any clients that disconnected during this
-            // scene event.
-            if (!completedSceneEvent)
+            else
             {
+                if (m_NetworkManager.IsHost && m_AsyncOperation != null && !m_AsyncOperation.isDone)
+                {
+                    clients.Add(m_NetworkManager.LocalClientId);
+                }
+                // If we are getting the list of clients that have not completed the
+                // scene event, then add any clients that disconnected during this
+                // scene event.
                 clients.AddRange(ClientsThatDisconnected);
             }
             return clients;
