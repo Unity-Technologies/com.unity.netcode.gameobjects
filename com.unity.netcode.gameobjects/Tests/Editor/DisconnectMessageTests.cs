@@ -9,13 +9,13 @@ namespace Unity.Netcode.EditorTests
         public void EmptyDisconnectReason()
         {
             var networkContext = new NetworkContext();
-            FastBufferWriter writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            DisconnectReasonMessage msg = new DisconnectReasonMessage();
+            var writer = new FastBufferWriter(20, Allocator.Temp, 20);
+            var msg = new DisconnectReasonMessage();
             msg.Reason = string.Empty;
             msg.Serialize(writer);
 
-            FastBufferReader fbr = new FastBufferReader(writer, Allocator.Temp);
-            DisconnectReasonMessage recvMsg = new DisconnectReasonMessage();
+            var fbr = new FastBufferReader(writer, Allocator.Temp);
+            var recvMsg = new DisconnectReasonMessage();
             recvMsg.Deserialize(fbr, ref networkContext);
 
             Assert.IsEmpty(recvMsg.Reason);
@@ -25,13 +25,13 @@ namespace Unity.Netcode.EditorTests
         public void DisconnectReason()
         {
             var networkContext = new NetworkContext();
-            FastBufferWriter writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            DisconnectReasonMessage msg = new DisconnectReasonMessage();
+            var writer = new FastBufferWriter(20, Allocator.Temp, 20);
+            var msg = new DisconnectReasonMessage();
             msg.Reason = "Foo";
             msg.Serialize(writer);
 
-            FastBufferReader fbr = new FastBufferReader(writer, Allocator.Temp);
-            DisconnectReasonMessage recvMsg = new DisconnectReasonMessage();
+            var fbr = new FastBufferReader(writer, Allocator.Temp);
+            var recvMsg = new DisconnectReasonMessage();
             recvMsg.Deserialize(fbr, ref networkContext);
 
             Assert.AreEqual("Foo", recvMsg.Reason);
@@ -41,13 +41,13 @@ namespace Unity.Netcode.EditorTests
         public void DisconnectReasonTooLong()
         {
             var networkContext = new NetworkContext();
-            FastBufferWriter writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            DisconnectReasonMessage msg = new DisconnectReasonMessage();
+            var writer = new FastBufferWriter(20, Allocator.Temp, 20);
+            var msg = new DisconnectReasonMessage();
             msg.Reason = "ThisStringIsWayLongerThanTwentyBytes";
             msg.Serialize(writer);
 
-            FastBufferReader fbr = new FastBufferReader(writer, Allocator.Temp);
-            DisconnectReasonMessage recvMsg = new DisconnectReasonMessage();
+            var fbr = new FastBufferReader(writer, Allocator.Temp);
+            var recvMsg = new DisconnectReasonMessage();
             recvMsg.Deserialize(fbr, ref networkContext);
 
             Assert.IsEmpty(recvMsg.Reason);
