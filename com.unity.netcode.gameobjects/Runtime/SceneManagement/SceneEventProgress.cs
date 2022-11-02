@@ -110,10 +110,14 @@ namespace Unity.Netcode
             var clients = new List<ulong>();
             if (completedSceneEvent)
             {
-                if (m_NetworkManager.IsHost && m_AsyncOperation != null && m_AsyncOperation.isDone)
+                // If we are the host, then add the host-client to the list
+                // of clients that completed if the AsyncOperation is done.
+                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
+
+                // Add all clients that completed the scene event
                 foreach (var clientStatus in ClientsProcessingSceneEvent)
                 {
                     if (clientStatus.Value == completedSceneEvent)
@@ -124,10 +128,14 @@ namespace Unity.Netcode
             }
             else
             {
-                if (m_NetworkManager.IsHost && m_AsyncOperation != null && !m_AsyncOperation.isDone)
+                // If we are the host, then add the host-client to the list
+                // of clients that did not complete if the AsyncOperation is
+                // not done.
+                if (m_NetworkManager.IsHost && !m_AsyncOperation.isDone)
                 {
                     clients.Add(m_NetworkManager.LocalClientId);
                 }
+
                 // If we are getting the list of clients that have not completed the
                 // scene event, then add any clients that disconnected during this
                 // scene event.
