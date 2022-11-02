@@ -1831,7 +1831,14 @@ namespace Unity.Netcode
                     // or, if we are the server, so we got everything from that client.
                     MessagingSystem.ProcessIncomingMessageQueue();
 
-                    OnClientDisconnectCallback?.Invoke(clientId);
+                    try
+                    {
+                        OnClientDisconnectCallback?.Invoke(clientId);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
 
                     if (IsServer)
                     {
