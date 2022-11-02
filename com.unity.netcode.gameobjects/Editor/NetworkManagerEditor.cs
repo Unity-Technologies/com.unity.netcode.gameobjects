@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEditorInternal;
+using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor
 {
@@ -14,7 +15,6 @@ namespace Unity.Netcode.Editor
     [CanEditMultipleObjects]
     public class NetworkManagerEditor : UnityEditor.Editor
     {
-        internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
         private static GUIStyle s_CenteredWordWrappedLabelStyle;
         private static GUIStyle s_HelpBoxStyle;
 
@@ -359,7 +359,7 @@ namespace Unity.Netcode.Editor
             const string targetUrl = "https://docs-multiplayer.unity3d.com/netcode/current/tools/install-tools";
             const string infoIconName = "console.infoicon";
 
-            if (PlayerPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 0) != 0)
+            if (NetcodeForGameObjectsSettings.GetNetcodeInstallMultiplayerToolTips() != 0)
             {
                 return;
             }
@@ -405,7 +405,7 @@ namespace Unity.Netcode.Editor
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
                 {
-                    PlayerPrefs.SetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey, 1);
+                    NetcodeForGameObjectsSettings.SetNetcodeInstallMultiplayerToolTips(1);
                 }
                 EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
                 GUILayout.FlexibleSpace();
