@@ -105,7 +105,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         private bool AllNetworkVariablesOnPlayersInitializedCorrectly()
         {
-            foreach(var instance in PreInitializedOnAwake.Instances)
+            foreach (var instance in PreInitializedOnAwake.Instances)
             {
                 if (!instance.AllValuesMatch())
                 {
