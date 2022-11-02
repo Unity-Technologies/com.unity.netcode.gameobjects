@@ -1058,7 +1058,7 @@ namespace Unity.Netcode
                 {
                     var currentKnownChildren = new System.Text.StringBuilder();
                     currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
-                    for(int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                    for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
                     {
                         var childNetworkBehaviour = ChildNetworkBehaviours[i];
                         currentKnownChildren.Append($" [{i}] {childNetworkBehaviour.__getTypeName()}");
