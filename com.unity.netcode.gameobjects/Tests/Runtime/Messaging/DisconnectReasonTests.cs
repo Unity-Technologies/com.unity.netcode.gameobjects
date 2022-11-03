@@ -44,11 +44,11 @@ namespace Unity.Netcode.RuntimeTests
             m_ThrowOnDisconnect = false;
             m_DisconnectCount = 0;
 
-            // Add a callback for first client, when they get disconnected
+            // Add a callback for both clients, when they get disconnected
             m_ClientNetworkManagers[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
             m_ClientNetworkManagers[1].OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-            // Disconnect first client, from the server
+            // Disconnect both clients, from the server
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[0].LocalClientId, "Bogus reason 1");
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId, "Bogus reason 2");
 
