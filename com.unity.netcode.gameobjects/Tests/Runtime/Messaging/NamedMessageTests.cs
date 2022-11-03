@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 
@@ -50,7 +49,7 @@ namespace Unity.Netcode.RuntimeTests
                     writer);
             }
 
-            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager>{FirstClient});
+            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager> { FirstClient });
 
             Assert.AreEqual(messageContent.Value, receivedMessageContent.Value);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, receivedMessageSender);
@@ -136,7 +135,7 @@ namespace Unity.Netcode.RuntimeTests
                     writer);
             }
 
-            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager>{FirstClient, SecondClient});
+            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager> { FirstClient, SecondClient });
 
             Assert.AreEqual(messageContent.Value, firstReceivedMessageContent.Value);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, firstReceivedMessageSender);
@@ -194,7 +193,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager.CustomMessagingManager.SendNamedMessageToAll(messageName, writer);
             }
 
-            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager>{FirstClient, SecondClient});
+            yield return WaitForMessageReceived<NamedMessage>(new List<NetworkManager> { FirstClient, SecondClient });
 
             Assert.AreEqual(messageContent.Value, firstReceivedMessageContent.Value);
             Assert.AreEqual(m_ServerNetworkManager.LocalClientId, firstReceivedMessageSender);
