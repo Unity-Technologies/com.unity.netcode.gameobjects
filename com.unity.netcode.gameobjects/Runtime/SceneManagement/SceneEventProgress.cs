@@ -108,19 +108,37 @@ namespace Unity.Netcode
         internal List<ulong> GetClientsWithStatus(bool completedSceneEvent)
         {
             var clients = new List<ulong>();
-            foreach (var clientStatus in ClientsProcessingSceneEvent)
+            if (completedSceneEvent)
             {
-                if (clientStatus.Value == completedSceneEvent)
+                // If we are the host, then add the host-client to the list
+                // of clients that completed if the AsyncOperation is done.
+                if (m_NetworkManager.IsHost && m_AsyncOperation.isDone)
                 {
-                    clients.Add(clientStatus.Key);
+                    clients.Add(m_NetworkManager.LocalClientId);
+                }
+
+                // Add all clients that completed the scene event
+                foreach (var clientStatus in ClientsProcessingSceneEvent)
+                {
+                    if (clientStatus.Value == completedSceneEvent)
+                    {
+                        clients.Add(clientStatus.Key);
+                    }
                 }
             }
-
-            // If we are getting the list of clients that have not completed the
-            // scene event, then add any clients that disconnected during this
-            // scene event.
-            if (!completedSceneEvent)
+            else
             {
+                // If we are the host, then add the host-client to the list
+                // of clients that did not complete if the AsyncOperation is
+                // not done.
+                if (m_NetworkManager.IsHost && !m_AsyncOperation.isDone)
+                {
+                    clients.Add(m_NetworkManager.LocalClientId);
+                }
+
+                // If we are getting the list of clients that have not completed the
+                // scene event, then add any clients that disconnected during this
+                // scene event.
                 clients.AddRange(ClientsThatDisconnected);
             }
             return clients;
@@ -138,6 +156,11 @@ namespace Unity.Netcode
                     // Track the clients that were connected when we started this event
                     foreach (var connectedClientId in networkManager.ConnectedClientsIds)
                     {
+                        // Ignore the host client
+                        if (NetworkManager.ServerClientId == connectedClientId)
+                        {
+                            continue;
+                        }
                         ClientsProcessingSceneEvent.Add(connectedClientId, false);
                     }
 
@@ -218,7 +241,10 @@ namespace Unity.Netcode
             }
 
             // Return the local scene event's AsyncOperation status
-            return m_AsyncOperation.isDone;
+            // Note: Integration tests process scene loading through a queue
+            // and the AsyncOperation could not be assigned for several
+            // network tick periods. Return false if that is the case.
+            return m_AsyncOperation == null ? false : m_AsyncOperation.isDone;
         }
 
         /// <summary>
