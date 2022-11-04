@@ -126,5 +126,40 @@ namespace Unity.Netcode.EditorTests
 
             transport.Shutdown();
         }
+
+#if UTP_TRANSPORT_2_0_ABOVE
+        [Test]
+        public void UnityTransport_EmptySecurityStringsShouldThrow([Values("", null)] string cert, [Values("", null)] string secret)
+        {
+            var supportingGO = new GameObject();
+            try
+            {
+                var networkManager = supportingGO.AddComponent<NetworkManager>(); // NM is required for UTP to work with certificates.
+                networkManager.NetworkConfig = new NetworkConfig();
+                UnityTransport transport = supportingGO.AddComponent<UnityTransport>();
+                networkManager.NetworkConfig.NetworkTransport = transport;
+                transport.Initialize();
+                transport.SetServerSecrets(serverCertificate: cert, serverPrivateKey: secret);
+
+                // Use encryption, but don't set certificate and check for exception
+                transport.UseEncryption = true;
+                Assert.Throws<System.Exception>(() =>
+                {
+                    networkManager.StartServer();
+                });
+                // Make sure StartServer failed
+                Assert.False(transport.NetworkDriver.IsCreated);
+                Assert.False(networkManager.IsServer);
+                Assert.False(networkManager.IsListening);
+            }
+            finally
+            {
+                if (supportingGO != null)
+                {
+                    Object.DestroyImmediate(supportingGO);
+                }
+            }
+        }
+#endif
     }
 }
