@@ -16,6 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)
+- Fixed an issue in `UnityTransport` where an error would be logged if the 'Use Encryption' flag was enabled with a Relay configuration that used a secure protocol. (#2289)
 - Fixed issue where in-scene placed `NetworkObjects` were not honoring the `AutoObjectParentSync` property. (#2281)
 - Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
