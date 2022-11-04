@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime.Metrics;
@@ -11,15 +12,26 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 {
     internal class ServerLogsMetricTests : SingleClientMetricTestBase
     {
-        // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
-        private const int k_MessageHeaderSize = 2;
-        private static readonly int k_ServerLogSentMessageOverhead = 2 + k_MessageHeaderSize;
-        private static readonly int k_ServerLogReceivedMessageOverhead = 2;
+        // Header is dynamically sized due to packing, will be 3 bytes for all test messages.
+        private const int k_MessageHeaderSize = 3;
 
         protected override IEnumerator OnSetup()
         {
             m_CreateServerFirst = false;
             return base.OnSetup();
+        }
+
+
+        private int GetWriteSizeForLog(NetworkLog.LogType logType, string logMessage)
+        {
+            var message = new ServerLogMessage
+            {
+                LogType = logType,
+                Message = logMessage
+            };
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            message.Serialize(writer);
+            return writer.Length;
         }
 
         [UnityTest]
@@ -41,6 +53,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var sentMetric = sentMetrics.First();
             Assert.AreEqual(Server.LocalClientId, sentMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)sentMetric.LogLevel);
+
+            var serializedLength = GetWriteSizeForLog(NetworkLog.LogType.Warning, message);
+            Assert.AreEqual(serializedLength + k_MessageHeaderSize, sentMetric.BytesCount);
         }
 
         [UnityTest]
@@ -63,6 +78,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             var receivedMetric = receivedMetrics.First();
             Assert.AreEqual(Client.LocalClientId, receivedMetric.Connection.Id);
             Assert.AreEqual((uint)NetworkLog.LogType.Warning, (uint)receivedMetric.LogLevel);
+
+            var serializedLength = GetWriteSizeForLog(NetworkLog.LogType.Warning, message);
+            Assert.AreEqual(serializedLength, receivedMetric.BytesCount);
         }
     }
 }
