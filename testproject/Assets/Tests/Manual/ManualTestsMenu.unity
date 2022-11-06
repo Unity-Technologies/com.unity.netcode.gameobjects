@@ -698,6 +698,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -923,6 +924,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SceneMenus:
+  - {fileID: 11400000, guid: 2c0ff1138526d4041a875c84f7114513, type: 2}
   - {fileID: 11400000, guid: 83bc07221c884b24e968f464eaccce26, type: 2}
   - {fileID: 11400000, guid: 644bd35b81cd40c4d88002a24e223462, type: 2}
   - {fileID: 11400000, guid: 33e25ac2a2f551c4db75a9e960a6bc2f, type: 2}
