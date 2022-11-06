@@ -762,6 +762,16 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Synchronizes by writing all NetworkVariable fields' values the client can read that are
+        /// defined within the NetworkBehaviour.
+        /// Note: This is only invoked when first synchronizing a NetworkBehaviour (i.e. late join or spawned NetworkObject)
+        /// </summary>
+        /// <remarks>
+        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
+        /// each NetworkVariable field will be proceeded by the number of bytes
+        /// written for that specific field.
+        /// </remarks>
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
             if (NetworkVariableFields.Count == 0)
@@ -771,27 +781,43 @@ namespace Unity.Netcode
 
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                bool canClientRead = NetworkVariableFields[j].CanClientRead(targetClientId);
 
-                if (canClientRead)
+                if (NetworkVariableFields[j].CanClientRead(targetClientId))
                 {
-                    var writePos = writer.Position;
-                    writer.WriteValueSafe((ushort)0);
-                    var startPos = writer.Position;
-                    NetworkVariableFields[j].WriteField(writer);
-                    var size = writer.Position - startPos;
-                    writer.Seek(writePos);
-                    writer.WriteValueSafe((ushort)size);
-                    writer.Seek(startPos + size);
+                    if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                    {
+                        var writePos = writer.Position;
+                        writer.WriteValueSafe((ushort)0);
+                        var startPos = writer.Position;
+                        NetworkVariableFields[j].WriteField(writer);
+                        var size = writer.Position - startPos;
+                        writer.Seek(writePos);
+                        writer.WriteValueSafe((ushort)size);
+                        writer.Seek(startPos + size);
+                    }
+                    else
+                    {
+                        NetworkVariableFields[j].WriteField(writer);
+                    }
                 }
-                else
+                else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
+                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
                     writer.WriteValueSafe((ushort)0);
                 }
             }
         }
 
-        internal void SetNetworkVariableData(FastBufferReader reader)
+        /// <summary>
+        /// Synchronizes by setting all NetworkVariable fields' values that the client can read
+        /// Note: This is only invoked when first synchronizing a NetworkBehaviour (i.e. late join or spawned NetworkObject)
+        /// </summary>
+        /// <remarks>
+        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
+        /// each NetworkVariable field will be proceeded by the number of bytes
+        /// written for that specific field.
+        /// </remarks>
+        internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
             if (NetworkVariableFields.Count == 0)
             {
@@ -800,13 +826,23 @@ namespace Unity.Netcode
 
             for (int j = 0; j < NetworkVariableFields.Count; j++)
             {
-                reader.ReadValueSafe(out ushort varSize);
-                if (varSize == 0)
+                var varSize = (ushort)0;
+                var readStartPos = 0;
+                if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
+                {
+                    reader.ReadValueSafe(out varSize);
+                    if (varSize == 0)
+                    {
+                        continue;
+                    }
+                    readStartPos = reader.Position;
+                }
+                else // If the client cannot read this field, then skip it
+                if (!NetworkVariableFields[j].CanClientRead(clientId))
                 {
                     continue;
                 }
 
-                var readStartPos = reader.Position;
                 NetworkVariableFields[j].ReadField(reader);
 
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -842,6 +878,131 @@ namespace Unity.Netcode
         {
             return NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(networkId, out NetworkObject networkObject) ? networkObject : null;
         }
+
+        /// <summary>
+        /// When overridden, this method is invoked on a NetworkBehaviour during client synchronization in order
+        /// to provide the ability to inject custom synchronization information specific to the derived class.
+        /// </summary>
+        /// <param name="serializer">The serializer to use to read and write the data.</param>
+        /// <typeparam name="T">
+        /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
+        /// is in read mode or write mode.
+        /// </typeparam>
+        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+
+        }
+
+        /// <summary>
+        /// Internal method that determines if a NetworkBehaviour has additional synchronization data to
+        /// be synchronized when first instantiated prior to its associated NetworkObject being spawned.
+        /// </summary>
+        /// <remarks>
+        /// Only invoked during the initial synchronization (i.e. late join client or newly spawned NetworkObject).
+        /// This includes try-catch to assure if user code fails the rest of the synchronization process will not
+        /// be impacted (i.e. if one NetworkBehaviour fails the rest will still be synchronized)
+        /// </remarks>
+        /// <returns>true if it wrote synchronization data and false if it did not</returns>
+        internal bool Synchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsWriter)
+            {
+                // Get the writer to handle seeking and determining how many bytes were written
+                var writer = serializer.GetFastBufferWriter();
+                // Save our position before we attempt to write anything so we can seek back to it (i.e. error occurs)
+                var positionBeforeWrite = writer.Position;
+                var networkBehaviourId = NetworkBehaviourId;
+                writer.WriteValueSafe(networkBehaviourId);
+
+                // Save our position where we will write the final size being written so we can skip over it in the
+                // event an exception occurs when deserializing.
+                var sizePosition = writer.Position;
+                writer.WriteValueSafe((ushort)0);
+                // Save our position before synchronizing to determine
+                var positionBeforeSynchronize = writer.Position;
+                var threwException = false;
+                try
+                {
+                    OnSynchronize(ref serializer);
+                }
+                catch (Exception ex)
+                {
+                    threwException = true;
+                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{name} threw an exception during synchronization serialization, this {nameof(NetworkBehaviour)} is being skipped and will not be synchronized!");
+                        if (NetworkManager.LogLevel == LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"{ex.Message}\n {ex.StackTrace}");
+                        }
+                    }
+                }
+                var finalPosition = writer.Position;
+
+                // If we wrote nothing then skip writing anything for this NetworkBehaviour
+                if (finalPosition == positionBeforeSynchronize || threwException)
+                {
+                    writer.Seek(positionBeforeWrite);
+                    return false;
+                }
+                else
+                {
+                    // Write the number of bytes serialized to handle exceptions on the deserialization side
+                    var bytesWritten = finalPosition - positionBeforeSynchronize;
+                    writer.Seek(sizePosition);
+                    writer.WriteValueSafe((ushort)bytesWritten);
+                    writer.Seek(finalPosition);
+                }
+                return true;
+            }
+            else
+            {
+                var reader = serializer.GetFastBufferReader();
+                // We will always read the expected byte count
+                reader.ReadValueSafe(out ushort expectedBytesToRead);
+
+                // Save our position before we begin synchronization deserialization
+                var positionBeforeSynchronize = reader.Position;
+                var synchronizationError = false;
+                try
+                {
+                    // Invoke synchronization
+                    OnSynchronize(ref serializer);
+                }
+                catch (Exception ex)
+                {
+                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{name} threw an exception during synchronization deserialization, this {nameof(NetworkBehaviour)} is being skipped and will not be synchronized!");
+                        if (NetworkManager.LogLevel == LogLevel.Developer)
+                        {
+                            NetworkLog.LogError($"{ex.Message}\n {ex.StackTrace}");
+                        }
+                    }
+                    synchronizationError = true;
+                }
+
+                var totalBytesRead = reader.Position - positionBeforeSynchronize;
+                if (totalBytesRead != expectedBytesToRead)
+                {
+                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning($"{name} read {totalBytesRead} bytes but was expected to read {expectedBytesToRead} bytes during synchronization deserialization! This {nameof(NetworkBehaviour)} is being skipped and will not be synchronized!");
+                    }
+                    synchronizationError = true;
+                }
+
+                // Skip over the entry if deserialization fails
+                if (synchronizationError)
+                {
+                    var skipToPosition = positionBeforeSynchronize + expectedBytesToRead;
+                    reader.Seek(skipToPosition);
+                    return false;
+                }
+                return true;
+            }
+        }
+
 
         /// <summary>
         /// Invoked when the <see cref="GameObject"/> the <see cref="NetworkBehaviour"/> is attached to.
