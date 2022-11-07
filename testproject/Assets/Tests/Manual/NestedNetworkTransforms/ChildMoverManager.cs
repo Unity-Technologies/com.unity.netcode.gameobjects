@@ -48,7 +48,7 @@ namespace TestProject.ManualTests
             if (IsOwner && IsSpawned)
             {
                 var deltaPosition = (transform.position - m_LastPosition);
-                if (deltaPosition.sqrMagnitude >=  (TriggerDistanceToMove * TriggerDistanceToMove))
+                if (deltaPosition.sqrMagnitude >= (TriggerDistanceToMove * TriggerDistanceToMove))
                 {
                     // Get our movement direction
                     var movementDirection = Vector3.Dot(deltaPosition.normalized, transform.forward);
@@ -64,7 +64,7 @@ namespace TestProject.ManualTests
 
                     movementDirection *= rotationDirection.y < 0 ? -1 : 1;
                     bool forward = true;
-                    if (movementDirection < 0 )
+                    if (movementDirection < 0)
                     {
                         forward = false;
                     }
