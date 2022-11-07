@@ -1060,7 +1060,20 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+                    NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
+                }
+
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    var currentKnownChildren = new System.Text.StringBuilder();
+                    currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
+                    for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                    {
+                        var childNetworkBehaviour = ChildNetworkBehaviours[i];
+                        currentKnownChildren.Append($" [{i}] {childNetworkBehaviour.__getTypeName()}");
+                        currentKnownChildren.Append(i < ChildNetworkBehaviours.Count - 1 ? "," : ".");
+                    }
+                    NetworkLog.LogInfo(currentKnownChildren.ToString());
                 }
 
                 return null;
