@@ -918,7 +918,8 @@ namespace Unity.Netcode
                 // event an exception occurs when deserializing.
                 var sizePosition = writer.Position;
                 writer.WriteValueSafe((ushort)0);
-                // Save our position before synchronizing to determine
+
+                // Save our position before synchronizing to determine how much was written
                 var positionBeforeSynchronize = writer.Position;
                 var threwException = false;
                 try
