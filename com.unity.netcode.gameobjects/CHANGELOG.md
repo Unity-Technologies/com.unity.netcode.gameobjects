@@ -10,16 +10,25 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+
+- Added protected method `NetworkBehaviour.OnSynchronize` which is invoked during the initial `NetworkObject` synchronization process. This provides users the ability to include custom serialization information that will be applied to the `NetworkBehaviour` prior to the `NetworkObject` being spawned. (#2298)
 - Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings. (#2285)
-- Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. 
+- Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. (#2280)
+
 
 ### Fixed
 
+- Fixed issue where `NetworkTransform` components nested under a parent with a `NetworkObect` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)
+- Fixed issue where `NetworkObject`s that failed to instantiate could cause the entire synchronization pipeline to be disrupted/halted for a connecting client. (#2298)
+- Fixed issue where in-scene placed `NetworkObject`s nested under a `GameObject` would be added to the orphaned children list causing continual console warning log messages. (#2298)
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)
 - Fixed an issue in `UnityTransport` where an error would be logged if the 'Use Encryption' flag was enabled with a Relay configuration that used a secure protocol. (#2289)
 - Fixed issue where in-scene placed `NetworkObjects` were not honoring the `AutoObjectParentSync` property. (#2281)
 - Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
+
+### Changed
+- When `NetworkConfig.EnsureNetworkVariableLengthSafety` is disabled `NetworkVariable` fields do not write the additional `ushort` size value (_which helps to reduce the total synchronization message size_), but when enabled it still writes the additional `ushort` value. (#2298)
 
 ### Removed
 - Removed the `NetworkObject` auto-add and Multiplayer Tools install reminder settings from the Menu interface. (#2285)
