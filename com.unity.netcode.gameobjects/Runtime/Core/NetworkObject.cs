@@ -521,12 +521,21 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.RemoveOwnership(this);
         }
 
+        internal ulong m_NextOwner = 0;
+        internal bool m_HasNextOwner = false;
+
         /// <summary>
         /// Changes the owner of the object. Can only be called from server
         /// </summary>
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
+            m_NextOwner = newOwnerClientId;
+            m_HasNextOwner = true;
+
+            MarkVariablesDirty(true); // do we need just the next line instead?
+            NetworkManager.BehaviourUpdater.AddForUpdate(this);
+
             NetworkManager.SpawnManager.ChangeOwnership(this, newOwnerClientId);
         }
 

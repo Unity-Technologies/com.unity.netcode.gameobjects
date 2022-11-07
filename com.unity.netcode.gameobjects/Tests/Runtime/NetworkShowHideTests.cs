@@ -57,13 +57,47 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariable<int> MyNetworkVariable;
         public NetworkList<int> MyListSetOnSpawn;
+        public NetworkVariable<int> MyOwnerReadNetworkVariable;
+
+        private static int s_IdCount = 0;
+        private int m_Id = 0;
 
         private void Awake()
         {
+//            Debug.Log($"Awake {NetworkManager.LocalClientId}");
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;
 
             MyListSetOnSpawn = new NetworkList<int>();
+            m_Id = s_IdCount++;
+
+            MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm:NetworkVariableReadPermission.Owner);
+
+            if (m_Id % 2 == 0)
+            {
+                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
+            }
+            else
+            {
+                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged2;
+            }
+        }
+
+        public override void OnGainedOwnership()
+        {
+//            Debug.Log($"[{m_Id}] OnGainedOwnership");
+//            Debug.Log($"MyOwnerReadNetworkVariable has value {MyOwnerReadNetworkVariable.Value}");
+            base.OnGainedOwnership();
+        }
+
+        public void OwnerReadChanged(int before, int after)
+        {
+//            Debug.Log($"[even] Owner-read Value changed from {before} to {after}");
+        }
+
+        public void OwnerReadChanged2(int before, int after)
+        {
+  //          Debug.Log($"[odd] Owner-read Value changed from {before} to {after}");
         }
 
         public void Changed(int before, int after)
@@ -328,5 +362,32 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
         }
+
+        [UnityTest]
+        public IEnumerator NetworkHideChangeOwnershipNotHidden()
+        {
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+
+            yield return new WaitForSeconds(1.0f);
+
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyOwnerReadNetworkVariable.Value++;
+
+            yield return new WaitForSeconds(1.0f);
+
+            // Change ownership
+            Debug.Log("About to change owner");
+            m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyOwnerReadNetworkVariable.Value++;
+
+            yield return new WaitForSeconds(1.0f);
+
+            Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+        }
+
     }
 }

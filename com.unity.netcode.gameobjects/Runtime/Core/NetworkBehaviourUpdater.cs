@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Unity.Profiling;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -34,6 +35,15 @@ namespace Unity.Netcode
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
+                        if (dirtyObj.m_HasNextOwner)
+                        {
+                            dirtyObj.m_HasNextOwner = false;
+                            dirtyObj.OwnerClientId = dirtyObj.m_NextOwner;
+                            networkManager.SpawnManager.UpdateOwnershipTable(dirtyObj, dirtyObj.OwnerClientId);
+
+                            Debug.Log($"Updated ownership of {dirtyObj} to {dirtyObj.OwnerClientId}");
+                        }
+
                         for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                         {
                             dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();

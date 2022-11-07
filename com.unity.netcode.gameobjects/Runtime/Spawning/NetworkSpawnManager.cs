@@ -268,15 +268,18 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            networkObject.OwnerClientId = clientId;
+            Debug.Log($"Delayed update ownership of {networkObject} to {clientId}");
+
+            // this should be done later
+            // networkObject.OwnerClientId = clientId;
 
             // Server adds entries for all client ownership
-            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+            // UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
 
             var message = new ChangeOwnershipMessage
             {
                 NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = networkObject.OwnerClientId
+                OwnerClientId = clientId
             };
 
             foreach (var client in NetworkManager.ConnectedClients)
