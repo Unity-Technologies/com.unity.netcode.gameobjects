@@ -10,11 +10,19 @@ namespace TestProject.ManualTests
 
         [Range(0.001f, 5.0f)]
         public float TriggerDistanceToMove = 0.2f;
+
+        public Camera PlayerCamera;
         private Vector3 m_LastPosition;
         private Vector3 m_LastForward;
         private Camera m_MainCamera;
-        private Camera m_PlayerViewCamera;
 
+        private void Awake()
+        {
+            if (PlayerCamera != null)
+            {
+                PlayerCamera.enabled = false;
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -30,16 +38,6 @@ namespace TestProject.ManualTests
                     {
                         m_MainCamera = Camera.allCameras[i];
                     }
-                    else if (camera.name == "PlayerView")
-                    {
-                        m_PlayerViewCamera = camera;
-                    }
-                }
-
-                if (m_PlayerViewCamera != null)
-                {
-                    m_PlayerViewCamera.enabled = false;
-                    m_PlayerViewCamera.transform.parent = transform;
                 }
             }
             base.OnNetworkSpawn();
@@ -78,17 +76,17 @@ namespace TestProject.ManualTests
                     }
                 }
 
-                if (Input.GetKeyDown(KeyCode.P) && m_PlayerViewCamera != null && m_MainCamera != null)
+                if (Input.GetKeyDown(KeyCode.C) && PlayerCamera != null && m_MainCamera != null)
                 {
-                    if(m_MainCamera.enabled)
+                    if (m_MainCamera.isActiveAndEnabled)
                     {
+                        PlayerCamera.enabled = true;
                         m_MainCamera.enabled = false;
-                        m_PlayerViewCamera.enabled = true;
                     }
                     else
                     {
                         m_MainCamera.enabled = true;
-                        m_PlayerViewCamera.enabled = false;
+                        PlayerCamera.enabled = false;
                     }
                 }
             }
