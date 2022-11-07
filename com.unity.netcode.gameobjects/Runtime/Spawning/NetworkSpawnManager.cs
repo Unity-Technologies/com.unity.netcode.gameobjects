@@ -456,7 +456,8 @@ namespace Unity.Netcode
                 {
                     // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
                     // (we always want to set worldPositionStays)
-                    networkObject.SetNetworkParenting(sceneObject.IsLatestParentSet ? parentNetworkId : null, worldPositionStays);
+                    ulong? parentId = sceneObject.IsLatestParentSet ? parentNetworkId : null;
+                    networkObject.SetNetworkParenting(parentId, worldPositionStays);
                 }
 
 
