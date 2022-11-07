@@ -444,7 +444,6 @@ namespace Unity.Netcode
             int totalBytes = 0;
 
             // Write the number of NetworkObjects we are serializing
-            //BytePacker.WriteValuePacked(writer, m_NetworkObjectsSync.Count);
             writer.WriteValueSafe(m_NetworkObjectsSync.Count);
 
             // Serialize all NetworkObjects that are spawned
@@ -511,9 +510,6 @@ namespace Unity.Netcode
             // Write the scene handle and GlobalObjectIdHash value
             for (var i = 0; i < m_DespawnedInSceneObjectsSync.Count; ++i)
             {
-                //BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
-                //BytePacker.WriteValuePacked(writer, m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
-
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
             }
