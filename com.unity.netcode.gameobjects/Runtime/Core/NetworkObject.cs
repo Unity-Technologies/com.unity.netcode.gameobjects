@@ -1413,8 +1413,8 @@ namespace Unity.Netcode
                 try
                 {
                     // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
-                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationData);
-                    reader.Seek(reader.Position + networkBehaviourSynchronizationData);
+                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
                 }
                 catch (Exception ex)
                 {

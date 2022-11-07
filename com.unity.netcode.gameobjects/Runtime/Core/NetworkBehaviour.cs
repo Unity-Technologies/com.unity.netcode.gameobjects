@@ -769,7 +769,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
-        /// each NetworkVariable field will be proceeded by the number of bytes
+        /// each NetworkVariable field will be preceded by the number of bytes
         /// written for that specific field.
         /// </remarks>
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
@@ -814,7 +814,7 @@ namespace Unity.Netcode
         /// </summary>
         /// <remarks>
         /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
-        /// each NetworkVariable field will be proceeded by the number of bytes
+        /// each NetworkVariable field will be preceded by the number of bytes
         /// written for that specific field.
         /// </remarks>
         internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
@@ -881,7 +881,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// When overridden, this method is invoked on a NetworkBehaviour during client synchronization in order
-        /// to provide the ability to inject custom synchronization information specific to the derived class.
+        /// to provide the ability to inject custom synchronization information for derived NetworkBehaviours.
         /// </summary>
         /// <param name="serializer">The serializer to use to read and write the data.</param>
         /// <typeparam name="T">
