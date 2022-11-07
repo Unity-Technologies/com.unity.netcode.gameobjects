@@ -830,6 +830,9 @@ namespace Unity.Netcode
                 // parent and then re-parents the child under a GameObject with a NetworkObject component attached.
                 if (parentNetworkObject == null)
                 {
+                    // If we are parented under a GameObject, go ahead and mark the world position stays as false
+                    // so clients synchronize their transform in local space. (only for in-scene placed NetworkObjects)
+                    m_CachedWorldPositionStays = false;
                     return true;
                 }
                 else // If the parent still isn't spawned add this to the orphaned children and return false
@@ -841,8 +844,11 @@ namespace Unity.Netcode
                 else
                 {
                     // If we made it this far, go ahead and set the network parenting values
-                    // with the default WorldPoisitonSays value
-                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, true);
+                    // with the WorldPoisitonSays value set to false
+                    // Note: Since in-scene placed NetworkObjects are parented in the scene
+                    // the default "assumption" is that children are parenting local space
+                    // relative.
+                    SetNetworkParenting(parentNetworkObject.NetworkObjectId, false);
 
                     // Set the cached parent
                     m_CachedParent = parentNetworkObject.transform;
@@ -1045,7 +1051,20 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    NetworkLog.LogError($"Behaviour index was out of bounds. Did you mess up the order of your {nameof(NetworkBehaviour)}s?");
+                    NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
+                }
+
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                {
+                    var currentKnownChildren = new System.Text.StringBuilder();
+                    currentKnownChildren.Append($"Known child {nameof(NetworkBehaviour)}s:");
+                    for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+                    {
+                        var childNetworkBehaviour = ChildNetworkBehaviours[i];
+                        currentKnownChildren.Append($" [{i}] {childNetworkBehaviour.__getTypeName()}");
+                        currentKnownChildren.Append(i < ChildNetworkBehaviours.Count - 1 ? "," : ".");
+                    }
+                    NetworkLog.LogInfo(currentKnownChildren.ToString());
                 }
 
                 return null;
@@ -1231,6 +1250,13 @@ namespace Unity.Netcode
             if (!AlwaysReplicateAsRoot && transform.parent != null)
             {
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
+                // In-scene placed NetworkObjects parented under GameObjects with no NetworkObject
+                // should set the has parent flag and preserve the world position stays value
+                if (parentNetworkObject == null && obj.IsSceneObject)
+                {
+                    obj.HasParent = true;
+                    obj.WorldPositionStays = m_CachedWorldPositionStays;
+                }
             }
 
             if (parentNetworkObject != null)
@@ -1250,19 +1276,37 @@ namespace Unity.Netcode
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
                 obj.HasTransform = true;
+
+                // We start with the default AutoObjectParentSync values to determine which transform space we will
+                // be synchronizing clients with.
+                var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
+                var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
+
+                // If auto object synchronization is turned off
+                if (!AutoObjectParentSync)
+                {
+                    // We always synchronize position and rotation world space relative
+                    syncRotationPositionLocalSpaceRelative = false;
+                    // Scale is special, it synchronizes local space relative if it has a
+                    // parent since applying the world space scale under a parent with scale
+                    // will result in the improper scale for the child
+                    syncScaleLocalSpaceRelative = obj.HasParent;
+                }
+
+
                 obj.Transform = new SceneObject.TransformData
                 {
                     // If we are parented and we have the m_CachedWorldPositionStays disabled, then use local space
                     // values as opposed world space values.
-                    Position = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localPosition : transform.position,
-                    Rotation = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localRotation : transform.rotation,
+                    Position = syncRotationPositionLocalSpaceRelative ? transform.localPosition : transform.position,
+                    Rotation = syncRotationPositionLocalSpaceRelative ? transform.localRotation : transform.rotation,
 
                     // We only use the lossyScale if the NetworkObject has a parent. Multi-generation nested children scales can
                     // impact the final scale of the child NetworkObject in question. The solution is to use the lossy scale
                     // which can be thought of as "world space scale".
                     // More information:
                     // https://docs.unity3d.com/ScriptReference/Transform-lossyScale.html
-                    Scale = parentNetworkObject && !m_CachedWorldPositionStays ? transform.localScale : transform.lossyScale,
+                    Scale = syncScaleLocalSpaceRelative ? transform.localScale : transform.lossyScale,
                 };
             }
 

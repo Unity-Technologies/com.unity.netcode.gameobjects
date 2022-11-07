@@ -134,5 +134,41 @@ namespace TestProject.RuntimeTests
                 m_ClientLoadedScene = true;
             }
         }
+
+        private int m_LoadEventCompletedInvocationCount;
+
+        /// <summary>
+        /// This test validates that a host only receives one OnLoadEventCompleted callback per scene loading event when
+        /// no clients are connected.
+        /// Note: the fix was within SceneEventProgress but is associated with NetworkSceneManager
+        /// </summary>
+        [UnityTest]
+        public IEnumerator HostReceivesOneLoadEventCompletedNotification()
+        {
+            // Host only test
+            if (!m_UseHost)
+            {
+                yield break;
+            }
+
+            yield return StopOneClient(m_ClientNetworkManagers[0]);
+            m_LoadEventCompletedInvocationCount = 0;
+            m_ServerNetworkManager.SceneManager.OnLoadEventCompleted += SceneManager_OnLoadEventCompleted;
+
+            var retStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_AdditiveScene1, LoadSceneMode.Additive);
+            Assert.AreEqual(retStatus, SceneEventProgressStatus.Started);
+            yield return WaitForConditionOrTimeOut(() => m_LoadEventCompletedInvocationCount > 0);
+            AssertOnTimeout($"Host timed out loading scene {k_AdditiveScene1} additively!");
+
+            // Wait one tick to make sure any other notifications are not triggered.
+            yield return s_DefaultWaitForTick;
+
+            Assert.IsTrue(m_LoadEventCompletedInvocationCount == 1, $"Expected OnLoadEventCompleted to be triggered once but was triggered {m_LoadEventCompletedInvocationCount} times!");
+        }
+
+        private void SceneManager_OnLoadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, System.Collections.Generic.List<ulong> clientsCompleted, System.Collections.Generic.List<ulong> clientsTimedOut)
+        {
+            m_LoadEventCompletedInvocationCount++;
+        }
     }
 }
