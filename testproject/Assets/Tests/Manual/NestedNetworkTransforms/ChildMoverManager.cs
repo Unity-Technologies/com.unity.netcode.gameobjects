@@ -63,16 +63,12 @@ namespace TestProject.ManualTests
                     }
 
                     movementDirection *= rotationDirection.y < 0 ? -1 : 1;
-                    bool forward = true;
-                    if (movementDirection < 0)
-                    {
-                        forward = false;
-                    }
+
                     m_LastPosition = transform.position;
                     m_LastForward = transform.forward;
                     foreach (var childMover in ChildMovers)
                     {
-                        childMover.PlayerIsMoving(forward);
+                        childMover.PlayerIsMoving(Mathf.Sign(movementDirection));
                     }
                 }
 
