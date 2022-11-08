@@ -804,7 +804,7 @@ namespace Unity.Netcode
                     else
                     {
                         NetworkVariableFields[j].WriteField(writer);
-                    }                    
+                    }
                 }
                 else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
