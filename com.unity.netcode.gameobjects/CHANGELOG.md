@@ -14,12 +14,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Custom messages are now properly received by the local client when they're sent while running in host mode. (#2296)
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)
 - Fixed issue where in-scene placed `NetworkObjects` were not honoring the `AutoObjectParentSync` property. (#2281)
 - Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
-- Custom messages are now properly received by the local client when they're sent while running in host mode. (#2296)
-
 ### Removed
 - Removed the `NetworkObject` auto-add and Multiplayer Tools install reminder settings from the Menu interface. (#2285)
 
