@@ -21,6 +21,7 @@ namespace Unity.Netcode
             Client = 2
         }
 
+
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
 
@@ -787,6 +788,11 @@ namespace Unity.Netcode
                     if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var writePos = writer.Position;
+                        // Note: This value can't be packed because we don't know how large it will be in advance
+                        // we reserve space for it, then write the data, then come back and fill in the space
+                        // to pack here, we'd have to write data to a temporary buffer and copy it in - which
+                        // isn't worth possibly saving one byte if and only if the data is less than 63 bytes long...
+                        // The way we do packing, any value > 63 in a ushort will use the full 2 bytes to represent.
                         writer.WriteValueSafe((ushort)0);
                         var startPos = writer.Position;
                         NetworkVariableFields[j].WriteField(writer);
@@ -798,7 +804,7 @@ namespace Unity.Netcode
                     else
                     {
                         NetworkVariableFields[j].WriteField(writer);
-                    }
+                    }                    
                 }
                 else // Only if EnsureNetworkVariableLengthSafety, otherwise just skip
                 if (NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)

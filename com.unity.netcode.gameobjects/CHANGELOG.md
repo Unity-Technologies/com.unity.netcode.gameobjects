@@ -16,6 +16,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. (#2280)
 
 
+### Changed
+
+- Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
+
 ### Fixed
 
 - Fixed issue where `NetworkTransform` components nested under a parent with a `NetworkObect` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)

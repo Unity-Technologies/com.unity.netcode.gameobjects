@@ -1,6 +1,8 @@
 using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -18,6 +20,96 @@ namespace Unity.Netcode
         // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
         public void Read(FastBufferReader reader, ref T value);
+    }
+
+    /// <summary>
+    /// Packing serializer for shorts
+    /// </summary>
+    internal class ShortSerializer : INetworkVariableSerializer<short>
+    {
+        public void Write(FastBufferWriter writer, ref short value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref short value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+    }
+
+    /// <summary>
+    /// Packing serializer for shorts
+    /// </summary>
+    internal class UshortSerializer : INetworkVariableSerializer<ushort>
+    {
+        public void Write(FastBufferWriter writer, ref ushort value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref ushort value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+    }
+
+    /// <summary>
+    /// Packing serializer for ints
+    /// </summary>
+    internal class IntSerializer : INetworkVariableSerializer<int>
+    {
+        public void Write(FastBufferWriter writer, ref int value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref int value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+    }
+
+    /// <summary>
+    /// Packing serializer for ints
+    /// </summary>
+    internal class UintSerializer : INetworkVariableSerializer<uint>
+    {
+        public void Write(FastBufferWriter writer, ref uint value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref uint value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+    }
+
+    /// <summary>
+    /// Packing serializer for longs
+    /// </summary>
+    internal class LongSerializer : INetworkVariableSerializer<long>
+    {
+        public void Write(FastBufferWriter writer, ref long value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref long value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+    }
+
+    /// <summary>
+    /// Packing serializer for longs
+    /// </summary>
+    internal class UlongSerializer : INetworkVariableSerializer<ulong>
+    {
+        public void Write(FastBufferWriter writer, ref ulong value)
+        {
+            BytePacker.WriteValueBitPacked(writer, value);
+        }
+        public void Read(FastBufferReader reader, ref ulong value)
+        {
+            ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
     }
 
     /// <summary>
@@ -188,6 +280,26 @@ namespace Unity.Netcode
     /// </summary>
     public static class NetworkVariableSerializationTypes
     {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+#endif
+        internal static void InitializeIntegerSerialization()
+        {
+            NetworkVariableSerialization<short>.Serializer = new ShortSerializer();
+            NetworkVariableSerialization<short>.AreEqual = NetworkVariableSerialization<short>.ValueEquals;
+            NetworkVariableSerialization<ushort>.Serializer = new UshortSerializer();
+            NetworkVariableSerialization<ushort>.AreEqual = NetworkVariableSerialization<ushort>.ValueEquals;
+            NetworkVariableSerialization<int>.Serializer = new IntSerializer();
+            NetworkVariableSerialization<int>.AreEqual = NetworkVariableSerialization<int>.ValueEquals;
+            NetworkVariableSerialization<uint>.Serializer = new UintSerializer();
+            NetworkVariableSerialization<uint>.AreEqual = NetworkVariableSerialization<uint>.ValueEquals;
+            NetworkVariableSerialization<long>.Serializer = new LongSerializer();
+            NetworkVariableSerialization<long>.AreEqual = NetworkVariableSerialization<long>.ValueEquals;
+            NetworkVariableSerialization<ulong>.Serializer = new UlongSerializer();
+            NetworkVariableSerialization<ulong>.AreEqual = NetworkVariableSerialization<ulong>.ValueEquals;
+        }
+
         /// <summary>
         /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
         /// </summary>
