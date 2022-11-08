@@ -41,6 +41,7 @@ namespace TestProject.RuntimeTests
         {
             InSceneParentChildHandler.ResetInstancesTracking(m_EnableVerboseDebug);
             InSceneParentedUnderGameObjectHandler.Instances.Clear();
+            ParentingAutoSyncManager.Reset();
             return base.OnSetup();
         }
 
@@ -382,6 +383,132 @@ namespace TestProject.RuntimeTests
             {
                 Assert.False(instance.transform.parent == null, $"{instance.name}'s parent is null when it should not be!");
             }
+        }
+
+
+        /// <summary>
+        /// Validates that all client transforms match all server transforms for the InSceneNestedAutoSyncObjectTest
+        /// </summary>
+        private bool AllClientInstancesMatchServerInstance()
+        {
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms.Count; i++)
+            {
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOnTransforms[i];
+                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
+                {
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOnTransforms[i];
+                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms.Count; i++)
+            {
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.NetworkObjectAutoSyncOffTransforms[i];
+                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
+                {
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientTransformToTest = clientRelativeAutoSyncManager.NetworkObjectAutoSyncOffTransforms[i];
+                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms.Count; i++)
+            {
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOnTransforms[i];
+                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
+                {
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOnTransforms[i];
+                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            for (int i = 0; i < ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms.Count; i++)
+            {
+                var serverTransformToTest = ParentingAutoSyncManager.ServerInstance.GameObjectAutoSyncOffTransforms[i];
+                for (int j = 0; j < m_ClientNetworkManagers.Length; j++)
+                {
+                    var clientRelativeAutoSyncManager = ParentingAutoSyncManager.ClientInstances[m_ClientNetworkManagers[j].LocalClientId];
+                    var clientTransformToTest = clientRelativeAutoSyncManager.GameObjectAutoSyncOffTransforms[i];
+                    if (!Approximately(clientTransformToTest.position, serverTransformToTest.position))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.rotation, serverTransformToTest.rotation))
+                    {
+                        return false;
+                    }
+
+                    if (!Approximately(clientTransformToTest.localScale, serverTransformToTest.localScale))
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Validates that both nested in-scene NetworkObjects and in-scene NetworkObjects
+        /// nested under GameObjects synchronize clients with the appropriate transform
+        /// space values (world vs local).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator InSceneNestedAutoSyncObjectTest()
+        {
+            SceneManager.sceneLoaded += SceneManager_sceneLoaded;
+            SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
+            m_InitialClientsLoadedScene = false;
+            m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+
+            var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
+            Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
+            yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);
+            AssertOnTimeout($"Timed out waiting for all clients to load scene {k_TestSceneToLoad}!");
+
+            yield return WaitForConditionOrTimeOut(AllClientInstancesMatchServerInstance);
+            AssertOnTimeout($"Timed out waiting for all client transforms to match the server-side values in test scene {k_TestSceneToLoad}!");
         }
     }
 }

@@ -402,7 +402,7 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
-                // SPECIAL CASE:
+                // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
                 // more scenes that contain nested in-scene placed NetworkObject children yet the server's
                 // synchronization information does not indicate the NetworkObject in question has a parent.
@@ -423,7 +423,9 @@ namespace Unity.Netcode
                 // but it is up to the user to set those values
                 if (sceneObject.Header.HasTransform && !isSpawnedByPrefabHandler)
                 {
-                    if (worldPositionStays)
+                    // If world position stays is true or we have auto object parent synchronization disabled
+                    // then we want to apply the position and rotation values world space relative
+                    if (worldPositionStays || !networkObject.AutoObjectParentSync)
                     {
                         networkObject.transform.position = position;
                         networkObject.transform.rotation = rotation;
@@ -443,6 +445,9 @@ namespace Unity.Netcode
                     // that is the default value of Vector3.
                     if (!sceneObject.Header.IsPlayerObject)
                     {
+                        // Since scale is always applied to local space scale, we do the transform
+                        // space logic during serialization such that it works out whether AutoObjectParentSync
+                        // is enabled or not (see NetworkObject.SceneObject)
                         networkObject.transform.localScale = scale;
                     }
                 }

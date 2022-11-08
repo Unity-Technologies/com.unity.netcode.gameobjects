@@ -1441,7 +1441,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 if (m_ProtocolType == ProtocolType.RelayUnityTransport)
                 {
-                    if (m_RelayServerData.IsSecure != 0)
+                    if (m_RelayServerData.IsSecure == 0)
                     {
                         // log an error because we have mismatched configuration
                         Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
