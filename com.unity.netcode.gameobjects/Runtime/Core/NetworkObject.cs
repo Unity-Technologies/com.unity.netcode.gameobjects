@@ -1403,7 +1403,7 @@ namespace Unity.Netcode
                 // Log the error that the NetworkObject failed to construct
                 if (networkManager.LogLevel <= LogLevel.Normal)
                 {
-                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Header.Hash}.");
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Hash}.");
                 }
 
                 try
@@ -1423,7 +1423,7 @@ namespace Unity.Netcode
 
             // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
             // in order to be able to determine which NetworkVariables the client will be allowed to read.
-            networkObject.OwnerClientId = sceneObject.Header.OwnerClientId;
+            networkObject.OwnerClientId = sceneObject.OwnerClientId;
 
             // Synchronize NetworkBehaviours
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));

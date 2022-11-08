@@ -626,7 +626,7 @@ namespace Unity.Netcode
                     var sceneObject = new NetworkObject.SceneObject();
                     sceneObject.Deserialize(InternalBuffer);
 
-                    if (sceneObject.Header.IsSceneObject)
+                    if (sceneObject.IsSceneObject)
                     {
                         // Set our relative scene to the NetworkObject
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
@@ -855,7 +855,7 @@ namespace Unity.Netcode
                     sceneObject.Deserialize(InternalBuffer);
 
                     // If the sceneObject is in-scene placed, then set the scene being synchronized
-                    if (sceneObject.Header.IsSceneObject)
+                    if (sceneObject.IsSceneObject)
                     {
                         m_NetworkManager.SceneManager.SetTheSceneBeingSynchronized(sceneObject.NetworkSceneHandle);
                     }
