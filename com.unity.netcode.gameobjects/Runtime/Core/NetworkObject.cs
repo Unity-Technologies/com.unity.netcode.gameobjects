@@ -530,12 +530,6 @@ namespace Unity.Netcode
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
-            m_NextOwner = newOwnerClientId;
-            m_HasNextOwner = true;
-
-            MarkVariablesDirty(true); // do we need just the next line instead?
-            NetworkManager.BehaviourUpdater.AddForUpdate(this);
-
             NetworkManager.SpawnManager.ChangeOwnership(this, newOwnerClientId);
         }
 
