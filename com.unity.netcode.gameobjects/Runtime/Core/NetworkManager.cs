@@ -86,10 +86,10 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
-        // <summary>
-        // When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        // tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
-        // </summary>
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
         public string DisconnectReason { get; internal set; }
 
         private class NetworkManagerHooks : INetworkHooks
@@ -450,9 +450,10 @@ namespace Unity.Netcode
             /// </summary>
             public bool Pending;
 
-            // <summary>
-            // Optional reason. If Approved is false, this reason will be sent to the client so they know why they
-            // were not approved.
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
             public string Reason;
         }
 
