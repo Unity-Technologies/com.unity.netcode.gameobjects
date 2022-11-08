@@ -7,7 +7,8 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
-            writer.WriteValueSafe(this);
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            writer.WriteValueSafe(DestroyGameObject);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
@@ -18,7 +19,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            reader.ReadValueSafe(out this);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+            reader.ReadValueSafe(out DestroyGameObject);
 
             if (!networkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {

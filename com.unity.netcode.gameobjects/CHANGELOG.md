@@ -13,6 +13,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings. (#2285)
 - Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. 
 
+### Changed
+
+- Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
+
 ### Fixed
 
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)

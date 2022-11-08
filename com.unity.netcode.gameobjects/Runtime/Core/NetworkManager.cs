@@ -2185,14 +2185,11 @@ namespace Unity.Netcode
                     // Generate a SceneObject for the player object to spawn
                     var sceneObject = new NetworkObject.SceneObject
                     {
-                        Header = new NetworkObject.SceneObject.HeaderData
-                        {
-                            IsPlayerObject = true,
-                            OwnerClientId = ownerClientId,
-                            IsSceneObject = false,
-                            HasTransform = true,
-                            Hash = playerPrefabHash,
-                        },
+                        OwnerClientId = ownerClientId,
+                        IsPlayerObject = true,
+                        IsSceneObject = false,
+                        HasTransform = true,
+                        Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Transform = new NetworkObject.SceneObject.TransformData
                         {
@@ -2309,11 +2306,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Header.Hash = playerPrefabHash;
-                message.ObjectInfo.Header.IsSceneObject = false;
-                message.ObjectInfo.Header.HasParent = false;
-                message.ObjectInfo.Header.IsPlayerObject = true;
-                message.ObjectInfo.Header.OwnerClientId = clientId;
+                message.ObjectInfo.Hash = playerPrefabHash;
+                message.ObjectInfo.IsSceneObject = false;
+                message.ObjectInfo.HasParent = false;
+                message.ObjectInfo.IsPlayerObject = true;
+                message.ObjectInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
