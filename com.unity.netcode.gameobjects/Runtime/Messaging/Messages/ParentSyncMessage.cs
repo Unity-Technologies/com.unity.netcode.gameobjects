@@ -6,16 +6,30 @@ namespace Unity.Netcode
     {
         public ulong NetworkObjectId;
 
-        public bool WorldPositionStays;
+        private byte m_BitField;
+
+        public bool WorldPositionStays
+        {
+            get => ByteUtility.GetBit(m_BitField, 0);
+            set => ByteUtility.SetBit(ref m_BitField, 0, value);
+        }
 
         //If(Metadata.IsReparented)
-        public bool IsLatestParentSet;
+        public bool IsLatestParentSet
+        {
+            get => ByteUtility.GetBit(m_BitField, 1);
+            set => ByteUtility.SetBit(ref m_BitField, 1, value);
+        }
 
         //If(IsLatestParentSet)
         public ulong? LatestParent;
 
         // Is set when the parent should be removed (similar to IsReparented functionality but only for removing the parent)
-        public bool RemoveParent;
+        public bool RemoveParent
+        {
+            get => ByteUtility.GetBit(m_BitField, 2);
+            set => ByteUtility.SetBit(ref m_BitField, 2, value);
+        }
 
         // These additional properties are used to synchronize clients with the current position,
         // rotation, and scale after parenting/de-parenting (world/local space relative). This
@@ -27,16 +41,13 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer)
         {
-            BytePacker.WriteValuePacked(writer, NetworkObjectId);
-            writer.WriteValueSafe(RemoveParent);
-            writer.WriteValueSafe(WorldPositionStays);
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            writer.WriteValueSafe(m_BitField);
             if (!RemoveParent)
             {
-                writer.WriteValueSafe(IsLatestParentSet);
-
                 if (IsLatestParentSet)
                 {
-                    BytePacker.WriteValueBitPacked(writer, (ulong)LatestParent);
+                    BytePacker.WriteValueBitPacked(writer, LatestParent.Value);
                 }
             }
 
@@ -54,13 +65,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            ByteUnpacker.ReadValuePacked(reader, out NetworkObjectId);
-            reader.ReadValueSafe(out RemoveParent);
-            reader.ReadValueSafe(out WorldPositionStays);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+            reader.ReadValueSafe(out m_BitField);
             if (!RemoveParent)
             {
-                reader.ReadValueSafe(out IsLatestParentSet);
-
                 if (IsLatestParentSet)
                 {
                     ByteUnpacker.ReadValueBitPacked(reader, out ulong latestParent);

@@ -380,7 +380,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(SceneEventType);
 
             // Write the scene loading mode
-            writer.WriteValueSafe(LoadSceneMode);
+            writer.WriteValueSafe((byte)LoadSceneMode);
 
             // Write the scene event progress Guid
             if (SceneEventType != SceneEventType.Synchronize)
@@ -533,7 +533,8 @@ namespace Unity.Netcode
         internal void Deserialize(FastBufferReader reader)
         {
             reader.ReadValueSafe(out SceneEventType);
-            reader.ReadValueSafe(out LoadSceneMode);
+            reader.ReadValueSafe(out byte loadSceneMode);
+            LoadSceneMode = (LoadSceneMode)loadSceneMode;
 
             if (SceneEventType != SceneEventType.Synchronize)
             {

@@ -8,24 +8,17 @@ namespace Unity.Netcode
     {
         public static unsafe void Serialize(ref FastBufferWriter writer, ref RpcMetadata metadata, ref FastBufferWriter payload)
         {
-            if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize<RpcMetadata>() + payload.Length))
-            {
-                throw new OverflowException("Not enough space in the buffer to store RPC data.");
-            }
-
-            writer.WriteValue(metadata);
-            writer.WriteBytes(payload.GetUnsafePtr(), payload.Length);
+            BytePacker.WriteValueBitPacked(writer, metadata.NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, metadata.NetworkBehaviourId);
+            BytePacker.WriteValueBitPacked(writer, metadata.NetworkRpcMethodId);
+            writer.WriteBytesSafe(payload.GetUnsafePtr(), payload.Length);
         }
 
         public static unsafe bool Deserialize(ref FastBufferReader reader, ref NetworkContext context, ref RpcMetadata metadata, ref FastBufferReader payload)
         {
-            int metadataSize = FastBufferWriter.GetWriteSize<RpcMetadata>();
-            if (!reader.TryBeginRead(metadataSize))
-            {
-                throw new InvalidOperationException("Not enough data in the buffer to read RPC meta.");
-            }
-
-            reader.ReadValue(out metadata);
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkObjectId);
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkBehaviourId);
+            ByteUnpacker.ReadValueBitPacked(reader, out metadata.NetworkRpcMethodId);
 
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(metadata.NetworkObjectId))
@@ -46,7 +39,7 @@ namespace Unity.Netcode
                 return false;
             }
 
-            payload = new FastBufferReader(reader.GetUnsafePtr() + metadataSize, Allocator.None, reader.Length - metadataSize);
+            payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
