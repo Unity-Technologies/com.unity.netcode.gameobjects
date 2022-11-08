@@ -171,6 +171,11 @@ namespace TestProject.RuntimeTests
                 }
             }
 
+            foreach (var c in clientsToClean)
+            {
+                Assert.AreEqual(c.DisconnectReason, "Some valid reason");
+            }
+
             foreach (var client in clients)
             {
                 // If a client failed, then it will already be shutdown
@@ -227,6 +232,14 @@ namespace TestProject.RuntimeTests
                 response.Position = null;
                 response.Rotation = null;
                 response.PlayerPrefabHash = m_PrefabOverrideGlobalObjectIdHash;
+            }
+            if (!response.Approved)
+            {
+                response.Reason = "Some valid reason";
+            }
+            else
+            {
+                response.Reason = string.Empty;
             }
         }
 

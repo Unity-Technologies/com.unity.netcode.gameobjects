@@ -734,7 +734,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(m_DetectedPotentialInterpolatedTeleport == 0.0f, $"Detected possible interpolation on non-authority side! NonAuthority distance: {m_DetectedPotentialInterpolatedTeleport} | Target distance: {targetDistance}");
         }
 
-
         /// <summary>
         /// This test validates the <see cref="NetworkTransform.SetState(Vector3?, Quaternion?, Vector3?, bool)"/> method
         /// usage for the non-authoritative side.  It will either be the owner or the server making/requesting state changes.
@@ -842,7 +841,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             if (!nonauthorityIsEqual)
             {
-                VerboseDebug($"NonAuthority position {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
+                VerboseDebug($"NonAuthority rotation {nonAuthorityRotationEuler} != rotation to match: {rotationEulerToMatch}!");
             }
             return auhtorityIsEqual && nonauthorityIsEqual;
         }

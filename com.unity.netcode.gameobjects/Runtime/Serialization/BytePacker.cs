@@ -50,7 +50,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(FastBufferWriter writer, float value)
         {
-            WriteUInt32Packed(writer, ToUint(value));
+            WriteValueBitPacked(writer, ToUint(value));
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void WriteValuePacked(FastBufferWriter writer, double value)
         {
-            WriteUInt64Packed(writer, ToUlong(value));
+            WriteValueBitPacked(writer, ToUlong(value));
         }
 
         /// <summary>
@@ -98,7 +98,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, short value) => WriteUInt32Packed(writer, (ushort)Arithmetic.ZigZagEncode(value));
+        public static void WriteValuePacked(FastBufferWriter writer, short value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Write an unsigned short (UInt16) as a varint to the buffer.
@@ -109,7 +109,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, ushort value) => WriteUInt32Packed(writer, value);
+        public static void WriteValuePacked(FastBufferWriter writer, ushort value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Write a two-byte character as a varint to the buffer.
@@ -120,7 +120,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="c">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, char c) => WriteUInt32Packed(writer, c);
+        public static void WriteValuePacked(FastBufferWriter writer, char c) => WriteValueBitPacked(writer, c);
 
         /// <summary>
         /// Write a signed int (Int32) as a ZigZag encoded varint to the buffer.
@@ -128,7 +128,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, int value) => WriteUInt32Packed(writer, (uint)Arithmetic.ZigZagEncode(value));
+        public static void WriteValuePacked(FastBufferWriter writer, int value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Write an unsigned int (UInt32) to the buffer.
@@ -136,7 +136,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, uint value) => WriteUInt32Packed(writer, value);
+        public static void WriteValuePacked(FastBufferWriter writer, uint value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Write an unsigned long (UInt64) to the buffer.
@@ -144,7 +144,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, ulong value) => WriteUInt64Packed(writer, value);
+        public static void WriteValuePacked(FastBufferWriter writer, ulong value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Write a signed long (Int64) as a ZigZag encoded varint to the buffer.
@@ -152,7 +152,7 @@ namespace Unity.Netcode
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">Value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void WriteValuePacked(FastBufferWriter writer, long value) => WriteUInt64Packed(writer, Arithmetic.ZigZagEncode(value));
+        public static void WriteValuePacked(FastBufferWriter writer, long value) => WriteValueBitPacked(writer, value);
 
         /// <summary>
         /// Convenience method that writes two packed Vector3 from the ray to the buffer
@@ -282,231 +282,183 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueBitPacked<T>(FastBufferWriter writer, T value) where T: unmanaged => writer.WriteValueSafe(value);
 #else
-
         /// <summary>
-        /// Maximum serializable value for a BitPacked ushort (minimum for unsigned is 0)
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const ushort BitPackedUshortMax = (1 << 15) - 1;
 
         /// <summary>
-        /// Maximum serializable value for a BitPacked short
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const short BitPackedShortMax = (1 << 14) - 1;
 
         /// <summary>
-        /// Minimum serializable value size for a BitPacked ushort
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const short BitPackedShortMin = -(1 << 14);
 
         /// <summary>
-        /// Maximum serializable value for a BitPacked uint (minimum for unsigned is 0)
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const uint BitPackedUintMax = (1 << 30) - 1;
 
         /// <summary>
-        /// Maximum serializable value for a BitPacked int
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const int BitPackedIntMax = (1 << 29) - 1;
 
         /// <summary>
-        /// Minimum serializable value size for a BitPacked int
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const int BitPackedIntMin = -(1 << 29);
 
         /// <summary>
-        /// Maximum serializable value for a BitPacked ulong (minimum for unsigned is 0)
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const ulong BitPackedULongMax = (1L << 61) - 1;
 
         /// <summary>
-        /// Maximum serializable value for a BitPacked long
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const long BitPackedLongMax = (1L << 60) - 1;
 
         /// <summary>
-        /// Minimum serializable value size for a BitPacked long
+        /// Obsolete value that no longer carries meaning. Do not use.
         /// </summary>
         public const long BitPackedLongMin = -(1L << 60);
 
         /// <summary>
-        /// Writes a 14-bit signed short to the buffer in a bit-encoded packed format.
-        /// The first bit indicates whether the value is 1 byte or 2.
-        /// The sign bit takes up another bit.
-        /// That leaves 14 bits for the value.
-        /// A value greater than 2^14-1 or less than -2^14 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its two
-        /// most significant bits after zig-zag encoding.
+        /// Writes a 16-bit signed short to the buffer in a bit-encoded packed format.
+        /// Zig-zag encoding is used to move the sign bit to the least significant bit, so that negative values
+        /// are still able to be compressed.
+        /// The first two bits indicate whether the value is 1, 2, or 3 bytes.
+        /// If the value uses 14 bits or less, the remaining 14 bits contain the value.
+        /// For performance, reasons, if the value is 15 bits or more, there will be six 0 bits, followed
+        /// by the original unmodified 16-bit value in the next 2 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(FastBufferWriter writer, short value) => WriteValueBitPacked(writer, (ushort)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
-        /// Writes a 15-bit unsigned short to the buffer in a bit-encoded packed format.
-        /// The first bit indicates whether the value is 1 byte or 2.
-        /// That leaves 15 bits for the value.
-        /// A value greater than 2^15-1 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its
-        /// most significant bit.
+        /// Writes a 16-bit unsigned short to the buffer in a bit-encoded packed format.
+        /// The first two bits indicate whether the value is 1, 2, or 3 bytes.
+        /// If the value uses 14 bits or less, the remaining 14 bits contain the value.
+        /// For performance, reasons, if the value is 15 bits or more, there will be six 0 bits, followed
+        /// by the original unmodified 16-bit value in the next 2 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
         public static void WriteValueBitPacked(FastBufferWriter writer, ushort value)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value >= BitPackedUshortMax)
+            if (value > (1 << 14) - 1)
             {
-                throw new ArgumentException("BitPacked ushorts must be <= 15 bits");
-            }
-#endif
-
-            if (value <= 0b0111_1111)
-            {
-                if (!writer.TryBeginWriteInternal(1))
+                if (!writer.TryBeginWriteInternal(3))
                 {
                     throw new OverflowException("Writing past the end of the buffer");
                 }
-                writer.WriteByte((byte)(value << 1));
+                writer.WriteByte(3);
+                writer.WriteValue(value);
                 return;
             }
 
-            if (!writer.TryBeginWriteInternal(2))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-            writer.WriteValue((ushort)((value << 1) | 0b1));
-        }
-
-        /// <summary>
-        /// Writes a 29-bit signed int to the buffer in a bit-encoded packed format.
-        /// The first two bits indicate whether the value is 1, 2, 3, or 4 bytes.
-        /// The sign bit takes up another bit.
-        /// That leaves 29 bits for the value.
-        /// A value greater than 2^29-1 or less than -2^29 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its three
-        /// most significant bits after zig-zag encoding.
-        /// </summary>
-        /// <param name="writer">The writer to write to</param>
-        /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(FastBufferWriter writer, int value) => WriteValueBitPacked(writer, (uint)Arithmetic.ZigZagEncode(value));
-
-        /// <summary>
-        /// Writes a 30-bit unsigned int to the buffer in a bit-encoded packed format.
-        /// The first two bits indicate whether the value is 1, 2, 3, or 4 bytes.
-        /// That leaves 30 bits for the value.
-        /// A value greater than 2^30-1 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its two
-        /// most significant bits.
-        /// </summary>
-        /// <param name="writer">The writer to write to</param>
-        /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(FastBufferWriter writer, uint value)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value > BitPackedUintMax)
-            {
-                throw new ArgumentException("BitPacked uints must be <= 30 bits");
-            }
-#endif
             value <<= 2;
             var numBytes = BitCounter.GetUsedByteCount(value);
             if (!writer.TryBeginWriteInternal(numBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
+            writer.WritePartialValue(value | (ushort)(numBytes), numBytes);
         }
 
         /// <summary>
-        /// Writes a 60-bit signed long to the buffer in a bit-encoded packed format.
-        /// The first three bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, or 8 bytes.
-        /// The sign bit takes up another bit.
-        /// That leaves 60 bits for the value.
-        /// A value greater than 2^60-1 or less than -2^60 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its four
-        /// most significant bits after zig-zag encoding.
+        /// Writes a 32-bit signed int to the buffer in a bit-encoded packed format.
+        /// Zig-zag encoding is used to move the sign bit to the least significant bit, so that negative values
+        /// are still able to be compressed.
+        /// The first three bits indicate whether the value is 1, 2, 3, 4, or 5 bytes.
+        /// If the value uses 29 bits or less, the remaining 29 bits contain the value.
+        /// For performance, reasons, if the value is 30 bits or more, there will be five 0 bits, followed
+        /// by the original unmodified 32-bit value in the next 4 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(FastBufferWriter writer, long value) => WriteValueBitPacked(writer, Arithmetic.ZigZagEncode(value));
+        public static void WriteValueBitPacked(FastBufferWriter writer, int value) => WriteValueBitPacked(writer, (uint)Arithmetic.ZigZagEncode(value));
 
         /// <summary>
-        /// Writes a 61-bit unsigned long to the buffer in a bit-encoded packed format.
-        /// The first three bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, or 8 bytes.
-        /// That leaves 31 bits for the value.
-        /// A value greater than 2^61-1 will throw an exception in editor and development builds.
-        /// In release builds builds the exception is not thrown and the value is truncated by losing its three
-        /// most significant bits.
+        /// Writes a 32-bit unsigned int to the buffer in a bit-encoded packed format.
+        /// The first three bits indicate whether the value is 1, 2, 3, 4, or 5 bytes.
+        /// If the value uses 29 bits or less, the remaining 29 bits contain the value.
+        /// For performance, reasons, if the value is 30 bits or more, there will be five 0 bits, followed
+        /// by the original unmodified 32-bit value in the next 4 bytes.
         /// </summary>
         /// <param name="writer">The writer to write to</param>
         /// <param name="value">The value to pack</param>
-        public static void WriteValueBitPacked(FastBufferWriter writer, ulong value)
+        public static void WriteValueBitPacked(FastBufferWriter writer, uint value)
         {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (value > BitPackedULongMax)
+            if (value > (1 << 29) - 1)
             {
-                throw new ArgumentException("BitPacked ulongs must be <= 61 bits");
+                if (!writer.TryBeginWriteInternal(5))
+                {
+                    throw new OverflowException("Writing past the end of the buffer");
+                }
+                writer.WriteByte(5);
+                writer.WriteValue(value);
+                return;
             }
-#endif
+
             value <<= 3;
             var numBytes = BitCounter.GetUsedByteCount(value);
             if (!writer.TryBeginWriteInternal(numBytes))
             {
                 throw new OverflowException("Writing past the end of the buffer");
             }
-            writer.WritePartialValue(value | (uint)(numBytes - 1), numBytes);
+            writer.WritePartialValue(value | (uint)(numBytes), numBytes);
+        }
+
+        /// <summary>
+        /// Writes a 64-bit signed long to the buffer in a bit-encoded packed format.
+        /// Zig-zag encoding is used to move the sign bit to the least significant bit, so that negative values
+        /// are still able to be compressed.
+        /// The first four bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, 8, or 9 bytes.
+        /// If the value uses 60 bits or less, the remaining 60 bits contain the value.
+        /// For performance, reasons, if the value is 61 bits or more, there will be four 0 bits, followed
+        /// by the original unmodified 64-bit value in the next 8 bytes.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
+        public static void WriteValueBitPacked(FastBufferWriter writer, long value) => WriteValueBitPacked(writer, Arithmetic.ZigZagEncode(value));
+
+        /// <summary>
+        /// Writes a 64-bit unsigned long to the buffer in a bit-encoded packed format.
+        /// The first four bits indicate whether the value is 1, 2, 3, 4, 5, 6, 7, 8, or 9 bytes.
+        /// If the value uses 60 bits or less, the remaining 60 bits contain the value.
+        /// For performance, reasons, if the value is 61 bits or more, there will be four 0 bits, followed
+        /// by the original unmodified 64-bit value in the next 8 bytes.
+        /// </summary>
+        /// <param name="writer">The writer to write to</param>
+        /// <param name="value">The value to pack</param>
+        public static void WriteValueBitPacked(FastBufferWriter writer, ulong value)
+        {
+            if (value > (1L << 60) - 1)
+            {
+                if (!writer.TryBeginWriteInternal(9))
+                {
+                    throw new OverflowException("Writing past the end of the buffer");
+                }
+                writer.WriteByte(9);
+                writer.WriteValue(value);
+                return;
+            }
+
+            value <<= 4;
+            var numBytes = BitCounter.GetUsedByteCount(value);
+            if (!writer.TryBeginWriteInternal(numBytes))
+            {
+                throw new OverflowException("Writing past the end of the buffer");
+            }
+            writer.WritePartialValue(value | (uint)(numBytes), numBytes);
         }
 #endif
-
-        private static void WriteUInt64Packed(FastBufferWriter writer, ulong value)
-        {
-            if (value <= 240)
-            {
-                writer.WriteByteSafe((byte)value);
-                return;
-            }
-            if (value <= 2287)
-            {
-                writer.WriteByteSafe((byte)(((value - 240) >> 8) + 241));
-                writer.WriteByteSafe((byte)(value - 240));
-                return;
-            }
-            var writeBytes = BitCounter.GetUsedByteCount(value);
-
-            if (!writer.TryBeginWriteInternal(writeBytes + 1))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-            writer.WriteByte((byte)(247 + writeBytes));
-            writer.WritePartialValue(value, writeBytes);
-        }
-
-        // Looks like the same code as WriteUInt64Packed?
-        // It's actually different because it will call the more efficient 32-bit version
-        // of BytewiseUtility.GetUsedByteCount().
-        private static void WriteUInt32Packed(FastBufferWriter writer, uint value)
-        {
-            if (value <= 240)
-            {
-                writer.WriteByteSafe((byte)value);
-                return;
-            }
-            if (value <= 2287)
-            {
-                writer.WriteByteSafe((byte)(((value - 240) >> 8) + 241));
-                writer.WriteByteSafe((byte)(value - 240));
-                return;
-            }
-            var writeBytes = BitCounter.GetUsedByteCount(value);
-
-            if (!writer.TryBeginWriteInternal(writeBytes + 1))
-            {
-                throw new OverflowException("Writing past the end of the buffer");
-            }
-            writer.WriteByte((byte)(247 + writeBytes));
-            writer.WritePartialValue(value, writeBytes);
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe uint ToUint<T>(T value) where T : unmanaged
         {
