@@ -56,8 +56,6 @@ namespace Unity.Netcode.RuntimeTests
             // Provide enough time for the client to receive and process the change in ownership message.
             yield return WaitForMessageReceived<ChangeOwnershipMessage>(m_ClientNetworkManagers.ToList());
 
-            yield return new WaitForSeconds(0.5f);
-
             // Ensure it's now added to the list
             Assert.True(m_ClientNetworkManagers[0].SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId).Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));
             Assert.True(m_ServerNetworkManager.SpawnManager.GetClientOwnedObjects(m_ClientNetworkManagers[0].LocalClientId).Any(x => x.NetworkObjectId == serverObject.NetworkObjectId));

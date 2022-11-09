@@ -274,12 +274,6 @@ namespace Unity.Netcode
             networkObject.MarkVariablesDirty(true); // do we need just the next line instead?
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
-            // this should be done later
-            // networkObject.OwnerClientId = clientId;
-
-            // Server adds entries for all client ownership
-            // UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
-
             var message = new ChangeOwnershipMessage
             {
                 NetworkObjectId = networkObject.NetworkObjectId,
