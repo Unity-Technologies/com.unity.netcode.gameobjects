@@ -43,6 +43,8 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
+        private float m_LastRotDirection = 1.0f;
+        private float m_LastMovementDirection = 1.0f;
         private void Update()
         {
             if (IsOwner && IsSpawned)
@@ -52,16 +54,29 @@ namespace TestProject.ManualTests
                 {
                     // Get our movement direction
                     var movementDirection = Vector3.Dot(deltaPosition.normalized, transform.forward);
-                    var rotationDirection = Vector3.zero;
-                    if (movementDirection >= 0)
+                    if (movementDirection == 0)
                     {
-                        rotationDirection = Vector3.Cross(m_LastForward, transform.forward);
+                        movementDirection = m_LastMovementDirection;
                     }
                     else
                     {
+                        m_LastMovementDirection = movementDirection;
+                    }
+                    var rotationDirection = Vector3.zero;
+                    if (movementDirection > 0)
+                    {
+                        rotationDirection = Vector3.Cross(m_LastForward, transform.forward);
+                    }
+                    else if (movementDirection < 0)
+                    {
                         rotationDirection = Vector3.Cross(transform.forward, m_LastForward);
                     }
+                    else
+                    {
+                        rotationDirection.y = m_LastRotDirection;
+                    }
 
+                    m_LastRotDirection = rotationDirection.y;
                     movementDirection *= rotationDirection.y < 0 ? -1 : 1;
 
                     m_LastPosition = transform.position;
