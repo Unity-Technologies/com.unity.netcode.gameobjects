@@ -64,14 +64,14 @@ namespace Unity.Netcode.RuntimeTests
 
         private void Awake()
         {
-//            Debug.Log($"Awake {NetworkManager.LocalClientId}");
+            // Debug.Log($"Awake {NetworkManager.LocalClientId}");
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;
 
             MyListSetOnSpawn = new NetworkList<int>();
             m_Id = s_IdCount++;
 
-            MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm:NetworkVariableReadPermission.Owner);
+            MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
 
             if (m_Id % 2 == 0)
             {
@@ -85,19 +85,19 @@ namespace Unity.Netcode.RuntimeTests
 
         public override void OnGainedOwnership()
         {
-//            Debug.Log($"[{m_Id}] OnGainedOwnership");
-//            Debug.Log($"MyOwnerReadNetworkVariable has value {MyOwnerReadNetworkVariable.Value}");
+            // Debug.Log($"[{m_Id}] OnGainedOwnership");
+            // Debug.Log($"MyOwnerReadNetworkVariable has value {MyOwnerReadNetworkVariable.Value}");
             base.OnGainedOwnership();
         }
 
         public void OwnerReadChanged(int before, int after)
         {
-//            Debug.Log($"[even] Owner-read Value changed from {before} to {after}");
+            // Debug.Log($"[even] Owner-read Value changed from {before} to {after}");
         }
 
         public void OwnerReadChanged2(int before, int after)
         {
-  //          Debug.Log($"[odd] Owner-read Value changed from {before} to {after}");
+            // Debug.Log($"[odd] Owner-read Value changed from {before} to {after}");
         }
 
         public void Changed(int before, int after)

@@ -268,8 +268,8 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            networkObject.m_NextOwner = clientId;
-            networkObject.m_HasNextOwner = true;
+            networkObject.NextOwner = clientId;
+            networkObject.HasNextOwner = true;
 
             networkObject.MarkVariablesDirty(true); // do we need just the next line instead?
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
