@@ -40,8 +40,6 @@ namespace Unity.Netcode
                             dirtyObj.m_HasNextOwner = false;
                             dirtyObj.OwnerClientId = dirtyObj.m_NextOwner;
                             networkManager.SpawnManager.UpdateOwnershipTable(dirtyObj, dirtyObj.OwnerClientId);
-
-                            Debug.Log($"Updated ownership of {dirtyObj} to {dirtyObj.OwnerClientId}");
                         }
 
                         for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)

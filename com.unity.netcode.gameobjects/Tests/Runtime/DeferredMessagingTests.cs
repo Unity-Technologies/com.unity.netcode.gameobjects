@@ -802,11 +802,13 @@ namespace Unity.Netcode.RuntimeTests
                 var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
                 Assert.IsTrue(manager.DeferMessageCalled);
                 Assert.IsFalse(manager.ProcessTriggersCalled);
-                Assert.AreEqual(4, manager.DeferredMessageCountTotal());
-                Assert.AreEqual(3, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
-                Assert.AreEqual(3, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
+
+                // We use LessOrEqual as there can be multiple NetworkVariableDeltaMessage
+                Assert.LessOrEqual(3, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
+                Assert.LessOrEqual(3, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
                 Assert.AreEqual(1, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnAddPrefab));
                 Assert.AreEqual(1, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnAddPrefab, serverObject.GetComponent<NetworkObject>().GlobalObjectIdHash));
+                Assert.LessOrEqual(4, manager.DeferredMessageCountTotal());
                 AddPrefabsToClient(client);
             }
 

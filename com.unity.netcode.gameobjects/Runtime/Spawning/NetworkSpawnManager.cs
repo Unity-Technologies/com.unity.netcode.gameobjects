@@ -274,8 +274,6 @@ namespace Unity.Netcode
             networkObject.MarkVariablesDirty(true); // do we need just the next line instead?
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
-            Debug.Log($"Delayed update ownership of {networkObject} to {clientId}");
-
             // this should be done later
             // networkObject.OwnerClientId = clientId;
 
