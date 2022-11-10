@@ -1237,7 +1237,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBeahviours.
+        /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBehaviours.
         /// </summary>
         /// <remarks>
         /// This is where we determine how much data is written after the associated NetworkObject in order to recover
