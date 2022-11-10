@@ -1237,8 +1237,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles synchronizing NetworkVariables as well as custom user synchronization code for NetworkBeahviours
+        /// Handles synchronizing NetworkVariables as well as custom user synchronization code for NetworkBeahviours.
         /// </summary>
+        /// <remarks>
+        /// This is where we determine how much data is written after the associated NetworkObject in order to recover
+        /// from a failed instantiated NetworkObject without completely disrupting client synchronization.
+        /// </remarks>
         internal void SynchronizeNetworkBehaviours<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
         {
             if (serializer.IsWriter)
@@ -1390,7 +1394,7 @@ namespace Unity.Netcode
         /// when the client is approved or during a scene transition
         /// </summary>
         /// <param name="sceneObject">Deserialized scene object data</param>
-        /// <param name="variableData">reader for the NetworkVariable data</param>
+        /// <param name="reader">FastBufferReader for the NetworkVariable data</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <returns>optional to use NetworkObject deserialized</returns>
         internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager)

@@ -25,10 +25,13 @@ namespace TestProject.RuntimeTests
         protected override void OnOneTimeSetup()
         {
             ChildMover.RandomizeScale = true;
+            // Preserve the test runner scene that is currently the active scene
             m_OriginalActiveScene = SceneManager.GetActiveScene();
+            // Load our test's scene used by all client players (it gets set as the currently active scene when loaded)
             m_PlayerPrefabResource = Resources.Load(k_PlayerToLoad);
             Assert.NotNull(m_PlayerPrefabResource, $"Failed to load resource {k_PlayerToLoad}");
-            // Migrate the resource into the DDOL
+
+            // Migrate the resource into the DDOL to prevent the server from thinking it is in-scene placed.
             Object.DontDestroyOnLoad(m_PlayerPrefabResource);
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadScene(k_TestScene, LoadSceneMode.Additive);
@@ -38,10 +41,12 @@ namespace TestProject.RuntimeTests
         protected override void OnOneTimeTearDown()
         {
             ChildMover.RandomizeScale = false;
+            // Set test runner's scene back to the currently active scene
             if (m_OriginalActiveScene.IsValid() && m_OriginalActiveScene.isLoaded)
             {
                 SceneManager.SetActiveScene(m_OriginalActiveScene);
             }
+            // Unload our base scene if it is still loaded
             if (m_BaseSceneLoaded.IsValid() && m_BaseSceneLoaded.isLoaded)
             {
                 SceneManager.UnloadSceneAsync(m_BaseSceneLoaded);
@@ -68,6 +73,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
+            // This prevents us from trying to destroy the resource loaded
             m_PlayerPrefab = null;
             return base.OnTearDown();
         }
@@ -75,16 +81,16 @@ namespace TestProject.RuntimeTests
 
         protected override void OnCreatePlayerPrefab()
         {
+            // Destroy the default player prefab
             Object.DestroyImmediate(m_PlayerPrefab);
+            // Assign the network prefab resource loaded
             m_PlayerPrefab = m_PlayerPrefabResource as GameObject;
             base.OnCreatePlayerPrefab();
         }
 
-        protected override void OnNewClientStarted(NetworkManager networkManager)
-        {
-            base.OnNewClientStarted(networkManager);
-        }
-
+        /// <summary>
+        /// Prevent the server from telling the clients to load our test scene
+        /// </summary>
         private bool VerifySceneServer(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             if (sceneName == k_TestScene)

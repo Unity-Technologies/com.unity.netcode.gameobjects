@@ -764,14 +764,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Synchronizes by writing all NetworkVariable fields' values the client can read that are
-        /// defined within the NetworkBehaviour.
+        /// Synchronizes by setting only the NetworkVariable field values that the client has permission to read.
         /// Note: This is only invoked when first synchronizing a NetworkBehaviour (i.e. late join or spawned NetworkObject)
         /// </summary>
         /// <remarks>
-        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
-        /// each NetworkVariable field will be preceded by the number of bytes
-        /// written for that specific field.
+        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled each NetworkVariable field will be preceded
+        /// by the number of bytes written for that specific field.
         /// </remarks>
         internal void WriteNetworkVariableData(FastBufferWriter writer, ulong targetClientId)
         {
@@ -815,13 +813,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Synchronizes by setting all NetworkVariable fields' values that the client can read
+        /// Synchronizes by setting only the NetworkVariable field values that the client has permission to read.
         /// Note: This is only invoked when first synchronizing a NetworkBehaviour (i.e. late join or spawned NetworkObject)
         /// </summary>
         /// <remarks>
-        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled
-        /// each NetworkVariable field will be preceded by the number of bytes
-        /// written for that specific field.
+        /// When NetworkConfig.EnsureNetworkVariableLengthSafety is enabled each NetworkVariable field will be preceded
+        /// by the number of bytes written for that specific field.
         /// </remarks>
         internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
@@ -886,8 +883,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// When overridden, this method is invoked on a NetworkBehaviour during client synchronization in order
-        /// to provide the ability to inject custom synchronization information for derived NetworkBehaviours.
+        /// Override this method if your derived NetworkBehaviour requires custom synchronization data.
+        /// When serializing (writing) this will be invoked during the client synchronization period for
+        /// each instance as well as when spawning a new NetworkObject.
+        /// When deserializing (reading), this will be invoked prior to the NetworkBehaviour's associated
+        /// NetworkObject is spawned.
         /// </summary>
         /// <param name="serializer">The serializer to use to read and write the data.</param>
         /// <typeparam name="T">
@@ -904,9 +904,8 @@ namespace Unity.Netcode
         /// be synchronized when first instantiated prior to its associated NetworkObject being spawned.
         /// </summary>
         /// <remarks>
-        /// Only invoked during the initial synchronization (i.e. late join client or newly spawned NetworkObject).
-        /// This includes try-catch to assure if user code fails the rest of the synchronization process will not
-        /// be impacted (i.e. if one NetworkBehaviour fails the rest will still be synchronized)
+        /// This includes try-catch blocks to recover from exceptions that might occur and continue to
+        /// synchronize any remaining NetworkBehaviours.
         /// </remarks>
         /// <returns>true if it wrote synchronization data and false if it did not</returns>
         internal bool Synchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
@@ -917,8 +916,7 @@ namespace Unity.Netcode
                 var writer = serializer.GetFastBufferWriter();
                 // Save our position before we attempt to write anything so we can seek back to it (i.e. error occurs)
                 var positionBeforeWrite = writer.Position;
-                var networkBehaviourId = NetworkBehaviourId;
-                writer.WriteValueSafe(networkBehaviourId);
+                writer.WriteValueSafe(NetworkBehaviourId);
 
                 // Save our position where we will write the final size being written so we can skip over it in the
                 // event an exception occurs when deserializing.

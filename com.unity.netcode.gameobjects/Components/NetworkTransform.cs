@@ -226,7 +226,6 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-
                 serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
