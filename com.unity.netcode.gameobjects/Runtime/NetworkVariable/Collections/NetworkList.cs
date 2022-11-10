@@ -413,7 +413,7 @@ namespace Unity.Netcode
         /// <inheritdoc />
         public bool Contains(T item)
         {
-            int index = NativeArrayExtensions.IndexOf(m_List, item);
+            int index = m_List.IndexOf(item);
             return index != -1;
         }
 
@@ -426,7 +426,7 @@ namespace Unity.Netcode
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
 
-            int index = NativeArrayExtensions.IndexOf(m_List, item);
+            int index = m_List.IndexOf(item);
             if (index == -1)
             {
                 return false;
