@@ -10,8 +10,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
@@ -674,53 +676,72 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        [BurstCompile]
+        private struct SendBatchedMessagesJob : IJob
+        {
+            public NetworkDriver.Concurrent Driver;
+            public SendTarget Target;
+            public BatchedSendQueue Queue;
+            public NetworkPipeline ReliablePipeline;
+
+            public void Execute()
+            {
+                var clientId = Target.ClientId;
+                var connection = ParseClientId(clientId);
+                var pipeline = Target.NetworkPipeline;
+
+                while (!Queue.IsEmpty)
+                {
+                    var result = Driver.BeginSend(pipeline, connection, out var writer);
+                    if (result != (int)Networking.Transport.Error.StatusCode.Success)
+                    {
+                        Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                        return;
+                    }
+
+                    // We don't attempt to send entire payloads over the reliable pipeline. Instead we
+                    // fragment it manually. This is safe and easy to do since the reliable pipeline
+                    // basically implements a stream, so as long as we separate the different messages
+                    // in the stream (the send queue does that automatically) we are sure they'll be
+                    // reassembled properly at the other end. This allows us to lift the limit of ~44KB
+                    // on reliable payloads (because of the reliable window size).
+                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer) : Queue.FillWriterWithMessages(ref writer);
+
+                    result = Driver.EndSend(writer);
+                    if (result == written)
+                    {
+                        // Batched message was sent successfully. Remove it from the queue.
+                        Queue.Consume(written);
+                    }
+                    else
+                    {
+                        // Some error occured. If it's just the UTP queue being full, then don't log
+                        // anything since that's okay (the unsent message(s) are still in the queue
+                        // and we'll retry sending them later). Otherwise log the error and remove the
+                        // message from the queue (we don't want to resend it again since we'll likely
+                        // just get the same error again).
+                        if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
+                        {
+                            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                            Queue.Consume(written);
+                        }
+
+                        return;
+                    }
+                }
+            }
+        }
+
         // Send as many batched messages from the queue as possible.
         private void SendBatchedMessages(SendTarget sendTarget, BatchedSendQueue queue)
         {
-            var clientId = sendTarget.ClientId;
-            var connection = ParseClientId(clientId);
-            var pipeline = sendTarget.NetworkPipeline;
-
-            while (!queue.IsEmpty)
+            new SendBatchedMessagesJob
             {
-                var result = m_Driver.BeginSend(pipeline, connection, out var writer);
-                if (result != (int)Networking.Transport.Error.StatusCode.Success)
-                {
-                    Debug.LogError("Error sending the message: " +
-                        ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
-                    return;
-                }
-
-                // We don't attempt to send entire payloads over the reliable pipeline. Instead we
-                // fragment it manually. This is safe and easy to do since the reliable pipeline
-                // basically implements a stream, so as long as we separate the different messages
-                // in the stream (the send queue does that automatically) we are sure they'll be
-                // reassembled properly at the other end. This allows us to lift the limit of ~44KB
-                // on reliable payloads (because of the reliable window size).
-                var written = pipeline == m_ReliableSequencedPipeline ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
-
-                result = m_Driver.EndSend(writer);
-                if (result == written)
-                {
-                    // Batched message was sent successfully. Remove it from the queue.
-                    queue.Consume(written);
-                }
-                else
-                {
-                    // Some error occured. If it's just the UTP queue being full, then don't log
-                    // anything since that's okay (the unsent message(s) are still in the queue
-                    // and we'll retry sending the later). Otherwise log the error and remove the
-                    // message from the queue (we don't want to resend it again since we'll likely
-                    // just get the same error again).
-                    if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
-                    {
-                        Debug.LogError("Error sending the message: " + ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
-                        queue.Consume(written);
-                    }
-
-                    return;
-                }
-            }
+                Driver = m_Driver.ToConcurrent(),
+                Target = sendTarget,
+                Queue = queue,
+                ReliablePipeline = m_ReliableSequencedPipeline
+            }.Run();
         }
 
         private bool AcceptConnection()
