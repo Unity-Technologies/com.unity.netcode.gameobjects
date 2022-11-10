@@ -51,50 +51,48 @@ namespace Unity.Netcode.Transports.UTP
     /// </summary>
     public static class ErrorUtilities
     {
-        private const string k_NetworkSuccess = "Success";
-        private const string k_NetworkIdMismatch = "NetworkId is invalid, likely caused by stale connection {0}.";
-        private const string k_NetworkVersionMismatch = "NetworkVersion is invalid, likely caused by stale connection {0}.";
-        private const string k_NetworkStateMismatch = "Sending data while connecting on connection {0} is not allowed.";
-        private const string k_NetworkPacketOverflow = "Unable to allocate packet due to buffer overflow.";
-        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many in-flight packets. This could be because the send queue size ('Max Send Queue Size') is too small.";
-        private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
-        private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
-        private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
-        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
+        private static readonly FixedString128Bytes k_NetworkSuccess = "Success";
+        private static readonly FixedString128Bytes k_NetworkIdMismatch = "Invalid connection ID {0}.";
+        private static readonly FixedString128Bytes k_NetworkVersionMismatch = "Connection ID is invalid. Likely caused by sending on stale connection {0}.";
+        private static readonly FixedString128Bytes k_NetworkStateMismatch = "Connection state is invalid. Likely caused by sending on connection {0} which is stale or still connecting.";
+        private static readonly FixedString128Bytes k_NetworkPacketOverflow = "Packet is too large to be allocated by the transport.";
+        private static readonly FixedString128Bytes k_NetworkSendQueueFull = "Unable to queue packet in the transport. Likely caused by send queue size ('Max Send Queue Size') being too small.";
 
         /// <summary>
-        /// Convert error code to human readable error message.
+        /// Convert a UTP error code to human-readable error message.
         /// </summary>
-        /// <param name="error">Status code of the error</param>
-        /// <param name="connectionId">Subject connection ID of the error</param>
-        /// <returns>Human readable error message.</returns>
+        /// <param name="error">UTP error code.</param>
+        /// <param name="connectionId">ID of the connection on which the error occurred.</param>
+        /// <returns>Human-readable error message.</returns>
         public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
         {
-            switch (error)
+            return ErrorToString((int)error, connectionId);
+        }
+
+        internal static string ErrorToString(int error, ulong connectionId)
+        {
+            return ErrorToFixedString(error, connectionId).ToString();
+        }
+
+        internal static FixedString128Bytes ErrorToFixedString(int error, ulong connectionId)
+        {
+            switch ((Networking.Transport.Error.StatusCode)error)
             {
                 case Networking.Transport.Error.StatusCode.Success:
                     return k_NetworkSuccess;
                 case Networking.Transport.Error.StatusCode.NetworkIdMismatch:
-                    return string.Format(k_NetworkIdMismatch, connectionId);
+                    return FixedString.Format(k_NetworkIdMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkVersionMismatch:
-                    return string.Format(k_NetworkVersionMismatch, connectionId);
+                    return FixedString.Format(k_NetworkVersionMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkStateMismatch:
-                    return string.Format(k_NetworkStateMismatch, connectionId);
+                    return FixedString.Format(k_NetworkStateMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkPacketOverflow:
                     return k_NetworkPacketOverflow;
                 case Networking.Transport.Error.StatusCode.NetworkSendQueueFull:
                     return k_NetworkSendQueueFull;
-                case Networking.Transport.Error.StatusCode.NetworkHeaderInvalid:
-                    return k_NetworkHeaderInvalid;
-                case Networking.Transport.Error.StatusCode.NetworkDriverParallelForErr:
-                    return k_NetworkDriverParallelForErr;
-                case Networking.Transport.Error.StatusCode.NetworkSendHandleInvalid:
-                    return k_NetworkSendHandleInvalid;
-                case Networking.Transport.Error.StatusCode.NetworkArgumentMismatch:
-                    return k_NetworkArgumentMismatch;
+                default:
+                    return FixedString.Format("Unknown error code {0}.", error);
             }
-
-            return $"Unknown ErrorCode {Enum.GetName(typeof(Networking.Transport.Error.StatusCode), error)}";
         }
     }
 
