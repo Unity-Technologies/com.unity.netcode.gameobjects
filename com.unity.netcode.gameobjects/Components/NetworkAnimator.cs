@@ -226,6 +226,75 @@ namespace Unity.Netcode.Components
             }
         }
 
+#if UNITY_EDITOR
+        private void ParseStateMachineStates(int layerIndex, ref AnimatorController animatorController, ref AnimatorStateMachine stateMachine)
+        {
+            for (int y = 0; y < stateMachine.states.Length; y++)
+            {
+                var animatorState = stateMachine.states[y].state;
+                for (int z = 0; z < animatorState.transitions.Length; z++)
+                {
+                    var transition = animatorState.transitions[z];
+                    if (transition.conditions.Length == 0 && transition.isExit)
+                    {
+                        // We don't need to worry about exit transitions with no conditions
+                        continue;
+                    }
+
+                    foreach (var condition in transition.conditions)
+                    {
+                        var parameterName = condition.parameter;
+
+                        var parameters = animatorController.parameters;
+                        // Find the associated parameter for the condition
+                        foreach (var parameter in parameters)
+                        {
+                            // Only process the associated parameter(s)
+                            if (parameter.name != parameterName)
+                            {
+                                continue;
+                            }
+
+                            switch (parameter.type)
+                            {
+                                case AnimatorControllerParameterType.Trigger:
+                                    {
+
+                                        if (transition.destinationStateMachine != null)
+                                        {
+                                            var destinationStateMachine = transition.destinationStateMachine;
+                                            ParseStateMachineStates(layerIndex, ref animatorController, ref destinationStateMachine);
+                                        }
+                                        else if (transition.destinationState != null)
+                                        {
+                                            var transitionInfo = new TransitionStateinfo()
+                                            {
+                                                Layer = layerIndex,
+                                                OriginatingState = animatorState.nameHash,
+                                                DestinationState = transition.destinationState.nameHash,
+                                                TransitionDuration = transition.duration,
+                                                TriggerNameHash = parameter.nameHash,
+                                                TransitionIndex = z
+                                            };
+                                            TransitionStateInfoList.Add(transitionInfo);
+                                        }
+                                        else
+                                        {
+                                            Debug.LogError($"[{name}][Conditional Transition for {animatorState.name}] Conditional triggered transition has neither a DestinationState nor a DestinationStateMachine! This transition is not likely to synchronize properly. " +
+                                                $"Please file a GitHub issue about this error with details about your Animator's setup.");
+                                        }
+                                        break;
+                                    }
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+#endif
+
         /// <summary>
         /// Creates the TransitionStateInfoList table
         /// </summary>
@@ -245,54 +314,8 @@ namespace Unity.Netcode.Components
 
             for (int x = 0; x < animatorController.layers.Length; x++)
             {
-                var layer = animatorController.layers[x];
-
-                for (int y = 0; y < layer.stateMachine.states.Length; y++)
-                {
-                    var animatorState = layer.stateMachine.states[y].state;
-                    var transitions = layer.stateMachine.GetStateMachineTransitions(layer.stateMachine);
-                    for (int z = 0; z < animatorState.transitions.Length; z++)
-                    {
-                        var transition = animatorState.transitions[z];
-                        if (transition.conditions.Length == 0 && transition.isExit)
-                        {
-                            // We don't need to worry about exit transitions with no conditions
-                            continue;
-                        }
-
-                        foreach (var condition in transition.conditions)
-                        {
-                            var parameterName = condition.parameter;
-                            var parameters = animatorController.parameters;
-                            foreach (var parameter in parameters)
-                            {
-                                switch (parameter.type)
-                                {
-                                    case AnimatorControllerParameterType.Trigger:
-                                        {
-                                            // Match the condition with an existing trigger
-                                            if (parameterName == parameter.name)
-                                            {
-                                                var transitionInfo = new TransitionStateinfo()
-                                                {
-                                                    Layer = x,
-                                                    OriginatingState = animatorState.nameHash,
-                                                    DestinationState = transition.destinationState.nameHash,
-                                                    TransitionDuration = transition.duration,
-                                                    TriggerNameHash = parameter.nameHash,
-                                                    TransitionIndex = z
-                                                };
-                                                TransitionStateInfoList.Add(transitionInfo);
-                                            }
-                                            break;
-                                        }
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                }
+                var stateMachine = animatorController.layers[x].stateMachine;
+                ParseStateMachineStates(x, ref animatorController, ref stateMachine);
             }
 #endif
         }
