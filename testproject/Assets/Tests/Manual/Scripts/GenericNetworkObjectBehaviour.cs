@@ -124,14 +124,33 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void DespawnObject()
+        {
+            m_ShouldDespawn = false;
+
+            if (NetworkObject.NetworkManager != null)
+            {
+                NetworkObject.Despawn();
+            }
+        }
+
+        [ServerRpc(RequireOwnership = false)]
+        private void DespawnObjectServerRpc()
+        {
+            DespawnObject();
+        }
+
         private void Update()
         {
-            if (IsOwner && m_ShouldDespawn && NetworkObject != null)
+            if (m_NetworkTransform.CanCommitToTransform && m_ShouldDespawn && NetworkObject != null)
             {
-                m_ShouldDespawn = false;
-                if (NetworkObject.NetworkManager != null)
+                if (IsServer)
                 {
-                    NetworkObject.Despawn();
+                    DespawnObject();
+                }
+                else
+                {
+                    DespawnObjectServerRpc();
                 }
             }
         }

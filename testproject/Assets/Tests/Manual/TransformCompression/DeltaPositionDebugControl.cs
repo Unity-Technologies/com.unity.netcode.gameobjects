@@ -87,7 +87,7 @@ public class DeltaPositionDebugControl : NetworkBehaviour
             if (m_PlayerObject != null)
             {
                 m_PlayerMovement = m_PlayerObject.GetComponent<PlayerMovement>();
-                m_PlayerMovement.Speed = 10.0f;
+                m_PlayerMovement.Speed = 20.0f;
             }
         }
 
