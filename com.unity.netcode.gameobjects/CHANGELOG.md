@@ -19,6 +19,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed `NetworkAnimator` issue where it was not checking for `AnimatorStateTtansition.destinationStateMachine` and any possible sub-states defined within it.
 - Custom messages are now properly received by the local client when they're sent while running in host mode. (#2296)
 - Fixed issue where the host would receive more than one event completed notification when loading or unloading a scene only when no clients were connected. (#2292)
 - Fixed an issue in `UnityTransport` where an error would be logged if the 'Use Encryption' flag was enabled with a Relay configuration that used a secure protocol. (#2289)
