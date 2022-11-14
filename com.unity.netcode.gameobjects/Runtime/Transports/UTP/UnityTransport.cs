@@ -147,7 +147,7 @@ namespace Unity.Netcode.Transports.UTP
         // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
         private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 32 * 60) / 1000; // bytes per millisecond
 
-        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
+        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = "0.0.0.0" };
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -303,9 +303,9 @@ namespace Unity.Netcode.Transports.UTP
             public ushort Port;
 
             /// <summary>
-            /// IP address the server will listen on. If not provided, will use 'Address'.
+            /// IP address the server will listen on. If not provided, will use 0.0.0.0.
             /// </summary>
-            [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
+            [Tooltip("IP address the server will listen on. If not provided, will use 0.0.0.0.")]
             [SerializeField]
             public string ServerListenAddress;
 
@@ -330,7 +330,7 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? "0.0.0.0" : ServerListenAddress, Port);
         }
 
         /// <summary>
