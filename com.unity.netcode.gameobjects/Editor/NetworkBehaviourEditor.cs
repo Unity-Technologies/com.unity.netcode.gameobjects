@@ -37,8 +37,8 @@ namespace Unity.Netcode.Editor
                 var ft = fields[i].FieldType;
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
-                    m_NetworkVariableNames.Add(fields[i].Name);
-                    m_NetworkVariableFields.Add(fields[i].Name, fields[i]);
+                    m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
+                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
                 }
             }
         }
