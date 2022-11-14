@@ -324,6 +324,40 @@ namespace TestProject.RuntimeTests
                 rotateToggle = !rotateToggle;
             }
 #endif
+            CheckStateEnterCount.ResetTest();
+            if (m_EnableVerboseDebug)
+            {
+                var retryTrigger = true;
+                var timeOutHelper = new TimeoutHelper(1.0f);
+                var count = 0;
+                while (retryTrigger)
+                {
+                    VerboseDebug($"Current Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    VerboseDebug($"Setting Attack Trigger ");
+                    var animator = animatorTestHelper.GetAnimator();
+                    animator.SetInteger("WeaponType", 1);
+                    animatorTestHelper.SetTrigger("Attack");
+                    VerboseDebug($"New Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    // Wait for all triggers to fire
+                    yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode), timeOutHelper);
+                    retryTrigger = timeOutHelper.TimedOut;
+                    if (retryTrigger)
+                    {
+                        count++;
+                        Debug.LogWarning($"[{ownerShipMode}][{count}] Resending trigger!");
+                    }
+                }
+            }
+            else
+            {
+                var animator = animatorTestHelper.GetAnimator();
+                animator.SetInteger("WeaponType", 1);
+                animatorTestHelper.SetTrigger("Attack");
+                // Wait for all triggers to fire
+                yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
+                AssertOnTimeout($"Timed out waiting for all triggers to match!");
+            }
+
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
