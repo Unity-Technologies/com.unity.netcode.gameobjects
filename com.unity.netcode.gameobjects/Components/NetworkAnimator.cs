@@ -1342,7 +1342,7 @@ namespace Unity.Netcode.Components
                     m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animTriggerMessage);
                     if (!IsHost)
                     {
-                        InternalSetTrigger(hash);
+                        InternalSetTrigger(hash, setTrigger);
                     }
                 }
                 else
@@ -1351,7 +1351,7 @@ namespace Unity.Netcode.Components
                     m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToServer(animTriggerMessage);
                     if (!IsServerAuthoritative())
                     {
-                        InternalSetTrigger(hash);
+                        InternalSetTrigger(hash, setTrigger);
                     }
                 }
             }
