@@ -73,31 +73,40 @@ namespace Unity.Netcode.RuntimeTests
 
             MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
 
-            if (m_Id % 2 == 0)
+            if (m_Id == 1)
             {
-                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
+                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged1;
+            }
+            else if (m_Id == 2)
+            {
+                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged2;
             }
             else
             {
-                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged2;
+                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadWarn;
             }
         }
 
         public override void OnGainedOwnership()
         {
-            // Debug.Log($"[{m_Id}] OnGainedOwnership");
-            // Debug.Log($"MyOwnerReadNetworkVariable has value {MyOwnerReadNetworkVariable.Value}");
+            Debug.Log($"[{m_Id}] OnGainedOwnership");
+            Debug.Log($"MyOwnerReadNetworkVariable has value {MyOwnerReadNetworkVariable.Value}");
             base.OnGainedOwnership();
         }
 
-        public void OwnerReadChanged(int before, int after)
+        public void OwnerReadWarn(int before, int after)
         {
-            // Debug.Log($"[even] Owner-read Value changed from {before} to {after}");
+            Debug.Log($"Why is this called?");
+        }
+
+        public void OwnerReadChanged1(int before, int after)
+        {
+            Debug.Log($"[1] Owner-read Value changed from {before} to {after}");
         }
 
         public void OwnerReadChanged2(int before, int after)
         {
-            // Debug.Log($"[odd] Owner-read Value changed from {before} to {after}");
+            Debug.Log($"[2] Owner-read Value changed from {before} to {after}");
         }
 
         public void Changed(int before, int after)
@@ -379,10 +388,14 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return new WaitForSeconds(1.0f);
 
+            Assert.False(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+
             // Change ownership
             Debug.Log("About to change owner");
             m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
-            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyOwnerReadNetworkVariable.Value++;
+
+            //should not need to change the value again for it to be transfered
+            //m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyOwnerReadNetworkVariable.Value++;
 
             yield return new WaitForSeconds(1.0f);
 
