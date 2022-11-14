@@ -328,7 +328,7 @@ namespace Unity.Netcode
             NetworkObject networkObject = null;
             var globalObjectIdHash = sceneObject.Hash;
             var position = sceneObject.HasTransform ? sceneObject.Transform.Position : default;
-            var rotation = sceneObject.HasTransform ? sceneObject.Transform.Rotation : default;
+            var rotation = sceneObject.HasTransform ? sceneObject.Rotation : default;
             var scale = sceneObject.HasTransform ? sceneObject.Transform.Scale : default;
             var parentNetworkId = sceneObject.HasParent ? sceneObject.ParentObjectId : default;
             var worldPositionStays = (!sceneObject.HasParent) || sceneObject.WorldPositionStays;
