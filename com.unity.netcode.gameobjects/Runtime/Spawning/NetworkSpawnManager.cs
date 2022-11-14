@@ -271,7 +271,7 @@ namespace Unity.Netcode
             networkObject.NextOwner = clientId;
             networkObject.HasNextOwner = true;
 
-            networkObject.MarkVariablesDirty(true); // do we need just the next line instead?
+            networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
             var message = new ChangeOwnershipMessage
