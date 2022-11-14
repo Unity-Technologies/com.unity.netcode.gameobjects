@@ -840,6 +840,11 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
+                    // Just notify all remote clients and not the local server
+                    m_ClientSendList.Clear();
+                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+                    m_ClientSendList.Remove(NetworkManager.LocalClientId);
+                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
                     SendAnimStateClientRpc(m_AnimationMessage);
                 }
             }
