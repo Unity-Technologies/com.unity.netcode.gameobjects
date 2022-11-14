@@ -7,6 +7,9 @@ using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor
 {
+    /// <summary>
+    /// The <see cref="CustomEditor"/> for <see cref="NetworkBehaviour"/>
+    /// </summary>
     [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
     public class NetworkBehaviourEditor : UnityEditor.Editor

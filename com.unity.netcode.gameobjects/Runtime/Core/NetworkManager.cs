@@ -86,10 +86,10 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
-        // <summary>
-        // When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        // tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
-        // </summary>
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
         public string DisconnectReason { get; internal set; }
 
         private class NetworkManagerHooks : INetworkHooks
@@ -450,9 +450,10 @@ namespace Unity.Netcode
             /// </summary>
             public bool Pending;
 
-            // <summary>
-            // Optional reason. If Approved is false, this reason will be sent to the client so they know why they
-            // were not approved.
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
             public string Reason;
         }
 
@@ -2185,14 +2186,11 @@ namespace Unity.Netcode
                     // Generate a SceneObject for the player object to spawn
                     var sceneObject = new NetworkObject.SceneObject
                     {
-                        Header = new NetworkObject.SceneObject.HeaderData
-                        {
-                            IsPlayerObject = true,
-                            OwnerClientId = ownerClientId,
-                            IsSceneObject = false,
-                            HasTransform = true,
-                            Hash = playerPrefabHash,
-                        },
+                        OwnerClientId = ownerClientId,
+                        IsPlayerObject = true,
+                        IsSceneObject = false,
+                        HasTransform = true,
+                        Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Rotation = response.Rotation.GetValueOrDefault(),
                         Transform = new NetworkObject.SceneObject.TransformData
@@ -2309,11 +2307,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Header.Hash = playerPrefabHash;
-                message.ObjectInfo.Header.IsSceneObject = false;
-                message.ObjectInfo.Header.HasParent = false;
-                message.ObjectInfo.Header.IsPlayerObject = true;
-                message.ObjectInfo.Header.OwnerClientId = clientId;
+                message.ObjectInfo.Hash = playerPrefabHash;
+                message.ObjectInfo.IsSceneObject = false;
+                message.ObjectInfo.HasParent = false;
+                message.ObjectInfo.IsPlayerObject = true;
+                message.ObjectInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }

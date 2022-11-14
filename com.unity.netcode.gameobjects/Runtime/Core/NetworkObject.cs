@@ -1075,19 +1075,43 @@ namespace Unity.Netcode
 
         internal struct SceneObject
         {
-            public struct HeaderData : INetworkSerializeByMemcpy
-            {
-                public ulong NetworkObjectId;
-                public ulong OwnerClientId;
-                public uint Hash;
+            private byte m_BitField;
+            public uint Hash;
+            public ulong NetworkObjectId;
+            public ulong OwnerClientId;
 
-                public bool IsPlayerObject;
-                public bool HasParent;
-                public bool IsSceneObject;
-                public bool HasTransform;
+            public bool IsPlayerObject
+            {
+                get => ByteUtility.GetBit(m_BitField, 0);
+                set => ByteUtility.SetBit(ref m_BitField, 0, value);
+            }
+            public bool HasParent
+            {
+                get => ByteUtility.GetBit(m_BitField, 1);
+                set => ByteUtility.SetBit(ref m_BitField, 1, value);
+            }
+            public bool IsSceneObject
+            {
+                get => ByteUtility.GetBit(m_BitField, 2);
+                set => ByteUtility.SetBit(ref m_BitField, 2, value);
+            }
+            public bool HasTransform
+            {
+                get => ByteUtility.GetBit(m_BitField, 3);
+                set => ByteUtility.SetBit(ref m_BitField, 3, value);
             }
 
-            public HeaderData Header;
+            public bool IsLatestParentSet
+            {
+                get => ByteUtility.GetBit(m_BitField, 4);
+                set => ByteUtility.SetBit(ref m_BitField, 4, value);
+            }
+
+            public bool WorldPositionStays
+            {
+                get => ByteUtility.GetBit(m_BitField, 5);
+                set => ByteUtility.SetBit(ref m_BitField, 5, value);
+            }
 
             //If(Metadata.HasParent)
             public ulong ParentObjectId;
@@ -1104,7 +1128,6 @@ namespace Unity.Netcode
             public Quaternion Rotation;
 
             //If(Metadata.IsReparented)
-            public bool IsLatestParentSet;
 
             //If(IsLatestParentSet)
             public ulong? LatestParent;
@@ -1114,40 +1137,33 @@ namespace Unity.Netcode
 
             public int NetworkSceneHandle;
 
-            public bool WorldPositionStays;
 
-            public unsafe void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer)
             {
-                var writeSize = sizeof(HeaderData);
-                if (Header.HasParent)
+                writer.WriteValueSafe(m_BitField);
+                writer.WriteValueSafe(Hash);
+                BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+                BytePacker.WriteValueBitPacked(writer, OwnerClientId);
+
+                if (HasParent)
                 {
-                    writeSize += FastBufferWriter.GetWriteSize(ParentObjectId);
-                    writeSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
-                    writeSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    writeSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
+                    BytePacker.WriteValueBitPacked(writer, ParentObjectId);
+                    if (IsLatestParentSet)
+                    {
+                        BytePacker.WriteValueBitPacked(writer, LatestParent.Value);
+                    }
                 }
-                writeSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                writeSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+
+                var writeSize = 0;
+                writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
+                writeSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
                     throw new OverflowException("Could not serialize SceneObject: Out of buffer space.");
                 }
 
-                writer.WriteValue(Header);
-
-                if (Header.HasParent)
-                {
-                    writer.WriteValue(ParentObjectId);
-                    writer.WriteValue(WorldPositionStays);
-                    writer.WriteValue(IsLatestParentSet);
-                    if (IsLatestParentSet)
-                    {
-                        writer.WriteValue(LatestParent.Value);
-                    }
-                }
-
-                if (Header.HasTransform)
+                if (HasTransform)
                 {
                     Transform.Rotation = QuaternionCompressor.CompressQuaternion(ref Rotation);
                     writer.WriteValue(Transform);
@@ -1158,7 +1174,7 @@ namespace Unity.Netcode
                 // handle, it provides us with a unique and persistent "scene prefab asset" instance.
                 // This is only set on in-scene placed NetworkObjects to reduce the over-all packet
                 // sizes for dynamically spawned NetworkObjects.
-                if (Header.IsSceneObject)
+                if (IsSceneObject)
                 {
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
@@ -1171,51 +1187,34 @@ namespace Unity.Netcode
                 OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
             }
 
-            public unsafe void Deserialize(FastBufferReader reader)
+            public void Deserialize(FastBufferReader reader)
             {
-                if (!reader.TryBeginRead(sizeof(HeaderData)))
+                reader.ReadValueSafe(out m_BitField);
+                reader.ReadValueSafe(out Hash);
+                ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+                ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+
+                if (HasParent)
                 {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
-                }
-                reader.ReadValue(out Header);
-                var readSize = 0;
-                if (Header.HasParent)
-                {
-                    readSize += FastBufferWriter.GetWriteSize(ParentObjectId);
-                    readSize += FastBufferWriter.GetWriteSize(WorldPositionStays);
-                    readSize += FastBufferWriter.GetWriteSize(IsLatestParentSet);
-                    // We need to read at this point in order to get the IsLatestParentSet value
-                    if (!reader.TryBeginRead(readSize))
+                    ByteUnpacker.ReadValueBitPacked(reader, out ParentObjectId);
+                    if (IsLatestParentSet)
                     {
-                        throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                        ByteUnpacker.ReadValueBitPacked(reader, out ulong latestParent);
+                        LatestParent = latestParent;
                     }
-
-                    // Read the initial parenting related properties
-                    reader.ReadValue(out ParentObjectId);
-                    reader.ReadValue(out WorldPositionStays);
-                    reader.ReadValue(out IsLatestParentSet);
-
-                    // Now calculate the remaining bytes to read
-                    readSize = 0;
-                    readSize += IsLatestParentSet ? FastBufferWriter.GetWriteSize<ulong>() : 0;
                 }
 
-                readSize += Header.HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                readSize += Header.IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                var readSize = 0;
+                readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
+                readSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
                 {
-                    throw new OverflowException("Could not deserialize SceneObject: Out of buffer space.");
+                    throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
 
-                if (IsLatestParentSet)
-                {
-                    reader.ReadValueSafe(out ulong latestParent);
-                    LatestParent = latestParent;
-                }
-
-                if (Header.HasTransform)
+                if (HasTransform)
                 {
                     reader.ReadValue(out Transform);
                     QuaternionCompressor.DecompressQuaternion(ref Rotation, Transform.Rotation);
@@ -1226,9 +1225,9 @@ namespace Unity.Netcode
                 // handle, it provides us with a unique and persistent "scene prefab asset" instance.
                 // Client-side NetworkSceneManagers use this to locate their local instance of the
                 // NetworkObject instance.
-                if (Header.IsSceneObject)
+                if (IsSceneObject)
                 {
-                    reader.ReadValueSafe(out NetworkSceneHandle);
+                    reader.ReadValue(out NetworkSceneHandle);
                 }
             }
         }
@@ -1245,14 +1244,11 @@ namespace Unity.Netcode
         {
             var obj = new SceneObject
             {
-                Header = new SceneObject.HeaderData
-                {
-                    IsPlayerObject = IsPlayerObject,
-                    NetworkObjectId = NetworkObjectId,
-                    OwnerClientId = OwnerClientId,
-                    IsSceneObject = IsSceneObject ?? true,
-                    Hash = HostCheckForGlobalObjectIdHashOverride(),
-                },
+                NetworkObjectId = NetworkObjectId,
+                OwnerClientId = OwnerClientId,
+                IsPlayerObject = IsPlayerObject,
+                IsSceneObject = IsSceneObject ?? true,
+                Hash = HostCheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId
             };
@@ -1264,16 +1260,16 @@ namespace Unity.Netcode
                 parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
                 // In-scene placed NetworkObjects parented under GameObjects with no NetworkObject
                 // should set the has parent flag and preserve the world position stays value
-                if (parentNetworkObject == null && obj.Header.IsSceneObject)
+                if (parentNetworkObject == null && obj.IsSceneObject)
                 {
-                    obj.Header.HasParent = true;
+                    obj.HasParent = true;
                     obj.WorldPositionStays = m_CachedWorldPositionStays;
                 }
             }
 
             if (parentNetworkObject != null)
             {
-                obj.Header.HasParent = true;
+                obj.HasParent = true;
                 obj.ParentObjectId = parentNetworkObject.NetworkObjectId;
                 obj.WorldPositionStays = m_CachedWorldPositionStays;
                 var latestParent = GetNetworkParenting();
@@ -1287,12 +1283,12 @@ namespace Unity.Netcode
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.Header.HasTransform = true;
+                obj.HasTransform = true;
 
                 // We start with the default AutoObjectParentSync values to determine which transform space we will
                 // be synchronizing clients with.
-                var syncRotationPositionLocalSpaceRelative = obj.Header.HasParent && !m_CachedWorldPositionStays;
-                var syncScaleLocalSpaceRelative = obj.Header.HasParent && !m_CachedWorldPositionStays;
+                var syncRotationPositionLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
+                var syncScaleLocalSpaceRelative = obj.HasParent && !m_CachedWorldPositionStays;
 
                 // If auto object synchronization is turned off
                 if (!AutoObjectParentSync)
@@ -1302,7 +1298,7 @@ namespace Unity.Netcode
                     // Scale is special, it synchronizes local space relative if it has a
                     // parent since applying the world space scale under a parent with scale
                     // will result in the improper scale for the child
-                    syncScaleLocalSpaceRelative = obj.Header.HasParent;
+                    syncScaleLocalSpaceRelative = obj.HasParent;
                 }
 
                 obj.Rotation = syncRotationPositionLocalSpaceRelative ? transform.localRotation : transform.rotation;
@@ -1341,7 +1337,7 @@ namespace Unity.Netcode
             if (networkObject == null)
             {
                 // Log the error that the NetworkObject failed to construct
-                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Header.Hash}.");
+                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Hash}.");
 
                 // If we failed to load this NetworkObject, then skip past the network variable data
                 variableData.ReadValueSafe(out ushort varSize);

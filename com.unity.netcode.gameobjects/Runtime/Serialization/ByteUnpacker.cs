@@ -11,7 +11,6 @@ namespace Unity.Netcode
     /// </summary>
     public static class ByteUnpacker
     {
-
 #if UNITY_NETCODE_DEBUG_NO_PACKING
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -58,7 +57,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(FastBufferReader reader, out float value)
         {
-            ReadUInt32Packed(reader, out uint asUInt);
+            ReadValueBitPacked(reader, out uint asUInt);
             value = ToSingle(asUInt);
         }
 
@@ -70,7 +69,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(FastBufferReader reader, out double value)
         {
-            ReadUInt64Packed(reader, out ulong asULong);
+            ReadValueBitPacked(reader, out ulong asULong);
             value = ToDouble(asULong);
         }
 
@@ -109,11 +108,7 @@ namespace Unity.Netcode
         /// <param name="reader">The reader to read from</param>
         /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(FastBufferReader reader, out short value)
-        {
-            ReadUInt32Packed(reader, out uint readValue);
-            value = (short)Arithmetic.ZigZagDecode(readValue);
-        }
+        public static void ReadValuePacked(FastBufferReader reader, out short value) => ReadValueBitPacked(reader, out value);
 
         /// <summary>
         /// Read an unsigned short (UInt16) as a varint from the stream.
@@ -121,11 +116,7 @@ namespace Unity.Netcode
         /// <param name="reader">The reader to read from</param>
         /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(FastBufferReader reader, out ushort value)
-        {
-            ReadUInt32Packed(reader, out uint readValue);
-            value = (ushort)readValue;
-        }
+        public static void ReadValuePacked(FastBufferReader reader, out ushort value) => ReadValueBitPacked(reader, out value);
 
         /// <summary>
         /// Read a two-byte character as a varint from the stream.
@@ -135,7 +126,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(FastBufferReader reader, out char c)
         {
-            ReadUInt32Packed(reader, out uint readValue);
+            ReadValueBitPacked(reader, out ushort readValue);
             c = (char)readValue;
         }
 
@@ -145,11 +136,7 @@ namespace Unity.Netcode
         /// <param name="reader">The reader to read from</param>
         /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(FastBufferReader reader, out int value)
-        {
-            ReadUInt32Packed(reader, out uint readValue);
-            value = (int)Arithmetic.ZigZagDecode(readValue);
-        }
+        public static void ReadValuePacked(FastBufferReader reader, out int value) => ReadValueBitPacked(reader, out value);
 
         /// <summary>
         /// Read an unsigned int (UInt32) from the stream.
@@ -157,7 +144,7 @@ namespace Unity.Netcode
         /// <param name="reader">The reader to read from</param>
         /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(FastBufferReader reader, out uint value) => ReadUInt32Packed(reader, out value);
+        public static void ReadValuePacked(FastBufferReader reader, out uint value) => ReadValueBitPacked(reader, out value);
 
         /// <summary>
         /// Read an unsigned long (UInt64) from the stream.
@@ -165,7 +152,7 @@ namespace Unity.Netcode
         /// <param name="reader">The reader to read from</param>
         /// <param name="value">Value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void ReadValuePacked(FastBufferReader reader, out ulong value) => ReadUInt64Packed(reader, out value);
+        public static void ReadValuePacked(FastBufferReader reader, out ulong value) => ReadValueBitPacked(reader, out value);
 
         /// <summary>
         /// Read a signed long (Int64) as a ZigZag encoded varint from the stream.
@@ -175,8 +162,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void ReadValuePacked(FastBufferReader reader, out long value)
         {
-            ReadUInt64Packed(reader, out ulong readValue);
-            value = Arithmetic.ZigZagDecode(readValue);
+            ReadValueBitPacked(reader, out value);
         }
 
         /// <summary>
@@ -341,7 +327,9 @@ namespace Unity.Netcode
             ushort returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
-            int numBytes = (data[0] & 0b1) + 1;
+            // Mask out the first two bits - they contain the total byte count
+            // (1, 2, or 3)
+            int numBytes = (data[0] & 0b11);
             if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
@@ -350,17 +338,23 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
+                case 3:
+                    // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
+                    value = returnValue;
+                    return;
                 default:
                     throw new InvalidOperationException("Could not read bit-packed value: impossible byte count");
             }
 
-            value = (ushort)(returnValue >> 1);
+            value = (ushort)(returnValue >> 2);
         }
 
         /// <summary>
@@ -386,7 +380,8 @@ namespace Unity.Netcode
             uint returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
-            int numBytes = (data[0] & 0b11) + 1;
+            // Mask out the first three bits - they contain the total byte count (1-5)
+            int numBytes = (data[0] & 0b111);
             if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
@@ -395,26 +390,34 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
                 case 3:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
                     break;
                 case 4:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
                     break;
+                case 5:
+                    // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
+                    ptr[2] = data[3];
+                    ptr[3] = data[4];
+                    value = returnValue;
+                    return;
             }
 
-            value = returnValue >> 2;
+            value = returnValue >> 3;
         }
 
         /// <summary>
@@ -440,7 +443,8 @@ namespace Unity.Netcode
             ulong returnValue = 0;
             byte* ptr = ((byte*)&returnValue);
             byte* data = reader.GetUnsafePtrAtCurrentPosition();
-            int numBytes = (data[0] & 0b111) + 1;
+            // Mask out the first four bits - they contain the total byte count (1-9)
+            int numBytes = (data[0] & 0b1111);
             if (!reader.TryBeginReadInternal(numBytes))
             {
                 throw new OverflowException("Reading past the end of the buffer");
@@ -449,109 +453,74 @@ namespace Unity.Netcode
             switch (numBytes)
             {
                 case 1:
-                    *ptr = *data;
+                    ptr[0] = data[0];
                     break;
                 case 2:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
                     break;
                 case 3:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
                     break;
                 case 4:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
                     break;
                 case 5:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
                     break;
                 case 6:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
                     break;
                 case 7:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
-                    *(ptr + 6) = *(data + 6);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
+                    ptr[6] = data[6];
                     break;
                 case 8:
-                    *ptr = *data;
-                    *(ptr + 1) = *(data + 1);
-                    *(ptr + 2) = *(data + 2);
-                    *(ptr + 3) = *(data + 3);
-                    *(ptr + 4) = *(data + 4);
-                    *(ptr + 5) = *(data + 5);
-                    *(ptr + 6) = *(data + 6);
-                    *(ptr + 7) = *(data + 7);
+                    ptr[0] = data[0];
+                    ptr[1] = data[1];
+                    ptr[2] = data[2];
+                    ptr[3] = data[3];
+                    ptr[4] = data[4];
+                    ptr[5] = data[5];
+                    ptr[6] = data[6];
+                    ptr[7] = data[7];
                     break;
+                case 9:
+                    // First byte contains no data, it's just a marker. The data is in the remaining two bytes.
+                    ptr[0] = data[1];
+                    ptr[1] = data[2];
+                    ptr[2] = data[3];
+                    ptr[3] = data[4];
+                    ptr[4] = data[5];
+                    ptr[5] = data[6];
+                    ptr[6] = data[7];
+                    ptr[7] = data[8];
+                    value = returnValue;
+                    return;
             }
 
-            value = returnValue >> 3;
+            value = returnValue >> 4;
         }
 #endif
-        private static void ReadUInt64Packed(FastBufferReader reader, out ulong value)
-        {
-            reader.ReadByteSafe(out byte firstByte);
-            if (firstByte <= 240)
-            {
-                value = firstByte;
-                return;
-            }
-
-            if (firstByte <= 248)
-            {
-                reader.ReadByteSafe(out byte secondByte);
-                value = 240UL + ((firstByte - 241UL) << 8) + secondByte;
-                return;
-            }
-
-            var numBytes = firstByte - 247;
-            if (!reader.TryBeginReadInternal(numBytes))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            reader.ReadPartialValue(out value, numBytes);
-        }
-
-        private static void ReadUInt32Packed(FastBufferReader reader, out uint value)
-        {
-            reader.ReadByteSafe(out byte firstByte);
-            if (firstByte <= 240)
-            {
-                value = firstByte;
-                return;
-            }
-
-            if (firstByte <= 248)
-            {
-                reader.ReadByteSafe(out byte secondByte);
-                value = 240U + ((firstByte - 241U) << 8) + secondByte;
-                return;
-            }
-
-            var numBytes = firstByte - 247;
-            if (!reader.TryBeginReadInternal(numBytes))
-            {
-                throw new OverflowException("Reading past the end of the buffer");
-            }
-            reader.ReadPartialValue(out value, numBytes);
-        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe float ToSingle<T>(T value) where T : unmanaged
