@@ -493,7 +493,7 @@ namespace Unity.Netcode
             // Special cases because these are the messages that carry the version info - thus the version info isn't
             // populated yet when we get these. The first part of these messages always has to be the version data
             // and can't change.
-            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage))
+            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage))
             {
                 messageVersion = system.GetMessageVersion(typeof(T), context.SenderId, true);
                 if (messageVersion < 0)
