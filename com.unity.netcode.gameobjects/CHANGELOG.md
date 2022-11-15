@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -16,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- Changed 3rd-party `XXHash` (32 & 64) implementation with an in-house reimplementation (#2310)
 - Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
 
 ### Fixed
@@ -26,9 +26,10 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where in-scene placed `NetworkObjects` were not honoring the `AutoObjectParentSync` property. (#2281)
 - Fixed the issue where `NetworkManager.OnClientConnectedCallback` was being invoked before in-scene placed `NetworkObject`s had been spawned when starting `NetworkManager` as a host. (#2277)
 - Creating a `FastBufferReader` with `Allocator.None` will not result in extra memory being allocated for the buffer (since it's owned externally in that scenario). (#2265)
-### Removed
-- Removed the `NetworkObject` auto-add and Multiplayer Tools install reminder settings from the Menu interface. (#2285)
 
+### Removed
+
+- Removed the `NetworkObject` auto-add and Multiplayer Tools install reminder settings from the Menu interface. (#2285)
 
 ## [1.1.0] - 2022-10-21
 
@@ -180,6 +181,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `ClientNetworkTransform` from the package samples and moved to Boss Room's Utilities package which can be found [here](https://github.com/Unity-Technologies/com.unity.multiplayer.samples.coop/blob/main/Packages/com.unity.multiplayer.samples.coop/Utilities/Net/ClientAuthority/ClientNetworkTransform.cs) (#1912)
 
 ### Fixed
+
 - Fixed issue where `NetworkSceneManager` did not synchronize despawned in-scene placed NetworkObjects. (#1898)
 - Fixed `NetworkTransform` generating false positive rotation delta checks when rolling over between 0 and 360 degrees. (#1890)
 - Fixed client throwing an exception if it has messages in the outbound queue when processing the `NetworkEvent.Disconnect` event and is using UTP. (#1884)
@@ -233,10 +235,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [1.0.0-pre.6] - 2022-03-02
 
 ### Added
+
 - NetworkAnimator now properly synchrhonizes all animation layers as well as runtime-adjusted weighting between them (#1765)
 - Added first set of tests for NetworkAnimator - parameter syncing, trigger set / reset, override network animator (#1735)
 
 ### Fixed
+
 - Fixed an issue where sometimes the first client to connect to the server could see messages from the server as coming from itself. (#1683)
 - Fixed an issue where clients seemed to be able to send messages to ClientId 1, but these messages would actually still go to the server (id 0) instead of that client. (#1683)
 - Improved clarity of error messaging when a client attempts to send a message to a destination other than the server, which isn't allowed. (#1683)
@@ -288,6 +292,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Removed `FixedQueue`, `StreamExtensions`, `TypeExtensions` (#1398)
 
 ### Fixed
+
 - Fixed in-scene NetworkObjects that are moved into the DDOL scene not getting restored to their original active state (enabled/disabled) after a full scene transition (#1354)
 - Fixed invalid IL code being generated when using `this` instead of `this ref` for the FastBufferReader/FastBufferWriter parameter of an extension method. (#1393)
 - Fixed an issue where if you are running as a server (not host) the LoadEventCompleted and UnloadEventCompleted events would fire early by the NetworkSceneManager (#1379)
@@ -302,6 +307,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed network tick value sometimes being duplicated or skipped. (#1614)
 
 ### Changed
+
 - The SDK no longer limits message size to 64k. (The transport may still impose its own limits, but the SDK no longer does.) (#1384)
 - Updated com.unity.collections to 1.1.0 (#1451)
 - NetworkManager's GameObject is no longer allowed to be nested under one or more GameObject(s).(#1484)
