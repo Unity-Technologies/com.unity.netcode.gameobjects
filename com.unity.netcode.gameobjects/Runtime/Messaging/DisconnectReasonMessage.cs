@@ -4,7 +4,9 @@ namespace Unity.Netcode
     {
         public string Reason;
 
-        public void Serialize(FastBufferWriter writer)
+        public int Version => 0;
+
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             string reasonSent = Reason;
             if (reasonSent == null)
@@ -24,7 +26,7 @@ namespace Unity.Netcode
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             reader.ReadValueSafe(out Reason);
             return true;
