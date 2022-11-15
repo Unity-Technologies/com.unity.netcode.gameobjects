@@ -796,6 +796,10 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForAllClientsToReceive<ChangeOwnershipMessage, NetworkVariableDeltaMessage>();
 
+            // wait three ticks
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
             // Validate messages are deferred and pending
             foreach (var client in m_ClientNetworkManagers)
             {
