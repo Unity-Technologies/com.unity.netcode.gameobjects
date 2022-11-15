@@ -20,6 +20,7 @@ namespace Unity.Netcode.RuntimeTests
         private GameObject m_NetworkPrefab;
         private GameObject m_InValidNetworkPrefab;
         private GameObject m_SynchronizationPrefab;
+        private GameObject m_OnSynchronizePrefab;
         private VariableLengthSafety m_VariableLengthSafety;
 
         private LogLevel m_CurrentLogLevel;
@@ -66,6 +67,9 @@ namespace Unity.Netcode.RuntimeTests
             m_SynchronizationPrefab = CreateNetworkObjectPrefab("SyncObject");
             m_SynchronizationPrefab.AddComponent<NetworkBehaviourSynchronizeFailureComponent>();
             m_SynchronizationPrefab.AddComponent<NetworkBehaviourWithNetworkVariables>();
+
+            m_OnSynchronizePrefab = CreateNetworkObjectPrefab("OnSyncObject");
+            m_OnSynchronizePrefab.AddComponent<NetworkBehaviourOnSynchronizeComponent>();
 
             base.OnServerAndClientsCreated();
         }
@@ -291,6 +295,22 @@ namespace Unity.Netcode.RuntimeTests
 
                 ValidateNetworkBehaviourWithNetworkVariables(serverSideSpawnedNetworkObject, clientSideSpawnedNetworkObject);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkBehaviourOnSynchronize()
+        {
+            var serverSideInstance = SpawnObject(m_OnSynchronizePrefab, m_ServerNetworkManager).GetComponent<NetworkBehaviourOnSynchronizeComponent>();
+            // Now spawn and connect a client that will fail to spawn half of the NetworkObjects spawned
+            yield return CreateAndStartNewClient();
+
+            var clientSideNetworkObjects = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
+            var clientSideInstance = clientSideNetworkObjects[serverSideInstance.NetworkObjectId].GetComponent<NetworkBehaviourOnSynchronizeComponent>();
+
+            Assert.IsTrue(serverSideInstance.CustomSerializationData.Value1 == clientSideInstance.CustomSerializationData.Value1, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value1}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value1})");
+            Assert.IsTrue(serverSideInstance.CustomSerializationData.Value2 == clientSideInstance.CustomSerializationData.Value2, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value2}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value2})");
+            Assert.IsTrue(serverSideInstance.CustomSerializationData.Value3 == clientSideInstance.CustomSerializationData.Value3, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value3}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value3})");
+            Assert.IsTrue(serverSideInstance.CustomSerializationData.Value4 == clientSideInstance.CustomSerializationData.Value4, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value4}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value4})");
         }
     }
 
@@ -556,6 +576,44 @@ namespace Unity.Netcode.RuntimeTests
             m_MyCustomData.FailureType = m_FailureType.Value;
             // Now handle the serialization for this failure type
             m_MyCustomData.NetworkSerialize(serializer);
+        }
+    }
+
+    public class NetworkBehaviourOnSynchronizeComponent : NetworkBehaviour
+    {
+        public SomeCustomSerializationData CustomSerializationData = new SomeCustomSerializationData();
+
+        public struct SomeCustomSerializationData : INetworkSerializable
+        {
+            public uint Value1;
+            public bool Value2;
+            public long Value3;
+            public float Value4;
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref Value1);
+                serializer.SerializeValue(ref Value2);
+                serializer.SerializeValue(ref Value3);
+                serializer.SerializeValue(ref Value4);
+            }
+        }
+
+        public override void OnNetworkSpawn()
+        {
+            if (IsServer)
+            {
+                CustomSerializationData.Value1 = (uint)Random.Range(0, 10000);
+                CustomSerializationData.Value2 = true;
+                CustomSerializationData.Value3 = Random.Range(0, 10000);
+                CustomSerializationData.Value4 = Random.Range(-1000.0f, 1000.0f);
+            }
+            base.OnNetworkSpawn();
+        }
+
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            serializer.SerializeNetworkSerializable(ref CustomSerializationData);
+            base.OnSynchronize(ref serializer);
         }
     }
 }
