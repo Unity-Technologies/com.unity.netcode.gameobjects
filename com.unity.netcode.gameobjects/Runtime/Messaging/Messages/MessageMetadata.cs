@@ -1,6 +1,9 @@
 namespace Unity.Netcode
 {
-    public struct MessageVersionData
+    /// <summary>
+    /// Conveys a version number on a remote node for the given message (identified by its hash)
+    /// </summary>
+    internal struct MessageVersionData
     {
         public uint Hash;
         public int Version;

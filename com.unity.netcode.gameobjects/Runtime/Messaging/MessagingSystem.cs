@@ -56,6 +56,8 @@ namespace Unity.Netcode
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
+
+        // This is m_PerClientMessageVersion[clientId][messageType] = version
         private Dictionary<ulong, Dictionary<Type, int>> m_PerClientMessageVersions = new Dictionary<ulong, Dictionary<Type, int>>();
         private Dictionary<uint, Type> m_MessagesByHash = new Dictionary<uint, Type>();
         private Dictionary<Type, int> m_LocalVersions = new Dictionary<Type, int>();
@@ -488,6 +490,9 @@ namespace Unity.Netcode
         {
             var message = new T();
             var messageVersion = 0;
+            // Special cases because these are the messages that carry the version info - thus the version info isn't
+            // populated yet when we get these. The first part of these messages always has to be the version data
+            // and can't change.
             if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage))
             {
                 messageVersion = system.GetMessageVersion(typeof(T), context.SenderId, true);
@@ -539,6 +544,9 @@ namespace Unity.Netcode
             for (var i = 0; i < clientIds.Count; ++i)
             {
                 var messageVersion = 0;
+                // Special case because this is the message that carries the version info - thus the version info isn't
+                // populated yet when we get this. The first part of this message always has to be the version data
+                // and can't change.
                 if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
                 {
                     messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
@@ -587,6 +595,9 @@ namespace Unity.Netcode
             for (var i = 0; i < clientIds.Count; ++i)
             {
                 var messageVersion = 0;
+                // Special case because this is the message that carries the version info - thus the version info isn't
+                // populated yet when we get this. The first part of this message always has to be the version data
+                // and can't change.
                 if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
                 {
                     messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
@@ -653,6 +664,9 @@ namespace Unity.Netcode
             where TMessageType : INetworkMessage
         {
             var messageVersion = 0;
+            // Special case because this is the message that carries the version info - thus the version info isn't
+            // populated yet when we get this. The first part of this message always has to be the version data
+            // and can't change.
             if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
             {
                 messageVersion = GetMessageVersion(typeof(TMessageType), clientId);
