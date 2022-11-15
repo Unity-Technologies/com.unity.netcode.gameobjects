@@ -88,10 +88,10 @@ namespace TestProject.RuntimeTests
                 NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOverride);
                 m_PrefabOverrideGlobalObjectIdHash = networkObjectOverride.GlobalObjectIdHash;
 
-                server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                server.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
                 foreach (var client in clients)
                 {
-                    client.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
+                    client.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = m_PlayerPrefabOverride });
                 }
             }
             else

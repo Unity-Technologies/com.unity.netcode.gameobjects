@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
@@ -32,6 +34,24 @@ namespace Unity.Netcode.Editor
 
             EditorApplication.playModeStateChanged += EditorApplication_playModeStateChanged;
             EditorApplication.hierarchyChanged += EditorApplication_hierarchyChanged;
+
+            // Initialize default values for new NetworkManagers
+            //
+            // When the default prefab list is enabled, this will default
+            // new NetworkManagers to using it.
+            //
+            // This will get run when new NetworkManagers are added, and
+            // when the user presses the "reset" button on a NetworkManager
+            // in the inspector.
+            NetworkManager.OnNetworkManagerReset = manager =>
+            {
+                var settings = NetcodeForGameObjectsSettings.GetOrCreateSettings();
+                if (settings.GenerateDefaultNetworkPrefabs)
+                {
+                    manager.NetworkConfig = new NetworkConfig();
+                    manager.NetworkConfig.Prefabs.NetworkPrefabsList = NetworkPrefabProcessor.GetOrCreateNetworkPrefabs(NetworkPrefabProcessor.DefaultNetworkPrefabsPath, out _, true);
+                }
+            };
         }
 
         private static void EditorApplication_playModeStateChanged(PlayModeStateChange playModeStateChange)

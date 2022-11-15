@@ -5,6 +5,9 @@ namespace Unity.Netcode.Editor.Configuration
 {
     internal static class NetcodeSettingsProvider
     {
+        private const float k_MaxLabelWidth = 450f;
+        private static float s_MaxLabelWidth;
+
         [SettingsProvider]
         public static SettingsProvider CreateNetcodeSettingsProvider()
         {
@@ -39,6 +42,32 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 NetcodeForGameObjectsSettings.SetAutoAddNetworkObjectSetting(autoAddNetworkObjectSetting);
                 NetcodeForGameObjectsSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
+            }
+            const string generateNetworkPrefabsString = "Generate Default Network Prefabs List";
+
+            if (s_MaxLabelWidth == 0)
+            {
+                s_MaxLabelWidth = EditorStyles.label.CalcSize(new GUIContent(generateNetworkPrefabsString)).x;
+                s_MaxLabelWidth = Mathf.Min(k_MaxLabelWidth, s_MaxLabelWidth);
+            }
+
+            EditorGUIUtility.labelWidth = s_MaxLabelWidth;
+
+            var settings = NetcodeForGameObjectsSettings.GetOrCreateSettings();
+
+            GUILayout.Label("Network Prefabs", EditorStyles.boldLabel);
+            EditorGUI.BeginChangeCheck();
+            var generateDefaultPrefabs = EditorGUILayout.Toggle(
+                new GUIContent(
+                    generateNetworkPrefabsString,
+                    "When enabled, a default NetworkPrefabsList object will be added to your project and kept up " +
+                    "to date with all NetworkObject prefabs."),
+                settings.GenerateDefaultNetworkPrefabs,
+                GUILayout.Width(s_MaxLabelWidth + 20));
+            if (EditorGUI.EndChangeCheck())
+            {
+                settings.GenerateDefaultNetworkPrefabs = generateDefaultPrefabs;
+                settings.Save();
             }
         }
     }

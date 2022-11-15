@@ -71,7 +71,7 @@ namespace TestProject.RuntimeTests
             networkObjectServer.name = "ServerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectServer);
             var networkAnimatorServerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectServer.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorServerAuthPrefab);
 
             // Owner authority prefab
             var networkObjectOwner = (m_OwnerAnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
@@ -79,12 +79,12 @@ namespace TestProject.RuntimeTests
             networkObjectOwner.name = "OwnerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOwner);
             var networkAnimatorOwnerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectOwner.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorOwnerAuthPrefab);
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorServerAuthPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorOwnerAuthPrefab);
             }
 
             base.OnServerAndClientsCreated();
@@ -331,9 +331,9 @@ namespace TestProject.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
-            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
-            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
         }
 
         /// <summary>
@@ -626,8 +626,8 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
+            m_ClientNetworkManagers[0].NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
             OnCreatePlayerPrefab();
 
             // Now, restart the server and the client

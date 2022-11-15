@@ -40,20 +40,20 @@ namespace Unity.Netcode.RuntimeTests
         {
             Assert.IsTrue(NetcodeIntegrationTestHelpers.Create(1, out m_ServerHost, out m_Clients));
 
-            m_ObjectToSpawn = new GameObject();
-            m_NetworkObject = m_ObjectToSpawn.AddComponent<NetworkObject>();
+            m_ObjectToSpawn = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(nameof(NetworkObjectOnNetworkDespawnTests), m_ServerHost, m_Clients);;
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
+            m_NetworkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
 
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(m_NetworkObject);
 
             var networkPrefab = new NetworkPrefab();
             networkPrefab.Prefab = m_ObjectToSpawn;
-            m_ServerHost.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            m_ServerHost.NetworkConfig.Prefabs.Add(networkPrefab);
 
             foreach (var client in m_Clients)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                client.NetworkConfig.Prefabs.Add(networkPrefab);
             }
 
             yield return null;
@@ -130,4 +130,3 @@ namespace Unity.Netcode.RuntimeTests
         }
     }
 }
-
