@@ -297,16 +297,21 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        /// <summary>
+        /// A basic validation for the NetworkBehaviour.OnSynchronize method
+        /// </summary>
         [UnityTest]
         public IEnumerator NetworkBehaviourOnSynchronize()
         {
             var serverSideInstance = SpawnObject(m_OnSynchronizePrefab, m_ServerNetworkManager).GetComponent<NetworkBehaviourOnSynchronizeComponent>();
-            // Now spawn and connect a client that will fail to spawn half of the NetworkObjects spawned
+
+            // Now spawn and connect a client that will have custom serialized data applied during the client synchronization process.
             yield return CreateAndStartNewClient();
 
             var clientSideNetworkObjects = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId];
             var clientSideInstance = clientSideNetworkObjects[serverSideInstance.NetworkObjectId].GetComponent<NetworkBehaviourOnSynchronizeComponent>();
 
+            // Validate the values match
             Assert.IsTrue(serverSideInstance.CustomSerializationData.Value1 == clientSideInstance.CustomSerializationData.Value1, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value1}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value1})");
             Assert.IsTrue(serverSideInstance.CustomSerializationData.Value2 == clientSideInstance.CustomSerializationData.Value2, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value2}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value2})");
             Assert.IsTrue(serverSideInstance.CustomSerializationData.Value3 == clientSideInstance.CustomSerializationData.Value3, $"Client-side instance Value1 ({serverSideInstance.CustomSerializationData.Value3}) does not equal server-side instance Value1 ({clientSideInstance.CustomSerializationData.Value3})");
