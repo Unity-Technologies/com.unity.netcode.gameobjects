@@ -330,7 +330,21 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? "0.0.0.0" : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint
+            {
+                get
+                {
+                    if (ServerListenAddress?.Length == 0)
+                    {
+                        var ep = ServerEndPoint.Family == NetworkFamily.Ipv4 ? NetworkEndpoint.AnyIpv4 : NetworkEndpoint.AnyIpv6;
+                        return ep.WithPort(Port);
+                    }
+                    else
+                    {
+                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                    }
+                }
+            }
         }
 
         /// <summary>
