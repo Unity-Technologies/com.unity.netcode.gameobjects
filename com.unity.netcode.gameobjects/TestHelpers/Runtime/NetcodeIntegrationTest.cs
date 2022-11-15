@@ -274,16 +274,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreateServerAndClients(NumberOfClients);
         }
 
-        protected virtual void OnNewClientCreated(NetworkManager networkManager)
-        {
-
-        }
-
-        protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
-        {
-
-        }
-
         private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
         {
             var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
@@ -299,6 +289,37 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_NumberOfClients = clientNetworkManagersList.Count;
         }
 
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created
+        /// </summary>
+        protected virtual void OnNewClientCreated(NetworkManager networkManager)
+        {
+
+        }
+
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created and started
+        /// </summary>
+        protected virtual void OnNewClientStarted(NetworkManager networkManager)
+        {
+        }
+
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created, started, and connected
+        /// to the server-host.
+        /// </summary>
+        protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
+        {
+
+        }
+
+        /// <summary>
+        /// This will create, start, and connect a new client while in the middle of an
+        /// integration test.
+        /// </summary>
         protected IEnumerator CreateAndStartNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length);
@@ -309,9 +330,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnNewClientCreated(networkManager);
 
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
+
             AddRemoveNetworkManager(networkManager, true);
+
+            OnNewClientStarted(networkManager);
+
             // Wait for the new client to connect
             yield return WaitForClientsConnectedOrTimeOut();
+
+            OnNewClientStartedAndConnected(networkManager);
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 AddRemoveNetworkManager(networkManager, false);
@@ -322,6 +349,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"[{networkManager.name}] Created and connected!");
         }
 
+        /// <summary>
+        /// This will stop a client while in the middle of an integration test
+        /// </summary>
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -444,6 +474,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        protected virtual bool LogAllMessages => false;
+
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
         /// returns true.
@@ -460,6 +492,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     Debug.LogError("Failed to start instances");
                     Assert.Fail("Failed to start instances");
+                }
+
+                if (LogAllMessages)
+                {
+                    EnableMessageLogging();
                 }
 
                 RegisterSceneManagerHandler();
@@ -689,6 +726,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
+            }
+        }
+
+        /// <summary>
+        /// For debugging purposes, this will turn on verbose logging of all messages and batches sent and received
+        /// </summary>
+        protected void EnableMessageLogging()
+        {
+            m_ServerNetworkManager.MessagingSystem.Hook(new DebugNetworkHooks());
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.MessagingSystem.Hook(new DebugNetworkHooks());
             }
         }
 

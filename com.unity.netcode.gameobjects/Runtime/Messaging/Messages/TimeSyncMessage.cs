@@ -8,7 +8,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(this);
+            BytePacker.WriteValueBitPacked(writer, Tick);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -18,7 +18,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            reader.ReadValueSafe(out this);
+            ByteUnpacker.ReadValueBitPacked(reader, out Tick);
             return true;
         }
 

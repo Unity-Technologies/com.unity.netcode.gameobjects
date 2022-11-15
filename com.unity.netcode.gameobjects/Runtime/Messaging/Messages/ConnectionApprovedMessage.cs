@@ -53,8 +53,10 @@ namespace Unity.Netcode
                         ++sceneObjectCount;
                     }
                 }
+
                 writer.Seek(pos);
-                writer.WriteValue(sceneObjectCount);
+                // Can't pack this value because its space is reserved, so it needs to always use all the reserved space.
+                writer.WriteValueSafe(sceneObjectCount);
                 writer.Seek(writer.Length);
             }
             else

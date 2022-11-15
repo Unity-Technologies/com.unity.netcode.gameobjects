@@ -9,7 +9,8 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(this);
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, OwnerClientId);
         }
 
         public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
@@ -19,7 +20,8 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            reader.ReadValueSafe(out this);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+            ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);
