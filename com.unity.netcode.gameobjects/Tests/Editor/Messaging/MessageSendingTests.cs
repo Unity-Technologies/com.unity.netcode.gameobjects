@@ -18,13 +18,13 @@ namespace Unity.Netcode.EditorTests
             public int B;
             public int C;
             public static bool Serialized;
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 Serialized = true;
                 writer.WriteValueSafe(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -32,6 +32,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
 
         private class TestMessageSender : IMessageSender
@@ -66,7 +68,8 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
                 // Track messages sent
@@ -88,6 +91,7 @@ namespace Unity.Netcode.EditorTests
             m_TestMessageProvider = new TestMessageProvider();
             m_MessagingSystem = new MessagingSystem(m_MessageSender, this, m_TestMessageProvider);
             m_MessagingSystem.ClientConnected(0);
+            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]
@@ -256,7 +260,8 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = null
+                        Handler = null,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }

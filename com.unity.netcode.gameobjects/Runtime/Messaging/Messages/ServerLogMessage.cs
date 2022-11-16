@@ -2,6 +2,8 @@ namespace Unity.Netcode
 {
     internal struct ServerLogMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public NetworkLog.LogType LogType;
         // It'd be lovely to be able to replace this with FixedString or NativeArray...
         // But it's not really practical. On the sending side, the user is likely to want
@@ -11,13 +13,13 @@ namespace Unity.Netcode
         public string Message;
 
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             writer.WriteValueSafe(LogType);
             BytePacker.WriteValuePacked(writer, Message);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (networkManager.IsServer && networkManager.NetworkConfig.EnableNetworkLogs)

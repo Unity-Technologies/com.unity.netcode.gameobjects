@@ -431,8 +431,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
             Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
+            // Go ahead and create an entry for this new client
+            if (!m_PlayerNetworkObjects.ContainsKey(networkManager.LocalClientId))
+            {
+                m_PlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+            }
+
             // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
+            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -444,6 +450,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(networkManager.LocalClientId))
                 {
                     m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
+                }
+            }
+
+            // For late joining clients, add the remaining (if any) cloned versions of each client's player
+            clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+            foreach (var playerNetworkObject in clientPlayerClones)
+            {
+                if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
+                {
+                    m_PlayerNetworkObjects[networkManager.LocalClientId].Add(playerNetworkObject.OwnerClientId, playerNetworkObject);
                 }
             }
         }

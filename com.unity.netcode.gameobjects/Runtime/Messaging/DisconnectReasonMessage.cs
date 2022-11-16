@@ -4,7 +4,9 @@ namespace Unity.Netcode
     {
         public string Reason;
 
-        public void Serialize(FastBufferWriter writer)
+        public int Version => 0;
+
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             string reasonSent = Reason;
             if (reasonSent == null)
@@ -12,9 +14,16 @@ namespace Unity.Netcode
                 reasonSent = string.Empty;
             }
 
+            // Since we don't send a ConnectionApprovedMessage, the version for this message is encded with the message
+            // itself. However, note that we HAVE received a ConnectionRequestMessage, so we DO have a valid targetVersion
+            // on this side of things - we just have to make sure the receiving side knows what version we sent it,
+            // since whoever has the higher version number is responsible for versioning and they may be the one
+            // with the higher version number.
+            BytePacker.WriteValueBitPacked(writer, Version);
+
             if (writer.TryBeginWrite(FastBufferWriter.GetWriteSize(reasonSent)))
             {
-                writer.WriteValueSafe(reasonSent);
+                writer.WriteValue(reasonSent);
             }
             else
             {
@@ -24,8 +33,11 @@ namespace Unity.Netcode
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
+            // Since we don't get a ConnectionApprovedMessage, the version for this message is encded with the message
+            // itself. This will override what we got from MessagingSystem... which will always be 0 here.
+            ByteUnpacker.ReadValueBitPacked(reader, out receivedMessageVersion);
             reader.ReadValueSafe(out Reason);
             return true;
         }

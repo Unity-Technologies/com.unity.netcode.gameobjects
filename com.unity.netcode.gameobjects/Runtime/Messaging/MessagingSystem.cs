@@ -46,6 +46,7 @@ namespace Unity.Netcode
         }
 
         internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, MessagingSystem system);
+        internal delegate int VersionGetter();
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
 
@@ -55,6 +56,11 @@ namespace Unity.Netcode
 
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
+
+        // This is m_PerClientMessageVersion[clientId][messageType] = version
+        private Dictionary<ulong, Dictionary<Type, int>> m_PerClientMessageVersions = new Dictionary<ulong, Dictionary<Type, int>>();
+        private Dictionary<uint, Type> m_MessagesByHash = new Dictionary<uint, Type>();
+        private Dictionary<Type, int> m_LocalVersions = new Dictionary<Type, int>();
 
         private List<INetworkHooks> m_Hooks = new List<INetworkHooks>();
 
@@ -80,6 +86,7 @@ namespace Unity.Netcode
         {
             public Type MessageType;
             public MessageHandler Handler;
+            public VersionGetter GetVersion;
         }
 
         internal List<MessageWithHandler> PrioritizeMessageOrder(List<MessageWithHandler> allowedTypes)
@@ -90,9 +97,8 @@ namespace Unity.Netcode
             // Those are the messages that must be delivered in order to allow re-ordering the others later
             foreach (var t in allowedTypes)
             {
-                if (t.MessageType.FullName == "Unity.Netcode.ConnectionRequestMessage" ||
-                    t.MessageType.FullName == "Unity.Netcode.ConnectionApprovedMessage" ||
-                    t.MessageType.FullName == "Unity.Netcode.OrderingMessage")
+                if (t.MessageType.FullName == typeof(ConnectionRequestMessage).FullName ||
+                    t.MessageType.FullName == typeof(ConnectionApprovedMessage).FullName)
                 {
                     prioritizedTypes.Add(t);
                 }
@@ -100,9 +106,8 @@ namespace Unity.Netcode
 
             foreach (var t in allowedTypes)
             {
-                if (t.MessageType.FullName != "Unity.Netcode.ConnectionRequestMessage" &&
-                    t.MessageType.FullName != "Unity.Netcode.ConnectionApprovedMessage" &&
-                    t.MessageType.FullName != "Unity.Netcode.OrderingMessage")
+                if (t.MessageType.FullName != typeof(ConnectionRequestMessage).FullName &&
+                    t.MessageType.FullName != typeof(ConnectionApprovedMessage).FullName)
                 {
                     prioritizedTypes.Add(t);
                 }
@@ -189,7 +194,14 @@ namespace Unity.Netcode
 
             m_MessageHandlers[m_HighMessageType] = messageWithHandler.Handler;
             m_ReverseTypeMap[m_HighMessageType] = messageWithHandler.MessageType;
+            m_MessagesByHash[XXHash.Hash32(messageWithHandler.MessageType.FullName)] = messageWithHandler.MessageType;
             m_MessageTypes[messageWithHandler.MessageType] = m_HighMessageType++;
+            m_LocalVersions[messageWithHandler.MessageType] = messageWithHandler.GetVersion();
+        }
+
+        public int GetLocalVersion(Type messageType)
+        {
+            return m_LocalVersions[messageType];
         }
 
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
@@ -270,68 +282,53 @@ namespace Unity.Netcode
             return true;
         }
 
-        // Moves the handler for the type having hash `targetHash` to the `desiredOrder` position, in the handler list
-        // This allows the server to tell the client which id it is using for which message and make sure the right
-        // message is used when deserializing.
-        internal void ReorderMessage(int desiredOrder, uint targetHash)
+        internal Type GetMessageForHash(uint messageHash)
         {
-            if (desiredOrder < 0)
+            if (!m_MessagesByHash.ContainsKey(messageHash))
             {
-                throw new ArgumentException("ReorderMessage desiredOrder must be positive");
+                return null;
             }
+            return m_MessagesByHash[messageHash];
+        }
 
-            if (desiredOrder < m_ReverseTypeMap.Length &&
-                XXHash.Hash32(m_ReverseTypeMap[desiredOrder].FullName) == targetHash)
+        internal void SetVersion(ulong clientId, uint messageHash, int version)
+        {
+            if (!m_MessagesByHash.ContainsKey(messageHash))
             {
-                // matching positions and hashes. All good.
                 return;
             }
+            var messageType = m_MessagesByHash[messageHash];
 
-            Debug.Log($"Unexpected hash for {desiredOrder}");
-
-            // Since the message at `desiredOrder` is not the expected one,
-            // insert an empty placeholder and move the messages down
-            var typesAsList = new List<Type>(m_ReverseTypeMap);
-
-            typesAsList.Insert(desiredOrder, null);
-            var handlersAsList = new List<MessageHandler>(m_MessageHandlers);
-            handlersAsList.Insert(desiredOrder, null);
-
-            // we added a dummy message, bump the end up
-            m_HighMessageType++;
-
-            // Here, we rely on the server telling us about all messages, in order.
-            // So, we know the handlers before desiredOrder are correct.
-            // We start at desiredOrder to not shift them when we insert.
-            int position = desiredOrder;
-            bool found = false;
-            while (position < typesAsList.Count)
+            if (!m_PerClientMessageVersions.ContainsKey(clientId))
             {
-                if (typesAsList[position] != null &&
-                    XXHash.Hash32(typesAsList[position].FullName) == targetHash)
+                m_PerClientMessageVersions[clientId] = new Dictionary<Type, int>();
+            }
+
+            m_PerClientMessageVersions[clientId][messageType] = version;
+        }
+
+        internal void SetServerMessageOrder(NativeArray<uint> messagesInIdOrder)
+        {
+            var oldHandlers = m_MessageHandlers;
+            var oldTypes = m_MessageTypes;
+            m_ReverseTypeMap = new Type[messagesInIdOrder.Length];
+            m_MessageHandlers = new MessageHandler[messagesInIdOrder.Length];
+            m_MessageTypes = new Dictionary<Type, uint>();
+
+            for (var i = 0; i < messagesInIdOrder.Length; ++i)
+            {
+                if (!m_MessagesByHash.ContainsKey(messagesInIdOrder[i]))
                 {
-                    found = true;
-                    break;
+                    continue;
                 }
-
-                position++;
+                var messageType = m_MessagesByHash[messagesInIdOrder[i]];
+                var oldId = oldTypes[messageType];
+                var handler = oldHandlers[oldId];
+                var newId = (uint)i;
+                m_MessageTypes[messageType] = newId;
+                m_MessageHandlers[newId] = handler;
+                m_ReverseTypeMap[newId] = messageType;
             }
-
-            if (found)
-            {
-                // Copy the handler and type to the right index
-
-                typesAsList[desiredOrder] = typesAsList[position];
-                handlersAsList[desiredOrder] = handlersAsList[position];
-                typesAsList.RemoveAt(position);
-                handlersAsList.RemoveAt(position);
-
-                // we removed a copy after moving a message, reduce the high message index
-                m_HighMessageType--;
-            }
-
-            m_ReverseTypeMap = typesAsList.ToArray();
-            m_MessageHandlers = handlersAsList.ToArray();
         }
 
         public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
@@ -433,7 +430,7 @@ namespace Unity.Netcode
             m_SendQueues.Remove(clientId);
         }
 
-        private unsafe void CleanupDisconnectedClient(ulong clientId)
+        private void CleanupDisconnectedClient(ulong clientId)
         {
             var queue = m_SendQueues[clientId];
             for (var i = 0; i < queue.Length; ++i)
@@ -444,10 +441,67 @@ namespace Unity.Netcode
             queue.Dispose();
         }
 
+        internal void CleanupDisconnectedClients()
+        {
+            var removeList = new NativeList<ulong>(Allocator.Temp);
+            foreach (var clientId in m_PerClientMessageVersions.Keys)
+            {
+                if (!m_SendQueues.ContainsKey(clientId))
+                {
+                    removeList.Add(clientId);
+                }
+            }
+
+            foreach (var clientId in removeList)
+            {
+                m_PerClientMessageVersions.Remove(clientId);
+            }
+        }
+
+        public static int CreateMessageAndGetVersion<T>() where T : INetworkMessage, new()
+        {
+            return new T().Version;
+        }
+
+        internal int GetMessageVersion(Type type, ulong clientId, bool forReceive = false)
+        {
+            if (!m_PerClientMessageVersions.TryGetValue(clientId, out var versionMap))
+            {
+                if (forReceive)
+                {
+                    Debug.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+
+                }
+                else
+                {
+                    Debug.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
+                }
+                return -1;
+            }
+            if (!versionMap.TryGetValue(type, out var messageVersion))
+            {
+                return -1;
+            }
+
+            return messageVersion;
+        }
+
         public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
         {
             var message = new T();
-            if (message.Deserialize(reader, ref context))
+            var messageVersion = 0;
+            // Special cases because these are the messages that carry the version info - thus the version info isn't
+            // populated yet when we get these. The first part of these messages always has to be the version data
+            // and can't change.
+            if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage))
+            {
+                messageVersion = system.GetMessageVersion(typeof(T), context.SenderId, true);
+                if (messageVersion < 0)
+                {
+                    return;
+                }
+            }
+            if (message.Deserialize(reader, ref context, messageVersion))
             {
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
                 {
@@ -485,16 +539,47 @@ namespace Unity.Netcode
                 return 0;
             }
 
-            var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
+            var largestSerializedSize = 0;
+            var sentMessageVersions = new NativeHashSet<int>(clientIds.Count, Allocator.Temp);
+            for (var i = 0; i < clientIds.Count; ++i)
+            {
+                var messageVersion = 0;
+                // Special case because this is the message that carries the version info - thus the version info isn't
+                // populated yet when we get this. The first part of this message always has to be the version data
+                // and can't change.
+                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                {
+                    messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
+                    if (messageVersion < 0)
+                    {
+                        // Client doesn't know this message exists, don't send it at all.
+                        continue;
+                    }
+                }
 
-            using var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
+                if (sentMessageVersions.Contains(messageVersion))
+                {
+                    continue;
+                }
 
-            message.Serialize(tmpSerializer);
+                sentMessageVersions.Add(messageVersion);
 
-            return SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, clientIds);
+                var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
+
+                using var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
+
+                message.Serialize(tmpSerializer, messageVersion);
+
+                var size = SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, clientIds, messageVersion);
+                largestSerializedSize = size > largestSerializedSize ? size : largestSerializedSize;
+            }
+
+            sentMessageVersions.Dispose();
+
+            return largestSerializedSize;
         }
 
-        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds)
+        internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds, int messageVersionFilter)
             where TMessageType : INetworkMessage
         {
             using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp);
@@ -509,6 +594,25 @@ namespace Unity.Netcode
 
             for (var i = 0; i < clientIds.Count; ++i)
             {
+                var messageVersion = 0;
+                // Special case because this is the message that carries the version info - thus the version info isn't
+                // populated yet when we get this. The first part of this message always has to be the version data
+                // and can't change.
+                if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+                {
+                    messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
+                    if (messageVersion < 0)
+                    {
+                        // Client doesn't know this message exists, don't send it at all.
+                        continue;
+                    }
+
+                    if (messageVersion != messageVersionFilter)
+                    {
+                        continue;
+                    }
+                }
+
                 var clientId = clientIds[i];
 
                 if (!CanSend(clientId, typeof(TMessageType), delivery))
@@ -559,8 +663,22 @@ namespace Unity.Netcode
         internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, ulong clientId)
             where TMessageType : INetworkMessage
         {
+            var messageVersion = 0;
+            // Special case because this is the message that carries the version info - thus the version info isn't
+            // populated yet when we get this. The first part of this message always has to be the version data
+            // and can't change.
+            if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
+            {
+                messageVersion = GetMessageVersion(typeof(TMessageType), clientId);
+                if (messageVersion < 0)
+                {
+                    // Client doesn't know this message exists, don't send it at all.
+                    return 0;
+                }
+            }
+
             ulong* clientIds = stackalloc ulong[] { clientId };
-            return SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, new PointerListWrapper<ulong>(clientIds, 1));
+            return SendPreSerializedMessage(tmpSerializer, maxSize, ref message, delivery, new PointerListWrapper<ulong>(clientIds, 1), messageVersion);
         }
 
         private struct PointerListWrapper<T> : IReadOnlyList<T>
