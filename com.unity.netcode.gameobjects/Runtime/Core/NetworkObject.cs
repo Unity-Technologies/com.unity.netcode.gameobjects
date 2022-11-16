@@ -521,9 +521,6 @@ namespace Unity.Netcode
             NetworkManager.SpawnManager.RemoveOwnership(this);
         }
 
-        internal ulong NextOwner = 0;
-        internal bool HasNextOwner = false;
-
         /// <summary>
         /// Changes the owner of the object. Can only be called from server
         /// </summary>

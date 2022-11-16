@@ -268,16 +268,18 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            networkObject.NextOwner = clientId;
-            networkObject.HasNextOwner = true;
+            networkObject.OwnerClientId = clientId;
 
             networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
+            // Server adds entries for all client ownership
+            UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+
             var message = new ChangeOwnershipMessage
             {
                 NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = clientId
+                OwnerClientId = networkObject.OwnerClientId
             };
 
             foreach (var client in NetworkManager.ConnectedClients)

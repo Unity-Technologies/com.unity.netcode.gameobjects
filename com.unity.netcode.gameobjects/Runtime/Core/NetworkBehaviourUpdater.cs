@@ -34,13 +34,6 @@ namespace Unity.Netcode
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
-                        if (dirtyObj.HasNextOwner)
-                        {
-                            dirtyObj.HasNextOwner = false;
-                            dirtyObj.OwnerClientId = dirtyObj.NextOwner;
-                            networkManager.SpawnManager.UpdateOwnershipTable(dirtyObj, dirtyObj.OwnerClientId);
-                        }
-
                         for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                         {
                             dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
