@@ -12,11 +12,11 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
             var msg = new DisconnectReasonMessage();
             msg.Reason = string.Empty;
-            msg.Serialize(writer);
+            msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);
             var recvMsg = new DisconnectReasonMessage();
-            recvMsg.Deserialize(fbr, ref networkContext);
+            recvMsg.Deserialize(fbr, ref networkContext, msg.Version);
 
             Assert.IsEmpty(recvMsg.Reason);
         }
@@ -28,11 +28,11 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
             var msg = new DisconnectReasonMessage();
             msg.Reason = "Foo";
-            msg.Serialize(writer);
+            msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);
             var recvMsg = new DisconnectReasonMessage();
-            recvMsg.Deserialize(fbr, ref networkContext);
+            recvMsg.Deserialize(fbr, ref networkContext, msg.Version);
 
             Assert.AreEqual("Foo", recvMsg.Reason);
         }
@@ -44,11 +44,11 @@ namespace Unity.Netcode.EditorTests
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
             var msg = new DisconnectReasonMessage();
             msg.Reason = "ThisStringIsWayLongerThanTwentyBytes";
-            msg.Serialize(writer);
+            msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);
             var recvMsg = new DisconnectReasonMessage();
-            recvMsg.Deserialize(fbr, ref networkContext);
+            recvMsg.Deserialize(fbr, ref networkContext, msg.Version);
 
             Assert.IsEmpty(recvMsg.Reason);
         }

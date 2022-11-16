@@ -4,16 +4,18 @@ namespace Unity.Netcode
     // like most of the other messages when we have some more time and can come back and refactor this.
     internal struct SceneEventMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public SceneEventData EventData;
 
         private FastBufferReader m_ReceivedData;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             EventData.Serialize(writer);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             m_ReceivedData = reader;
             return true;

@@ -2,14 +2,16 @@ namespace Unity.Netcode
 {
     internal struct TimeSyncMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
+        public int Version => 0;
+
         public int Tick;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, Tick);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)

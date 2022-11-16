@@ -18,12 +18,12 @@ namespace Unity.Netcode.EditorTests
             public static bool Handled;
             public static List<TestMessage> DeserializedValues = new List<TestMessage>();
 
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 writer.WriteValueSafe(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 Deserialized = true;
                 reader.ReadValueSafe(out this);
@@ -35,6 +35,8 @@ namespace Unity.Netcode.EditorTests
                 Handled = true;
                 DeserializedValues.Add(this);
             }
+
+            public int Version => 0;
         }
 
         private class TestMessageProvider : IMessageProvider
@@ -46,7 +48,8 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }
@@ -62,6 +65,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.DeserializedValues.Clear();
 
             m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestMessageProvider());
+            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]

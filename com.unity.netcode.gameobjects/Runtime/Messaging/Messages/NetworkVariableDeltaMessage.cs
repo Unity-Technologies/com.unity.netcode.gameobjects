@@ -12,6 +12,8 @@ namespace Unity.Netcode
     /// </summary>
     internal struct NetworkVariableDeltaMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public ulong NetworkObjectId;
         public ushort NetworkBehaviourIndex;
 
@@ -21,7 +23,7 @@ namespace Unity.Netcode
 
         private FastBufferReader m_ReceivedNetworkVariableData;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             if (!writer.TryBeginWrite(FastBufferWriter.GetWriteSize(NetworkObjectId) + FastBufferWriter.GetWriteSize(NetworkBehaviourIndex)))
             {
@@ -110,7 +112,7 @@ namespace Unity.Netcode
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkBehaviourIndex);
