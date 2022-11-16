@@ -32,6 +32,11 @@
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
+        },
+        {
+            "name": "com.unity.transport",
+            "expression": "2.0.0-exp",
+            "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
     ]
 }
