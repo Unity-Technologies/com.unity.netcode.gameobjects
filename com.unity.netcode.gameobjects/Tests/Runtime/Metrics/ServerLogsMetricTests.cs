@@ -30,7 +30,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 Message = logMessage
             };
             using var writer = new FastBufferWriter(1024, Allocator.Temp);
-            message.Serialize(writer);
+            message.Serialize(writer, message.Version);
             return writer.Length;
         }
 
