@@ -12,7 +12,6 @@ namespace TestProject.RuntimeTests
     {
         private const string k_BaseSceneToLoad = "UnitTestBaseScene";
         private const string k_TestSceneToLoad = "ParentingInSceneObjects";
-        private const string k_NestedUndeGameObjectName = "RootParent_GameObject";
         private const int k_NumIterationsDeparentReparent = 100;
         private const float k_AproximateThresholdValue = 0.001f;
 

@@ -3,9 +3,13 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEditor;
+using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor
 {
+    /// <summary>
+    /// The <see cref="CustomEditor"/> for <see cref="NetworkBehaviour"/>
+    /// </summary>
     [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
     public class NetworkBehaviourEditor : UnityEditor.Editor
@@ -33,8 +37,8 @@ namespace Unity.Netcode.Editor
                 var ft = fields[i].FieldType;
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
-                    m_NetworkVariableNames.Add(fields[i].Name);
-                    m_NetworkVariableFields.Add(fields[i].Name, fields[i]);
+                    m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
+                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
                 }
             }
         }
@@ -230,8 +234,6 @@ namespace Unity.Netcode.Editor
             CheckForNetworkObject((target as NetworkBehaviour).gameObject);
         }
 
-        internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
-
         /// <summary>
         /// Recursively finds the root parent of a <see cref="Transform"/>
         /// </summary>
@@ -308,7 +310,7 @@ namespace Unity.Netcode.Editor
                     // and the user has already turned "Auto-Add NetworkObject" on when first notified about the requirement
                     // then just send a reminder to the user why the NetworkObject they just deleted seemingly "re-appeared"
                     // again.
-                    if (networkObjectRemoved && EditorPrefs.HasKey(AutoAddNetworkObjectIfNoneExists) && EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists))
+                    if (networkObjectRemoved && NetcodeForGameObjectsSettings.GetAutoAddNetworkObjectSetting())
                     {
                         Debug.LogWarning($"{gameObject.name} still has {nameof(NetworkBehaviour)}s and Auto-Add NetworkObjects is enabled. A NetworkObject is being added back to {gameObject.name}.");
                         Debug.Log($"To reset Auto-Add NetworkObjects: Select the Netcode->General->Reset Auto-Add NetworkObject menu item.");
@@ -317,7 +319,7 @@ namespace Unity.Netcode.Editor
                     // Notify and provide the option to add it one time, always add a NetworkObject, or do nothing and let the user manually add it
                     if (EditorUtility.DisplayDialog($"{nameof(NetworkBehaviour)}s require a {nameof(NetworkObject)}",
                     $"{gameObject.name} does not have a {nameof(NetworkObject)} component.  Would you like to add one now?", "Yes", "No (manually add it)",
-                    DialogOptOutDecisionType.ForThisMachine, AutoAddNetworkObjectIfNoneExists))
+                    DialogOptOutDecisionType.ForThisMachine, NetcodeForGameObjectsSettings.AutoAddNetworkObjectIfNoneExists))
                     {
                         gameObject.AddComponent<NetworkObject>();
                         var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
@@ -325,21 +327,6 @@ namespace Unity.Netcode.Editor
                         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
                     }
                 }
-            }
-        }
-
-        /// <summary>
-        /// This allows users to reset the Auto-Add NetworkObject preference
-        /// so the next time they add a NetworkBehaviour to a GameObject without
-        /// a NetworkObject it will display the dialog box again and not
-        /// automatically add a NetworkObject.
-        /// </summary>
-        [MenuItem("Netcode/General/Reset Auto-Add NetworkObject", false, 1)]
-        private static void ResetMultiplayerToolsTipStatus()
-        {
-            if (EditorPrefs.HasKey(AutoAddNetworkObjectIfNoneExists))
-            {
-                EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, false);
             }
         }
     }

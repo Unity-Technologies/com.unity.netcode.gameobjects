@@ -39,7 +39,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (AllMessagesReceived)
             {
-                return AllMessagesReceived;
+                foreach (var entry in m_MessageHookEntries)
+                {
+                    entry.RemoveHook();
+                }
             }
 
             return AllMessagesReceived;
@@ -108,6 +111,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_MessageReceiptCheck = MessageHooks.CheckForMessageOfTypeReceived<T>;
             }
             Initialize();
+        }
+
+        internal void RemoveHook()
+        {
+            m_NetworkManager.MessagingSystem.Unhook(MessageHooks);
         }
 
         internal void AssignMessageType(Type type)

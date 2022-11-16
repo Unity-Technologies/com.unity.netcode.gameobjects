@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Multiplayer.Tools.MetricTypes;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -43,6 +44,18 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             return networkObject;
         }
 
+        private int GetWriteSizeForOwnerChange(NetworkObject networkObject, ulong newOwner)
+        {
+            var message = new ChangeOwnershipMessage
+            {
+                NetworkObjectId = networkObject.NetworkObjectId,
+                OwnerClientId = newOwner
+            };
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            message.Serialize(writer, message.Version);
+            return writer.Length;
+        }
+
         [UnityTest]
         public IEnumerator TrackOwnershipChangeSentMetric()
         {
@@ -68,7 +81,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             ownershipChangeSent = metricValues.Last();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeSent.NetworkId.NetworkId);
             Assert.AreEqual(Client.LocalClientId, ownershipChangeSent.Connection.Id);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>() + k_MessageHeaderSize, ownershipChangeSent.BytesCount);
+
+            var serializedLength = GetWriteSizeForOwnerChange(networkObject, 1);
+            Assert.AreEqual(serializedLength + k_MessageHeaderSize, ownershipChangeSent.BytesCount);
         }
 
         [UnityTest]
@@ -89,7 +104,9 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var ownershipChangeReceived = metricValues.First();
             Assert.AreEqual(networkObject.NetworkObjectId, ownershipChangeReceived.NetworkId.NetworkId);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize<ChangeOwnershipMessage>(), ownershipChangeReceived.BytesCount);
+
+            var serializedLength = GetWriteSizeForOwnerChange(networkObject, 1);
+            Assert.AreEqual(serializedLength, ownershipChangeReceived.BytesCount);
         }
     }
 }
