@@ -1493,35 +1493,29 @@ namespace Unity.Netcode.Transports.UTP
                 }
                 else
                 {
-                    try
+                    if (NetworkManager.IsServer)
                     {
-                        if (NetworkManager.IsServer)
+                        if (String.IsNullOrEmpty(m_ServerCertificate) || String.IsNullOrEmpty(m_ServerPrivateKey))
                         {
-                            if (m_ServerCertificate.Length == 0 || m_ServerPrivateKey.Length == 0)
-                            {
-                                throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
-                            }
-                            m_NetworkSettings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
+                            throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
+                        }
+
+                        m_NetworkSettings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
+                    }
+                    else
+                    {
+                        if (String.IsNullOrEmpty(m_ServerCommonName))
+                        {
+                            throw new Exception("In order to use encrypted communications, clients must set the server common name.");
+                        }
+                        else if (String.IsNullOrEmpty(m_ClientCaCertificate))
+                        {
+                            m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
                         }
                         else
                         {
-                            if (m_ServerCommonName.Length == 0)
-                            {
-                                throw new Exception("In order to use encrypted communications, clients must set the server common name.");
-                            }
-                            else if (m_ClientCaCertificate == null)
-                            {
-                                m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
-                            }
-                            else
-                            {
-                                m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
-                            }
+                            m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
                         }
-                    }
-                    catch(Exception e)
-                    {
-                        Debug.LogException(e, this);
                     }
                 }
             }
