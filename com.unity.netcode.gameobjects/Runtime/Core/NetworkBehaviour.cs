@@ -884,11 +884,16 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Override this method if your derived NetworkBehaviour requires custom synchronization data.
-        /// When serializing (writing) this will be invoked during the client synchronization period for
-        /// each instance as well as when spawning a new NetworkObject.
-        /// When deserializing (reading), this will be invoked prior to the NetworkBehaviour's associated
-        /// NetworkObject is spawned.
+        /// Note: Use of this method is only for the initial client synchronization of NetworkBehaviours
+        /// and will increase the payload size for client synchronization and dynamically spawned
+        /// <see cref="NetworkObject"/>s.
         /// </summary>
+        /// <remarks>
+        /// When serializing (writing) this will be invoked during the client synchronization period and
+        /// when spawning new NetworkObjects.
+        /// When deserializing (reading), this will be invoked prior to the NetworkBehaviour's associated
+        /// NetworkObject being spawned.
+        /// </remarks>
         /// <param name="serializer">The serializer to use to read and write the data.</param>
         /// <typeparam name="T">
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
