@@ -59,10 +59,9 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<int> MyNetworkVariable;
         public NetworkList<int> MyListSetOnSpawn;
         public NetworkVariable<int> MyOwnerReadNetworkVariable;
+        static public NetworkManager NetworkManagerOfInterest;
 
-        internal static int IdCount = 0;
         internal static int GainOwnershipCount = 0;
-        private int m_Id = 0;
 
         private void Awake()
         {
@@ -71,22 +70,9 @@ namespace Unity.Netcode.RuntimeTests
             MyNetworkVariable.OnValueChanged += Changed;
 
             MyListSetOnSpawn = new NetworkList<int>();
-            m_Id = IdCount++;
 
             MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
-
-            if (m_Id == 0)
-            {
-                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged0;
-            }
-            else if (m_Id == 1)
-            {
-                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged1;
-            }
-            else if (m_Id == 2)
-            {
-                MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged2;
-            }
+            MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
         }
 
         public override void OnGainedOwnership()
@@ -95,20 +81,12 @@ namespace Unity.Netcode.RuntimeTests
             base.OnGainedOwnership();
         }
 
-        public void OwnerReadChanged0(int before, int after)
+        public void OwnerReadChanged(int before, int after)
         {
-            // Debug.Log($"[0] Owner-read Value changed from {before} to {after}");
-        }
-
-        public void OwnerReadChanged1(int before, int after)
-        {
-            ValueAfterOwnershipChange = after;
-            // Debug.Log($"[1] Owner-read Value changed from {before} to {after}");
-        }
-
-        public void OwnerReadChanged2(int before, int after)
-        {
-            // Debug.Log($"[2] Owner-read Value changed from {before} to {after}");
+            if (NetworkManager == NetworkManagerOfInterest)
+            {
+                ValueAfterOwnershipChange = after;
+            }
         }
 
         public void Changed(int before, int after)
@@ -377,7 +355,6 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator NetworkHideChangeOwnershipNotHidden()
         {
-            ShowHideObject.IdCount = 0;
             ShowHideObject.ClientTargetedNetworkObjects.Clear();
             ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
             ShowHideObject.Silent = true;
@@ -399,6 +376,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // check we'll actually be changing owners
             Assert.False(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+
+            // only check for value change on one specific client
+            ShowHideObject.NetworkManagerOfInterest = m_ClientNetworkManagers[0];
 
             // change ownership
             m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
