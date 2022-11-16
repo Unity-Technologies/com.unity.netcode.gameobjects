@@ -9,7 +9,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
-
+- Added support for different versions of the SDK to talk to each other in circumstances where changes permit it. Starting with this version and into future versions, patch versions should be compatible as long as the minor version is the same. (#2290)
 - Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings. (#2285)
 - Added `public string DisconnectReason` getter to `NetworkManager` and `string Reason` to `ConnectionApprovalResponse`. Allows connection approval to communicate back a reason. Also added `public void DisconnectClient(ulong clientId, string reason)` allowing setting a disconnection reason, when explicitly disconnecting a client. 
 

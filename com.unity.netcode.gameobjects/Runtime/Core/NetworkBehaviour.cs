@@ -730,7 +730,7 @@ namespace Unity.Netcode
                         var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
                         using (tmpWriter)
                         {
-                            message.Serialize(tmpWriter);
+                            message.Serialize(tmpWriter, message.Version);
                         }
                     }
                     else
