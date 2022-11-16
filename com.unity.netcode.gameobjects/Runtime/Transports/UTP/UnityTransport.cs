@@ -543,7 +543,7 @@ namespace Unity.Netcode.Transports.UTP
             int result = m_Driver.Bind(endPoint);
             if (result != 0)
             {
-                Debug.LogError("Server failed to bind. This is usually caused by another processing being already bound to the same port.");
+                Debug.LogError("Server failed to bind. This is usually caused by another process being bound to the same port.");
                 return false;
             }
 
