@@ -147,7 +147,7 @@ namespace Unity.Netcode.Transports.UTP
         // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
         private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 32 * 60) / 1000; // bytes per millisecond
 
-        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = "0.0.0.0" };
+        private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -334,9 +334,17 @@ namespace Unity.Netcode.Transports.UTP
             {
                 get
                 {
-                    if (ServerListenAddress?.Length == 0)
+                    if (String.IsNullOrEmpty(ServerListenAddress))
                     {
-                        var ep = ServerEndPoint.Family == NetworkFamily.Ipv4 ? NetworkEndpoint.AnyIpv4 : NetworkEndpoint.AnyIpv6;
+                        var ep = NetworkEndpoint.AnyIpv4;
+
+                        // If an address was entered and it's IPv6, switch to using :: as the
+                        // default listen address. (Otherwise we always assume IPv4.)
+                        if (!String.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
+                        {
+                            ep = NetworkEndpoint.AnyIpv6;
+                        }
+
                         return ep.WithPort(Port);
                     }
                     else

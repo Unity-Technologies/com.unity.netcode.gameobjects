@@ -126,5 +126,18 @@ namespace Unity.Netcode.EditorTests
 
             transport.Shutdown();
         }
+
+        // Check that leaving all addresses empty is valid.
+        [Test]
+        public void UnityTransport_StartServerWithoutAddresses()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+
+            transport.SetConnectionData(string.Empty, 4242);
+            Assert.True(transport.StartServer());
+
+            transport.Shutdown();
+        }
     }
 }
