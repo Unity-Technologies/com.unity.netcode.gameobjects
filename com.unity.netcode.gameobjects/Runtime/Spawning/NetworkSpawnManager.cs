@@ -270,6 +270,9 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
+            networkObject.MarkVariablesDirty(true);
+            NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
+
             // Server adds entries for all client ownership
             UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
 
