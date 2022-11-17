@@ -334,13 +334,13 @@ namespace Unity.Netcode.Transports.UTP
             {
                 get
                 {
-                    if (String.IsNullOrEmpty(ServerListenAddress))
+                    if (string.IsNullOrEmpty(ServerListenAddress))
                     {
                         var ep = NetworkEndpoint.AnyIpv4;
 
                         // If an address was entered and it's IPv6, switch to using :: as the
                         // default listen address. (Otherwise we always assume IPv4.)
-                        if (!String.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
+                        if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
                         {
                             ep = NetworkEndpoint.AnyIpv6;
                         }
@@ -1495,7 +1495,7 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     if (NetworkManager.IsServer)
                     {
-                        if (String.IsNullOrEmpty(m_ServerCertificate) || String.IsNullOrEmpty(m_ServerPrivateKey))
+                        if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
                         {
                             throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
                         }
@@ -1504,11 +1504,11 @@ namespace Unity.Netcode.Transports.UTP
                     }
                     else
                     {
-                        if (String.IsNullOrEmpty(m_ServerCommonName))
+                        if (string.IsNullOrEmpty(m_ServerCommonName))
                         {
                             throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                         }
-                        else if (String.IsNullOrEmpty(m_ClientCaCertificate))
+                        else if (string.IsNullOrEmpty(m_ClientCaCertificate))
                         {
                             m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
                         }
