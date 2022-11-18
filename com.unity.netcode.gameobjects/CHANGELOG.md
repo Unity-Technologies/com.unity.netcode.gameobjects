@@ -10,6 +10,14 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## [1.2.0] - 2022-11-21
+
+### Added
+
 - Added protected method `NetworkBehaviour.OnSynchronize` which is invoked during the initial `NetworkObject` synchronization process. This provides users the ability to include custom serialization information that will be applied to the `NetworkBehaviour` prior to the `NetworkObject` being spawned. (#2298)
 - Added support for different versions of the SDK to talk to each other in circumstances where changes permit it. Starting with this version and into future versions, patch versions should be compatible as long as the minor version is the same. (#2290)
 - Added `NetworkObject` auto-add helper and Multiplayer Tools install reminder settings to Project Settings. (#2285)
