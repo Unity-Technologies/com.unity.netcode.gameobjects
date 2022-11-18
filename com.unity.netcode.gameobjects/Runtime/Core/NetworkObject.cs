@@ -1008,13 +1008,17 @@ namespace Unity.Netcode
                 }
             }
         }
-        internal void SetNetworkVariableData(FastBufferReader reader)
+
+        /// <summary>
+        /// Only invoked during first synchronization of a NetworkObject (late join or newly spawned)
+        /// </summary>
+        internal void SetNetworkVariableData(FastBufferReader reader, ulong clientId)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
             {
                 var behaviour = ChildNetworkBehaviours[i];
                 behaviour.InitializeVariables();
-                behaviour.SetNetworkVariableData(reader);
+                behaviour.SetNetworkVariableData(reader, clientId);
             }
         }
 
@@ -1168,16 +1172,17 @@ namespace Unity.Netcode
                 }
 
                 // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
-                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
-                // This is only set on in-scene placed NetworkObjects to reduce the over-all packet
-                // sizes for dynamically spawned NetworkObjects.
+                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
+                // this to locate their local instance of the in-scene placed NetworkObject instance.
+                // Only written for in-scene placed NetworkObjects.
                 if (IsSceneObject)
                 {
                     writer.WriteValue(OwnerObject.GetSceneOriginHandle());
                 }
 
-                OwnerObject.WriteNetworkVariableData(writer, TargetClientId);
+                // Synchronize NetworkVariables and NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+                OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
             }
 
             public void Deserialize(FastBufferReader reader)
@@ -1213,10 +1218,9 @@ namespace Unity.Netcode
                 }
 
                 // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Since each loaded scene has a unique
-                // handle, it provides us with a unique and persistent "scene prefab asset" instance.
-                // Client-side NetworkSceneManagers use this to locate their local instance of the
-                // NetworkObject instance.
+                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
+                // this to locate their local instance of the in-scene placed NetworkObject instance.
+                // Only read for in-scene placed NetworkObjects
                 if (IsSceneObject)
                 {
                     reader.ReadValue(out NetworkSceneHandle);
@@ -1229,6 +1233,78 @@ namespace Unity.Netcode
             for (int k = 0; k < ChildNetworkBehaviours.Count; k++)
             {
                 ChildNetworkBehaviours[k].PostNetworkVariableWrite();
+            }
+        }
+
+        /// <summary>
+        /// Handles synchronizing NetworkVariables and custom synchronization data for NetworkBehaviours.
+        /// </summary>
+        /// <remarks>
+        /// This is where we determine how much data is written after the associated NetworkObject in order to recover
+        /// from a failed instantiated NetworkObject without completely disrupting client synchronization.
+        /// </remarks>
+        internal void SynchronizeNetworkBehaviours<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
+        {
+            if (serializer.IsWriter)
+            {
+                var writer = serializer.GetFastBufferWriter();
+                var positionBeforeSynchronizing = writer.Position;
+                writer.WriteValueSafe((ushort)0);
+                var sizeToSkipCalculationPosition = writer.Position;
+
+                // Synchronize NetworkVariables
+                WriteNetworkVariableData(writer, targetClientId);
+                // Reserve the NetworkBehaviour synchronization count position
+                var networkBehaviourCountPosition = writer.Position;
+                writer.WriteValueSafe((byte)0);
+
+                // Parse through all NetworkBehaviours and any that return true
+                // had additional synchronization data written.
+                // (See notes for reading/deserialization below)
+                var synchronizationCount = (byte)0;
+                foreach (var childBehaviour in ChildNetworkBehaviours)
+                {
+                    if (childBehaviour.Synchronize(ref serializer))
+                    {
+                        synchronizationCount++;
+                    }
+                }
+
+                var currentPosition = writer.Position;
+                // Write the total number of bytes written for NetworkVariable and NetworkBehaviour
+                // synchronization.
+                writer.Seek(positionBeforeSynchronizing);
+                // We want the size of everything after our size to skip calculation position
+                var size = (ushort)(currentPosition - sizeToSkipCalculationPosition);
+                writer.WriteValueSafe(size);
+                // Write the number of NetworkBehaviours synchronized
+                writer.Seek(networkBehaviourCountPosition);
+                writer.WriteValueSafe(synchronizationCount);
+                // seek back to the position after writing NetworkVariable and NetworkBehaviour
+                // synchronization data.
+                writer.Seek(currentPosition);
+            }
+            else
+            {
+                var reader = serializer.GetFastBufferReader();
+
+                reader.ReadValueSafe(out ushort sizeOfSynchronizationData);
+                var seekToEndOfSynchData = reader.Position + sizeOfSynchronizationData;
+                // Apply the network variable synchronization data
+                SetNetworkVariableData(reader, targetClientId);
+                // Read the number of NetworkBehaviours to synchronize
+                reader.ReadValueSafe(out byte numberSynchronized);
+                var networkBehaviourId = (ushort)0;
+
+                // If a NetworkBehaviour writes synchronization data, it will first
+                // write its NetworkBehaviourId so when deserializing the client-side
+                // can find the right NetworkBehaviour to deserialize the synchronization data.
+                for (int i = 0; i < numberSynchronized; i++)
+                {
+                    serializer.SerializeValue(ref networkBehaviourId);
+                    var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
+                    networkBehaviour.Synchronize(ref serializer);
+                }
             }
         }
 
@@ -1318,10 +1394,10 @@ namespace Unity.Netcode
         /// when the client is approved or during a scene transition
         /// </summary>
         /// <param name="sceneObject">Deserialized scene object data</param>
-        /// <param name="variableData">reader for the NetworkVariable data</param>
+        /// <param name="reader">FastBufferReader for the NetworkVariable data</param>
         /// <param name="networkManager">NetworkManager instance</param>
         /// <returns>optional to use NetworkObject deserialized</returns>
-        internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader variableData, NetworkManager networkManager)
+        internal static NetworkObject AddSceneObject(in SceneObject sceneObject, FastBufferReader reader, NetworkManager networkManager)
         {
             //Attempt to create a local NetworkObject
             var networkObject = networkManager.SpawnManager.CreateLocalNetworkObject(sceneObject);
@@ -1329,18 +1405,36 @@ namespace Unity.Netcode
             if (networkObject == null)
             {
                 // Log the error that the NetworkObject failed to construct
-                Debug.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Hash}.");
+                if (networkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogError($"Failed to spawn {nameof(NetworkObject)} for Hash {sceneObject.Hash}.");
+                }
 
-                // If we failed to load this NetworkObject, then skip past the network variable data
-                variableData.ReadValueSafe(out ushort varSize);
-                variableData.Seek(variableData.Position + varSize);
+                try
+                {
+                    // If we failed to load this NetworkObject, then skip past the Network Variable and (if any) synchronization data
+                    reader.ReadValueSafe(out ushort networkBehaviourSynchronizationDataLength);
+                    reader.Seek(reader.Position + networkBehaviourSynchronizationDataLength);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
 
                 // We have nothing left to do here.
                 return null;
             }
 
+            // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
+            // in order to be able to determine which NetworkVariables the client will be allowed to read.
+            networkObject.OwnerClientId = sceneObject.OwnerClientId;
+
+            // Synchronize NetworkBehaviours
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+            networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+
             // Spawn the NetworkObject
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, variableData, false);
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, false);
 
             return networkObject;
         }

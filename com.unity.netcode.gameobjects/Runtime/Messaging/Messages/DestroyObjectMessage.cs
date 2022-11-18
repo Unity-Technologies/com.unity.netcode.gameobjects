@@ -2,16 +2,18 @@ namespace Unity.Netcode
 {
     internal struct DestroyObjectMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
+        public int Version => 0;
+
         public ulong NetworkObjectId;
         public bool DestroyGameObject;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             writer.WriteValueSafe(DestroyGameObject);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)

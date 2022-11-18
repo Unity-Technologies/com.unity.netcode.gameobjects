@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
@@ -11,12 +10,12 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 writer.WriteValue(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -24,6 +23,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
 
         private struct TestMessageTwo : INetworkMessage, INetworkSerializeByMemcpy
@@ -31,12 +32,12 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 writer.WriteValue(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -44,6 +45,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
         private class TestMessageProviderOne : IMessageProvider
         {
@@ -54,12 +57,14 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageOne),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageOne>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageOne>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageOne>
                     },
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageTwo),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageTwo>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageTwo>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageTwo>
                     }
                 };
             }
@@ -70,12 +75,12 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 writer.WriteValue(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -83,6 +88,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
         private class TestMessageProviderTwo : IMessageProvider
         {
@@ -93,7 +100,8 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageThree),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageThree>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageThree>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageThree>
                     }
                 };
             }
@@ -103,12 +111,12 @@ namespace Unity.Netcode.EditorTests
             public int A;
             public int B;
             public int C;
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 writer.WriteValue(this);
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -116,6 +124,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
         private class TestMessageProviderThree : IMessageProvider
         {
@@ -126,7 +136,8 @@ namespace Unity.Netcode.EditorTests
                     new MessagingSystem.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageFour),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageFour>
+                        Handler = MessagingSystem.ReceiveMessage<TestMessageFour>,
+                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageFour>
                     }
                 };
             }
@@ -183,11 +194,11 @@ namespace Unity.Netcode.EditorTests
 
         internal class AAAEarlyLexicographicNetworkMessage : INetworkMessage
         {
-            public void Serialize(FastBufferWriter writer)
+            public void Serialize(FastBufferWriter writer, int targetVersion)
             {
             }
 
-            public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+            public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
             {
                 return true;
             }
@@ -195,6 +206,8 @@ namespace Unity.Netcode.EditorTests
             public void Handle(ref NetworkContext context)
             {
             }
+
+            public int Version => 0;
         }
 
 #pragma warning disable IDE1006
@@ -212,18 +225,19 @@ namespace Unity.Netcode.EditorTests
                 var messageWithHandler = new MessagingSystem.MessageWithHandler();
 
                 messageWithHandler.MessageType = typeof(zzzLateLexicographicNetworkMessage);
+                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<zzzLateLexicographicNetworkMessage>;
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(ConnectionRequestMessage);
+                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<ConnectionRequestMessage>;
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(ConnectionApprovedMessage);
-                listMessages.Add(messageWithHandler);
-
-                messageWithHandler.MessageType = typeof(OrderingMessage);
+                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<ConnectionApprovedMessage>;
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(AAAEarlyLexicographicNetworkMessage);
+                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<AAAEarlyLexicographicNetworkMessage>;
                 listMessages.Add(messageWithHandler);
 
                 return listMessages;
@@ -237,65 +251,16 @@ namespace Unity.Netcode.EditorTests
             var provider = new OrderingMessageProvider();
             using var messagingSystem = new MessagingSystem(sender, null, provider);
 
-            // the 3 priority messages should appear first, in lexicographic order
+            // the 2 priority messages should appear first, in lexicographic order
             Assert.AreEqual(messagingSystem.MessageTypes[0], typeof(ConnectionApprovedMessage));
             Assert.AreEqual(messagingSystem.MessageTypes[1], typeof(ConnectionRequestMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[2], typeof(OrderingMessage));
 
             // the other should follow after
-            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(AAAEarlyLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(zzzLateLexicographicNetworkMessage));
+            Assert.AreEqual(messagingSystem.MessageTypes[2], typeof(AAAEarlyLexicographicNetworkMessage));
+            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
 
             // there should not be any extras
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
-
-            // reorder the zzz one to position 3
-            messagingSystem.ReorderMessage(3, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
-
-            // the 3 priority messages should still appear first, in lexicographic order
-            Assert.AreEqual(messagingSystem.MessageTypes[0], typeof(ConnectionApprovedMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[1], typeof(ConnectionRequestMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[2], typeof(OrderingMessage));
-
-            // the other should follow after, but reordered
-            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(AAAEarlyLexicographicNetworkMessage));
-
-            // there should still not be any extras
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
-
-            // verify we get an exception when asking for an invalid position
-            try
-            {
-                messagingSystem.ReorderMessage(-1, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
-                Assert.Fail();
-            }
-            catch (ArgumentException)
-            {
-            }
-
-            // reorder the zzz one to position 3, again, to check nothing bad happens
-            messagingSystem.ReorderMessage(3, XXHash.Hash32(typeof(zzzLateLexicographicNetworkMessage).FullName));
-
-            // the two non-priority should not have moved
-            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(AAAEarlyLexicographicNetworkMessage));
-
-            // there should still not be any extras
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 5);
-
-            // 4242 is a random hash that should not match anything
-            messagingSystem.ReorderMessage(3, 4242);
-
-            // that should result in an extra entry
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 6);
-
-            // with a null handler
-            Assert.AreEqual(messagingSystem.MessageHandlers[3], null);
-
-            // and it should have bumped the previous messages down
-            Assert.AreEqual(messagingSystem.MessageTypes[4], typeof(zzzLateLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[5], typeof(AAAEarlyLexicographicNetworkMessage));
+            Assert.AreEqual(messagingSystem.MessageHandlerCount, 4);
         }
     }
 }

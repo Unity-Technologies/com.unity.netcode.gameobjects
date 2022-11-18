@@ -85,17 +85,19 @@ namespace Unity.Netcode
 
     internal struct ServerRpcMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public RpcMetadata Metadata;
 
         public FastBufferWriter WriteBuffer;
         public FastBufferReader ReadBuffer;
 
-        public unsafe void Serialize(FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer, int targetVersion)
         {
             RpcMessageHelpers.Serialize(ref writer, ref Metadata, ref WriteBuffer);
         }
 
-        public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public unsafe bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
         }
@@ -118,17 +120,19 @@ namespace Unity.Netcode
 
     internal struct ClientRpcMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public RpcMetadata Metadata;
 
         public FastBufferWriter WriteBuffer;
         public FastBufferReader ReadBuffer;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             RpcMessageHelpers.Serialize(ref writer, ref Metadata, ref WriteBuffer);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             return RpcMessageHelpers.Deserialize(ref reader, ref context, ref Metadata, ref ReadBuffer);
         }

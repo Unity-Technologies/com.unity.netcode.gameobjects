@@ -270,6 +270,9 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = clientId;
 
+            networkObject.MarkVariablesDirty(true);
+            NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
+
             // Server adds entries for all client ownership
             UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
 
@@ -454,8 +457,14 @@ namespace Unity.Netcode
 
                 if (sceneObject.HasParent)
                 {
-                    // Go ahead and set network parenting properties
-                    networkObject.SetNetworkParenting(parentNetworkId, worldPositionStays);
+                    // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
+                    // (we always want to set worldPositionStays)
+                    ulong? parentId = null;
+                    if (sceneObject.IsLatestParentSet)
+                    {
+                        parentId = parentNetworkId;
+                    }
+                    networkObject.SetNetworkParenting(parentId, worldPositionStays);
                 }
 
 
@@ -495,8 +504,7 @@ namespace Unity.Netcode
         }
 
         // Ran on both server and client
-        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject,
-            FastBufferReader variableData, bool destroyWithScene)
+        internal void SpawnNetworkObjectLocally(NetworkObject networkObject, in NetworkObject.SceneObject sceneObject, bool destroyWithScene)
         {
             if (networkObject == null)
             {
@@ -507,8 +515,6 @@ namespace Unity.Netcode
             {
                 throw new SpawnStateException("Object is already spawned");
             }
-
-            networkObject.SetNetworkVariableData(variableData);
 
             SpawnNetworkObjectLocallyCommon(networkObject, sceneObject.NetworkObjectId, sceneObject.IsSceneObject, sceneObject.IsPlayerObject, sceneObject.OwnerClientId, destroyWithScene);
         }

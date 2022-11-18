@@ -2,15 +2,17 @@ namespace Unity.Netcode
 {
     internal struct UnnamedMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public FastBufferWriter SendData;
         private FastBufferReader m_ReceivedData;
 
-        public unsafe void Serialize(FastBufferWriter writer)
+        public unsafe void Serialize(FastBufferWriter writer, int targetVersion)
         {
             writer.WriteBytesSafe(SendData.GetUnsafePtr(), SendData.Length);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             m_ReceivedData = reader;
             return true;

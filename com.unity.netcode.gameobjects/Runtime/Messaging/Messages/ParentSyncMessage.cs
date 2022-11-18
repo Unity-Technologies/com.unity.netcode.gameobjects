@@ -4,6 +4,8 @@ namespace Unity.Netcode
 {
     internal struct ParentSyncMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public ulong NetworkObjectId;
 
         private byte m_BitField;
@@ -39,7 +41,7 @@ namespace Unity.Netcode
         public Quaternion Rotation;
         public Vector3 Scale;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             writer.WriteValueSafe(m_BitField);
@@ -57,7 +59,7 @@ namespace Unity.Netcode
             writer.WriteValueSafe(Scale);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)

@@ -452,6 +452,33 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// This is invoked when a new client joins (server and client sides)
+        /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
+        /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well
+        /// </summary>
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            // We don't need to synchronize NetworkTransforms that are on the same
+            // GameObject as the NetworkObject.
+            if (NetworkObject.gameObject == gameObject)
+            {
+                return;
+            }
+            var synchronizationState = new NetworkTransformState();
+            if (serializer.IsWriter)
+            {
+                synchronizationState.IsTeleportingNextFrame = true;
+                ApplyTransformToNetworkStateWithInfo(ref synchronizationState, m_CachedNetworkManager.LocalTime.Time, transform);
+                synchronizationState.NetworkSerialize(serializer);
+            }
+            else
+            {
+                synchronizationState.NetworkSerialize(serializer);
+                AddInterpolatedState(synchronizationState);
+            }
+        }
+
+        /// <summary>
         /// This will try to send/commit the current transform delta states (if any)
         /// </summary>
         /// <remarks>
