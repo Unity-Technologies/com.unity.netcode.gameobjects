@@ -86,6 +86,12 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
+        public string DisconnectReason { get; internal set; }
+
         private class NetworkManagerHooks : INetworkHooks
         {
             private NetworkManager m_NetworkManager;
@@ -443,6 +449,12 @@ namespace Unity.Netcode
             /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
             /// </summary>
             public bool Pending;
+
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
+            public string Reason;
         }
 
         /// <summary>
@@ -889,6 +901,7 @@ namespace Unity.Netcode
                 return;
             }
 
+            DisconnectReason = string.Empty;
             IsApproved = false;
 
             ComponentFactory.SetDefaults();
@@ -1427,7 +1440,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (IsClient && IsConnectedClient)
+            if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
                 NetworkConfig.NetworkTransport.DisconnectLocalClient();
@@ -1585,6 +1598,7 @@ namespace Unity.Netcode
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
             MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem.CleanupDisconnectedClients();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
@@ -1666,7 +1680,23 @@ namespace Unity.Netcode
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
+
+            message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
+            for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
+            {
+                if (MessagingSystem.MessageTypes[index] != null)
+                {
+                    var type = MessagingSystem.MessageTypes[index];
+                    message.MessageVersions[index] = new MessageVersionData
+                    {
+                        Hash = XXHash.Hash32(type.FullName),
+                        Version = MessagingSystem.GetLocalVersion(type)
+                    };
+                }
+            }
+
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            message.MessageVersions.Dispose();
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1831,7 +1861,14 @@ namespace Unity.Netcode
                     // or, if we are the server, so we got everything from that client.
                     MessagingSystem.ProcessIncomingMessageQueue();
 
-                    OnClientDisconnectCallback?.Invoke(clientId);
+                    try
+                    {
+                        OnClientDisconnectCallback?.Invoke(clientId);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
 
                     if (IsServer)
                     {
@@ -1998,10 +2035,29 @@ namespace Unity.Netcode
         /// <param name="clientId">The ClientId to disconnect</param>
         public void DisconnectClient(ulong clientId)
         {
+            DisconnectClient(clientId, null);
+        }
+
+        /// <summary>
+        /// Disconnects the remote client.
+        /// </summary>
+        /// <param name="clientId">The ClientId to disconnect</param>
+        /// <param name="reason">Disconnection reason. If set, client will receive a DisconnectReasonMessage and have the
+        /// reason available in the NetworkManager.DisconnectReason property</param>
+        public void DisconnectClient(ulong clientId, string reason)
+        {
             if (!IsServer)
             {
                 throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
             }
+
+            if (!string.IsNullOrEmpty(reason))
+            {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.Reason = reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
+            }
+            MessagingSystem.ProcessSendQueues();
 
             OnClientDisconnectFromServer(clientId);
             DisconnectRemoteClient(clientId);
@@ -2147,14 +2203,11 @@ namespace Unity.Netcode
                     // Generate a SceneObject for the player object to spawn
                     var sceneObject = new NetworkObject.SceneObject
                     {
-                        Header = new NetworkObject.SceneObject.HeaderData
-                        {
-                            IsPlayerObject = true,
-                            OwnerClientId = ownerClientId,
-                            IsSceneObject = false,
-                            HasTransform = true,
-                            Hash = playerPrefabHash,
-                        },
+                        OwnerClientId = ownerClientId,
+                        IsPlayerObject = true,
+                        IsSceneObject = false,
+                        HasTransform = true,
+                        Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Transform = new NetworkObject.SceneObject.TransformData
                         {
@@ -2194,21 +2247,22 @@ namespace Unity.Netcode
                         }
                     }
 
-                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
-
+                    message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
                     for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
                     {
                         if (MessagingSystem.MessageTypes[index] != null)
                         {
-                            var orderingMessage = new OrderingMessage
+                            var type = MessagingSystem.MessageTypes[index];
+                            message.MessageVersions[index] = new MessageVersionData
                             {
-                                Order = index,
-                                Hash = XXHash.Hash32(MessagingSystem.MessageTypes[index].FullName)
+                                Hash = XXHash.Hash32(type.FullName),
+                                Version = MessagingSystem.GetLocalVersion(type)
                             };
-
-                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                         }
                     }
+
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    message.MessageVersions.Dispose();
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
@@ -2236,6 +2290,15 @@ namespace Unity.Netcode
             }
             else
             {
+                if (!string.IsNullOrEmpty(response.Reason))
+                {
+                    var disconnectReason = new DisconnectReasonMessage();
+                    disconnectReason.Reason = response.Reason;
+                    SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+
+                    MessagingSystem.ProcessSendQueues();
+                }
+
                 PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
             }
@@ -2262,11 +2325,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Header.Hash = playerPrefabHash;
-                message.ObjectInfo.Header.IsSceneObject = false;
-                message.ObjectInfo.Header.HasParent = false;
-                message.ObjectInfo.Header.IsPlayerObject = true;
-                message.ObjectInfo.Header.OwnerClientId = clientId;
+                message.ObjectInfo.Hash = playerPrefabHash;
+                message.ObjectInfo.IsSceneObject = false;
+                message.ObjectInfo.HasParent = false;
+                message.ObjectInfo.IsPlayerObject = true;
+                message.ObjectInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }

@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -12,48 +11,23 @@ namespace TestProject.RuntimeTests
 {
     public class ClientSynchronizationValidationTest : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 1;
+        protected override int NumberOfClients => 0;
         private const string k_FirstSceneToLoad = "UnitTestBaseScene";
-        private const string k_SecondSceneToSkip = "InSceneNetworkObject";
-        private const string k_ThirdSceneToLoad = "EmptyScene";
-        private bool m_CanStartServerAndClients;
+        private const string k_SecondSceneToLoad = "InSceneNetworkObject";
+        private const string k_ThirdSceneToSkip = "EmptyScene";
+
         private List<ClientSceneVerificationHandler> m_ClientSceneVerifiers = new List<ClientSceneVerificationHandler>();
 
-        protected override bool CanStartServerAndClients()
+        protected override void OnNewClientStarted(NetworkManager networkManager)
         {
-            return m_CanStartServerAndClients;
-        }
-
-        protected override IEnumerator OnStartedServerAndClients()
-        {
-            // Create ClientSceneVerificationHandlers for each client
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                m_ClientSceneVerifiers.Add(new ClientSceneVerificationHandler(client));
-            }
-            return base.OnStartedServerAndClients();
+            m_ClientSceneVerifiers.Add(new ClientSceneVerificationHandler(networkManager));
+            base.OnNewClientStarted(networkManager);
         }
 
         [UnityTest]
         public IEnumerator ClientVerifySceneBeforeLoading()
         {
-            // Because despawning a client will cause it to shutdown and clean everything in the
-            // scene hierarchy, we have to prevent one of the clients from spawning initially before
-            // we test synchronizing late joining clients.
-            // So, we prevent the automatic starting of the server and clients, remove the client we
-            // will be targeting to join late from the m_ClientNetworkManagers array, start the server
-            // and the remaining client, despawn the in-scene NetworkObject, and then start and synchronize
-            // the clientToTest.
-            var clientToTest = m_ClientNetworkManagers[0];
-            var clients = m_ClientNetworkManagers.ToList();
-            clients.Remove(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-            m_CanStartServerAndClients = true;
-            yield return StartServerAndClients();
-            clients.Add(clientToTest);
-            m_ClientNetworkManagers = clients.ToArray();
-
-            var scenesToLoad = new List<string>() { k_FirstSceneToLoad, k_SecondSceneToSkip, k_ThirdSceneToLoad };
+            var scenesToLoad = new List<string>() { k_FirstSceneToLoad, k_SecondSceneToLoad, k_ThirdSceneToSkip };
             m_ServerNetworkManager.SceneManager.OnLoadComplete += OnLoadComplete;
             foreach (var sceneToLoad in scenesToLoad)
             {
@@ -65,15 +39,10 @@ namespace TestProject.RuntimeTests
                 AssertOnTimeout($"Timed out waiting for scene {m_SceneBeingLoaded} to finish loading!");
             }
 
-            // Now late join a client to make sure the client synchronizes to 2 of the 3 scenes loaded
-            NetcodeIntegrationTestHelpers.StartOneClient(clientToTest);
-            yield return WaitForConditionOrTimeOut(() => (clientToTest.IsConnectedClient && clientToTest.IsListening));
-            AssertOnTimeout($"Timed out waiting for {clientToTest.name} to reconnect!");
+            yield return CreateAndStartNewClient();
 
-            yield return s_DefaultWaitForTick;
-
-            // Update the newly joined client information
-            ClientNetworkManagerPostStartInit();
+            yield return WaitForConditionOrTimeOut(m_ClientSceneVerifiers[0].HasLoadedExpectedScenes);
+            AssertOnTimeout($"Timed out waiting for the client to have loaded the expected scenes");
 
             // Check to make sure only the two scenes were loaded and one
             // completely skipped.
@@ -110,15 +79,20 @@ namespace TestProject.RuntimeTests
                 m_NetworkManager.SceneManager.OnLoad += ClientSceneManager_OnLoad;
                 m_NetworkManager.SceneManager.OnLoadComplete += ClientSceneManager_OnLoadComplete;
                 m_ValidSceneEventCount.Add(k_FirstSceneToLoad, 0);
-                m_ValidSceneEventCount.Add(k_SecondSceneToSkip, 0);
-                m_ValidSceneEventCount.Add(k_ThirdSceneToLoad, 0);
+                m_ValidSceneEventCount.Add(k_SecondSceneToLoad, 0);
+                m_ValidSceneEventCount.Add(k_ThirdSceneToSkip, 0);
+            }
+
+            public bool HasLoadedExpectedScenes()
+            {
+                return m_ValidSceneEventCount[k_FirstSceneToLoad] == 2 && m_ValidSceneEventCount[k_SecondSceneToLoad] == 2;
             }
 
             public void ValidateScenesLoaded()
             {
-                Assert.IsFalse(m_ValidSceneEventCount[k_SecondSceneToSkip] > 0, $"Client still loaded the invalidated scene {k_SecondSceneToSkip}!");
-                Assert.IsTrue(m_ValidSceneEventCount[k_FirstSceneToLoad] == 1, $"Client did not load and process the validated scene {k_FirstSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_FirstSceneToLoad]})");
-                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToLoad] == 1, $"Client did not load and process the validated scene {k_ThirdSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_ThirdSceneToLoad]})");
+                Assert.IsTrue(m_ValidSceneEventCount[k_ThirdSceneToSkip] == 0, $"Client still loaded the invalidated scene {k_ThirdSceneToSkip}!");
+                Assert.IsTrue(m_ValidSceneEventCount[k_FirstSceneToLoad] == 2, $"Client did not load and process the validated scene {k_FirstSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_FirstSceneToLoad]})");
+                Assert.IsTrue(m_ValidSceneEventCount[k_SecondSceneToLoad] == 2, $"Client did not load and process the validated scene {k_SecondSceneToLoad}! Expected (1) but was ({m_ValidSceneEventCount[k_SecondSceneToLoad]})");
             }
 
             private void ClientSceneManager_OnLoadComplete(ulong clientId, string sceneName, LoadSceneMode loadSceneMode)
@@ -139,7 +113,7 @@ namespace TestProject.RuntimeTests
 
             private bool VerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
             {
-                if (sceneName == k_SecondSceneToSkip)
+                if (sceneName == k_ThirdSceneToSkip)
                 {
                     return false;
                 }

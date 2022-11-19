@@ -7,6 +7,12 @@ public class ServerHostClientText : NetworkBehaviour
     [SerializeField]
     private Text m_DisplayText;
     private Color m_Color;
+    private Vector3 m_LocalPosition;
+
+    private void Awake()
+    {
+        m_LocalPosition = transform.localPosition;
+    }
 
     private void Start()
     {
@@ -30,6 +36,7 @@ public class ServerHostClientText : NetworkBehaviour
                 m_DisplayText.text = "Client";
             }
         }
+        transform.localPosition = m_LocalPosition;
     }
 
     private void OnGUI()

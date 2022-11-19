@@ -69,7 +69,7 @@ projects:
 # Package dependencies
 dependencies: 
   - name: com.unity.transport
-    version: 2.0.0-exp.7
+    version: 2.0.0-pre.2
     test_editors:
       - 2022.2
       - trunk

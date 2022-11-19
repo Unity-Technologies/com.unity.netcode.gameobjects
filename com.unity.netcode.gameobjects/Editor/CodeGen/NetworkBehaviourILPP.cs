@@ -139,6 +139,19 @@ namespace Unity.Netcode.Editor.CodeGen
             return false;
         }
 
+        private bool IsSpecialCaseType(TypeReference type)
+        {
+            foreach (var supportedType in SpecialCaseTypes)
+            {
+                if (type.FullName == supportedType.FullName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void CreateNetworkVariableTypeInitializers(AssemblyDefinition assembly)
         {
             foreach (var typeDefinition in assembly.MainModule.Types)
@@ -153,6 +166,11 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     foreach (var type in m_WrappedNetworkVariableTypes)
                     {
+                        if (IsSpecialCaseType(type))
+                        {
+                            continue;
+                        }
+
                         // If a serializable type isn't found, FallbackSerializer will be used automatically, which will
                         // call into UserNetworkVariableSerialization, giving the user a chance to define their own serializaiton
                         // for types that aren't in our official supported types list.
@@ -257,6 +275,20 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
 
+        private MethodReference m_BytePacker_WriteValueBitPacked_Short_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_UShort_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_Int_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_UInt_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_Long_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_ULong_MethodRef;
+
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef;
+
         private TypeReference m_FastBufferWriter_TypeRef;
         private readonly Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new Dictionary<string, MethodReference>();
         private readonly List<MethodReference> m_FastBufferWriter_ExtensionMethodRefs = new List<MethodReference>();
@@ -276,12 +308,13 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(decimal),
             typeof(double),
             typeof(float),
-            typeof(int),
+            // the following types have special handling
+            /*typeof(int),
             typeof(uint),
             typeof(long),
             typeof(ulong),
             typeof(short),
-            typeof(ushort),
+            typeof(ushort),*/
             typeof(Vector2),
             typeof(Vector3),
             typeof(Vector2Int),
@@ -292,6 +325,16 @@ namespace Unity.Netcode.Editor.CodeGen
             typeof(Color32),
             typeof(Ray),
             typeof(Ray2D)
+        };
+        internal static readonly Type[] SpecialCaseTypes = new[]
+        {
+            // the following types have special handling
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(short),
+            typeof(ushort),
         };
 
         private const string k_Debug_LogError = nameof(Debug.LogError);
@@ -343,6 +386,8 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition fastBufferWriterTypeDef = null;
             TypeDefinition fastBufferReaderTypeDef = null;
             TypeDefinition networkVariableSerializationTypesTypeDef = null;
+            TypeDefinition bytePackerTypeDef = null;
+            TypeDefinition byteUnpackerTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
                 if (networkManagerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkManager))
@@ -396,6 +441,18 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (networkVariableSerializationTypesTypeDef == null && netcodeTypeDef.Name == nameof(NetworkVariableSerializationTypes))
                 {
                     networkVariableSerializationTypesTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (bytePackerTypeDef == null && netcodeTypeDef.Name == nameof(BytePacker))
+                {
+                    bytePackerTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (byteUnpackerTypeDef == null && netcodeTypeDef.Name == nameof(ByteUnpacker))
+                {
+                    byteUnpackerTypeDef = netcodeTypeDef;
                     continue;
                 }
             }
@@ -648,6 +705,82 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_ManagedClassEquals):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef = method;
+                        break;
+                }
+            }
+
+            foreach (var method in bytePackerTypeDef.Methods)
+            {
+                if (!method.IsStatic)
+                {
+                    continue;
+                }
+
+                switch (method.Name)
+                {
+                    case nameof(BytePacker.WriteValueBitPacked):
+                        if (method.Parameters[1].ParameterType.FullName == typeof(short).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Short_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ushort).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_UShort_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(int).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Int_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(uint).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_UInt_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(long).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Long_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ulong).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_ULong_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        break;
+                }
+            }
+
+            foreach (var method in byteUnpackerTypeDef.Methods)
+            {
+                if (!method.IsStatic)
+                {
+                    continue;
+                }
+
+                switch (method.Name)
+                {
+                    case nameof(ByteUnpacker.ReadValueBitPacked):
+                        if (method.Parameters[1].ParameterType.FullName == typeof(short).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ushort).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(int).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(uint).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(long).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ulong).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef = m_MainModule.ImportReference(method);
+                        }
                         break;
                 }
             }
@@ -1008,6 +1141,36 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool GetWriteMethodForParameter(TypeReference paramType, out MethodReference methodRef)
         {
+            if (paramType.FullName == typeof(short).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Short_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ushort).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_UShort_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(int).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Int_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(uint).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_UInt_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(long).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Long_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ulong).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_ULong_MethodRef;
+                return true;
+            }
             var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
             var foundMethodRef = m_FastBufferWriter_WriteValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);
 
@@ -1154,6 +1317,36 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool GetReadMethodForParameter(TypeReference paramType, out MethodReference methodRef)
         {
+            if (paramType.FullName == typeof(short).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ushort).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(int).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(uint).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(long).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ulong).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef;
+                return true;
+            }
             var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
 
             var foundMethodRef = m_FastBufferReader_ReadValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);

@@ -113,6 +113,12 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Runtime/ObjectParenting/ParentingInSceneObjects.unity
     guid: 49fd14bff1eceda4f9299721a9029750
+  - enabled: 1
+    path: Assets/Tests/Manual/NestedNetworkTransforms/NestedNetworkTransforms.unity
+    guid: 92b8cccf28cbaba40854a025b66e2ac3
+  - enabled: 1
+    path: Assets/Tests/Runtime/ObjectParenting/NestedNetworkTransformTestScene.unity
+    guid: 14235ed18eff0964cbb3ff7ae2ed1933
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}

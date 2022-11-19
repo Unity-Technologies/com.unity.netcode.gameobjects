@@ -8,16 +8,12 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkShowHideTestComponent : NetworkBehaviour
-    {
-
-    }
-
     public class ShowHideObject : NetworkBehaviour
     {
         public static List<ShowHideObject> ClientTargetedNetworkObjects = new List<ShowHideObject>();
         public static ulong ClientIdToTarget;
         public static bool Silent;
+        public static int ValueAfterOwnershipChange = 0;
 
         public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
         {
@@ -62,13 +58,35 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkVariable<int> MyNetworkVariable;
         public NetworkList<int> MyListSetOnSpawn;
+        public NetworkVariable<int> MyOwnerReadNetworkVariable;
+        static public NetworkManager NetworkManagerOfInterest;
+
+        internal static int GainOwnershipCount = 0;
 
         private void Awake()
         {
+            // Debug.Log($"Awake {NetworkManager.LocalClientId}");
             MyNetworkVariable = new NetworkVariable<int>();
             MyNetworkVariable.OnValueChanged += Changed;
 
             MyListSetOnSpawn = new NetworkList<int>();
+
+            MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
+            MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
+        }
+
+        public override void OnGainedOwnership()
+        {
+            GainOwnershipCount++;
+            base.OnGainedOwnership();
+        }
+
+        public void OwnerReadChanged(int before, int after)
+        {
+            if (NetworkManager == NetworkManagerOfInterest)
+            {
+                ValueAfterOwnershipChange = after;
+            }
         }
 
         public void Changed(int before, int after)
@@ -93,11 +111,6 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_Object1OnClient0;
         private NetworkObject m_Object2OnClient0;
         private NetworkObject m_Object3OnClient0;
-
-        protected override void OnCreatePlayerPrefab()
-        {
-            var networkTransform = m_PlayerPrefab.AddComponent<NetworkShowHideTestComponent>();
-        }
 
         protected override void OnServerAndClientsCreated()
         {
@@ -338,5 +351,48 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
         }
+
+        [UnityTest]
+        public IEnumerator NetworkHideChangeOwnershipNotHidden()
+        {
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+
+            // wait for host to have spawned and gained ownership
+            while (ShowHideObject.GainOwnershipCount == 0)
+            {
+                yield return new WaitForSeconds(0.0f);
+            }
+
+            // change the value
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyOwnerReadNetworkVariable.Value++;
+
+            // wait for three ticks
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+
+            // check we'll actually be changing owners
+            Assert.False(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+
+            // only check for value change on one specific client
+            ShowHideObject.NetworkManagerOfInterest = m_ClientNetworkManagers[0];
+
+            // change ownership
+            m_NetSpawnedObject1.ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+
+            // wait three ticks
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+            // verify ownership changed
+            Assert.True(ShowHideObject.ClientTargetedNetworkObjects[0].OwnerClientId == m_ClientNetworkManagers[0].LocalClientId);
+
+            // verify the expected client got the OnValueChanged. (Only client 1 sets this value)
+            Assert.True(ShowHideObject.ValueAfterOwnershipChange == 1);
+        }
+
     }
 }
