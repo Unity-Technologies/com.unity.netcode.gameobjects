@@ -257,12 +257,9 @@ namespace TestProject.RuntimeTests
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
 
-            // Since the com.unity.netcode.components does not allow test project to access its internals
-            // during runtime, this is only used when running test runner from within the editor
-#if UNITY_EDITOR
             var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
             Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
-#endif
+
             if (authoritativeMode == AuthoritativeMode.ServerAuth)
             {
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
@@ -473,6 +470,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
+            m_EnableVerboseDebug = true;
             VerboseDebug($" ++++++++++++++++++ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
 
             StateSyncTest.IsVerboseDebug = m_EnableVerboseDebug;
@@ -511,7 +509,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(firstClientAnimatorTestHelper.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"Timed out waiting for client-side cube to reach 180.0f!");
 
-            m_ServerNetworkManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            AnimatorTestHelper.ServerSideInstance.GetNetworkAnimator().SynchronizationStateInfo = new List<AnimatorStateInfo>();
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
@@ -539,25 +537,6 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Update Server Side Animator Layer's AnimationStateInfo when late joining
-        /// client connects to get the values being sent to the late joining client
-        /// during NetworkAnimator synchronization.
-        /// </summary>
-        private void Server_OnClientConnectedCallback(ulong obj)
-        {
-            m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
-            var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
-
-            // Only update the 3rd layer since this is where we want to assure all values are synchronized to the
-            // same values upon the client connecting.
-            var index = 2;
-            Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {index}!");
-            var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(index);
-            StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][index] = animationStateInfo;
-            VerboseDebug($"[{index}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
-        }
-
-        /// <summary>
         /// Used by: LateJoinSynchronizationTest
         /// Wait condition method that compares the states of the late joined client
         /// and the server.
@@ -581,7 +560,7 @@ namespace TestProject.RuntimeTests
 
             // We only check the last layer for this test as the other layers will have their normalized time slightly out of sync
             var index = 2;
-            var serverAnimState = serverStates[index];
+            var serverAnimState = AnimatorTestHelper.ServerSideInstance.GetNetworkAnimator().SynchronizationStateInfo[index];// serverStates[index];
             if (clientStates[index].shortNameHash != serverAnimState.shortNameHash)
             {
                 VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[index].shortNameHash}) ");
