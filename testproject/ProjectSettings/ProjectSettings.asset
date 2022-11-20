@@ -580,7 +580,8 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    Standalone: NGO_COMPONENTS_ASSEMBLY_RUNTIME_VISIBILITY
+    : NGO_COMPONENTS_ASSEMBLY_RUNTIME_VISIBILITY
+    1: NGO_COMPONENTS_ASSEMBLY_RUNTIME_VISIBILITY
   additionalCompilerArguments:
     1:
     - -warnaserror
