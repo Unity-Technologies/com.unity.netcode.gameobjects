@@ -6,5 +6,8 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
 [assembly: InternalsVisibleTo("TestProject.EditorTests")]
 #endif
+
+#if NGO_COMPONENTS_ASSEMBLY_RUNTIME_VISIBILITY
 [assembly: InternalsVisibleTo("TestProject.RuntimeTests")]
+#endif
 [assembly: InternalsVisibleTo("Unity.Netcode.RuntimeTests")]
