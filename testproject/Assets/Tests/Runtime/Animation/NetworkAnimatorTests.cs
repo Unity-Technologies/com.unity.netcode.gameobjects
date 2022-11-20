@@ -470,7 +470,6 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator LateJoinSynchronizationTest([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
-            m_EnableVerboseDebug = true;
             VerboseDebug($" ++++++++++++++++++ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Starting ++++++++++++++++++ ");
 
             StateSyncTest.IsVerboseDebug = m_EnableVerboseDebug;
