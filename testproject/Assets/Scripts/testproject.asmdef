@@ -11,6 +11,13 @@
         "Unity.Services.Relay",
         "Unity.Addressables.Editor"
     ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.services.relay",
@@ -26,6 +33,12 @@
             "name": "com.unity.addressables",
             "expression": "",
             "define": "TESTPROJECT_USE_ADDRESSABLES"
+        },
+        {
+            "name": "Unity",
+            "expression": "2023.1.0a21",
+            "define": "USE_FINDOBJECTSBYTYPE"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

@@ -10,7 +10,11 @@ public class NetworkManagerMonitor : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
+#if USE_FINDOBJECTSBYTYPE
+        var networkManagerInstances = FindObjectsByType<NetworkManager>();
+#else
         var networkManagerInstances = FindObjectsOfType<NetworkManager>();
+#endif
         foreach (var instance in networkManagerInstances)
         {
             if (instance.IsListening)
