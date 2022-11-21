@@ -303,9 +303,9 @@ namespace Unity.Netcode.Transports.UTP
             public ushort Port;
 
             /// <summary>
-            /// IP address the server will listen on. If not provided, will use 'Address'.
+            /// IP address the server will listen on. If not provided, will use 0.0.0.0.
             /// </summary>
-            [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
+            [Tooltip("IP address the server will listen on. If not provided, will use 0.0.0.0.")]
             [SerializeField]
             public string ServerListenAddress;
 
@@ -330,7 +330,29 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint
+            {
+                get
+                {
+                    if (string.IsNullOrEmpty(ServerListenAddress))
+                    {
+                        var ep = NetworkEndpoint.AnyIpv4;
+
+                        // If an address was entered and it's IPv6, switch to using :: as the
+                        // default listen address. (Otherwise we always assume IPv4.)
+                        if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
+                        {
+                            ep = NetworkEndpoint.AnyIpv6;
+                        }
+
+                        return ep.WithPort(Port);
+                    }
+                    else
+                    {
+                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -529,14 +551,14 @@ namespace Unity.Netcode.Transports.UTP
             int result = m_Driver.Bind(endPoint);
             if (result != 0)
             {
-                Debug.LogError("Server failed to bind");
+                Debug.LogError("Server failed to bind. This is usually caused by another process being bound to the same port.");
                 return false;
             }
 
             result = m_Driver.Listen();
             if (result != 0)
             {
-                Debug.LogError("Server failed to listen");
+                Debug.LogError("Server failed to listen.");
                 return false;
             }
 
@@ -1473,7 +1495,7 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     if (NetworkManager.IsServer)
                     {
-                        if (String.IsNullOrEmpty(m_ServerCertificate) || String.IsNullOrEmpty(m_ServerPrivateKey))
+                        if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
                         {
                             throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
                         }
@@ -1482,11 +1504,11 @@ namespace Unity.Netcode.Transports.UTP
                     }
                     else
                     {
-                        if (String.IsNullOrEmpty(m_ServerCommonName))
+                        if (string.IsNullOrEmpty(m_ServerCommonName))
                         {
                             throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                         }
-                        else if (String.IsNullOrEmpty(m_ClientCaCertificate))
+                        else if (string.IsNullOrEmpty(m_ClientCaCertificate))
                         {
                             m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
                         }
