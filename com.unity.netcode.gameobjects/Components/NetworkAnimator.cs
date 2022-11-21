@@ -453,33 +453,6 @@ namespace Unity.Netcode.Components
             }
         }
 
-        /// <summary>
-        ///  Used to handle the initial NetworkAnimator synchronization
-        /// </summary>
-        /// <remarks>
-        /// Note: For reading already serialized data only
-        /// </remarks>
-        private class AnimationSynchronizationData
-        {
-            public ParametersUpdateMessage Parameters = new ParametersUpdateMessage();
-            public AnimationMessage AnimationStates = new AnimationMessage();
-
-            private NetworkAnimator m_NetworkAnimator;
-
-            public void ReadSynchronizationData<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                serializer.SerializeValue(ref Parameters);
-                m_NetworkAnimator.UpdateParameters(ref Parameters);
-                serializer.SerializeValue(ref AnimationStates);
-                m_NetworkAnimator.HandleAnimStateUpdate(ref AnimationStates);
-            }
-
-            public AnimationSynchronizationData(NetworkAnimator networkAnimator)
-            {
-                m_NetworkAnimator = networkAnimator;
-            }
-        }
-
         [SerializeField] private Animator m_Animator;
 
         public Animator Animator
@@ -517,11 +490,6 @@ namespace Unity.Netcode.Components
         private ClientRpcParams m_ClientRpcParams;
         private AnimationMessage m_AnimationMessage;
         private NetworkAnimatorStateChangeHandler m_NetworkAnimatorStateChangeHandler;
-
-        /// <summary>
-        /// Used for the initial client-side synchronization of NetworkAnimator
-        /// </summary>
-        private AnimationSynchronizationData m_AnimationSynchronizationData;
 
         /// <summary>
         /// Used for integration test purposes
@@ -660,8 +628,6 @@ namespace Unity.Netcode.Components
 
                 m_CachedAnimatorParameters[i] = cacheParam;
             }
-
-            m_AnimationSynchronizationData = new AnimationSynchronizationData(this);
         }
 
         /// <summary>
@@ -800,11 +766,12 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (m_AnimationSynchronizationData == null)
-                {
-                    m_AnimationSynchronizationData = new AnimationSynchronizationData(this);
-                }
-                m_AnimationSynchronizationData.ReadSynchronizationData(ref serializer);
+                var parameters = new ParametersUpdateMessage();
+                var animationStates = new AnimationMessage();
+                serializer.SerializeValue(ref parameters);
+                UpdateParameters(ref parameters);
+                serializer.SerializeValue(ref animationStates);
+                HandleAnimStateUpdate(ref animationStates);
             }
         }
 
