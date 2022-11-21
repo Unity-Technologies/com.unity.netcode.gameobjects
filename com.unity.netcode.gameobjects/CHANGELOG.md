@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Changed
+- The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 
 ### Fixed
 
@@ -26,7 +27,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - Changed 3rd-party `XXHash` (32 & 64) implementation with an in-house reimplementation (#2310)
-- The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 - When `NetworkConfig.EnsureNetworkVariableLengthSafety` is disabled `NetworkVariable` fields do not write the additional `ushort` size value (_which helps to reduce the total synchronization message size_), but when enabled it still writes the additional `ushort` value. (#2298)
 - Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
 
