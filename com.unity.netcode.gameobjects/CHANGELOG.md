@@ -11,6 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Changed
+- The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 
 ### Fixed
 
