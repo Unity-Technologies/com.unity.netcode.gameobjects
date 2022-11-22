@@ -162,7 +162,7 @@ namespace Unity.Netcode.Editor
                     EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
                     if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
                     {
-                        var networkPrefabs = m_NetworkManager.NetworkConfig._MigrateNetworkPrefabs();
+                        var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
                         string path = $"Assets/NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset";
                         Debug.Log("Saving migrated Network Prefabs List to " + path);
                         AssetDatabase.CreateAsset(networkPrefabs, path);

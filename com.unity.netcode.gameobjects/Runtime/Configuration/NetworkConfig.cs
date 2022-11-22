@@ -267,7 +267,7 @@ namespace Unity.Netcode
         {
             if (HasOldPrefabList())
             {
-                _MigrateNetworkPrefabs();
+                MigrateOldNetworkPrefabsToNetworkPrefabsList();
             }
 
             Prefabs.Initialize();
@@ -291,7 +291,7 @@ namespace Unity.Netcode
         /// Returns true if the old List&lt;NetworkPrefab&gt; serialized data is present.
         /// </summary>
         /// <remarks>
-        /// Internal use only to help migrate projects. <seealso cref="_MigrateNetworkPrefabs"/></remarks>
+        /// Internal use only to help migrate projects. <seealso cref="MigrateOldNetworkPrefabsToNetworkPrefabsList"/></remarks>
         internal bool HasOldPrefabList()
         {
             return OldPrefabList?.Count > 0;
@@ -304,7 +304,7 @@ namespace Unity.Netcode
         /// OnAfterDeserialize cannot instantiate new objects (e.g. NetworkPrefabsList SO) since it executes in a thread, so we have to do it later.
         /// Since NetworkConfig isn't a Unity.Object it doesn't get an Awake callback, so we have to do this in NetworkManager and expose this API.
         /// </remarks>
-        internal NetworkPrefabsList _MigrateNetworkPrefabs()
+        internal NetworkPrefabsList MigrateOldNetworkPrefabsToNetworkPrefabsList()
         {
             if (OldPrefabList == null || OldPrefabList.Count == 0)
             {
