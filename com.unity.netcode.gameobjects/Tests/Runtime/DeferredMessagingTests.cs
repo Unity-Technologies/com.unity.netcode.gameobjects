@@ -274,7 +274,7 @@ namespace Unity.Netcode.RuntimeTests
 #if USE_FINDOBJECTSBYTYPE
             var componentsToFind = Object.FindObjectsByType<T>(FindObjectsSortMode.None);
 #else
-             var componentsToFind = Object.FindObjectsOfType<T>();
+            var componentsToFind = Object.FindObjectsOfType<T>();
 #endif
 
             foreach (var component in componentsToFind)
