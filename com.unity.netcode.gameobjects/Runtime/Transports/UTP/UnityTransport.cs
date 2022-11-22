@@ -1471,7 +1471,7 @@ namespace Unity.Netcode.Transports.UTP
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (NetworkManager.IsServer)
+            if (NetworkManager.IsServer && m_ProtocolType != ProtocolType.RelayUnityTransport)
             {
                 throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
             }
