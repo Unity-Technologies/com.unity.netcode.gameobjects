@@ -271,10 +271,12 @@ namespace Unity.Netcode.RuntimeTests
 
         private T GetComponentForClient<T>(ulong clientId) where T : NetworkBehaviour
         {
-#if USE_FINDOBJECTSBYTYPE
-            var componentsToFind = Object.FindObjectsByType<T>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var componentsToFind = Object.FindObjectsOfType<T>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
             foreach (var component in componentsToFind)
@@ -757,10 +759,12 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var found1 = false;
                 var found2 = false;
-#if USE_FINDOBJECTSBYTYPE
-                var deferredMessageTestRpcComponents = Object.FindObjectsByType<DeferredMessageTestRpcComponent>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
                 var deferredMessageTestRpcComponents = Object.FindObjectsOfType<DeferredMessageTestRpcComponent>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
                 foreach (var component in deferredMessageTestRpcComponents)

@@ -45,11 +45,14 @@ namespace Unity.Netcode.RuntimeTests
 
         private EmptyComponent GetObjectForClient(ulong clientId)
         {
-#if USE_FINDOBJECTSBYTYPE
-            var emptyComponents = Object.FindObjectsByType<EmptyComponent>(FindObjectsSortMode.None);
-#else
-            var emptyComponents = Object.FindObjectsOfType<EmptyComponent>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
 #endif
+            var emptyComponents = Object.FindObjectsOfType<EmptyComponent>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
+
             foreach (var component in emptyComponents)
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)

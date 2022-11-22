@@ -53,11 +53,14 @@ namespace TestProject.RuntimeTests
             {
                 return false;
             }
-#if USE_FINDOBJECTSBYTYPE
-            m_NetworkObjectTestComponent = Object.FindFirstObjectByType<NetworkObjectTestComponent>();
-#else
-            m_NetworkObjectTestComponent = Object.FindObjectOfType<NetworkObjectTestComponent>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
 #endif
+            m_NetworkObjectTestComponent = Object.FindObjectOfType<NetworkObjectTestComponent>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
+
             if (m_NetworkObjectTestComponent == null)
             {
                 return false;

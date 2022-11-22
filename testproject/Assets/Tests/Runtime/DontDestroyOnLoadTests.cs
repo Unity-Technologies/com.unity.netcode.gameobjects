@@ -79,10 +79,12 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager = null;
             m_ClientNetworkManagers = null;
 
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
             foreach (var netObject in networkObjects)

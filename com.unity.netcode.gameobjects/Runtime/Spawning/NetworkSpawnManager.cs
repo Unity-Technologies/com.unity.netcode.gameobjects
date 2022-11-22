@@ -658,10 +658,12 @@ namespace Unity.Netcode
         // Makes scene objects ready to be reused
         internal void ServerResetShudownStateForSceneObjects()
         {
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
             foreach (var sobj in networkObjects)
             {
@@ -693,12 +695,13 @@ namespace Unity.Netcode
 
         internal void DespawnAndDestroyNetworkObjects()
         {
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
-            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
 #endif
-
+            var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
             for (int i = 0; i < networkObjects.Length; i++)
             {
                 if (networkObjects[i].NetworkManager == NetworkManager)
@@ -727,10 +730,12 @@ namespace Unity.Netcode
 
         internal void DestroySceneObjects()
         {
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
             for (int i = 0; i < networkObjects.Length; i++)
@@ -758,10 +763,12 @@ namespace Unity.Netcode
 
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
             var networkObjectsToSpawn = new List<NetworkObject>();
 

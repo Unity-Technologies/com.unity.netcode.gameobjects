@@ -88,13 +88,10 @@ namespace TestProject.RuntimeTests
             const int expectedNetworkObjects = numClients + 2; // +2 = one for prefab, one for server.
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
 #endif
-
-            while (networkObjects.Length != expectedNetworkObjects)
+            while (Object.FindObjectsOfType<NetworkObject>().Length != expectedNetworkObjects)
             {
                 if (Time.frameCount > maxFrames)
                 {
@@ -108,12 +105,10 @@ namespace TestProject.RuntimeTests
                 }
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
-#if USE_FINDOBJECTSBYTYPE
-                networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
-                networkObjects = Object.FindObjectsOfType<NetworkObject>();
-#endif
             }
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
 
             serverObject.GetComponent<NetworkVariableInitOnNetworkSpawn>().Variable.Value = NetworkVariableInitOnNetworkSpawn.ExpectedSpawnValueOnClient;
 

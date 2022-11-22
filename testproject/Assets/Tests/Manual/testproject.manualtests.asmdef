@@ -14,12 +14,6 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [
-        {
-            "name": "Unity",
-            "expression": "2023.1.0a21",
-            "define": "USE_FINDOBJECTSBYTYPE"
-        }
-    ],
+    "versionDefines": [],
     "noEngineReferences": false
 }

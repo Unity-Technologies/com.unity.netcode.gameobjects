@@ -39,11 +39,6 @@
             "name": "com.unity.modules.physics2d",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS2D"
-        },
-        {
-            "name": "Unity",
-            "expression": "2023.1.0a21",
-            "define": "USE_FINDOBJECTSBYTYPE"
         }
     ],
     "noEngineReferences": false

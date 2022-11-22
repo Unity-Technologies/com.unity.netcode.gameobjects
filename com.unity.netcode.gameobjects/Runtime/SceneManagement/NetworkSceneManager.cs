@@ -2017,11 +2017,12 @@ namespace Unity.Netcode
             {
                 ScenePlacedObjects.Clear();
             }
-
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
             // Just add every NetworkObject found that isn't already in the list

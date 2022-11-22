@@ -437,13 +437,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 m_PlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
             }
 
-#if USE_FINDOBJECTSBYTYPE
-            // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
             // Get all player instances for the current client NetworkManager instance
             var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-#endif
+
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -457,13 +456,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
                 }
             }
-#if USE_FINDOBJECTSBYTYPE
-            // Get all player instances for the current client NetworkManager instance
-            clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
-#else
+
             // Get all player instances for the current client NetworkManager instance
             clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
+
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -483,10 +482,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             if (m_UseHost)
             {
-#if USE_FINDOBJECTSBYTYPE
-                var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
                 var clientSideServerPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
 
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
@@ -544,12 +545,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
                     if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
-#if USE_FINDOBJECTSBYTYPE
-                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-#else
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
+#endif
                         // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
                         var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
 #endif
                         foreach (var playerNetworkObject in serverPlayerClones)
                         {
@@ -740,11 +742,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {
-#if USE_FINDOBJECTSBYTYPE
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
-#else
-            var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning disable 612, 618
 #endif
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
+
             foreach (var networkObject in networkObjects)
             {
                 // This can sometimes be null depending upon order of operations
