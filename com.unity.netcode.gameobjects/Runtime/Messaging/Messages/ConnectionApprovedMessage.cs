@@ -1,10 +1,12 @@
-using System;
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public ulong OwnerClientId;
         public int NetworkTick;
 
@@ -13,12 +15,24 @@ namespace Unity.Netcode
 
         private FastBufferReader m_ReceivedSceneObjectData;
 
-        public void Serialize(FastBufferWriter writer)
+        public NativeArray<MessageVersionData> MessageVersions;
+
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            if (!writer.TryBeginWrite(sizeof(ulong) + sizeof(int) + sizeof(int)))
+            // ============================================================
+            // BEGIN FORBIDDEN SEGMENT
+            // DO NOT CHANGE THIS HEADER. Everything added to this message
+            // must go AFTER the message version header.
+            // ============================================================
+            BytePacker.WriteValueBitPacked(writer, MessageVersions.Length);
+            foreach (var messageVersion in MessageVersions)
             {
-                throw new OverflowException($"Not enough space in the write buffer to serialize {nameof(ConnectionApprovedMessage)}");
+                messageVersion.Serialize(writer);
             }
+            // ============================================================
+            // END FORBIDDEN SEGMENT
+            // ============================================================
+
             BytePacker.WriteValueBitPacked(writer, OwnerClientId);
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
 
@@ -51,13 +65,41 @@ namespace Unity.Netcode
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return false;
             }
+
+            // ============================================================
+            // BEGIN FORBIDDEN SEGMENT
+            // DO NOT CHANGE THIS HEADER. Everything added to this message
+            // must go AFTER the message version header.
+            // ============================================================
+            ByteUnpacker.ReadValueBitPacked(reader, out int length);
+            var messageHashesInOrder = new NativeArray<uint>(length, Allocator.Temp);
+            for (var i = 0; i < length; ++i)
+            {
+                var messageVersion = new MessageVersionData();
+                messageVersion.Deserialize(reader);
+                networkManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
+                messageHashesInOrder[i] = messageVersion.Hash;
+
+                // Update the received version since this message will always be passed version 0, due to the map not
+                // being initialized until just now.
+                var messageType = networkManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
+                if (messageType == typeof(ConnectionApprovedMessage))
+                {
+                    receivedMessageVersion = messageVersion.Version;
+                }
+            }
+            networkManager.MessagingSystem.SetServerMessageOrder(messageHashesInOrder);
+            messageHashesInOrder.Dispose();
+            // ============================================================
+            // END FORBIDDEN SEGMENT
+            // ============================================================
 
             ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
             ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);

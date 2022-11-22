@@ -7,6 +7,9 @@ using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor
 {
+    /// <summary>
+    /// The <see cref="CustomEditor"/> for <see cref="NetworkBehaviour"/>
+    /// </summary>
     [CustomEditor(typeof(NetworkBehaviour), true)]
     [CanEditMultipleObjects]
     public class NetworkBehaviourEditor : UnityEditor.Editor
@@ -34,8 +37,8 @@ namespace Unity.Netcode.Editor
                 var ft = fields[i].FieldType;
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
-                    m_NetworkVariableNames.Add(fields[i].Name);
-                    m_NetworkVariableFields.Add(fields[i].Name, fields[i]);
+                    m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
+                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
                 }
             }
         }

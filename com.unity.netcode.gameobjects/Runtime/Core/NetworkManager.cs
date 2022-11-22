@@ -86,10 +86,10 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
-        // <summary>
-        // When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        // tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
-        // </summary>
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
         public string DisconnectReason { get; internal set; }
 
         private class NetworkManagerHooks : INetworkHooks
@@ -450,9 +450,10 @@ namespace Unity.Netcode
             /// </summary>
             public bool Pending;
 
-            // <summary>
-            // Optional reason. If Approved is false, this reason will be sent to the client so they know why they
-            // were not approved.
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
             public string Reason;
         }
 
@@ -1192,7 +1193,7 @@ namespace Unity.Netcode
                 }
             }
 
-            if (IsClient && IsConnectedClient)
+            if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
                 NetworkConfig.NetworkTransport.DisconnectLocalClient();
@@ -1350,6 +1351,7 @@ namespace Unity.Netcode
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
             MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem.CleanupDisconnectedClients();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
@@ -1431,7 +1433,23 @@ namespace Unity.Netcode
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
+
+            message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
+            for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
+            {
+                if (MessagingSystem.MessageTypes[index] != null)
+                {
+                    var type = MessagingSystem.MessageTypes[index];
+                    message.MessageVersions[index] = new MessageVersionData
+                    {
+                        Hash = XXHash.Hash32(type.FullName),
+                        Version = MessagingSystem.GetLocalVersion(type)
+                    };
+                }
+            }
+
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            message.MessageVersions.Dispose();
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
@@ -1982,21 +2000,22 @@ namespace Unity.Netcode
                         }
                     }
 
-                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
-
+                    message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
                     for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
                     {
                         if (MessagingSystem.MessageTypes[index] != null)
                         {
-                            var orderingMessage = new OrderingMessage
+                            var type = MessagingSystem.MessageTypes[index];
+                            message.MessageVersions[index] = new MessageVersionData
                             {
-                                Order = index,
-                                Hash = XXHash.Hash32(MessagingSystem.MessageTypes[index].FullName)
+                                Hash = XXHash.Hash32(type.FullName),
+                                Version = MessagingSystem.GetLocalVersion(type)
                             };
-
-                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                         }
                     }
+
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    message.MessageVersions.Dispose();
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
