@@ -761,14 +761,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 if (CanDestroyNetworkObject(networkObject))
                 {
-                    // Due to some timing issues, this could actually be false
-                    if (!m_ServerNetworkManager.IsServer)
+                    // Note: All of this is for 2023.1.0a21 related timing issues (possibly related to the FindObjectsByType update to replace FindObjectsOfType)
+                    if (m_ServerNetworkManager != null && !m_ServerNetworkManager.IsServer)
                     {
                         // Make sure the owner NetworkManager is considered to be
                         // the server to avoid errors in NetworkObject.OnDestroy
                         m_ServerNetworkManager.IsServer = true;
+                        networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+                    } // Just in case we have a null m_ServerNetworkManager but the singleton is not null
+                    else if (m_ServerNetworkManager == null && NetworkManager.Singleton != null)
+                    {
+                        // Make whatever the singleton is a server to avoid the NetworkObject "client is destroying a NetworkObject exception"
+                        NetworkManager.Singleton.IsServer = true;
+                        networkObject.NetworkManagerOwner = NetworkManager.Singleton;
                     }
-                    networkObject.NetworkManagerOwner = m_ServerNetworkManager;
+
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
