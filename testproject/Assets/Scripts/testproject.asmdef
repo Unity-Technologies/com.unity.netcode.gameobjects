@@ -1,3 +1,4 @@
+
 {
     "name": "TestProject",
     "rootNamespace": "",
@@ -11,13 +12,6 @@
         "Unity.Services.Relay",
         "Unity.Addressables.Editor"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.services.relay",
@@ -34,6 +28,5 @@
             "expression": "",
             "define": "TESTPROJECT_USE_ADDRESSABLES"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

@@ -14,13 +14,7 @@
         "Unity.Collections",
         "Unity.Burst"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
     "allowUnsafeCode": true,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -42,6 +36,5 @@
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

@@ -10,20 +10,10 @@
         "Unity.ResourceManager",
         "Unity.Netcode.TestHelpers.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Collections",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "Unity.Collections"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
-    ],
-    "autoReferenced": false,
-    "defineConstraints": [
-        "UNITY_INCLUDE_TESTS"
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
     "versionDefines": [
         {
@@ -36,6 +26,5 @@
             "expression": "",
             "define": "TESTPROJECT_USE_ADDRESSABLES"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

@@ -8,12 +8,6 @@
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -40,6 +34,5 @@
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS2D"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

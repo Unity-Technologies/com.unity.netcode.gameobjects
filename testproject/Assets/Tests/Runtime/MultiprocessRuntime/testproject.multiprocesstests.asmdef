@@ -1,9 +1,10 @@
+
 {
     "name": "TestProject.MultiprocessTests",
     "rootNamespace": "",
     "references": [
         "Unity.Netcode.Runtime",
-        "TestProject",
+		"TestProject",
         "Unity.Netcode.Editor",
         "Unity.Netcode.Components",
         "ScriptsForAutomatedTesting",
@@ -13,8 +14,8 @@
     ],
     "includePlatforms": [
         "Editor",
-        "LinuxStandalone64",
         "macOSStandalone",
+        "LinuxStandalone64",
         "WindowsStandalone32",
         "WindowsStandalone64"
     ],
@@ -28,12 +29,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
+    "noEngineReferences": false,
     "versionDefines": [
         {
             "name": "Unity",
             "expression": "(0,2022.2.0a5)",
             "define": "UNITY_UNET_PRESENT"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }

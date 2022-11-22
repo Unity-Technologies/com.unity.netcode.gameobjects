@@ -11,18 +11,11 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Networking.Transport",
         "ClientNetworkTransform",
-        "Unity.Netcode.TestHelpers.Runtime",
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "Unity.Netcode.TestHelpers.Runtime"
     ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": true,
-    "precompiledReferences": [
-        "nunit.framework.dll"
+    "optionalUnityReferences": [
+        "TestAssemblies"
     ],
-    "autoReferenced": false,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
@@ -52,6 +45,5 @@
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
-    ],
-    "noEngineReferences": false
+    ]
 }
