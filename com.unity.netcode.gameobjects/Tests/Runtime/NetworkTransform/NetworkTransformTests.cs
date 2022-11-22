@@ -945,7 +945,6 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_EnableVerboseDebug = false;
             Object.DestroyImmediate(m_PlayerPrefab);
-            Object.DestroyImmediate(m_ChildObjectToBeParented);
             yield return base.OnTearDown();
         }
     }
