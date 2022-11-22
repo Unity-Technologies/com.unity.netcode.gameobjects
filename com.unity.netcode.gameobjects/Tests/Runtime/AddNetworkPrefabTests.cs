@@ -48,19 +48,16 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_2023_1_OR_NEWER
 #pragma warning disable 612, 618
 #endif
-            var emptyComponents = Object.FindObjectsOfType<EmptyComponent>();
-#if UNITY_2023_1_OR_NEWER
-#pragma warning restore 612, 618
-#endif
-
-            foreach (var component in emptyComponents)
+            foreach (var component in Object.FindObjectsOfType<EmptyComponent>())
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
                 {
                     return component;
                 }
             }
-
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
             return null;
         }
 

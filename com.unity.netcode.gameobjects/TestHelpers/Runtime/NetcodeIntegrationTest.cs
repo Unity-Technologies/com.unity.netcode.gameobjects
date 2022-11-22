@@ -457,7 +457,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
 
-            // Get all player instances for the current client NetworkManager instance
+            // For late joining clients, add the remaining (if any) cloned versions of each client's player
             clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
 #if UNITY_2023_1_OR_NEWER
 #pragma warning restore 612, 618

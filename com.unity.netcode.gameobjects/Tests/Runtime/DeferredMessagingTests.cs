@@ -274,19 +274,16 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_2023_1_OR_NEWER
 #pragma warning disable 612, 618
 #endif
-            var componentsToFind = Object.FindObjectsOfType<T>();
-#if UNITY_2023_1_OR_NEWER
-#pragma warning restore 612, 618
-#endif
-
-            foreach (var component in componentsToFind)
+            foreach (var component in Object.FindObjectsOfType<T>())
             {
                 if (component.IsSpawned && component.NetworkManager.LocalClientId == clientId)
                 {
                     return component;
                 }
             }
-
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
             return null;
         }
 
@@ -762,12 +759,7 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_2023_1_OR_NEWER
 #pragma warning disable 612, 618
 #endif
-                var deferredMessageTestRpcComponents = Object.FindObjectsOfType<DeferredMessageTestRpcComponent>();
-#if UNITY_2023_1_OR_NEWER
-#pragma warning restore 612, 618
-#endif
-
-                foreach (var component in deferredMessageTestRpcComponents)
+                foreach (var component in Object.FindObjectsOfType<DeferredMessageTestRpcComponent>())
                 {
                     if (component.IsSpawned && component.NetworkManager.LocalClientId == client.LocalClientId)
                     {
@@ -781,6 +773,9 @@ namespace Unity.Netcode.RuntimeTests
                         }
                     }
                 }
+#if UNITY_2023_1_OR_NEWER
+#pragma warning restore 612, 618
+#endif
 
                 Assert.IsTrue(found1);
                 Assert.IsTrue(found2);

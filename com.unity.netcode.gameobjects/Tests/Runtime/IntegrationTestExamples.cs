@@ -32,7 +32,9 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_2023_1_OR_NEWER
 #pragma warning disable 612, 618
 #endif
-            yield return WaitForConditionOrTimeOut(() => Object.FindObjectsOfType<NetworkVisibilityComponent>().Where((c) => c.IsSpawned).Count() == 2);
+            yield return WaitForConditionOrTimeOut(() =>
+            Object.FindObjectsOfType<NetworkVisibilityComponent>().Where(
+                (c) => c.IsSpawned).Count() == 2);
 #if UNITY_2023_1_OR_NEWER
 #pragma warning restore 612, 618
 #endif
