@@ -764,7 +764,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     networkObject.NetworkManagerOwner = m_ServerNetworkManager;
                     // Destroy the GameObject that holds the NetworkObject component
-                    Object.DestroyImmediate(networkObject.gameObject); Object.DestroyImmediate(networkObject.gameObject);
+                    Object.DestroyImmediate(networkObject.gameObject);
                 }
             }
         }
