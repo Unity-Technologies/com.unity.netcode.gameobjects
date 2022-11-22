@@ -2082,7 +2082,7 @@ namespace Unity.Netcode
                             }
                             else
                             {
-                                Destroy(playerObject.gameObject);
+                                SpawnManager.DespawnObject(playerObject, true);
                             }
                         }
                         else
