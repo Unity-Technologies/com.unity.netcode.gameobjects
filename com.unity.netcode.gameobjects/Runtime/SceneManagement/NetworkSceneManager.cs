@@ -2018,7 +2018,11 @@ namespace Unity.Netcode
                 ScenePlacedObjects.Clear();
             }
 
+#if USE_FINDOBJECTSBYTYPE
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+#else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#endif
 
             // Just add every NetworkObject found that isn't already in the list
             // With additive scenes, we can have multiple in-scene placed NetworkObjects with the same GlobalObjectIdHash value

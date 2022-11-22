@@ -11,12 +11,20 @@
         "Unity.Multiplayer.Tools.NetStats",
         "Unity.Networking.Transport",
         "ClientNetworkTransform",
-        "Unity.Netcode.TestHelpers.Runtime"
+        "Unity.Netcode.TestHelpers.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
-    "optionalUnityReferences": [
-        "TestAssemblies"
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
     ],
+    "autoReferenced": false,
     "defineConstraints": [
+        "UNITY_INCLUDE_TESTS",
         "UNITY_INCLUDE_TESTS"
     ],
     "versionDefines": [
@@ -44,6 +52,12 @@
             "name": "com.unity.transport",
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
+        },
+        {
+            "name": "Unity",
+            "expression": "2023.1.0a21",
+            "define": "USE_FINDOBJECTSBYTYPE"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

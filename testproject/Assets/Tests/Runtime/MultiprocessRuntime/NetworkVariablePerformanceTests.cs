@@ -183,7 +183,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
 #if USE_FINDOBJECTSBYTYPE
-                Assert.That(Object.FindObjectsByType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
+                Assert.That(Object.FindObjectsByType<OneNetVar>(FindObjectsSortMode.None).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
 #else
                 Assert.That(Object.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
 #endif

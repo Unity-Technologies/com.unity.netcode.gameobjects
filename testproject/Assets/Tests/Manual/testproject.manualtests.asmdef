@@ -6,5 +6,20 @@
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
         "Unity.Collections"
-    ]
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "Unity",
+            "expression": "2023.1.0a21",
+            "define": "USE_FINDOBJECTSBYTYPE"
+        }
+    ],
+    "noEngineReferences": false
 }

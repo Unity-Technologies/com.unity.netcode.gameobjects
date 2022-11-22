@@ -269,7 +269,12 @@ namespace Unity.Netcode
         {
             m_DespawnedInSceneObjectsSync.Clear();
             // Find all active and non-active in-scene placed NetworkObjects
+#if USE_FINDOBJECTSBYTYPE
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None).Where((c) => c.NetworkManager == m_NetworkManager);
+#else
             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) => c.NetworkManager == m_NetworkManager);
+
+#endif
             foreach (var sobj in inSceneNetworkObjects)
             {
                 if (sobj.IsSceneObject.HasValue && sobj.IsSceneObject.Value && !sobj.IsSpawned)
@@ -657,7 +662,11 @@ namespace Unity.Netcode
 
             if (networkObjectsToRemove.Length > 0)
             {
+#if USE_FINDOBJECTSBYTYPE
+                var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsSortMode.None);
+#else
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
+#endif
                 var networkObjectIdToNetworkObject = new Dictionary<ulong, NetworkObject>();
                 foreach (var networkObject in networkObjects)
                 {
@@ -785,8 +794,14 @@ namespace Unity.Netcode
                             var objectRelativeScene = m_NetworkManager.SceneManager.ScenesLoaded[localSceneHandle];
 
                             // Find all active and non-active in-scene placed NetworkObjects
+#if USE_FINDOBJECTSBYTYPE
+                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None).Where((c) =>
+                            c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+#else
                             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) =>
                             c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
+#endif
+
 
                             foreach (var inSceneObject in inSceneNetworkObjects)
                             {

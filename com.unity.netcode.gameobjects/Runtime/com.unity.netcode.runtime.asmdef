@@ -14,7 +14,13 @@
         "Unity.Collections",
         "Unity.Burst"
     ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
     "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -35,6 +41,12 @@
             "name": "com.unity.transport",
             "expression": "2.0.0-exp",
             "define": "UTP_TRANSPORT_2_0_ABOVE"
+        },
+        {
+            "name": "Unity",
+            "expression": "2023.1.0a21",
+            "define": "USE_FINDOBJECTSBYTYPE"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }
