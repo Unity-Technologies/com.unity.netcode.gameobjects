@@ -40,7 +40,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             Assert.IsTrue(NetcodeIntegrationTestHelpers.Create(1, out m_ServerHost, out m_Clients));
 
-            m_ObjectToSpawn = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(nameof(NetworkObjectOnNetworkDespawnTests), m_ServerHost, m_Clients);;
+            m_ObjectToSpawn = NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(nameof(NetworkObjectOnNetworkDespawnTests), m_ServerHost, m_Clients); ;
             m_ObjectToSpawn.AddComponent<OnNetworkDespawnTestComponent>();
             m_NetworkObject = m_ObjectToSpawn.GetComponent<NetworkObject>();
 

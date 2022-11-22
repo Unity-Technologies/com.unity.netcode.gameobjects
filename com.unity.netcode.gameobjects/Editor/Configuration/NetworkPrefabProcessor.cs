@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -13,7 +12,8 @@ namespace Unity.Netcode.Editor.Configuration
         private static string s_DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
         public static string DefaultNetworkPrefabsPath
         {
-            get {
+            get
+            {
                 return s_DefaultNetworkPrefabsPath;
             }
             internal set
@@ -60,7 +60,7 @@ namespace Unity.Netcode.Editor.Configuration
             bool ProcessDeletedAssets(string[] strings)
             {
                 var dirty = false;
-                List<string> deleted = new List<string>(strings);
+                var deleted = new List<string>(strings);
                 for (int i = s_PrefabsList.List.Count - 1; i >= 0 && deleted.Count > 0; --i)
                 {
                     GameObject prefab;
@@ -140,7 +140,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         private static List<NetworkPrefab> FindAll()
         {
-            List<NetworkPrefab> list = new List<NetworkPrefab>();
+            var list = new List<NetworkPrefab>();
 
             string[] guids = AssetDatabase.FindAssets("t:GameObject");
             foreach (var guid in guids)

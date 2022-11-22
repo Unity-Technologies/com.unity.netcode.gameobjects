@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -106,8 +106,8 @@ namespace Unity.Netcode
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                 {
-                    StringBuilder sb = new StringBuilder("Removing invalid prefabs from Network Prefab registration: ");
-                    sb.Append(String.Join(", ", removeList));
+                    var sb = new StringBuilder("Removing invalid prefabs from Network Prefab registration: ");
+                    sb.Append(string.Join(", ", removeList));
                     NetworkLog.LogWarning(sb.ToString());
                 }
             }
@@ -264,16 +264,16 @@ namespace Unity.Netcode
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
-                {
-                    NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                    OverrideToNetworkPrefab.Add(target, source);
-                }
+                    {
+                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
+                        OverrideToNetworkPrefab.Add(target, source);
+                    }
                     break;
                 case NetworkPrefabOverride.Hash:
-                {
-                    NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                    OverrideToNetworkPrefab.Add(target, source);
-                }
+                    {
+                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
+                        OverrideToNetworkPrefab.Add(target, source);
+                    }
                     break;
             }
 

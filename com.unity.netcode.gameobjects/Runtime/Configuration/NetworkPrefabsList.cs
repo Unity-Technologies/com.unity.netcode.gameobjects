@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -23,8 +22,8 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Read-only view into the prefabs list, enabling iterating and examining the list.
-        /// Actually modifying the list should be done using <see cref="NetworkPrefabsList.Add"/>
-        /// and <see cref="NetworkPrefabsList.Remove"/>.
+        /// Actually modifying the list should be done using <see cref="Add"/>
+        /// and <see cref="Remove"/>.
         /// </summary>
         public IReadOnlyList<NetworkPrefab> PrefabList => List;
 

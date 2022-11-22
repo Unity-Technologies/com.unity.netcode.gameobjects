@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using UnityEditorInternal;
 using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor

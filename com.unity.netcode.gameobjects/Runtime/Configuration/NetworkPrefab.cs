@@ -130,49 +130,49 @@ namespace Unity.Netcode
             switch (Override)
             {
                 case NetworkPrefabOverride.Hash:
-                {
-                    if (SourceHashToOverride == 0)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        if (SourceHashToOverride == 0)
                         {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero " +
-                                "(entry will be ignored).");
-                        }
-                        return false;
-                    }
-
-                    break;
-                }
-                case NetworkPrefabOverride.Prefab:
-                {
-                    if (SourcePrefabToOverride == null)
-                    {
-                        // This is a leftover side-effect from NetworkManager's OnValidate. It's a usability
-                        // adjustment to automatically set the "Prefab" field as the source prefab when a user
-                        // swaps from the default Inspector to the override one.
-                        if (Prefab != null)
-                        {
-                            SourcePrefabToOverride = Prefab;
-                        }
-                        else if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                        {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourcePrefabToOverride)} is null (entry will be ignored).");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero " +
+                                    "(entry will be ignored).");
+                            }
                             return false;
                         }
-                    }
 
-                    if (!SourcePrefabToOverride.TryGetComponent(out networkObject))
+                        break;
+                    }
+                case NetworkPrefabOverride.Prefab:
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        if (SourcePrefabToOverride == null)
                         {
-                            NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({SourcePrefabToOverride.name}) " +
-                                $"is missing a {nameof(NetworkObject)} component (entry will be ignored).");
+                            // This is a leftover side-effect from NetworkManager's OnValidate. It's a usability
+                            // adjustment to automatically set the "Prefab" field as the source prefab when a user
+                            // swaps from the default Inspector to the override one.
+                            if (Prefab != null)
+                            {
+                                SourcePrefabToOverride = Prefab;
+                            }
+                            else if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourcePrefabToOverride)} is null (entry will be ignored).");
+                                return false;
+                            }
                         }
-                        return false;
-                    }
 
-                    break;
-                }
+                        if (!SourcePrefabToOverride.TryGetComponent(out networkObject))
+                        {
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({SourcePrefabToOverride.name}) " +
+                                    $"is missing a {nameof(NetworkObject)} component (entry will be ignored).");
+                            }
+                            return false;
+                        }
+
+                        break;
+                    }
             }
 
             // Validate target prefab override values next
@@ -185,15 +185,15 @@ namespace Unity.Netcode
                 switch (Override)
                 {
                     case NetworkPrefabOverride.Hash:
-                    {
-                        Debug.LogWarning($"{nameof(NetworkPrefab)} override entry {SourceHashToOverride} will be removed and ignored.");
-                        break;
-                    }
+                        {
+                            Debug.LogWarning($"{nameof(NetworkPrefab)} override entry {SourceHashToOverride} will be removed and ignored.");
+                            break;
+                        }
                     case NetworkPrefabOverride.Prefab:
-                    {
-                        Debug.LogWarning($"{nameof(NetworkPrefab)} override entry ({SourcePrefabToOverride.name}) will be removed and ignored.");
-                        break;
-                    }
+                        {
+                            Debug.LogWarning($"{nameof(NetworkPrefab)} override entry ({SourcePrefabToOverride.name}) will be removed and ignored.");
+                            break;
+                        }
                 }
                 return false;
             }
