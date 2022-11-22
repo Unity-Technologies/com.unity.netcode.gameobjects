@@ -442,7 +442,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #endif
             // Get all player instances for the current client NetworkManager instance
             var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
-
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -462,7 +461,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNITY_2023_1_OR_NEWER
 #pragma warning restore 612, 618
 #endif
-
             foreach (var playerNetworkObject in clientPlayerClones)
             {
                 if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
@@ -489,7 +487,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNITY_2023_1_OR_NEWER
 #pragma warning restore 612, 618
 #endif
-
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
                 {
                     // When the server is not the host this needs to be done
@@ -749,7 +746,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 #if UNITY_2023_1_OR_NEWER
 #pragma warning restore 612, 618
 #endif
-
             foreach (var networkObject in networkObjects)
             {
                 // This can sometimes be null depending upon order of operations
@@ -764,7 +760,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     continue;
                 }
-
                 if (CanDestroyNetworkObject(networkObject))
                 {
                     networkObject.NetworkManagerOwner = m_ServerNetworkManager;
