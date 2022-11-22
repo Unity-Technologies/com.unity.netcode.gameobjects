@@ -16,7 +16,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server).
+- Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server). (#2321)
 
 ## [1.2.0] - 2022-11-21
 
