@@ -9,7 +9,6 @@ namespace Unity.Netcode.Editor.Configuration
         private static float s_MaxLabelWidth;
         private static bool s_ShowEditorSettingFields = true;
         private static bool s_ShowProjectSettingFields = true;
-        private static Texture2D backgroundTexture = MakeTex(1, 1, new Color(0.75f, 0.75f, 0.75f, 1));
 
         [SettingsProvider]
         public static SettingsProvider CreateNetcodeSettingsProvider()
@@ -24,19 +23,6 @@ namespace Unity.Netcode.Editor.Configuration
             };
 
             return provider;
-        }
-
-        private static Texture2D MakeTex( int width, int height, Color col )
-        {
-            Color[] pix = new Color[width * height];
-            for( int i = 0; i < pix.Length; ++i )
-            {
-                pix[ i ] = col;
-            }
-            Texture2D result = new Texture2D( width, height );
-            result.SetPixels( pix );
-            result.Apply();
-            return result;
         }
 
         internal static NetcodeSettingsLabel NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObject Helper Settings", 20);
