@@ -4,6 +4,13 @@ using UnityEngine.Serialization;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// A ScriptableObject for holding a network prefabs list, which can be
+    /// shared between multiple NetworkManagers.
+    ///
+    /// When NetworkManagers hold references to this list, modifications to the
+    /// list at runtime will be picked up by all NetworkManagers that reference it.
+    /// </summary>
     [CreateAssetMenu(fileName = "NetworkPrefabsList", menuName = "Netcode/Network Prefabs List")]
     public class NetworkPrefabsList : ScriptableObject
     {
@@ -49,6 +56,11 @@ namespace Unity.Netcode
             OnRemove?.Invoke(prefab);
         }
 
+        /// <summary>
+        /// Check if the given GameObject is present as a prefab within the list
+        /// </summary>
+        /// <param name="prefab">The prefab to check</param>
+        /// <returns>Whether or not the prefab exists</returns>
         public bool Contains(GameObject prefab)
         {
             for (int i = 0; i < List.Count; i++)
@@ -62,6 +74,11 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Check if the given NetworkPrefab is present within the list
+        /// </summary>
+        /// <param name="prefab">The prefab to check</param>
+        /// <returns>Whether or not the prefab exists</returns>
         public bool Contains(NetworkPrefab prefab)
         {
             for (int i = 0; i < List.Count; i++)

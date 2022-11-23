@@ -25,10 +25,9 @@ namespace Unity.Netcode.Editor.Configuration
         }
         private static NetworkPrefabsList s_PrefabsList;
 
-        // Unfortunately this method is required by the asset pipeline to be static
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-            var settings = NetcodeForGameObjectsSettings.GetOrCreateSettings();
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
             if (!settings.GenerateDefaultNetworkPrefabs)
             {
                 return;

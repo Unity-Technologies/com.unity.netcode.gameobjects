@@ -5,6 +5,11 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// A class that represents the runtime aspect of network prefabs.
+    /// This class contains processed prefabs from the NetworkPrefabsList, as
+    /// well as additional modifications (additions and removals) made at runtime.
+    /// </summary>
     [Serializable]
     public class NetworkPrefabs
     {
@@ -180,13 +185,13 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Check if the given GameObject is present as a prefab within the list
+        /// </summary>
+        /// <param name="prefab">The prefab to check</param>
+        /// <returns>Whether or not the prefab exists</returns>
         public bool Contains(GameObject prefab)
         {
-            if (prefab == null)
-            {
-                throw new ArgumentNullException(nameof(prefab));
-            }
-
             for (int i = 0; i < m_Prefabs.Count; i++)
             {
                 if (m_Prefabs[i].Prefab == prefab)
@@ -198,13 +203,13 @@ namespace Unity.Netcode
             return false;
         }
 
+        /// <summary>
+        /// Check if the given NetworkPrefab is present within the list
+        /// </summary>
+        /// <param name="prefab">The prefab to check</param>
+        /// <returns>Whether or not the prefab exists</returns>
         public bool Contains(NetworkPrefab prefab)
         {
-            if (prefab == null)
-            {
-                throw new ArgumentNullException(nameof(prefab));
-            }
-
             for (int i = 0; i < m_Prefabs.Count; i++)
             {
                 if (m_Prefabs[i].Equals(prefab))

@@ -5,16 +5,10 @@ using UnityEngine;
 
 namespace Unity.Netcode.Editor.Configuration
 {
-    internal class NetcodeForGameObjectsSettings
+    internal class NetcodeForGameObjectsEditorSettings
     {
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
         internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
-
-        private const string k_SettingsPath = "ProjectSettings/NetcodeForGameObjectsSettings.json";
-        private static NetcodeForGameObjectsSettings s_Instance;
-
-        [SerializeField]
-        public bool GenerateDefaultNetworkPrefabs = true;
 
         internal static int GetNetcodeInstallMultiplayerToolTips()
         {
@@ -22,6 +16,7 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 return EditorPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey);
             }
+
             return 0;
         }
 
@@ -36,6 +31,7 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 return EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists);
             }
+
             return false;
         }
 
@@ -43,39 +39,16 @@ namespace Unity.Netcode.Editor.Configuration
         {
             EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, autoAddSetting);
         }
+    }
 
-        public static NetcodeForGameObjectsSettings GetOrCreateSettings()
+    [FilePath("ProjectSettings/NetcodeForGameObjects.settings", FilePathAttribute.Location.ProjectFolder)]
+    internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
+    {
+        [SerializeField] public bool GenerateDefaultNetworkPrefabs = true;
+
+        internal void SaveSettings()
         {
-            NetcodeForGameObjectsSettings LoadFromFile()
-            {
-                if (!System.IO.File.Exists(k_SettingsPath))
-                {
-                    return null;
-                }
-
-                // Load from file
-                try
-                {
-                    var text = System.IO.File.ReadAllText(k_SettingsPath);
-                    return JsonUtility.FromJson<NetcodeForGameObjectsSettings>(text);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError(e);
-                    return null;
-                }
-            }
-
-            // Load or instantiate a new instance
-            s_Instance ??= LoadFromFile() ?? new NetcodeForGameObjectsSettings();
-            return s_Instance;
-        }
-
-        public void Save(string path = k_SettingsPath)
-        {
-            path ??= k_SettingsPath;
-            var json = JsonUtility.ToJson(this, true);
-            System.IO.File.WriteAllText(path, json);
+            Save(true);
         }
     }
 }

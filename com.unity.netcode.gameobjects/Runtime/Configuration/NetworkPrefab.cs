@@ -3,10 +3,23 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The method of NetworkPrefab override used to identify the source prefab
+    /// </summary>
     public enum NetworkPrefabOverride
     {
+        /// <summary>
+        /// No oeverride is present
+        /// </summary>
         None,
+        /// <summary>
+        /// Override the prefab when the given SourcePrefabToOverride is requested
+        /// </summary>
         Prefab,
+        /// <summary>
+        /// Override the prefab when the given SourceHashToOverride is requested
+        /// Used in situations where the server assets do not exist in client builds
+        /// </summary>
         Hash
     }
 

@@ -310,7 +310,7 @@ namespace Unity.Netcode.Editor
                     // and the user has already turned "Auto-Add NetworkObject" on when first notified about the requirement
                     // then just send a reminder to the user why the NetworkObject they just deleted seemingly "re-appeared"
                     // again.
-                    if (networkObjectRemoved && NetcodeForGameObjectsSettings.GetAutoAddNetworkObjectSetting())
+                    if (networkObjectRemoved && NetcodeForGameObjectsEditorSettings.GetAutoAddNetworkObjectSetting())
                     {
                         Debug.LogWarning($"{gameObject.name} still has {nameof(NetworkBehaviour)}s and Auto-Add NetworkObjects is enabled. A NetworkObject is being added back to {gameObject.name}.");
                         Debug.Log($"To reset Auto-Add NetworkObjects: Select the Netcode->General->Reset Auto-Add NetworkObject menu item.");
@@ -319,7 +319,7 @@ namespace Unity.Netcode.Editor
                     // Notify and provide the option to add it one time, always add a NetworkObject, or do nothing and let the user manually add it
                     if (EditorUtility.DisplayDialog($"{nameof(NetworkBehaviour)}s require a {nameof(NetworkObject)}",
                     $"{gameObject.name} does not have a {nameof(NetworkObject)} component.  Would you like to add one now?", "Yes", "No (manually add it)",
-                    DialogOptOutDecisionType.ForThisMachine, NetcodeForGameObjectsSettings.AutoAddNetworkObjectIfNoneExists))
+                    DialogOptOutDecisionType.ForThisMachine, NetcodeForGameObjectsEditorSettings.AutoAddNetworkObjectIfNoneExists))
                     {
                         gameObject.AddComponent<NetworkObject>();
                         var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();

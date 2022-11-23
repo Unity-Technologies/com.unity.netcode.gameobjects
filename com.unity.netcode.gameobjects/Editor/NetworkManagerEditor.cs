@@ -311,7 +311,7 @@ namespace Unity.Netcode.Editor
             const string targetUrl = "https://docs-multiplayer.unity3d.com/netcode/current/tools/install-tools";
             const string infoIconName = "console.infoicon";
 
-            if (NetcodeForGameObjectsSettings.GetNetcodeInstallMultiplayerToolTips() != 0)
+            if (NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() != 0)
             {
                 return;
             }
@@ -357,7 +357,7 @@ namespace Unity.Netcode.Editor
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button(dismissButtonText, dismissButtonStyle, GUILayout.ExpandWidth(false)))
                 {
-                    NetcodeForGameObjectsSettings.SetNetcodeInstallMultiplayerToolTips(1);
+                    NetcodeForGameObjectsEditorSettings.SetNetcodeInstallMultiplayerToolTips(1);
                 }
                 EditorGUIUtility.AddCursorRect(GUILayoutUtility.GetLastRect(), MouseCursor.Link);
                 GUILayout.FlexibleSpace();
