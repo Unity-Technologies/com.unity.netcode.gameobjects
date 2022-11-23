@@ -48,10 +48,12 @@ namespace TestProject.RuntimeTests
             // Wait for the scene with the in-scene placed NetworkObject to be loaded.
             yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_TestScene.IsValid() && m_TestScene.isLoaded, timeoutHelper);
             Assert.False(timeoutHelper.TimedOut, "Timed out waiting for scene to load!");
+
 #if UNITY_2023_1_OR_NEWER
-#pragma warning disable 612, 618
-#endif
+            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+#else
             var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+#endif
 
             Assert.IsNotNull(loadedInSceneObject, $"Failed to find {k_SceneObjectName} before starting client!");
 
@@ -68,9 +70,10 @@ namespace TestProject.RuntimeTests
             yield return m_DefaultWaitForTick;
 
             // Find the same object
-            loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #if UNITY_2023_1_OR_NEWER
-#pragma warning restore 612, 618
+            loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+#else
+            loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #endif
 
             // Verify it still exists

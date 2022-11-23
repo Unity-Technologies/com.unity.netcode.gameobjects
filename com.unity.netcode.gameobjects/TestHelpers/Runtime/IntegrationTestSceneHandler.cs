@@ -148,11 +148,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Get all in-scene placed NeworkObjects that were instantiated when this scene loaded
 #if UNITY_2023_1_OR_NEWER
-#pragma warning disable 612, 618
-#endif
+            var inSceneNetworkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
+#else
             var inSceneNetworkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != false && c.GetSceneOriginHandle() == scene.handle);
-#if UNITY_2023_1_OR_NEWER
-#pragma warning restore 612, 618
 #endif
 
             foreach (var sobj in inSceneNetworkObjects)
