@@ -187,7 +187,7 @@ namespace Unity.Netcode.RuntimeTests
             NetworkManagerHelper.ShutdownNetworkManager();
 
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).ToList();
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).ToList();
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
 #endif

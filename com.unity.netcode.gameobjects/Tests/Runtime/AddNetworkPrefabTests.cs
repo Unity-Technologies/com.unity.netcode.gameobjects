@@ -46,7 +46,7 @@ namespace Unity.Netcode.RuntimeTests
         private EmptyComponent GetObjectForClient(ulong clientId)
         {
 #if UNITY_2023_1_OR_NEWER
-            var emptyComponents = Object.FindObjectsByType<EmptyComponent>(FindObjectsSortMode.None);
+            var emptyComponents = Object.FindObjectsByType<EmptyComponent>(FindObjectsSortMode.InstanceID);
 #else
             var emptyComponents = Object.FindObjectsOfType<EmptyComponent>();
 #endif

@@ -68,7 +68,7 @@ namespace TestProject.RuntimeTests
             serverObj.GetComponent<NetworkObject>().Spawn();
 
 #if UNITY_2023_1_OR_NEWER
-            var objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.None);
+            var objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
 #else
             var objs = Object.FindObjectsOfType<AddressableTestScript>();
 #endif
@@ -86,7 +86,7 @@ namespace TestProject.RuntimeTests
                 // Since it's not added, after the CreateObjectMessage is received, it's not spawned yet
                 // Verify that to be the case as a precondition.
 #if UNITY_2023_1_OR_NEWER
-                objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.None);
+                objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
 #else
                 objs = Object.FindObjectsOfType<AddressableTestScript>();
 #endif
@@ -99,7 +99,7 @@ namespace TestProject.RuntimeTests
             }
 
 #if UNITY_2023_1_OR_NEWER
-            objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.None);
+            objs = Object.FindObjectsByType<AddressableTestScript>(FindObjectsSortMode.InstanceID);
 #else
             objs = Object.FindObjectsOfType<AddressableTestScript>();
 #endif

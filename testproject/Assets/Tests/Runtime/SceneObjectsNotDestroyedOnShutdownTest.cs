@@ -50,7 +50,7 @@ namespace TestProject.RuntimeTests
             Assert.False(timeoutHelper.TimedOut, "Timed out waiting for scene to load!");
 
 #if UNITY_2023_1_OR_NEWER
-            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+            var loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #else
             var loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #endif
@@ -71,7 +71,7 @@ namespace TestProject.RuntimeTests
 
             // Find the same object
 #if UNITY_2023_1_OR_NEWER
-            loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
+            loadedInSceneObject = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #else
             loadedInSceneObject = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.name == k_SceneObjectName).FirstOrDefault();
 #endif

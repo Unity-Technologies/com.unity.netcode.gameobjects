@@ -2019,7 +2019,7 @@ namespace Unity.Netcode
             }
 
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif

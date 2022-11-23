@@ -659,7 +659,7 @@ namespace Unity.Netcode
         internal void ServerResetShudownStateForSceneObjects()
         {
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSceneObject != null && c.IsSceneObject == true);
 #endif
@@ -694,7 +694,7 @@ namespace Unity.Netcode
         internal void DespawnAndDestroyNetworkObjects()
         {
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
@@ -728,7 +728,7 @@ namespace Unity.Netcode
         internal void DestroySceneObjects()
         {
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
@@ -759,7 +759,7 @@ namespace Unity.Netcode
         internal void ServerSpawnSceneObjectsOnStartSweep()
         {
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif

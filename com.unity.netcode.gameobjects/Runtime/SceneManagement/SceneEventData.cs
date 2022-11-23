@@ -270,7 +270,7 @@ namespace Unity.Netcode
             m_DespawnedInSceneObjectsSync.Clear();
             // Find all active and non-active in-scene placed NetworkObjects
 #if UNITY_2023_1_OR_NEWER
-            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None).Where((c) => c.NetworkManager == m_NetworkManager);
+            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.InstanceID).Where((c) => c.NetworkManager == m_NetworkManager);
 #else
             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) => c.NetworkManager == m_NetworkManager);
 
@@ -663,7 +663,7 @@ namespace Unity.Netcode
             if (networkObjectsToRemove.Length > 0)
             {
 #if UNITY_2023_1_OR_NEWER
-                var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsSortMode.None);
+                var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsSortMode.InstanceID);
 #else
                 var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>();
 #endif
@@ -795,7 +795,7 @@ namespace Unity.Netcode
 
                             // Find all active and non-active in-scene placed NetworkObjects
 #if UNITY_2023_1_OR_NEWER
-                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.None).Where((c) =>
+                            var inSceneNetworkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(UnityEngine.FindObjectsInactive.Include, UnityEngine.FindObjectsSortMode.InstanceID).Where((c) =>
                             c.GetSceneOriginHandle() == localSceneHandle && (c.IsSceneObject != false)).ToList();
 #else
                             var inSceneNetworkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>(includeInactive: true).Where((c) =>

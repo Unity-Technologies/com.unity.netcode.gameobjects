@@ -11,7 +11,7 @@ public class NetworkManagerMonitor : MonoBehaviour
     private void Start()
     {
 #if UNITY_2023_1_OR_NEWER
-        var networkManagerInstances = FindObjectsByType<NetworkManager>(FindObjectsSortMode.None);
+        var networkManagerInstances = FindObjectsByType<NetworkManager>(FindObjectsSortMode.InstanceID);
 #else
         var networkManagerInstances = FindObjectsOfType<NetworkManager>();
 #endif

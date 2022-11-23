@@ -272,7 +272,7 @@ namespace Unity.Netcode.RuntimeTests
         private T GetComponentForClient<T>(ulong clientId) where T : NetworkBehaviour
         {
 #if UNITY_2023_1_OR_NEWER
-            var componentsToFind = Object.FindObjectsByType<T>(FindObjectsSortMode.None);
+            var componentsToFind = Object.FindObjectsByType<T>(FindObjectsSortMode.InstanceID);
 #else
             var componentsToFind = Object.FindObjectsOfType<T>();
 #endif

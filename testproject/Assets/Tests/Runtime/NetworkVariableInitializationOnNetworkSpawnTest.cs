@@ -89,7 +89,7 @@ namespace TestProject.RuntimeTests
             const int maxFrames = 240;
             var doubleCheckTime = Time.realtimeSinceStartup + 5.0f;
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
 #endif
@@ -109,7 +109,7 @@ namespace TestProject.RuntimeTests
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
 #if UNITY_2023_1_OR_NEWER
-                networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+                networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
                 networkObjects = Object.FindObjectsOfType<NetworkObject>();
 #endif

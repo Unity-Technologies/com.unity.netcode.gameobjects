@@ -80,7 +80,7 @@ namespace TestProject.RuntimeTests
             m_ClientNetworkManagers = null;
 
 #if UNITY_2023_1_OR_NEWER
-            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
 #else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
 #endif
