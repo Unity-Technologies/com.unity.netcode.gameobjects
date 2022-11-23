@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 
 ### Fixed
+- Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
 
 ## [1.2.0] - 2022-11-21
 
