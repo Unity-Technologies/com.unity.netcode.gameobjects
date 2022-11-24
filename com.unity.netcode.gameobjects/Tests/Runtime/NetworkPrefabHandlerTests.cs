@@ -186,7 +186,12 @@ namespace Unity.Netcode.RuntimeTests
             //Stop, shutdown, and destroy
             NetworkManagerHelper.ShutdownNetworkManager();
 
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = UnityEngine.Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).ToList();
+#else
             var networkObjects = UnityEngine.Object.FindObjectsOfType<NetworkObject>().ToList();
+#endif
+
             var networkObjectsList = networkObjects.Where(c => c.name.Contains(k_PrefabObjectName));
             foreach (var networkObject in networkObjectsList)
             {
