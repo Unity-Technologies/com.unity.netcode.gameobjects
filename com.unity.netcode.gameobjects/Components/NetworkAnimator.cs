@@ -780,7 +780,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void CheckForAnimatorChanges()
         {
-            if (!IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && !IsServer)
+            if (!IsSpawned || (!IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && !IsServer))
             {
                 return;
             }
