@@ -123,7 +123,8 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (methodDefinition.Name == nameof(NetworkBehaviour.__beginSendServerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__endSendServerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
-                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc))
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__createNativeList))
                 {
                     methodDefinition.IsFamily = true;
                 }

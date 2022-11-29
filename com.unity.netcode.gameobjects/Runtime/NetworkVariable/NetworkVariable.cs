@@ -64,6 +64,11 @@ namespace Unity.Netcode
             }
         }
 
+        internal ref T RefValue()
+        {
+            return ref m_InternalValue;
+        }
+
         /// <summary>
         /// Sets the <see cref="Value"/>, marks the <see cref="NetworkVariable{T}"/> dirty, and invokes the <see cref="OnValueChanged"/> callback
         /// if there are subscribers to that event.

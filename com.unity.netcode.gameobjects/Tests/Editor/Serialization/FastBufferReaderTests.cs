@@ -135,6 +135,88 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
+        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in NativeArray<T> value) where T : unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeArray<T>) });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeArray"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
+        private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in NativeList<T> value) where T : unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeList<T>) });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeList"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
         private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferReader).GetMethod(methodName, new[] { typeof(T).MakeByRefType() });
@@ -230,6 +312,110 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(reader, args);
             value = (T[])args[0];
         }
+
+        private void RunReadMethod<T>(string methodName, FastBufferReader reader, out NativeArray<T> value) where T : unmanaged
+        {
+            MethodInfo method = null;
+
+            try
+            {
+                method = typeof(FastBufferReader).GetMethod(methodName, new[] { typeof(NativeArray<T>).MakeByRefType(), typeof(Allocator) });
+            }
+            catch (AmbiguousMatchException)
+            {
+                // skip.
+            }
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferReader).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length < 2 || (candidateMethod.GetParameters().Length > 2 && !candidateMethod.GetParameters()[2].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeArray"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            value = new NativeArray<T>();
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            args[1] = Allocator.Temp;
+            for (var i = 2; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(reader, args);
+            value = (NativeArray<T>)args[0];
+        }
+
+        private void RunReadMethod<T>(string methodName, FastBufferReader reader, ref NativeList<T> value) where T : unmanaged
+        {
+            MethodInfo method = null;
+
+            try
+            {
+                method = typeof(FastBufferReader).GetMethod(methodName, new[] { typeof(NativeList<T>).MakeByRefType() });
+            }
+            catch (AmbiguousMatchException)
+            {
+                // skip.
+            }
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferReader).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeList"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(reader, args);
+        }
         #endregion
 
         #region Generic Checks
@@ -291,6 +477,26 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private void VerifyArrayEquality<T>(NativeArray<T> value, NativeArray<T> compareValue, int offset) where T : unmanaged
+        {
+            Assert.AreEqual(value.Length, compareValue.Length);
+
+            for (var i = 0; i < value.Length; ++i)
+            {
+                Assert.AreEqual(value[i], compareValue[i]);
+            }
+        }
+
+        private void VerifyArrayEquality<T>(NativeList<T> value, NativeList<T> compareValue, int offset) where T : unmanaged
+        {
+            Assert.AreEqual(value.Length, compareValue.Length);
+
+            for (var i = 0; i < value.Length; ++i)
+            {
+                Assert.AreEqual(value[i], compareValue[i]);
+            }
+        }
+
         protected override unsafe void RunTypeArrayTest<T>(T[] valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -343,6 +549,112 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        protected override unsafe void RunTypeNativeArrayTest<T>(NativeArray<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
+
+                RunWriteMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
+
+                WriteCheckBytes(writer, writeSize);
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(reader, writer.Length);
+
+                    Assert.IsTrue(reader.TryBeginRead(writeSize));
+                    RunReadMethod(nameof(FastBufferReader.ReadValue), reader, out NativeArray<T> result);
+                    VerifyArrayEquality(valueToTest, result, 0);
+
+                    VerifyCheckBytes(reader, writeSize);
+                }
+            }
+        }
+
+        protected override unsafe void RunTypeNativeArrayTestSafe<T>(NativeArray<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+
+                RunWriteMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
+
+                WriteCheckBytes(writer, writeSize);
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(reader, writer.Length);
+
+                    RunReadMethod(nameof(FastBufferReader.ReadValueSafe), reader, out NativeArray<T> result);
+                    VerifyArrayEquality(valueToTest, result, 0);
+
+                    VerifyCheckBytes(reader, writeSize);
+                }
+            }
+        }
+
+        protected override unsafe void RunTypeNativeListTest<T>(NativeList<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
+
+                RunWriteMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
+
+                WriteCheckBytes(writer, writeSize);
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(reader, writer.Length);
+
+                    Assert.IsTrue(reader.TryBeginRead(writeSize));
+                    var result = new NativeList<T>(Allocator.Temp);
+                    RunReadMethod(nameof(FastBufferReader.ReadValueInPlace), reader, ref result);
+                    VerifyArrayEquality(valueToTest, result, 0);
+
+                    VerifyCheckBytes(reader, writeSize);
+                }
+            }
+        }
+
+        protected override unsafe void RunTypeNativeListTestSafe<T>(NativeList<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+
+                RunWriteMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
+
+                WriteCheckBytes(writer, writeSize);
+
+                var reader = new FastBufferReader(writer, Allocator.Temp);
+                using (reader)
+                {
+                    VerifyPositionAndLength(reader, writer.Length);
+
+                    var result = new NativeList<T>(Allocator.Temp);
+                    RunReadMethod(nameof(FastBufferReader.ReadValueSafeInPlace), reader, ref result);
+                    VerifyArrayEquality(valueToTest, result, 0);
+
+                    VerifyCheckBytes(reader, writeSize);
+                }
+            }
+        }
+
         #endregion
 
         #region Tests
@@ -372,6 +684,34 @@ namespace Unity.Netcode.EditorTests
             [Values] WriteType writeType)
         {
             BaseArrayTypeTest(testType, writeType);
+        }
+
+        [Test]
+        public void GivenFastBufferWriterContainingValue_WhenReadingNativeArrayOfUnmanagedElementType_ValueMatchesWhatWasWritten(
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
+        {
+            BaseNativeArrayTypeTest(testType, writeType);
+        }
+
+        [Test]
+        public void GivenFastBufferWriterContainingValue_WhenReadingNativeListOfUnmanagedElementType_ValueMatchesWhatWasWritten(
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
+        {
+            BaseNativeListTypeTest(testType, writeType);
         }
 
 

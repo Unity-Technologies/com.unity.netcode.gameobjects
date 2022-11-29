@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using Random = System.Random;
 
@@ -152,6 +153,88 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in NativeArray<T> value) where T : unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeArray<T>) });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeArray"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
+        private void RunMethod<T>(string methodName, FastBufferWriter writer, in NativeList<T> value) where T : unmanaged
+        {
+            MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeList<T>) });
+            if (method == null)
+            {
+                foreach (var candidateMethod in typeof(FastBufferWriter).GetMethods())
+                {
+                    if (candidateMethod.Name == methodName && candidateMethod.IsGenericMethodDefinition)
+                    {
+                        if (candidateMethod.GetParameters().Length == 0 || (candidateMethod.GetParameters().Length > 1 && !candidateMethod.GetParameters()[1].HasDefaultValue))
+                        {
+                            continue;
+                        }
+                        if (!candidateMethod.GetParameters()[0].ParameterType.Name.Contains("NativeList"))
+                        {
+                            continue;
+                        }
+                        try
+                        {
+                            method = candidateMethod.MakeGenericMethod(typeof(T));
+                            break;
+                        }
+                        catch (ArgumentException)
+                        {
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            Assert.NotNull(method);
+
+            object[] args = new object[method.GetParameters().Length];
+            args[0] = value;
+            for (var i = 1; i < args.Length; ++i)
+            {
+                args[i] = method.GetParameters()[i].DefaultValue;
+            }
+            method.Invoke(writer, args);
+        }
+
 
         protected override unsafe void RunTypeTest<T>(T valueToTest)
         {
@@ -206,6 +289,32 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+        private unsafe void VerifyArrayEquality<T>(NativeArray<T> value, byte* unsafePtr, int offset) where T : unmanaged
+        {
+            int* sizeValue = (int*)(unsafePtr + offset);
+            Assert.AreEqual(value.Length, *sizeValue);
+
+            var asTPointer = (T*)value.GetUnsafePtr();
+            var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
+            for (var i = 0; i < value.Length; ++i)
+            {
+                Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
+            }
+        }
+
+        private unsafe void VerifyArrayEquality<T>(NativeList<T> value, byte* unsafePtr, int offset) where T : unmanaged
+        {
+            int* sizeValue = (int*)(unsafePtr + offset);
+            Assert.AreEqual(value.Length, *sizeValue);
+
+            var asTPointer = (T*)value.GetUnsafePtr();
+            var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
+            for (var i = 0; i < value.Length; ++i)
+            {
+                Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
+            }
+        }
+
         protected override unsafe void RunTypeArrayTest<T>(T[] valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -229,6 +338,94 @@ namespace Unity.Netcode.EditorTests
         }
 
         protected override unsafe void RunTypeArrayTestSafe<T>(T[] valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+
+                RunMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
+                VerifyPositionAndLength(writer, writeSize);
+
+                WriteCheckBytes(writer, writeSize);
+
+                VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
+
+                var underlyingArray = writer.ToArray();
+                VerifyCheckBytes(underlyingArray, writeSize);
+            }
+        }
+
+
+        protected override unsafe void RunTypeNativeArrayTest<T>(NativeArray<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
+
+                RunMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
+                VerifyPositionAndLength(writer, writeSize);
+
+                WriteCheckBytes(writer, writeSize);
+
+                VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
+
+                var underlyingArray = writer.ToArray();
+                VerifyCheckBytes(underlyingArray, writeSize);
+            }
+        }
+
+        protected override unsafe void RunTypeNativeArrayTestSafe<T>(NativeArray<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+
+                RunMethod(nameof(FastBufferWriter.WriteValueSafe), writer, valueToTest);
+                VerifyPositionAndLength(writer, writeSize);
+
+                WriteCheckBytes(writer, writeSize);
+
+                VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
+
+                var underlyingArray = writer.ToArray();
+                VerifyCheckBytes(underlyingArray, writeSize);
+            }
+        }
+
+
+        protected override unsafe void RunTypeNativeListTest<T>(NativeList<T> valueToTest)
+        {
+            var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
+            var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
+            using (writer)
+            {
+
+                Assert.AreEqual(sizeof(int) + sizeof(T) * valueToTest.Length, writeSize);
+                Assert.IsTrue(writer.TryBeginWrite(writeSize + 2), "Writer denied write permission");
+
+                RunMethod(nameof(FastBufferWriter.WriteValue), writer, valueToTest);
+                VerifyPositionAndLength(writer, writeSize);
+
+                WriteCheckBytes(writer, writeSize);
+
+                VerifyArrayEquality(valueToTest, writer.GetUnsafePtr(), 0);
+
+                var underlyingArray = writer.ToArray();
+                VerifyCheckBytes(underlyingArray, writeSize);
+            }
+        }
+
+        protected override unsafe void RunTypeNativeListTestSafe<T>(NativeList<T> valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
             var writer = new FastBufferWriter(writeSize + 2, Allocator.Temp);
@@ -278,6 +475,34 @@ namespace Unity.Netcode.EditorTests
             [Values] WriteType writeType)
         {
             BaseArrayTypeTest(testType, writeType);
+        }
+
+        [Test]
+        public void WhenWritingNativeArrayOfUnmanagedElementType_NativeArrayIsWrittenCorrectly(
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
+        {
+            BaseNativeArrayTypeTest(testType, writeType);
+        }
+
+        [Test]
+        public void WhenWritingNativeListOfUnmanagedElementType_NativeListIsWrittenCorrectly(
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            Type testType,
+            [Values] WriteType writeType)
+        {
+            BaseNativeListTypeTest(testType, writeType);
         }
 
         [TestCase(false, WriteType.WriteDirect)]
