@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
-- Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `isNotTeleporting` for better clarity of what that parameter does. (#2228)
+- Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `teleportDisabled` for better clarity of what that parameter does. (#2228)
 
 ### Fixed
 
