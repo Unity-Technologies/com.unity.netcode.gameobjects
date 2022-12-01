@@ -65,7 +65,7 @@ namespace Unity.Netcode
             ReaderHandle* readerHandle = null;
             if (copyAllocator == Allocator.None)
             {
-                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle) + length, UnsafeUtility.AlignOf<byte>(), internalAllocator);
+                readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle), UnsafeUtility.AlignOf<byte>(), internalAllocator);
                 readerHandle->BufferPointer = buffer;
                 readerHandle->Position = offset;
             }
@@ -459,6 +459,19 @@ namespace Unity.Netcode
             {
                 ReadNetworkSerializable(out value[i]);
             }
+        }
+
+        /// <summary>
+        /// Read an INetworkSerializable in-place, without constructing a new one
+        /// Note that this will NOT check for null before calling NetworkSerialize
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializableInPlace<T>(ref T value) where T : INetworkSerializable
+        {
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(this));
+            value.NetworkSerialize(bufferSerializer);
         }
 
         /// <summary>
@@ -1307,6 +1320,25 @@ namespace Unity.Netcode
         {
             ReadUnmanagedSafe(out int length);
             value = new T();
+            value.Length = length;
+            ReadBytesSafe(value.GetUnsafePtr(), length);
+        }
+
+
+        /// <summary>
+        /// Read a FixedString value.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafeInPlace<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
             value.Length = length;
             ReadBytesSafe(value.GetUnsafePtr(), length);
         }

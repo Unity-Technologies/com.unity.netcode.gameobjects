@@ -1,10 +1,12 @@
-using System;
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace Unity.Netcode
 {
     internal struct ConnectionApprovedMessage : INetworkMessage
     {
+        public int Version => 0;
+
         public ulong OwnerClientId;
         public int NetworkTick;
 
@@ -13,14 +15,26 @@ namespace Unity.Netcode
 
         private FastBufferReader m_ReceivedSceneObjectData;
 
-        public void Serialize(FastBufferWriter writer)
+        public NativeArray<MessageVersionData> MessageVersions;
+
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            if (!writer.TryBeginWrite(sizeof(ulong) + sizeof(int) + sizeof(int)))
+            // ============================================================
+            // BEGIN FORBIDDEN SEGMENT
+            // DO NOT CHANGE THIS HEADER. Everything added to this message
+            // must go AFTER the message version header.
+            // ============================================================
+            BytePacker.WriteValueBitPacked(writer, MessageVersions.Length);
+            foreach (var messageVersion in MessageVersions)
             {
-                throw new OverflowException($"Not enough space in the write buffer to serialize {nameof(ConnectionApprovedMessage)}");
+                messageVersion.Serialize(writer);
             }
-            writer.WriteValue(OwnerClientId);
-            writer.WriteValue(NetworkTick);
+            // ============================================================
+            // END FORBIDDEN SEGMENT
+            // ============================================================
+
+            BytePacker.WriteValueBitPacked(writer, OwnerClientId);
+            BytePacker.WriteValueBitPacked(writer, NetworkTick);
 
             uint sceneObjectCount = 0;
             if (SpawnedObjectsList != null)
@@ -39,17 +53,19 @@ namespace Unity.Netcode
                         ++sceneObjectCount;
                     }
                 }
+
                 writer.Seek(pos);
-                writer.WriteValue(sceneObjectCount);
+                // Can't pack this value because its space is reserved, so it needs to always use all the reserved space.
+                writer.WriteValueSafe(sceneObjectCount);
                 writer.Seek(writer.Length);
             }
             else
             {
-                writer.WriteValue(sceneObjectCount);
+                writer.WriteValueSafe(sceneObjectCount);
             }
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
@@ -57,13 +73,36 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!reader.TryBeginRead(sizeof(ulong) + sizeof(int) + sizeof(int)))
+            // ============================================================
+            // BEGIN FORBIDDEN SEGMENT
+            // DO NOT CHANGE THIS HEADER. Everything added to this message
+            // must go AFTER the message version header.
+            // ============================================================
+            ByteUnpacker.ReadValueBitPacked(reader, out int length);
+            var messageHashesInOrder = new NativeArray<uint>(length, Allocator.Temp);
+            for (var i = 0; i < length; ++i)
             {
-                throw new OverflowException($"Not enough space in the buffer to read {nameof(ConnectionApprovedMessage)}");
-            }
+                var messageVersion = new MessageVersionData();
+                messageVersion.Deserialize(reader);
+                networkManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
+                messageHashesInOrder[i] = messageVersion.Hash;
 
-            reader.ReadValue(out OwnerClientId);
-            reader.ReadValue(out NetworkTick);
+                // Update the received version since this message will always be passed version 0, due to the map not
+                // being initialized until just now.
+                var messageType = networkManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
+                if (messageType == typeof(ConnectionApprovedMessage))
+                {
+                    receivedMessageVersion = messageVersion.Version;
+                }
+            }
+            networkManager.MessagingSystem.SetServerMessageOrder(messageHashesInOrder);
+            messageHashesInOrder.Dispose();
+            // ============================================================
+            // END FORBIDDEN SEGMENT
+            // ============================================================
+
+            ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkTick);
             m_ReceivedSceneObjectData = reader;
             return true;
         }
@@ -79,12 +118,13 @@ namespace Unity.Netcode
             networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
 
             networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
+            networkManager.IsApproved = true;
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {
                 networkManager.SpawnManager.DestroySceneObjects();
-                m_ReceivedSceneObjectData.ReadValue(out uint sceneObjectCount);
+                m_ReceivedSceneObjectData.ReadValueSafe(out uint sceneObjectCount);
 
                 // Deserializing NetworkVariable data is deferred from Receive() to Handle to avoid needing
                 // to create a list to hold the data. This is a breach of convention for performance reasons.

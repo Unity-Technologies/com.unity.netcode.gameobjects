@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -38,7 +39,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (AllMessagesReceived)
             {
-                return AllMessagesReceived;
+                foreach (var entry in m_MessageHookEntries)
+                {
+                    entry.RemoveHook();
+                }
             }
 
             return AllMessagesReceived;
@@ -63,18 +67,34 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
     }
 
+    public enum ReceiptType
+    {
+        Received,
+        Handled
+    }
+
     public class MessageHookEntry
     {
         internal MessageHooks MessageHooks;
         protected NetworkManager m_NetworkManager;
         private MessageHooks.MessageReceiptCheck m_MessageReceiptCheck;
+        private MessageHooks.MessageHandleCheck m_MessageHandleCheck;
         internal string MessageType;
+        private ReceiptType m_ReceiptType;
 
         public void Initialize()
         {
-            Assert.IsNotNull(m_MessageReceiptCheck, $"{nameof(m_MessageReceiptCheck)} is null, did you forget to initialize?");
             MessageHooks = new MessageHooks();
-            MessageHooks.ReceiptCheck = m_MessageReceiptCheck;
+            if (m_ReceiptType == ReceiptType.Handled)
+            {
+                Assert.IsNotNull(m_MessageHandleCheck, $"{nameof(m_MessageHandleCheck)} is null, did you forget to initialize?");
+                MessageHooks.HandleCheck = m_MessageHandleCheck;
+            }
+            else
+            {
+                Assert.IsNotNull(m_MessageReceiptCheck, $"{nameof(m_MessageReceiptCheck)} is null, did you forget to initialize?");
+                MessageHooks.ReceiptCheck = m_MessageReceiptCheck;
+            }
             Assert.IsNotNull(m_NetworkManager.MessagingSystem, $"{nameof(NetworkManager.MessagingSystem)} is null! Did you forget to start first?");
             m_NetworkManager.MessagingSystem.Hook(MessageHooks);
         }
@@ -82,14 +102,46 @@ namespace Unity.Netcode.TestHelpers.Runtime
         internal void AssignMessageType<T>() where T : INetworkMessage
         {
             MessageType = typeof(T).Name;
-            m_MessageReceiptCheck = MessageHooks.CheckForMessageOfType<T>;
+            if (m_ReceiptType == ReceiptType.Handled)
+            {
+                m_MessageHandleCheck = MessageHooks.CheckForMessageOfTypeHandled<T>;
+            }
+            else
+            {
+                m_MessageReceiptCheck = MessageHooks.CheckForMessageOfTypeReceived<T>;
+            }
             Initialize();
         }
 
-        public MessageHookEntry(NetworkManager networkManager)
+        internal void RemoveHook()
+        {
+            m_NetworkManager.MessagingSystem.Unhook(MessageHooks);
+        }
+
+        internal void AssignMessageType(Type type)
+        {
+            MessageType = type.Name;
+            if (m_ReceiptType == ReceiptType.Handled)
+            {
+                m_MessageHandleCheck = (message) =>
+                {
+                    return message.GetType() == type;
+                };
+            }
+            else
+            {
+                m_MessageReceiptCheck = (messageType) =>
+                {
+                    return messageType == type;
+                };
+            }
+            Initialize();
+        }
+
+        public MessageHookEntry(NetworkManager networkManager, ReceiptType type = ReceiptType.Handled)
         {
             m_NetworkManager = networkManager;
+            m_ReceiptType = type;
         }
     }
 }
-

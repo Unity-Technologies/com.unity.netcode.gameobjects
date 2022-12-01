@@ -2,22 +2,26 @@ namespace Unity.Netcode
 {
     internal struct ChangeOwnershipMessage : INetworkMessage, INetworkSerializeByMemcpy
     {
+        public int Version => 0;
+
         public ulong NetworkObjectId;
         public ulong OwnerClientId;
 
-        public void Serialize(FastBufferWriter writer)
+        public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            writer.WriteValueSafe(this);
+            BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
+            BytePacker.WriteValueBitPacked(writer, OwnerClientId);
         }
 
-        public bool Deserialize(FastBufferReader reader, ref NetworkContext context)
+        public bool Deserialize(FastBufferReader reader, ref NetworkContext context, int receivedMessageVersion)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
             if (!networkManager.IsClient)
             {
                 return false;
             }
-            reader.ReadValueSafe(out this);
+            ByteUnpacker.ReadValueBitPacked(reader, out NetworkObjectId);
+            ByteUnpacker.ReadValueBitPacked(reader, out OwnerClientId);
             if (!networkManager.SpawnManager.SpawnedObjects.ContainsKey(NetworkObjectId))
             {
                 networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, reader, ref context);

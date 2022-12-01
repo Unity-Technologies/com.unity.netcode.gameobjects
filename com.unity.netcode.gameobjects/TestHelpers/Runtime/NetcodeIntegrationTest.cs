@@ -132,6 +132,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_EnableVerboseDebug { get; set; }
 
         /// <summary>
+        /// When set to true, this will bypass the entire
+        /// wait for clients to connect process.
+        /// </summary>
+        /// <remarks>
+        /// CAUTION:
+        /// Setting this to true will bypass other helper
+        /// identification related code, so this should only
+        /// be used for connection failure oriented testing
+        /// </remarks>
+        protected bool m_BypassConnectionTimeout { get; set; }
+
+        /// <summary>
         /// Used to display the various integration test
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
@@ -262,16 +274,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             CreateServerAndClients(NumberOfClients);
         }
 
-        protected virtual void OnNewClientCreated(NetworkManager networkManager)
-        {
-
-        }
-
-        protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
-        {
-
-        }
-
         private void AddRemoveNetworkManager(NetworkManager networkManager, bool addNetworkManager)
         {
             var clientNetworkManagersList = new List<NetworkManager>(m_ClientNetworkManagers);
@@ -287,6 +289,37 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_NumberOfClients = clientNetworkManagersList.Count;
         }
 
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created
+        /// </summary>
+        protected virtual void OnNewClientCreated(NetworkManager networkManager)
+        {
+
+        }
+
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created and started
+        /// </summary>
+        protected virtual void OnNewClientStarted(NetworkManager networkManager)
+        {
+        }
+
+        /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Invoked when the newly created client has been created, started, and connected
+        /// to the server-host.
+        /// </summary>
+        protected virtual void OnNewClientStartedAndConnected(NetworkManager networkManager)
+        {
+
+        }
+
+        /// <summary>
+        /// This will create, start, and connect a new client while in the middle of an
+        /// integration test.
+        /// </summary>
         protected IEnumerator CreateAndStartNewClient()
         {
             var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length);
@@ -297,9 +330,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
             OnNewClientCreated(networkManager);
 
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
+
             AddRemoveNetworkManager(networkManager, true);
+
+            OnNewClientStarted(networkManager);
+
             // Wait for the new client to connect
             yield return WaitForClientsConnectedOrTimeOut();
+
+            OnNewClientStartedAndConnected(networkManager);
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 AddRemoveNetworkManager(networkManager, false);
@@ -310,6 +349,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"[{networkManager.name}] Created and connected!");
         }
 
+        /// <summary>
+        /// This will stop a client while in the middle of an integration test
+        /// </summary>
         protected IEnumerator StopOneClient(NetworkManager networkManager, bool destroy = false)
         {
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
@@ -389,8 +431,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.name = $"NetworkManager - Client - {networkManager.LocalClientId}";
             Assert.NotNull(networkManager.LocalClient.PlayerObject, $"{nameof(StartServerAndClients)} detected that client {networkManager.LocalClientId} does not have an assigned player NetworkObject!");
 
+            // Go ahead and create an entry for this new client
+            if (!m_PlayerNetworkObjects.ContainsKey(networkManager.LocalClientId))
+            {
+                m_PlayerNetworkObjects.Add(networkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+            }
+
+#if UNITY_2023_1_OR_NEWER
             // Get all player instances for the current client NetworkManager instance
-            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId);
+            var clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
+#else
+            // Get all player instances for the current client NetworkManager instance
+            var clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == networkManager.LocalClientId).ToList();
+#endif
             // Add this player instance to each client player entry
             foreach (var playerNetworkObject in clientPlayerClones)
             {
@@ -402,6 +455,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 if (!m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].ContainsKey(networkManager.LocalClientId))
                 {
                     m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(networkManager.LocalClientId, playerNetworkObject);
+                }
+            }
+#if UNITY_2023_1_OR_NEWER
+            // For late joining clients, add the remaining (if any) cloned versions of each client's player
+            clientPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+#else
+            // For late joining clients, add the remaining (if any) cloned versions of each client's player
+            clientPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.NetworkManager == networkManager).ToList();
+#endif
+            foreach (var playerNetworkObject in clientPlayerClones)
+            {
+                if (!m_PlayerNetworkObjects[networkManager.LocalClientId].ContainsKey(playerNetworkObject.OwnerClientId))
+                {
+                    m_PlayerNetworkObjects[networkManager.LocalClientId].Add(playerNetworkObject.OwnerClientId, playerNetworkObject);
                 }
             }
         }
@@ -416,7 +483,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             if (m_UseHost)
             {
+#if UNITY_2023_1_OR_NEWER
+                var clientSideServerPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#else
                 var clientSideServerPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#endif
                 foreach (var playerNetworkObject in clientSideServerPlayerClones)
                 {
                     // When the server is not the host this needs to be done
@@ -431,6 +502,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
         }
+
+        protected virtual bool LogAllMessages => false;
 
         /// <summary>
         /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
@@ -450,36 +523,51 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     Assert.Fail("Failed to start instances");
                 }
 
+                if (LogAllMessages)
+                {
+                    EnableMessageLogging();
+                }
+
                 RegisterSceneManagerHandler();
 
                 // Notification that the server and clients have been started
                 yield return OnStartedServerAndClients();
 
-                // Wait for all clients to connect
-                yield return WaitForClientsConnectedOrTimeOut();
-                AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
-
-                if (m_UseHost || m_ServerNetworkManager.IsHost)
+                // When true, we skip everything else (most likely a connection oriented test)
+                if (!m_BypassConnectionTimeout)
                 {
-                    // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
-                    var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
-                    foreach (var playerNetworkObject in serverPlayerClones)
+                    // Wait for all clients to connect
+                    yield return WaitForClientsConnectedOrTimeOut();
+
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+
+                    if (m_UseHost || m_ServerNetworkManager.IsHost)
                     {
-                        if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+#if UNITY_2023_1_OR_NEWER
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#else
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#endif
+                        foreach (var playerNetworkObject in serverPlayerClones)
                         {
-                            m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                            {
+                                m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            }
+                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                         }
-                        m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
                     }
+
+                    ClientNetworkManagerPostStartInit();
+
+                    // Notification that at this time the server and client(s) are instantiated,
+                    // started, and connected on both sides.
+                    yield return OnServerAndClientsConnected();
+
+                    VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
                 }
-
-                ClientNetworkManagerPostStartInit();
-
-                // Notification that at this time the server and client(s) are instantiated,
-                // started, and connected on both sides.
-                yield return OnServerAndClientsConnected();
-
-                VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
             }
         }
 
@@ -651,7 +739,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void DestroySceneNetworkObjects()
         {
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
+#else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#endif
             foreach (var networkObject in networkObjects)
             {
                 // This can sometimes be null depending upon order of operations
@@ -672,6 +764,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     // Destroy the GameObject that holds the NetworkObject component
                     Object.DestroyImmediate(networkObject.gameObject);
                 }
+            }
+        }
+
+        /// <summary>
+        /// For debugging purposes, this will turn on verbose logging of all messages and batches sent and received
+        /// </summary>
+        protected void EnableMessageLogging()
+        {
+            m_ServerNetworkManager.MessagingSystem.Hook(new DebugNetworkHooks());
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.MessagingSystem.Hook(new DebugNetworkHooks());
             }
         }
 
@@ -760,6 +864,41 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator WaitForClientsConnectedOrTimeOut()
         {
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
+        }
+
+        internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled) where T : INetworkMessage
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                var messageHook = new MessageHookEntry(clientNetworkManager, type);
+                messageHook.AssignMessageType<T>();
+                messageHookEntriesForSpawn.Add(messageHook);
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut);
+        }
+
+        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled)
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in wiatForReceivedBy)
+            {
+                foreach (var message in messagesInOrder)
+                {
+                    var messageHook = new MessageHookEntry(clientNetworkManager, type);
+                    messageHook.AssignMessageType(message);
+                    messageHookEntriesForSpawn.Add(messageHook);
+                }
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            yield return WaitForConditionOrTimeOut(hooks);
+            Assert.False(s_GlobalTimeoutHelper.TimedOut);
         }
 
         /// <summary>

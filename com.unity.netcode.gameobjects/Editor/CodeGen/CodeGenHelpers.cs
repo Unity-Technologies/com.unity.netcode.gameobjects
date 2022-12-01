@@ -123,6 +123,19 @@ namespace Unity.Netcode.Editor.CodeGen
             try
             {
                 var typeDef = typeReference.Resolve();
+                // Note: this won't catch generics correctly.
+                //
+                //     class Foo<T>: IInterface<T> {}
+                //     class Bar: Foo<int> {}
+                //
+                // Bar.HasInterface(IInterface<int>) -> returns false even though it should be true.
+                //
+                // This can be fixed (see GetAllFieldsAndResolveGenerics() in NetworkBehaviourILPP to understand how)
+                // but right now we don't need that to work so it's left alone to reduce complexity
+                if (typeDef.BaseType.HasInterface(interfaceTypeFullName))
+                {
+                    return true;
+                }
                 var typeFaces = typeDef.Interfaces;
                 return typeFaces.Any(iface => iface.InterfaceType.FullName == interfaceTypeFullName);
             }
@@ -385,18 +398,19 @@ namespace Unity.Netcode.Editor.CodeGen
             return assemblyDefinition;
         }
 
-        public static (ModuleDefinition DotnetModule, ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        private static void SearchForBaseModulesRecursive(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver, ref ModuleDefinition unityModule, ref ModuleDefinition netcodeModule, HashSet<string> visited)
         {
-            ModuleDefinition dotnetModule = null;
-            ModuleDefinition unityModule = null;
-            ModuleDefinition netcodeModule = null;
 
             foreach (var module in assemblyDefinition.Modules)
             {
-                if (dotnetModule == null && module.Name == DotnetModuleName)
+                if (module == null)
                 {
-                    dotnetModule = module;
                     continue;
+                }
+
+                if (unityModule != null && netcodeModule != null)
+                {
+                    return;
                 }
 
                 if (unityModule == null && module.Name == UnityModuleName)
@@ -411,41 +425,46 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
-
-            if (dotnetModule != null && unityModule != null && netcodeModule != null)
+            if (unityModule != null && netcodeModule != null)
             {
-                return (dotnetModule, unityModule, netcodeModule);
+                return;
             }
 
             foreach (var assemblyNameReference in assemblyDefinition.MainModule.AssemblyReferences)
             {
-                foreach (var module in assemblyResolver.Resolve(assemblyNameReference).Modules)
+                if (assemblyNameReference == null)
                 {
-                    if (dotnetModule == null && module.Name == DotnetModuleName)
-                    {
-                        dotnetModule = module;
-                        continue;
-                    }
-                    if (unityModule == null && module.Name == UnityModuleName)
-                    {
-                        unityModule = module;
-                        continue;
-                    }
-
-                    if (netcodeModule == null && module.Name == NetcodeModuleName)
-                    {
-                        netcodeModule = module;
-                        continue;
-                    }
+                    continue;
+                }
+                if (visited.Contains(assemblyNameReference.Name))
+                {
+                    continue;
                 }
 
-                if (dotnetModule != null && unityModule != null && netcodeModule != null)
+                visited.Add(assemblyNameReference.Name);
+
+                var assembly = assemblyResolver.Resolve(assemblyNameReference);
+                if (assembly == null)
                 {
-                    return (dotnetModule, unityModule, netcodeModule);
+                    continue;
+                }
+                SearchForBaseModulesRecursive(assembly, assemblyResolver, ref unityModule, ref netcodeModule, visited);
+
+                if (unityModule != null && netcodeModule != null)
+                {
+                    return;
                 }
             }
+        }
 
-            return (dotnetModule, unityModule, netcodeModule);
+        public static (ModuleDefinition UnityModule, ModuleDefinition NetcodeModule) FindBaseModules(AssemblyDefinition assemblyDefinition, PostProcessorAssemblyResolver assemblyResolver)
+        {
+            ModuleDefinition unityModule = null;
+            ModuleDefinition netcodeModule = null;
+            var visited = new HashSet<string>();
+            SearchForBaseModulesRecursive(assemblyDefinition, assemblyResolver, ref unityModule, ref netcodeModule, visited);
+
+            return (unityModule, netcodeModule);
         }
     }
 }

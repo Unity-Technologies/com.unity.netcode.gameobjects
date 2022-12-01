@@ -86,6 +86,12 @@ namespace Unity.Netcode
         private bool m_ShuttingDown;
         private bool m_StopProcessingMessages;
 
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
+        public string DisconnectReason { get; internal set; }
+
         private class NetworkManagerHooks : INetworkHooks
         {
             private NetworkManager m_NetworkManager;
@@ -366,9 +372,21 @@ namespace Unity.Netcode
         public bool IsListening { get; internal set; }
 
         /// <summary>
-        /// Gets if we are connected as a client
+        /// When true, the client is connected, approved, and synchronized with
+        /// the server.
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        /// <summary>
+        /// Is true when the client has been approved.
+        /// </summary>
+        /// <remarks>
+        /// This only reflects the client's approved status and does not mean the client
+        /// has finished the connection and synchronization process. The server-host will
+        /// always be approved upon being starting the <see cref="NetworkManager"/>
+        /// <see cref="IsConnectedClient"/>
+        /// </remarks>
+        public bool IsApproved { get; internal set; }
 
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
@@ -431,6 +449,12 @@ namespace Unity.Netcode
             /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
             /// </summary>
             public bool Pending;
+
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
+            public string Reason;
         }
 
         /// <summary>
@@ -877,6 +901,9 @@ namespace Unity.Netcode
                 return;
             }
 
+            DisconnectReason = string.Empty;
+            IsApproved = false;
+
             ComponentFactory.SetDefaults();
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -1018,24 +1045,38 @@ namespace Unity.Netcode
             }
 
             Initialize(true);
+            IsServer = true;
+            IsClient = false;
+            IsListening = true;
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (NetworkConfig.NetworkTransport.StartServer())
+            try
             {
-                IsServer = true;
-                IsClient = false;
-                IsListening = true;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (NetworkConfig.NetworkTransport.StartServer())
+                {
+                    SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
-                SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+                    OnServerStarted?.Invoke();
+                    IsApproved = true;
+                    return true;
+                }
+                else
+                {
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
 
-                OnServerStarted?.Invoke();
-                return true;
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+                }
             }
-            else
+            catch (Exception)
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             return false;
@@ -1093,22 +1134,37 @@ namespace Unity.Netcode
 
             Initialize(true);
 
-            // If we failed to start then shutdown and notify user that the transport failed to start
-            if (!NetworkConfig.NetworkTransport.StartServer())
+            IsServer = true;
+            IsClient = true;
+            IsListening = true;
+
+            try
             {
-                Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                OnTransportFailure?.Invoke();
-                Shutdown();
-                return false;
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (!NetworkConfig.NetworkTransport.StartServer())
+                {
+                    Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
+                    OnTransportFailure?.Invoke();
+                    Shutdown();
+
+                    IsServer = false;
+                    IsClient = false;
+                    IsListening = false;
+
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                IsServer = false;
+                IsClient = false;
+                IsListening = false;
+                throw;
             }
 
             MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
-
-            IsServer = true;
-            IsClient = true;
-            IsListening = true;
 
             if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
             {
@@ -1123,6 +1179,7 @@ namespace Unity.Netcode
                 }
 
                 response.Approved = true;
+                IsApproved = true;
                 HandleConnectionApproval(ServerClientId, response);
             }
             else
@@ -1136,6 +1193,11 @@ namespace Unity.Netcode
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+            // This assures that any in-scene placed NetworkObject is spawned and
+            // any associated NetworkBehaviours' netcode related properties are
+            // set prior to invoking OnClientConnected.
+            InvokeOnClientConnectedCallback(LocalClientId);
 
             OnServerStarted?.Invoke();
 
@@ -1297,6 +1359,7 @@ namespace Unity.Netcode
         private void DisconnectRemoteClient(ulong clientId)
         {
             var transportId = ClientIdToTransportId(clientId);
+            MessagingSystem.ProcessSendQueues();
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
         }
 
@@ -1377,13 +1440,14 @@ namespace Unity.Netcode
                 }
             }
 
-            if (IsClient && IsConnectedClient)
+            if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
                 NetworkConfig.NetworkTransport.DisconnectLocalClient();
             }
 
             IsConnectedClient = false;
+            IsApproved = false;
 
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two
@@ -1534,6 +1598,7 @@ namespace Unity.Netcode
             } while (IsListening && networkEvent != NetworkEvent.Nothing);
 
             MessagingSystem.ProcessIncomingMessageQueue();
+            MessagingSystem.CleanupDisconnectedClients();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPoll.End();
@@ -1609,63 +1674,98 @@ namespace Unity.Netcode
         {
             var message = new ConnectionRequestMessage
             {
-                ConfigHash = NetworkConfig.GetConfig(),
+                // Since only a remote client will send a connection request,
+                // we should always force the rebuilding of the NetworkConfig hash value
+                ConfigHash = NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
                 ConnectionData = NetworkConfig.ConnectionData
             };
+
+            message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
+            for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
+            {
+                if (MessagingSystem.MessageTypes[index] != null)
+                {
+                    var type = MessagingSystem.MessageTypes[index];
+                    message.MessageVersions[index] = new MessageVersionData
+                    {
+                        Hash = XXHash.Hash32(type.FullName),
+                        Version = MessagingSystem.GetLocalVersion(type)
+                    };
+                }
+            }
+
             SendMessage(ref message, NetworkDelivery.ReliableSequenced, ServerClientId);
+            message.MessageVersions.Dispose();
         }
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            if (IsServer)
+            var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timedOut = false;
+            var connectionApproved = false;
+            var connectionNotApproved = false;
+            var timeoutMarker = timeStarted + NetworkConfig.ClientConnectionBufferTimeout;
+
+            while (IsListening && !ShutdownInProgress && !timedOut && !connectionApproved)
             {
-                NetworkTime timeStarted = LocalTime;
+                yield return null;
+                // Check if we timed out
+                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
 
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
-                while (IsListening && (LocalTime - timeStarted).Time < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
+                if (IsServer)
                 {
-                    yield return null;
+                    // When the client is no longer in the pending clients list and is in the connected clients list
+                    // it has been approved
+                    connectionApproved = !PendingClients.ContainsKey(clientId) && ConnectedClients.ContainsKey(clientId);
+
+                    // For the server side, if the client is in neither list then it was declined or the client disconnected
+                    connectionNotApproved = !PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId);
                 }
-
-                if (!IsListening)
+                else
                 {
-                    yield break;
-                }
-
-                if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
-                {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Client {clientId} Handshake Timed Out");
-                    }
-
-                    DisconnectClient(clientId);
+                    connectionApproved = IsApproved;
                 }
             }
-            else
+
+            // Exit coroutine if we are no longer listening or a shutdown is in progress (client or server)
+            if (!IsListening || ShutdownInProgress)
             {
-                float timeStarted = Time.realtimeSinceStartup;
+                yield break;
+            }
 
-                //We yield every frame incase a pending client disconnects and someone else gets its connection id
-                while (IsListening && (Time.realtimeSinceStartup - timeStarted) < NetworkConfig.ClientConnectionBufferTimeout && !IsConnectedClient)
+            // If the client timed out or was not approved
+            if (timedOut || connectionNotApproved)
+            {
+                // Timeout
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
-                    yield return null;
-                }
-
-                if (!IsListening)
-                {
-                    yield break;
-                }
-
-                if (!IsConnectedClient)
-                {
-                    // Timeout
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+                    if (timedOut)
                     {
-                        NetworkLog.LogInfo("Server Handshake Timed Out");
+                        if (IsServer)
+                        {
+                            // Log a warning that the transport detected a connection but then did not receive a follow up connection request message.
+                            // (hacking or something happened to the server's network connection)
+                            NetworkLog.LogWarning($"Server detected a transport connection from Client-{clientId}, but timed out waiting for the connection request message.");
+                        }
+                        else
+                        {
+                            // We only provide informational logging for the client side
+                            NetworkLog.LogInfo("Timed out waiting for the server to approve the connection request.");
+                        }
                     }
+                    else if (connectionNotApproved)
+                    {
+                        NetworkLog.LogInfo($"Client-{clientId} was either denied approval or disconnected while being approved.");
+                    }
+                }
+
+                if (IsServer)
+                {
+                    DisconnectClient(clientId);
+                }
+                else
+                {
                     Shutdown(true);
                 }
             }
@@ -1757,7 +1857,18 @@ namespace Unity.Netcode
                         NetworkLog.LogInfo($"Disconnect Event From {clientId}");
                     }
 
-                    OnClientDisconnectCallback?.Invoke(clientId);
+                    // Process the incoming message queue so that we get everything from the server disconnecting us
+                    // or, if we are the server, so we got everything from that client.
+                    MessagingSystem.ProcessIncomingMessageQueue();
+
+                    try
+                    {
+                        OnClientDisconnectCallback?.Invoke(clientId);
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogException(exception);
+                    }
 
                     if (IsServer)
                     {
@@ -1924,10 +2035,29 @@ namespace Unity.Netcode
         /// <param name="clientId">The ClientId to disconnect</param>
         public void DisconnectClient(ulong clientId)
         {
+            DisconnectClient(clientId, null);
+        }
+
+        /// <summary>
+        /// Disconnects the remote client.
+        /// </summary>
+        /// <param name="clientId">The ClientId to disconnect</param>
+        /// <param name="reason">Disconnection reason. If set, client will receive a DisconnectReasonMessage and have the
+        /// reason available in the NetworkManager.DisconnectReason property</param>
+        public void DisconnectClient(ulong clientId, string reason)
+        {
             if (!IsServer)
             {
                 throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
             }
+
+            if (!string.IsNullOrEmpty(reason))
+            {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.Reason = reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
+            }
+            MessagingSystem.ProcessSendQueues();
 
             OnClientDisconnectFromServer(clientId);
             DisconnectRemoteClient(clientId);
@@ -1944,13 +2074,20 @@ namespace Unity.Netcode
                     var playerObject = networkClient.PlayerObject;
                     if (playerObject != null)
                     {
-                        if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        if (!playerObject.DontDestroyWithOwner)
                         {
-                            PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                            {
+                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                            }
+                            else
+                            {
+                                Destroy(playerObject.gameObject);
+                            }
                         }
                         else
                         {
-                            Destroy(playerObject.gameObject);
+                            playerObject.RemoveOwnership();
                         }
                     }
 
@@ -2061,14 +2198,28 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var networkObject = SpawnManager.CreateLocalNetworkObject(
-                        isSceneObject: false,
-                        response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash,
-                        ownerClientId,
-                        parentNetworkId: null,
-                        networkSceneHandle: null,
-                        response.Position,
-                        response.Rotation);
+                    var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+
+                    // Generate a SceneObject for the player object to spawn
+                    var sceneObject = new NetworkObject.SceneObject
+                    {
+                        OwnerClientId = ownerClientId,
+                        IsPlayerObject = true,
+                        IsSceneObject = false,
+                        HasTransform = true,
+                        Hash = playerPrefabHash,
+                        TargetClientId = ownerClientId,
+                        Transform = new NetworkObject.SceneObject.TransformData
+                        {
+                            Position = response.Position.GetValueOrDefault(),
+                            Rotation = response.Rotation.GetValueOrDefault()
+                        }
+                    };
+
+                    // Create the player NetworkObject locally
+                    var networkObject = SpawnManager.CreateLocalNetworkObject(sceneObject);
+
+                    // Spawn the player NetworkObject locally
                     SpawnManager.SpawnNetworkObjectLocally(
                         networkObject,
                         SpawnManager.GetNetworkObjectId(),
@@ -2096,21 +2247,22 @@ namespace Unity.Netcode
                         }
                     }
 
-                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
-
+                    message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
                     for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
                     {
                         if (MessagingSystem.MessageTypes[index] != null)
                         {
-                            var orderingMessage = new OrderingMessage
+                            var type = MessagingSystem.MessageTypes[index];
+                            message.MessageVersions[index] = new MessageVersionData
                             {
-                                Order = index,
-                                Hash = XXHash.Hash32(MessagingSystem.MessageTypes[index].FullName)
+                                Hash = XXHash.Hash32(type.FullName),
+                                Version = MessagingSystem.GetLocalVersion(type)
                             };
-
-                            SendMessage(ref orderingMessage, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                         }
                     }
+
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    message.MessageVersions.Dispose();
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     if (!NetworkConfig.EnableSceneManagement)
@@ -2126,7 +2278,6 @@ namespace Unity.Netcode
                 {
                     LocalClient = client;
                     SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
-                    InvokeOnClientConnectedCallback(ownerClientId);
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkConfig.PlayerPrefab == null))
@@ -2139,6 +2290,15 @@ namespace Unity.Netcode
             }
             else
             {
+                if (!string.IsNullOrEmpty(response.Reason))
+                {
+                    var disconnectReason = new DisconnectReasonMessage();
+                    disconnectReason.Reason = response.Reason;
+                    SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+
+                    MessagingSystem.ProcessSendQueues();
+                }
+
                 PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
             }
@@ -2165,11 +2325,11 @@ namespace Unity.Netcode
                 {
                     ObjectInfo = ConnectedClients[clientId].PlayerObject.GetMessageSceneObject(clientPair.Key)
                 };
-                message.ObjectInfo.Header.Hash = playerPrefabHash;
-                message.ObjectInfo.Header.IsSceneObject = false;
-                message.ObjectInfo.Header.HasParent = false;
-                message.ObjectInfo.Header.IsPlayerObject = true;
-                message.ObjectInfo.Header.OwnerClientId = clientId;
+                message.ObjectInfo.Hash = playerPrefabHash;
+                message.ObjectInfo.IsSceneObject = false;
+                message.ObjectInfo.HasParent = false;
+                message.ObjectInfo.IsPlayerObject = true;
+                message.ObjectInfo.OwnerClientId = clientId;
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }

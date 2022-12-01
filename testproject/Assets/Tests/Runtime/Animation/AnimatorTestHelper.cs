@@ -29,6 +29,15 @@ namespace TestProject.RuntimeTests
             m_NetworkAnimator = GetComponent<NetworkAnimator>();
         }
 
+        // Since the com.unity.netcode.components does not allow test project to access its internals
+        // during runtime, this is only used when running test runner from within the editor
+#if UNITY_EDITOR
+        internal int GetAnimatorStateCount()
+        {
+            return m_NetworkAnimator.GetAnimationMessage().AnimationStates.Count;
+        }
+#endif
+
         public override void OnNetworkSpawn()
         {
             if (IsTriggerTest)
@@ -115,6 +124,11 @@ namespace TestProject.RuntimeTests
             {
                 StartCoroutine(TriggerMonitor(name));
             }
+        }
+
+        public void SetBool(string name, bool valueToSet)
+        {
+            m_Animator.SetBool(name, valueToSet);
         }
 
         private System.Collections.IEnumerator TriggerMonitor(string triggerName)

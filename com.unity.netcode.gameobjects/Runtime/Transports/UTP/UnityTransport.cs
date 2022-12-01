@@ -10,11 +10,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using NetcodeNetworkEvent = Unity.Netcode.NetworkEvent;
 using TransportNetworkEvent = Unity.Networking.Transport.NetworkEvent;
+using Unity.Burst;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Relay;
 using Unity.Networking.Transport.Utilities;
+#if UTP_TRANSPORT_2_0_ABOVE
+using Unity.Networking.Transport.TLS;
+#endif
 
 #if !UTP_TRANSPORT_2_0_ABOVE
 using NetworkEndpoint = Unity.Networking.Transport.NetworkEndPoint;
@@ -48,50 +53,48 @@ namespace Unity.Netcode.Transports.UTP
     /// </summary>
     public static class ErrorUtilities
     {
-        private const string k_NetworkSuccess = "Success";
-        private const string k_NetworkIdMismatch = "NetworkId is invalid, likely caused by stale connection {0}.";
-        private const string k_NetworkVersionMismatch = "NetworkVersion is invalid, likely caused by stale connection {0}.";
-        private const string k_NetworkStateMismatch = "Sending data while connecting on connection {0} is not allowed.";
-        private const string k_NetworkPacketOverflow = "Unable to allocate packet due to buffer overflow.";
-        private const string k_NetworkSendQueueFull = "Currently unable to queue packet as there is too many in-flight packets. This could be because the send queue size ('Max Send Queue Size') is too small.";
-        private const string k_NetworkHeaderInvalid = "Invalid Unity Transport Protocol header.";
-        private const string k_NetworkDriverParallelForErr = "The parallel network driver needs to process a single unique connection per job, processing a single connection multiple times in a parallel for is not supported.";
-        private const string k_NetworkSendHandleInvalid = "Invalid NetworkInterface Send Handle. Likely caused by pipeline send data corruption.";
-        private const string k_NetworkArgumentMismatch = "Invalid NetworkEndpoint Arguments.";
+        private static readonly FixedString128Bytes k_NetworkSuccess = "Success";
+        private static readonly FixedString128Bytes k_NetworkIdMismatch = "Invalid connection ID {0}.";
+        private static readonly FixedString128Bytes k_NetworkVersionMismatch = "Connection ID is invalid. Likely caused by sending on stale connection {0}.";
+        private static readonly FixedString128Bytes k_NetworkStateMismatch = "Connection state is invalid. Likely caused by sending on connection {0} which is stale or still connecting.";
+        private static readonly FixedString128Bytes k_NetworkPacketOverflow = "Packet is too large to be allocated by the transport.";
+        private static readonly FixedString128Bytes k_NetworkSendQueueFull = "Unable to queue packet in the transport. Likely caused by send queue size ('Max Send Queue Size') being too small.";
 
         /// <summary>
-        /// Convert error code to human readable error message.
+        /// Convert a UTP error code to human-readable error message.
         /// </summary>
-        /// <param name="error">Status code of the error</param>
-        /// <param name="connectionId">Subject connection ID of the error</param>
-        /// <returns>Human readable error message.</returns>
+        /// <param name="error">UTP error code.</param>
+        /// <param name="connectionId">ID of the connection on which the error occurred.</param>
+        /// <returns>Human-readable error message.</returns>
         public static string ErrorToString(Networking.Transport.Error.StatusCode error, ulong connectionId)
         {
-            switch (error)
+            return ErrorToString((int)error, connectionId);
+        }
+
+        internal static string ErrorToString(int error, ulong connectionId)
+        {
+            return ErrorToFixedString(error, connectionId).ToString();
+        }
+
+        internal static FixedString128Bytes ErrorToFixedString(int error, ulong connectionId)
+        {
+            switch ((Networking.Transport.Error.StatusCode)error)
             {
                 case Networking.Transport.Error.StatusCode.Success:
                     return k_NetworkSuccess;
                 case Networking.Transport.Error.StatusCode.NetworkIdMismatch:
-                    return string.Format(k_NetworkIdMismatch, connectionId);
+                    return FixedString.Format(k_NetworkIdMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkVersionMismatch:
-                    return string.Format(k_NetworkVersionMismatch, connectionId);
+                    return FixedString.Format(k_NetworkVersionMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkStateMismatch:
-                    return string.Format(k_NetworkStateMismatch, connectionId);
+                    return FixedString.Format(k_NetworkStateMismatch, connectionId);
                 case Networking.Transport.Error.StatusCode.NetworkPacketOverflow:
                     return k_NetworkPacketOverflow;
                 case Networking.Transport.Error.StatusCode.NetworkSendQueueFull:
                     return k_NetworkSendQueueFull;
-                case Networking.Transport.Error.StatusCode.NetworkHeaderInvalid:
-                    return k_NetworkHeaderInvalid;
-                case Networking.Transport.Error.StatusCode.NetworkDriverParallelForErr:
-                    return k_NetworkDriverParallelForErr;
-                case Networking.Transport.Error.StatusCode.NetworkSendHandleInvalid:
-                    return k_NetworkSendHandleInvalid;
-                case Networking.Transport.Error.StatusCode.NetworkArgumentMismatch:
-                    return k_NetworkArgumentMismatch;
+                default:
+                    return FixedString.Format("Unknown error code {0}.", error);
             }
-
-            return $"Unknown ErrorCode {Enum.GetName(typeof(Networking.Transport.Error.StatusCode), error)}";
         }
     }
 
@@ -164,14 +167,26 @@ namespace Unity.Netcode.Transports.UTP
         private ProtocolType m_ProtocolType;
 
 #if UTP_TRANSPORT_2_0_ABOVE
-        [Tooltip("Whether or not to use WebSockets as Network Interface")]
+        [Tooltip("Per default the client/server will communicate over UDP. Set to true to communicate with WebSocket.")]
         [SerializeField]
         private bool m_UseWebSockets = false;
 
         public bool UseWebSockets
         {
-            set => m_UseWebSockets = value;
             get => m_UseWebSockets;
+            set => m_UseWebSockets = value;
+        }
+
+        /// <summary>
+        /// Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.
+        /// </summary>
+        [Tooltip("Per default the client/server communication will not be encrypted. Select true to enable DTLS for UDP and TLS for Websocket.")]
+        [SerializeField]
+        private bool m_UseEncryption = false;
+        public bool UseEncryption
+        {
+            get => m_UseEncryption;
+            set => m_UseEncryption = value;
         }
 #endif
 
@@ -288,18 +303,20 @@ namespace Unity.Netcode.Transports.UTP
             public ushort Port;
 
             /// <summary>
-            /// IP address the server will listen on. If not provided, will use 'Address'.
+            /// IP address the server will listen on. If not provided, will use 0.0.0.0.
             /// </summary>
-            [Tooltip("IP address the server will listen on. If not provided, will use 'Address'.")]
+            [Tooltip("IP address the server will listen on. If not provided, will use 0.0.0.0.")]
             [SerializeField]
             public string ServerListenAddress;
 
             private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
             {
-                if (!NetworkEndpoint.TryParse(ip, port, out var endpoint))
+                NetworkEndpoint endpoint = default;
+
+                if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
+                    !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
                 {
                     Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
-                    return default;
                 }
 
                 return endpoint;
@@ -313,7 +330,29 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint
+            {
+                get
+                {
+                    if (string.IsNullOrEmpty(ServerListenAddress))
+                    {
+                        var ep = NetworkEndpoint.AnyIpv4;
+
+                        // If an address was entered and it's IPv6, switch to using :: as the
+                        // default listen address. (Otherwise we always assume IPv4.)
+                        if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
+                        {
+                            ep = NetworkEndpoint.AnyIpv6;
+                        }
+
+                        return ep.WithPort(Port);
+                    }
+                    else
+                    {
+                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -491,7 +530,8 @@ namespace Unity.Netcode.Transports.UTP
 
             InitDriver();
 
-            int result = m_Driver.Bind(NetworkEndpoint.AnyIpv4);
+            var bindEndpoint = serverEndpoint.Family == NetworkFamily.Ipv6 ? NetworkEndpoint.AnyIpv6 : NetworkEndpoint.AnyIpv4;
+            int result = m_Driver.Bind(bindEndpoint);
             if (result != 0)
             {
                 Debug.LogError("Client failed to bind");
@@ -511,52 +551,19 @@ namespace Unity.Netcode.Transports.UTP
             int result = m_Driver.Bind(endPoint);
             if (result != 0)
             {
-                Debug.LogError("Server failed to bind");
+                Debug.LogError("Server failed to bind. This is usually caused by another process being bound to the same port.");
                 return false;
             }
 
             result = m_Driver.Listen();
             if (result != 0)
             {
-                Debug.LogError("Server failed to listen");
+                Debug.LogError("Server failed to listen.");
                 return false;
             }
 
             m_State = State.Listening;
             return true;
-        }
-
-        private static RelayAllocationId ConvertFromAllocationIdBytes(byte[] allocationIdBytes)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = allocationIdBytes)
-                {
-                    return RelayAllocationId.FromBytePointer(ptr, allocationIdBytes.Length);
-                }
-            }
-        }
-
-        private static RelayHMACKey ConvertFromHMAC(byte[] hmac)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = hmac)
-                {
-                    return RelayHMACKey.FromBytePointer(ptr, RelayHMACKey.k_Length);
-                }
-            }
-        }
-
-        private static RelayConnectionData ConvertConnectionData(byte[] connectionData)
-        {
-            unsafe
-            {
-                fixed (byte* ptr = connectionData)
-                {
-                    return RelayConnectionData.FromBytePointer(ptr, RelayConnectionData.k_Length);
-                }
-            }
         }
 
         private void SetProtocol(ProtocolType inProtocol)
@@ -565,7 +572,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>Set the relay server data for the server.</summary>
-        /// <param name="ipv4Address">IP address of the relay server.</param>
+        /// <param name="ipv4Address">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationIdBytes">Allocation ID as a byte array.</param>
         /// <param name="keyBytes">Allocation key as a byte array.</param>
@@ -574,38 +581,21 @@ namespace Unity.Netcode.Transports.UTP
         /// <param name="isSecure">Whether the connection is secure (uses DTLS).</param>
         public void SetRelayServerData(string ipv4Address, ushort port, byte[] allocationIdBytes, byte[] keyBytes, byte[] connectionDataBytes, byte[] hostConnectionDataBytes = null, bool isSecure = false)
         {
-            RelayConnectionData hostConnectionData;
+            var hostConnectionData = hostConnectionDataBytes ?? connectionDataBytes;
+            m_RelayServerData = new RelayServerData(ipv4Address, port, allocationIdBytes, connectionDataBytes, hostConnectionData, keyBytes, isSecure);
+            SetProtocol(ProtocolType.RelayUnityTransport);
+        }
 
-            if (!NetworkEndpoint.TryParse(ipv4Address, port, out var serverEndpoint))
-            {
-                Debug.LogError($"Invalid address {ipv4Address}:{port}");
-
-                // We set this to default to cause other checks to fail to state you need to call this
-                // function again.
-                m_RelayServerData = default;
-                return;
-            }
-
-            var allocationId = ConvertFromAllocationIdBytes(allocationIdBytes);
-            var key = ConvertFromHMAC(keyBytes);
-            var connectionData = ConvertConnectionData(connectionDataBytes);
-
-            if (hostConnectionDataBytes != null)
-            {
-                hostConnectionData = ConvertConnectionData(hostConnectionDataBytes);
-            }
-            else
-            {
-                hostConnectionData = connectionData;
-            }
-
-            m_RelayServerData = new RelayServerData(ref serverEndpoint, 1, ref allocationId, ref connectionData, ref hostConnectionData, ref key, isSecure);
-
+        /// <summary>Set the relay server data (using the lower-level Unity Transport data structure).</summary>
+        /// <param name="serverData">Data for the Relay server to use.</param>
+        public void SetRelayServerData(RelayServerData serverData)
+        {
+            m_RelayServerData = serverData;
             SetProtocol(ProtocolType.RelayUnityTransport);
         }
 
         /// <summary>Set the relay server data for the host.</summary>
-        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="ipAddress">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationId">Allocation ID as a byte array.</param>
         /// <param name="key">Allocation key as a byte array.</param>
@@ -617,7 +607,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         /// <summary>Set the relay server data for the host.</summary>
-        /// <param name="ipAddress">IP address of the relay server.</param>
+        /// <param name="ipAddress">IP address or hostname of the relay server.</param>
         /// <param name="port">UDP port of the relay server.</param>
         /// <param name="allocationId">Allocation ID as a byte array.</param>
         /// <param name="key">Allocation key as a byte array.</param>
@@ -632,7 +622,7 @@ namespace Unity.Netcode.Transports.UTP
         /// <summary>
         /// Sets IP and Port information. This will be ignored if using the Unity Relay and you should call <see cref="SetRelayServerData"/>
         /// </summary>
-        /// <param name="ipv4Address">The remote IP address</param>
+        /// <param name="ipv4Address">The remote IP address (despite the name, can be an IPv6 address)</param>
         /// <param name="port">The remote port</param>
         /// <param name="listenAddress">The local listen address</param>
         public void SetConnectionData(string ipv4Address, ushort port, string listenAddress = null)
@@ -708,53 +698,72 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        [BurstCompile]
+        private struct SendBatchedMessagesJob : IJob
+        {
+            public NetworkDriver.Concurrent Driver;
+            public SendTarget Target;
+            public BatchedSendQueue Queue;
+            public NetworkPipeline ReliablePipeline;
+
+            public void Execute()
+            {
+                var clientId = Target.ClientId;
+                var connection = ParseClientId(clientId);
+                var pipeline = Target.NetworkPipeline;
+
+                while (!Queue.IsEmpty)
+                {
+                    var result = Driver.BeginSend(pipeline, connection, out var writer);
+                    if (result != (int)Networking.Transport.Error.StatusCode.Success)
+                    {
+                        Debug.LogError($"Error sending message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                        return;
+                    }
+
+                    // We don't attempt to send entire payloads over the reliable pipeline. Instead we
+                    // fragment it manually. This is safe and easy to do since the reliable pipeline
+                    // basically implements a stream, so as long as we separate the different messages
+                    // in the stream (the send queue does that automatically) we are sure they'll be
+                    // reassembled properly at the other end. This allows us to lift the limit of ~44KB
+                    // on reliable payloads (because of the reliable window size).
+                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer) : Queue.FillWriterWithMessages(ref writer);
+
+                    result = Driver.EndSend(writer);
+                    if (result == written)
+                    {
+                        // Batched message was sent successfully. Remove it from the queue.
+                        Queue.Consume(written);
+                    }
+                    else
+                    {
+                        // Some error occured. If it's just the UTP queue being full, then don't log
+                        // anything since that's okay (the unsent message(s) are still in the queue
+                        // and we'll retry sending them later). Otherwise log the error and remove the
+                        // message from the queue (we don't want to resend it again since we'll likely
+                        // just get the same error again).
+                        if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
+                        {
+                            Debug.LogError($"Error sending the message: {ErrorUtilities.ErrorToFixedString(result, clientId)}");
+                            Queue.Consume(written);
+                        }
+
+                        return;
+                    }
+                }
+            }
+        }
+
         // Send as many batched messages from the queue as possible.
         private void SendBatchedMessages(SendTarget sendTarget, BatchedSendQueue queue)
         {
-            var clientId = sendTarget.ClientId;
-            var connection = ParseClientId(clientId);
-            var pipeline = sendTarget.NetworkPipeline;
-
-            while (!queue.IsEmpty)
+            new SendBatchedMessagesJob
             {
-                var result = m_Driver.BeginSend(pipeline, connection, out var writer);
-                if (result != (int)Networking.Transport.Error.StatusCode.Success)
-                {
-                    Debug.LogError("Error sending the message: " +
-                        ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
-                    return;
-                }
-
-                // We don't attempt to send entire payloads over the reliable pipeline. Instead we
-                // fragment it manually. This is safe and easy to do since the reliable pipeline
-                // basically implements a stream, so as long as we separate the different messages
-                // in the stream (the send queue does that automatically) we are sure they'll be
-                // reassembled properly at the other end. This allows us to lift the limit of ~44KB
-                // on reliable payloads (because of the reliable window size).
-                var written = pipeline == m_ReliableSequencedPipeline ? queue.FillWriterWithBytes(ref writer) : queue.FillWriterWithMessages(ref writer);
-
-                result = m_Driver.EndSend(writer);
-                if (result == written)
-                {
-                    // Batched message was sent successfully. Remove it from the queue.
-                    queue.Consume(written);
-                }
-                else
-                {
-                    // Some error occured. If it's just the UTP queue being full, then don't log
-                    // anything since that's okay (the unsent message(s) are still in the queue
-                    // and we'll retry sending the later). Otherwise log the error and remove the
-                    // message from the queue (we don't want to resend it again since we'll likely
-                    // just get the same error again).
-                    if (result != (int)Networking.Transport.Error.StatusCode.NetworkSendQueueFull)
-                    {
-                        Debug.LogError("Error sending the message: " + ErrorUtilities.ErrorToString((Networking.Transport.Error.StatusCode)result, clientId));
-                        queue.Consume(written);
-                    }
-
-                    return;
-                }
-            }
+                Driver = m_Driver.ToConcurrent(),
+                Target = sendTarget,
+                Queue = queue,
+                ReliablePipeline = m_ReliableSequencedPipeline
+            }.Run();
         }
 
         private bool AcceptConnection()
@@ -1399,6 +1408,35 @@ namespace Unity.Netcode.Transports.UTP
         }
 #endif
 
+        private string m_ServerPrivateKey;
+        private string m_ServerCertificate;
+
+        private string m_ServerCommonName;
+        private string m_ClientCaCertificate;
+
+        /// <summary>Set the server parameters for encryption.</summary>
+        /// <param name="serverCertificate">Public certificate for the server (PEM format).</param>
+        /// <param name="serverPrivateKey">Private key for the server (PEM format).</param>
+        public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
+        {
+            m_ServerPrivateKey = serverPrivateKey;
+            m_ServerCertificate = serverCertificate;
+        }
+
+        /// <summary>Set the client parameters for encryption.</summary>
+        /// <remarks>
+        /// If the CA certificate is not provided, validation will be done against the OS/browser
+        /// certificate store. This is what you'd want if using certificates from a known provider.
+        /// For self-signed certificates, the CA certificate needs to be provided.
+        /// </remarks>
+        /// <param name="serverCommonName">Common name of the server (typically hostname).</param>
+        /// <param name="caCertificate">CA certificate used to validate the server's authenticity.</param>
+        public void SetClientSecrets(string serverCommonName, string caCertificate = null)
+        {
+            m_ServerCommonName = serverCommonName;
+            m_ClientCaCertificate = caCertificate;
+        }
+
         /// <summary>
         /// Creates the internal NetworkDriver
         /// </summary>
@@ -1431,6 +1469,57 @@ namespace Unity.Netcode.Transports.UTP
                 receiveQueueCapacity: m_MaxPacketQueueSize,
 #endif
                 heartbeatTimeoutMS: transport.m_HeartbeatTimeoutMS);
+
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (NetworkManager.IsServer && m_ProtocolType != ProtocolType.RelayUnityTransport)
+            {
+                throw new Exception("WebGL as a server is not supported by Unity Transport, outside the Editor.");
+            }
+#endif
+
+#if UTP_TRANSPORT_2_0_ABOVE
+            if (m_UseEncryption)
+            {
+                if (m_ProtocolType == ProtocolType.RelayUnityTransport)
+                {
+                    if (m_RelayServerData.IsSecure == 0)
+                    {
+                        // log an error because we have mismatched configuration
+                        Debug.LogError("Mismatched security configuration, between Relay and local NetworkManager settings");
+                    }
+
+                    // No need to to anything else if using Relay because UTP will handle the
+                    // configuration of the security parameters on its own.
+                }
+                else
+                {
+                    if (NetworkManager.IsServer)
+                    {
+                        if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
+                        {
+                            throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
+                        }
+
+                        m_NetworkSettings.WithSecureServerParameters(m_ServerCertificate, m_ServerPrivateKey);
+                    }
+                    else
+                    {
+                        if (string.IsNullOrEmpty(m_ServerCommonName))
+                        {
+                            throw new Exception("In order to use encrypted communications, clients must set the server common name.");
+                        }
+                        else if (string.IsNullOrEmpty(m_ClientCaCertificate))
+                        {
+                            m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
+                        }
+                        else
+                        {
+                            m_NetworkSettings.WithSecureClientParameters(m_ClientCaCertificate, m_ServerCommonName);
+                        }
+                    }
+                }
+            }
+#endif
 
 #if UTP_TRANSPORT_2_0_ABOVE
             if (m_UseWebSockets)

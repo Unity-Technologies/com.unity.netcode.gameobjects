@@ -38,13 +38,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             // modules
-            (m_DotnetModule, _, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
-
-            if (m_DotnetModule == null)
-            {
-                m_Diagnostics.AddError($"Cannot find .NET module: {CodeGenHelpers.DotnetModuleName}");
-                return null;
-            }
+            (_, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
 
             if (m_NetcodeModule == null)
             {
@@ -104,41 +98,39 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private ModuleDefinition m_DotnetModule;
         private ModuleDefinition m_NetcodeModule;
         private PostProcessorAssemblyResolver m_AssemblyResolver;
 
         private MethodReference m_MessagingSystem_ReceiveMessage_MethodRef;
+        private MethodReference m_MessagingSystem_CreateMessageAndGetVersion_MethodRef;
         private TypeReference m_MessagingSystem_MessageWithHandler_TypeRef;
         private MethodReference m_MessagingSystem_MessageHandler_Constructor_TypeRef;
+        private MethodReference m_MessagingSystem_VersionGetter_Constructor_TypeRef;
         private FieldReference m_ILPPMessageProvider___network_message_types_FieldRef;
         private FieldReference m_MessagingSystem_MessageWithHandler_MessageType_FieldRef;
         private FieldReference m_MessagingSystem_MessageWithHandler_Handler_FieldRef;
+        private FieldReference m_MessagingSystem_MessageWithHandler_GetVersion_FieldRef;
         private MethodReference m_Type_GetTypeFromHandle_MethodRef;
         private MethodReference m_List_Add_MethodRef;
 
         private const string k_ReceiveMessageName = nameof(MessagingSystem.ReceiveMessage);
+        private const string k_CreateMessageAndGetVersionName = nameof(MessagingSystem.CreateMessageAndGetVersion);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            TypeDefinition typeTypeDef = null;
-            TypeDefinition listTypeDef = null;
-            foreach (var dotnetTypeDef in m_DotnetModule.GetAllTypes())
-            {
-                if (typeTypeDef == null && dotnetTypeDef.Name == typeof(Type).Name)
-                {
-                    typeTypeDef = dotnetTypeDef;
-                    continue;
-                }
-
-                if (listTypeDef == null && dotnetTypeDef.Name == typeof(List<>).Name)
-                {
-                    listTypeDef = dotnetTypeDef;
-                    continue;
-                }
-            }
+            // Different environments seem to have different situations...
+            // Some have these definitions in netstandard.dll...
+            // some seem to have them elsewhere...
+            // Since they're standard .net classes they're not going to cause
+            // the same issues as referencing other assemblies, in theory, since
+            // the definitions should be standard and consistent across platforms
+            // (i.e., there's no #if UNITY_EDITOR in them that could create
+            // invalid IL code)
+            TypeDefinition typeTypeDef = moduleDefinition.ImportReference(typeof(Type)).Resolve();
+            TypeDefinition listTypeDef = moduleDefinition.ImportReference(typeof(List<>)).Resolve();
 
             TypeDefinition messageHandlerTypeDef = null;
+            TypeDefinition versionGetterTypeDef = null;
             TypeDefinition messageWithHandlerTypeDef = null;
             TypeDefinition ilppMessageProviderTypeDef = null;
             TypeDefinition messagingSystemTypeDef = null;
@@ -147,6 +139,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (messageHandlerTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.MessageHandler))
                 {
                     messageHandlerTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (versionGetterTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.VersionGetter))
+                {
+                    versionGetterTypeDef = netcodeTypeDef;
                     continue;
                 }
 
@@ -170,6 +168,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             m_MessagingSystem_MessageHandler_Constructor_TypeRef = moduleDefinition.ImportReference(messageHandlerTypeDef.GetConstructors().First());
+            m_MessagingSystem_VersionGetter_Constructor_TypeRef = moduleDefinition.ImportReference(versionGetterTypeDef.GetConstructors().First());
 
             m_MessagingSystem_MessageWithHandler_TypeRef = moduleDefinition.ImportReference(messageWithHandlerTypeDef);
             foreach (var fieldDef in messageWithHandlerTypeDef.Fields)
@@ -181,6 +180,9 @@ namespace Unity.Netcode.Editor.CodeGen
                         break;
                     case nameof(MessagingSystem.MessageWithHandler.Handler):
                         m_MessagingSystem_MessageWithHandler_Handler_FieldRef = moduleDefinition.ImportReference(fieldDef);
+                        break;
+                    case nameof(MessagingSystem.MessageWithHandler.GetVersion):
+                        m_MessagingSystem_MessageWithHandler_GetVersion_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                 }
             }
@@ -224,6 +226,9 @@ namespace Unity.Netcode.Editor.CodeGen
                     case k_ReceiveMessageName:
                         m_MessagingSystem_ReceiveMessage_MethodRef = moduleDefinition.ImportReference(methodDef);
                         break;
+                    case k_CreateMessageAndGetVersionName:
+                        m_MessagingSystem_CreateMessageAndGetVersion_MethodRef = moduleDefinition.ImportReference(methodDef);
+                        break;
                 }
             }
 
@@ -249,7 +254,7 @@ namespace Unity.Netcode.Editor.CodeGen
             return staticCtorMethodDef;
         }
 
-        private void CreateInstructionsToRegisterType(ILProcessor processor, List<Instruction> instructions, TypeReference type, MethodReference receiveMethod)
+        private void CreateInstructionsToRegisterType(ILProcessor processor, List<Instruction> instructions, TypeReference type, MethodReference receiveMethod, MethodReference versionMethod)
         {
             // MessagingSystem.__network_message_types.Add(new MessagingSystem.MessageWithHandler{MessageType=typeof(type), Handler=type.Receive});
             processor.Body.Variables.Add(new VariableDefinition(m_MessagingSystem_MessageWithHandler_TypeRef));
@@ -265,13 +270,22 @@ namespace Unity.Netcode.Editor.CodeGen
             instructions.Add(processor.Create(OpCodes.Call, m_Type_GetTypeFromHandle_MethodRef));
             instructions.Add(processor.Create(OpCodes.Stfld, m_MessagingSystem_MessageWithHandler_MessageType_FieldRef));
 
-            // tmp.Handler = type.Receive
+            // tmp.Handler = MessageHandler.ReceveMessage<type>
             instructions.Add(processor.Create(OpCodes.Ldloca, messageWithHandlerLocIdx));
             instructions.Add(processor.Create(OpCodes.Ldnull));
 
             instructions.Add(processor.Create(OpCodes.Ldftn, receiveMethod));
             instructions.Add(processor.Create(OpCodes.Newobj, m_MessagingSystem_MessageHandler_Constructor_TypeRef));
             instructions.Add(processor.Create(OpCodes.Stfld, m_MessagingSystem_MessageWithHandler_Handler_FieldRef));
+
+
+            // tmp.GetVersion = MessageHandler.CreateMessageAndGetVersion<type>
+            instructions.Add(processor.Create(OpCodes.Ldloca, messageWithHandlerLocIdx));
+            instructions.Add(processor.Create(OpCodes.Ldnull));
+
+            instructions.Add(processor.Create(OpCodes.Ldftn, versionMethod));
+            instructions.Add(processor.Create(OpCodes.Newobj, m_MessagingSystem_VersionGetter_Constructor_TypeRef));
+            instructions.Add(processor.Create(OpCodes.Stfld, m_MessagingSystem_MessageWithHandler_GetVersion_FieldRef));
 
             // ILPPMessageProvider.__network_message_types.Add(tmp);
             instructions.Add(processor.Create(OpCodes.Ldloc, messageWithHandlerLocIdx));
@@ -298,7 +312,9 @@ namespace Unity.Netcode.Editor.CodeGen
                     {
                         var receiveMethod = new GenericInstanceMethod(m_MessagingSystem_ReceiveMessage_MethodRef);
                         receiveMethod.GenericArguments.Add(type);
-                        CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod);
+                        var versionMethod = new GenericInstanceMethod(m_MessagingSystem_CreateMessageAndGetVersion_MethodRef);
+                        versionMethod.GenericArguments.Add(type);
+                        CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod, versionMethod);
                     }
 
                     instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));

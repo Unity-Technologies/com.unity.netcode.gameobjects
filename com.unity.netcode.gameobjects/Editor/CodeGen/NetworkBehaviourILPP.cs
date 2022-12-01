@@ -44,7 +44,7 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             // modules
-            (_, m_UnityModule, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
+            (m_UnityModule, m_NetcodeModule) = CodeGenHelpers.FindBaseModules(assemblyDefinition, m_AssemblyResolver);
 
             if (m_UnityModule == null)
             {
@@ -73,6 +73,8 @@ namespace Unity.Netcode.Editor.CodeGen
                             .Where(t => t.IsSubclassOf(CodeGenHelpers.NetworkBehaviour_FullName))
                             .ToList()
                             .ForEach(b => ProcessNetworkBehaviour(b, compiledAssembly.Defines));
+
+                        CreateNetworkVariableTypeInitializers(assemblyDefinition);
                     }
                     catch (Exception e)
                     {
@@ -103,6 +105,132 @@ namespace Unity.Netcode.Editor.CodeGen
             assemblyDefinition.Write(pe, writerParameters);
 
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
+        }
+
+        private MethodDefinition GetOrCreateStaticConstructor(TypeDefinition typeDefinition)
+        {
+            var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
+            if (staticCtorMethodDef == null)
+            {
+                staticCtorMethodDef = new MethodDefinition(
+                    ".cctor", // Static Constructor (constant-constructor)
+                    MethodAttributes.HideBySig |
+                    MethodAttributes.SpecialName |
+                    MethodAttributes.RTSpecialName |
+                    MethodAttributes.Static,
+                    typeDefinition.Module.TypeSystem.Void);
+                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                typeDefinition.Methods.Add(staticCtorMethodDef);
+            }
+
+            return staticCtorMethodDef;
+        }
+
+        private bool IsMemcpyableType(TypeReference type)
+        {
+            foreach (var supportedType in BaseSupportedTypes)
+            {
+                if (type.FullName == supportedType.FullName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsSpecialCaseType(TypeReference type)
+        {
+            foreach (var supportedType in SpecialCaseTypes)
+            {
+                if (type.FullName == supportedType.FullName)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void CreateNetworkVariableTypeInitializers(AssemblyDefinition assembly)
+        {
+            foreach (var typeDefinition in assembly.MainModule.Types)
+            {
+                if (typeDefinition.FullName == "<Module>")
+                {
+                    var staticCtorMethodDef = GetOrCreateStaticConstructor(typeDefinition);
+
+                    var processor = staticCtorMethodDef.Body.GetILProcessor();
+
+                    var instructions = new List<Instruction>();
+
+                    foreach (var type in m_WrappedNetworkVariableTypes)
+                    {
+                        if (IsSpecialCaseType(type))
+                        {
+                            continue;
+                        }
+
+                        // If a serializable type isn't found, FallbackSerializer will be used automatically, which will
+                        // call into UserNetworkVariableSerialization, giving the user a chance to define their own serializaiton
+                        // for types that aren't in our official supported types list.
+                        GenericInstanceMethod serializeMethod = null;
+                        GenericInstanceMethod equalityMethod;
+
+                        if (type.IsValueType)
+                        {
+                            if (type.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || type.Resolve().IsEnum || IsMemcpyableType(type))
+                            {
+                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef);
+                            }
+                            else if (type.HasInterface(typeof(INetworkSerializable).FullName))
+                            {
+                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef);
+                            }
+                            else if (type.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && type.HasInterface(k_INativeListBool_FullName))
+                            {
+                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef);
+                            }
+
+                            if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
+                            {
+                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef);
+                            }
+                            else
+                            {
+                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
+                            }
+                        }
+                        else
+                        {
+                            if (type.HasInterface(typeof(INetworkSerializable).FullName))
+                            {
+                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
+                            }
+
+                            if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
+                            {
+                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef);
+                            }
+                            else
+                            {
+                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
+                            }
+                        }
+
+                        if (serializeMethod != null)
+                        {
+                            serializeMethod.GenericArguments.Add(type);
+                            instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(serializeMethod)));
+                        }
+                        equalityMethod.GenericArguments.Add(type);
+                        instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(equalityMethod)));
+                    }
+
+                    instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
+                    break;
+                }
+            }
         }
 
         private ModuleDefinition m_MainModule;
@@ -138,6 +266,28 @@ namespace Unity.Netcode.Editor.CodeGen
         private FieldReference m_ServerRpcParams_Receive_FieldRef;
         private FieldReference m_ServerRpcParams_Receive_SenderClientId_FieldRef;
         private TypeReference m_ClientRpcParams_TypeRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef;
+        private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
+
+        private MethodReference m_BytePacker_WriteValueBitPacked_Short_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_UShort_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_Int_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_UInt_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_Long_MethodRef;
+        private MethodReference m_BytePacker_WriteValueBitPacked_ULong_MethodRef;
+
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef;
+        private MethodReference m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef;
 
         private TypeReference m_FastBufferWriter_TypeRef;
         private readonly Dictionary<string, MethodReference> m_FastBufferWriter_WriteValue_MethodRefs = new Dictionary<string, MethodReference>();
@@ -146,6 +296,46 @@ namespace Unity.Netcode.Editor.CodeGen
         private TypeReference m_FastBufferReader_TypeRef;
         private readonly Dictionary<string, MethodReference> m_FastBufferReader_ReadValue_MethodRefs = new Dictionary<string, MethodReference>();
         private readonly List<MethodReference> m_FastBufferReader_ExtensionMethodRefs = new List<MethodReference>();
+
+        private HashSet<TypeReference> m_WrappedNetworkVariableTypes = new HashSet<TypeReference>();
+
+        internal static readonly Type[] BaseSupportedTypes = new[]
+        {
+            typeof(bool),
+            typeof(byte),
+            typeof(sbyte),
+            typeof(char),
+            typeof(decimal),
+            typeof(double),
+            typeof(float),
+            // the following types have special handling
+            /*typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(short),
+            typeof(ushort),*/
+            typeof(Vector2),
+            typeof(Vector3),
+            typeof(Vector2Int),
+            typeof(Vector3Int),
+            typeof(Vector4),
+            typeof(Quaternion),
+            typeof(Color),
+            typeof(Color32),
+            typeof(Ray),
+            typeof(Ray2D)
+        };
+        internal static readonly Type[] SpecialCaseTypes = new[]
+        {
+            // the following types have special handling
+            typeof(int),
+            typeof(uint),
+            typeof(long),
+            typeof(ulong),
+            typeof(short),
+            typeof(ushort),
+        };
 
         private const string k_Debug_LogError = nameof(Debug.LogError);
         private const string k_NetworkManager_LocalClientId = nameof(NetworkManager.LocalClientId);
@@ -172,6 +362,9 @@ namespace Unity.Netcode.Editor.CodeGen
         private const string k_ServerRpcParams_Receive = nameof(ServerRpcParams.Receive);
         private const string k_ServerRpcReceiveParams_SenderClientId = nameof(ServerRpcReceiveParams.SenderClientId);
 
+        // CodeGen cannot reference the collections assembly to do a typeof() on it due to a bug that causes that to crash.
+        private const string k_INativeListBool_FullName = "Unity.Collections.INativeList`1<System.Byte>";
+
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
             TypeDefinition debugTypeDef = null;
@@ -192,6 +385,9 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition clientRpcParamsTypeDef = null;
             TypeDefinition fastBufferWriterTypeDef = null;
             TypeDefinition fastBufferReaderTypeDef = null;
+            TypeDefinition networkVariableSerializationTypesTypeDef = null;
+            TypeDefinition bytePackerTypeDef = null;
+            TypeDefinition byteUnpackerTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
                 if (networkManagerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkManager))
@@ -239,6 +435,24 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (fastBufferReaderTypeDef == null && netcodeTypeDef.Name == nameof(FastBufferReader))
                 {
                     fastBufferReaderTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (networkVariableSerializationTypesTypeDef == null && netcodeTypeDef.Name == nameof(NetworkVariableSerializationTypes))
+                {
+                    networkVariableSerializationTypesTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (bytePackerTypeDef == null && netcodeTypeDef.Name == nameof(BytePacker))
+                {
+                    bytePackerTypeDef = netcodeTypeDef;
+                    continue;
+                }
+
+                if (byteUnpackerTypeDef == null && netcodeTypeDef.Name == nameof(ByteUnpacker))
+                {
+                    byteUnpackerTypeDef = netcodeTypeDef;
                     continue;
                 }
             }
@@ -459,7 +673,168 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
+            foreach (var method in networkVariableSerializationTypesTypeDef.Methods)
+            {
+                if (!method.IsStatic)
+                {
+                    continue;
+                }
+
+                switch (method.Name)
+                {
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedByMemcpy):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedINetworkSerializable):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_ManagedINetworkSerializable):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeSerializer_FixedString):
+                        m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_ManagedIEquatable):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedIEquatable):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedValueEquals):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef = method;
+                        break;
+                    case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_ManagedClassEquals):
+                        m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef = method;
+                        break;
+                }
+            }
+
+            foreach (var method in bytePackerTypeDef.Methods)
+            {
+                if (!method.IsStatic)
+                {
+                    continue;
+                }
+
+                switch (method.Name)
+                {
+                    case nameof(BytePacker.WriteValueBitPacked):
+                        if (method.Parameters[1].ParameterType.FullName == typeof(short).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Short_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ushort).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_UShort_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(int).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Int_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(uint).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_UInt_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(long).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_Long_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ulong).FullName)
+                        {
+                            m_BytePacker_WriteValueBitPacked_ULong_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        break;
+                }
+            }
+
+            foreach (var method in byteUnpackerTypeDef.Methods)
+            {
+                if (!method.IsStatic)
+                {
+                    continue;
+                }
+
+                switch (method.Name)
+                {
+                    case nameof(ByteUnpacker.ReadValueBitPacked):
+                        if (method.Parameters[1].ParameterType.FullName == typeof(short).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ushort).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(int).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(uint).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(long).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        else if (method.Parameters[1].ParameterType.FullName == typeof(ulong).MakeByRefType().FullName)
+                        {
+                            m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef = m_MainModule.ImportReference(method);
+                        }
+                        break;
+                }
+            }
+
             return true;
+        }
+
+        // This gets all fields from this type as well as any parent types, up to (but not including) the base NetworkBehaviour class
+        // Importantly... this also resolves any generics, so if the base class is Foo<T> and contains a field of NetworkVariable<T>,
+        // and this class is Bar : Foo<int>, it will properly resolve NetworkVariable<T> to NetworkVariable<int>.
+        private void GetAllFieldsAndResolveGenerics(TypeDefinition type, ref List<TypeReference> fieldTypes, Dictionary<string, TypeReference> genericParameters = null)
+        {
+            foreach (var field in type.Fields)
+            {
+                if (field.FieldType.IsGenericInstance)
+                {
+                    var genericType = (GenericInstanceType)field.FieldType;
+                    var newGenericType = new GenericInstanceType(field.FieldType.Resolve());
+                    for (var i = 0; i < genericType.GenericArguments.Count; ++i)
+                    {
+                        var argument = genericType.GenericArguments[i];
+
+                        if (genericParameters != null && genericParameters.ContainsKey(argument.Name))
+                        {
+                            newGenericType.GenericArguments.Add(genericParameters[argument.Name]);
+                        }
+                        else
+                        {
+                            newGenericType.GenericArguments.Add(argument);
+                        }
+                    }
+                    fieldTypes.Add(newGenericType);
+                }
+                else
+                {
+                    fieldTypes.Add(field.FieldType);
+                }
+            }
+
+            if (type.BaseType == null || type.BaseType.Name == nameof(NetworkBehaviour))
+            {
+                return;
+            }
+            var genericParams = new Dictionary<string, TypeReference>();
+            var resolved = type.BaseType.Resolve();
+            if (type.BaseType.IsGenericInstance)
+            {
+                var genericType = (GenericInstanceType)type.BaseType;
+                for (var i = 0; i < genericType.GenericArguments.Count; ++i)
+                {
+                    genericParams[resolved.GenericParameters[i].Name] = genericType.GenericArguments[i];
+                }
+            }
+            GetAllFieldsAndResolveGenerics(resolved, ref fieldTypes, genericParams);
         }
 
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
@@ -501,6 +876,28 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (isEditorOrDevelopment)
                 {
                     rpcNames.Add((rpcMethodId, methodDefinition.Name));
+                }
+            }
+
+            if (!typeDefinition.HasGenericParameters && !typeDefinition.IsGenericInstance)
+            {
+                var fieldTypes = new List<TypeReference>();
+                GetAllFieldsAndResolveGenerics(typeDefinition, ref fieldTypes);
+                foreach (var type in fieldTypes)
+                {
+                    //var type = field.FieldType;
+                    if (type.IsGenericInstance)
+                    {
+                        if (type.Resolve().Name == typeof(NetworkVariable<>).Name || type.Resolve().Name == typeof(NetworkList<>).Name)
+                        {
+                            var genericInstanceType = (GenericInstanceType)type;
+                            var wrappedType = genericInstanceType.GenericArguments[0];
+                            if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                            {
+                                m_WrappedNetworkVariableTypes.Add(wrappedType);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -744,6 +1141,36 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool GetWriteMethodForParameter(TypeReference paramType, out MethodReference methodRef)
         {
+            if (paramType.FullName == typeof(short).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Short_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ushort).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_UShort_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(int).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Int_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(uint).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_UInt_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(long).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_Long_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ulong).FullName)
+            {
+                methodRef = m_BytePacker_WriteValueBitPacked_ULong_MethodRef;
+                return true;
+            }
             var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
             var foundMethodRef = m_FastBufferWriter_WriteValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);
 
@@ -890,6 +1317,36 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private bool GetReadMethodForParameter(TypeReference paramType, out MethodReference methodRef)
         {
+            if (paramType.FullName == typeof(short).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Short_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ushort).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_UShort_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(int).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Int_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(uint).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_UInt_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(long).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef;
+                return true;
+            }
+            if (paramType.FullName == typeof(ulong).FullName)
+            {
+                methodRef = m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef;
+                return true;
+            }
             var assemblyQualifiedName = paramType.FullName + ", " + paramType.Resolve().Module.Assembly.FullName;
 
             var foundMethodRef = m_FastBufferReader_ReadValue_MethodRefs.TryGetValue(assemblyQualifiedName, out methodRef);
