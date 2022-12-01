@@ -96,12 +96,6 @@ namespace Unity.Netcode
                         networkVariable.WriteDelta(writer);
                     }
 
-                    if (!NetworkBehaviour.NetworkVariableIndexesToResetSet.Contains(i))
-                    {
-                        NetworkBehaviour.NetworkVariableIndexesToResetSet.Add(i);
-                        NetworkBehaviour.NetworkVariableIndexesToReset.Add(i);
-                    }
-
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
                         NetworkBehaviour.NetworkObject,
