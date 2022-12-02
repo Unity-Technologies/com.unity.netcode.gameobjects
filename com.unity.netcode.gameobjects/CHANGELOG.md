@@ -35,7 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
 
 ### Fixed
-
+- Fixed `IsSpawnedObjectsPendingInDontDestroyOnLoad` is only set to true when loading a scene using `LoadSceneMode.Singleonly`. (#2330)
 - Fixed issue where `NetworkTransform` components nested under a parent with a `NetworkObject` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)
 - Fixed issue where `NetworkObject`s that failed to instantiate could cause the entire synchronization pipeline to be disrupted/halted for a connecting client. (#2298)
 - Fixed issue where in-scene placed `NetworkObject`s nested under a `GameObject` would be added to the orphaned children list causing continual console warning log messages. (#2298)
