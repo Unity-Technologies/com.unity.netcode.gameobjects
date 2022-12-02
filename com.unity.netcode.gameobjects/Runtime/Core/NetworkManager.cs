@@ -2082,7 +2082,12 @@ namespace Unity.Netcode
                             }
                             else
                             {
-                                Destroy(playerObject.gameObject);
+                                // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked
+                                // on the server-side (when the client side disconnected).
+                                // This prevents the issue (when just destroying the GameObject) where
+                                // any NetworkBehaviour component(s) destroyed before the NetworkObject
+                                // would not have OnNetworkDespawn invoked.
+                                SpawnManager.DespawnObject(playerObject, true);
                             }
                         }
                         else
