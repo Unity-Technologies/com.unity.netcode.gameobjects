@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 
 ### Fixed
+- Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
 
 - Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server). (#2321)
 

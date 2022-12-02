@@ -241,11 +241,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
         }
 
+        /// <summary>
+        /// Invoked immediately after the player prefab GameObject is created
+        /// prior to adding a NetworkObject component
+        /// </summary>
+        protected virtual void OnPlayerPrefabGameObjectCreated()
+        {
+        }
+
         private void CreatePlayerPrefab()
         {
             VerboseDebug($"Entering {nameof(CreatePlayerPrefab)}");
             // Create playerPrefab
             m_PlayerPrefab = new GameObject("Player");
+            OnPlayerPrefabGameObjectCreated();
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
 
             // Make it a prefab
