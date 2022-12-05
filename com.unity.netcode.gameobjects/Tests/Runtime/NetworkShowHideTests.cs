@@ -406,7 +406,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(ShowHideObject.ValueAfterOwnershipChange == 1);
         }
 
-        string Display(NetworkList<int> list)
+        private string Display(NetworkList<int> list)
         {
             string message = "";
             foreach (var i in list)
@@ -417,7 +417,7 @@ namespace Unity.Netcode.RuntimeTests
             return message;
         }
 
-        void Compare(NetworkList<int> list1, NetworkList<int> list2)
+        private void Compare(NetworkList<int> list1, NetworkList<int> list2)
         {
             if (list1.Count != list2.Count)
             {
@@ -485,7 +485,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.0f);
             }
 
-            for(int i = 0; i < 2; i++)
+            for (int i = 0; i < 2; i++)
             {
                 // wait for three ticks
                 yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);

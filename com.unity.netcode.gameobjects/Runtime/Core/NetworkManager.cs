@@ -1667,7 +1667,7 @@ namespace Unity.Netcode
             BehaviourUpdater.NetworkBehaviourUpdate(this);
 
             // Handle NetworkObjects to show
-            foreach(var client in ObjectsToShowToClient)
+            foreach (var client in ObjectsToShowToClient)
             {
                 ulong clientId = client.Key;
                 foreach (var networkObject in client.Value)
