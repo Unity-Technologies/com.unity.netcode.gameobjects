@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using NUnit.Framework;
 using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Components;
@@ -146,6 +147,36 @@ namespace Unity.Netcode.RuntimeTests
             // Destroy the parent object which should not cause any exceptions
             // (validating the fix)
             Object.Destroy(parentObject);
+        }
+
+        protected override void OnPlayerPrefabGameObjectCreated()
+        {
+            // Adds the SimpleNetworkBehaviour before the NetworkObject
+            // for OnNetworkDespawnInvokedWhenClientDisconnects testing
+            m_PlayerPrefab.AddComponent<SimpleNetworkBehaviour>();
+        }
+
+        /// <summary>
+        /// This validates that upon a client disconnecting, the server-side
+        /// client's player clone will invoke NetworkBehaviour.OnNetworkDespawn
+        /// when the component precedes the NetworkObject component.(PR-2323)
+        /// </summary>
+        [UnityTest]
+        public IEnumerator OnNetworkDespawnInvokedWhenClientDisconnects()
+        {
+            m_AllowServerToStart = true;
+
+            // Now just start the Host
+            yield return StartServerAndClients();
+
+            // Now create and connect a new client
+            yield return CreateAndStartNewClient();
+
+            var serverSidePlayer = m_PlayerNetworkObjects[NetworkManager.ServerClientId][m_ClientNetworkManagers[0].LocalClientId].GetComponent<SimpleNetworkBehaviour>();
+
+            yield return StopOneClient(m_ClientNetworkManagers[0]);
+
+            Assert.True(serverSidePlayer.OnNetworkDespawnCalled, $"Server-side player clone did not invoke OnNetworkDespawn!");
         }
     }
 }
