@@ -265,9 +265,7 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            Observers.Add(clientId);
-
-            NetworkManager.SpawnManager.SendSpawnCallForObject(clientId, this);
+            NetworkManager.MarkObjectForShowingTo(this, clientId);
         }
 
 

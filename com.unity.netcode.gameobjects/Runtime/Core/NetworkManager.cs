@@ -67,6 +67,9 @@ namespace Unity.Netcode
 
         internal Dictionary<ulong, ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, ConnectionApprovalResponse>();
 
+        // Stores the objects that need to be shown at end-of-frame
+        internal Dictionary<ulong, List<NetworkObject>> ObjectsToShowToClient = new Dictionary<ulong, List<NetworkObject>>();
+
         /// <summary>
         /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
         /// </summary>
@@ -1663,6 +1666,18 @@ namespace Unity.Netcode
             // Do NetworkVariable updates
             BehaviourUpdater.NetworkBehaviourUpdate(this);
 
+            // Handle NetworkObjects to show
+            foreach(var client in ObjectsToShowToClient)
+            {
+                ulong clientId = client.Key;
+                foreach (var networkObject in client.Value)
+                {
+                    networkObject.Observers.Add(clientId);
+                    SpawnManager.SendSpawnCallForObject(clientId, networkObject);
+                }
+            }
+            ObjectsToShowToClient.Clear();
+
             int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
@@ -2333,6 +2348,15 @@ namespace Unity.Netcode
                 var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
+        }
+
+        internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
+        {
+            if (!ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                ObjectsToShowToClient.Add(clientId, new List<NetworkObject>());
+            }
+            ObjectsToShowToClient[clientId].Add(networkObject);
         }
     }
 }
