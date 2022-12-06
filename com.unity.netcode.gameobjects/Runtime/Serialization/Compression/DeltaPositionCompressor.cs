@@ -5,8 +5,20 @@ namespace Unity.Netcode
 {
     public struct CompressedDeltaPosition
     {
-        public ushort MagnitudePrecision;
-        public uint CompressedValues;
+        /// <summary>
+        /// Contains additional compression information
+        /// </summary>
+        /// <remarks>
+        /// Bits 0 - 10: 1/1000th decimal place precision value of magnitude
+        /// Bits 11 - 13: Sign values of the largest axial value and the two smallest values
+        /// bits 14 - 15: The index of the largest axial value
+        /// </remarks>
+        public ushort Header;
+
+        /// <summary>
+        /// Contains the compressed values
+        /// </summary>
+        public uint Compressed;
     }
 
     /// <summary>
@@ -16,7 +28,7 @@ namespace Unity.Netcode
     /// </summary>
     public static class DeltaPositionCompressor
     {
-        private const ushort k_PrecisionMask = (1 << 9) - 1;
+        private const ushort k_PrecisionMask = (1 << 10) - 1;
 
         // Square root of 2 over 2 (Mathf.Sqrt(2.0f) / 2.0f == 1.0f / Mathf.Sqrt(2.0f))
         // This provides encoding the smallest three components into a (+/-) Mathf.Sqrt(2.0f) / 2.0f range
@@ -26,15 +38,13 @@ namespace Unity.Netcode
         // by the precision mask (minor reduction of runtime calculations)
         private const float k_CompressionEcodingMask = (1.0f / k_SqrtTwoOverTwoEncoding) * k_PrecisionMask;
 
-        // Used to shift the negative bit to the 10th bit position when compressing and encoding
-        private const ushort k_ShiftNegativeBit = 9;
-
         // We can do the same for our decoding and decompression by dividing k_PrecisionMask into 1.0 and multiplying
         // that by k_SqrtTwoOverTwo (minor reduction of runtime calculations)
         private const float k_DcompressionDecodingMask = (1.0f / k_PrecisionMask) * k_SqrtTwoOverTwoEncoding;
 
-        // The sign bit position (10th bit) used when decompressing and decoding
-        private const ushort k_NegShortBit = 0x200;
+        private const ushort k_MagnitudePrecisionMask = 1023;
+        private const byte k_LargestIndexShift = 14;
+        private const byte k_BaseSignShift = 11;
 
         // Negative bit set values
         private const ushort k_True = 1;
@@ -64,6 +74,8 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void CompressDeltaPosition(ref Vector3 positionDelta, ref CompressedDeltaPosition compressedDeltaPosition)
         {
+            compressedDeltaPosition.Compressed = 0;
+            compressedDeltaPosition.Header = 0;
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
 
@@ -81,27 +93,28 @@ namespace Unity.Netcode
             // Get the sign of the largest element
             var vectMaxSign = (normalizedDir[indexToSkip] < 0 ? k_True : k_False);
 
-            // Start with the largest value's index (shifted to the highest two bits)
-            var compressed = (uint)indexToSkip;
+            // Store the index, magnitude precision, and largest value's sign
+            compressedDeltaPosition.Header = (ushort)(indexToSkip << k_LargestIndexShift);
+            compressedDeltaPosition.Header |= (ushort)((ushort)Mathf.Round((magnitude - (uint)magnitude) * 1000) & k_MagnitudePrecisionMask);
+            compressedDeltaPosition.Header |= (ushort)(vectMaxSign << (k_BaseSignShift + 2));
 
-            // Store the sign of the largest value with the magnitude
-            var shortMag = (ushort)((vectMaxSign << k_ShiftNegativeBit) | (ushort)magnitude);
-            compressedDeltaPosition.MagnitudePrecision = (ushort)Mathf.Round((magnitude - (uint)magnitude) * 1000);
-            compressed = (compressed << 10) | shortMag;
+            // Store the non-decimal magnitude value
+            var compressed = (uint)magnitude;
 
-            // Step 1: Start with the first element
             var currentIndex = 0;
-
-            // Step 2: If we are on the index to skip preserve the current compressed value, otherwise proceed to step 3 and 4
-            // Step 3: Get the sign of the element we are processing. If it is the not the same as the largest value's sign bit then we set the bit
-            // Step 4: Get the compressed and encoded value by multiplying the absolute value of the current element by k_CompressionEcodingMask and round that result up
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
-            currentIndex++;
-            // Repeat the last 3 steps for the remaining elements
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
-            currentIndex++;
-            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
-            compressedDeltaPosition.CompressedValues = compressed;
+            for (int i = 0; i < 3; i++)
+            {
+                if (i == indexToSkip)
+                {
+                    continue;
+                }
+                // Store the axis sign in the header
+                compressedDeltaPosition.Header |= (ushort)((normalizedDir[i] < 0 ? k_True : k_False) << (k_BaseSignShift + currentIndex));
+                // Add the axis compressed value to the existing compressed values
+                compressed = (compressed << 10) | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[i]);
+                currentIndex++;
+            }
+            compressedDeltaPosition.Compressed = compressed;
         }
 
         /// <summary>
@@ -112,12 +125,13 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void DecompressDeltaPosition(ref Vector3 deltaPosition, ref CompressedDeltaPosition compressedDeltaPosition)
         {
-            var compressed = compressedDeltaPosition.CompressedValues;
+            var compressed = compressedDeltaPosition.Compressed;
             // Get the last two bits for the index to skip (0-3)
-            var indexToSkip = (int)(compressed >> 30);
+            var indexToSkip = compressedDeltaPosition.Header >> k_LargestIndexShift;
 
             // Reverse out the values while skipping over the largest value index
             var sumOfSquaredMagnitudes = 0.0f;
+            var currentIndex = 1;
             for (int i = 2; i >= 0; --i)
             {
                 if (i == indexToSkip)
@@ -125,16 +139,24 @@ namespace Unity.Netcode
                     continue;
                 }
                 // Check the negative bit and multiply that result with the decompressed and decoded value
-                deltaPosition[i] = ((compressed & k_NegShortBit) > 0 ? -1.0f : 1.0f) * (compressed & k_PrecisionMask) * k_DcompressionDecodingMask;
+                var axisSign = compressedDeltaPosition.Header & (1 << (k_BaseSignShift + currentIndex));
+
+                deltaPosition[i] = (axisSign > 0 ? -1.0f : 1.0f) * (compressed & k_PrecisionMask) * k_DcompressionDecodingMask;
                 sumOfSquaredMagnitudes += deltaPosition[i] * deltaPosition[i];
                 compressed = compressed >> 10;
+                currentIndex--;
             }
+
             // Get the magnitude of the delta position
             var magnitude = (float)(compressed & k_PrecisionMask);
-            magnitude += compressedDeltaPosition.MagnitudePrecision * 0.001f;
+
+            // Get the 1/1000th decimal place precision value of the magnitude
+            magnitude += (compressedDeltaPosition.Header & k_MagnitudePrecisionMask) * 0.001f;
+
+            var largestSign = compressedDeltaPosition.Header & (1 << (k_BaseSignShift + 2));
 
             // Calculate the largest value from the sum of squares of the two smallest axis values
-            deltaPosition[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * ((compressed & k_NegShortBit) > 0 ? -1.0f : 1.0f);
+            deltaPosition[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * (largestSign > 0 ? -1.0f : 1.0f);
 
             // Apply the magnitude
             deltaPosition *= magnitude;
