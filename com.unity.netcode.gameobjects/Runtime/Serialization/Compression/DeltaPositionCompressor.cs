@@ -3,6 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
+    public struct CompressedDeltaPosition
+    {
+        public ushort MagnitudePrecision;
+        public uint CompressedValues;
+    }
+
     /// <summary>
     /// Compresses a delta position using a smallest two approach and using the 3rd 10 bit slot
     /// to store the magnitude.
@@ -44,10 +50,10 @@ namespace Unity.Netcode
         /// <param name="currentPosition">the current position</param>
         /// <returns>compressed delta position</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public uint CompressDeltaPosition(ref Vector3 previousPosition, ref Vector3 currentPosition)
+        static public void CompressDeltaPosition(ref Vector3 previousPosition, ref Vector3 currentPosition, ref CompressedDeltaPosition compressedDeltaPosition)
         {
             var directionTowards = (currentPosition - previousPosition);
-            return CompressDeltaPosition(ref directionTowards);
+            CompressDeltaPosition(ref directionTowards, ref compressedDeltaPosition);
         }
 
         /// <summary>
@@ -56,7 +62,7 @@ namespace Unity.Netcode
         /// <param name="positionDelta">the delta between two positions</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public uint CompressDeltaPosition(ref Vector3 positionDelta)
+        static public void CompressDeltaPosition(ref Vector3 positionDelta, ref CompressedDeltaPosition compressedDeltaPosition)
         {
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
@@ -80,6 +86,7 @@ namespace Unity.Netcode
 
             // Store the sign of the largest value with the magnitude
             var shortMag = (ushort)((vectMaxSign << k_ShiftNegativeBit) | (ushort)magnitude);
+            compressedDeltaPosition.MagnitudePrecision = (ushort)Mathf.Round((magnitude - (uint)magnitude) * 1000);
             compressed = (compressed << 10) | shortMag;
 
             // Step 1: Start with the first element
@@ -93,7 +100,8 @@ namespace Unity.Netcode
             // Repeat the last 3 steps for the remaining elements
             compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
             currentIndex++;
-            return currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
+            compressed = currentIndex != indexToSkip ? (compressed << 10) | (uint)((normalizedDir[currentIndex] < 0 ? k_True : k_False)) << k_ShiftNegativeBit | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[currentIndex]) : compressed;
+            compressedDeltaPosition.CompressedValues = compressed;
         }
 
         /// <summary>
@@ -102,8 +110,9 @@ namespace Unity.Netcode
         /// <param name="deltaPosition">the target vector to store the decompressed delta position</param>
         /// <param name="compressed">the compressed delta position</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public void DecompressDeltaPosition(ref Vector3 deltaPosition, uint compressed)
+        static public void DecompressDeltaPosition(ref Vector3 deltaPosition, ref CompressedDeltaPosition compressedDeltaPosition)
         {
+            var compressed = compressedDeltaPosition.CompressedValues;
             // Get the last two bits for the index to skip (0-3)
             var indexToSkip = (int)(compressed >> 30);
 
@@ -121,7 +130,8 @@ namespace Unity.Netcode
                 compressed = compressed >> 10;
             }
             // Get the magnitude of the delta position
-            var magnitude = (ushort)(compressed & k_PrecisionMask);
+            var magnitude = (float)(compressed & k_PrecisionMask);
+            magnitude += compressedDeltaPosition.MagnitudePrecision * 0.001f;
 
             // Calculate the largest value from the sum of squares of the two smallest axis values
             deltaPosition[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * ((compressed & k_NegShortBit) > 0 ? -1.0f : 1.0f);

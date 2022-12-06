@@ -49,15 +49,7 @@ namespace Unity.Netcode
 
         protected void StoreCompressedValue(int index, uint value)
         {
-            //var blockOffset = index * BytePosition;
-            //var bitsMaximum = (index * sizeof(ushort) * 8);
-            //var bitPosition = index * Precision;
-            //var precisionIndex = (ushort)((bitsMaximum - bitPosition) % 8);
-            //precisionIndex = (ushort)((8 - precisionIndex) % 8);
-
-
             var blockOffset = index * BytePosition;
-            //var bitsMaximum = (index * sizeof(ushort) * 8);
             var bitShift = (index * Precision) - (blockOffset * 8);
 
             var arrayBlockSize = (m_SmallestOfNCompressed.Data.Length - blockOffset) < sizeof(uint) ? 2 : 4;
@@ -74,26 +66,6 @@ namespace Unity.Netcode
             currentValue |= (PrecisionMask & value) << bitShift;
             var adjustedBlock = BitConverter.GetBytes(currentValue);
 
-            //if (BytesPerValue == sizeof(ushort))
-            //{
-            //    var currentValue = BitConverter.ToUInt16(m_SmallestOfNCompressed.Data, blockIndex);
-
-            //    //var adjustedValue = (ushort)(currentValue | (ushort)((PrecisionMask & value) << precisionIndex));
-            //    var adjustedValue = (ushort)(currentValue | (ushort)(value << precisionIndex));
-
-            //    //var adjustedValue = (ushort)(currentValue | value);
-
-
-            //    // Closer - But off
-            //    //var adjustedValue = (ushort)((ushort)((currentValue & ValueMask) >> precisionIndex) | value);
-            //    //adjustedValue |= currentValue;
-            //    adjustedBlock = BitConverter.GetBytes(adjustedValue);
-            //}
-            //else
-            //{
-            //    var adjustedValue = BitConverter.ToUInt32(m_SmallestOfNCompressed.Data, blockIndex) | (PrecisionMask & value);
-            //    adjustedBlock = BitConverter.GetBytes(adjustedValue);
-            //}
             for (int i = 0; i < arrayBlockSize; i++)
             {
                 var dataIndex = blockOffset + i;
@@ -103,19 +75,11 @@ namespace Unity.Netcode
 
         protected uint GetDecompressedValue(int index)
         {
-            //var blockOffset = index * BytePosition;
-            //var bitsMaximum = (index * sizeof(ushort) * 8);
-            //var bitPosition = index * Precision;
-            //var precisionIndex = (ushort)((bitsMaximum - bitPosition) % 8);
-            //precisionIndex = (ushort)((8 - precisionIndex) % 8);
-
             var blockOffset = index * BytePosition;
-            //var bitsMaximum = (index * sizeof(ushort) * 8);
             var bitShift = (index * Precision) - (blockOffset * 8);
-            //var precisionIndex = (ushort)((bitsMaximum - bitPosition) % 8);
-            //precisionIndex = (ushort)((8 - precisionIndex) % 8);
 
             var currentValue = (uint)0;
+
             if ((m_SmallestOfNCompressed.Data.Length - blockOffset) < sizeof(uint))
             {
                 currentValue = BitConverter.ToUInt16(m_SmallestOfNCompressed.Data, blockOffset);
@@ -126,24 +90,6 @@ namespace Unity.Netcode
             }
 
             return (currentValue >> bitShift) & PrecisionMask;
-
-            //if (BytesPerValue == sizeof(ushort))
-            //{
-            //    var rawValue = BitConverter.ToUInt16(m_SmallestOfNCompressed.Data, blockIndex);
-            //    var bitsMaximum = (index * sizeof(ushort) * 8);
-            //    var bitPosition = index * Precision;
-            //    var precisionIndex = (ushort)((bitsMaximum - bitPosition) % 8);
-            //    precisionIndex = (ushort)((8 - precisionIndex) % 8);
-            //    var adjustedValue = (ushort)((rawValue >> precisionIndex) & PrecisionMask);
-            //    //var adjustedValue = (ushort)(rawValue & PrecisionMask);
-
-            //    return (uint)adjustedValue;
-            //}
-            //else
-            //{
-            //    return BitConverter.ToUInt32(m_SmallestOfNCompressed.Data, blockIndex) & PrecisionMask;
-            //}
-
         }
 
         /// <summary>
@@ -215,9 +161,6 @@ namespace Unity.Netcode
             Precision = precision;
             BytePosition = (precision / 8);
             BytesPerValue = (byte)((uint)((Precision % 8) > 0 ? 1 : 0) + (uint)BytePosition);
-
-            //var precisionvalue = 1 << Precision;
-            //PrecisionMask = (ushort)((precisionvalue - 1) | precisionvalue);
             PrecisionMask = (uint)((1 << Precision) - 1);
             CompressionEncodingMask = (1.0f / SqrtTwoOverTwoEncoding) * PrecisionMask;
             DecompressionDecodingMask = (1.0f / PrecisionMask) * SqrtTwoOverTwoEncoding;
@@ -238,8 +181,6 @@ namespace Unity.Netcode
         public SmallestOfNCompressed CompressDeltaPosition(ref Vector3 positionDelta)
         {
             Clear();
-
-
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
 
@@ -261,19 +202,11 @@ namespace Unity.Netcode
             SetSignBit(2, normalizedDir[indexToSkip]);
 
             // Add one decimal place of precision
-            SetOverFlowBits((uint)Math.Round((magnitude - (uint)magnitude) * 100));
+            SetOverFlowBits((uint)Mathf.Round((magnitude - (uint)magnitude) * 100));
 
             // Start with the largest value's magnitude that will end up shifted to the highest value bit position range
             var compressed = (uint)magnitude;
-            var compressedMagnitude = magnitude;
             StoreCompressedValue(2, compressed);
-            //Debug.Log($"[Magnitude] Value = ({magnitude}) | Compressed ({compressed})");
-            var decompressed = GetDecompressedValue(2);
-
-            if (Mathf.Abs(magnitude - decompressed) >= 1.0f)
-            {
-                Debug.Log("Fail!");
-            }
 
             var indexPosition = 0;
             // Step 1: Process each of the four elements
@@ -288,17 +221,9 @@ namespace Unity.Netcode
                 // Step 4: Get the compressed and encoded value by multiplying the absolute value of the current element by k_CompressionEcodingMask and round that result up
                 SetSignBit(indexPosition, normalizedDir[i]);
                 compressed = (uint)Mathf.Round(CompressionEncodingMask * m_AbsValues[i]);
-                //compressed = (uint)(CompressionEncodingMask * m_AbsValues[i]);
                 StoreCompressedValue(indexPosition, compressed);
                 indexPosition++;
             }
-            decompressed = GetDecompressedValue(2);
-
-            if (Mathf.Abs(compressedMagnitude - decompressed) >= 1.0f)
-            {
-                Debug.Log("Fail!");
-            }
-
             return m_SmallestOfNCompressed;
         }
 
@@ -325,13 +250,17 @@ namespace Unity.Netcode
                 sumOfSquaredMagnitudes += deltaPosition[i] * deltaPosition[i];
                 indexPosition++;
             }
+
+            // Get the largest value's sign
+            var largestSign = GetSignBit(2);
+
+            // Calculate the largest value from the sum of squares of the two smallest axis values
+            deltaPosition[indexToSkip] = Mathf.Sqrt(Mathf.Abs(1.0f - sumOfSquaredMagnitudes)) * largestSign;
+
             // Get the magnitude of the delta position
             var magnitude = (float)GetDecompressedValue(2);
             magnitude += 0.01f * GetOverFlowBits();
-            var largestSign = GetSignBit(2);
-            // Calculate the largest value from the sum of squares of the two smallest axis values
-            deltaPosition[indexToSkip] = Mathf.Sqrt(Mathf.Abs(1.0f - sumOfSquaredMagnitudes)) * largestSign;
-            //Debug.Log($"[DeltaPosition] Decompressed Normalized -> ({deltaPosition.x}, {deltaPosition.y},{deltaPosition.z})");
+
             // Apply the magnitude
             deltaPosition *= magnitude;
         }
