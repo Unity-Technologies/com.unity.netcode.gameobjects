@@ -232,7 +232,7 @@ namespace Unity.Netcode.Components
         private void BuildTransitionStateInfoList()
         {
 #if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            if (UnityEditor.EditorApplication.isUpdating)
             {
                 return;
             }
@@ -304,8 +304,15 @@ namespace Unity.Netcode.Components
 
         public void OnBeforeSerialize()
         {
+
+        }
+
+#if UNITY_EDITOR
+        public void OnValidate()
+        {
             BuildTransitionStateInfoList();
         }
+#endif
 
         internal struct AnimationState : INetworkSerializable
         {

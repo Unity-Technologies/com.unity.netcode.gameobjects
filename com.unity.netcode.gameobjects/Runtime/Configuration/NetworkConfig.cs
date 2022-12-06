@@ -316,24 +316,19 @@ namespace Unity.Netcode
                 throw new Exception("Prefabs field is null.");
             }
 
-            if (Prefabs.NetworkPrefabsList != null)
-            {
-                throw new InvalidOperationException("Cannot migrate old NetworkPrefabs when new list already exists.");
-            }
-
-            Prefabs.NetworkPrefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            Prefabs.NetworkPrefabsLists.Add(ScriptableObject.CreateInstance<NetworkPrefabsList>());
 
             if (OldPrefabList?.Count > 0)
             {
                 // Migrate legacy types/fields
                 foreach (var networkPrefab in OldPrefabList)
                 {
-                    Prefabs.NetworkPrefabsList.Add(networkPrefab);
+                    Prefabs.NetworkPrefabsLists[Prefabs.NetworkPrefabsLists.Count - 1].Add(networkPrefab);
                 }
             }
 
             OldPrefabList = null;
-            return Prefabs.NetworkPrefabsList;
+            return Prefabs.NetworkPrefabsLists[Prefabs.NetworkPrefabsLists.Count - 1];
         }
 
         [FormerlySerializedAs("NetworkPrefabs")]

@@ -48,7 +48,7 @@ namespace Unity.Netcode.Editor
                 if (settings.GenerateDefaultNetworkPrefabs)
                 {
                     manager.NetworkConfig = new NetworkConfig();
-                    manager.NetworkConfig.Prefabs.NetworkPrefabsList = NetworkPrefabProcessor.GetOrCreateNetworkPrefabs(NetworkPrefabProcessor.DefaultNetworkPrefabsPath, out _, true);
+                    manager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { NetworkPrefabProcessor.GetOrCreateNetworkPrefabs(NetworkPrefabProcessor.DefaultNetworkPrefabsPath, out _, true) };
                 }
             };
         }

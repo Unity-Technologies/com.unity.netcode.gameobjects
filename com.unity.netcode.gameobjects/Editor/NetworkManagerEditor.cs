@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using Unity.Netcode.Editor.Configuration;
@@ -106,7 +107,7 @@ namespace Unity.Netcode.Editor
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
-                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsList));
+                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
 
             ReloadTransports();
         }
@@ -134,7 +135,7 @@ namespace Unity.Netcode.Editor
             m_LoadSceneTimeOutProperty = m_NetworkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
             m_PrefabsList = m_NetworkConfigProperty
                 .FindPropertyRelative(nameof(NetworkConfig.Prefabs))
-                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsList));
+                .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
         }
 
         /// <inheritdoc/>
@@ -162,8 +163,40 @@ namespace Unity.Netcode.Editor
                     EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
                     if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
                     {
+                        // Default directory
+                        var directory = "Assets/";
+                        var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
+                        if (assetPath == "")
+                        {
+                            assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
+                        }
+
+                        if (assetPath != "")
+                        {
+                            directory = Path.GetDirectoryName(assetPath);
+                        }
+                        else
+                        {
+                            var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+                            if (prefabStage != null)
+                            {
+                                var prefabPath = prefabStage.assetPath;
+                                if (!string.IsNullOrEmpty(prefabPath))
+                                {
+                                    directory = Path.GetDirectoryName(prefabPath);
+                                }
+                            }
+                            if (m_NetworkManager.gameObject.scene != null)
+                            {
+                                var scenePath = m_NetworkManager.gameObject.scene.path;
+                                if (!string.IsNullOrEmpty(scenePath))
+                                {
+                                    directory = Path.GetDirectoryName(scenePath);
+                                }
+                            }
+                        }
                         var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
-                        string path = $"Assets/NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset";
+                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
                         Debug.Log("Saving migrated Network Prefabs List to " + path);
                         AssetDatabase.CreateAsset(networkPrefabs, path);
                         EditorUtility.SetDirty(m_NetworkManager);
@@ -171,7 +204,7 @@ namespace Unity.Netcode.Editor
                 }
                 else
                 {
-                    if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsList == null)
+                    if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
                     {
                         EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
                     }

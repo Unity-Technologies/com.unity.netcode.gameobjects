@@ -21,7 +21,7 @@ namespace Unity.Netcode
         /// Runtime usages of <see cref="NetworkPrefabs"/> should not depend on this edit-time field for execution.
         /// </remarks>
         [SerializeField]
-        public NetworkPrefabsList NetworkPrefabsList;
+        public List<NetworkPrefabsList> NetworkPrefabsLists = new List<NetworkPrefabsList>();
 
         /// <summary>
         /// This dictionary provides a quick way to check and see if a NetworkPrefab has a NetworkPrefab override.
@@ -53,10 +53,10 @@ namespace Unity.Netcode
 
         ~NetworkPrefabs()
         {
-            if (NetworkPrefabsList)
+            foreach (var list in NetworkPrefabsLists)
             {
-                NetworkPrefabsList.OnAdd -= AddTriggeredByNetworkPrefabList;
-                NetworkPrefabsList.OnRemove -= RemoveTriggeredByNetworkPrefabList;
+                list.OnAdd -= AddTriggeredByNetworkPrefabList;
+                list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
             }
         }
 
@@ -66,23 +66,35 @@ namespace Unity.Netcode
         /// </summary>
         public void Initialize(bool warnInvalid = true)
         {
-            if (NetworkPrefabsList && m_Prefabs.Count > 0)
+            if (NetworkPrefabsLists.Count != 0 && m_Prefabs.Count > 0)
             {
                 NetworkLog.LogWarning("Runtime Network Prefabs was not empty at initialization time. Network " +
                     "Prefab registrations made before initialization will be replaced by NetworkPrefabsList.");
                 m_Prefabs.Clear();
             }
 
-            if (NetworkPrefabsList)
+            foreach (var list in NetworkPrefabsLists)
             {
-                NetworkPrefabsList.OnAdd += AddTriggeredByNetworkPrefabList;
-                NetworkPrefabsList.OnRemove += RemoveTriggeredByNetworkPrefabList;
+                list.OnAdd += AddTriggeredByNetworkPrefabList;
+                list.OnRemove += RemoveTriggeredByNetworkPrefabList;
             }
 
             NetworkPrefabOverrideLinks.Clear();
             OverrideToNetworkPrefab.Clear();
 
-            var prefabs = NetworkPrefabsList && NetworkPrefabsList.PrefabList != null ? NetworkPrefabsList.PrefabList : m_Prefabs.AsReadOnly();
+            var prefabs = NetworkPrefabsLists.Count != 0 ? new List<NetworkPrefab>() : m_Prefabs;
+
+            if (NetworkPrefabsLists.Count != 0)
+            {
+                foreach (var list in NetworkPrefabsLists)
+                {
+                    foreach (var networkPrefab in list.PrefabList)
+                    {
+                        prefabs.Add(networkPrefab);
+                    }
+                }
+            }
+
             m_Prefabs = new List<NetworkPrefab>();
 
             List<NetworkPrefab> removeList = null;
@@ -91,18 +103,15 @@ namespace Unity.Netcode
                 removeList = new List<NetworkPrefab>();
             }
 
-            if (prefabs != null)
+            foreach (var networkPrefab in prefabs)
             {
-                foreach (var networkPrefab in prefabs)
+                if (AddPrefabRegistration(networkPrefab))
                 {
-                    if (AddPrefabRegistration(networkPrefab))
-                    {
-                        m_Prefabs.Add(networkPrefab);
-                    }
-                    else
-                    {
-                        removeList?.Add(networkPrefab);
-                    }
+                    m_Prefabs.Add(networkPrefab);
+                }
+                else
+                {
+                    removeList?.Add(networkPrefab);
                 }
             }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -33,7 +34,7 @@ namespace TestProject.RuntimeTests
             networkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                Prefabs = new NetworkPrefabs { NetworkPrefabsList = prefabs },
+                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList>{ prefabs } },
                 NetworkTransport = unityTransport
             };
 

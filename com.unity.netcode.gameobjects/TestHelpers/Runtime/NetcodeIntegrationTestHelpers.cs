@@ -487,12 +487,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
             {
-                if (config.Prefabs.NetworkPrefabsList == null)
-                {
-                    config.Prefabs.NetworkPrefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-                }
-
-                config.Prefabs.NetworkPrefabsList.Add(prefab);
+                config.Prefabs.Add(prefab);
             }
 
             var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";

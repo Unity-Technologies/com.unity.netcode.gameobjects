@@ -185,12 +185,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
             {
-                if (config.Prefabs.NetworkPrefabsList == null)
-                {
-                    config.Prefabs.NetworkPrefabsList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-                }
-
-                config.Prefabs.NetworkPrefabsList.Add(prefab);
+                config.Prefabs.Add(prefab);
             }
 
             // Sanity check to make sure we are not trying to create more clients than we have available to use
