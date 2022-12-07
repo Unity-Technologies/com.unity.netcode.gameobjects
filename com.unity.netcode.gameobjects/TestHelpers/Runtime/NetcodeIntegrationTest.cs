@@ -340,6 +340,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
 
+            if (LogAllMessages)
+            {
+                networkManager.MessagingSystem.Hook(new DebugNetworkHooks());
+            }
+
             AddRemoveNetworkManager(networkManager, true);
 
             OnNewClientStarted(networkManager);
