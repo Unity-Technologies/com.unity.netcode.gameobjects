@@ -12,6 +12,7 @@ namespace Unity.Netcode.EditorTests
         public const string DefaultBuildScenePath = "Tests/Editor/Build/BuildTestScene.unity";
 
         [Test]
+        [Ignore("Disabling this test on release/1.2.0 branch due to Burst failures caused when running with upm ci")]
         public void BasicBuildTest()
         {
             var execAssembly = Assembly.GetExecutingAssembly();
