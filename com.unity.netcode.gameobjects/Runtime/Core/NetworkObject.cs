@@ -349,26 +349,28 @@ namespace Unity.Netcode
                 throw new NotServerException("Only server can change visibility");
             }
 
-            if (!Observers.Contains(clientId))
-            {
-                throw new VisibilityChangeException("The object is already hidden");
-            }
-
             if (clientId == NetworkManager.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-            Observers.Remove(clientId);
-
-            var message = new DestroyObjectMessage
+            if (!NetworkManager.RemoveObjectFromShowingTo(this, clientId))
             {
-                NetworkObjectId = NetworkObjectId,
-                DestroyGameObject = !IsSceneObject.Value
-            };
-            // Send destroy call
-            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
-            NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
+                if (!Observers.Contains(clientId))
+                {
+                    throw new VisibilityChangeException("The object is already hidden");
+                }
+                Observers.Remove(clientId);
+
+                var message = new DestroyObjectMessage
+                {
+                    NetworkObjectId = NetworkObjectId,
+                    DestroyGameObject = !IsSceneObject.Value
+                };
+                // Send destroy call
+                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
+            }
         }
 
         /// <summary>

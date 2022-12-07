@@ -440,6 +440,30 @@ namespace Unity.Netcode.RuntimeTests
             Debug.Assert(list1.Count == list2.Count);
         }
 
+        private IEnumerator HideThenShowAndHideThenModifyAndShow()
+        {
+            Debug.Log("Hiding");
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+            Debug.Log("Showing and Hiding");
+            // show and hide
+            m_NetSpawnedObject1.NetworkShow(1);
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+            Debug.Log("Modifying and Showing");
+            // modify and show
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyList.Add(5);
+            m_NetSpawnedObject1.NetworkShow(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+        }
+
+
         private IEnumerator HideThenModifyAndShow()
         {
             // hide
@@ -485,7 +509,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.0f);
             }
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < 3; i++)
             {
                 // wait for three ticks
                 yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
@@ -493,12 +517,19 @@ namespace Unity.Netcode.RuntimeTests
 
                 switch (i)
                 {
-                    case 1:
+                    case 0:
+                        Debug.Log("Running HideThenModifyAndShow");
                         yield return HideThenModifyAndShow();
                         break;
-                    case 2:
+                    case 1:
+                        Debug.Log("Running HideThenShowAndModify");
                         yield return HideThenShowAndModify();
                         break;
+                    case 2:
+                        Debug.Log("Running HideThenShowAndHideThenModifyAndShow");
+                        yield return HideThenShowAndHideThenModifyAndShow();
+                        break;
+
 
                 }
 

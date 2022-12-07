@@ -2363,5 +2363,26 @@ namespace Unity.Netcode
             }
             ObjectsToShowToClient[clientId].Add(networkObject);
         }
+
+        // returns whether any matching objects would have become visible and were returned to hidden state
+        internal bool RemoveObjectFromShowingTo(NetworkObject networkObject, ulong clientId)
+        {
+            var ret = false;
+            if (!ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                return false;
+            }
+
+            // probably overkill, but deals with multiple entries
+            while (ObjectsToShowToClient[clientId].Contains(networkObject))
+            {
+                Debug.LogWarning(
+                    "Object was shown and hidden from the same client in the same Network frame. As a result, the client will _not_ receive a NetworkSpawn");
+                ObjectsToShowToClient[clientId].Remove(networkObject);
+                ret = true;
+            }
+
+            return ret;
+        }
     }
 }
