@@ -3,13 +3,13 @@ using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
-    public struct CompressedDeltaPosition
+    public struct CompressedDeltaPosition : INetworkSerializable
     {
         /// <summary>
         /// Contains additional compression information
         /// </summary>
         /// <remarks>
-        /// Bits 0 - 10: 1/1000th decimal place precision value of the magnitude
+        /// Bits 0 - 10: decimal place precision value of the magnitude
         /// Bits 11 - 13: Sign values of the largest axial value and the two smallest values
         /// bits 14 - 15: The index of the largest axial value
         /// </remarks>
@@ -17,10 +17,21 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Contains the compressed values
-        /// Bits 0-21: The smallest two normalized axial values with 11 bit precision
-        /// Bits 22-31: The unsigned int value of the magnitude
         /// </summary>
+        /// <remarks>
+        /// Bits 0-21: The smallest two normalized axial values with 11 bit precision
+        /// Bits 22-30: The unsigned int value of the magnitude
+        /// Bit 31: When set, the magnitude is < 0.22f
+        /// When Magnitude is only a fractional value:
+        /// Bits 22-30: high 9 bits of value (header is the lower 10bits giving 19 bit precision)
+        /// </remarks>
         public uint Compressed;
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Header);
+            serializer.SerializeValue(ref Compressed);
+        }
     }
 
     /// <summary>
@@ -32,16 +43,30 @@ namespace Unity.Netcode
     /// Specifications for usage:
     /// - This yields a 50% reduction in total size to maintain a reasonable precision
     ///   - 12 bytes (Vector3) to 6 bytes <see cref="CompressedDeltaPosition"/>.
-    /// - Axial deltas should not exceed +/- 511.0f range.
-    ///   - At the default network tick of 30x per second this would yield +/- 15,330 unity world space units (UWS units) per second.
-    /// - Decompressed value(s) precision accuracy ranges (@30x per second):
-    ///   - @ +/- 511 delta ---> tolerance level is +/- 0.226f ---> +/-15,330 UWS units per second. (moving so fast you might not see it)
-    ///   - @ +/- 255 delta ---> tolerance level is +/- 0.113f ---> +/-7,650 UWS units per second.
-    ///   - @ +/- 127 delta ---> tolerance level is +/- 0.056f ---> +/-3,810 UWS units per second.
-    ///   - @ +/- 63 delta ----> tolerance level is +/- 0.028f ---> +/-1,890 UWS units per second.
-    ///   - @ +/- 31 delta ----> tolerance level is +/- 0.014f ---> +/-930 UWS units per second.
-    ///   (tolerance levels continue to drop as the delta range drops)
-    /// Each invocation (compressing or decompressing) should take about 1us or less to execute
+    /// - Position Delta Ranges from (+/-) 255.00f to 0.001f
+    /// - Decompressed value(s) precision accuracy ranges:
+    ///   [+Delta-][Precision][Unity WorldSpace Units(UWSU)] (USWU Values Calculated @30x +/-Delta)
+    ///   [255.000][0.1124573][+/- 7650.000 UWSU per second] (Delta Ceiling)
+    ///   [127.000][0.0557327][+/- 3810.000 UWSU per second]
+    ///   [063.000][0.0276642][+/- 1890.000 UWSU per second]
+    ///   [031.000][0.0139141][+/- 0930.000 UWSU per second]
+    ///   [015.000][0.0067520][+/- 0450.000 UWSU per second]
+    ///   [007.000][0.0028806][+/- 0210.000 UWSU per second]
+    ///   [003.000][0.0012348][+/- 0090.000 UWSU per second]
+    ///   [001.000][0.0004115][+/- 0030.000 UWSU per second]
+    ///   [000.500][0.0002058][+/- 0015.000 UWSU per second]
+    ///   [000.250][0.0001029][+/- 0007.500 UWSU per second]
+    ///   [000.125][0.0000572][+/- 0003.750 UWSU per second]
+    ///   [000.063][0.0000257][+/- 0001.875 UWSU per second]
+    ///   [000.031][0.0000157][+/- 0000.938 UWSU per second]
+    ///   [000.016][0.0000061][+/- 0000.469 UWSU per second]
+    ///   [000.008][0.0000034][+/- 0000.234 UWSU per second]
+    ///   [000.004][0.0000031][+/- 0000.117 UWSU per second]
+    ///   [000.002][0.0000020][+/- 0000.058 UWSU per second] (Precision Floor)
+    ///   [000.001][0.0000020][+/- 0000.029 UWSU per second] (Delta Floor)(Minimum NetworkTransform Threshold)
+    ///
+    /// Note: Objects with axial deltas >= +/- 255.0f (per delta) range are moving so fast they most likely
+    /// will be clipped from camera's default far clipping plane (1000 UWSU) on the 1st or 2nd network tick.
     /// </remarks>
     public static class DeltaPositionCompressor
     {
@@ -59,9 +84,11 @@ namespace Unity.Netcode
         // that by k_SqrtTwoOverTwo (minor reduction of runtime calculations)
         private const float k_DcompressionDecodingMask = (1.0f / k_PrecisionMask) * k_SqrtTwoOverTwoEncoding;
 
-        private const ushort k_MagnitudeMask = 1023;
+        private const ushort k_HeaderMagnitudeMask = 1023;
+        private const ushort k_MagnitudeMask = 511;
         private const byte k_LargestIndexShift = 14;
         private const byte k_BaseSignShift = 11;
+        private const uint k_FractionAdjustMask = 0x7FFFFFFF;
 
         // Negative bit set values
         private const ushort k_True = 1;
@@ -95,6 +122,10 @@ namespace Unity.Netcode
             compressedDeltaPosition.Header = 0;
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
+            var magnitudeIsFractional = (magnitude < 0.22f);
+
+            // Set the combined decimal place flag if the magnitude falls below 0.21f
+            compressedDeltaPosition.Compressed = (uint)((magnitudeIsFractional ? k_True : k_False) << 31);
 
             // Store off the absolute value for each Quaternion element
             s_AbsValues[0] = Mathf.Abs(normalizedDir[0]);
@@ -112,11 +143,17 @@ namespace Unity.Netcode
 
             // Store the index, magnitude precision, and largest value's sign
             compressedDeltaPosition.Header = (ushort)(indexToSkip << k_LargestIndexShift);
-            compressedDeltaPosition.Header |= (ushort)((uint)Mathf.Round((magnitude - (uint)magnitude) * 1000) & k_MagnitudeMask);
+            // Get the header fractional magnitude value
+            var headerMag = magnitudeIsFractional ? (magnitude * 100) - (uint)(magnitude * 100) : magnitude - (uint)magnitude;
+
+            compressedDeltaPosition.Header |= (ushort)((ushort)Mathf.Round(headerMag * 1000) & k_HeaderMagnitudeMask);
             compressedDeltaPosition.Header |= (ushort)(vectMaxSign << (k_BaseSignShift + 2));
 
-            // Store the non-decimal magnitude value
-            compressedDeltaPosition.Compressed = ((uint)magnitude & k_MagnitudeMask) << 22;
+            // Store the magnitude value
+            var magnitudeAdjusted = magnitudeIsFractional ? ((uint)(magnitude * 100) & k_MagnitudeMask) : (uint)(magnitude) & k_MagnitudeMask;
+
+            compressedDeltaPosition.Compressed |= ((uint)magnitudeAdjusted << 22) & k_FractionAdjustMask;
+
             var currentIndex = 0;
             var axialValues = (uint)0;
             for (int i = 0; i < 3; i++)
@@ -144,6 +181,8 @@ namespace Unity.Netcode
         static public void DecompressDeltaPosition(ref Vector3 deltaPosition, ref CompressedDeltaPosition compressedDeltaPosition)
         {
             var compressed = compressedDeltaPosition.Compressed;
+
+
             // Get the last two bits for the index to skip (0-3)
             var indexToSkip = compressedDeltaPosition.Header >> k_LargestIndexShift;
 
@@ -153,9 +192,11 @@ namespace Unity.Netcode
 
             // Get the magnitude of the delta position
             var magnitude = (float)((compressed >> 22) & k_MagnitudeMask);
+            var magnitudeIsFractional = (compressed & (k_FractionAdjustMask + 1)) > 0;
+            var magnitudeAdjusted = magnitudeIsFractional ? magnitude * 0.01f : magnitude;
 
             // Get the 1/1000th decimal place precision value of the magnitude
-            magnitude += (compressedDeltaPosition.Header & k_MagnitudeMask) * 0.001f;
+            magnitudeAdjusted += (compressedDeltaPosition.Header & k_HeaderMagnitudeMask) * (magnitudeIsFractional ? 0.00001f : 0.001f);
 
             for (int i = 2; i >= 0; --i)
             {
@@ -179,7 +220,7 @@ namespace Unity.Netcode
             deltaPosition[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * (largestSign > 0 ? -1.0f : 1.0f);
 
             // Apply the magnitude
-            deltaPosition *= magnitude;
+            deltaPosition *= magnitudeAdjusted;
         }
     }
 }
