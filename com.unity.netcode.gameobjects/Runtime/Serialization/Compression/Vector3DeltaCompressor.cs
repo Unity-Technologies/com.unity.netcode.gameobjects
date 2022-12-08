@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace Unity.Netcode
 {
-    public struct CompressedDeltaPosition : INetworkSerializable
+    public struct CompressedVector3Delta : INetworkSerializable
     {
         /// <summary>
         /// Contains additional compression information
@@ -35,16 +35,15 @@ namespace Unity.Netcode
     }
 
     /// <summary>
-    /// Compresses a delta position using a "smallest two approach" and using the 3rd 10 bit slot
-    /// to store the magnitude. This should only be used when determining the change in a position
-    /// and not used to store a world space position.
+    /// Compresses a <see cref="Vector3"/> delta using a "smallest two approach" and using the 3rd 10 bit slot
+    /// to store the magnitude. This should only be used when determining the delta between two Vector3 values.
     /// </summary>
     /// <remarks>
     /// Specifications for usage:
     /// - This yields a 50% reduction in total size to maintain a reasonable precision
-    ///   - 12 bytes (Vector3) to 6 bytes <see cref="CompressedDeltaPosition"/>.
-    /// - Position Delta Ranges from (+/-) 255.00f to 0.001f
-    /// - Decompressed value(s) precision accuracy ranges:
+    ///   - 12 bytes (Vector3) to 6 bytes <see cref="CompressedVector3Delta"/>.
+    /// - Min-Max delta ranges from (+/-) 255.00f to 0.001f
+    /// - Decompressed value(s) precision accuracy ranges when used for delta positions:
     ///   [+Delta-][Precision][Unity WorldSpace Units(UWSU)] (USWU Values Calculated @30x +/-Delta)
     ///   [255.000][0.1124573][+/- 7650.000 UWSU per second] (Delta Ceiling)
     ///   [127.000][0.0557327][+/- 3810.000 UWSU per second]
@@ -63,12 +62,14 @@ namespace Unity.Netcode
     ///   [000.008][0.0000034][+/- 0000.234 UWSU per second]
     ///   [000.004][0.0000031][+/- 0000.117 UWSU per second]
     ///   [000.002][0.0000020][+/- 0000.058 UWSU per second] (Precision Floor)
-    ///   [000.001][0.0000020][+/- 0000.029 UWSU per second] (Delta Floor)(Minimum NetworkTransform Threshold)
+    ///   [000.001][0.0000020][+/- 0000.029 UWSU per second] (Delta Floor)(i.e. Minimum NetworkTransform Thresholds for Scale and Position)
     ///
-    /// Note: Objects with axial deltas >= +/- 255.0f (per delta) range are moving so fast they most likely
-    /// will be clipped from camera's default far clipping plane (1000 UWSU) on the 1st or 2nd network tick.
+    /// Note: Objects with axial position deltas >= +/- 255.0f (per delta) range are moving so fast they most likely
+    /// will be excluded from camera's default far clipping plane (1000 UWSU) on the 1st or 2nd network tick. When
+    /// used for scale, this does not apply.  Of course, a change (delta) of scale greater than the maximum size is
+    /// highly unlikely.
     /// </remarks>
-    public static class DeltaPositionCompressor
+    public static class Vector3DeltaCompressor
     {
         private const ushort k_PrecisionMask = (1 << 11) - 1;
 
@@ -94,45 +95,45 @@ namespace Unity.Netcode
         private const ushort k_True = 1;
         private const ushort k_False = 0;
 
-        // Used to store the absolute value of the delta position value
+        // Used to store the absolute value of the delta Vector3 value
         private static Vector3 s_AbsValues = Vector3.zero;
 
         /// <summary>
-        /// Compress the delta position between a previous and current position
+        /// Compress the delta between two Vector3 values
         /// </summary>
-        /// <param name="previousPosition">the previous position</param>
-        /// <param name="currentPosition">the current position</param>
-        /// <returns>compressed delta position</returns>
+        /// <param name="previous">previous Vector3</param>
+        /// <param name="current">current Vector3</param>
+        /// <param name="compressedVector3Delta">the compressed value</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public void CompressDeltaPosition(ref Vector3 previousPosition, ref Vector3 currentPosition, ref CompressedDeltaPosition compressedDeltaPosition)
+        static public void CompressDelta(ref Vector3 previous, ref Vector3 current, ref CompressedVector3Delta compressedVector3Delta)
         {
-            var directionTowards = (currentPosition - previousPosition);
-            CompressDeltaPosition(ref directionTowards, ref compressedDeltaPosition);
+            var directionTowards = (current - previous);
+            CompressDelta(ref directionTowards, ref compressedVector3Delta);
         }
 
         /// <summary>
-        /// Compress a delta position
+        /// Compress a Vector3 delta
         /// </summary>
-        /// <param name="positionDelta">the delta between two positions</param>
+        /// <param name="delta">the delta between two Vector3 values</param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public void CompressDeltaPosition(ref Vector3 positionDelta, ref CompressedDeltaPosition compressedDeltaPosition)
+        static public void CompressDelta(ref Vector3 delta, ref CompressedVector3Delta compressedVector3Delta)
         {
-            compressedDeltaPosition.Compressed = 0;
-            compressedDeltaPosition.Header = 0;
-            var normalizedDir = positionDelta.normalized;
-            var magnitude = positionDelta.magnitude;
+            compressedVector3Delta.Compressed = 0;
+            compressedVector3Delta.Header = 0;
+            var normalizedDir = delta.normalized;
+            var magnitude = delta.magnitude;
             var magnitudeIsFractional = (magnitude < 0.22f);
 
             // Set the combined decimal place flag if the magnitude falls below 0.21f
-            compressedDeltaPosition.Compressed = (uint)((magnitudeIsFractional ? k_True : k_False) << 31);
+            compressedVector3Delta.Compressed = (uint)((magnitudeIsFractional ? k_True : k_False) << 31);
 
             // Store off the absolute value for each Quaternion element
             s_AbsValues[0] = Mathf.Abs(normalizedDir[0]);
             s_AbsValues[1] = Mathf.Abs(normalizedDir[1]);
             s_AbsValues[2] = Mathf.Abs(normalizedDir[2]);
 
-            // Get the largest element value of the position delta to know what the remaining "Smallest Three" values are
+            // Get the largest element value of the Vector3 delta to know what the remaining "Smallest Three" values are
             var vectMax = Mathf.Max(s_AbsValues[0], s_AbsValues[1], s_AbsValues[2]);
 
             // Find the index of the largest element so we can skip that element while compressing and decompressing
@@ -142,17 +143,17 @@ namespace Unity.Netcode
             var vectMaxSign = (normalizedDir[indexToSkip] < 0 ? k_True : k_False);
 
             // Store the index, magnitude precision, and largest value's sign
-            compressedDeltaPosition.Header = (ushort)(indexToSkip << k_LargestIndexShift);
+            compressedVector3Delta.Header = (ushort)(indexToSkip << k_LargestIndexShift);
             // Get the header fractional magnitude value
             var headerMag = magnitudeIsFractional ? (magnitude * 100) - (uint)(magnitude * 100) : magnitude - (uint)magnitude;
 
-            compressedDeltaPosition.Header |= (ushort)((ushort)Mathf.Round(headerMag * 1000) & k_HeaderMagnitudeMask);
-            compressedDeltaPosition.Header |= (ushort)(vectMaxSign << (k_BaseSignShift + 2));
+            compressedVector3Delta.Header |= (ushort)((ushort)Mathf.Round(headerMag * 1000) & k_HeaderMagnitudeMask);
+            compressedVector3Delta.Header |= (ushort)(vectMaxSign << (k_BaseSignShift + 2));
 
             // Store the magnitude value
             var magnitudeAdjusted = magnitudeIsFractional ? ((uint)(magnitude * 100) & k_MagnitudeMask) : (uint)(magnitude) & k_MagnitudeMask;
 
-            compressedDeltaPosition.Compressed |= ((uint)magnitudeAdjusted << 22) & k_FractionAdjustMask;
+            compressedVector3Delta.Compressed |= ((uint)magnitudeAdjusted << 22) & k_FractionAdjustMask;
 
             var currentIndex = 0;
             var axialValues = (uint)0;
@@ -163,40 +164,40 @@ namespace Unity.Netcode
                     continue;
                 }
                 // Store the axis sign in the header
-                compressedDeltaPosition.Header |= (ushort)((normalizedDir[i] < 0 ? k_True : k_False) << (k_BaseSignShift + currentIndex));
+                compressedVector3Delta.Header |= (ushort)((normalizedDir[i] < 0 ? k_True : k_False) << (k_BaseSignShift + currentIndex));
 
                 // Add the axis compressed value to the existing compressed values
                 axialValues = (axialValues << 11) | (ushort)Mathf.Round(k_CompressionEcodingMask * s_AbsValues[i]);
                 currentIndex++;
             }
-            compressedDeltaPosition.Compressed |= axialValues;
+            compressedVector3Delta.Compressed |= axialValues;
         }
 
         /// <summary>
-        /// Decompresses a compressed delta position
+        /// Decompresses a compressed Vector3 delta
         /// </summary>
-        /// <param name="deltaPosition">the target vector to store the decompressed delta position</param>
-        /// <param name="compressed">the compressed delta position</param>
+        /// <param name="delta">the target Vector3 to store the decompressed delta</param>
+        /// <param name="compressed">the compressed Vector3 delta</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public void DecompressDeltaPosition(ref Vector3 deltaPosition, ref CompressedDeltaPosition compressedDeltaPosition)
+        static public void DecompressDelta(ref Vector3 delta, ref CompressedVector3Delta compressedVector3Delta)
         {
-            var compressed = compressedDeltaPosition.Compressed;
+            var compressed = compressedVector3Delta.Compressed;
 
 
             // Get the last two bits for the index to skip (0-3)
-            var indexToSkip = compressedDeltaPosition.Header >> k_LargestIndexShift;
+            var indexToSkip = compressedVector3Delta.Header >> k_LargestIndexShift;
 
             // Reverse out the values while skipping over the largest value index
             var sumOfSquaredMagnitudes = 0.0f;
             var currentIndex = 1;
 
-            // Get the magnitude of the delta position
+            // Get the magnitude of the delta
             var magnitude = (float)((compressed >> 22) & k_MagnitudeMask);
             var magnitudeIsFractional = (compressed & (k_FractionAdjustMask + 1)) > 0;
             var magnitudeAdjusted = magnitudeIsFractional ? magnitude * 0.01f : magnitude;
 
             // Get the 1/1000th decimal place precision value of the magnitude
-            magnitudeAdjusted += (compressedDeltaPosition.Header & k_HeaderMagnitudeMask) * (magnitudeIsFractional ? 0.00001f : 0.001f);
+            magnitudeAdjusted += (compressedVector3Delta.Header & k_HeaderMagnitudeMask) * (magnitudeIsFractional ? 0.00001f : 0.001f);
 
             for (int i = 2; i >= 0; --i)
             {
@@ -205,22 +206,22 @@ namespace Unity.Netcode
                     continue;
                 }
                 // Check the negative bit and multiply that result with the decompressed and decoded value
-                var axisSign = compressedDeltaPosition.Header & (1 << (k_BaseSignShift + currentIndex));
+                var axisSign = compressedVector3Delta.Header & (1 << (k_BaseSignShift + currentIndex));
 
-                deltaPosition[i] = (axisSign > 0 ? -1.0f : 1.0f) * (compressed & k_PrecisionMask) * k_DcompressionDecodingMask;
-                sumOfSquaredMagnitudes += deltaPosition[i] * deltaPosition[i];
+                delta[i] = (axisSign > 0 ? -1.0f : 1.0f) * (compressed & k_PrecisionMask) * k_DcompressionDecodingMask;
+                sumOfSquaredMagnitudes += delta[i] * delta[i];
                 compressed = compressed >> 11;
                 currentIndex--;
             }
 
             // Get the largest value's sign
-            var largestSign = compressedDeltaPosition.Header & (1 << (k_BaseSignShift + 2));
+            var largestSign = compressedVector3Delta.Header & (1 << (k_BaseSignShift + 2));
 
             // Calculate the largest value from the sum of squares of the two smallest axis values
-            deltaPosition[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * (largestSign > 0 ? -1.0f : 1.0f);
+            delta[indexToSkip] = Mathf.Sqrt(1.0f - sumOfSquaredMagnitudes) * (largestSign > 0 ? -1.0f : 1.0f);
 
             // Apply the magnitude
-            deltaPosition *= magnitudeAdjusted;
+            delta *= magnitudeAdjusted;
         }
     }
 }
