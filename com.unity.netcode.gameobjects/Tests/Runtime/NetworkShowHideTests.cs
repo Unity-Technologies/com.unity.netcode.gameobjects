@@ -15,6 +15,7 @@ namespace Unity.Netcode.RuntimeTests
         public static bool Silent;
         public static int ValueAfterOwnershipChange = 0;
         public static Dictionary<ulong, ShowHideObject> ObjectsPerClientId = new Dictionary<ulong, ShowHideObject>();
+        public static List<ulong> ClientIdsRpcCalledOn;
 
         public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
         {
@@ -82,6 +83,7 @@ namespace Unity.Netcode.RuntimeTests
 
             MyListSetOnSpawn = new NetworkList<int>();
             MyList = new NetworkList<int>();
+            ClientIdsRpcCalledOn = new List<ulong>();
 
             MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
             MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
@@ -108,11 +110,23 @@ namespace Unity.Netcode.RuntimeTests
                 Debug.Log($"Value changed from {before} to {after}");
             }
         }
+
+        [ClientRpc]
+        public void SomeRandomClientRPC()
+        {
+            Debug.Log($"RPC called {NetworkManager.LocalClientId}");
+            ClientIdsRpcCalledOn.Add(NetworkManager.LocalClientId);
+        }
+
+        public void TriggerRpc()
+        {
+            SomeRandomClientRPC();
+        }
     }
 
     public class NetworkShowHideTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 2;
+        protected override int NumberOfClients => 4;
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
@@ -493,6 +507,18 @@ namespace Unity.Netcode.RuntimeTests
             yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
         }
 
+        private IEnumerator HideThenShowAndRPC()
+        {
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+
+            // show
+            m_NetSpawnedObject1.NetworkShow(1);
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().TriggerRpc();
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+        }
+
         [UnityTest]
         public IEnumerator NetworkShowHideAroundListModify()
         {
@@ -509,7 +535,7 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.0f);
             }
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 4; i++)
             {
                 // wait for three ticks
                 yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
@@ -529,7 +555,11 @@ namespace Unity.Netcode.RuntimeTests
                         Debug.Log("Running HideThenShowAndHideThenModifyAndShow");
                         yield return HideThenShowAndHideThenModifyAndShow();
                         break;
-
+                    case 3:
+                        Debug.Log("Running HideThenShowAndRPC");
+                        yield return HideThenShowAndRPC();
+                        Debug.Assert(ShowHideObject.ClientIdsRpcCalledOn.Count == NumberOfClients + 1);
+                        break;
 
                 }
 
