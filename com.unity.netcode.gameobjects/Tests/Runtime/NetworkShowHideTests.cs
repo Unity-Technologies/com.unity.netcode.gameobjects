@@ -83,7 +83,6 @@ namespace Unity.Netcode.RuntimeTests
 
             MyListSetOnSpawn = new NetworkList<int>();
             MyList = new NetworkList<int>();
-            ClientIdsRpcCalledOn = new List<ulong>();
 
             MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
             MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
@@ -115,7 +114,10 @@ namespace Unity.Netcode.RuntimeTests
         public void SomeRandomClientRPC()
         {
             Debug.Log($"RPC called {NetworkManager.LocalClientId}");
-            ClientIdsRpcCalledOn.Add(NetworkManager.LocalClientId);
+            if (ClientIdsRpcCalledOn != null)
+            {
+                ClientIdsRpcCalledOn.Add(NetworkManager.LocalClientId);
+            }
         }
 
         public void TriggerRpc()
@@ -557,6 +559,7 @@ namespace Unity.Netcode.RuntimeTests
                         break;
                     case 3:
                         Debug.Log("Running HideThenShowAndRPC");
+                        ShowHideObject.ClientIdsRpcCalledOn = new List<ulong>();
                         yield return HideThenShowAndRPC();
                         Debug.Assert(ShowHideObject.ClientIdsRpcCalledOn.Count == NumberOfClients + 1);
                         break;

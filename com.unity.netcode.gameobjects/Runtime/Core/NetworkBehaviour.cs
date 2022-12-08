@@ -210,6 +210,13 @@ namespace Unity.Netcode
                     }
                     rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
                 }
+                foreach (var it in NetworkManager.ObjectsToShowToClient)
+                {
+                    if (it.Value.Contains(NetworkObject))
+                    {
+                        rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, it.Key);
+                    }
+                }
             }
 
             // If we are a server/host then we just no op and send to ourself
