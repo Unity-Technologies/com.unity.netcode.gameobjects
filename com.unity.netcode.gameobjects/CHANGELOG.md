@@ -12,6 +12,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
+- Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.
+- `NetworkHide()` of an object that was just `NetworkShow()`n produces a warning, as remote clients will _not_ get a spawn/despawn pair.
 - The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 - Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `teleportDisabled` for better clarity of what that parameter does. (#2228)
 
