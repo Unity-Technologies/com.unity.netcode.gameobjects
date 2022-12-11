@@ -644,6 +644,8 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        protected override bool LogAllMessages => true;
+
         [UnityTest]
         public IEnumerator WhenMultipleSpawnTriggeredMessagesAreDeferred_TheyAreAllProcessedOnSpawn()
         {
@@ -663,7 +665,7 @@ namespace Unity.Netcode.RuntimeTests
 
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
-            yield return WaitForAllClientsToReceive<ChangeOwnershipMessage>();
+            yield return WaitForAllClientsToReceive<ChangeOwnershipMessage, NetworkVariableDeltaMessage>();
 
             foreach (var client in m_ClientNetworkManagers)
             {
@@ -671,9 +673,9 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.IsTrue(manager.DeferMessageCalled);
                 Assert.IsFalse(manager.ProcessTriggersCalled);
 
-                Assert.AreEqual(3, manager.DeferredMessageCountTotal());
-                Assert.AreEqual(3, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
-                Assert.AreEqual(3, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
+                Assert.AreEqual(4, manager.DeferredMessageCountTotal());
+                Assert.AreEqual(4, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnSpawn));
+                Assert.AreEqual(4, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
                 Assert.AreEqual(0, manager.DeferredMessageCountForType(IDeferredMessageManager.TriggerType.OnAddPrefab));
                 AddPrefabsToClient(client);
             }
@@ -806,10 +808,6 @@ namespace Unity.Netcode.RuntimeTests
             serverObject.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
 
             yield return WaitForAllClientsToReceive<ChangeOwnershipMessage, NetworkVariableDeltaMessage>();
-
-            // wait three ticks
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
 
             // Validate messages are deferred and pending
             foreach (var client in m_ClientNetworkManagers)
