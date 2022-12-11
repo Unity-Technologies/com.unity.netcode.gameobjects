@@ -58,7 +58,9 @@ namespace Unity.Netcode.Editor.Configuration
 
         private static void OnGuiHandler(string obj)
         {
+            // Make sure all NetcodeGUISettings derived classes are instantiated first
             CheckForInitialize();
+
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsSettings.GetAutoAddNetworkObjectSetting();
             var multiplayerToolsTipStatus = NetcodeForGameObjectsSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
             EditorGUI.BeginChangeCheck();
