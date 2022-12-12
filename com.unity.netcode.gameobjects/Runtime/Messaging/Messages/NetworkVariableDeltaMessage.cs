@@ -64,6 +64,16 @@ namespace Unity.Netcode
                     shouldWrite = false;
                 }
 
+                // The object containing the behaviour we're about to process is about to be shown to this client
+                // As a result, the client will get the fully serialized NetworkVariable and would be confused by
+                // an extraneous delta
+                if (NetworkBehaviour.NetworkManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
+                    NetworkBehaviour.NetworkManager.ObjectsToShowToClient[TargetClientId]
+                    .Contains(NetworkBehaviour.NetworkObject))
+                {
+                    shouldWrite = false;
+                }
+
                 if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                 {
                     if (!shouldWrite)

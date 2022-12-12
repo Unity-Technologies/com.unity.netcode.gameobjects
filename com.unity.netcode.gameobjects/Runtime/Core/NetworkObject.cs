@@ -266,6 +266,7 @@ namespace Unity.Netcode
             }
 
             NetworkManager.MarkObjectForShowingTo(this, clientId);
+            Observers.Add(clientId);
         }
 
 

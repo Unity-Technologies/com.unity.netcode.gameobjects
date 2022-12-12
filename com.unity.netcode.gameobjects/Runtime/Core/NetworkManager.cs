@@ -1672,7 +1672,6 @@ namespace Unity.Netcode
                 ulong clientId = client.Key;
                 foreach (var networkObject in client.Value)
                 {
-                    networkObject.Observers.Add(clientId);
                     SpawnManager.SendSpawnCallForObject(clientId, networkObject);
                 }
             }
@@ -2381,6 +2380,8 @@ namespace Unity.Netcode
                 ObjectsToShowToClient[clientId].Remove(networkObject);
                 ret = true;
             }
+
+            networkObject.Observers.Remove(clientId);
 
             return ret;
         }
