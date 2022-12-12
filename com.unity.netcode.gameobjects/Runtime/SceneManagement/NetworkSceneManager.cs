@@ -862,16 +862,6 @@ namespace Unity.Netcode
 
             SceneEventProgressTracking.Add(sceneEventProgress.Guid, sceneEventProgress);
 
-            if (!isUnloading)
-            {
-                // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
-                // they need to be moved into the do not destroy temporary scene
-                // When it is set: Just before starting the asynchronous loading call
-                // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
-                // not destroy temporary scene are moved into the active scene
-                IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
-            }
-
             m_IsSceneEventActive = true;
 
             // Set our callback delegate handler for completion
@@ -1162,6 +1152,13 @@ namespace Unity.Netcode
 
             if (sceneEventData.LoadSceneMode == LoadSceneMode.Single)
             {
+                // The Condition: While a scene is asynchronously loaded in single loading scene mode, if any new NetworkObjects are spawned
+                // they need to be moved into the do not destroy temporary scene
+                // When it is set: Just before starting the asynchronous loading call
+                // When it is unset: After the scene has loaded, the PopulateScenePlacedObjects is called, and all NetworkObjects in the do
+                // not destroy temporary scene are moved into the active scene
+                IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
+
                 // Destroy current scene objects before switching.
                 m_NetworkManager.SpawnManager.ServerDestroySpawnedSceneObjects();
 

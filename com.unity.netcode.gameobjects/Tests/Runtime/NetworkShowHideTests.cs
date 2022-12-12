@@ -14,6 +14,8 @@ namespace Unity.Netcode.RuntimeTests
         public static ulong ClientIdToTarget;
         public static bool Silent;
         public static int ValueAfterOwnershipChange = 0;
+        public static Dictionary<ulong, ShowHideObject> ObjectsPerClientId = new Dictionary<ulong, ShowHideObject>();
+        public static List<ulong> ClientIdsRpcCalledOn;
 
         public static NetworkObject GetNetworkObjectById(ulong networkObjectId)
         {
@@ -44,6 +46,15 @@ namespace Unity.Netcode.RuntimeTests
                 Debug.Assert(MyListSetOnSpawn[0] == 45);
             }
 
+            if (ObjectsPerClientId.ContainsKey(NetworkManager.LocalClientId))
+            {
+                ObjectsPerClientId[NetworkManager.LocalClientId] = this;
+            }
+            else
+            {
+                ObjectsPerClientId.Add(NetworkManager.LocalClientId, this);
+            }
+
             base.OnNetworkSpawn();
         }
 
@@ -59,6 +70,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<int> MyNetworkVariable;
         public NetworkList<int> MyListSetOnSpawn;
         public NetworkVariable<int> MyOwnerReadNetworkVariable;
+        public NetworkList<int> MyList;
         static public NetworkManager NetworkManagerOfInterest;
 
         internal static int GainOwnershipCount = 0;
@@ -70,6 +82,7 @@ namespace Unity.Netcode.RuntimeTests
             MyNetworkVariable.OnValueChanged += Changed;
 
             MyListSetOnSpawn = new NetworkList<int>();
+            MyList = new NetworkList<int>();
 
             MyOwnerReadNetworkVariable = new NetworkVariable<int>(readPerm: NetworkVariableReadPermission.Owner);
             MyOwnerReadNetworkVariable.OnValueChanged += OwnerReadChanged;
@@ -96,11 +109,26 @@ namespace Unity.Netcode.RuntimeTests
                 Debug.Log($"Value changed from {before} to {after}");
             }
         }
+
+        [ClientRpc]
+        public void SomeRandomClientRPC()
+        {
+            Debug.Log($"RPC called {NetworkManager.LocalClientId}");
+            if (ClientIdsRpcCalledOn != null)
+            {
+                ClientIdsRpcCalledOn.Add(NetworkManager.LocalClientId);
+            }
+        }
+
+        public void TriggerRpc()
+        {
+            SomeRandomClientRPC();
+        }
     }
 
     public class NetworkShowHideTests : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 2;
+        protected override int NumberOfClients => 4;
 
         private ulong m_ClientId0;
         private GameObject m_PrefabToSpawn;
@@ -394,5 +422,153 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(ShowHideObject.ValueAfterOwnershipChange == 1);
         }
 
+        private string Display(NetworkList<int> list)
+        {
+            string message = "";
+            foreach (var i in list)
+            {
+                message += $"{i}, ";
+            }
+
+            return message;
+        }
+
+        private void Compare(NetworkList<int> list1, NetworkList<int> list2)
+        {
+            if (list1.Count != list2.Count)
+            {
+                string message = $"{Display(list1)} versus {Display(list2)}";
+                Debug.Log(message);
+            }
+            else
+            {
+                for (var i = 0; i < list1.Count; i++)
+                {
+                    if (list1[i] != list2[i])
+                    {
+                        string message = $"{Display(list1)} versus {Display(list2)}";
+                        Debug.Log(message);
+                        break;
+                    }
+                }
+            }
+
+            Debug.Assert(list1.Count == list2.Count);
+        }
+
+        private IEnumerator HideThenShowAndHideThenModifyAndShow()
+        {
+            Debug.Log("Hiding");
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+            Debug.Log("Showing and Hiding");
+            // show and hide
+            m_NetSpawnedObject1.NetworkShow(1);
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+            Debug.Log("Modifying and Showing");
+            // modify and show
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyList.Add(5);
+            m_NetSpawnedObject1.NetworkShow(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+        }
+
+
+        private IEnumerator HideThenModifyAndShow()
+        {
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+
+            // modify
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyList.Add(5);
+            // show
+            m_NetSpawnedObject1.NetworkShow(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+        }
+
+        private IEnumerator HideThenShowAndModify()
+        {
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+
+            // show
+            m_NetSpawnedObject1.NetworkShow(1);
+            // modify
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().MyList.Add(5);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+        }
+
+        private IEnumerator HideThenShowAndRPC()
+        {
+            // hide
+            m_NetSpawnedObject1.NetworkHide(1);
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+
+            // show
+            m_NetSpawnedObject1.NetworkShow(1);
+            m_NetSpawnedObject1.GetComponent<ShowHideObject>().TriggerRpc();
+            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+        }
+
+        [UnityTest]
+        public IEnumerator NetworkShowHideAroundListModify()
+        {
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientNetworkManagers[1].LocalClientId;
+            ShowHideObject.Silent = true;
+
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+
+            // wait for host to have spawned and gained ownership
+            while (ShowHideObject.GainOwnershipCount == 0)
+            {
+                yield return new WaitForSeconds(0.0f);
+            }
+
+            for (int i = 0; i < 4; i++)
+            {
+                // wait for three ticks
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 3);
+                yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 3);
+
+                switch (i)
+                {
+                    case 0:
+                        Debug.Log("Running HideThenModifyAndShow");
+                        yield return HideThenModifyAndShow();
+                        break;
+                    case 1:
+                        Debug.Log("Running HideThenShowAndModify");
+                        yield return HideThenShowAndModify();
+                        break;
+                    case 2:
+                        Debug.Log("Running HideThenShowAndHideThenModifyAndShow");
+                        yield return HideThenShowAndHideThenModifyAndShow();
+                        break;
+                    case 3:
+                        Debug.Log("Running HideThenShowAndRPC");
+                        ShowHideObject.ClientIdsRpcCalledOn = new List<ulong>();
+                        yield return HideThenShowAndRPC();
+                        Debug.Assert(ShowHideObject.ClientIdsRpcCalledOn.Count == NumberOfClients + 1);
+                        break;
+
+                }
+
+                Compare(ShowHideObject.ObjectsPerClientId[0].MyList, ShowHideObject.ObjectsPerClientId[1].MyList);
+                Compare(ShowHideObject.ObjectsPerClientId[0].MyList, ShowHideObject.ObjectsPerClientId[2].MyList);
+            }
+        }
     }
 }
