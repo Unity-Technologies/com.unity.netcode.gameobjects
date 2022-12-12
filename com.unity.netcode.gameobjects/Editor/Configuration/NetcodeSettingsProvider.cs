@@ -1,10 +1,9 @@
-#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
 namespace Unity.Netcode.Editor.Configuration
 {
-    public static class NetcodeSettingsProvider
+    internal static class NetcodeSettingsProvider
     {
         [SettingsProvider]
         public static SettingsProvider CreateNetcodeSettingsProvider()
@@ -124,5 +123,3 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 }
-#endif
-
