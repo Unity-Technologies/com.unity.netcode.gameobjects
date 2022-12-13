@@ -69,11 +69,10 @@ namespace Unity.Netcode.Components
 
             internal bool InLocalSpace
             {
-                get => (m_Bitset & (1 << k_InLocalSpaceBit)) != 0;
+                get => BitGet(k_InLocalSpaceBit);
                 set
                 {
-                    if (value) { m_Bitset = (ushort)(m_Bitset | (1 << k_InLocalSpaceBit)); }
-                    else { m_Bitset = (ushort)(m_Bitset & ~(1 << k_InLocalSpaceBit)); }
+                    BitSet(value, k_InLocalSpaceBit);
                 }
             }
 
@@ -408,7 +407,7 @@ namespace Unity.Netcode.Components
         /// Currently this is static only for testing purposes. The static prefix will
         /// be removed if we decide to use this.
         /// </remarks>
-        static public bool UsePositionDeltaCompression = true;
+        static public bool UsePositionDeltaCompression = false;
 
         // Last position is used on the authoritative side to get the delta between the
         // current and the last position when UsePositionDeltaCompression is enabled
@@ -531,6 +530,7 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+
             var synchronizationState = new NetworkTransformState();
             if (serializer.IsWriter)
             {
@@ -649,6 +649,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
+            // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
+            networkState.UseInterpolation = Interpolate;
+            networkState.PostionDeltaCompression = UsePositionDeltaCompression;
+
             return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse);
         }
 
@@ -1007,6 +1011,12 @@ namespace Unity.Netcode.Components
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
             var currentEulerAngles = currentRotation.eulerAngles;
 
+            if (newState.IsTeleportingNextFrame)
+            {
+                ApplyTeleportingState(newState);
+                return;
+            }
+
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
@@ -1114,12 +1124,6 @@ namespace Unity.Netcode.Components
                 m_TargetPosition += newState.DeltaPosition;
             }
 
-            // Teleport, interpolate, or do nothing else
-            if (newState.IsTeleportingNextFrame)
-            {
-                ApplyTeleportingState(newState);
-            }
-            else
             if (Interpolate)
             {
                 // Add measurements for the new state's deltas

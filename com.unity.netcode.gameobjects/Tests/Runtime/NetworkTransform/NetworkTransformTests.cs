@@ -622,11 +622,14 @@ namespace Unity.Netcode.RuntimeTests
             var authorityRotation = m_AuthoritativeTransform.transform.rotation;
             var authorityEulerRotation = authorityRotation.eulerAngles;
 
+            // Apply the current state which assures all bitset flags are updated
+            var results = m_AuthoritativeTransform.ApplyState();
+
             // Verify rotation is not marked dirty when rotated by half of the threshold
             authorityEulerRotation.y += halfThreshold;
             authorityRotation.eulerAngles = authorityEulerRotation;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            var results = m_AuthoritativeTransform.ApplyState();
+            results = m_AuthoritativeTransform.ApplyState();
             Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
             yield return s_DefaultWaitForTick;
 
