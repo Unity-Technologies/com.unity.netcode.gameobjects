@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
         {
             if (IsOwner && RandomizeScale)
             {
-                transform.localScale = transform.localScale * Random.Range(0.5f, 2.0f);
+                transform.localScale = transform.localScale * Random.Range(0.75f, 1.75f);
             }
             base.OnNetworkSpawn();
         }

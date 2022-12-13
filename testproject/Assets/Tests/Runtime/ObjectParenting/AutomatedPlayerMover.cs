@@ -10,7 +10,7 @@ namespace TestProject.RuntimeTests
         private float m_RotSpeed = 15.0f;
 
         private GameObject m_Destination;
-        private Vector3 m_TargetPosition;
+        private Vector3 m_Target;
 
 
 
@@ -30,8 +30,8 @@ namespace TestProject.RuntimeTests
                 var targetNavPointIndex = Random.Range(0, Navigationpoints.Instance.NavPoints.Count - 1);
                 m_Destination = Navigationpoints.Instance.NavPoints[targetNavPointIndex];
 
-                m_TargetPosition = m_Destination.transform.position;
-                m_TargetPosition.y = transform.position.y;
+                m_Target = m_Destination.transform.position;
+                m_Target.y = transform.position.y;
             }
         }
 
@@ -58,8 +58,8 @@ namespace TestProject.RuntimeTests
             {
                 return;
             }
-            m_TargetPosition.y = transform.position.y;
-            var distance = Vector3.Distance(transform.position, m_TargetPosition);
+            m_Target.y = transform.position.y;
+            var distance = Vector3.Distance(transform.position, m_Target);
             if (distance < 0.25f)
             {
                 var currentDestination = m_Destination;
@@ -79,7 +79,7 @@ namespace TestProject.RuntimeTests
             else
             {
                 transform.position = Vector3.MoveTowards(transform.position, m_Destination.transform.position, m_Speed * Time.fixedDeltaTime);
-                var normalizedDirection = (m_TargetPosition - transform.position).normalized;
+                var normalizedDirection = (m_Target - transform.position).normalized;
                 if (normalizedDirection.magnitude != 0.0f)
                 {
                     var lookRotation = Quaternion.LookRotation(normalizedDirection, transform.up).eulerAngles;

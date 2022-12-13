@@ -6,6 +6,8 @@ namespace TestProject.ManualTests
 {
     public class ChildMoverManager : NetworkBehaviour
     {
+        static public bool StopMovement;
+
         public List<ChildMover> ChildMovers;
 
         [Range(0.001f, 5.0f)]
@@ -45,9 +47,9 @@ namespace TestProject.ManualTests
 
         private float m_LastRotDirection = 1.0f;
         private float m_LastMovementDirection = 1.0f;
-        private void Update()
+        private void LateUpdate()
         {
-            if (IsOwner && IsSpawned)
+            if (IsOwner && IsSpawned && !StopMovement)
             {
                 var deltaPosition = (transform.position - m_LastPosition);
                 if (deltaPosition.sqrMagnitude >= (TriggerDistanceToMove * TriggerDistanceToMove))

@@ -6,9 +6,30 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
+    //Uncomment to test several iterations
+    //[TestFixture(2)]
+    //[TestFixture(3)]
+    //[TestFixture(4)]
+    //[TestFixture(5)]
+    //[TestFixture(6)]
+    //[TestFixture(7)]
+    //[TestFixture(8)]
+    //[TestFixture(9)]
+    //[TestFixture(10)]
+    //[TestFixture(11)]
+    //[TestFixture(12)]
+    //[TestFixture(13)]
+    //[TestFixture(14)]
+    //[TestFixture(15)]
+    //[TestFixture(16)]
+    //[TestFixture(17)]
+    //[TestFixture(18)]
+    //[TestFixture(19)]
+    //[TestFixture(20)]
     public class NestedNetworkTransformTests : IntegrationTestWithApproximation
     {
         private const string k_TestScene = "NestedNetworkTransformTestScene";
@@ -20,6 +41,16 @@ namespace TestProject.RuntimeTests
         private Scene m_OriginalActiveScene;
 
         private Object m_PlayerPrefabResource;
+
+        public NestedNetworkTransformTests(int id )
+        {
+            VerboseDebug($"Test #{id}");
+        }
+
+        public NestedNetworkTransformTests()
+        {
+
+        }
 
         protected override void OnOneTimeSetup()
         {
@@ -107,7 +138,7 @@ namespace TestProject.RuntimeTests
         /// </summary>
         protected override float GetDeltaVarianceThreshold()
         {
-            return 0.1f;
+            return NetworkTransform.UsePositionDeltaCompression ? 0.5f : 0.1f;
         }
 
         private StringBuilder m_ValidationErrors;
@@ -134,15 +165,15 @@ namespace TestProject.RuntimeTests
                     {
                         if (!Approximately(playerNetworkTransforms[i].transform.position, relativeClonedTransforms[i].transform.position))
                         {
-                            m_ValidationErrors.Append($"[Position][Client-{connectedClient} {playerNetworkTransforms[i].transform.position}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.position}]");
+                            m_ValidationErrors.Append($"[Position][Client-{connectedClient} {playerNetworkTransforms[i].transform.position}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.position}]\n");
                         }
                         if (!Approximately(playerNetworkTransforms[i].transform.eulerAngles, relativeClonedTransforms[i].transform.eulerAngles))
                         {
-                            m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} {playerNetworkTransforms[i].transform.eulerAngles}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.eulerAngles}]");
+                            m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} {playerNetworkTransforms[i].transform.eulerAngles}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.eulerAngles}]\n");
                         }
                         if (!Approximately(playerNetworkTransforms[i].transform.localScale, relativeClonedTransforms[i].transform.localScale))
                         {
-                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]");
+                            m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]\n");
                         }
                     }
                 }
@@ -154,7 +185,8 @@ namespace TestProject.RuntimeTests
         public IEnumerator NestedNetworkTransformSynchronization()
         {
             m_ValidationErrors = new StringBuilder();
-            var waitPeriod = new WaitForSeconds(1.0f);
+            var waitPeriod = new WaitForSeconds(s_DefaultWaitForTick.waitTime * m_ServerNetworkManager.NetworkConfig.TickRate);
+            var timeoutHelper = new TimeoutHelper(1.2f);
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
             yield return waitPeriod;
 
@@ -162,19 +194,40 @@ namespace TestProject.RuntimeTests
             for (int i = 0; i < 5; i++)
             {
                 yield return CreateAndStartNewClient();
-                // Stop all movement for all players
-                AutomatedPlayerMover.StopMovement = true;
-                // Validate that the transforms are approximately the same
-                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms);
-                AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match:\n {m_ValidationErrors}");
-                // Continue player movement
-                AutomatedPlayerMover.StopMovement = false;
+                yield return s_DefaultWaitForTick;
+                int syncCount = 0;
+                while (syncCount < 3)
+                {
+                    // Stop all movement for all players
+                    AutomatedPlayerMover.StopMovement = true;
+                    ChildMoverManager.StopMovement = true;
+
+                    // Validate that the transforms are approximately the same
+                    yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, timeoutHelper);
+
+                    // Continue player movement
+                    AutomatedPlayerMover.StopMovement = false;
+                    ChildMoverManager.StopMovement = false;
+                    if (timeoutHelper.TimedOut)
+                    {
+                        syncCount++;
+                        // Allow the players to move a bit.
+                        yield return waitPeriod;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+
+                AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match:\n {m_ValidationErrors}", timeoutHelper);
                 // Allow the players to move a bit.
                 yield return waitPeriod;
             }
 
             // Just a final sanity check to make sure position and rotation match
             AutomatedPlayerMover.StopMovement = true;
+            ChildMoverManager.StopMovement = true;
             yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms);
         }
 

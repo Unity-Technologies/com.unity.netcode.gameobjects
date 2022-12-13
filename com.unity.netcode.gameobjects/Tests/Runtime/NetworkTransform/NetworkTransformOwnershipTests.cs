@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformOwnershipTests : NetcodeIntegrationTest
+    public class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 1;
 
@@ -82,7 +82,7 @@ namespace Unity.Netcode.RuntimeTests
             rotation.eulerAngles = valueSetByOwner;
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation,rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -91,7 +91,7 @@ namespace Unity.Netcode.RuntimeTests
             // Verify non-owners cannot change transform values
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
-            Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
+            Assert.True(Approximately(nonOwnerInstance.transform.position, valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{nonOwnerInstance.transform.position}");
 
             // Change ownership and wait for the non-owner to reflect the change
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
@@ -113,13 +113,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
 
             // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
-            valueSetByOwner = Vector3.one * 50;
+            valueSetByOwner = Vector3.one * 10;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
             rotation.eulerAngles = valueSetByOwner;
             ownerInstance.transform.rotation = rotation;
             transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
             // The last check is to verify non-owners cannot change transform values after ownership has changed
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
-            Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
+            Assert.True(Approximately(nonOwnerInstance.transform.position, valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
         /// <summary>

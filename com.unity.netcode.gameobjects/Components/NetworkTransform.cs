@@ -248,7 +248,7 @@ namespace Unity.Netcode.Components
                 var preserveFlags = (ushort)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | 1 << (k_PositionDeltaCompress));
                 m_Bitset &= preserveFlags;
                 IsDirty = false;
-                // Clear the position delta each tick
+                // Clear the position delta
                 DeltaPosition = Vector3.zero;
             }
 
@@ -715,6 +715,7 @@ namespace Unity.Netcode.Components
             if (UsePositionDeltaCompression && networkState.IsTeleportingNextFrame)
             {
                 m_LastPosition = position;
+                networkState.DeltaPosition = Vector3.zero;
             }
 
             if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
@@ -1017,6 +1018,11 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            if (!Interpolate)
+            {
+                return;
+            }
+
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
@@ -1119,16 +1125,14 @@ namespace Unity.Netcode.Components
 
             // If delta position compression is enabled and we had a position change,
             // then update the target position (note: teleporting will write over this)
-            if (UsePositionDeltaCompression && newState.HasPositionChange)
+            if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
             {
+                //Debug.Log($"[{name}] IsServer: {IsServer} | IsOwner: {IsOwner} | TargetPosition: {m_TargetPosition} | DeltaPosition: {newState.DeltaPosition}");
                 m_TargetPosition += newState.DeltaPosition;
             }
 
-            if (Interpolate)
-            {
-                // Add measurements for the new state's deltas
-                AddInterpolatedState(newState);
-            }
+            // Add measurements for the new state's deltas
+            AddInterpolatedState(newState);
         }
 
         /// <summary>
@@ -1219,13 +1223,19 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
-            Initialize();
+            if (OwnerClientId == NetworkManager.LocalClientId)
+            {
+                Initialize();
+            }
         }
 
         /// <inheritdoc/>
         public override void OnLostOwnership()
         {
-            Initialize();
+            if (OwnerClientId != NetworkManager.LocalClientId)
+            {
+                Initialize();
+            }
         }
 
         /// <summary>
@@ -1241,6 +1251,7 @@ namespace Unity.Netcode.Components
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
             m_LocalAuthoritativeNetworkState = replicatedState.Value;
+
             m_LastPosition = InLocalSpace ? transform.localPosition : transform.position;
             m_TargetPosition = InLocalSpace ? transform.localPosition : transform.position;
 
@@ -1251,7 +1262,6 @@ namespace Unity.Netcode.Components
             else
             {
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
-
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
             }

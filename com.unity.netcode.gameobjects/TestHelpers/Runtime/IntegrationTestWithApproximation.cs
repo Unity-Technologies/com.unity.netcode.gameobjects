@@ -1,7 +1,7 @@
 using UnityEngine;
-using Unity.Netcode.TestHelpers.Runtime;
 
-namespace TestProject.RuntimeTests
+
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     public abstract class IntegrationTestWithApproximation : NetcodeIntegrationTest
     {

@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests

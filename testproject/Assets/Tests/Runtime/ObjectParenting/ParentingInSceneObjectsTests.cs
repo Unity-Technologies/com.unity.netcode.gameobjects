@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using Unity.Netcode;
 using TestProject.ManualTests;
+using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {

@@ -362,9 +362,19 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -745482209883575862, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 947981134, guid: 96e0a72e30d0c46c8a5c9a750e8f5807, type: 3}
       propertyPath: GlobalObjectIdHash
       value: 951099334
+      objectReference: {fileID: 0}
+    - target: {fileID: 3809075828520557319, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
+        type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8685790303553767874, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
         type: 3}
@@ -485,7 +495,7 @@ MonoBehaviour:
   ChildMovers:
   - {fileID: 1866518356433686547}
   - {fileID: 2914594030718603294}
-  TriggerDistanceToMove: 0.25
+  TriggerDistanceToMove: 0.1
   PlayerCamera: {fileID: 8372809022110481992}
 --- !u!114 &5376990732947334198
 MonoBehaviour:
@@ -502,14 +512,14 @@ MonoBehaviour:
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
-  SyncRotAngleX: 0
+  SyncRotAngleX: 1
   SyncRotAngleY: 1
-  SyncRotAngleZ: 0
+  SyncRotAngleZ: 1
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
   PositionThreshold: 0.001
-  RotAngleThreshold: 0.01
-  ScaleThreshold: 0.01
+  RotAngleThreshold: 0.001
+  ScaleThreshold: 0.001
   InLocalSpace: 0
   Interpolate: 1
