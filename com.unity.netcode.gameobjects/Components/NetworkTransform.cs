@@ -230,14 +230,17 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
             internal Vector3 DeltaPosition;
+            internal Vector3 DeltaPositionDecompressed;
+            internal Vector3 DeltaPositioPrecisionLoss;
+            internal Vector3 TickRealPosition;
             internal CompressedVector3Delta CompressedVector3Delta;
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
             internal bool IsDirty;
 
-            // Non-Authoritative side uses this for ending extrapolation of the last applied state
-            internal int EndExtrapolationTick;
+            // Used primarily for debugging.
+            internal int NetworkTick;
 
             /// <summary>
             /// This will reset the NetworkTransform BitSet
@@ -252,21 +255,42 @@ namespace Unity.Netcode.Components
                 DeltaPosition = Vector3.zero;
             }
 
+            /// <summary>
+            /// Compress the delta position
+            /// </summary>
+            /// <param name="position">current authoritative position used for precision loss calculations</param>
+            /// <remarks>
+            /// Because the position can change between applying the update and when it is sent/serialized, we store
+            /// off the precise authoritative position that is used later to calculate the DeltaPositioPrecisionLoss
+            /// </remarks>
+            public void CompressDeltaPosition(ref Vector3 position)
+            {
+                // If using delta position compression, only use it when not teleporting.
+                if (HasPositionChange && PostionDeltaCompression && !IsTeleportingNextFrame)
+                {
+                    TickRealPosition = position;
+                    DeltaPosition += DeltaPositioPrecisionLoss;
+                    Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
+
+                    // Decompress to get the non-authoritative side's loss in precision which is used just prior to
+                    // when the state is being serialized
+                    Vector3DeltaCompressor.DecompressDelta(ref DeltaPositionDecompressed, ref CompressedVector3Delta);
+                }
+            }
+
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 serializer.SerializeValue(ref SentTime);
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
+
+                serializer.SerializeValue(ref NetworkTick);
+
                 if (HasPositionChange)
                 {
                     // If using delta position compression, only use it when not teleporting.
                     if (PostionDeltaCompression && !IsTeleportingNextFrame)
                     {
-                        if (serializer.IsWriter)
-                        {
-                            Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
-                        }
-
                         serializer.SerializeNetworkSerializable(ref CompressedVector3Delta);
 
                         if (serializer.IsReader)
@@ -407,7 +431,7 @@ namespace Unity.Netcode.Components
         /// Currently this is static only for testing purposes. The static prefix will
         /// be removed if we decide to use this.
         /// </remarks>
-        static public bool UsePositionDeltaCompression = false;
+        static public bool UsePositionDeltaCompression = true;
 
         // Last position is used on the authoritative side to get the delta between the
         // current and the last position when UsePositionDeltaCompression is enabled
@@ -599,6 +623,9 @@ namespace Unity.Netcode.Components
             // If the transform has deltas (returns dirty) then...
             if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
+                m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
+                var position = transformToCommit.position;
+                m_LocalAuthoritativeNetworkState.CompressDeltaPosition(ref position);
                 // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
             }
@@ -824,9 +851,7 @@ namespace Unity.Netcode.Components
             {
                 if (networkState.PostionDeltaCompression && networkState.HasPositionChange)
                 {
-                    if (networkState.HasPositionX) { adjustedPosition.x = m_TargetPosition.x; }
-                    if (networkState.HasPositionY) { adjustedPosition.y = m_TargetPosition.y; }
-                    if (networkState.HasPositionZ) { adjustedPosition.z = m_TargetPosition.z; }
+                    adjustedPosition = m_TargetPosition;
                 }
                 else
                 {
@@ -1102,6 +1127,10 @@ namespace Unity.Netcode.Components
             }
         }
 
+        public delegate void OnTransformStateChangedHandler(ref Vector3 position, ref Vector3 precisionLoss, int networkTick);
+
+        public OnTransformStateChangedHandler OnTransformStateChanged;
+
         /// <summary>
         /// Only non-authoritative instances should invoke this method
         /// </summary>
@@ -1112,9 +1141,19 @@ namespace Unity.Netcode.Components
                 return;
             }
 
+            // Authority now subscribes to OnNetworkStateChanged only to handle precision loss calculations
             if (CanCommitToTransform)
             {
-                // we're the authority, we ignore incoming changes
+                if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
+                {
+                    m_TargetPosition += newState.DeltaPositionDecompressed;
+                    var precisionLoss = m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss;
+
+                    OnTransformStateChanged?.Invoke(ref m_TargetPosition, ref precisionLoss, newState.NetworkTick);
+
+                    m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss = newState.TickRealPosition - m_TargetPosition;
+                }
+                // Authority only calculates precision loss and then exits
                 return;
             }
 
@@ -1127,8 +1166,17 @@ namespace Unity.Netcode.Components
             // then update the target position (note: teleporting will write over this)
             if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
             {
-                //Debug.Log($"[{name}] IsServer: {IsServer} | IsOwner: {IsOwner} | TargetPosition: {m_TargetPosition} | DeltaPosition: {newState.DeltaPosition}");
-                m_TargetPosition += newState.DeltaPosition;
+                if (oldState.NetworkTick != newState.NetworkTick)
+                {
+                    //Debug.Log($"[{name}] IsServer: {IsServer} | IsOwner: {IsOwner} | TargetPosition: {m_TargetPosition} | DeltaPosition: {newState.DeltaPosition}");
+                    m_TargetPosition += newState.DeltaPosition;
+                    var clientSideNoPrecisionLossCalculations = Vector3.zero;
+                    OnTransformStateChanged?.Invoke(ref m_TargetPosition, ref clientSideNoPrecisionLossCalculations, newState.NetworkTick);
+                }
+                else
+                {
+                    Debug.LogWarning($"Client thinks position has changed on duplicate network tick {newState.NetworkTick}!");
+                }
             }
 
             // Add measurements for the new state's deltas
@@ -1223,6 +1271,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnGainedOwnership()
         {
+            // Only initialize if we gained ownership
             if (OwnerClientId == NetworkManager.LocalClientId)
             {
                 Initialize();
@@ -1232,6 +1281,8 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnLostOwnership()
         {
+            // Only initialize if we are not authority and lost
+            // ownership
             if (OwnerClientId != NetworkManager.LocalClientId)
             {
                 Initialize();
@@ -1252,20 +1303,33 @@ namespace Unity.Netcode.Components
             var replicatedState = ReplicatedNetworkState;
             m_LocalAuthoritativeNetworkState = replicatedState.Value;
 
-            m_LastPosition = InLocalSpace ? transform.localPosition : transform.position;
-            m_TargetPosition = InLocalSpace ? transform.localPosition : transform.position;
+            var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
+            m_LastPosition = currentPosition;
+            m_TargetPosition = currentPosition;
 
             if (CanCommitToTransform)
             {
+                // Sanity check to assure we only subscribe to OnValueChanged once
                 replicatedState.OnValueChanged -= OnNetworkStateChanged;
+                replicatedState.OnValueChanged += OnNetworkStateChanged;
+
+                // Authority subscribes to the tick event and only updates once
+                // per tick
+                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
             }
             else
             {
+                // Sanity check to assure we only subscribe to OnValueChanged once
+                replicatedState.OnValueChanged -= OnNetworkStateChanged;
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
+
+                // Assure we no longer subscribe to the tick event
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 // In case we are late joining
                 ResetInterpolatedStateToCurrentAuthoritativeState();
             }
         }
+
 
         /// <summary>
         /// Directly sets a state on the authoritative transform.
@@ -1387,25 +1451,34 @@ namespace Unity.Netcode.Components
             TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
         }
 
+        /// <summary>
+        /// Authority subscribes to network tick events
+        /// </summary>
+        private void NetworkTickSystem_Tick()
+        {
+            // As long as we are still authority
+            if (CanCommitToTransform)
+            {
+                // Update any changes to the transform
+                UpdateAuthoritativeState(transform);
+            }
+            else
+            {
+                // If we are no longer authority, unsubscribe to the tick event
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+            }
+        }
+
         /// <inheritdoc/>
         /// <remarks>
         /// If you override this method, be sure that:
-        /// - Non-owners always invoke this base class method when using interpolation.
-        /// - Authority can opt to use <see cref="TryCommitTransformToServer"/> in place of invoking this base class method.
-        /// - Non-authority owners can use <see cref="TryCommitTransformToServer"/> but should still invoke the this base class method when using interpolation.
+        /// - Non-authority always invokes this base class method when using interpolation.
         /// </remarks>
         protected virtual void Update()
         {
             // If not spawned or this instance has authority, exit early
-            if (!IsSpawned)
+            if (!IsSpawned || CanCommitToTransform)
             {
-                return;
-            }
-
-            // If we are authority, update the authoritative state
-            if (CanCommitToTransform)
-            {
-                UpdateAuthoritativeState(transform);
                 return;
             }
 
