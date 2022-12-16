@@ -63,7 +63,8 @@ namespace Unity.Netcode.Components
             private const int k_TeleportingBit = 10;
             private const int k_Interpolate = 11;
             private const int k_PositionDeltaCompress = 12;
-            // 13-15: <unused>
+            private const int k_QuaternionSync = 13;
+            // 14-15: <unused>
 
             private ushort m_Bitset;
 
@@ -212,6 +213,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool QuaternionSync
+            {
+                get => BitGet(k_QuaternionSync);
+                set
+                {
+                    BitSet(value, k_QuaternionSync);
+                }
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private bool BitGet(int bitPosition)
             {
@@ -234,6 +244,8 @@ namespace Unity.Netcode.Components
             internal Vector3 DeltaPositioPrecisionLoss;
             internal Vector3 TickRealPosition;
             internal CompressedVector3Delta CompressedVector3Delta;
+
+            internal Quaternion Rotation;
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
@@ -319,22 +331,31 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                // RotAngle Values
-                if (HasRotAngleX)
+                if (HasRotAngleChange)
                 {
-                    serializer.SerializeValue(ref RotAngleX);
-                }
+                    if (QuaternionSync)
+                    {
+                        serializer.SerializeValue(ref Rotation);
+                    }
+                    else
+                    {
+                        // RotAngle Values
+                        if (HasRotAngleX)
+                        {
+                            serializer.SerializeValue(ref RotAngleX);
+                        }
 
-                if (HasRotAngleY)
-                {
-                    serializer.SerializeValue(ref RotAngleY);
-                }
+                        if (HasRotAngleY)
+                        {
+                            serializer.SerializeValue(ref RotAngleY);
+                        }
 
-                if (HasRotAngleZ)
-                {
-                    serializer.SerializeValue(ref RotAngleZ);
+                        if (HasRotAngleZ)
+                        {
+                            serializer.SerializeValue(ref RotAngleZ);
+                        }
+                    }
                 }
-
                 // Scale Values
                 if (HasScaleX)
                 {
@@ -424,6 +445,8 @@ namespace Unity.Netcode.Components
                 return SyncScaleX || SyncScaleY || SyncScaleZ;
             }
         }
+
+        static public bool UseQuaternionSynchronization = true;
 
         /// <summary>
         /// When enabled, this position will be synchronized as compressed deltas
@@ -719,6 +742,13 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
+            if (UseQuaternionSynchronization != networkState.QuaternionSync)
+            {
+                networkState.QuaternionSync = UseQuaternionSynchronization;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
             {
                 networkState.PositionX = position.x;
@@ -765,6 +795,11 @@ namespace Unity.Netcode.Components
                 networkState.RotAngleZ = rotAngles.z;
                 networkState.HasRotAngleZ = true;
                 isRotationDirty = true;
+            }
+
+            if (networkState.HasRotAngleChange && networkState.QuaternionSync)
+            {
+                networkState.Rotation = InLocalSpace ? transform.localRotation : transform.rotation;
             }
 
             if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
@@ -817,6 +852,7 @@ namespace Unity.Netcode.Components
 
             // TODO: We should store network state w/ quats vs. euler angles
             var adjustedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
+            var adjustedRotation = networkState.InLocalSpace ? transform.localRotation : transform.rotation;
             var adjustedScale = transform.localScale;
 
             // InLocalSpace Read:
@@ -842,10 +878,19 @@ namespace Unity.Netcode.Components
 
                 if (SynchronizeRotation)
                 {
-                    var interpolatedEulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                    if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
-                    if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
-                    if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
+                    var interpolatedRotation = m_RotationInterpolator.GetInterpolatedValue();
+                    if (UseQuaternionSynchronization)
+                    {
+                        adjustedRotation = interpolatedRotation;
+                    }
+                    else
+                    {
+                        var interpolatedEulerAngles = interpolatedRotation.eulerAngles;
+                        if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
+                        if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
+                        if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
+                        adjustedRotation.eulerAngles = adjustedRotAngles;
+                    }
                 }
             }
             else
@@ -865,9 +910,17 @@ namespace Unity.Netcode.Components
                 if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
                 if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
 
-                if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
-                if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
-                if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+                if (networkState.QuaternionSync)
+                {
+                    adjustedRotation = networkState.Rotation;
+                }
+                else
+                {
+                    if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
+                    if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
+                    if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+                    adjustedRotation.eulerAngles = adjustedRotAngles;
+                }
             }
 
             // NOTE: The below conditional checks for applying axial values are required in order to
@@ -898,11 +951,11 @@ namespace Unity.Netcode.Components
             {
                 if (InLocalSpace)
                 {
-                    transform.localRotation = Quaternion.Euler(adjustedRotAngles);
+                    transform.localRotation = adjustedRotation;
                 }
                 else
                 {
-                    transform.rotation = Quaternion.Euler(adjustedRotAngles);
+                    transform.rotation = adjustedRotation;
                 }
             }
 
@@ -998,23 +1051,34 @@ namespace Unity.Netcode.Components
             // Apply the adjusted scale
             transform.localScale = currentScale;
 
-            // Adjust based on which axis changed
-            if (newState.HasRotAngleX)
+            if (newState.QuaternionSync && newState.HasRotAngleChange)
             {
-                currentEulerAngles.x = newState.RotAngleX;
+                currentRotation = newState.Rotation;
+            }
+            else
+            {
+                // Adjust based on which axis changed
+                if (newState.HasRotAngleX)
+                {
+                    currentEulerAngles.x = newState.RotAngleX;
+                }
+
+                if (newState.HasRotAngleY)
+                {
+                    currentEulerAngles.y = newState.RotAngleY;
+                }
+
+                if (newState.HasRotAngleZ)
+                {
+                    currentEulerAngles.z = newState.RotAngleZ;
+                }
+                currentRotation.eulerAngles = currentEulerAngles;
             }
 
-            if (newState.HasRotAngleY)
+            if (newState.HasRotAngleChange)
             {
-                currentEulerAngles.y = newState.RotAngleY;
+                m_RotationInterpolator.ResetTo(currentRotation, sentTime);
             }
-
-            if (newState.HasRotAngleZ)
-            {
-                currentEulerAngles.z = newState.RotAngleZ;
-            }
-            currentRotation.eulerAngles = currentEulerAngles;
-
 
             if (InLocalSpace)
             {
@@ -1096,22 +1160,29 @@ namespace Unity.Netcode.Components
             // values.
             if (newState.HasRotAngleChange)
             {
-                if (newState.HasRotAngleX)
+                if (newState.QuaternionSync && newState.HasRotAngleChange)
                 {
-                    currentEulerAngles.x = newState.RotAngleX;
+                    currentRotation = newState.Rotation;
                 }
-
-                if (newState.HasRotAngleY)
+                else
                 {
-                    currentEulerAngles.y = newState.RotAngleY;
-                }
+                    // Adjust based on which axis changed
+                    if (newState.HasRotAngleX)
+                    {
+                        currentEulerAngles.x = newState.RotAngleX;
+                    }
 
-                if (newState.HasRotAngleZ)
-                {
-                    currentEulerAngles.z = newState.RotAngleZ;
-                }
+                    if (newState.HasRotAngleY)
+                    {
+                        currentEulerAngles.y = newState.RotAngleY;
+                    }
 
-                currentRotation.eulerAngles = currentEulerAngles;
+                    if (newState.HasRotAngleZ)
+                    {
+                        currentEulerAngles.z = newState.RotAngleZ;
+                    }
+                    currentRotation.eulerAngles = currentEulerAngles;
+                }
 
                 m_RotationInterpolator.AddMeasurement(currentRotation, sentTime);
             }
@@ -1151,6 +1222,7 @@ namespace Unity.Netcode.Components
             UsePositionDeltaCompression = newState.PostionDeltaCompression;
             InLocalSpace = newState.InLocalSpace;
             Interpolate = newState.UseInterpolation;
+            UseQuaternionSynchronization = newState.QuaternionSync;
 
             // If delta position compression is enabled and we had a position change,
             // then update the target position (note: teleporting will write over this)
@@ -1158,7 +1230,6 @@ namespace Unity.Netcode.Components
             {
                 if (oldState.NetworkTick != newState.NetworkTick)
                 {
-                    //Debug.Log($"[{name}] IsServer: {IsServer} | IsOwner: {IsOwner} | TargetPosition: {m_TargetPosition} | DeltaPosition: {newState.DeltaPosition}");
                     m_TargetPosition += newState.DeltaPosition;
                     var clientSideNoPrecisionLossCalculations = Vector3.zero;
                     OnTransformStateChanged?.Invoke(ref m_TargetPosition, ref clientSideNoPrecisionLossCalculations, newState.NetworkTick);

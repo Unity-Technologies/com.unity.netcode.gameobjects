@@ -317,7 +317,7 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            return Quaternion.Lerp(start, end, time);
         }
 
         /// <inheritdoc />
@@ -325,7 +325,7 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            return Quaternion.Lerp(start, end, time);
         }
     }
 }

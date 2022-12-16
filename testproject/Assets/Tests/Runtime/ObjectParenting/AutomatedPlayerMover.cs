@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Netcode.Components;
+using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
@@ -12,7 +13,21 @@ namespace TestProject.RuntimeTests
         private GameObject m_Destination;
         private Vector3 m_Target;
 
-
+        /// <summary>
+        /// This overrides OnSynchronize to apply any transform changes required
+        /// before it is synchronized.  It then invokes the base OnSynchronize
+        /// to synchronize the adjustments.
+        /// </summary>
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        {
+            if (serializer.IsWriter)
+            {
+                var temp = transform.position;
+                temp.y = 0.5f;
+                transform.position = temp;
+            }
+            base.OnSynchronize(ref serializer);
+        }
 
         /// <summary>
         /// Make this PlayerMovement-NetworkTransform component
@@ -31,7 +46,6 @@ namespace TestProject.RuntimeTests
                 m_Destination = Navigationpoints.Instance.NavPoints[targetNavPointIndex];
 
                 m_Target = m_Destination.transform.position;
-                m_Target.y = transform.position.y;
             }
         }
 
@@ -40,9 +54,6 @@ namespace TestProject.RuntimeTests
             if (IsOwner)
             {
                 UpdateDestination();
-                var temp = transform.position;
-                temp.y = 0.5f;
-                transform.position = temp;
             }
             base.OnNetworkSpawn();
         }
