@@ -116,7 +116,6 @@ namespace TestProject.ManualTests
         {
             var currentPosition = transform.position;
             var delta = updatedPosition - currentPosition;
-            ClientPosition.text = $"Client: ({currentPosition.x}, {currentPosition.y}, {currentPosition.z})";
             ClientDelta.text = $"C-Delta: ({delta.x}, {delta.y}, {delta.z})";
             PredictedClient.text = $"Client-Next: ({updatedPosition.x}, {updatedPosition.y}, {updatedPosition.z})";
             m_ClientSideLastPosition = updatedPosition;
@@ -231,8 +230,14 @@ namespace TestProject.ManualTests
 
         private void LateUpdate()
         {
-            if (!IsSpawned || !IsServer)
+            if (!IsSpawned)
             {
+                return;
+            }
+
+            if (!IsServer)
+            {
+                ClientPosition.text = $"Client: ({transform.position.x}, {transform.position.y}, {transform.position.z})";
                 return;
             }
 
