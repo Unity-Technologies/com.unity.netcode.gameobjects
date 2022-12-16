@@ -1053,20 +1053,23 @@ namespace Unity.Netcode.Components
             // depending upon whether UsePositionDeltaCompression is enabled
             if (UsePositionDeltaCompression && newState.HasPositionChange)
             {
-                if (newState.HasPositionX)
-                {
-                    m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
-                }
+                m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
+                m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
+                m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
+                //if (newState.HasPositionX)
+                //{
+                //    m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
+                //}
 
-                if (newState.HasPositionY)
-                {
-                    m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
-                }
+                //if (newState.HasPositionY)
+                //{
+                //    m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
+                //}
 
-                if (newState.HasPositionZ)
-                {
-                    m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
-                }
+                //if (newState.HasPositionZ)
+                //{
+                //    m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
+                //}
             }
             else
             {

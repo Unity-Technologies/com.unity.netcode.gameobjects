@@ -1228,6 +1228,11 @@ PrefabInstance:
       objectReference: {fileID: 1573742290}
     - target: {fileID: 2903918356161307896, guid: c2db148a1fac379449a31b5430f4c6ac,
         type: 3}
+      propertyPath: RandomDirections
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903918356161307896, guid: c2db148a1fac379449a31b5430f4c6ac,
+        type: 3}
       propertyPath: StartingDirection
       value: 1
       objectReference: {fileID: 0}
@@ -1304,7 +1309,7 @@ PrefabInstance:
     - target: {fileID: 6252884070208936090, guid: c2db148a1fac379449a31b5430f4c6ac,
         type: 3}
       propertyPath: Interpolate
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6252884070208936090, guid: c2db148a1fac379449a31b5430f4c6ac,
         type: 3}

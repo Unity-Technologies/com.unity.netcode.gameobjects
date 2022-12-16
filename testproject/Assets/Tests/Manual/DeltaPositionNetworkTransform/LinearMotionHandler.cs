@@ -16,9 +16,11 @@ namespace TestProject.ManualTests
         [Range(0.5f, 10.0f)]
         public float Speed = 5.0f;
         public Directions StartingDirection;
-        [Range(1, 1000)]
-        public int DirectionDuration = 1;
+        [Range(0.5f, 1000.0f)]
+        public float DirectionDuration = 0.5f;
         public GameObject ClientPositionVisual;
+        [Tooltip("When true, it will randomly pick a new direction after DirectionDuration period of time has elapsed.")]
+        public bool RandomDirections;
 
         public Text ServerDelta;
         public Text ServerPosition;
@@ -28,7 +30,6 @@ namespace TestProject.ManualTests
         public Text ClientDelta;
         public Text TimeMoving;
         public Text DirectionText;
-
 
         public enum Directions
         {
@@ -136,11 +137,21 @@ namespace TestProject.ManualTests
         {
             if (!useCurrent)
             {
-                int currentDirection = (int)m_CurrentDirection;
-                currentDirection++;
                 var directions = System.Enum.GetValues(typeof(Directions));
-                currentDirection = currentDirection % (directions.Length - 1);
-                m_CurrentDirection = (Directions)currentDirection;
+                // If not using random directions, then move to the next
+                // or roll over.
+                if (!RandomDirections)
+                {
+                    int currentDirection = (int)m_CurrentDirection;
+                    currentDirection++;
+
+                    currentDirection = currentDirection % (directions.Length - 1);
+                    m_CurrentDirection = (Directions)currentDirection;
+                }
+                else
+                {
+                    m_CurrentDirection = (Directions)Random.Range(0, directions.Length - 1);
+                }
             }
 
             DirectionText.text = $"Direction: {m_CurrentDirection}";
