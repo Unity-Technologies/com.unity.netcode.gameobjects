@@ -24,16 +24,20 @@ namespace Unity.Netcode.RuntimeTests
             clientNetworkTransform.Interpolate = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            // NOTE: We don't use a sphere collider for this integration test because by the time we can
+            // assure they don't collide and skew the results the NetworkObjects are already synchronized
+            // with skewed results
             m_ClientNetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-            m_ClientNetworkTransformPrefab.AddComponent<SphereCollider>();
             m_ClientNetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
 
             m_NetworkTransformPrefab = CreateNetworkObjectPrefab("ServerAuthorityTest");
             var networkTransform = m_NetworkTransformPrefab.AddComponent<NetworkTransform>();
             rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            // NOTE: We don't use a sphere collider for this integration test because by the time we can
+            // assure they don't collide and skew the results the NetworkObjects are already synchronized
+            // with skewed results
             m_NetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-            m_NetworkTransformPrefab.AddComponent<SphereCollider>();
             m_NetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
             networkTransform.Interpolate = false;
 
@@ -217,13 +221,6 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
-                // This makes sure that the NetworkManager relative NetworkObject instances don't collide with each other
-                // and skew the expected changes to the transforms
-                foreach (var entry in s_NetworkManagerRelativeSpawnedObjects)
-                {
-                    Physics.IgnoreCollision(entry.Value.GetComponent<SphereCollider>(), GetComponent<SphereCollider>());
-                }
-
                 if (!s_NetworkManagerRelativeSpawnedObjects.ContainsKey(NetworkManager.LocalClientId))
                 {
                     s_NetworkManagerRelativeSpawnedObjects.Add(NetworkManager.LocalClientId, this);
