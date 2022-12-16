@@ -122,8 +122,8 @@ MonoBehaviour:
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
-  InLocalSpace: 0
-  Interpolate: 1
+  InLocalSpace: 1
+  Interpolate: 0
 --- !u!1 &2771624607751045562
 GameObject:
   m_ObjectHideFlags: 0
@@ -353,8 +353,8 @@ MonoBehaviour:
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
-  InLocalSpace: 0
-  Interpolate: 1
+  InLocalSpace: 1
+  Interpolate: 0
 --- !u!1001 &8977898853425847701
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -522,4 +522,4 @@ MonoBehaviour:
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
-  Interpolate: 1
+  Interpolate: 0

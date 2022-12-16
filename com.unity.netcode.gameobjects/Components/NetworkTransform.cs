@@ -260,7 +260,7 @@ namespace Unity.Netcode.Components
             internal void ClearBitSetForNextTick()
             {
                 // Preserve the global flags
-                var preserveFlags = (ushort)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | 1 << (k_PositionDeltaCompress));
+                var preserveFlags = (ushort)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | (1 << k_PositionDeltaCompress) | (1 << k_QuaternionSync));
                 m_Bitset &= preserveFlags;
                 IsDirty = false;
                 // Clear the position delta
@@ -648,7 +648,7 @@ namespace Unity.Netcode.Components
             if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
                 m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
-                var position = transformToCommit.position;
+                var position = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
                 m_LocalAuthoritativeNetworkState.CompressDeltaPosition(ref position);
                 // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
