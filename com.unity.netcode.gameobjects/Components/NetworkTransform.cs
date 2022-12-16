@@ -284,8 +284,9 @@ namespace Unity.Netcode.Components
                 // InLocalSpace + HasXXX Bits
                 serializer.SerializeValue(ref m_Bitset);
 
+#if DEBUG_NETWORKTRANSFORM
                 serializer.SerializeValue(ref NetworkTick);
-
+#endif
                 if (HasPositionChange)
                 {
                     // If using delta position compression, only use it when not teleporting.
@@ -1056,20 +1057,6 @@ namespace Unity.Netcode.Components
                 m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
                 m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
                 m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
-                //if (newState.HasPositionX)
-                //{
-                //    m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
-                //}
-
-                //if (newState.HasPositionY)
-                //{
-                //    m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
-                //}
-
-                //if (newState.HasPositionZ)
-                //{
-                //    m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
-                //}
             }
             else
             {
