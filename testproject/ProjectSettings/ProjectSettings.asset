@@ -580,7 +580,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    Standalone: DEBUG_NETWORKTRANSFORM 
+    1: DEBUG_NETWORKTRANSFORM 
   additionalCompilerArguments:
     1:
     - -warnaserror
