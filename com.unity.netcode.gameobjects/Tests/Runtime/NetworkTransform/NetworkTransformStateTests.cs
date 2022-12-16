@@ -5,8 +5,10 @@ using UnityEngine;
 namespace Unity.Netcode.RuntimeTests
 {
 
-    [TestFixture(TransformSpace.World)]
-    [TestFixture(TransformSpace.Local)]
+    [TestFixture(TransformSpace.World, Compression.DontCompress, Rotation.Euler)]
+    [TestFixture(TransformSpace.World, Compression.Compress, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.Local, Compression.DontCompress, Rotation.Euler)]
+    [TestFixture(TransformSpace.Local, Compression.Compress, Rotation.Quaternion)]
     public class NetworkTransformStateTests
     {
         public enum SyncAxis
@@ -47,6 +49,18 @@ namespace Unity.Netcode.RuntimeTests
             Local
         }
 
+        public enum Compression
+        {
+            DontCompress,
+            Compress
+        }
+
+        public enum Rotation
+        {
+            Euler,
+            Quaternion
+        }
+
         public enum SynchronizationType
         {
             Delta,
@@ -54,10 +68,16 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private TransformSpace m_TransformSpace;
+        private Compression m_Compression;
+        private Rotation m_Rotation;
 
-        public NetworkTransformStateTests(TransformSpace transformSpace)
+        public NetworkTransformStateTests(TransformSpace transformSpace, Compression compression, Rotation rotation)
         {
             m_TransformSpace = transformSpace;
+            m_Compression = compression;
+            m_Rotation = rotation;
+            NetworkTransform.UsePositionDeltaCompression = m_Compression == Compression.Compress;
+            NetworkTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -84,6 +104,24 @@ namespace Unity.Netcode.RuntimeTests
             bool syncScaX = syncAxis == SyncAxis.SyncScaleX || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllX || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaY = syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllY || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaZ = syncAxis == SyncAxis.SyncScaleZ || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllZ || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
+
+            // When compressing, we can skip these tests
+            if (m_Compression == Compression.Compress)
+            {
+                if (syncAxis == SyncAxis.SyncPosX || syncAxis == SyncAxis.SyncPosY || syncAxis == SyncAxis.SyncPosZ)
+                {
+                    return;
+                }
+            }
+
+            // When using quaternion synchronization, we can skip these tests
+            if (m_Rotation == Rotation.Quaternion)
+            {
+                if (syncAxis == SyncAxis.SyncRotX || syncAxis == SyncAxis.SyncRotY || syncAxis == SyncAxis.SyncRotZ || syncAxis == SyncAxis.SyncScaleX || syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleZ)
+                {
+                    return;
+                }
+            }
 
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();

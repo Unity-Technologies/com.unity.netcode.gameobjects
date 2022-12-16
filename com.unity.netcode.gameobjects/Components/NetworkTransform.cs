@@ -703,6 +703,7 @@ namespace Unity.Netcode.Components
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
             networkState.UseInterpolation = Interpolate;
             networkState.PostionDeltaCompression = UsePositionDeltaCompression;
+            networkState.QuaternionSync = UseQuaternionSynchronization;
 
             return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse);
         }
