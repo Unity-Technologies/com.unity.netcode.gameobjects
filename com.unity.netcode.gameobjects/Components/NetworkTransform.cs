@@ -204,7 +204,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool PostionDeltaCompression
+            internal bool PositionDeltaCompression
             {
                 get => BitGet(k_PositionDeltaCompress);
                 set
@@ -239,6 +239,9 @@ namespace Unity.Netcode.Components
             internal float RotAngleX, RotAngleY, RotAngleZ;
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
+
+            internal HalfVector3 HalfVector;
+
             internal Vector3 DeltaPosition;
             internal Vector3 DeltaPositionDecompressed;
             internal Vector3 DeltaPositioPrecisionLoss;
@@ -251,9 +254,13 @@ namespace Unity.Netcode.Components
             // dirty or not.
             internal bool IsDirty;
 
-            // Used primarily for debugging.
+#if DEBUG_NETWORKTRANSFORM
+            // Used for integration testing and debugging.
             internal int NetworkTick;
-
+            // Used for integration testing and debugging.
+            // This will get incremented each time the state is set
+            internal int StateId;
+#endif
             /// <summary>
             /// This will reset the NetworkTransform BitSet
             /// </summary>
@@ -278,15 +285,18 @@ namespace Unity.Netcode.Components
             public void CompressDeltaPosition(ref Vector3 position)
             {
                 // If using delta position compression, only use it when not teleporting.
-                if (HasPositionChange && PostionDeltaCompression && !IsTeleportingNextFrame)
+                if (HasPositionChange && PositionDeltaCompression && !IsTeleportingNextFrame)
                 {
                     TickRealPosition = position;
                     DeltaPosition += DeltaPositioPrecisionLoss;
-                    Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
+                    HalfVector.FromVector3(ref DeltaPosition);
+                    DeltaPositionDecompressed = HalfVector.ToVector3();
 
-                    // Decompress to get the non-authoritative side's loss in precision which is used just prior to
-                    // when the state is being serialized
-                    Vector3DeltaCompressor.DecompressDelta(ref DeltaPositionDecompressed, ref CompressedVector3Delta);
+                    //Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
+
+                    //// Decompress to get the non-authoritative side's loss in precision which is used just prior to
+                    //// when the state is being serialized
+                    //Vector3DeltaCompressor.DecompressDelta(ref DeltaPositionDecompressed, ref CompressedVector3Delta);
                 }
             }
 
@@ -298,17 +308,23 @@ namespace Unity.Netcode.Components
 
 #if DEBUG_NETWORKTRANSFORM
                 serializer.SerializeValue(ref NetworkTick);
+                serializer.SerializeValue(ref StateId);
 #endif
                 if (HasPositionChange)
                 {
                     // If using delta position compression, only use it when not teleporting.
-                    if (PostionDeltaCompression && !IsTeleportingNextFrame)
+                    if (PositionDeltaCompression && !IsTeleportingNextFrame)
                     {
-                        serializer.SerializeNetworkSerializable(ref CompressedVector3Delta);
+                        //serializer.SerializeNetworkSerializable(ref CompressedVector3Delta);
 
+                        //if (serializer.IsReader)
+                        //{
+                        //    Vector3DeltaCompressor.DecompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
+                        //}
+                        serializer.SerializeNetworkSerializable(ref HalfVector);
                         if (serializer.IsReader)
                         {
-                            Vector3DeltaCompressor.DecompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
+                            DeltaPosition = HalfVector.ToVector3();
                         }
                     }
                     else // Full position value synchronization (teleporting or delta position compression disabled)
@@ -446,7 +462,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        static public bool UseQuaternionSynchronization = true;
+        public bool UseQuaternionSynchronization = true;
 
         /// <summary>
         /// When enabled, this position will be synchronized as compressed deltas
@@ -455,7 +471,7 @@ namespace Unity.Netcode.Components
         /// Currently this is static only for testing purposes. The static prefix will
         /// be removed if we decide to use this.
         /// </remarks>
-        static public bool UsePositionDeltaCompression = true;
+        public bool UsePositionDeltaCompression = true;
 
         // Last position is used on the authoritative side to get the delta between the
         // current and the last position when UsePositionDeltaCompression is enabled
@@ -565,6 +581,11 @@ namespace Unity.Netcode.Components
             return m_LastSentState;
         }
 
+        public Vector3 GetPecisionLoss()
+        {
+            return m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss;
+        }
+
         /// <summary>
         /// This is invoked when a new client joins (server and client sides)
         /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
@@ -574,10 +595,10 @@ namespace Unity.Netcode.Components
         {
             // We don't need to synchronize NetworkTransforms that are on the same
             // GameObject as the NetworkObject.
-            if (NetworkObject.gameObject == gameObject)
-            {
-                return;
-            }
+            //if (NetworkObject.gameObject == gameObject)
+            //{
+            //    return;
+            //}
 
             var synchronizationState = new NetworkTransformState();
             if (serializer.IsWriter)
@@ -589,7 +610,12 @@ namespace Unity.Netcode.Components
             else
             {
                 synchronizationState.NetworkSerialize(serializer);
-                AddInterpolatedState(synchronizationState);
+                UsePositionDeltaCompression = synchronizationState.PositionDeltaCompression;
+                InLocalSpace = synchronizationState.InLocalSpace;
+                Interpolate = synchronizationState.UseInterpolation;
+                UseQuaternionSynchronization = synchronizationState.QuaternionSync;
+                ApplyTeleportingState(synchronizationState);
+                //AddInterpolatedState(synchronizationState);
             }
         }
 
@@ -645,13 +671,14 @@ namespace Unity.Netcode.Components
             }
 
             // If the transform has deltas (returns dirty) then...
-            if (ApplyTransformToNetworkState(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
+            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit))
             {
                 m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
                 var position = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
                 m_LocalAuthoritativeNetworkState.CompressDeltaPosition(ref position);
                 // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                m_LocalAuthoritativeNetworkState.StateId++;
             }
         }
 
@@ -702,7 +729,7 @@ namespace Unity.Netcode.Components
         {
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
             networkState.UseInterpolation = Interpolate;
-            networkState.PostionDeltaCompression = UsePositionDeltaCompression;
+            networkState.PositionDeltaCompression = UsePositionDeltaCompression;
             networkState.QuaternionSync = UseQuaternionSynchronization;
 
             return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse);
@@ -736,9 +763,9 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
-            if (UsePositionDeltaCompression != networkState.PostionDeltaCompression)
+            if (UsePositionDeltaCompression != networkState.PositionDeltaCompression)
             {
-                networkState.PostionDeltaCompression = UsePositionDeltaCompression;
+                networkState.PositionDeltaCompression = UsePositionDeltaCompression;
                 isDirty = true;
                 networkState.IsTeleportingNextFrame = true;
             }
@@ -824,10 +851,13 @@ namespace Unity.Netcode.Components
                 isScaleDirty = true;
             }
 
-            if (UsePositionDeltaCompression && isPositionDirty && !networkState.IsTeleportingNextFrame)
+            if (UsePositionDeltaCompression && !networkState.IsTeleportingNextFrame)
             {
-                networkState.DeltaPosition += position - m_LastPosition;
-                m_LastPosition = position;
+                if (isPositionDirty)
+                {
+                    networkState.DeltaPosition += position - m_LastPosition;
+                    m_LastPosition = position;
+                }
             }
 
             isDirty |= isPositionDirty || isRotationDirty || isScaleDirty;
@@ -861,7 +891,7 @@ namespace Unity.Netcode.Components
 
             Interpolate = networkState.UseInterpolation;
 
-            UsePositionDeltaCompression = networkState.PostionDeltaCompression;
+            UsePositionDeltaCompression = networkState.PositionDeltaCompression;
 
             // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
@@ -869,9 +899,19 @@ namespace Unity.Netcode.Components
             var useInterpolatedValue = !networkState.IsTeleportingNextFrame && Interpolate;
             if (useInterpolatedValue)
             {
-                if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
-                if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
-                if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
+                if (UsePositionDeltaCompression)
+                {
+                    adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue();
+                    adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue();
+                    adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue();
+                }
+                else
+                {
+                    if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
+                    if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
+                    if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
+                }
+
 
                 if (SyncScaleX) { adjustedScale.x = m_ScaleXInterpolator.GetInterpolatedValue(); }
                 if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
@@ -896,7 +936,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (networkState.PostionDeltaCompression && networkState.HasPositionChange)
+                if (networkState.PositionDeltaCompression && networkState.HasPositionChange)
                 {
                     adjustedPosition = m_TargetPosition;
                 }
@@ -1015,7 +1055,7 @@ namespace Unity.Netcode.Components
             }
 
             // assign our target position if position delta compression is enabled
-            if (newState.PostionDeltaCompression)
+            if (newState.PositionDeltaCompression)
             {
                 m_TargetPosition = currentPosition;
             }
@@ -1097,7 +1137,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only non-authoritative instances should invoke this
         /// </remarks>
-        private void AddInterpolatedState(NetworkTransformState newState)
+        private void UpdateState(NetworkTransformState newState)
         {
             var sentTime = newState.SentTime;
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
@@ -1189,9 +1229,63 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public delegate void OnTransformStateChangedHandler(ref Vector3 position, ref Vector3 precisionLoss, int networkTick);
+#if DEBUG_NETWORKTRANSFORM
+        private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
 
-        public OnTransformStateChangedHandler OnTransformStateChanged;
+        protected struct NetworkTransformStateUpdate
+        {
+            public bool PositionUpdate;
+            public bool ScaleUpdate;
+            public bool RotationUpdate;
+            public int NetworkTick;
+            // For authority this is the predicted position.
+            // For non-authority this is the target position when interpolating
+            // and the position that will be updated this frame when not interpolating.
+            public Vector3 TargetPosition;
+            // This is only set on the authority side.
+            public Vector3 PrecisionLoss;
+        }
+
+        protected virtual void OnNetworkTransformStateUpdate(ref NetworkTransformStateUpdate networkTransformStateUpdate)
+        {
+
+        }
+#endif
+
+        private void ApplyState(NetworkTransformState oldState, NetworkTransformState newState)
+        {
+
+            // Set the state's NetworkTransform properties
+            UsePositionDeltaCompression = newState.PositionDeltaCompression;
+            InLocalSpace = newState.InLocalSpace;
+            Interpolate = newState.UseInterpolation;
+            UseQuaternionSynchronization = newState.QuaternionSync;
+
+            // If delta position compression is enabled and we had a position change,
+            // then update the target position (note: teleporting will write over this)
+            if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
+            {
+                m_TargetPosition += newState.DeltaPosition;
+#if DEBUG_NETWORKTRANSFORM
+                if (oldState.NetworkTick != newState.NetworkTick || oldState.StateId == newState.StateId)
+                {
+                    m_NetworkTransformStateUpdate.TargetPosition = m_TargetPosition;
+                    OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
+                }
+                else if (oldState.HasPositionChange && !oldState.IsTeleportingNextFrame)
+                {
+                    var warningMsg = new System.Text.StringBuilder();
+                    warningMsg.Append($"Non-Authority Client-{NetworkManager.LocalClientId} ({NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}) position has changed on the same network tick ({newState.NetworkTick})!\n");
+                    warningMsg.Append($"[oldState] Time: {oldState.SentTime} | PositionDelta: {oldState.DeltaPosition}\n");
+                    warningMsg.Append($"[newState] Time: {newState.SentTime} | PositionDelta: {newState.DeltaPosition}\n");
+                    Debug.LogWarning(warningMsg);
+                }
+#endif
+            }
+
+            // Update the state
+            UpdateState(newState);
+        }
 
         /// <summary>
         /// Only non-authoritative instances should invoke this method
@@ -1202,16 +1296,25 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
-
+#if DEBUG_NETWORKTRANSFORM
+            m_NetworkTransformStateUpdate.PositionUpdate = newState.HasPositionChange;
+            m_NetworkTransformStateUpdate.ScaleUpdate = newState.HasScaleChange;
+            m_NetworkTransformStateUpdate.RotationUpdate = newState.HasRotAngleChange;
+            m_NetworkTransformStateUpdate.NetworkTick = newState.NetworkTick;
+#endif
             // Authority now subscribes to OnNetworkStateChanged only to handle precision loss calculations
             if (CanCommitToTransform)
             {
+
                 if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
                 {
                     m_TargetPosition += newState.DeltaPositionDecompressed;
-                    var precisionLoss = m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss;
 
-                    OnTransformStateChanged?.Invoke(ref m_TargetPosition, ref precisionLoss, newState.NetworkTick);
+#if DEBUG_NETWORKTRANSFORM
+                    m_NetworkTransformStateUpdate.PrecisionLoss = m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss;
+                    m_NetworkTransformStateUpdate.TargetPosition = m_TargetPosition;
+                    OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
+#endif
 
                     m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss = newState.TickRealPosition - m_TargetPosition;
                 }
@@ -1219,30 +1322,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Set the state's NetworkTransform properties
-            UsePositionDeltaCompression = newState.PostionDeltaCompression;
-            InLocalSpace = newState.InLocalSpace;
-            Interpolate = newState.UseInterpolation;
-            UseQuaternionSynchronization = newState.QuaternionSync;
+            ApplyState(oldState, newState);
 
-            // If delta position compression is enabled and we had a position change,
-            // then update the target position (note: teleporting will write over this)
-            if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
-            {
-                if (oldState.NetworkTick != newState.NetworkTick)
-                {
-                    m_TargetPosition += newState.DeltaPosition;
-                    var clientSideNoPrecisionLossCalculations = Vector3.zero;
-                    OnTransformStateChanged?.Invoke(ref m_TargetPosition, ref clientSideNoPrecisionLossCalculations, newState.NetworkTick);
-                }
-                else
-                {
-                    Debug.LogWarning($"Client thinks position has changed on duplicate network tick {newState.NetworkTick}!");
-                }
-            }
-
-            // Add measurements for the new state's deltas
-            AddInterpolatedState(newState);
         }
 
         /// <summary>
@@ -1267,7 +1348,7 @@ namespace Unity.Netcode.Components
         /// Create interpolators when first instantiated to avoid memory allocations if the
         /// associated NetworkObject persists (i.e. despawned but not destroyed or pools)
         /// </summary>
-        private void Awake()
+        protected virtual void Awake()
         {
             // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
@@ -1298,6 +1379,16 @@ namespace Unity.Netcode.Components
         {
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
+
+            //Debug.Log($"Client-{NetworkManager.LocalClientId} spawned {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
+            //try
+            //{
+            //    throw new Exception("Stack Trace");
+            //}
+            //catch(Exception ex)
+            //{
+            //    Debug.Log($"{ex.Message}:\n{ex.StackTrace}");
+            //}
 
             Initialize();
 
@@ -1336,7 +1427,11 @@ namespace Unity.Netcode.Components
             // Only initialize if we gained ownership
             if (OwnerClientId == NetworkManager.LocalClientId)
             {
-                Initialize();
+                if (IsSpawned)
+                {
+                    Debug.Log($"Client-{NetworkManager.LocalClientId} gained ownership {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
+                    Initialize();
+                }
             }
         }
 
@@ -1347,6 +1442,7 @@ namespace Unity.Netcode.Components
             // ownership
             if (OwnerClientId != NetworkManager.LocalClientId)
             {
+                Debug.Log($"Client-{NetworkManager.LocalClientId} lost ownership {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
                 Initialize();
             }
         }
@@ -1381,6 +1477,7 @@ namespace Unity.Netcode.Components
             }
             else
             {
+
                 // Sanity check to assure we only subscribe to OnValueChanged once
                 replicatedState.OnValueChanged -= OnNetworkStateChanged;
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
