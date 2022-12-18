@@ -329,21 +329,35 @@ namespace Unity.Netcode.Components
                     }
                     else // Full position value synchronization (teleporting or delta position compression disabled)
                     {
-                        // Position Values
-                        if (HasPositionX)
+                        if (serializer.IsWriter)
                         {
-                            serializer.SerializeValue(ref PositionX);
+                            HalfVector.XHalf = PositionX;
+                            HalfVector.YHalf = PositionY;
+                            HalfVector.ZHalf = PositionZ;
+                        }
+                        serializer.SerializeNetworkSerializable(ref HalfVector);
+                        if (serializer.IsReader)
+                        {
+                            PositionX = HalfVector.XFloat;
+                            PositionY = HalfVector.YFloat;
+                            PositionZ = HalfVector.ZFloat;
                         }
 
-                        if (HasPositionY)
-                        {
-                            serializer.SerializeValue(ref PositionY);
-                        }
+                        //// Position Values
+                        //if (HasPositionX)
+                        //{
+                        //    serializer.SerializeValue(ref PositionX);
+                        //}
 
-                        if (HasPositionZ)
-                        {
-                            serializer.SerializeValue(ref PositionZ);
-                        }
+                        //if (HasPositionY)
+                        //{
+                        //    serializer.SerializeValue(ref PositionY);
+                        //}
+
+                        //if (HasPositionZ)
+                        //{
+                        //    serializer.SerializeValue(ref PositionZ);
+                        //}
                     }
                 }
 
@@ -471,7 +485,7 @@ namespace Unity.Netcode.Components
         /// Currently this is static only for testing purposes. The static prefix will
         /// be removed if we decide to use this.
         /// </remarks>
-        public bool UsePositionDeltaCompression = true;
+        public bool UsePositionDeltaCompression = false;
 
         // Last position is used on the authoritative side to get the delta between the
         // current and the last position when UsePositionDeltaCompression is enabled
@@ -615,7 +629,7 @@ namespace Unity.Netcode.Components
                 Interpolate = synchronizationState.UseInterpolation;
                 UseQuaternionSynchronization = synchronizationState.QuaternionSync;
                 ApplyTeleportingState(synchronizationState);
-                //AddInterpolatedState(synchronizationState);
+                m_LocalAuthoritativeNetworkState = synchronizationState;
             }
         }
 
@@ -679,6 +693,9 @@ namespace Unity.Netcode.Components
                 // ...commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
                 m_LocalAuthoritativeNetworkState.StateId++;
+
+                // For integration testing
+                m_LastSentState = m_LocalAuthoritativeNetworkState;
             }
         }
 
@@ -878,7 +895,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ApplyAuthoritativeState()
         {
-            var networkState = ReplicatedNetworkState.Value;
+            var networkState = m_LocalAuthoritativeNetworkState;
             var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
 
             // TODO: We should store network state w/ quats vs. euler angles
@@ -1254,7 +1271,6 @@ namespace Unity.Netcode.Components
 
         private void ApplyState(NetworkTransformState oldState, NetworkTransformState newState)
         {
-
             // Set the state's NetworkTransform properties
             UsePositionDeltaCompression = newState.PositionDeltaCompression;
             InLocalSpace = newState.InLocalSpace;
@@ -1282,7 +1298,7 @@ namespace Unity.Netcode.Components
                 }
 #endif
             }
-
+            m_LocalAuthoritativeNetworkState = newState;
             // Update the state
             UpdateState(newState);
         }
@@ -1459,8 +1475,6 @@ namespace Unity.Netcode.Components
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
-            m_LocalAuthoritativeNetworkState = replicatedState.Value;
-
             var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
             m_LastPosition = currentPosition;
             m_TargetPosition = currentPosition;
@@ -1477,7 +1491,6 @@ namespace Unity.Netcode.Components
             }
             else
             {
-
                 // Sanity check to assure we only subscribe to OnValueChanged once
                 replicatedState.OnValueChanged -= OnNetworkStateChanged;
                 replicatedState.OnValueChanged += OnNetworkStateChanged;
@@ -1557,8 +1570,6 @@ namespace Unity.Netcode.Components
             }
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
-
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
         }
 
         /// <summary>
@@ -1602,11 +1613,9 @@ namespace Unity.Netcode.Components
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
             {
-                m_LastSentState = m_LocalAuthoritativeNetworkState;
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
             }
-
             TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
         }
 
