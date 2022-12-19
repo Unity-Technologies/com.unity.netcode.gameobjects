@@ -285,13 +285,15 @@ namespace Unity.Netcode.Components
             public void CompressDeltaPosition(ref Vector3 position)
             {
                 // If using delta position compression, only use it when not teleporting.
-                if (HasPositionChange && PositionDeltaCompression && !IsTeleportingNextFrame)
+                if (HasPositionChange)
                 {
                     TickRealPosition = position;
-                    DeltaPosition += DeltaPositioPrecisionLoss;
-                    HalfVector.FromVector3(ref DeltaPosition);
-                    DeltaPositionDecompressed = HalfVector.ToVector3();
-
+                    if (PositionDeltaCompression && !IsTeleportingNextFrame)
+                    {
+                        DeltaPosition += DeltaPositioPrecisionLoss;
+                        HalfVector.FromVector3(ref DeltaPosition);
+                        DeltaPositionDecompressed = HalfVector.ToVector3();
+                    }
                     //Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
 
                     //// Decompress to get the non-authoritative side's loss in precision which is used just prior to
@@ -1279,9 +1281,16 @@ namespace Unity.Netcode.Components
 
             // If delta position compression is enabled and we had a position change,
             // then update the target position (note: teleporting will write over this)
-            if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
+            if (newState.HasPositionChange && !newState.IsTeleportingNextFrame)
             {
-                m_TargetPosition += newState.DeltaPosition;
+                if (UsePositionDeltaCompression)
+                {
+                    m_TargetPosition += newState.DeltaPosition;
+                }
+                else
+                {
+                    m_TargetPosition = newState.HalfVector.ToVector3();
+                }
 #if DEBUG_NETWORKTRANSFORM
                 if (oldState.NetworkTick != newState.NetworkTick || oldState.StateId == newState.StateId)
                 {
@@ -1321,10 +1330,16 @@ namespace Unity.Netcode.Components
             // Authority now subscribes to OnNetworkStateChanged only to handle precision loss calculations
             if (CanCommitToTransform)
             {
-
-                if (UsePositionDeltaCompression && newState.HasPositionChange && !newState.IsTeleportingNextFrame)
+                if (newState.HasPositionChange && !newState.IsTeleportingNextFrame)
                 {
-                    m_TargetPosition += newState.DeltaPositionDecompressed;
+                    if (UsePositionDeltaCompression)
+                    {
+                        m_TargetPosition += newState.DeltaPositionDecompressed;
+                    }
+                    else
+                    {
+                        m_TargetPosition = newState.HalfVector.ToVector3();
+                    }
 
 #if DEBUG_NETWORKTRANSFORM
                     m_NetworkTransformStateUpdate.PrecisionLoss = m_LocalAuthoritativeNetworkState.DeltaPositioPrecisionLoss;

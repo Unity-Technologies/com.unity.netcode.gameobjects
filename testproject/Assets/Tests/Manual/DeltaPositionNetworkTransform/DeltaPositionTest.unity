@@ -1193,6 +1193,11 @@ PrefabInstance:
       objectReference: {fileID: 312714044}
     - target: {fileID: 2903918356161307896, guid: c2db148a1fac379449a31b5430f4c6ac,
         type: 3}
+      propertyPath: Interpolate
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903918356161307896, guid: c2db148a1fac379449a31b5430f4c6ac,
+        type: 3}
       propertyPath: ServerDelta
       value: 
       objectReference: {fileID: 366695565}

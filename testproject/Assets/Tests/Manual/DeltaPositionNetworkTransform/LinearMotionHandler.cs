@@ -1,17 +1,25 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 
+#if UNITY_EDITOR
+using UnityEditor;
+[CustomEditor(typeof(TestProject.ManualTests.LinearMotionHandler))]
+public class LinearMotionHandlerEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+    }
+}
+#endif
 
 namespace TestProject.ManualTests
 {
-
     /// <summary>
     /// Used with GenericObjects to randomly move them around
     /// </summary>
-    public class LinearMotionHandler : NetworkBehaviour
+    public class LinearMotionHandler : IntegrationNetworkTransform
     {
         [Range(0.5f, 10.0f)]
         public float Speed = 5.0f;
@@ -46,20 +54,12 @@ namespace TestProject.ManualTests
         private Directions m_CurrentDirection;
         private float m_DirectionTimeOffset;
 
-        private struct ServerStateUpdate
-        {
-            public int Tick;
-            public Vector3 ServerPosition;
-            public Vector3 ClientPredictedPosition;
-            public Vector3 PrecisionLoss;
-        }
-
-        private Dictionary<int, ServerStateUpdate> m_TickPositionTable = new Dictionary<int, ServerStateUpdate>();
-
         private Vector3 m_Direction;
 
-        private void Awake()
+        protected override void Awake()
         {
+            base.Awake();
+
             m_ServerPosition = transform.position;
             m_ClientPosition = transform.position;
             m_ClientDelta = Vector3.zero;
@@ -78,6 +78,8 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkSpawn()
         {
+            base.OnNetworkSpawn();
+
             if (IsServer)
             {
                 ServerPosition.enabled = true;
@@ -92,8 +94,6 @@ namespace TestProject.ManualTests
                 SetNextDirection(true);
                 SetPositionText();
                 UpdateTimeMoving();
-
-                GetComponent<NetworkTransform>().OnTransformStateChanged = OnServerTransformStateChanged;
             }
             else
             {
@@ -102,30 +102,34 @@ namespace TestProject.ManualTests
                 ClientDelta.enabled = true;
                 PredictedClient.enabled = true;
                 m_ClientSideLastPosition = transform.position;
+            }
 
-                GetComponent<NetworkTransform>().OnTransformStateChanged = OnClienTransformStateChanged;
+        }
+
+        private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
+
+        protected override void OnNetworkTransformStateUpdate(ref NetworkTransformStateUpdate networkTransformStateUpdate)
+        {
+            base.OnNetworkTransformStateUpdate(ref networkTransformStateUpdate);
+            if(!CanCommitToTransform)
+            {
+                m_NetworkTransformStateUpdate = networkTransformStateUpdate;
             }
         }
 
-        private void OnServerTransformStateChanged(ref Vector3 updatedPosition, ref Vector3 precisionLoss, int networkTick)
+        private void UpdateClientPositionInfo()
         {
-            m_TickPositionTable.Add(networkTick, new ServerStateUpdate() { Tick = networkTick, ServerPosition = transform.position, ClientPredictedPosition = updatedPosition, PrecisionLoss = precisionLoss });
-        }
-
-        private void OnClienTransformStateChanged(ref Vector3 updatedPosition, ref Vector3 precisionLoss, int networkTick)
-        {
+            var targetPosition = m_NetworkTransformStateUpdate.TargetPosition;
             var currentPosition = transform.position;
-            var delta = updatedPosition - currentPosition;
+            var delta = targetPosition - currentPosition;
             ClientDelta.text = $"C-Delta: ({delta.x}, {delta.y}, {delta.z})";
-            PredictedClient.text = $"Client-Next: ({updatedPosition.x}, {updatedPosition.y}, {updatedPosition.z})";
-            m_ClientSideLastPosition = updatedPosition;
-
-            DebugPositionServerRpc(updatedPosition, networkTick);
+            PredictedClient.text = $"Client-Next: ({targetPosition.x}, {targetPosition.y}, {targetPosition.z})";
+            ClientPosition.text = $"Client: ({transform.position.x}, {transform.position.y}, {transform.position.z})";
+            m_ClientSideLastPosition = targetPosition;
         }
 
         public override void OnNetworkDespawn()
         {
-            GetComponent<NetworkTransform>().OnTransformStateChanged = null;
             base.OnNetworkDespawn();
         }
 
@@ -237,7 +241,7 @@ namespace TestProject.ManualTests
 
             if (!IsServer)
             {
-                ClientPosition.text = $"Client: ({transform.position.x}, {transform.position.y}, {transform.position.z})";
+                UpdateClientPositionInfo();
                 return;
             }
 
@@ -256,23 +260,6 @@ namespace TestProject.ManualTests
                 m_DirectionTimeOffset = m_TotalTimeMoving;
                 SetNextDirection();
             }
-
-            //if (Input.GetKeyDown(KeyCode.UpArrow))
-            //{
-            //    m_Direction = Vector3.forward;
-            //}
-            //if (Input.GetKeyDown(KeyCode.DownArrow))
-            //{
-            //    m_Direction = Vector3.forward * -1f;
-            //}
-            //if (Input.GetKeyDown(KeyCode.RightArrow))
-            //{
-            //    m_Direction = Vector3.right;
-            //}
-            //if (Input.GetKeyDown(KeyCode.LeftArrow))
-            //{
-            //    m_Direction = Vector3.right * -1f;
-            //}
         }
 
         private Vector3 m_ServerPosition;
@@ -293,27 +280,14 @@ namespace TestProject.ManualTests
             ClientDelta.text = $"C-Delta: ({m_ClientDelta.x}, {m_ClientDelta.y}, {m_ClientDelta.z})";
         }
 
-        private int m_LastTickSent;
-
-        [ServerRpc(RequireOwnership = false)]
-        private void DebugPositionServerRpc(Vector3 position, int tick)
+        protected override void OnPositionValidation(ref Vector3 position, ref AuthorityStateUpdate authorityState)
         {
-            if (tick == m_LastTickSent)
-            {
-                Debug.LogWarning($"Client sent two RPCs with the same tick {tick}");
-            }
+            var clientDelta = position - authorityState.AuthorityPosition;
+            var serverDelta = authorityState.AuthorityPosition - authorityState.PredictedPosition;
 
-            var serverState = m_TickPositionTable[tick];
-
-            var serverPosition = serverState.ServerPosition;
-            var serverClientPredictedPosition = serverState.ClientPredictedPosition;
-
-            var clientDelta = position - serverPosition;
-            var serverDelta = serverPosition - serverClientPredictedPosition;
-
-            m_PrecisionLoss = serverState.PrecisionLoss;
-            m_ServerPosition = serverPosition;
-            m_ServerPredicted = serverClientPredictedPosition;
+            m_PrecisionLoss = authorityState.PrecisionLoss;
+            m_ServerPosition = authorityState.AuthorityPosition;
+            m_ServerPredicted = authorityState.PredictedPosition;
             m_ClientPosition = position;
             m_ServerDelta = serverDelta;
             m_ClientDelta = clientDelta;
@@ -322,8 +296,7 @@ namespace TestProject.ManualTests
 
             ClientPositionVisual.transform.position = m_ClientPosition;
 
-            m_TickPositionTable.Remove(tick);
-            m_LastTickSent = tick;
+            base.OnPositionValidation(ref position, ref authorityState);
         }
     }
 }

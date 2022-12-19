@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 5507278367988661153}
   - component: {fileID: 5507278367988661158}
   - component: {fileID: 4569061280170134544}
-  - component: {fileID: 6252884070208936090}
   - component: {fileID: 661352837518445490}
   - component: {fileID: 2903918356161307896}
   m_Layer: 8
@@ -104,32 +103,6 @@ MonoBehaviour:
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
---- !u!114 &6252884070208936090
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5507278367988661157}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 1
-  SyncRotAngleY: 1
-  SyncRotAngleZ: 1
-  SyncScaleX: 1
-  SyncScaleY: 1
-  SyncScaleZ: 1
-  PositionThreshold: 0.001
-  RotAngleThreshold: 0.001
-  ScaleThreshold: 0.001
-  InLocalSpace: 0
-  Interpolate: 1
 --- !u!114 &661352837518445490
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -142,6 +115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24a9235f10bc6456183432fdb3015157, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ApplyColorToChildren: 0
 --- !u!114 &2903918356161307896
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -154,12 +128,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dbb8bcef5fa3fef40979ee30dd557b41, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 1
+  SyncRotAngleY: 1
+  SyncRotAngleZ: 1
+  SyncScaleX: 1
+  SyncScaleY: 1
+  SyncScaleZ: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  InLocalSpace: 0
+  Interpolate: 1
   Speed: 5
-  Direction: {x: 0, y: 0, z: 1}
+  StartingDirection: 0
+  DirectionDuration: 0.5
   ClientPositionVisual: {fileID: 0}
+  RandomDirections: 0
+  ServerDelta: {fileID: 0}
   ServerPosition: {fileID: 0}
+  PredictedClient: {fileID: 0}
+  PrecisionLoss: {fileID: 0}
   ClientPosition: {fileID: 0}
-  DeltaPosition: {fileID: 0}
+  ClientDelta: {fileID: 0}
+  TimeMoving: {fileID: 0}
+  DirectionText: {fileID: 0}
 --- !u!1 &6442405535935652293
 GameObject:
   m_ObjectHideFlags: 0
