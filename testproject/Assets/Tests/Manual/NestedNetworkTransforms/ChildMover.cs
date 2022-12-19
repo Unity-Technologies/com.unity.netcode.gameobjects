@@ -1,20 +1,40 @@
 using UnityEngine;
-using Unity.Netcode;
 
+#if UNITY_EDITOR
+using UnityEditor;
+[CustomEditor(typeof(TestProject.ManualTests.ChildMover))]
+public class ChildMoverEditor : Editor
+{
+    public override void OnInspectorGUI()
+    {
+        DrawDefaultInspector();
+    }
+}
+#endif
 namespace TestProject.ManualTests
 {
-    public class ChildMover : NetworkBehaviour
+    public class ChildMover : IntegrationNetworkTransform
     {
-        public static bool RandomizeScale;
+        public static bool RandomizeScale = true;
 
         [Range(0.1f, 30.0f)]
         public float RotationSpeed = 5.0f;
 
         private Transform m_RootParentTransform;
 
+        protected override bool OnIsServerAuthoritative()
+        {
+            return true;
+        }
+
+        public bool IsAuthority()
+        {
+            return CanCommitToTransform;
+        }
+
         public void PlayerIsMoving(float movementDirection)
         {
-            if (IsSpawned && IsOwner)
+            if (IsSpawned && CanCommitToTransform)
             {
                 var rotateDirection = movementDirection * RotationSpeed;
                 transform.RotateAround(m_RootParentTransform.position, Vector3.up, rotateDirection);
@@ -32,13 +52,14 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkSpawn()
         {
-            if (IsOwner)
+
+            if ((OnIsServerAuthoritative() && IsServer) || (!OnIsServerAuthoritative() && IsOwner))
             {
+                m_RootParentTransform = GetRootParentTransform(transform);
                 if (RandomizeScale)
                 {
-                    transform.localScale = transform.localScale * Random.Range(0.75f, 1.75f);
+                    transform.localScale = transform.localScale * Random.Range(0.5f, 1.5f);
                 }
-                m_RootParentTransform = GetRootParentTransform(transform);
             }
             base.OnNetworkSpawn();
         }

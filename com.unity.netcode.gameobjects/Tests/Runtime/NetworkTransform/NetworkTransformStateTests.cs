@@ -76,8 +76,6 @@ namespace Unity.Netcode.RuntimeTests
             m_TransformSpace = transformSpace;
             m_Compression = compression;
             m_Rotation = rotation;
-            NetworkTransform.UsePositionDeltaCompression = m_Compression == Compression.Compress;
-            NetworkTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -131,7 +129,8 @@ namespace Unity.Netcode.RuntimeTests
             var initialPosition = Vector3.zero;
             var initialRotAngles = Vector3.zero;
             var initialScale = Vector3.one;
-
+            networkTransform.UsePositionDeltaCompression = m_Compression == Compression.Compress;
+            networkTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
             networkTransform.transform.position = initialPosition;
             networkTransform.transform.eulerAngles = initialRotAngles;
             networkTransform.transform.localScale = initialScale;
