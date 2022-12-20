@@ -64,7 +64,8 @@ namespace Unity.Netcode.Components
             private const int k_Interpolate = 11;
             private const int k_PositionDeltaCompress = 12;
             private const int k_QuaternionSync = 13;
-            // 14-15: <unused>
+            private const int k_QuaternionCompress = 14;
+            // 15: <unused>
 
             private ushort m_Bitset;
 
@@ -222,6 +223,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool QuaternionCompression
+            {
+                get => BitGet(k_QuaternionCompress);
+                set
+                {
+                    BitSet(value, k_QuaternionCompress);
+                }
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private bool BitGet(int bitPosition)
             {
@@ -240,7 +250,11 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
 
-            internal HalfVector3 HalfVector;
+            internal HalfVector3 HalfVectorPosition;
+            internal HalfVector4 HalfVectorRotation;
+
+            internal uint QuaternionCompressed;
+
 
             internal Vector3 DeltaPosition;
             internal Vector3 DeltaPositionDecompressed;
@@ -291,8 +305,8 @@ namespace Unity.Netcode.Components
                     if (PositionDeltaCompression && !IsTeleportingNextFrame)
                     {
                         DeltaPosition += DeltaPositioPrecisionLoss;
-                        HalfVector.FromVector3(ref DeltaPosition);
-                        DeltaPositionDecompressed = HalfVector.ToVector3();
+                        HalfVectorPosition.FromVector3(ref DeltaPosition);
+                        DeltaPositionDecompressed = HalfVectorPosition.ToVector3();
                     }
                     //Vector3DeltaCompressor.CompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
 
@@ -323,43 +337,48 @@ namespace Unity.Netcode.Components
                         //{
                         //    Vector3DeltaCompressor.DecompressDelta(ref DeltaPosition, ref CompressedVector3Delta);
                         //}
-                        serializer.SerializeNetworkSerializable(ref HalfVector);
+                        serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
                         if (serializer.IsReader)
                         {
-                            DeltaPosition = HalfVector.ToVector3();
+                            DeltaPosition = HalfVectorPosition.ToVector3();
                         }
                     }
                     else // Full position value synchronization (teleporting or delta position compression disabled)
                     {
-                        if (serializer.IsWriter)
+                        if (!IsTeleportingNextFrame)
                         {
-                            HalfVector.XHalf = PositionX;
-                            HalfVector.YHalf = PositionY;
-                            HalfVector.ZHalf = PositionZ;
+                            if (serializer.IsWriter)
+                            {
+                                HalfVectorPosition.XHalf = PositionX;
+                                HalfVectorPosition.YHalf = PositionY;
+                                HalfVectorPosition.ZHalf = PositionZ;
+                            }
+                            serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
+                            if (serializer.IsReader)
+                            {
+                                PositionX = HalfVectorPosition.XFloat;
+                                PositionY = HalfVectorPosition.YFloat;
+                                PositionZ = HalfVectorPosition.ZFloat;
+                            }
                         }
-                        serializer.SerializeNetworkSerializable(ref HalfVector);
-                        if (serializer.IsReader)
+                        else
                         {
-                            PositionX = HalfVector.XFloat;
-                            PositionY = HalfVector.YFloat;
-                            PositionZ = HalfVector.ZFloat;
+                            // Position Values
+                            if (HasPositionX)
+                            {
+                                serializer.SerializeValue(ref PositionX);
+                            }
+
+                            if (HasPositionY)
+                            {
+                                serializer.SerializeValue(ref PositionY);
+                            }
+
+                            if (HasPositionZ)
+                            {
+                                serializer.SerializeValue(ref PositionZ);
+                            }
                         }
-
-                        //// Position Values
-                        //if (HasPositionX)
-                        //{
-                        //    serializer.SerializeValue(ref PositionX);
-                        //}
-
-                        //if (HasPositionY)
-                        //{
-                        //    serializer.SerializeValue(ref PositionY);
-                        //}
-
-                        //if (HasPositionZ)
-                        //{
-                        //    serializer.SerializeValue(ref PositionZ);
-                        //}
                     }
                 }
 
@@ -367,7 +386,45 @@ namespace Unity.Netcode.Components
                 {
                     if (QuaternionSync)
                     {
-                        serializer.SerializeValue(ref Rotation);
+                        if (IsTeleportingNextFrame)
+                        {
+                            serializer.SerializeValue(ref Rotation);
+                        }
+                        else
+                        {
+                            if (serializer.IsWriter)
+                            {
+                                if(QuaternionCompression)
+                                {
+                                    QuaternionCompressed = QuaternionCompressor.CompressQuaternion(ref Rotation);
+                                }
+                                else
+                                {
+                                    HalfVectorRotation.FromQuaternion(ref Rotation);
+                                }
+                            }
+
+                            if (QuaternionCompression)
+                            {
+                                serializer.SerializeValue(ref QuaternionCompressed);
+                            }
+                            else
+                            {
+                                serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
+                            }
+
+                            if (serializer.IsReader)
+                            {
+                                if (QuaternionCompression)
+                                {
+                                    QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
+                                }
+                                else
+                                {
+                                    HalfVectorRotation.ToQuaternion(ref Rotation);
+                                }
+                            }
+                        }
                     }
                     else
                     {
@@ -479,6 +536,7 @@ namespace Unity.Netcode.Components
         }
 
         public bool UseQuaternionSynchronization = true;
+        public bool UseQuaternionCompression = true;
 
         /// <summary>
         /// When enabled, this position will be synchronized as compressed deltas
@@ -488,6 +546,8 @@ namespace Unity.Netcode.Components
         /// be removed if we decide to use this.
         /// </remarks>
         public bool UsePositionDeltaCompression = false;
+
+
 
         // Last position is used on the authoritative side to get the delta between the
         // current and the last position when UsePositionDeltaCompression is enabled
@@ -1289,7 +1349,7 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    m_TargetPosition = newState.HalfVector.ToVector3();
+                    m_TargetPosition = newState.HalfVectorPosition.ToVector3();
                 }
 #if DEBUG_NETWORKTRANSFORM
                 if (oldState.NetworkTick != newState.NetworkTick || oldState.StateId == newState.StateId)
@@ -1338,7 +1398,7 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        m_TargetPosition = newState.HalfVector.ToVector3();
+                        m_TargetPosition = newState.HalfVectorPosition.ToVector3();
                     }
 
 #if DEBUG_NETWORKTRANSFORM

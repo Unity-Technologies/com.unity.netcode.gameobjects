@@ -87,15 +87,23 @@ namespace TestProject.ManualTests
 
         private void PositionValidation(Vector3 positionUpdate, int tick)
         {
-            var serverState = m_TickPositionTable[OwnerClientId][tick];
-            var position = positionUpdate;
-            if (tick == m_LastTickSent)
+            if (m_TickPositionTable.ContainsKey(OwnerClientId))
             {
-                Debug.LogWarning($"Client sent two RPCs with the same tick {tick}");
+                if (m_TickPositionTable[OwnerClientId].ContainsKey(tick))
+                {
+
+                    var serverState = m_TickPositionTable[OwnerClientId][tick];
+                    var position = positionUpdate;
+                    if (tick == m_LastTickSent)
+                    {
+                        Debug.LogWarning($"Client sent two RPCs with the same tick {tick}");
+                    }
+                    OnPositionValidation(ref position, ref serverState);
+                    m_LastTickSent = tick;
+                    m_TickPositionTable[OwnerClientId].Remove(tick);
+                }
             }
-            OnPositionValidation(ref position, ref serverState);
-            m_LastTickSent = tick;
-            m_TickPositionTable[OwnerClientId].Remove(tick);
+
         }
 
         private int m_LastTickSent;
