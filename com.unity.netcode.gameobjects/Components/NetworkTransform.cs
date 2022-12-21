@@ -626,23 +626,15 @@ namespace Unity.Netcode.Components
                 isPositionDirty = true;
             }
 
-            if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
+            if (((SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ) && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)) ||
+                ((SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ) && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)) ||
+                ((SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ) && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame)))
             {
                 networkState.RotAngleX = rotAngles.x;
-                networkState.HasRotAngleX = true;
-                isRotationDirty = true;
-            }
-
-            if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
-            {
                 networkState.RotAngleY = rotAngles.y;
-                networkState.HasRotAngleY = true;
-                isRotationDirty = true;
-            }
-
-            if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
-            {
                 networkState.RotAngleZ = rotAngles.z;
+                networkState.HasRotAngleX = true;
+                networkState.HasRotAngleY = true;
                 networkState.HasRotAngleZ = true;
                 isRotationDirty = true;
             }
@@ -713,9 +705,12 @@ namespace Unity.Netcode.Components
                 if (SynchronizeRotation)
                 {
                     var interpolatedEulerAngles = m_RotationInterpolator.GetInterpolatedValue().eulerAngles;
-                    if (SyncRotAngleX) { adjustedRotAngles.x = interpolatedEulerAngles.x; }
-                    if (SyncRotAngleY) { adjustedRotAngles.y = interpolatedEulerAngles.y; }
-                    if (SyncRotAngleZ) { adjustedRotAngles.z = interpolatedEulerAngles.z; }
+                    if (SyncRotAngleX || SyncRotAngleY || SyncRotAngleZ)
+                    {
+                        adjustedRotAngles.x = interpolatedEulerAngles.x;
+                        adjustedRotAngles.y = interpolatedEulerAngles.y;
+                        adjustedRotAngles.z = interpolatedEulerAngles.z;
+                    }
                 }
             }
             else
