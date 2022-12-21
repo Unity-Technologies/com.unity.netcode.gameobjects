@@ -119,6 +119,9 @@ namespace Unity.Netcode.EditorTests
             Assert.False(transport.StartServer());
 
             LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
+#if UTP_TRANSPORT_2_0_ABOVE
+            LogAssert.Expect(LogType.Error, "Socket creation failed (error Unity.Baselib.LowLevel.Binding+Baselib_ErrorState: Invalid argument (0x01000003) <argument name stripped>");
+#endif
             LogAssert.Expect(LogType.Error, "Server failed to bind. This is usually caused by another process being bound to the same port.");
 
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
