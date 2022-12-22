@@ -9,6 +9,12 @@ namespace Unity.Netcode.Components
         public ushort Z;
         public ushort W;
 
+        // Since Quaternions are normalized, we increase their half precision
+        // by multiplying each value by 1000 when converting to a half float
+        // and then reverting that when converting back to a full float.
+        private const float k_PrecisionAdjustmentUp = 1000.0f;
+        private const float k_PrecisionAdjustmentDown = 0.001f;
+
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref X);
@@ -26,10 +32,10 @@ namespace Unity.Netcode.Components
         }
         public void ToQuaternion(ref Quaternion quaternion)
         {
-            quaternion.x = Mathf.HalfToFloat(X);
-            quaternion.y = Mathf.HalfToFloat(Y);
-            quaternion.z = Mathf.HalfToFloat(Z);
-            quaternion.w = Mathf.HalfToFloat(W);
+            quaternion.x = Mathf.HalfToFloat(X) * k_PrecisionAdjustmentDown;
+            quaternion.y = Mathf.HalfToFloat(Y) * k_PrecisionAdjustmentDown;
+            quaternion.z = Mathf.HalfToFloat(Z) * k_PrecisionAdjustmentDown;
+            quaternion.w = Mathf.HalfToFloat(W) * k_PrecisionAdjustmentDown;
         }
 
         public void FromVector4(ref Vector4 vector4)
@@ -42,10 +48,10 @@ namespace Unity.Netcode.Components
 
         public void FromQuaternion(ref Quaternion quaternion)
         {
-            X = Mathf.FloatToHalf(quaternion.x);
-            Y = Mathf.FloatToHalf(quaternion.y);
-            Z = Mathf.FloatToHalf(quaternion.z);
-            W = Mathf.FloatToHalf(quaternion.w);
+            X = Mathf.FloatToHalf(quaternion.x * k_PrecisionAdjustmentUp);
+            Y = Mathf.FloatToHalf(quaternion.y * k_PrecisionAdjustmentUp);
+            Z = Mathf.FloatToHalf(quaternion.z * k_PrecisionAdjustmentUp);
+            W = Mathf.FloatToHalf(quaternion.w * k_PrecisionAdjustmentUp);
         }
 
         public HalfVector4(Vector4 vector4)
