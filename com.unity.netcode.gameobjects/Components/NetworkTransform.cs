@@ -369,6 +369,7 @@ namespace Unity.Netcode.Components
                                 PositionX = HalfVectorPosition.XFloat;
                                 PositionY = HalfVectorPosition.YFloat;
                                 PositionZ = HalfVectorPosition.ZFloat;
+                                HasPositionX = HasPositionY = HasPositionZ = true;
                             }
                         }
                         else
@@ -988,7 +989,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ApplyAuthoritativeState()
         {
-            var networkState = m_LocalAuthoritativeNetworkState;
+            var networkState = ReplicatedNetworkState.Value;
             var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
 
             // TODO: We should store network state w/ quats vs. euler angles
@@ -1003,25 +1004,19 @@ namespace Unity.Netcode.Components
 
             UsePositionDeltaCompression = networkState.PositionDeltaCompression;
 
+            UseHalfFloatPrecision = networkState.UseHalfFloatPrecision;
+
+            UseQuaternionSynchronization = networkState.QuaternionSync;
+
             // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
             var useInterpolatedValue = !networkState.IsTeleportingNextFrame && Interpolate;
             if (useInterpolatedValue)
             {
-                if (UsePositionDeltaCompression)
-                {
-                    adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue();
-                    adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue();
-                    adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue();
-                }
-                else
-                {
-                    if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
-                    if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
-                    if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
-                }
-
+                if (SyncPositionX) { adjustedPosition.x = m_PositionXInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionY) { adjustedPosition.y = m_PositionYInterpolator.GetInterpolatedValue(); }
+                if (SyncPositionZ) { adjustedPosition.z = m_PositionZInterpolator.GetInterpolatedValue(); }
 
                 if (SyncScaleX) { adjustedScale.x = m_ScaleXInterpolator.GetInterpolatedValue(); }
                 if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
@@ -1046,16 +1041,9 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (networkState.PositionDeltaCompression && networkState.HasPositionChange)
-                {
-                    adjustedPosition = m_TargetPosition;
-                }
-                else
-                {
-                    if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
-                    if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
-                    if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
-                }
+                if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
+                if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
+                if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
 
                 if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
                 if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
@@ -1267,28 +1255,19 @@ namespace Unity.Netcode.Components
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
-            if (UsePositionDeltaCompression && newState.HasPositionChange)
+            if (newState.HasPositionX)
             {
-                m_PositionXInterpolator.AddMeasurement(m_TargetPosition.x, sentTime);
-                m_PositionYInterpolator.AddMeasurement(m_TargetPosition.y, sentTime);
-                m_PositionZInterpolator.AddMeasurement(m_TargetPosition.z, sentTime);
+                m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
             }
-            else
+
+            if (newState.HasPositionY)
             {
-                if (newState.HasPositionX)
-                {
-                    m_PositionXInterpolator.AddMeasurement(newState.PositionX, sentTime);
-                }
+                m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
+            }
 
-                if (newState.HasPositionY)
-                {
-                    m_PositionYInterpolator.AddMeasurement(newState.PositionY, sentTime);
-                }
-
-                if (newState.HasPositionZ)
-                {
-                    m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
-                }
+            if (newState.HasPositionZ)
+            {
+                m_PositionZInterpolator.AddMeasurement(newState.PositionZ, sentTime);
             }
 
             if (newState.HasScaleX)
@@ -1514,16 +1493,6 @@ namespace Unity.Netcode.Components
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
-            //Debug.Log($"Client-{NetworkManager.LocalClientId} spawned {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
-            //try
-            //{
-            //    throw new Exception("Stack Trace");
-            //}
-            //catch(Exception ex)
-            //{
-            //    Debug.Log($"{ex.Message}:\n{ex.StackTrace}");
-            //}
-
             Initialize();
 
             // This assures the initial spawning of the object synchronizes all connected clients
@@ -1545,14 +1514,23 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+            }
         }
 
         /// <inheritdoc/>
         public override void OnDestroy()
         {
+            if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+            {
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+            }
             base.OnDestroy();
             m_ReplicatedNetworkStateServer.Dispose();
             m_ReplicatedNetworkStateOwner.Dispose();
+
         }
 
         /// <inheritdoc/>
@@ -1561,11 +1539,7 @@ namespace Unity.Netcode.Components
             // Only initialize if we gained ownership
             if (OwnerClientId == NetworkManager.LocalClientId)
             {
-                if (IsSpawned)
-                {
-                    Debug.Log($"Client-{NetworkManager.LocalClientId} gained ownership {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
-                    Initialize();
-                }
+                Initialize();
             }
         }
 
@@ -1576,7 +1550,6 @@ namespace Unity.Netcode.Components
             // ownership
             if (OwnerClientId != NetworkManager.LocalClientId)
             {
-                Debug.Log($"Client-{NetworkManager.LocalClientId} lost ownership {NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}.");
                 Initialize();
             }
         }
@@ -1751,7 +1724,10 @@ namespace Unity.Netcode.Components
             else
             {
                 // If we are no longer authority, unsubscribe to the tick event
-                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+                if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
+                {
+                    NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+                }
             }
         }
 

@@ -581,14 +581,21 @@ namespace Unity.Netcode.RuntimeTests
         /// Test to verify nonAuthority cannot change the transform directly
         /// </summary>
         [UnityTest]
-        public IEnumerator VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation)
+        public IEnumerator VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation, [Values] Precision precision)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
+            m_AuthoritativeTransform.UseQuaternionSynchronization = true;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_NonAuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
+            m_NonAuthoritativeTransform.UseQuaternionSynchronization = true;
+
+
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "other side pos should be zero at first"); // sanity check
 
             m_NonAuthoritativeTransform.transform.position = new Vector3(4, 5, 6);
 
+            yield return s_DefaultWaitForTick;
             yield return s_DefaultWaitForTick;
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "[Position] NonAuthority was able to change the position!");
