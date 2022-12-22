@@ -5,10 +5,10 @@ using UnityEngine;
 namespace Unity.Netcode.RuntimeTests
 {
 
-    [TestFixture(TransformSpace.World, Compression.DontCompress, Rotation.Euler)]
-    [TestFixture(TransformSpace.World, Compression.Compress, Rotation.Quaternion)]
-    [TestFixture(TransformSpace.Local, Compression.DontCompress, Rotation.Euler)]
-    [TestFixture(TransformSpace.Local, Compression.Compress, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.World, Precision.Full)]
+    [TestFixture(TransformSpace.World, Precision.Half)]
+    [TestFixture(TransformSpace.Local, Precision.Full)]
+    [TestFixture(TransformSpace.Local, Precision.Half)]
     public class NetworkTransformStateTests
     {
         public enum SyncAxis
@@ -49,12 +49,6 @@ namespace Unity.Netcode.RuntimeTests
             Local
         }
 
-        public enum Compression
-        {
-            DontCompress,
-            Compress
-        }
-
         public enum Rotation
         {
             Euler,
@@ -67,15 +61,21 @@ namespace Unity.Netcode.RuntimeTests
             Teleport
         }
 
+        public enum Precision
+        {
+            Half,
+            Full
+        }
+
         private TransformSpace m_TransformSpace;
-        private Compression m_Compression;
+        private Precision m_Precision;
         private Rotation m_Rotation;
 
-        public NetworkTransformStateTests(TransformSpace transformSpace, Compression compression, Rotation rotation)
+        public NetworkTransformStateTests(TransformSpace transformSpace, Precision precision)
         {
             m_TransformSpace = transformSpace;
-            m_Compression = compression;
-            m_Rotation = rotation;
+            m_Precision = precision;
+            m_Rotation = Rotation.Quaternion;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -103,8 +103,9 @@ namespace Unity.Netcode.RuntimeTests
             bool syncScaY = syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllY || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaZ = syncAxis == SyncAxis.SyncScaleZ || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllZ || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
 
-            // When compressing, we can skip these tests
-            if (m_Compression == Compression.Compress)
+            // When using half precision, we send the full Vector3
+            // Skip individual axial checking
+            if (m_Precision == Precision.Half)
             {
                 if (syncAxis == SyncAxis.SyncPosX || syncAxis == SyncAxis.SyncPosY || syncAxis == SyncAxis.SyncPosZ)
                 {
@@ -129,7 +130,7 @@ namespace Unity.Netcode.RuntimeTests
             var initialPosition = Vector3.zero;
             var initialRotAngles = Vector3.zero;
             var initialScale = Vector3.one;
-            networkTransform.UsePositionDeltaCompression = m_Compression == Compression.Compress;
+            networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
             networkTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
             networkTransform.transform.position = initialPosition;
             networkTransform.transform.eulerAngles = initialRotAngles;

@@ -1,5 +1,4 @@
 using UnityEngine;
-using Unity.Netcode;
 using TestProject.ManualTests;
 
 #if UNITY_EDITOR
@@ -25,15 +24,6 @@ namespace TestProject.RuntimeTests
         private GameObject m_Destination;
         private Vector3 m_Target;
 
-        /// <summary>
-        /// Make this PlayerMovement-NetworkTransform component
-        /// Owner Authoritative
-        /// </summary>
-        protected override bool OnIsServerAuthoritative()
-        {
-            return true;
-        }
-
         private void UpdateDestination()
         {
             if (Navigationpoints.Instance != null)
@@ -56,7 +46,7 @@ namespace TestProject.RuntimeTests
 
         private void LateUpdate()
         {
-            if(CanCommitToTransform)
+            if (CanCommitToTransform)
             {
                 if (Input.GetKeyDown(KeyCode.Space))
                 {
@@ -72,7 +62,7 @@ namespace TestProject.RuntimeTests
                 return;
             }
 
-            if(CanCommitToTransform)
+            if (CanCommitToTransform)
             {
                 if (!StopMovement)
                 {

@@ -22,11 +22,6 @@ namespace TestProject.ManualTests
 
         private Transform m_RootParentTransform;
 
-        protected override bool OnIsServerAuthoritative()
-        {
-            return true;
-        }
-
         public bool IsAuthority()
         {
             return CanCommitToTransform;

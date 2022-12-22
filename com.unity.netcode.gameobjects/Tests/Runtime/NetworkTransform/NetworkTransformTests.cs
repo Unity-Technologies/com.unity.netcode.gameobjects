@@ -106,6 +106,12 @@ namespace Unity.Netcode.RuntimeTests
             EnableInterpolate
         }
 
+        public enum Precision
+        {
+            Half,
+            Full
+        }
+
         /// <summary>
         /// Constructor
         /// </summary>
@@ -611,11 +617,14 @@ namespace Unity.Netcode.RuntimeTests
         /// results when rolling over between 0 and 360 degrees
         /// </summary>
         [UnityTest]
-        public IEnumerator TestRotationThresholdDeltaCheck([Values] Interpolation interpolation)
+        public IEnumerator TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
+            m_AuthoritativeTransform.UseQuaternionSynchronization = true;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-
+            m_NonAuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
+            m_NonAuthoritativeTransform.UseQuaternionSynchronization = true;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 5.0f;
 
             var halfThreshold = m_AuthoritativeTransform.RotAngleThreshold * 0.5001f;
