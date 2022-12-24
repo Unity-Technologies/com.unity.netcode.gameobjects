@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -21,19 +22,17 @@ namespace TestProject.ManualTests
     /// </summary>
     public class LinearMotionHandler : IntegrationNetworkTransform
     {
+        public bool SimulateClient = false;
         [Range(0.5f, 10.0f)]
         public float Speed = 5.0f;
         public Directions StartingDirection;
-        [Range(0.5f, 1000.0f)]
+        [Range(0.1f, 1000.0f)]
         public float DirectionDuration = 0.5f;
         public GameObject ClientPositionVisual;
         [Tooltip("When true, it will randomly pick a new direction after DirectionDuration period of time has elapsed.")]
         public bool RandomDirections;
 
-        public Text ServerDelta;
         public Text ServerPosition;
-        public Text PredictedClient;
-        public Text PrecisionLoss;
         public Text ClientPosition;
         public Text ClientDelta;
         public Text TimeMoving;
@@ -62,15 +61,10 @@ namespace TestProject.ManualTests
 
             m_ServerPosition = transform.position;
             m_ClientPosition = transform.position;
-            m_ClientDelta = Vector3.zero;
-            m_ServerDelta = Vector3.zero;
-
+            m_HalfVector3Simulated = new HalfVector3(m_ClientPosition);
             Camera.main.transform.parent = transform;
             ServerPosition.enabled = false;
-            PredictedClient.enabled = false;
-            PrecisionLoss.enabled = false;
             ClientPosition.enabled = false;
-            ServerDelta.enabled = false;
             ClientDelta.enabled = false;
             TimeMoving.enabled = false;
             DirectionText.enabled = false;
@@ -84,12 +78,9 @@ namespace TestProject.ManualTests
             {
                 ServerPosition.enabled = true;
                 ClientPosition.enabled = true;
-                ServerDelta.enabled = true;
                 ClientDelta.enabled = true;
                 TimeMoving.enabled = true;
                 DirectionText.enabled = true;
-                PredictedClient.enabled = true;
-                PrecisionLoss.enabled = true;
                 m_CurrentDirection = StartingDirection;
                 SetNextDirection(true);
                 SetPositionText();
@@ -100,10 +91,7 @@ namespace TestProject.ManualTests
                 ClientPositionVisual.SetActive(false);
                 ClientPosition.enabled = true;
                 ClientDelta.enabled = true;
-                PredictedClient.enabled = true;
-                m_ClientSideLastPosition = transform.position;
             }
-
         }
 
         private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
@@ -111,7 +99,7 @@ namespace TestProject.ManualTests
         protected override void OnNetworkTransformStateUpdate(ref NetworkTransformStateUpdate networkTransformStateUpdate)
         {
             base.OnNetworkTransformStateUpdate(ref networkTransformStateUpdate);
-            if(!CanCommitToTransform)
+            if (!CanCommitToTransform)
             {
                 m_NetworkTransformStateUpdate = networkTransformStateUpdate;
             }
@@ -119,21 +107,24 @@ namespace TestProject.ManualTests
 
         private void UpdateClientPositionInfo()
         {
-            var targetPosition = m_NetworkTransformStateUpdate.TargetPosition;
-            var currentPosition = transform.position;
+            var targetPosition = m_NetworkTransformStateUpdate.Position;
+            var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
             var delta = targetPosition - currentPosition;
-            ClientDelta.text = $"C-Delta: ({delta.x}, {delta.y}, {delta.z})";
-            PredictedClient.text = $"Client-Next: ({targetPosition.x}, {targetPosition.y}, {targetPosition.z})";
-            ClientPosition.text = $"Client: ({transform.position.x}, {transform.position.y}, {transform.position.z})";
-            m_ClientSideLastPosition = targetPosition;
+            if (Interpolate)
+            {
+                ClientDelta.text = $"C-Delta: ({delta.x}, {delta.y}, {delta.z})";
+            }
+            else
+            {
+                ClientDelta.text = "--Interpolate Off--";
+            }
+            ClientPosition.text = $"Client: ({currentPosition.x}, {currentPosition.y}, {currentPosition.z})";
         }
 
         public override void OnNetworkDespawn()
         {
             base.OnNetworkDespawn();
         }
-
-        private Vector3 m_ClientSideLastPosition;
 
 
         private void SetNextDirection(bool useCurrent = false)
@@ -205,6 +196,13 @@ namespace TestProject.ManualTests
 
         }
 
+        private bool ShouldRun()
+        {
+            return (NetworkManager.ConnectedClients.Count > (IsHost ? 1 : 0)) || SimulateClient;
+        }
+
+
+        private HalfVector3 m_HalfVector3Simulated = new HalfVector3();
         // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()
         {
@@ -212,14 +210,24 @@ namespace TestProject.ManualTests
             {
                 return;
             }
-            if (IsServer && !m_StopMoving && (NetworkManager.ConnectedClients.Count > (IsHost ? 1 : 0)))
+            if (IsServer && !m_StopMoving && ShouldRun())
             {
                 var position = transform.position;
+                var rotation = transform.rotation;
                 var yAxis = position.y;
                 position += (m_Direction * Speed);
                 position.y = yAxis;
-                transform.position = Vector3.Lerp(transform.position, position, Time.fixedDeltaTime);
-                transform.rotation = Quaternion.LookRotation(m_Direction);
+                position = Vector3.Lerp(transform.position, position, Time.fixedDeltaTime);
+                rotation = Quaternion.LookRotation(m_Direction);
+                transform.position = position;
+                transform.rotation = rotation;
+
+                if (SimulateClient)
+                {
+                    m_HalfVector3Simulated.FromVector3(ref position);
+                    m_ClientPosition = m_HalfVector3Simulated.ToVector3();
+                    OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
+                }
             }
         }
 
@@ -241,6 +249,9 @@ namespace TestProject.ManualTests
 
             if (!IsServer)
             {
+                var position = InLocalSpace ? transform.localPosition : transform.position;
+                OnNonAuthorityUpdatePositionServerRpc(position);
+
                 UpdateClientPositionInfo();
                 return;
             }
@@ -250,7 +261,7 @@ namespace TestProject.ManualTests
                 m_StopMoving = !m_StopMoving;
             }
 
-            if (!m_StopMoving && (NetworkManager.ConnectedClients.Count > (IsHost ? 1 : 0)))
+            if (!m_StopMoving && ShouldRun())
             {
                 UpdateTimeMoving();
             }
@@ -260,43 +271,36 @@ namespace TestProject.ManualTests
                 m_DirectionTimeOffset = m_TotalTimeMoving;
                 SetNextDirection();
             }
+
+            ClientPositionVisual.transform.position = m_ClientPosition;
+            ClientPositionVisual.transform.rotation = InLocalSpace ? transform.localRotation : transform.rotation;
         }
 
         private Vector3 m_ServerPosition;
-        private Vector3 m_ServerPredicted;
         private Vector3 m_ClientPosition;
-        private Vector3 m_ServerDelta;
         private Vector3 m_ClientDelta;
-        private Vector3 m_PrecisionLoss;
 
 
         private void SetPositionText()
         {
             ServerPosition.text = $"Server: ({m_ServerPosition.x}, {m_ServerPosition.y}, {m_ServerPosition.z})";
-            PredictedClient.text = $"Predicted: ({m_ServerPredicted.x}, {m_ServerPredicted.y}, {m_ServerPredicted.z})";
-            PrecisionLoss.text = $"Prec-Loss: ({m_PrecisionLoss.x}, {m_PrecisionLoss.y}, {m_PrecisionLoss.z})";
             ClientPosition.text = $"Client: ({m_ClientPosition.x}, {m_ClientPosition.y}, {m_ClientPosition.z})";
-            ServerDelta.text = $"S-Delta: ({m_ServerDelta.x}, {m_ServerDelta.y}, {m_ServerDelta.z})";
             ClientDelta.text = $"C-Delta: ({m_ClientDelta.x}, {m_ClientDelta.y}, {m_ClientDelta.z})";
         }
 
-        protected override void OnPositionValidation(ref Vector3 position, ref AuthorityStateUpdate authorityState)
+        [ServerRpc(RequireOwnership = false)]
+        private void OnNonAuthorityUpdatePositionServerRpc(Vector3 position)
         {
-            var clientDelta = position - authorityState.AuthorityPosition;
-            var serverDelta = authorityState.AuthorityPosition - authorityState.PredictedPosition;
-
-            m_PrecisionLoss = authorityState.PrecisionLoss;
-            m_ServerPosition = authorityState.AuthorityPosition;
-            m_ServerPredicted = authorityState.PredictedPosition;
             m_ClientPosition = position;
-            m_ServerDelta = serverDelta;
-            m_ClientDelta = clientDelta;
+            UpdatePositionValidation();
+        }
+
+        private void UpdatePositionValidation()
+        {
+            m_ServerPosition = InLocalSpace ? transform.localPosition : transform.position;
+            m_ClientDelta = m_ClientPosition - m_ServerPosition;
 
             SetPositionText();
-
-            ClientPositionVisual.transform.position = m_ClientPosition;
-
-            base.OnPositionValidation(ref position, ref authorityState);
         }
     }
 }
