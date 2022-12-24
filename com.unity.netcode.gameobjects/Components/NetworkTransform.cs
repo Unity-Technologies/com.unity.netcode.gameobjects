@@ -333,7 +333,7 @@ namespace Unity.Netcode.Components
                 {
                     if (QuaternionSync)
                     {
-                        if (IsTeleportingNextFrame)
+                        if (IsTeleportingNextFrame || !QuaternionCompression)
                         {
                             serializer.SerializeValue(ref Rotation);
                         }
@@ -341,46 +341,11 @@ namespace Unity.Netcode.Components
                         {
                             if (serializer.IsWriter)
                             {
-                                if (QuaternionCompression)
-                                {
-                                    QuaternionCompressed = QuaternionCompressor.CompressQuaternion(ref Rotation);
-                                }
-                                else
-                                {
-                                    if (UseHalfFloatPrecision)
-                                    {
-                                        HalfVectorRotation.FromQuaternion(ref Rotation);
-                                    }
-                                }
-                            }
-
-                            if (QuaternionCompression)
-                            {
-                                serializer.SerializeValue(ref QuaternionCompressed);
+                                HalfVectorRotation.FromQuaternion(ref Rotation);
                             }
                             else
                             {
-                                if (UseHalfFloatPrecision)
-                                {
-                                    serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
-                                }
-                                else
-                                {
-                                    serializer.SerializeValue(ref Rotation);
-                                }
-
-                            }
-
-                            if (serializer.IsReader)
-                            {
-                                if (QuaternionCompression)
-                                {
-                                    QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
-                                }
-                                else if (UseHalfFloatPrecision)
-                                {
-                                    HalfVectorRotation.ToQuaternion(ref Rotation);
-                                }
+                                HalfVectorRotation.ToQuaternion(ref Rotation);
                             }
                         }
                     }
