@@ -12,8 +12,8 @@ namespace Unity.Netcode.Components
         // Since Quaternions are normalized, we increase their half precision
         // by multiplying each value by 1000 when converting to a half float
         // and then reverting that when converting back to a full float.
-        private const float k_PrecisionAdjustmentUp = 1000.0f;
-        private const float k_PrecisionAdjustmentDown = 0.001f;
+        private const float k_PrecisionAdjustmentUp = 10000.0f;
+        private const float k_PrecisionAdjustmentDown = 0.0001f;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
