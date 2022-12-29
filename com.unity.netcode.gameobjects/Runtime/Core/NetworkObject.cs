@@ -1265,7 +1265,7 @@ namespace Unity.Netcode
                 var synchronizationCount = (byte)0;
                 foreach (var childBehaviour in ChildNetworkBehaviours)
                 {
-                    if (childBehaviour.Synchronize(ref serializer))
+                    if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
                         synchronizationCount++;
                     }
@@ -1304,7 +1304,7 @@ namespace Unity.Netcode
                 {
                     serializer.SerializeValue(ref networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer);
+                    networkBehaviour.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
