@@ -5,19 +5,18 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
-using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
     [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Server)]
-    //[TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Client)]
+    [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Server)]
-    //[TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Client)]
+    [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Server)]
-    //[TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Client)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Server)]
-    //[TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Client)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Owner)]
     public class NestedNetworkTransformTests : IntegrationTestWithApproximation
     {
         private const string k_TestScene = "NestedNetworkTransformTestScene";
@@ -50,7 +49,7 @@ namespace TestProject.RuntimeTests
         public enum AuthoritativeModel
         {
             Server,
-            Client
+            Owner
         }
 
 
@@ -245,30 +244,6 @@ namespace TestProject.RuntimeTests
             return m_ValidationErrors.Length == 0;
         }
 
-        // TODO: We need to fix the issue within IntegrationNetworkTransform with authority and mapping tick values
-        private void PositionValidationCallback(ref NetworkObject networkObject, ref Vector3 position, ref IntegrationNetworkTransform.AuthorityStateUpdate serverStateUpdate)
-        {
-            //if (!Approximately(position, serverStateUpdate.AuthorityPosition) )
-            //{
-            //    var authPosition = serverStateUpdate.AuthorityPosition;
-            //    m_ValidationErrors.Append($"NonAuthority-({networkObject.OwnerClientId}) Position ({position.x},{position.y},{position.z}) does not match authority position ({authPosition.x},{authPosition.y},{authPosition.z}) for network tick ({serverStateUpdate.Tick})! \n");
-            //}
-            //if (!Approximately(position, serverStateUpdate.PredictedPosition))
-            //{
-            //    m_ValidationErrors.Append($"NonAuthority-({networkObject.OwnerClientId}) Position ({position.x},{position.y},{position.z}) does not match authority position ({authPosition.x},{authPosition.y},{authPosition.z}) for network tick ({serverStateUpdate.Tick})! \n");
-            //}
-        }
-
-
-        private void AddDebugHandler(NetworkManager networkManager)
-        {
-            var integrationNetworkTransforms = m_ServerNetworkManager.LocalClient.PlayerObject.GetComponentsInChildren<IntegrationNetworkTransform>();
-            foreach (var integrationNetworkTransform in integrationNetworkTransforms)
-            {
-                integrationNetworkTransform.PositionValidationCallback = PositionValidationCallback;
-            }
-        }
-
         private const int k_IterationsToTest = 10;
         private const int k_ClientsToSpawn = 4;  // Really it will be 5 including the host
 
@@ -283,7 +258,6 @@ namespace TestProject.RuntimeTests
             var timeoutHelper = new TimeoutHelper(2.5f);
             var timeoutHelperNoInterpolation = new TimeoutHelper(2f);
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
-            AddDebugHandler(m_ServerNetworkManager);
             yield return pausePeriod;
 
             var precisionFailures = 0;
@@ -299,7 +273,6 @@ namespace TestProject.RuntimeTests
                 if (clientCount < k_ClientsToSpawn)
                 {
                     yield return CreateAndStartNewClient();
-                    AddDebugHandler(m_ClientNetworkManagers[i]);
                     clientCount++;
                 }
 
