@@ -32,7 +32,7 @@ namespace TestProject.ManualTests
             if (IsSpawned && CanCommitToTransform)
             {
                 var rotateDirection = movementDirection * RotationSpeed;
-                transform.RotateAround(m_RootParentTransform.position, Vector3.up, rotateDirection);
+                transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), rotateDirection);
             }
         }
 
@@ -47,7 +47,6 @@ namespace TestProject.ManualTests
 
         public override void OnNetworkSpawn()
         {
-
             if ((OnIsServerAuthoritative() && IsServer) || (!OnIsServerAuthoritative() && IsOwner))
             {
                 m_RootParentTransform = GetRootParentTransform(transform);

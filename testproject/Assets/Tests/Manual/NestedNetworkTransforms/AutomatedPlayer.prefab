@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 6327137497379236391}
   - component: {fileID: 2204728973112518521}
   - component: {fileID: 1866518356433686547}
-  - component: {fileID: 2645854474244200924}
   m_Layer: 0
   m_Name: ChildOne
   m_TagString: Untagged
@@ -97,19 +96,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d8ad30fca3f9a240bdce16f0166033b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 5
---- !u!114 &2645854474244200924
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 772585991204072682}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf01cca54b77c0241ad6d9da5ef6a709, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -119,11 +105,22 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
-  RotAngleThreshold: 0.001
-  ScaleThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
   InLocalSpace: 1
   Interpolate: 1
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  RotationSpeed: 5
 --- !u!1 &2771624607751045562
 GameObject:
   m_ObjectHideFlags: 0
@@ -243,7 +240,6 @@ GameObject:
   - component: {fileID: 3062926429781172158}
   - component: {fileID: 1595868777393624541}
   - component: {fileID: 2914594030718603294}
-  - component: {fileID: 2888046383252644210}
   m_Layer: 0
   m_Name: ChildTwo
   m_TagString: Untagged
@@ -328,19 +324,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0d8ad30fca3f9a240bdce16f0166033b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RotationSpeed: 5
---- !u!114 &2888046383252644210
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6292214655028195304}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cf01cca54b77c0241ad6d9da5ef6a709, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
   SyncPositionX: 1
   SyncPositionY: 1
   SyncPositionZ: 1
@@ -350,11 +333,22 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
-  RotAngleThreshold: 0.001
-  ScaleThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
   InLocalSpace: 1
   Interpolate: 1
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  RotationSpeed: 5
 --- !u!1001 &8977898853425847701
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -520,11 +514,21 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
   Interpolate: 1
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!114 &7431853297519116304
 MonoBehaviour:
   m_ObjectHideFlags: 0

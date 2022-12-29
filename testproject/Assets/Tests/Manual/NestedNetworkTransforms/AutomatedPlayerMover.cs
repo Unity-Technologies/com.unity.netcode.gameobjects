@@ -18,6 +18,7 @@ namespace TestProject.RuntimeTests
     public class AutomatedPlayerMover : IntegrationNetworkTransform
     {
         public static bool StopMovement;
+        private bool m_LocalStopMovement;
         private float m_Speed = 15.0f;
         private float m_RotSpeed = 15.0f;
 
@@ -44,17 +45,6 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        private void LateUpdate()
-        {
-            if (CanCommitToTransform)
-            {
-                if (Input.GetKeyDown(KeyCode.Space))
-                {
-                    StopMovement = !StopMovement;
-                }
-            }
-        }
-
         protected override void Update()
         {
             if (!IsSpawned)
@@ -64,7 +54,12 @@ namespace TestProject.RuntimeTests
 
             if (CanCommitToTransform)
             {
-                if (!StopMovement)
+                if (Input.GetKeyDown(KeyCode.Space))
+                {
+                    m_LocalStopMovement = !m_LocalStopMovement;
+                }
+
+                if (!StopMovement && !m_LocalStopMovement)
                 {
                     m_Target.y = transform.position.y;
                     var distance = Vector3.Distance(transform.position, m_Target);
