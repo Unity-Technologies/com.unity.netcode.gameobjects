@@ -312,6 +312,12 @@ namespace Unity.Netcode.Components
                         if (IsTeleportingNextFrame)
                         {
                             serializer.SerializeValue(ref CurrentPosition);
+                            // If we are synchronizing too, then include the half vector position's
+                            // delta offset
+                            if (IsSynchronizing)
+                            {
+                                serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
+                            }
                         }
                         else
                         {
@@ -866,6 +872,8 @@ namespace Unity.Netcode.Components
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
                         networkState.CurrentPosition = m_HalfPositionState.FullPosition;
+                        networkState.HalfVectorPosition = m_HalfPositionState;
+                        networkState.IsSynchronizing = true;
                     }
                     networkState.HasPositionX = true;
                     networkState.HasPositionY = true;
@@ -1117,7 +1125,20 @@ namespace Unity.Netcode.Components
             else
             {
                 m_HalfPositionState = new HalfVector3(newState.CurrentPosition);
-                currentPosition = newState.CurrentPosition;
+                // Only if we are synchronizing and using half float values do we
+                // apply the delta offset as well
+                if (newState.IsSynchronizing)
+                {
+                    m_HalfPositionState.X = newState.HalfVectorPosition.X;
+                    m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
+                    m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
+                    currentPosition = m_HalfPositionState.ToVector3();
+                }
+                else
+                {
+                    currentPosition = newState.CurrentPosition;
+                }
+
                 if (Interpolate)
                 {
                     m_PositionXInterpolator.ResetTo(currentPosition.x, sentTime);
@@ -1453,7 +1474,7 @@ namespace Unity.Netcode.Components
             // This assures the initial spawning of the object synchronizes all connected clients
             // with the current transform values. This should not be placed within Initialize since
             // that can be invoked when ownership changes.
-            if (CanCommitToTransform)
+            if (CanCommitToTransform && !UseHalfFloatPrecision)
             {
                 var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
                 var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
@@ -1546,6 +1567,8 @@ namespace Unity.Netcode.Components
 
                 // Assure we no longer subscribe to the tick event
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+
+                ResetInterpolatedStateToCurrentAuthoritativeState();
             }
         }
 
