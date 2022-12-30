@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
     public class LinearMotionHandler : IntegrationNetworkTransform
     {
         public bool SimulateClient = false;
-        [Range(0.5f, 10.0f)]
+        [Range(0.5f, 100.0f)]
         public float Speed = 5.0f;
         public Directions StartingDirection;
         [Range(0.1f, 1000.0f)]
@@ -32,11 +32,19 @@ namespace TestProject.ManualTests
         [Tooltip("When true, it will randomly pick a new direction after DirectionDuration period of time has elapsed.")]
         public bool RandomDirections;
 
+        public Vector3 PositionOffset;
+
         public Text ServerPosition;
+        public Text ServerDelta;
+        public Text ServerCurrent;
+        public Text ServerFull;
         public Text ClientPosition;
         public Text ClientDelta;
         public Text TimeMoving;
         public Text DirectionText;
+
+        private bool m_StopMoving;
+        private float m_TotalTimeMoving;
 
         public enum Directions
         {
@@ -55,19 +63,29 @@ namespace TestProject.ManualTests
 
         private Vector3 m_Direction;
 
+
+        private HalfVector3 m_HalfVector3SimulatedClient = new HalfVector3();
+
+        private HalfVector3 m_HalfVector3Server = new HalfVector3();
+
         protected override void Awake()
         {
             base.Awake();
-
-            m_ServerPosition = transform.position;
-            m_ClientPosition = transform.position;
-            m_HalfVector3Simulated = new HalfVector3(m_ClientPosition);
             Camera.main.transform.parent = transform;
+            transform.position += PositionOffset;
+            m_ClientPosition = transform.position;
+            m_HalfVector3SimulatedClient = new HalfVector3(m_ClientPosition);
+            m_HalfVector3Server = new HalfVector3(m_ClientPosition);
+            m_ServerPosition = transform.position;
+            m_LastInterpolateState = Interpolate;
             ServerPosition.enabled = false;
             ClientPosition.enabled = false;
             ClientDelta.enabled = false;
             TimeMoving.enabled = false;
             DirectionText.enabled = false;
+            ServerDelta.enabled = false;
+            ServerCurrent.enabled = false;
+            ServerFull.enabled = false;
         }
 
         public override void OnNetworkSpawn()
@@ -82,6 +100,14 @@ namespace TestProject.ManualTests
                 TimeMoving.enabled = true;
                 DirectionText.enabled = true;
                 m_CurrentDirection = StartingDirection;
+                if (SimulateClient)
+                {
+                    m_StopMoving = true;
+                    ServerDelta.enabled = true;
+                    ServerCurrent.enabled = true;
+                    ServerFull.enabled = true;
+                    NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+                }
                 SetNextDirection(true);
                 SetPositionText();
                 UpdateTimeMoving();
@@ -91,6 +117,52 @@ namespace TestProject.ManualTests
                 ClientPositionVisual.SetActive(false);
                 ClientPosition.enabled = true;
                 ClientDelta.enabled = true;
+            }
+        }
+
+        private bool m_LastInterpolateState;
+        private void NetworkTickSystem_Tick()
+        {
+            if (SimulateClient)
+            {
+                var position = InLocalSpace? transform.localPosition: transform.position;
+                var isPositionDirty = m_LastInterpolateState != Interpolate;
+
+                ServerDelta.text = $"S-Delta:({m_HalfVector3Server.DeltaPosition.x}, {m_HalfVector3Server.DeltaPosition.y}, {m_HalfVector3Server.DeltaPosition.z})";
+                ServerCurrent.text = $"S-Curr:({m_HalfVector3Server.CurrentBasePosition.x}, {m_HalfVector3Server.CurrentBasePosition.y}, {m_HalfVector3Server.CurrentBasePosition.z})";
+                var fullPosition = m_HalfVector3Server.GetFullPosition();
+                ServerFull.text = $"S-Full:({fullPosition.x}, {fullPosition.y}, {fullPosition.z})";
+
+
+                if (isPositionDirty)
+                {
+                    m_HalfVector3SimulatedClient = new HalfVector3(position);
+                    m_HalfVector3Server = new HalfVector3(position);
+                    m_ClientPosition = position;
+                    OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
+                    m_LastInterpolateState = Interpolate;
+                    return;
+                }
+
+
+                var delta = position - m_HalfVector3Server.GetFullPosition();
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Mathf.Abs(delta[i]) >= PositionThreshold)
+                    {
+                        isPositionDirty = true;
+                        break;
+                    }
+                }
+                if (isPositionDirty)
+                {
+                    m_HalfVector3Server.FromVector3(ref position);
+                    m_HalfVector3SimulatedClient.X = m_HalfVector3Server.X;
+                    m_HalfVector3SimulatedClient.Y = m_HalfVector3Server.Y;
+                    m_HalfVector3SimulatedClient.Z = m_HalfVector3Server.Z;
+                    m_ClientPosition = m_HalfVector3SimulatedClient.ToVector3();
+                    OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
+                }
             }
         }
 
@@ -202,7 +274,6 @@ namespace TestProject.ManualTests
         }
 
 
-        private HalfVector3 m_HalfVector3Simulated = new HalfVector3();
         // We just apply our current direction with magnitude to our current position during fixed update
         private void FixedUpdate()
         {
@@ -221,18 +292,10 @@ namespace TestProject.ManualTests
                 rotation = Quaternion.LookRotation(m_Direction);
                 transform.position = position;
                 transform.rotation = rotation;
-
-                if (SimulateClient)
-                {
-                    m_HalfVector3Simulated.FromVector3(ref position);
-                    m_ClientPosition = m_HalfVector3Simulated.ToVector3();
-                    OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
-                }
             }
         }
 
-        private bool m_StopMoving;
-        private float m_TotalTimeMoving;
+
 
         private void UpdateTimeMoving()
         {
