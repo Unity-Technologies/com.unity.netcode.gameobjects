@@ -260,6 +260,7 @@ namespace Unity.Netcode.Components
             internal double SentTime;
 
             internal Vector3 CurrentPosition;
+            internal Vector3 DeltaPosition;
             internal HalfVector3 HalfVectorPosition;
             internal HalfVector4 HalfVectorRotation;
             internal uint QuaternionCompressed;
@@ -316,6 +317,7 @@ namespace Unity.Netcode.Components
                             // delta offset
                             if (IsSynchronizing)
                             {
+                                serializer.SerializeValue(ref DeltaPosition);
                                 serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
                             }
                         }
@@ -487,9 +489,9 @@ namespace Unity.Netcode.Components
             }
         }
 
-        public bool UseQuaternionSynchronization = true;
-        public bool UseQuaternionCompression = true;
-        public bool UseHalfFloatPrecision = true;
+        public bool UseQuaternionSynchronization = false;
+        public bool UseQuaternionCompression = false;
+        public bool UseHalfFloatPrecision = false;
 
         /// <summary>
         /// The current position threshold value
@@ -621,6 +623,12 @@ namespace Unity.Netcode.Components
         /// </remarks>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
         {
+            //TODO: With half float precision, we need to determine lossy scale
+            if (!UseHalfFloatPrecision && NetworkObject.gameObject == gameObject)
+            {
+                return;
+            }
+
             var synchronizationState = new NetworkTransformState();
             if (serializer.IsWriter)
             {
@@ -839,11 +847,10 @@ namespace Unity.Netcode.Components
                 isPositionDirty = networkState.IsTeleportingNextFrame;
                 if (!isPositionDirty)
                 {
-                    var delta = m_HalfPositionState.FullPosition - position;
+                    var delta = position - m_HalfPositionState.GetFullPosition();
                     for (int i = 0; i < 3; i++)
                     {
-                        delta[i] = Mathf.Abs(delta[i]);
-                        if (delta[i] >= PositionThreshold)
+                        if (Mathf.Abs(delta[i]) >= PositionThreshold)
                         {
                             isPositionDirty = true;
                             break;
@@ -871,8 +878,9 @@ namespace Unity.Netcode.Components
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
-                        networkState.CurrentPosition = m_HalfPositionState.FullPosition;
+                        networkState.CurrentPosition = m_HalfPositionState.CurrentBasePosition;
                         networkState.HalfVectorPosition = m_HalfPositionState;
+                        networkState.DeltaPosition = m_HalfPositionState.DeltaPosition;
                         networkState.IsSynchronizing = true;
                     }
                     networkState.HasPositionX = true;
@@ -1129,9 +1137,10 @@ namespace Unity.Netcode.Components
                 // apply the delta offset as well
                 if (newState.IsSynchronizing)
                 {
-                    m_HalfPositionState.X = newState.HalfVectorPosition.X;
-                    m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
-                    m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
+                    //m_HalfPositionState.X = newState.HalfVectorPosition.X;
+                    //m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
+                    //m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
+                    m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
                     currentPosition = m_HalfPositionState.ToVector3();
                 }
                 else
