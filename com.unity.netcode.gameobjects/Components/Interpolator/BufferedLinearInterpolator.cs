@@ -317,7 +317,7 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Quaternion.Lerp(start, end, time);
+            return Quaternion.Slerp(start, end, time);
         }
 
         /// <inheritdoc />
@@ -325,7 +325,37 @@ namespace Unity.Netcode
         {
             // Disabling Extrapolation:
             // TODO: Add Jira Ticket
-            return Quaternion.Lerp(start, end, time);
+            return Quaternion.Slerp(start, end, time);
+        }
+    }
+
+    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
+    {
+        public bool IsSlerp;
+        /// <inheritdoc />
+        protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
+        {
+            if (IsSlerp)
+            {
+                return Vector3.Slerp(start, end, time);
+            }
+            else
+            {
+                return Vector3.Lerp(start, end, time);
+            }
+        }
+
+        /// <inheritdoc />
+        protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
+        {
+            if (IsSlerp)
+            {
+                return Vector3.Slerp(start, end, time);
+            }
+            else
+            {
+                return Vector3.Lerp(start, end, time);
+            }
         }
     }
 }
