@@ -22,6 +22,8 @@ namespace TestProject.ManualTests
 
         private Transform m_RootParentTransform;
 
+        public bool RotateBasedOnDirection = false;
+
         public bool IsAuthority()
         {
             return CanCommitToTransform;
@@ -31,8 +33,8 @@ namespace TestProject.ManualTests
         {
             if (IsSpawned && CanCommitToTransform)
             {
-                var rotateDirection = movementDirection * RotationSpeed;
-                transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), rotateDirection);
+                var rotateDirection = RotateBasedOnDirection ? movementDirection * RotationSpeed : RotationSpeed;
+                transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), RotationSpeed);
             }
         }
 
