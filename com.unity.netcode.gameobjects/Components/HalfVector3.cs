@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -20,6 +21,7 @@ namespace Unity.Netcode.Components
         public Vector3 CurrentBasePosition;
         public Vector3 InternalFullPosition;
         internal Vector3 PrecisionLossDelta;
+        internal Vector3 HalfDeltaConvertedBack;
         public Vector3 DeltaPosition;
 
         /// <summary>
@@ -40,9 +42,7 @@ namespace Unity.Netcode.Components
         /// on all instances. This is why we don't just apply the delta per update but wait for it
         /// to reach a maximum threshold value of half the downward adjusted value.
         /// </remarks>
-        private const float k_MaxDeltaBeforeAdjustment = 32.0f;// (64504 * k_PrecisionAdjustmentDown);
-        private const float k_PrecisionAdjustmentUp = 1.0f;
-        private const float k_PrecisionAdjustmentDown = 1.0f;
+        private const float k_MaxDeltaBeforeAdjustment = 16.0f;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -58,11 +58,13 @@ namespace Unity.Netcode.Components
         /// !!! Should be only called once per state update !!!
         /// </remarks>
         /// <returns><see cref="Vector3"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVector3()
         {
-            DeltaPosition.x = Mathf.HalfToFloat(X) * k_PrecisionAdjustmentDown;
-            DeltaPosition.y = Mathf.HalfToFloat(Y) * k_PrecisionAdjustmentDown;
-            DeltaPosition.z = Mathf.HalfToFloat(Z) * k_PrecisionAdjustmentDown;
+            DeltaPosition.x = Mathf.HalfToFloat(X);
+            DeltaPosition.y = Mathf.HalfToFloat(Y);
+            DeltaPosition.z = Mathf.HalfToFloat(Z);
+
             // If we exceed or are equal to the maximum delta value then we need to
             // apply the delta to the full position value and reset the delta position.
             if (Mathf.Abs(DeltaPosition.x) >= k_MaxDeltaBeforeAdjustment)
@@ -89,6 +91,7 @@ namespace Unity.Netcode.Components
             return CurrentBasePosition + DeltaPosition;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetFullPosition()
         {
             return CurrentBasePosition + DeltaPosition;
@@ -101,37 +104,28 @@ namespace Unity.Netcode.Components
         /// This include precision loss adjustments.
         /// </remarks>
         /// <param name="vector3">the full <see cref="Vector3"/> to generate a delta from</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FromVector3(ref Vector3 vector3)
         {
-
-
-            /// !!!!!!!!!!!!!!! CURRENT ISSUE !!!!!!!!!!!!!!!!!!!
-            /// With the below changes we are back to the issue with out of synch deltas
-            /// "Whack-A-Mole!!!!"
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
 
-            X = Mathf.FloatToHalf(DeltaPosition.x * k_PrecisionAdjustmentUp);
-            Y = Mathf.FloatToHalf(DeltaPosition.y * k_PrecisionAdjustmentUp);
-            Z = Mathf.FloatToHalf(DeltaPosition.z * k_PrecisionAdjustmentUp);
+            X = Mathf.FloatToHalf(DeltaPosition.x);
+            Y = Mathf.FloatToHalf(DeltaPosition.y);
+            Z = Mathf.FloatToHalf(DeltaPosition.z);
 
-            var deltaBack = new Vector3(Mathf.HalfToFloat(X) * k_PrecisionAdjustmentDown, Mathf.HalfToFloat(Y) * k_PrecisionAdjustmentDown, Mathf.HalfToFloat(Z) * k_PrecisionAdjustmentDown);
-            PrecisionLossDelta = DeltaPosition - deltaBack;
+            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X);
+            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y);
+            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z);
 
-            if (Mathf.Abs(deltaBack.x) >= k_MaxDeltaBeforeAdjustment)
+            PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
+
+            for(int i = 0; i < 3; i++)
             {
-                CurrentBasePosition.x += deltaBack.x;
+                if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= k_MaxDeltaBeforeAdjustment)
+                {
+                    CurrentBasePosition[i] += HalfDeltaConvertedBack[i];
+                }
             }
-
-            if (Mathf.Abs(deltaBack.y) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.y += deltaBack.y;
-            }
-
-            if (Mathf.Abs(deltaBack.z) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.z += deltaBack.z;
-            }
-
             InternalFullPosition = vector3;
         }
 
@@ -145,7 +139,7 @@ namespace Unity.Netcode.Components
             InternalFullPosition = vector3;
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
-
+            HalfDeltaConvertedBack = Vector3.zero;
             FromVector3(ref vector3);
         }
 
@@ -160,7 +154,7 @@ namespace Unity.Netcode.Components
             InternalFullPosition = vector3;
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
-
+            HalfDeltaConvertedBack = Vector3.zero;
             FromVector3(ref vector3);
         }
     }
