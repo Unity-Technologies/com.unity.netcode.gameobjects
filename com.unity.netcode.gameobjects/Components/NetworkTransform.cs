@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -646,6 +647,7 @@ namespace Unity.Netcode.Components
 
                 // Teleport/Fully Initialize based on the state
                 ApplyTeleportingState(synchronizationState);
+
                 m_LocalAuthoritativeNetworkState = synchronizationState;
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
@@ -870,8 +872,9 @@ namespace Unity.Netcode.Components
                         else // Otherwise, just synchronize the delta position value
                         {
                             m_HalfPositionState.FromVector3(ref position);
-                            networkState.HalfVectorPosition = m_HalfPositionState;
                         }
+
+                        networkState.HalfVectorPosition = m_HalfPositionState;
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
@@ -880,6 +883,10 @@ namespace Unity.Netcode.Components
                             networkState.CurrentPosition = m_HalfPositionState.CurrentBasePosition;
                             networkState.HalfVectorPosition = m_HalfPositionState;
                             networkState.DeltaPosition = m_HalfPositionState.DeltaPosition;
+                        }
+                        else
+                        {
+                            networkState.CurrentPosition = position;
                         }
                     }
                     networkState.HasPositionX = true;
@@ -1144,16 +1151,23 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                m_HalfPositionState = new HalfVector3(newState.CurrentPosition);
                 // Only if we are synchronizing and using half float values do we
                 // apply the delta offset as well
                 if (isSynchronization)
                 {
-                    m_HalfPositionState.X = newState.HalfVectorPosition.X;
-                    m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
-                    m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
-                    m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
-                    currentPosition = m_HalfPositionState.ToVector3();
+                    m_HalfPositionState = new HalfVector3(newState.CurrentPosition);
+                    if (ShouldSynchronizeHalfFloat(NetworkManager.LocalClientId))
+                    {
+                        m_HalfPositionState.X = newState.HalfVectorPosition.X;
+                        m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
+                        m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
+                        m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
+                        currentPosition = m_HalfPositionState.ToVector3();
+                    }
+                    else
+                    {
+                        currentPosition = newState.CurrentPosition;
+                    }
                 }
                 else
                 {
@@ -1501,6 +1515,7 @@ namespace Unity.Netcode.Components
             TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
         }
 
+        private bool m_AuthorityShouldUpdate;
         /// <summary>
         /// Authority subscribes to network tick events
         /// </summary>
@@ -1509,8 +1524,9 @@ namespace Unity.Netcode.Components
             // As long as we are still authority
             if (CanCommitToTransform)
             {
-                // Update any changes to the transform
-                UpdateAuthoritativeState(transform);
+                m_AuthorityShouldUpdate = true;
+                //// Update any changes to the transform
+                //UpdateAuthoritativeState(transform);
             }
             else
             {
@@ -1521,8 +1537,6 @@ namespace Unity.Netcode.Components
                 }
             }
         }
-
-        private bool m_ShouldSynchronize;
 
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
@@ -1542,7 +1556,7 @@ namespace Unity.Netcode.Components
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
-                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time, UseHalfFloatPrecision);
+                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
             }
         }
 
@@ -1550,6 +1564,7 @@ namespace Unity.Netcode.Components
         public override void OnNetworkDespawn()
         {
             ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            CanCommitToTransform = false;
             if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
             {
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
@@ -1563,6 +1578,7 @@ namespace Unity.Netcode.Components
             {
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
             }
+            CanCommitToTransform = false;
             base.OnDestroy();
             m_ReplicatedNetworkStateServer.Dispose();
             m_ReplicatedNetworkStateOwner.Dispose();
@@ -1619,6 +1635,8 @@ namespace Unity.Netcode.Components
                 // Authority subscribes to the tick event and only updates once
                 // per tick
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+
+                StartCoroutine(AuthorityUpdate());
             }
             else
             {
@@ -1629,8 +1647,29 @@ namespace Unity.Netcode.Components
                 // Assure we no longer subscribe to the tick event
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
-                ResetInterpolatedStateToCurrentAuthoritativeState();
+                if (!UseHalfFloatPrecision)
+                {
+                    ResetInterpolatedStateToCurrentAuthoritativeState();
+                }
+
+                //ResetInterpolatedStateToCurrentAuthoritativeState();
             }
+        }
+
+        private IEnumerator AuthorityUpdate()
+        {
+            var waitPeriod =  new WaitForFixedUpdate();
+            while(CanCommitToTransform)
+            {
+                if( m_AuthorityShouldUpdate)
+                {
+                    // Update any changes to the transform
+                    UpdateAuthoritativeState(transform);
+                    m_AuthorityShouldUpdate = false;
+                }
+                yield return waitPeriod;
+            }
+            yield break;
         }
 
         /// <summary>
