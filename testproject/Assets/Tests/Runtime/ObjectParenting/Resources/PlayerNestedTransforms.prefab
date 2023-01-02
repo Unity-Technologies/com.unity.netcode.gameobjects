@@ -105,15 +105,25 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  SlerpPosition: 1
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
-  UsePositionDeltaCompression: 0
+  UseHalfFloatPrecision: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
   Interpolate: 0
+  DebugTransform: 0
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   RotationSpeed: 5
+  RotateBasedOnDirection: 0
 --- !u!1 &6307603743893504780
 GameObject:
   m_ObjectHideFlags: 0
@@ -144,7 +154,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6307603743893504780}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 2, y: 2, z: 2}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -247,7 +257,7 @@ MonoBehaviour:
   ChildMovers:
   - {fileID: 5364894993557538628}
   - {fileID: 8927942917638178633}
-  TriggerDistanceToMove: 0.1
+  TriggerDistanceToMove: 0.2
   PlayerCamera: {fileID: 0}
 --- !u!114 &1804311265969550177
 MonoBehaviour:
@@ -270,14 +280,23 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  SlerpPosition: 0
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
-  UsePositionDeltaCompression: 0
+  UseHalfFloatPrecision: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
   Interpolate: 0
+  DebugTransform: 0
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &6425543486096047037
 GameObject:
   m_ObjectHideFlags: 0
@@ -383,15 +402,25 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  SlerpPosition: 1
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
-  UsePositionDeltaCompression: 0
+  UseHalfFloatPrecision: 0
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
   Interpolate: 0
+  DebugTransform: 0
+  IsServerAuthoritative: 1
+  LastUpdatedPosition: {x: 0, y: 0, z: 0}
+  LastUpdatedScale: {x: 0, y: 0, z: 0}
+  LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
+  PreviousUpdatedScale: {x: 0, y: 0, z: 0}
+  PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   RotationSpeed: 5
+  RotateBasedOnDirection: 0
 --- !u!1 &8494372709139388141
 GameObject:
   m_ObjectHideFlags: 0
