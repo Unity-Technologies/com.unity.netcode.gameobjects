@@ -273,9 +273,10 @@ namespace Unity.Netcode.Components
             // dirty or not.
             internal bool IsDirty;
 
-#if DEBUG_NETWORKTRANSFORM
-            // Used for integration testing and debugging.
+            // Used for HalfVector3 delta position synchronization
             internal int NetworkTick;
+
+#if DEBUG_NETWORKTRANSFORM
             // Used for integration testing and debugging.
             // This will get incremented each time the state is set
             internal int StateId;
