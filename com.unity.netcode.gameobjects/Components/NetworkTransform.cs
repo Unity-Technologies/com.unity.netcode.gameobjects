@@ -488,7 +488,20 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool SyncScaleZ = true;
 
-
+        /// <summary>
+        /// When set to true and interpolate is enabled, this
+        /// will interpolate using Slerp which is useful if your
+        /// object's motion is of a circular/Bézier curve like
+        /// path.
+        ///
+        /// !!NOTE!!: Currently this is not synchronized if changed
+        /// during runtime!
+        ///
+        /// TODO: We need to provide a better way to expose more
+        /// modularity to interpolation.
+        ///
+        /// </summary>
+        [Tooltip("When enabled the interpolator uses Slerp for circular/Bézier curve motion models.")]
         public bool SlerpPosition = false;
 
         private bool SynchronizeScale
@@ -977,7 +990,7 @@ namespace Unity.Netcode.Components
                 networkState.Rotation = InLocalSpace ? transform.localRotation : transform.rotation;
             }
 
-            // Only if we are not synchronizing do we want to invoke this
+            // Only if we are not synchronizing...
             if (!isSynchronization)
             {
                 if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
@@ -1050,13 +1063,13 @@ namespace Unity.Netcode.Components
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
             if (Interpolate)
             {
+                var interpolatedPosition = m_BufferedLinearInterpolatorVector3.GetInterpolatedValue();
                 if (UseHalfFloatPrecision)
                 {
-                    adjustedPosition = m_BufferedLinearInterpolatorVector3.GetInterpolatedValue();
+                    adjustedPosition = interpolatedPosition;
                 }
                 else
                 {
-                    var interpolatedPosition = m_BufferedLinearInterpolatorVector3.GetInterpolatedValue();
                     if (SyncPositionX) { adjustedPosition.x = interpolatedPosition.x; }
                     if (SyncPositionY) { adjustedPosition.y = interpolatedPosition.y; }
                     if (SyncPositionZ) { adjustedPosition.z = interpolatedPosition.z; }
