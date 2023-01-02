@@ -9,13 +9,14 @@ public class ServerHostClientText : NetworkBehaviour
     private Color m_Color;
     private Vector3 m_LocalPosition;
 
+    public void SetColor(Color color)
+    {
+        m_Color = color;
+    }
+
     private void Awake()
     {
         m_LocalPosition = transform.localPosition;
-    }
-
-    private void Start()
-    {
         if (m_DisplayText != null)
         {
             m_DisplayText.text = string.Empty;
@@ -33,7 +34,7 @@ public class ServerHostClientText : NetworkBehaviour
             }
             else if (NetworkManager.IsClient)
             {
-                m_DisplayText.text = "Client";
+                m_DisplayText.text = $"Client-{NetworkManager.LocalClientId}";
             }
         }
         transform.localPosition = m_LocalPosition;

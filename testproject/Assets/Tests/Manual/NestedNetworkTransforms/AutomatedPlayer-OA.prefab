@@ -107,21 +107,22 @@ MonoBehaviour:
   SyncScaleZ: 1
   SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
+  UseQuaternionCompression: 1
   UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 1
   Interpolate: 1
-  IsServerAuthoritative: 1
+  DebugTransform: 0
+  IsServerAuthoritative: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
-  RotationSpeed: 5
+  RotationSpeed: 7.4
   RotateBasedOnDirection: 0
 --- !u!1 &2771624607751045562
 GameObject:
@@ -337,21 +338,22 @@ MonoBehaviour:
   SyncScaleZ: 1
   SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
+  UseQuaternionCompression: 1
   UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 1
   Interpolate: 1
-  IsServerAuthoritative: 1
+  DebugTransform: 0
+  IsServerAuthoritative: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
-  RotationSpeed: 5
+  RotationSpeed: 7.4
   RotateBasedOnDirection: 0
 --- !u!1001 &8977898853425847701
 PrefabInstance:
@@ -457,7 +459,7 @@ PrefabInstance:
     - target: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
         type: 3}
       propertyPath: m_Name
-      value: AutomatedPlayer
+      value: AutomatedPlayer-OA
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 8685790303553767876, guid: 96e0a72e30d0c46c8a5c9a750e8f5807, type: 3}
@@ -527,7 +529,8 @@ MonoBehaviour:
   ScaleThreshold: 0.001
   InLocalSpace: 0
   Interpolate: 1
-  IsServerAuthoritative: 1
+  DebugTransform: 0
+  IsServerAuthoritative: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
