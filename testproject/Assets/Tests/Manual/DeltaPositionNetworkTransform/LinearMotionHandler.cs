@@ -23,7 +23,7 @@ namespace TestProject.ManualTests
     public class LinearMotionHandler : IntegrationNetworkTransform
     {
         public bool SimulateClient = false;
-        [Range(0.5f, 100.0f)]
+        [Range(0f, 100.0f)]
         public float Speed = 5.0f;
         public Directions StartingDirection;
         [Range(0.1f, 1000.0f)]
