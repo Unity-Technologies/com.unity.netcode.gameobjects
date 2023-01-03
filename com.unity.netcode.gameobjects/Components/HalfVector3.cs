@@ -22,10 +22,13 @@ namespace Unity.Netcode.Components
 
         internal Vector3 PrecisionLossDelta;
         internal Vector3 HalfDeltaConvertedBack;
+        internal Vector3 PreviousPosition;
         public Vector3 DeltaPosition;
         internal int NetworkTick;
 
-        private const float k_MaxDeltaBeforeAdjustment = 999.0f;
+        private const float k_MaxDeltaBeforeAdjustment = 128.0f;
+        private const float k_AdjustmentUp = 100.0f;
+        private const float k_AdjustmentDown = 0.01f;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -52,9 +55,9 @@ namespace Unity.Netcode.Components
                 return CurrentBasePosition + DeltaPosition;
             }
 
-            DeltaPosition.x = Mathf.HalfToFloat(X);
-            DeltaPosition.y = Mathf.HalfToFloat(Y);
-            DeltaPosition.z = Mathf.HalfToFloat(Z);
+            DeltaPosition.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
+            DeltaPosition.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
+            DeltaPosition.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
 
             // If we exceed or are equal to the maximum delta value then we need to
             // apply the delta to the CurrentBasePosition value and reset the delta
@@ -100,13 +103,13 @@ namespace Unity.Netcode.Components
             NetworkTick = tick;
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
 
-            X = Mathf.FloatToHalf(DeltaPosition.x);
-            Y = Mathf.FloatToHalf(DeltaPosition.y);
-            Z = Mathf.FloatToHalf(DeltaPosition.z);
+            X = Mathf.FloatToHalf(DeltaPosition.x * k_AdjustmentUp);
+            Y = Mathf.FloatToHalf(DeltaPosition.y * k_AdjustmentUp);
+            Z = Mathf.FloatToHalf(DeltaPosition.z * k_AdjustmentUp);
 
-            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X);
-            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y);
-            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z);
+            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
+            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
+            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
 
             PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
 
@@ -119,6 +122,7 @@ namespace Unity.Netcode.Components
                     DeltaPosition[i] = 0.0f;
                 }
             }
+            PreviousPosition = vector3;
         }
 
         /// <summary>
@@ -129,6 +133,7 @@ namespace Unity.Netcode.Components
             X = Y = Z = 0;
             NetworkTick = networkTick;
             CurrentBasePosition = vector3;
+            PreviousPosition = vector3;
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
             HalfDeltaConvertedBack = Vector3.zero;
@@ -144,6 +149,7 @@ namespace Unity.Netcode.Components
             NetworkTick = networkTick;
             var vector3 = new Vector3(x, y, z);
             CurrentBasePosition = vector3;
+            PreviousPosition = vector3;
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
             HalfDeltaConvertedBack = Vector3.zero;

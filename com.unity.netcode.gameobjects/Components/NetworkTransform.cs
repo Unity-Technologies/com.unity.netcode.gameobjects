@@ -882,7 +882,7 @@ namespace Unity.Netcode.Components
                 // For HalfVector3, if any axial value is dirty then we always send a full update
                 if (!isPositionDirty)
                 {
-                    var delta = position - m_HalfPositionState.GetFullPosition();
+                    var delta = position - m_HalfPositionState.PreviousPosition;
                     for (int i = 0; i < 3; i++)
                     {
                         if (Mathf.Abs(delta[i]) >= PositionThreshold)
