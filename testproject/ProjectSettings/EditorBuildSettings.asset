@@ -122,6 +122,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tests/Manual/DeltaPositionNetworkTransform/DeltaPositionTest.unity
     guid: 19c7c7fb95b74684d8d8f8429b8d4ee5
+  - enabled: 1
+    path: Assets/Tests/Manual/NestedNetworkTransforms/LerpVsSlerpScene.unity
+    guid: 54ca4944ec2b95640a68bc35403a4977
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 5a3d5c53c25349c48912726ae850f3b0,
       type: 2}
