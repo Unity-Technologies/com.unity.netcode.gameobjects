@@ -48,7 +48,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
-        internal struct NetworkTransformState : INetworkSerializable
+        public struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
             private const int k_PositionXBit = 1;
@@ -66,11 +66,12 @@ namespace Unity.Netcode.Components
             private const int k_QuaternionCompress = 13;
             private const int k_UseHalfFloats = 14;
             private const int k_Synchronization = 15;
-            // 15: <unused>
+            private const int k_PositionSlerp = 16;
 
-            private ushort m_Bitset;
 
-            internal bool InLocalSpace
+            private uint m_Bitset;
+
+            public bool InLocalSpace
             {
                 get => BitGet(k_InLocalSpaceBit);
                 set
@@ -80,7 +81,7 @@ namespace Unity.Netcode.Components
             }
 
             // Position
-            internal bool HasPositionX
+            public bool HasPositionX
             {
                 get => BitGet(k_PositionXBit);
                 set
@@ -89,7 +90,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasPositionY
+            public bool HasPositionY
             {
                 get => BitGet(k_PositionYBit);
                 set
@@ -98,7 +99,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasPositionZ
+            public bool HasPositionZ
             {
                 get => BitGet(k_PositionZBit);
                 set
@@ -107,7 +108,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasPositionChange
+            public bool HasPositionChange
             {
                 get
                 {
@@ -116,7 +117,7 @@ namespace Unity.Netcode.Components
             }
 
             // RotAngles
-            internal bool HasRotAngleX
+            public bool HasRotAngleX
             {
                 get => BitGet(k_RotAngleXBit);
                 set
@@ -125,7 +126,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasRotAngleY
+            public bool HasRotAngleY
             {
                 get => BitGet(k_RotAngleYBit);
                 set
@@ -134,7 +135,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasRotAngleZ
+            public bool HasRotAngleZ
             {
                 get => BitGet(k_RotAngleZBit);
                 set
@@ -143,7 +144,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasRotAngleChange
+            public bool HasRotAngleChange
             {
                 get
                 {
@@ -152,7 +153,7 @@ namespace Unity.Netcode.Components
             }
 
             // Scale
-            internal bool HasScaleX
+            public bool HasScaleX
             {
                 get => BitGet(k_ScaleXBit);
                 set
@@ -161,7 +162,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasScaleY
+            public bool HasScaleY
             {
                 get => BitGet(k_ScaleYBit);
                 set
@@ -170,7 +171,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasScaleZ
+            public bool HasScaleZ
             {
                 get => BitGet(k_ScaleZBit);
                 set
@@ -179,7 +180,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool HasScaleChange
+            public bool HasScaleChange
             {
                 get
                 {
@@ -187,7 +188,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool IsTeleportingNextFrame
+            public bool IsTeleportingNextFrame
             {
                 get => BitGet(k_TeleportingBit);
                 set
@@ -196,7 +197,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool UseInterpolation
+            public bool UseInterpolation
             {
                 get => BitGet(k_Interpolate);
                 set
@@ -205,7 +206,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool QuaternionSync
+            public bool QuaternionSync
             {
                 get => BitGet(k_QuaternionSync);
                 set
@@ -214,7 +215,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool QuaternionCompression
+            public bool QuaternionCompression
             {
                 get => BitGet(k_QuaternionCompress);
                 set
@@ -223,7 +224,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool UseHalfFloatPrecision
+            public bool UseHalfFloatPrecision
             {
                 get => BitGet(k_UseHalfFloats);
                 set
@@ -232,12 +233,21 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            internal bool IsSynchronizing
+            public bool IsSynchronizing
             {
                 get => BitGet(k_Synchronization);
                 set
                 {
                     BitSet(value, k_Synchronization);
+                }
+            }
+
+            public bool UsePositionSlerp
+            {
+                get => BitGet(k_PositionSlerp);
+                set
+                {
+                    BitSet(value, k_PositionSlerp);
                 }
             }
 
@@ -250,14 +260,18 @@ namespace Unity.Netcode.Components
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void BitSet(bool set, int bitPosition)
             {
-                if (set) { m_Bitset = (ushort)(m_Bitset | (1 << bitPosition)); }
-                else { m_Bitset = (ushort)(m_Bitset & ~(1 << bitPosition)); }
+                if (set) { m_Bitset = (m_Bitset | (uint)(1 << bitPosition)); }
+                else { m_Bitset = (uint)(m_Bitset & (uint)~(1 << bitPosition)); }
             }
 
             internal float PositionX, PositionY, PositionZ;
             internal float RotAngleX, RotAngleY, RotAngleZ;
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
+            public double GetSentTime()
+            {
+                return SentTime;
+            }
 
             // Used for HalfVector3 delta position updates
             internal Vector3 CurrentPosition;
@@ -271,34 +285,50 @@ namespace Unity.Netcode.Components
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
-            internal bool IsDirty;
+            public bool IsDirty { get; internal set; }
 
             // Used for HalfVector3 delta position synchronization
             internal int NetworkTick;
 
-#if DEBUG_NETWORKTRANSFORM
-            // Used for integration testing and debugging.
-            // This will get incremented each time the state is set
+            public int GetNetworkTick()
+            {
+                return NetworkTick;
+            }
+
+            internal bool TrackByStateId;
             internal int StateId;
-            // The real values of the authority's position and rotation
-            // at the time the state was updated. This should be the same
-            // as non-authority sides when not using half precision
-            internal Vector3 AuthTickPosition;
-            internal Quaternion AuthTickRotation;
-#endif
+
             /// <summary>
-            /// This will reset the NetworkTransform BitSet
+            /// This will reset the NetworkTransform state's internal flags
             /// </summary>
-            internal void ClearBitSetForNextTick()
+            public void ClearBitSetForNextTick()
             {
                 // Preserve the global flags
-                var preserveFlags = (ushort)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | (1 << k_UseHalfFloats) | (1 << k_QuaternionSync) | (1 << k_QuaternionCompress));
+                var preserveFlags = (uint)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | (1 << k_UseHalfFloats) | (1 << k_QuaternionSync) | (1 << k_QuaternionCompress) | (1 << k_PositionSlerp));
                 m_Bitset &= preserveFlags;
                 IsDirty = false;
             }
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
+                if (TrackByStateId)
+                {
+                    var stateId = StateId;
+                    if (IsSynchronizing)
+                    {
+                        StateId = -1;
+                    }
+                    else
+                    {
+                        if (serializer.IsWriter)
+                        {
+                            StateId++;
+                        }
+                        serializer.SerializeValue(ref StateId);
+                    }
+                }
+
+
                 serializer.SerializeValue(ref SentTime);
                 serializer.SerializeValue(ref m_Bitset);
 
@@ -309,9 +339,7 @@ namespace Unity.Netcode.Components
                 {
                     serializer.SerializeValue(ref NetworkTick);
                 }
-#if DEBUG_NETWORKTRANSFORM
-                serializer.SerializeValue(ref StateId);
-#endif
+
                 if (HasPositionChange)
                 {
                     // If using half precision, we always send the full Vector3
@@ -560,9 +588,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool CanCommitToTransform { get; protected set; }
 
-#if DEBUG_NETWORKTRANSFORM
-        public bool DebugTransform;
-#endif
 
         /// <summary>
         /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
@@ -612,18 +637,72 @@ namespace Unity.Netcode.Components
         private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
         // Used by integration test
-        private NetworkTransformState m_LastSentState;
+        internal NetworkTransformState LastSentState;
+
+        protected void UpdatePositionInterpolator(Vector3 position, double time, bool resetInterpolator = false)
+        {
+            if (!CanCommitToTransform)
+            {
+                //var position = InLocalSpace ? transform.localPosition : transform.position;
+                if (resetInterpolator)
+                {
+                    m_BufferedLinearInterpolatorVector3.ResetTo(position, time);
+                }
+                else
+                {
+                    m_BufferedLinearInterpolatorVector3.AddMeasurement(position, time);
+                }
+            }
+        }
+
+#if DEBUG_NETWORKTRANSFORM
+        /// <summary>
+        /// For debugging delta position and half vector3
+        /// </summary>
+        protected delegate void AddLogEntryHandler(ref NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
+        protected AddLogEntryHandler m_AddLogEntry;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddLogEntry(ref NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false)
+        {
+            m_AddLogEntry?.Invoke(ref networkTransformState, targetClient, preUpdate);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected int GetStateId(ref NetworkTransformState state)
+        {
+            return state.StateId;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected HalfVector3 GetHalfPositionState()
+        {
+            return m_HalfPositionState;
+        }
+
+#else
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void AddLogEntry(ref NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false)
+        {
+        }
+#endif
+
+
+
 
         /// <summary>
         /// Only used when UseHalfFloatPrecision is enabled
         /// </summary>
         private HalfVector3 m_HalfPositionState = new HalfVector3();
 
-        internal NetworkTransformState GetLastSentState()
+        internal void UpdatePositionSlerp()
         {
-            return m_LastSentState;
+            if (m_BufferedLinearInterpolatorVector3 != null)
+            {
+                m_BufferedLinearInterpolatorVector3.IsSlerp = SlerpPosition;
+            }
         }
-
 
         /// <summary>
         /// Determines if synchronization is needed.
@@ -652,9 +731,6 @@ namespace Unity.Netcode.Components
 
             if (serializer.IsWriter)
             {
-#if DEBUG_NETWORKTRANSFORM
-                synchronizationState.StateId = -1;
-#endif
                 synchronizationState.IsTeleportingNextFrame = true;
                 if (UseHalfFloatPrecision)
                 {
@@ -674,6 +750,8 @@ namespace Unity.Netcode.Components
                 UseQuaternionSynchronization = synchronizationState.QuaternionSync;
                 UseHalfFloatPrecision = synchronizationState.UseHalfFloatPrecision;
                 UseQuaternionCompression = synchronizationState.QuaternionCompression;
+                SlerpPosition = synchronizationState.UsePositionSlerp;
+                UpdatePositionSlerp();
 
                 // Teleport/Fully Initialize based on the state
                 ApplyTeleportingState(synchronizationState);
@@ -703,7 +781,7 @@ namespace Unity.Netcode.Components
             // If we are authority, update the authoritative state
             if (CanCommitToTransform)
             {
-                UpdateAuthoritativeState(transform);
+                OnUpdateAuthoritativeState(ref transformToCommit);
             }
             else // Non-Authority
             {
@@ -722,11 +800,39 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Invoked just prior to being updated to non-authority instances
+        /// </summary>
+        /// <param name="networkTransformState">the state being pushed</param>
+        protected virtual void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+        {
+        }
+
+        /// <summary>
+        /// Only invoked when there is a state update to push
+        /// </summary>
+        private void PushTransformState()
+        {
+            // With half float precision (HalfVector3 for now), we need to track the network tick
+            if (UseHalfFloatPrecision)
+            {
+                // Set the current tick
+                m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
+            }
+
+            OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
+            // "push"/commit the state
+            ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+
+            // For integration testing
+            LastSentState = m_LocalAuthoritativeNetworkState;
+        }
+
+        /// <summary>
         /// Authoritative side only
         /// If there are any transform delta states, this method will synchronize the
         /// state with all non-authority instances.
         /// </summary>
-        private void TryCommitTransform(Transform transformToCommit, double dirtyTime, bool synchronize = false)
+        private void TryCommitTransform(ref Transform transformToCommit, bool synchronize = false)
         {
             if (!CanCommitToTransform && !IsOwner)
             {
@@ -735,26 +841,10 @@ namespace Unity.Netcode.Components
             }
 
             // If the transform has deltas (returns dirty) then...
-            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, dirtyTime, transformToCommit, synchronize))
+            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, NetworkManager.ServerTime.Time, transformToCommit, synchronize))
             {
-#if DEBUG_NETWORKTRANSFORM
-                m_LocalAuthoritativeNetworkState.AuthTickPosition = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
-                m_LocalAuthoritativeNetworkState.AuthTickRotation = InLocalSpace ? transformToCommit.localRotation : transformToCommit.rotation;
-                // Increment our state ID, this is useful to match state updates when debugging a NetworkTransform (i.e. Debug Transform checked)
-                m_LocalAuthoritativeNetworkState.StateId++;
-#endif
-                // With half float precision (HalfVector3 for now), we need to track the network tick
-                if (UseHalfFloatPrecision)
-                {
-                    // Set the current tick
-                    m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
-                }
-
-                // ...commit the state
-                ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
-
-                // For integration testing
-                m_LastSentState = m_LocalAuthoritativeNetworkState;
+                // Push the state updates if we have any to push
+                PushTransformState();
             }
         }
 
@@ -767,6 +857,7 @@ namespace Unity.Netcode.Components
             var position = InLocalSpace ? transform.localPosition : transform.position;
 
             m_BufferedLinearInterpolatorVector3.ResetTo(position, serverTime);
+            UpdatePositionSlerp();
 
             var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
             m_RotationInterpolator.ResetTo(rotation, serverTime);
@@ -854,6 +945,13 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
+            if (SlerpPosition != networkState.UsePositionSlerp)
+            {
+                networkState.UsePositionSlerp = SlerpPosition;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             if (!UseHalfFloatPrecision)
             {
                 if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
@@ -929,8 +1027,9 @@ namespace Unity.Netcode.Components
                                 networkState.CurrentPosition = m_HalfPositionState.CurrentBasePosition;
                                 networkState.HalfVectorPosition = m_HalfPositionState;
                                 // If the server is the owner, in both server and owner authoritative modes,
-                                // then we use the HalfDeltaConvertedBack value as the delta position
-                                if (NetworkObject.IsOwnedByServer)
+                                // or we are running in server authoritative mode, then we use the
+                                // HalfDeltaConvertedBack value as the delta position
+                                if (NetworkObject.IsOwnedByServer || IsServerAuthoritative())
                                 {
                                     networkState.DeltaPosition = m_HalfPositionState.HalfDeltaConvertedBack;
                                 }
@@ -952,10 +1051,8 @@ namespace Unity.Netcode.Components
                         {
                             networkState.CurrentPosition = position;
                         }
-#if DEBUG_NETWORKTRANSFORM
                         // Add log entry for this update relative to the client being synchronized
-                        AddLogEntry(networkState, targetClientId, true);
-#endif
+                        AddLogEntry(ref networkState, targetClientId, true);
                     }
                     networkState.HasPositionX = true;
                     networkState.HasPositionY = true;
@@ -1057,6 +1154,11 @@ namespace Unity.Netcode.Components
             UseHalfFloatPrecision = networkState.UseHalfFloatPrecision;
             UseQuaternionSynchronization = networkState.QuaternionSync;
             UseQuaternionCompression = networkState.QuaternionCompression;
+            if (SlerpPosition != networkState.UsePositionSlerp)
+            {
+                SlerpPosition = networkState.UsePositionSlerp;
+                UpdatePositionSlerp();
+            }
 
             // NOTE ABOUT INTERPOLATING AND THE CODE BELOW:
             // We always apply the interpolated state for any axis we are synchronizing even when the state has no deltas
@@ -1216,7 +1318,6 @@ namespace Unity.Netcode.Components
                 {
                     currentPosition.z = newState.PositionZ;
                 }
-                m_BufferedLinearInterpolatorVector3.IsSlerp = SlerpPosition;
                 m_BufferedLinearInterpolatorVector3.ResetTo(currentPosition, sentTime);
             }
             else
@@ -1241,10 +1342,8 @@ namespace Unity.Netcode.Components
                     {
                         currentPosition = newState.CurrentPosition;
                     }
-#if DEBUG_NETWORKTRANSFORM
-                    // Add log prior to applying the update
-                    AddLogEntry(newState, NetworkObject.OwnerClientId, true);
-#endif
+                    // Before the state is applied add a log entry if AddLogEntry is assigned
+                    AddLogEntry(ref newState, NetworkObject.OwnerClientId, true);
                 }
                 else
                 {
@@ -1255,7 +1354,6 @@ namespace Unity.Netcode.Components
 
                 if (Interpolate)
                 {
-                    m_BufferedLinearInterpolatorVector3.IsSlerp = SlerpPosition;
                     m_BufferedLinearInterpolatorVector3.ResetTo(currentPosition, sentTime);
                 }
             }
@@ -1329,13 +1427,12 @@ namespace Unity.Netcode.Components
             {
                 transform.rotation = currentRotation;
             }
-#if DEBUG_NETWORKTRANSFORM
-            // Add log after to applying the update
+
+            // Add log after to applying the update if AddLogEntry is defined
             if (isSynchronization)
             {
-                AddLogEntry(newState, NetworkObject.OwnerClientId);
+                AddLogEntry(ref newState, NetworkObject.OwnerClientId);
             }
-#endif
         }
 
         /// <summary>
@@ -1349,6 +1446,19 @@ namespace Unity.Netcode.Components
             var sentTime = newState.SentTime;
             var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
             var currentEulerAngles = currentRotation.eulerAngles;
+
+            // Set the transforms's synchronization modes
+            InLocalSpace = newState.InLocalSpace;
+            Interpolate = newState.UseInterpolation;
+            UseQuaternionSynchronization = newState.QuaternionSync;
+            UseQuaternionCompression = newState.QuaternionCompression;
+            UseHalfFloatPrecision = newState.UseHalfFloatPrecision;
+            if (SlerpPosition != newState.UsePositionSlerp)
+            {
+                SlerpPosition = newState.UsePositionSlerp;
+                UpdatePositionSlerp();
+            }
+
             m_LocalAuthoritativeNetworkState = newState;
             if (m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
@@ -1379,7 +1489,6 @@ namespace Unity.Netcode.Components
             {
                 if (m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
-                    m_BufferedLinearInterpolatorVector3.IsSlerp = SlerpPosition;
                     m_BufferedLinearInterpolatorVector3.AddMeasurement(m_LocalAuthoritativeNetworkState.CurrentPosition, sentTime);
                 }
                 else
@@ -1452,217 +1561,16 @@ namespace Unity.Netcode.Components
             }
         }
 
-#if DEBUG_NETWORKTRANSFORM
-        private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
-
-        protected struct NetworkTransformStateUpdate
-        {
-            public bool PositionUpdate;
-            public bool ScaleUpdate;
-            public bool RotationUpdate;
-            public ushort NetworkBehaviourId;
-            public int NetworkTick;
-            public ulong OwnerClientId;
-
-            // The authority's real transform values at the time the new state was applied
-            public Vector3 AuthTickPosition;
-            public Quaternion AuthTickRotation;
-
-            // The non-authority's last received transform values
-            public Vector3 Position;
-            public Quaternion Rotation;
-        }
-
-        protected virtual void OnNetworkTransformStateUpdate(ref NetworkTransformStateUpdate networkTransformStateUpdate)
+        /// <summary>
+        /// Invoked on the non-authoritative side when the NetworkTransformState has been updated
+        /// </summary>
+        /// <param name="oldState">the previous <see cref="NetworkTransformState"/></param>
+        /// <param name="newState">the new <see cref="NetworkTransformState"/></param>
+        protected virtual void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
 
         }
 
-        private struct HalfPosDebugStates : INetworkSerializable
-        {
-            public bool IsPreUpdate;
-            public bool IsTeleporting;
-            public bool IsSynchronizing;
-            public int StateId;
-            public int Tick;
-            public ulong ClientTarget;
-
-            public Vector3 BasePosition;
-            public Vector3 DeltaPosition;
-            public Vector3 HalfBackDelta;
-            public Vector3 FullPosition;
-            public Vector3 TransformPosition;
-
-            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
-            {
-                serializer.SerializeValue(ref IsPreUpdate);
-                serializer.SerializeValue(ref IsTeleporting);
-                serializer.SerializeValue(ref IsSynchronizing);
-                serializer.SerializeValue(ref StateId);
-                serializer.SerializeValue(ref Tick);
-                serializer.SerializeValue(ref ClientTarget);
-                serializer.SerializeValue(ref BasePosition);
-                serializer.SerializeValue(ref HalfBackDelta);
-                serializer.SerializeValue(ref DeltaPosition);
-                serializer.SerializeValue(ref FullPosition);
-                serializer.SerializeValue(ref TransformPosition);
-            }
-        }
-        private const int k_StatesToLog = 80;
-        private bool m_StopLoggingStates = false;
-        private Dictionary<ulong, Dictionary<ulong, List<HalfPosDebugStates>>> m_FirstInitialStateUpdates = new Dictionary<ulong, Dictionary<ulong, List<HalfPosDebugStates>>>();
-
-        private void AddLogEntry(NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false)
-        {
-            if (!DebugTransform)
-            {
-                return;
-            }
-
-            var state = new HalfPosDebugStates();
-            state.IsPreUpdate = preUpdate;
-            state.IsTeleporting = networkTransformState.IsTeleportingNextFrame;
-            state.IsSynchronizing = networkTransformState.IsSynchronizing;
-            state.StateId = networkTransformState.StateId;
-            state.Tick = networkTransformState.NetworkTick;
-            state.ClientTarget = targetClient;
-            state.BasePosition = m_HalfPositionState.CurrentBasePosition;
-            state.HalfBackDelta = m_HalfPositionState.HalfDeltaConvertedBack;
-            state.DeltaPosition = m_HalfPositionState.DeltaPosition;
-            state.FullPosition = m_HalfPositionState.GetFullPosition();
-            state.TransformPosition = InLocalSpace ? transform.localPosition : transform.position;
-            var localClientId = NetworkManager.LocalClientId;
-            var ownerId = NetworkObject.OwnerClientId;
-            if (!m_FirstInitialStateUpdates.ContainsKey(ownerId))
-            {
-                m_FirstInitialStateUpdates.Add(ownerId, new Dictionary<ulong, List<HalfPosDebugStates>>());
-            }
-            var ownerTable = m_FirstInitialStateUpdates[ownerId];
-
-            if (!ownerTable.ContainsKey(localClientId))
-            {
-                ownerTable.Add(localClientId, new List<HalfPosDebugStates>());
-            }
-            ownerTable[localClientId].Add(state);
-            if (ownerTable[localClientId].Count == k_StatesToLog)
-            {
-                m_StopLoggingStates = true;
-                if (IsServer)
-                {
-                    LogInitialTransformStates(localClientId, ownerId);
-                }
-                else
-                {
-                    SendStateLogToServer(ownerId);
-                    LogInitialTransformStates(localClientId, ownerId);
-                }
-            }
-        }
-
-        private void SendStateLogToServer(ulong ownerId)
-        {
-            var ownerTable = m_FirstInitialStateUpdates[ownerId];
-            var ownerTableClientRelative = ownerTable[NetworkManager.LocalClientId];
-            foreach (var entry in ownerTableClientRelative)
-            {
-                AddLogEntryServerRpc(entry, OwnerClientId);
-            }
-        }
-
-        [ServerRpc(RequireOwnership = false)]
-        private void AddLogEntryServerRpc(HalfPosDebugStates logEntry, ulong ownerId, ServerRpcParams serverRpcParams = default)
-        {
-            if (!m_FirstInitialStateUpdates.ContainsKey(ownerId))
-            {
-                m_FirstInitialStateUpdates.Add(ownerId, new Dictionary<ulong, List<HalfPosDebugStates>>());
-            }
-            var ownerTable = m_FirstInitialStateUpdates[ownerId];
-            var senderId = serverRpcParams.Receive.SenderClientId;
-            if (!ownerTable.ContainsKey(senderId))
-            {
-                ownerTable.Add(senderId, new List<HalfPosDebugStates>());
-            }
-            var ownerTableClientRelative = ownerTable[senderId];
-
-            ownerTableClientRelative.Add(logEntry);
-
-            if (ownerTableClientRelative.Count == k_StatesToLog)
-            {
-                LogInitialTransformStates(serverRpcParams.Receive.SenderClientId, ownerId);
-            }
-        }
-
-        private System.Text.StringBuilder m_LogEntry = new System.Text.StringBuilder();
-        private void LogInitialTransformStates(ulong clientId, ulong ownerId)
-        {
-            List<HalfPosDebugStates> states = m_FirstInitialStateUpdates[ownerId][clientId];
-            var sections = 1;
-            m_LogEntry.Append($"[#{sections}][{gameObject.name}][Client-{clientId}] Transform States Captured For Client-{ownerId}:\n");
-            var lineCounter = 0;
-            foreach (var stateEntry in states)
-            {
-                var isPreUpdate = stateEntry.IsPreUpdate ? "[PreUpdate]" : "";
-                var isSynchronization = stateEntry.IsSynchronizing ? "[Synchronizing]" : "";
-                var isTeleporing = stateEntry.IsTeleporting ? "[Teleporting]" : "";
-                var isApppliedLocal = stateEntry.ClientTarget == clientId ? "[Applied Local]" : $"[Targeting Client-{stateEntry.ClientTarget}]";
-                m_LogEntry.Append($"{isPreUpdate}{isApppliedLocal} State Entry ({stateEntry.StateId}) on Tick ({stateEntry.Tick}). {isSynchronization}{isTeleporing}\n");
-                m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{ stateEntry.HalfBackDelta}\n");
-                m_LogEntry.Append($"[FullPos]{stateEntry.FullPosition} [TransPos] {stateEntry.TransformPosition}\n");
-                if (lineCounter >= 75)
-                {
-                    Debug.Log(m_LogEntry);
-                    m_LogEntry.Clear();
-                    lineCounter = 0;
-                    sections++;
-                    m_LogEntry.Append($"[#{sections}][{gameObject.name}][Client-{clientId}] Transform States Captured For Client-{ownerId}:\n");
-                }
-                else
-                {
-                    lineCounter++;
-                }
-
-            }
-
-            if (m_LogEntry.Length > 0)
-            {
-                Debug.Log(m_LogEntry);
-                m_LogEntry.Clear();
-            }
-        }
-
-        private void DebugTransformStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
-        {
-
-            m_NetworkTransformStateUpdate.PositionUpdate = newState.HasPositionChange;
-            m_NetworkTransformStateUpdate.ScaleUpdate = newState.HasScaleChange;
-            m_NetworkTransformStateUpdate.RotationUpdate = newState.HasRotAngleChange;
-            m_NetworkTransformStateUpdate.NetworkTick = newState.NetworkTick;
-            m_NetworkTransformStateUpdate.NetworkBehaviourId = NetworkBehaviourId;
-            m_NetworkTransformStateUpdate.OwnerClientId = OwnerClientId;
-
-            // If delta position compression is enabled and we had a position change,
-            // then update the target position (note: teleporting will write over this)
-            if ((newState.HasPositionChange || newState.HasRotAngleChange || newState.HasScaleChange) && !newState.IsTeleportingNextFrame)
-            {
-
-                if (oldState.NetworkTick != newState.NetworkTick || oldState.StateId == newState.StateId || newState.SentTime != oldState.SentTime)
-                {
-                    m_NetworkTransformStateUpdate.Position = InLocalSpace ? transform.localPosition : transform.position;
-                    m_NetworkTransformStateUpdate.Rotation = InLocalSpace ? transform.localRotation : transform.rotation;
-
-                    OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
-                }
-                else if (oldState.HasPositionChange && !oldState.IsTeleportingNextFrame)
-                {
-                    var warningMsg = new System.Text.StringBuilder();
-                    warningMsg.Append($"Non-Authority Client-{NetworkManager.LocalClientId} ({NetworkObject.gameObject.name}-{NetworkObjectId}-{gameObject.name}-{name}) position has changed on the same network tick ({newState.NetworkTick})!\n");
-                    warningMsg.Append($"[oldState] Time: {oldState.SentTime}\n");
-                    warningMsg.Append($"[newState] Time: {newState.SentTime}\n");
-                    Debug.LogWarning(warningMsg);
-                }
-            }
-        }
-#endif
         /// <summary>
         /// Only non-authoritative instances should invoke this method
         /// </summary>
@@ -1673,45 +1581,11 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-#if DEBUG_NETWORKTRANSFORM
-            DebugTransformStateUpdate(oldState, newState);
-            if (DebugTransform)
-            {
-                if (IsOwner && !IsServerAuthoritative() && !m_StopLoggingStates)
-                {
-                    if (IsServer && NetworkManager.ConnectedClientsIds.Count < 2)
-                    {
-                        return;
-                    }
-                    AddLogEntry(newState, OwnerClientId);
-                }
-            }
-            if (CanCommitToTransform)
-            {
-                return;
-            }
-#endif
-            // Set the transforms's synchronization modes
-            InLocalSpace = newState.InLocalSpace;
-            Interpolate = newState.UseInterpolation;
-            UseQuaternionSynchronization = newState.QuaternionSync;
-            UseQuaternionCompression = newState.QuaternionCompression;
-            UseHalfFloatPrecision = newState.UseHalfFloatPrecision;
-
-
-
             // Update the state
             UpdateState(oldState, newState);
 
-#if DEBUG_NETWORKTRANSFORM
-            if (DebugTransform)
-            {
-                if (!IsOwner && !IsServerAuthoritative() && transform.parent != null && !m_StopLoggingStates)
-                {
-                    AddLogEntry(newState, OwnerClientId);
-                }
-            }
-#endif
+            // Provide notifications when the state has been updated
+            OnNetworkTransformStateUpdated(ref oldState, ref newState);
         }
 
         /// <summary>
@@ -1756,12 +1630,16 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Will update the authoritative transform state if any deltas are detected.
-        /// This will also reset the m_LocalAuthoritativeNetworkState if it is still dirty
-        /// but the replicated network state is not.
+        /// Can be overridden to customize what is updated or make adjustments to the
+        /// transform prior to pushing the updates to non-authoritative instances.
         /// </summary>
+        /// <remarks>
+        /// !!! NOTE !!!
+        /// This also reset the m_LocalAuthoritativeNetworkState if it is still dirty
+        /// but the replicated network state is not.
+        /// </remarks>
         /// <param name="transformSource">transform to be updated</param>
-        private void UpdateAuthoritativeState(Transform transformSource)
+        protected virtual void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
@@ -1769,11 +1647,13 @@ namespace Unity.Netcode.Components
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
             }
-            TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
+            TryCommitTransform(ref transformSource);
         }
 
         /// <summary>
-        /// Authority subscribes to network tick events
+        /// Authority subscribes to network tick events and will invoke
+        /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each
+        /// network tick.
         /// </summary>
         private void NetworkTickSystem_Tick()
         {
@@ -1781,7 +1661,8 @@ namespace Unity.Netcode.Components
             if (CanCommitToTransform)
             {
                 // Update any changes to the transform
-                UpdateAuthoritativeState(transform);
+                var transformSource = transform;
+                OnUpdateAuthoritativeState(ref transformSource);
             }
             else
             {
@@ -1811,7 +1692,8 @@ namespace Unity.Netcode.Components
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
-                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+                var transformToCommit = transform;
+                TryCommitTransform(ref transformToCommit);
             }
         }
 
@@ -1862,9 +1744,18 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Invoked when first spawned as well as when ownership changes
+        /// </summary>
+        /// <param name="replicatedState">the <see cref="NetworkVariable{T}"/> replicated <see cref="NetworkTransformState"/></param>
+        protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
+        {
+
+        }
+
+        /// <summary>
         /// Initializes NetworkTransform when spawned and ownership changes.
         /// </summary>
-        private void Initialize()
+        protected void Initialize()
         {
             if (!IsSpawned)
             {
@@ -1881,13 +1772,9 @@ namespace Unity.Netcode.Components
                 {
                     m_HalfPositionState = new HalfVector3(currentPosition, NetworkManager.NetworkTickSystem.ServerTime.Tick);
                 }
-#if DEBUG_NETWORKTRANSFORM
-                // Sanity check to assure we only subscribe to OnValueChanged once
-                replicatedState.OnValueChanged -= OnNetworkStateChanged;
-                replicatedState.OnValueChanged += OnNetworkStateChanged;
-#endif
 
                 // Authority only updates once per network tick
+                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
             }
             else
@@ -1901,6 +1788,8 @@ namespace Unity.Netcode.Components
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
             }
+
+            OnInitialize(ref replicatedState);
         }
 
         /// <summary>
@@ -1970,6 +1859,8 @@ namespace Unity.Netcode.Components
             }
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
+            var transformToCommit = transform;
+            TryCommitTransform(ref transformToCommit);
         }
 
         /// <summary>
@@ -2071,9 +1962,16 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
         /// </summary>
-        internal bool IsServerAuthoritative()
+        public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritative();
         }
     }
+
+
+    internal interface INetworkTransformLogStateEntry
+    {
+        void AddLogEntry(NetworkTransform.NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
+    }
 }
+

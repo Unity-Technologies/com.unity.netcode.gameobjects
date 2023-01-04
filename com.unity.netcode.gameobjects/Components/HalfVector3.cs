@@ -23,7 +23,7 @@ namespace Unity.Netcode.Components
         internal Vector3 PrecisionLossDelta;
         internal Vector3 HalfDeltaConvertedBack;
         internal Vector3 PreviousPosition;
-        public Vector3 DeltaPosition;
+        internal Vector3 DeltaPosition;
         internal int NetworkTick;
 
         private const float k_MaxDeltaBeforeAdjustment = 128.0f;
@@ -93,6 +93,32 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// The half float vector3 version of the current delta position.
+        /// Only applies to the authoritative side for <see cref="NetworkTransform"/>
+        /// instances.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetConvertedDelta()
+        {
+            return HalfDeltaConvertedBack;
+        }
+
+        /// <summary>
+        /// The full precision current delta position.
+        /// </summary>
+        /// <remarks>
+        /// Authoritative: Will have no precision loss
+        /// Non-Authoritative: Has the current network tick's loss of precision.
+        /// Precision loss adjustments are one network tick behind on the
+        /// non-authoritative side.
+        /// </remarks>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetDeltaPosition()
+        {
+            return DeltaPosition;
+        }
+
+        /// <summary>
         /// Sets the new position delta based off of the initial position.
         /// </summary>
         /// <param name="vector3">the full <see cref="Vector3"/> to generate a delta from</param>
@@ -113,7 +139,7 @@ namespace Unity.Netcode.Components
 
             PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
 
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= k_MaxDeltaBeforeAdjustment)
                 {
