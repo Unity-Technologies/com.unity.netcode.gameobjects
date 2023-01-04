@@ -125,10 +125,10 @@ namespace TestProject.ManualTests
         {
             if (SimulateClient)
             {
-                var position = InLocalSpace? transform.localPosition: transform.position;
+                var position = InLocalSpace ? transform.localPosition : transform.position;
                 var isPositionDirty = m_LastInterpolateState != Interpolate;
-
-                ServerDelta.text = $"S-Delta:({m_HalfVector3Server.DeltaPosition.x}, {m_HalfVector3Server.DeltaPosition.y}, {m_HalfVector3Server.DeltaPosition.z})";
+                var deltaPosition = m_HalfVector3Server.GetDeltaPosition();
+                ServerDelta.text = $"S-Delta:({deltaPosition.x}, {deltaPosition.y}, {deltaPosition.z})";
                 ServerCurrent.text = $"S-Curr:({m_HalfVector3Server.CurrentBasePosition.x}, {m_HalfVector3Server.CurrentBasePosition.y}, {m_HalfVector3Server.CurrentBasePosition.z})";
                 var fullPosition = m_HalfVector3Server.GetFullPosition();
                 ServerFull.text = $"S-Full:({fullPosition.x}, {fullPosition.y}, {fullPosition.z})";
@@ -265,7 +265,6 @@ namespace TestProject.ManualTests
                         break;
                     }
             }
-
         }
 
         private bool ShouldRun()

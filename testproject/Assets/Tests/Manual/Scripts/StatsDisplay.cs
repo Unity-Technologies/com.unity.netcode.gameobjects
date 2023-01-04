@@ -182,6 +182,7 @@ namespace TestProject.ManualTests
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
                         m_LastStatsDump += "\n";
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
+                        m_LastStatsDump += $"NetworkObjects: {NetworkManager.SpawnManager.SpawnedObjectsList.Count}\n";
                         if (m_SceneEventNotificationQueue != null)
                         {
                             var sceneEvents = m_SceneEventNotificationQueue.GetCurrentNotifications();

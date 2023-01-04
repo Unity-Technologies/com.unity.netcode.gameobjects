@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using Unity.Netcode;
 #if UNITY_EDITOR
 using UnityEditor;
 [CustomEditor(typeof(TestProject.ManualTests.ChildMover))]
@@ -24,16 +24,22 @@ namespace TestProject.ManualTests
 
         public bool RotateBasedOnDirection = false;
 
+        /// <summary>
+        /// For other components to determine if this instance has authority
+        /// </summary>
         public bool IsAuthority()
         {
             return CanCommitToTransform;
         }
+
+        private Vector3 m_LastPredictedPosition;
 
         public void PlayerIsMoving(float movementDirection)
         {
             if (IsSpawned && CanCommitToTransform)
             {
                 var rotateDirection = RotateBasedOnDirection ? movementDirection * RotationSpeed : RotationSpeed;
+
                 transform.RotateAround(m_RootParentTransform.position, transform.TransformDirection(Vector3.up), RotationSpeed);
             }
         }

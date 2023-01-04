@@ -82,7 +82,6 @@ namespace TestProject.RuntimeTests
                         transform.eulerAngles = currentEuler;
                     }
                 }
-                base.Update();
             }
             else
             {
