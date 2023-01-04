@@ -126,7 +126,7 @@ namespace TestProject.RuntimeTests
         {
             networkTransform.Interpolate = m_Interpolation == Interpolation.Interpolation;
             networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
-            networkTransform.IsServerAuthoritative = m_Authority == AuthoritativeModel.Server;
+            networkTransform.IsServerAuthority = m_Authority == AuthoritativeModel.Server;
         }
 
 
