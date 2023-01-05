@@ -328,17 +328,11 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-
-                serializer.SerializeValue(ref SentTime);
                 serializer.SerializeValue(ref m_Bitset);
 
-                // We need to use the NetworkTick when using UseHalfFloatPrecision
-                // TODO: We might be able to remove SentTime and just use the NetworkTick
-                // to calculate the sent time since updates only happen on every network tick
-                if (UseHalfFloatPrecision)
-                {
-                    serializer.SerializeValue(ref NetworkTick);
-                }
+                // We use network ticks as opposed to absolute time as the authoritative
+                // side updates on every new tick.
+                serializer.SerializeValue(ref NetworkTick);
 
                 if (HasPositionChange)
                 {
@@ -1127,6 +1121,7 @@ namespace Unity.Netcode.Components
             if (isDirty)
             {
                 networkState.SentTime = dirtyTime;
+                networkState.NetworkTick = NetworkManager.ServerTime.Tick;
             }
 
             /// We need to set this in order to know when we can reset our local authority state <see cref="Update"/>
@@ -1443,10 +1438,6 @@ namespace Unity.Netcode.Components
         /// </remarks>
         private void UpdateState(NetworkTransformState oldState, NetworkTransformState newState)
         {
-            var sentTime = newState.SentTime;
-            var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
-            var currentEulerAngles = currentRotation.eulerAngles;
-
             // Set the transforms's synchronization modes
             InLocalSpace = newState.InLocalSpace;
             Interpolate = newState.UseInterpolation;
@@ -1465,6 +1456,10 @@ namespace Unity.Netcode.Components
                 ApplyTeleportingState(m_LocalAuthoritativeNetworkState);
                 return;
             }
+
+            var sentTime = newState.SentTime;
+            var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
+            var currentEulerAngles = currentRotation.eulerAngles;
 
             if (UseHalfFloatPrecision)
             {
@@ -1580,6 +1575,9 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+
+            // Get the time when this new state was sent
+            newState.SentTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
 
             // Update the state
             UpdateState(oldState, newState);
