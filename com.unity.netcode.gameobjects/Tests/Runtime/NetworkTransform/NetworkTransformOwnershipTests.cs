@@ -22,6 +22,7 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkTransformPrefab = CreateNetworkObjectPrefab("OwnerAuthorityTest");
             var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<TestClientNetworkTransform>();
             clientNetworkTransform.Interpolate = false;
+            clientNetworkTransform.UseHalfFloatPrecision = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
             // NOTE: We don't use a sphere collider for this integration test because by the time we can
@@ -40,6 +41,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkTransformPrefab.AddComponent<NetworkRigidbody>();
             m_NetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
             networkTransform.Interpolate = false;
+            networkTransform.UseHalfFloatPrecision = false;
 
             base.OnServerAndClientsCreated();
         }
