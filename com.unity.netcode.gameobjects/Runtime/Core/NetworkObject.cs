@@ -76,6 +76,18 @@ namespace Unity.Netcode
         public bool IsPlayerObject { get; internal set; }
 
         /// <summary>
+        /// Determines if the associated NetworkObject's transform will get
+        /// synchronized when spawned.
+        /// </summary>
+        /// <remarks>
+        /// For things like in-scene placed NetworkObjects that have no visual
+        /// components can help reduce the instance's initial synchronization
+        /// bandwidth cost. This can also be useful for UI elements that have
+        /// a predetermined fixed position.
+        /// </remarks>
+        public bool SynchronizeTransform = true;
+
+        /// <summary>
         /// Gets if the object is the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
@@ -1118,6 +1130,8 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 5, value);
             }
 
+
+
             //If(Metadata.HasParent)
             public ulong ParentObjectId;
 
@@ -1352,7 +1366,7 @@ namespace Unity.Netcode
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.HasTransform = true;
+                obj.HasTransform = SynchronizeTransform;
 
                 // We start with the default AutoObjectParentSync values to determine which transform space we will
                 // be synchronizing clients with.
