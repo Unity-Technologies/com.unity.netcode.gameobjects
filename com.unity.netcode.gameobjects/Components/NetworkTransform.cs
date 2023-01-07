@@ -282,6 +282,8 @@ namespace Unity.Netcode.Components
             // dirty or not.
             public bool IsDirty { get; internal set; }
 
+            public int LastSerializedSize;
+
             // Used for HalfVector3 delta position synchronization
             internal int NetworkTick;
 
@@ -328,9 +330,11 @@ namespace Unity.Netcode.Components
                     }
                 }
                 serializer.SerializeValue(ref SentTime);
+                var positionStart = 0;
                 if (isWriting)
                 {
                     m_Writer = serializer.GetFastBufferWriter();
+                    positionStart = m_Writer.Position;
                     BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
                     // We use network ticks as opposed to absolute time as the authoritative
                     // side updates on every new tick.
@@ -340,6 +344,7 @@ namespace Unity.Netcode.Components
                 else
                 {
                     m_Reader = serializer.GetFastBufferReader();
+                    positionStart = m_Reader.Position;
                     ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
                     // We use network ticks as opposed to absolute time as the authoritative
                     // side updates on every new tick.
@@ -410,6 +415,7 @@ namespace Unity.Netcode.Components
                                 {
                                     QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
                                 }
+                                serializer.SerializeValue(ref QuaternionCompressed);
                             }
                             else
                             {
@@ -421,6 +427,7 @@ namespace Unity.Netcode.Components
                                 {
                                     HalfVectorRotation.ToQuaternion(ref Rotation);
                                 }
+                                serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
                             }
                         }
                     }
@@ -469,6 +476,11 @@ namespace Unity.Netcode.Components
                     // Go ahead and mark the local state dirty or not dirty as well
                     /// <see cref="TryCommitTransformToServer"/>
                     IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
+                    LastSerializedSize = m_Reader.Position - positionStart;
+                }
+                else
+                {
+                    LastSerializedSize = m_Writer.Position - positionStart;
                 }
             }
         }
@@ -832,6 +844,7 @@ namespace Unity.Netcode.Components
             // If the transform has deltas (returns dirty) then...
             if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
+                m_LocalAuthoritativeNetworkState.LastSerializedSize = ReplicatedNetworkState.Value.LastSerializedSize;
                 OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
 
                 // "push"/commit the state
@@ -929,6 +942,13 @@ namespace Unity.Netcode.Components
             if (UseQuaternionSynchronization != networkState.QuaternionSync)
             {
                 networkState.QuaternionSync = UseQuaternionSynchronization;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
+            if (UseQuaternionCompression != networkState.QuaternionCompression)
+            {
+                networkState.QuaternionCompression = UseQuaternionCompression;
                 isDirty = true;
                 networkState.IsTeleportingNextFrame = true;
             }
