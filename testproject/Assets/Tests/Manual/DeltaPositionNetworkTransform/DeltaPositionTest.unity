@@ -1806,8 +1806,8 @@ MonoBehaviour:
   ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 0
+  IsServerAuthority: 1
   DebugTransform: 0
-  IsServerAuthoritative: 1
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}

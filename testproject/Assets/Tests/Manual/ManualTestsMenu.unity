@@ -924,6 +924,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_SceneMenus:
+  - {fileID: 11400000, guid: 0ff5b99081d45a34182e1aa581428532, type: 2}
   - {fileID: 11400000, guid: 2c0ff1138526d4041a875c84f7114513, type: 2}
   - {fileID: 11400000, guid: 5971e25d82220f448be7385f5d71ece9, type: 2}
   - {fileID: 11400000, guid: 17de05ff09d39df47a6bc85ab38dca2f, type: 2}
