@@ -346,6 +346,7 @@ namespace Unity.Netcode.Components
                     ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
                 }
 
+                // POSITION
                 if (HasPositionChange)
                 {
                     // If using half precision, we always send the full Vector3
@@ -388,11 +389,12 @@ namespace Unity.Netcode.Components
                     }
                 }
 
+                // ROTATION
                 if (HasRotAngleChange)
                 {
                     if (QuaternionSync)
                     {
-                        if (IsTeleportingNextFrame || !QuaternionCompression)
+                        if (IsTeleportingNextFrame)
                         {
                             serializer.SerializeValue(ref Rotation);
                         }
@@ -402,11 +404,11 @@ namespace Unity.Netcode.Components
                             {
                                 if (serializer.IsWriter)
                                 {
-                                    HalfVectorRotation.FromQuaternion(ref Rotation);
+                                    QuaternionCompressed = QuaternionCompressor.CompressQuaternion(ref Rotation);
                                 }
                                 else
                                 {
-                                    HalfVectorRotation.ToQuaternion(ref Rotation);
+                                    QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
                                 }
                             }
                             else
@@ -441,20 +443,24 @@ namespace Unity.Netcode.Components
                         }
                     }
                 }
-                // Scale Values
-                if (HasScaleX)
-                {
-                    serializer.SerializeValue(ref ScaleX);
-                }
 
-                if (HasScaleY)
+                // SCALE
+                if (HasScaleChange)
                 {
-                    serializer.SerializeValue(ref ScaleY);
-                }
+                    if (HasScaleX)
+                    {
+                        serializer.SerializeValue(ref ScaleX);
+                    }
 
-                if (HasScaleZ)
-                {
-                    serializer.SerializeValue(ref ScaleZ);
+                    if (HasScaleY)
+                    {
+                        serializer.SerializeValue(ref ScaleY);
+                    }
+
+                    if (HasScaleZ)
+                    {
+                        serializer.SerializeValue(ref ScaleZ);
+                    }
                 }
 
                 // Only if we are receiving state
