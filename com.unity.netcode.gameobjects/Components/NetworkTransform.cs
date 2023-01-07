@@ -68,7 +68,6 @@ namespace Unity.Netcode.Components
             private const int k_Synchronization = 15;
             private const int k_PositionSlerp = 16;
 
-
             private uint m_Bitset;
 
             public bool InLocalSpace
@@ -268,10 +267,6 @@ namespace Unity.Netcode.Components
             internal float RotAngleX, RotAngleY, RotAngleZ;
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
-            public double GetSentTime()
-            {
-                return SentTime;
-            }
 
             // Used for HalfVector3 delta position updates
             internal Vector3 CurrentPosition;
@@ -309,8 +304,13 @@ namespace Unity.Netcode.Components
                 IsDirty = false;
             }
 
+            private FastBufferReader m_Reader;
+            private FastBufferWriter m_Writer;
+
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
+
+                var isWriting = serializer.IsWriter;
                 if (TrackByStateId)
                 {
                     var stateId = StateId;
@@ -327,12 +327,24 @@ namespace Unity.Netcode.Components
                         serializer.SerializeValue(ref StateId);
                     }
                 }
+                serializer.SerializeValue(ref SentTime);
+                if (isWriting)
+                {
+                    m_Writer = serializer.GetFastBufferWriter();
+                    BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
+                    // We use network ticks as opposed to absolute time as the authoritative
+                    // side updates on every new tick.
+                    BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
 
-                serializer.SerializeValue(ref m_Bitset);
-
-                // We use network ticks as opposed to absolute time as the authoritative
-                // side updates on every new tick.
-                serializer.SerializeValue(ref NetworkTick);
+                }
+                else
+                {
+                    m_Reader = serializer.GetFastBufferReader();
+                    ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
+                    // We use network ticks as opposed to absolute time as the authoritative
+                    // side updates on every new tick.
+                    ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
+                }
 
                 if (HasPositionChange)
                 {
@@ -726,13 +738,10 @@ namespace Unity.Netcode.Components
             if (serializer.IsWriter)
             {
                 synchronizationState.IsTeleportingNextFrame = true;
-                if (UseHalfFloatPrecision)
-                {
-                    synchronizationState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
-                }
+                var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
-                ApplyTransformToNetworkStateWithInfo(ref synchronizationState, m_CachedNetworkManager.LocalTime.Time, transform, true, targetClientId);
+                ApplyTransformToNetworkStateWithInfo(ref synchronizationState,ref transformToCommit, true, targetClientId);
                 synchronizationState.NetworkSerialize(serializer);
             }
             else
@@ -802,26 +811,6 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Only invoked when there is a state update to push
-        /// </summary>
-        private void PushTransformState()
-        {
-            // With half float precision (HalfVector3 for now), we need to track the network tick
-            if (UseHalfFloatPrecision)
-            {
-                // Set the current tick
-                m_LocalAuthoritativeNetworkState.NetworkTick = NetworkManager.NetworkTickSystem.ServerTime.Tick;
-            }
-
-            OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
-            // "push"/commit the state
-            ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
-
-            // For integration testing
-            LastSentState = m_LocalAuthoritativeNetworkState;
-        }
-
-        /// <summary>
         /// Authoritative side only
         /// If there are any transform delta states, this method will synchronize the
         /// state with all non-authority instances.
@@ -835,10 +824,15 @@ namespace Unity.Netcode.Components
             }
 
             // If the transform has deltas (returns dirty) then...
-            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, NetworkManager.ServerTime.Time, transformToCommit, synchronize))
+            if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
-                // Push the state updates if we have any to push
-                PushTransformState();
+                OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
+
+                // "push"/commit the state
+                ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+
+                // For integration testing
+                LastSentState = m_LocalAuthoritativeNetworkState;
             }
         }
 
@@ -876,7 +870,7 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
 
             // Now check the transform for any threshold value changes
-            ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+            ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transform);
 
             // Return the entire state to be used by the integration test
             return m_LocalAuthoritativeNetworkState;
@@ -892,13 +886,14 @@ namespace Unity.Netcode.Components
             networkState.QuaternionSync = UseQuaternionSynchronization;
             networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
 
-            return ApplyTransformToNetworkStateWithInfo(ref networkState, dirtyTime, transformToUse);
+            return ApplyTransformToNetworkStateWithInfo(ref networkState, ref transformToUse);
         }
 
         /// <summary>
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
-        private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState,ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
             var isDirty = false;
             var isPositionDirty = false;
@@ -1120,7 +1115,6 @@ namespace Unity.Netcode.Components
 
             if (isDirty)
             {
-                networkState.SentTime = dirtyTime;
                 networkState.NetworkTick = NetworkManager.ServerTime.Tick;
             }
 
