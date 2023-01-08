@@ -17,7 +17,9 @@ MonoBehaviour:
   Sections:
   - Heading: 'Bandwidth Cost Manual Test Requirements:'
     Text: In order to run the bandwidth cost manual test, you must first install
-      the Multiplayer Tools (com.unity.multiplayer.tools) package.
+      the Multiplayer Tools (com.unity.multiplayer.tools) package. Please  do not
+      check-in the manifest file with the multiplayer tools package unless it has
+      been verified not to interfere with integration and unit testing.
     LinkText: 
     Url: 
   - Heading: 'About Bandwidth Cost Manual Test:'
