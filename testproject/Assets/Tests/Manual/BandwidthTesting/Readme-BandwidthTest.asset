@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b7eaed6faf4cdc4b89de556dee8b934, type: 3}
+  m_Name: Readme-BandwidthTest
+  m_EditorClassIdentifier: 
+  Icon: {fileID: 2800000, guid: 120f6f8eaee6b4e4582f0ff9ac46d53c, type: 3}
+  Title: NetworkTransform Bandwidth Test
+  Sections:
+  - Heading: 'Bandwidth Cost Manual Test Requirements:'
+    Text: In order to run the bandwidth cost manual test, you must first install
+      the Multiplayer Tools (com.unity.multiplayer.tools) package.
+    LinkText: 
+    Url: 
+  - Heading: 'About Bandwidth Cost Manual Test:'
+    Text: This test can be run as a single host with or without clients connected.
+      It provides insight to the savings of using half float precision and quaternion
+      compression.
+    LinkText: 
+    Url: 
+  LoadedLayout: 0

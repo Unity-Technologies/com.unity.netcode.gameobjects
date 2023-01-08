@@ -10,5 +10,12 @@
         "Unity.Multiplayer.Tools.NetStatsMonitor.Component",
         "Unity.Multiplayer.Tools.NetStatsMonitor.Configuration",
         "Unity.Multiplayer.Tools.NetStatsMonitor.Implementation"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.multiplayer.tools",
+            "expression": "",
+            "define": "MULTIPLAYER_TOOLS"
+        }
     ]
 }

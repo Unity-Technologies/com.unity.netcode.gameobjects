@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
+#if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools.NetStats;
 using Unity.Multiplayer.Tools.NetStatsMonitor;
+#endif
 
 namespace TestProject.ManualTests
 {
@@ -57,17 +59,19 @@ namespace TestProject.ManualTests
         public List<InfoEntry> InfoEntries;
 
         public List<ToggleEntry> ToggleEntries;
-
+#if MULTIPLAYER_TOOLS
         private RuntimeNetStatsMonitor m_RuntimeNetStatsMonitor;
+#endif
         private Image m_Background;
 
         private int m_SizeOfNetworkTransform;
-        private float m_NetworkTickPeriod;
 
         private void Start()
         {
+#if MULTIPLAYER_TOOLS
             m_RuntimeNetStatsMonitor = FindObjectOfType<RuntimeNetStatsMonitor>();
             m_RuntimeNetStatsMonitor.enabled = false;
+#endif
             BandwidthMover.NotifySerializedSize = NotifySerializedSize;
             m_Background = GetComponent<Image>();
             m_Background.enabled = false;
@@ -78,15 +82,19 @@ namespace TestProject.ManualTests
         {
             if (IsSpawned)
             {
+#if MULTIPLAYER_TOOLS
                 m_RuntimeNetStatsMonitor.AddCustomValue(MetricId.Create(NetworkTransformStats.BPSNumeric), m_SizeOfNetworkTransform * 30);
                 m_RuntimeNetStatsMonitor.AddCustomValue(MetricId.Create(NetworkTransformStats.BytesPerUpdate), m_SizeOfNetworkTransform);
+#endif
             }
         }
 
         private void NotifySerializedSize(int size)
         {
             m_SizeOfNetworkTransform = size;
+#if MULTIPLAYER_TOOLS
             m_RuntimeNetStatsMonitor.AddCustomValue(MetricId.Create(NetworkTransformStats.BytesPerSecond), m_SizeOfNetworkTransform);
+#endif
         }
 
         public void OnUpdateHalfFloat(bool isOn)
@@ -122,8 +130,9 @@ namespace TestProject.ManualTests
         {
             m_Background.enabled = true;
             Root.SetActive(true);
-            m_NetworkTickPeriod = 1.0f / NetworkManager.NetworkConfig.TickRate;
+#if MULTIPLAYER_TOOLS
             m_RuntimeNetStatsMonitor.enabled = true;
+#endif
             if (!IsServer)
             {
                 UpdateClientSideToggles();

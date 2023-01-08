@@ -1,0 +1,19 @@
+{
+    "name": "Testproject.Editor",
+    "rootNamespace": "Testproject.Editor",
+    "references": [
+        "GUID:3e7e827df69d149d2a3bd9e6d90ba1e2",
+        "GUID:280e60deeb0fd4923b6b7c949fd9a23a"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
