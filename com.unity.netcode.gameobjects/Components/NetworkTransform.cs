@@ -311,8 +311,19 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-
+                var positionStart = 0;
                 var isWriting = serializer.IsWriter;
+                if (isWriting)
+                {
+                    m_Writer = serializer.GetFastBufferWriter();
+                    positionStart = m_Writer.Position;
+                }
+                else
+                {
+                    m_Reader = serializer.GetFastBufferReader();
+                    positionStart = m_Reader.Position;
+                }
+
                 if (TrackByStateId)
                 {
                     var stateId = StateId;
@@ -329,40 +340,36 @@ namespace Unity.Netcode.Components
                         serializer.SerializeValue(ref StateId);
                     }
                 }
-                serializer.SerializeValue(ref SentTime);
-                var positionStart = 0;
-                if (isWriting)
-                {
-                    m_Writer = serializer.GetFastBufferWriter();
-                    positionStart = m_Writer.Position;
-                    BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
-                    // We use network ticks as opposed to absolute time as the authoritative
-                    // side updates on every new tick.
-                    BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
 
-                }
-                else
+                // Synchronize State Flags and Network Tick
                 {
-                    m_Reader = serializer.GetFastBufferReader();
-                    positionStart = m_Reader.Position;
-                    ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
-                    // We use network ticks as opposed to absolute time as the authoritative
-                    // side updates on every new tick.
-                    ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
+                    if (isWriting)
+                    {
+                        BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
+                        // We use network ticks as opposed to absolute time as the authoritative
+                        // side updates on every new tick.
+                        BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
+
+                    }
+                    else
+                    {
+                        ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
+                        // We use network ticks as opposed to absolute time as the authoritative
+                        // side updates on every new tick.
+                        ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
+                    }
                 }
 
-                // POSITION
+                // Synchronize Position
                 if (HasPositionChange)
                 {
-                    // If using half precision, we always send the full Vector3
-                    // **Always use full precision when teleporting**
                     if (UseHalfFloatPrecision)
                     {
                         if (IsTeleportingNextFrame)
                         {
+                            // **Always use full precision when teleporting and UseHalfFloatPrecision is enabled**
                             serializer.SerializeValue(ref CurrentPosition);
-                            // If we are synchronizing too, then include the half vector position's
-                            // delta offset
+                            // If we are synchronizing, then include the half vector position's delta offset
                             if (IsSynchronizing)
                             {
                                 serializer.SerializeValue(ref DeltaPosition);
@@ -374,7 +381,7 @@ namespace Unity.Netcode.Components
                             serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
                         }
                     }
-                    else
+                    else // Legacy Position Synchronization
                     {
                         // Position Values
                         if (HasPositionX)
@@ -394,7 +401,7 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                // ROTATION
+                // Synchronize Rotation
                 if (HasRotAngleChange)
                 {
                     if (QuaternionSync)
@@ -419,15 +426,22 @@ namespace Unity.Netcode.Components
                             }
                             else
                             {
-                                if (serializer.IsWriter)
+                                if (UseHalfFloatPrecision)
                                 {
-                                    HalfVectorRotation.FromQuaternion(ref Rotation);
+                                    if (serializer.IsWriter)
+                                    {
+                                        HalfVectorRotation.FromQuaternion(ref Rotation);
+                                    }
+                                    else
+                                    {
+                                        HalfVectorRotation.ToQuaternion(ref Rotation);
+                                    }
+                                    serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
                                 }
                                 else
                                 {
-                                    HalfVectorRotation.ToQuaternion(ref Rotation);
+                                    serializer.SerializeValue(ref Rotation);
                                 }
-                                serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
                             }
                         }
                     }
@@ -451,22 +465,74 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                // SCALE
+                // Synchronize Scale
                 if (HasScaleChange)
                 {
-                    if (HasScaleX)
+                    if (UseHalfFloatPrecision && !IsTeleportingNextFrame)
                     {
-                        serializer.SerializeValue(ref ScaleX);
-                    }
+                        var halfScale = (ushort)0;
+                        if (HasScaleX)
+                        {
 
-                    if (HasScaleY)
-                    {
-                        serializer.SerializeValue(ref ScaleY);
-                    }
+                            if (isWriting)
+                            {
+                                halfScale = Mathf.FloatToHalf(ScaleX);
+                            }
+                            serializer.SerializeValue(ref halfScale);
+                            if (!isWriting)
+                            {
 
-                    if (HasScaleZ)
+                                ScaleX = Mathf.HalfToFloat(halfScale);
+                            }
+                        }
+
+                        if (HasScaleY)
+                        {
+                            if (isWriting)
+                            {
+                                halfScale = Mathf.FloatToHalf(ScaleY);
+                            }
+                            serializer.SerializeValue(ref halfScale);
+                            if (!isWriting)
+                            {
+
+                                ScaleY = Mathf.HalfToFloat(halfScale);
+                            }
+                        }
+
+                        if (HasScaleZ)
+                        {
+                            if (HasScaleY)
+                            {
+                                if (isWriting)
+                                {
+                                    halfScale = Mathf.FloatToHalf(ScaleZ);
+                                }
+                                serializer.SerializeValue(ref halfScale);
+                                if (!isWriting)
+                                {
+
+                                    ScaleZ = Mathf.HalfToFloat(halfScale);
+                                }
+                            }
+                        }
+                    }
+                    else
                     {
-                        serializer.SerializeValue(ref ScaleZ);
+                        if (HasScaleX)
+                        {
+                            serializer.SerializeValue(ref ScaleX);
+                        }
+
+                        if (HasScaleY)
+                        {
+                            serializer.SerializeValue(ref ScaleY);
+                        }
+
+                        if (HasScaleZ)
+                        {
+                            serializer.SerializeValue(ref ScaleZ);
+                        }
                     }
                 }
 
