@@ -168,6 +168,23 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void LateUpdate()
+        {
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+#if MULTIPLAYER_TOOLS
+            if (Input.GetKeyDown(KeyCode.Tab))
+            {
+
+                m_RuntimeNetStatsMonitor.Visible = !m_RuntimeNetStatsMonitor.Visible;
+
+            }
+#endif
+        }
+
         private void OnGUI()
         {
             if (IsSpawned )
