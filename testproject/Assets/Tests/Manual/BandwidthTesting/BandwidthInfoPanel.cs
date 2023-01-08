@@ -39,6 +39,7 @@ namespace TestProject.ManualTests
         public ToggleEntryTypes ToggleEntryType;
     }
 
+#if MULTIPLAYER_TOOLS
     [MetricTypeEnum(DisplayName = "NetworkTransformStats")]
     public enum NetworkTransformStats
     {
@@ -49,7 +50,7 @@ namespace TestProject.ManualTests
         [MetricMetadata(Units = Units.Bytes, MetricKind = MetricKind.Gauge)]
         BPSNumeric,
     }
-
+#endif
 
     public class BandwidthInfoPanel : NetworkBehaviour
     {
