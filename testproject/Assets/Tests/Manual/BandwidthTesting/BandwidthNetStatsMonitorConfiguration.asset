@@ -15,30 +15,33 @@ MonoBehaviour:
   <DisplayElements>k__BackingField:
   - <FieldsInitialized>k__BackingField: 1
     <Type>k__BackingField: 2
-    <Label>k__BackingField: Bytes Per Second
+    <Label>k__BackingField: Size Per Update
     <Stats>k__BackingField:
     - <TypeIndex>k__BackingField: 1
       <EnumValue>k__BackingField: 1
     <CounterConfiguration>k__BackingField:
-      <SmoothingMethod>k__BackingField: 0
-      <AggregationMethod>k__BackingField: 0
+      <SmoothingMethod>k__BackingField: 1
+      <AggregationMethod>k__BackingField: 1
       m_SignificantDigits: 3
       <HighlightLowerBound>k__BackingField: -3.4028235e+38
-      <HighlightUpperBound>k__BackingField: 3.4028235e+38
+      <HighlightUpperBound>k__BackingField: 3.402823e+38
       <ExponentialMovingAverageParams>k__BackingField:
-        m_HalfLife: 30
+        m_HalfLife: 1000000000
       <SimpleMovingAverageParams>k__BackingField:
-        m_SampleCount: 64
+        m_SampleCount: 29
+        <SampleRate>k__BackingField: 0
     <GraphConfiguration>k__BackingField:
-      m_SampleCount: 600
-      <VariableColors>k__BackingField: []
+      m_SampleCount: 512
+      <SampleRate>k__BackingField: 0
+      <VariableColors>k__BackingField:
+      - {r: 0.7735849, g: 0.3816161, b: 0.08392668, a: 1}
       <XAxisType>k__BackingField: 0
       <LineGraphConfiguration>k__BackingField:
-        m_LineThickness: 1
+        m_LineThickness: 2
     <SerializedStats>k__BackingField:
     - <TypeName>k__BackingField: TestProject.ManualTests.NetworkTransformStats, TestProject.ManualTests,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      <ValueName>k__BackingField: BytesPerSecondCounter
+      <ValueName>k__BackingField: BytesPerSecond
   - <FieldsInitialized>k__BackingField: 1
     <Type>k__BackingField: 0
     <Label>k__BackingField: Bytes Per Second Gauge
@@ -55,8 +58,10 @@ MonoBehaviour:
         m_HalfLife: 0.3333333432674408
       <SimpleMovingAverageParams>k__BackingField:
         m_SampleCount: 100
+        <SampleRate>k__BackingField: 0
     <GraphConfiguration>k__BackingField:
       m_SampleCount: 512
+      <SampleRate>k__BackingField: 1
       <VariableColors>k__BackingField: []
       <XAxisType>k__BackingField: 0
       <LineGraphConfiguration>k__BackingField:
@@ -64,7 +69,7 @@ MonoBehaviour:
     <SerializedStats>k__BackingField:
     - <TypeName>k__BackingField: TestProject.ManualTests.NetworkTransformStats, TestProject.ManualTests,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      <ValueName>k__BackingField: BytesPerSecondGauge
+      <ValueName>k__BackingField: BPSNumeric
   - <FieldsInitialized>k__BackingField: 1
     <Type>k__BackingField: 0
     <Label>k__BackingField: Size Per Update
@@ -81,8 +86,10 @@ MonoBehaviour:
         m_HalfLife: 1000000000
       <SimpleMovingAverageParams>k__BackingField:
         m_SampleCount: 29
+        <SampleRate>k__BackingField: 0
     <GraphConfiguration>k__BackingField:
       m_SampleCount: 512
+      <SampleRate>k__BackingField: 1
       <VariableColors>k__BackingField: []
       <XAxisType>k__BackingField: 0
       <LineGraphConfiguration>k__BackingField:
@@ -90,4 +97,4 @@ MonoBehaviour:
     <SerializedStats>k__BackingField:
     - <TypeName>k__BackingField: TestProject.ManualTests.NetworkTransformStats, TestProject.ManualTests,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
-      <ValueName>k__BackingField: SizePerUpdate
+      <ValueName>k__BackingField: BytesPerUpdate
