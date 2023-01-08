@@ -5,6 +5,10 @@
         "TestProject",
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Multiplayer.Tools.NetStats",
+        "Unity.Multiplayer.Tools.NetStatsMonitor.Component",
+        "Unity.Multiplayer.Tools.NetStatsMonitor.Configuration",
+        "Unity.Multiplayer.Tools.NetStatsMonitor.Implementation"
     ]
 }
