@@ -151,6 +151,18 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal bool HasScale(int axisIndex)
+            {
+                return BitGet(k_ScaleXBit + axisIndex);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal void SetHasScale(int axisIndex, bool isSet)
+            {
+                BitSet(isSet, k_ScaleXBit + axisIndex);
+            }
+
             // Scale
             public bool HasScaleX
             {
@@ -268,12 +280,19 @@ namespace Unity.Netcode.Components
             internal float ScaleX, ScaleY, ScaleZ;
             internal double SentTime;
 
-            // Used for HalfVector3DeltaPosition delta position updates
+            // Used for half precision delta position updates
             internal Vector3 CurrentPosition;
             internal Vector3 DeltaPosition;
             internal HalfVector3DeltaPosition HalfVectorPosition;
 
+            // Used for half precision scale
+            internal HalfVector3 HalfVectorScale;
+            internal Vector3 Scale;
+
+            // Used for half precision quaternion
             internal HalfVector4 HalfVectorRotation;
+
+            // Used to store a compressed quaternion
             internal uint QuaternionCompressed;
 
             internal Quaternion Rotation;
@@ -476,52 +495,19 @@ namespace Unity.Netcode.Components
                 // Synchronize Scale
                 if (HasScaleChange)
                 {
-                    if (UseHalfFloatPrecision && !IsTeleportingNextFrame)
+                    if (UseHalfFloatPrecision)
                     {
-                        var halfScale = (ushort)0;
-                        if (HasScaleX)
+                        if (IsTeleportingNextFrame)
                         {
-
-                            if (isWriting)
-                            {
-                                halfScale = Mathf.FloatToHalf(ScaleX);
-                            }
-                            serializer.SerializeValue(ref halfScale);
+                            serializer.SerializeValue(ref Scale);
+                        }
+                        else
+                        {
+                            HalfVectorScale = new HalfVector3(Scale, new HalfVector3AxisToSynchronize(HasScaleX, HasScaleY, HasScaleZ), 3);
+                            serializer.SerializeValue(ref HalfVectorScale);
                             if (!isWriting)
                             {
-
-                                ScaleX = Mathf.HalfToFloat(halfScale);
-                            }
-                        }
-
-                        if (HasScaleY)
-                        {
-                            if (isWriting)
-                            {
-                                halfScale = Mathf.FloatToHalf(ScaleY);
-                            }
-                            serializer.SerializeValue(ref halfScale);
-                            if (!isWriting)
-                            {
-
-                                ScaleY = Mathf.HalfToFloat(halfScale);
-                            }
-                        }
-
-                        if (HasScaleZ)
-                        {
-                            if (HasScaleY)
-                            {
-                                if (isWriting)
-                                {
-                                    halfScale = Mathf.FloatToHalf(ScaleZ);
-                                }
-                                serializer.SerializeValue(ref halfScale);
-                                if (!isWriting)
-                                {
-
-                                    ScaleZ = Mathf.HalfToFloat(halfScale);
-                                }
+                                HalfVectorScale.ToVector3(ref Scale);
                             }
                         }
                     }
@@ -738,13 +724,9 @@ namespace Unity.Netcode.Components
         private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
         private List<ulong> m_ClientIds = new List<ulong>() { 0 };
 
-        private BufferedLinearInterpolatorVector3 m_BufferedLinearInterpolatorVector3;
+        private BufferedLinearInterpolatorVector3 m_PositionInterpolator;
+        private BufferedLinearInterpolatorVector3 m_ScaleInterpolator;
         private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator; // rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
-
-        private BufferedLinearInterpolator<float> m_ScaleXInterpolator;
-        private BufferedLinearInterpolator<float> m_ScaleYInterpolator;
-        private BufferedLinearInterpolator<float> m_ScaleZInterpolator;
-        private readonly List<BufferedLinearInterpolator<float>> m_AllFloatInterpolators = new List<BufferedLinearInterpolator<float>>(6);
 
         // Used by integration test
         internal NetworkTransformState LastSentState;
@@ -757,11 +739,11 @@ namespace Unity.Netcode.Components
                 //var position = InLocalSpace ? transform.localPosition : transform.position;
                 if (resetInterpolator)
                 {
-                    m_BufferedLinearInterpolatorVector3.ResetTo(position, time);
+                    m_PositionInterpolator.ResetTo(position, time);
                 }
                 else
                 {
-                    m_BufferedLinearInterpolatorVector3.AddMeasurement(position, time);
+                    m_PositionInterpolator.AddMeasurement(position, time);
                 }
             }
         }
@@ -809,9 +791,9 @@ namespace Unity.Netcode.Components
 
         internal void UpdatePositionSlerp()
         {
-            if (m_BufferedLinearInterpolatorVector3 != null)
+            if (m_PositionInterpolator != null)
             {
-                m_BufferedLinearInterpolatorVector3.IsSlerp = SlerpPosition;
+                m_PositionInterpolator.IsSlerp = SlerpPosition;
             }
         }
 
@@ -948,18 +930,12 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-            var position = GetSpaceRelativePosition();
 
-            UpdatePositionInterpolator(position, serverTime, true);
+            UpdatePositionInterpolator(GetSpaceRelativePosition(), serverTime, true);
             UpdatePositionSlerp();
 
-            var rotation = GetSpaceRelativeRotation();
-            m_RotationInterpolator.ResetTo(rotation, serverTime);
-
-            var scale = transform.localScale;
-            m_ScaleXInterpolator.ResetTo(scale.x, serverTime);
-            m_ScaleYInterpolator.ResetTo(scale.y, serverTime);
-            m_ScaleZInterpolator.ResetTo(scale.z, serverTime);
+            m_ScaleInterpolator.ResetTo(transform.localScale, serverTime);
+            m_RotationInterpolator.ResetTo(GetSpaceRelativeRotation(), serverTime);
         }
 
         /// <summary>
@@ -1213,33 +1189,83 @@ namespace Unity.Netcode.Components
             // Only if we are not synchronizing...
             if (!isSynchronization)
             {
-                if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
+                if (!UseHalfFloatPrecision)
                 {
-                    networkState.ScaleX = scale.x;
-                    networkState.HasScaleX = true;
-                    isScaleDirty = true;
-                }
+                    if (SyncScaleX && (Mathf.Abs(networkState.ScaleX - scale.x) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
+                    {
+                        networkState.ScaleX = scale.x;
+                        networkState.HasScaleX = true;
+                        isScaleDirty = true;
+                    }
 
-                if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
-                {
-                    networkState.ScaleY = scale.y;
-                    networkState.HasScaleY = true;
-                    isScaleDirty = true;
-                }
+                    if (SyncScaleY && (Mathf.Abs(networkState.ScaleY - scale.y) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
+                    {
+                        networkState.ScaleY = scale.y;
+                        networkState.HasScaleY = true;
+                        isScaleDirty = true;
+                    }
 
-                if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
+                    if (SyncScaleZ && (Mathf.Abs(networkState.ScaleZ - scale.z) >= ScaleThreshold || networkState.IsTeleportingNextFrame))
+                    {
+                        networkState.ScaleZ = scale.z;
+                        networkState.HasScaleZ = true;
+                        isScaleDirty = true;
+                    }
+                }
+                else
                 {
-                    networkState.ScaleZ = scale.z;
-                    networkState.HasScaleZ = true;
-                    isScaleDirty = true;
+                    var previousScale = networkState.Scale;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (Mathf.Abs(Mathf.DeltaAngle(previousScale[i], scale[i])) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
+                        {
+                            isScaleDirty = true;
+                            networkState.Scale[i] = scale[i];
+                            networkState.SetHasScale(i, true);
+                        }
+                    }
                 }
             }
-            else // If we are synchronizing then use transform's values
+            else // If we are synchronizing then we need to determine which scale to use
             if (isSynchronization)
             {
-                networkState.ScaleX = transform.localScale.x;
-                networkState.ScaleY = transform.localScale.y;
-                networkState.ScaleZ = transform.localScale.z;
+                // This all has to do with complex nested hierarchies and how it impacts scale
+                // when set for the first time.
+                var hasParentNetworkObject = false;
+                // If the NetworkObject belonging to this NetworkTransform instance has a parent
+                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
+                if (NetworkObject.transform.parent != null)
+                {
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+
+                    // In-scene placed NetworkObjects parented under a GameObject with no
+                    // NetworkObject preserve their lossyScale when synchronizing.
+                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
+                    {
+                        hasParentNetworkObject = true;
+                    }
+                    else
+                    {
+                        // Or if the relative NetworkObject has a parent NetworkObject
+                        hasParentNetworkObject = parentNetworkObject != null;
+                    }
+                }
+
+                // If world position stays is set and the relative NetworkObject is parented under a NetworkObject
+                // then we want to use the lossy scale for the initial synchronization.
+                var useLossy = NetworkObject.WorldPositionStays() && hasParentNetworkObject;
+                var scaleToUse = useLossy ? transform.lossyScale : transform.localScale;
+
+                if (!UseHalfFloatPrecision)
+                {
+                    networkState.ScaleX = scaleToUse.x;
+                    networkState.ScaleY = scaleToUse.y;
+                    networkState.ScaleZ = scaleToUse.z;
+                }
+                else
+                {
+                    networkState.Scale = scaleToUse;
+                }
                 networkState.HasScaleX = true;
                 networkState.HasScaleY = true;
                 networkState.HasScaleZ = true;
@@ -1252,8 +1278,7 @@ namespace Unity.Netcode.Components
                 networkState.NetworkTick = NetworkManager.ServerTime.Tick;
             }
 
-            /// We need to set this in order to know when we can reset our local authority state <see cref="Update"/>
-            /// If our state is already dirty or we just found deltas (i.e. isDirty == true)
+            // Mark the state dirty for the next network tick update to clear out the bitset values
             networkState.IsDirty |= isDirty;
             return isDirty;
         }
@@ -1286,7 +1311,7 @@ namespace Unity.Netcode.Components
             // to assure we fully interpolate to our target even after we stop extrapolating 1 tick later.
             if (Interpolate)
             {
-                var interpolatedPosition = m_BufferedLinearInterpolatorVector3.GetInterpolatedValue();
+                var interpolatedPosition = m_PositionInterpolator.GetInterpolatedValue();
                 if (UseHalfFloatPrecision)
                 {
                     adjustedPosition = interpolatedPosition;
@@ -1298,9 +1323,17 @@ namespace Unity.Netcode.Components
                     if (SyncPositionZ) { adjustedPosition.z = interpolatedPosition.z; }
                 }
 
-                if (SyncScaleX) { adjustedScale.x = m_ScaleXInterpolator.GetInterpolatedValue(); }
-                if (SyncScaleY) { adjustedScale.y = m_ScaleYInterpolator.GetInterpolatedValue(); }
-                if (SyncScaleZ) { adjustedScale.z = m_ScaleZInterpolator.GetInterpolatedValue(); }
+                if (UseHalfFloatPrecision)
+                {
+                    adjustedScale = m_ScaleInterpolator.GetInterpolatedValue();
+                }
+                else
+                {
+                    var interpolatedScale = m_ScaleInterpolator.GetInterpolatedValue();
+                    if (SyncScaleX) { adjustedScale.x = interpolatedScale.x; }
+                    if (SyncScaleY) { adjustedScale.y = interpolatedScale.y; }
+                    if (SyncScaleZ) { adjustedScale.z = interpolatedScale.z; }
+                }
 
                 if (SynchronizeRotation)
                 {
@@ -1321,22 +1354,37 @@ namespace Unity.Netcode.Components
             }
             else
             {
+                // Non-Interpolated Position and Scale
                 if (UseHalfFloatPrecision)
                 {
-                    adjustedPosition = networkState.CurrentPosition;
+                    if (networkState.HasPositionChange)
+                    {
+                        adjustedPosition = networkState.CurrentPosition;
+                    }
+
+                    if (networkState.HasScaleChange)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (m_LocalAuthoritativeNetworkState.HasScale(i))
+                            {
+                                adjustedScale[i] = m_LocalAuthoritativeNetworkState.Scale[i];
+                            }
+                        }
+                    }
                 }
                 else
                 {
                     if (networkState.HasPositionX) { adjustedPosition.x = networkState.PositionX; }
                     if (networkState.HasPositionY) { adjustedPosition.y = networkState.PositionY; }
                     if (networkState.HasPositionZ) { adjustedPosition.z = networkState.PositionZ; }
+                    if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
+                    if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
+                    if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
                 }
 
-                if (networkState.HasScaleX) { adjustedScale.x = networkState.ScaleX; }
-                if (networkState.HasScaleY) { adjustedScale.y = networkState.ScaleY; }
-                if (networkState.HasScaleZ) { adjustedScale.z = networkState.ScaleZ; }
-
-                if (networkState.QuaternionSync)
+                // Non-interpolated rotation
+                if (networkState.QuaternionSync && networkState.HasRotAngleChange)
                 {
                     adjustedRotation = networkState.Rotation;
                 }
@@ -1413,13 +1461,9 @@ namespace Unity.Netcode.Components
 
             var isSynchronization = newState.IsSynchronizing;
 
-            // we should clear our float interpolators
-            foreach (var interpolator in m_AllFloatInterpolators)
-            {
-                interpolator.Clear();
-            }
-
-            // clear the quaternion interpolator
+            // Clear all interpolators
+            m_ScaleInterpolator.Clear();
+            m_PositionInterpolator.Clear();
             m_RotationInterpolator.Clear();
 
             if (!UseHalfFloatPrecision)
@@ -1489,24 +1533,29 @@ namespace Unity.Netcode.Components
                 transform.position = currentPosition;
             }
 
-            // Adjust based on which axis changed
-            if (newState.HasScaleX)
+            if (UseHalfFloatPrecision)
             {
-                m_ScaleXInterpolator.ResetTo(newState.ScaleX, sentTime);
-                currentScale.x = newState.ScaleX;
+                currentScale = newState.Scale;
             }
+            else
+            {
+                // Adjust based on which axis changed
+                if (newState.HasScaleX)
+                {
+                    currentScale.x = newState.ScaleX;
+                }
 
-            if (newState.HasScaleY)
-            {
-                m_ScaleYInterpolator.ResetTo(newState.ScaleY, sentTime);
-                currentScale.y = newState.ScaleY;
-            }
+                if (newState.HasScaleY)
+                {
+                    currentScale.y = newState.ScaleY;
+                }
 
-            if (newState.HasScaleZ)
-            {
-                m_ScaleZInterpolator.ResetTo(newState.ScaleZ, sentTime);
-                currentScale.z = newState.ScaleZ;
+                if (newState.HasScaleZ)
+                {
+                    currentScale.z = newState.ScaleZ;
+                }
             }
+            m_ScaleInterpolator.ResetTo(currentScale, sentTime);
 
             // Apply the adjusted scale
             transform.localScale = currentScale;
@@ -1634,19 +1683,37 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            if (m_LocalAuthoritativeNetworkState.HasScaleX)
+            if (m_LocalAuthoritativeNetworkState.HasScaleChange)
             {
-                m_ScaleXInterpolator.AddMeasurement(m_LocalAuthoritativeNetworkState.ScaleX, sentTime);
-            }
+                var currentScale = transform.localScale;
+                if (UseHalfFloatPrecision)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (m_LocalAuthoritativeNetworkState.HasScale(i))
+                        {
+                            currentScale[i] = m_LocalAuthoritativeNetworkState.Scale[i];
+                        }
+                    }
+                }
+                else
+                {
+                    if (m_LocalAuthoritativeNetworkState.HasScaleX)
+                    {
+                        currentScale.x = m_LocalAuthoritativeNetworkState.ScaleX;
+                    }
 
-            if (m_LocalAuthoritativeNetworkState.HasScaleY)
-            {
-                m_ScaleYInterpolator.AddMeasurement(m_LocalAuthoritativeNetworkState.ScaleY, sentTime);
-            }
+                    if (m_LocalAuthoritativeNetworkState.HasScaleY)
+                    {
+                        currentScale.y = m_LocalAuthoritativeNetworkState.ScaleY;
+                    }
 
-            if (m_LocalAuthoritativeNetworkState.HasScaleZ)
-            {
-                m_ScaleZInterpolator.AddMeasurement(m_LocalAuthoritativeNetworkState.ScaleZ, sentTime);
+                    if (m_LocalAuthoritativeNetworkState.HasScaleZ)
+                    {
+                        currentScale.z = m_LocalAuthoritativeNetworkState.ScaleZ;
+                    }
+                }
+                m_ScaleInterpolator.AddMeasurement(currentScale, sentTime);
             }
 
             // With rotation, we check if there are any changes first and
@@ -1722,10 +1789,8 @@ namespace Unity.Netcode.Components
         public void SetMaxInterpolationBound(float maxInterpolationBound)
         {
             m_RotationInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleXInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleYInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_ScaleZInterpolator.MaxInterpolationBound = maxInterpolationBound;
-            m_BufferedLinearInterpolatorVector3.MaxInterpolationBound = maxInterpolationBound;
+            m_PositionInterpolator.MaxInterpolationBound = maxInterpolationBound;
+            m_ScaleInterpolator.MaxInterpolationBound = maxInterpolationBound;
         }
 
         /// <summary>
@@ -1736,21 +1801,8 @@ namespace Unity.Netcode.Components
         {
             // Rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
             m_RotationInterpolator = new BufferedLinearInterpolatorQuaternion();
-            m_BufferedLinearInterpolatorVector3 = new BufferedLinearInterpolatorVector3();
-
-            // All other interpolators are BufferedLinearInterpolatorFloats
-            m_ScaleXInterpolator = new BufferedLinearInterpolatorFloat();
-            m_ScaleYInterpolator = new BufferedLinearInterpolatorFloat();
-            m_ScaleZInterpolator = new BufferedLinearInterpolatorFloat();
-
-            // Used to quickly iteration over the BufferedLinearInterpolatorFloat
-            // instances
-            if (m_AllFloatInterpolators.Count == 0)
-            {
-                m_AllFloatInterpolators.Add(m_ScaleXInterpolator);
-                m_AllFloatInterpolators.Add(m_ScaleYInterpolator);
-                m_AllFloatInterpolators.Add(m_ScaleZInterpolator);
-            }
+            m_PositionInterpolator = new BufferedLinearInterpolatorVector3();
+            m_ScaleInterpolator = new BufferedLinearInterpolatorVector3();
         }
 
         /// <summary>
@@ -2042,13 +2094,10 @@ namespace Unity.Netcode.Components
                 // is to make their cachedRenderTime run 2 ticks behind.
                 var ticksAgo = !IsServerAuthoritative() && !IsServer ? 2 : 1;
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
-                foreach (var interpolator in m_AllFloatInterpolators)
-                {
-                    interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
-                }
 
-                m_BufferedLinearInterpolatorVector3.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                m_PositionInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
+                m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
             }
 
             // Apply the current authoritative state
