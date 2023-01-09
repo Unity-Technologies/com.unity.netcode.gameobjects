@@ -277,6 +277,10 @@ namespace Unity.Netcode.Components
             internal uint QuaternionCompressed;
 
             internal Quaternion Rotation;
+            public Quaternion GetRotation()
+            {
+                return Rotation;
+            }
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
@@ -711,6 +715,18 @@ namespace Unity.Netcode.Components
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetSpaceRelativePosition()
+        {
+            return InLocalSpace ? transform.localPosition : transform.position;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Quaternion GetSpaceRelativeRotation()
+        {
+            return InLocalSpace ? transform.localRotation : transform.rotation;
+        }
+
         // Used by both authoritative and non-authoritative instances.
         // This represents the most recent local authoritative state.
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
@@ -729,6 +745,7 @@ namespace Unity.Netcode.Components
         // Used by integration test
         internal NetworkTransformState LastSentState;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected void UpdatePositionInterpolator(Vector3 position, double time, bool resetInterpolator = false)
         {
             if (!CanCommitToTransform)
@@ -825,7 +842,7 @@ namespace Unity.Netcode.Components
                 var transformToCommit = transform;
                 // If we are using Half Float Precision, then we want to only synchronize the authority's m_HalfPositionState.FullPosition in order for
                 // for the non-authority side to be able to properly synchronize delta position updates.
-                ApplyTransformToNetworkStateWithInfo(ref synchronizationState,ref transformToCommit, true, targetClientId);
+                ApplyTransformToNetworkStateWithInfo(ref synchronizationState, ref transformToCommit, true, targetClientId);
                 synchronizationState.NetworkSerialize(serializer);
             }
             else
@@ -872,8 +889,8 @@ namespace Unity.Netcode.Components
             }
             else // Non-Authority
             {
-                var position = InLocalSpace ? transformToCommit.localPosition : transformToCommit.position;
-                var rotation = InLocalSpace ? transformToCommit.localRotation : transformToCommit.rotation;
+                var position = GetSpaceRelativePosition();
+                var rotation = GetSpaceRelativeRotation();
                 // We are an owner requesting to update our state
                 if (!m_CachedIsServer)
                 {
@@ -927,12 +944,12 @@ namespace Unity.Netcode.Components
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
             var serverTime = NetworkManager.ServerTime.Time;
-            var position = InLocalSpace ? transform.localPosition : transform.position;
+            var position = GetSpaceRelativePosition();
 
-            m_BufferedLinearInterpolatorVector3.ResetTo(position, serverTime);
+            UpdatePositionInterpolator(position, serverTime, true);
             UpdatePositionSlerp();
 
-            var rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+            var rotation = GetSpaceRelativeRotation();
             m_RotationInterpolator.ResetTo(rotation, serverTime);
 
             var scale = transform.localScale;
@@ -978,7 +995,7 @@ namespace Unity.Netcode.Components
         /// Applies the transform to the <see cref="NetworkTransformState"/> specified.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState,ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
+        private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
             var isDirty = false;
             var isPositionDirty = false;
@@ -1165,7 +1182,7 @@ namespace Unity.Netcode.Components
 
             if (networkState.HasRotAngleChange && networkState.QuaternionSync)
             {
-                networkState.Rotation = InLocalSpace ? transform.localRotation : transform.rotation;
+                networkState.Rotation = GetSpaceRelativeRotation();
             }
 
             // Only if we are not synchronizing...
@@ -1222,11 +1239,9 @@ namespace Unity.Netcode.Components
         private void ApplyAuthoritativeState()
         {
             var networkState = m_LocalAuthoritativeNetworkState;
-            var adjustedPosition = networkState.InLocalSpace ? transform.localPosition : transform.position;
-
-            // TODO: We should store network state w/ quats vs. euler angles
-            var adjustedRotAngles = networkState.InLocalSpace ? transform.localEulerAngles : transform.eulerAngles;
-            var adjustedRotation = networkState.InLocalSpace ? transform.localRotation : transform.rotation;
+            var adjustedPosition = GetSpaceRelativePosition();
+            var adjustedRotation = GetSpaceRelativeRotation();
+            var adjustedRotAngles = adjustedRotation.eulerAngles;
             var adjustedScale = transform.localScale;
 
             // Non-Authority Preservers the authority's transform state update modes
@@ -1366,8 +1381,8 @@ namespace Unity.Netcode.Components
             }
 
             var sentTime = newState.SentTime;
-            var currentPosition = newState.InLocalSpace ? transform.localPosition : transform.position;
-            var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
+            var currentPosition = GetSpaceRelativePosition();
+            var currentRotation = GetSpaceRelativeRotation();
             var currentEulerAngles = currentRotation.eulerAngles;
             var currentScale = transform.localScale;
 
@@ -1399,7 +1414,7 @@ namespace Unity.Netcode.Components
                 {
                     currentPosition.z = newState.PositionZ;
                 }
-                m_BufferedLinearInterpolatorVector3.ResetTo(currentPosition, sentTime);
+                UpdatePositionInterpolator(currentPosition, sentTime, true);
             }
             else
             {
@@ -1435,7 +1450,7 @@ namespace Unity.Netcode.Components
 
                 if (Interpolate)
                 {
-                    m_BufferedLinearInterpolatorVector3.ResetTo(currentPosition, sentTime);
+                    UpdatePositionInterpolator(currentPosition, sentTime);
                 }
             }
 
@@ -1544,8 +1559,9 @@ namespace Unity.Netcode.Components
             }
 
             var sentTime = newState.SentTime;
-            var currentRotation = newState.InLocalSpace ? transform.localRotation : transform.rotation;
+            var currentRotation = GetSpaceRelativeRotation();
             var currentEulerAngles = currentRotation.eulerAngles;
+
 
             if (UseHalfFloatPrecision)
             {
@@ -1570,11 +1586,11 @@ namespace Unity.Netcode.Components
             {
                 if (m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
-                    m_BufferedLinearInterpolatorVector3.AddMeasurement(m_LocalAuthoritativeNetworkState.CurrentPosition, sentTime);
+                    UpdatePositionInterpolator(m_LocalAuthoritativeNetworkState.CurrentPosition, sentTime);
                 }
                 else
                 {
-                    var currentPosition = m_BufferedLinearInterpolatorVector3.GetInterpolatedValue();
+                    var currentPosition = GetSpaceRelativePosition();
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
                         currentPosition.x = m_LocalAuthoritativeNetworkState.PositionX;
@@ -1589,8 +1605,7 @@ namespace Unity.Netcode.Components
                     {
                         currentPosition.z = m_LocalAuthoritativeNetworkState.PositionZ;
                     }
-
-                    m_BufferedLinearInterpolatorVector3.AddMeasurement(currentPosition, sentTime);
+                    UpdatePositionInterpolator(currentPosition, sentTime);
                 }
             }
 
@@ -1614,7 +1629,7 @@ namespace Unity.Netcode.Components
             // values.
             if (m_LocalAuthoritativeNetworkState.HasRotAngleChange)
             {
-                if (m_LocalAuthoritativeNetworkState.QuaternionSync && m_LocalAuthoritativeNetworkState.HasRotAngleChange)
+                if (m_LocalAuthoritativeNetworkState.QuaternionSync)
                 {
                     currentRotation = m_LocalAuthoritativeNetworkState.Rotation;
                 }
@@ -1770,8 +1785,8 @@ namespace Unity.Netcode.Components
             // that can be invoked when ownership changes.
             if (CanCommitToTransform)
             {
-                var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
-                var currentRotation = InLocalSpace ? transform.localRotation : transform.rotation;
+                var currentPosition = GetSpaceRelativePosition();
+                var currentRotation = GetSpaceRelativeRotation();
                 // Teleport to current position
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
@@ -1848,7 +1863,7 @@ namespace Unity.Netcode.Components
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
-            var currentPosition = InLocalSpace ? transform.localPosition : transform.position;
+            var currentPosition = GetSpaceRelativePosition();
 
             if (CanCommitToTransform)
             {
@@ -1902,8 +1917,8 @@ namespace Unity.Netcode.Components
                 throw new Exception("Non-owner client instance cannot set the state of the NetworkTransform!");
             }
 
-            Vector3 pos = posIn == null ? InLocalSpace ? transform.localPosition : transform.position : posIn.Value;
-            Quaternion rot = rotIn == null ? InLocalSpace ? transform.localRotation : transform.rotation : rotIn.Value;
+            Vector3 pos = posIn == null ? GetSpaceRelativePosition() : posIn.Value;
+            Quaternion rot = rotIn == null ? GetSpaceRelativeRotation() : rotIn.Value;
             Vector3 scale = scaleIn == null ? transform.localScale : scaleIn.Value;
 
             if (!CanCommitToTransform)
@@ -1996,13 +2011,7 @@ namespace Unity.Netcode.Components
                 var serverTime = NetworkManager.ServerTime;
                 var cachedDeltaTime = Time.deltaTime;
                 var cachedServerTime = serverTime.Time;
-
-                // TODO: Investigate Further
-                // With owner authoritative mode, non-authority clients can lag behind
-                // by more than 1 tick period of time. The current "solution" for now
-                // is to make their cachedRenderTime run 2 ticks behind.
-                var ticksAgo = !IsServerAuthoritative() && !IsServer ? 2 : 1;
-                var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
+                var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);

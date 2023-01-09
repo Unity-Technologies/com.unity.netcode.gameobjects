@@ -124,6 +124,7 @@ namespace TestProject.ManualTests
             public Vector3 HalfBackDelta;
             public Vector3 FullPosition;
             public Vector3 TransformPosition;
+            public Quaternion Rotation;
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
@@ -165,6 +166,7 @@ namespace TestProject.ManualTests
             state.HalfBackDelta = halfPositionState.GetConvertedDelta();
             state.DeltaPosition = halfPositionState.GetDeltaPosition();
             state.FullPosition = halfPositionState.GetFullPosition();
+            state.Rotation = networkTransformState.GetRotation();
             state.TransformPosition = InLocalSpace ? transform.localPosition : transform.position;
             var localClientId = NetworkManager.LocalClientId;
             var ownerId = NetworkObject.OwnerClientId;
@@ -244,6 +246,7 @@ namespace TestProject.ManualTests
                 m_LogEntry.Append($"{isPreUpdate}{isApppliedLocal} State Entry ({stateEntry.StateId}) on Tick ({stateEntry.Tick}). {isSynchronization}{isTeleporing}\n");
                 m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{ stateEntry.HalfBackDelta}\n");
                 m_LogEntry.Append($"[FullPos]{stateEntry.FullPosition} [TransPos] {stateEntry.TransformPosition}\n");
+                m_LogEntry.Append($"[Rotation]{stateEntry.Rotation.eulerAngles}\n");
                 if (lineCounter >= 75)
                 {
                     Debug.Log(m_LogEntry);
