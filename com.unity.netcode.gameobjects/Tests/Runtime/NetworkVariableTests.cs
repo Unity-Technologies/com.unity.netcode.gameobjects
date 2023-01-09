@@ -201,6 +201,10 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<NativeArray<NetworkVariableTestStruct>> TestStructArrayVar;
         public NetworkVariable<NativeList<NetworkVariableTestStruct>> TestStructListVar;
 
+        public NetworkVariable<FixedString32Bytes> FixedStringVar;
+        public NetworkVariable<NativeArray<FixedString32Bytes>> FixedStringArrayVar;
+        public NetworkVariable<NativeList<FixedString32Bytes>> FixedStringListVar;
+
         public NetworkVariable<UnmanagedNetworkSerializableType> UnmanagedNetworkSerializableTypeVar;
         public NetworkVariable<NativeList<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableListVar;
         public NetworkVariable<NativeArray<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableArrayVar;
@@ -1425,7 +1429,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
                 typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct))]
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
             if (testType == typeof(byte))
@@ -1572,6 +1576,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 TestValueType<NetworkVariableTestStruct>(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
             }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueType<FixedString32Bytes>(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
+            }
         }
 
         [Test]
@@ -1582,7 +1590,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
                 typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct))]
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
             if (testType == typeof(byte))
@@ -1798,6 +1806,21 @@ namespace Unity.Netcode.RuntimeTests
                         NetworkVariableTestStruct.GetTestStruct()
                     }, Allocator.Temp));
             }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueTypeNativeArray<FixedString32Bytes>(
+                    new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("foobar"),
+                        new FixedString32Bytes("12345678901234567890123456789")
+                    }, Allocator.Temp),
+                    new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("BazQux"),
+                        new FixedString32Bytes("98765432109876543210987654321"),
+                        new FixedString32Bytes("FixedString32Bytes")
+                    }, Allocator.Temp));
+            }
         }
 
         [Test]
@@ -1808,7 +1831,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
                 typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct))]
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
             if (testType == typeof(byte))
@@ -2022,6 +2045,21 @@ namespace Unity.Netcode.RuntimeTests
                         NetworkVariableTestStruct.GetTestStruct(),
                         NetworkVariableTestStruct.GetTestStruct(),
                         NetworkVariableTestStruct.GetTestStruct()
+                    });
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueTypeNativeList<FixedString32Bytes>(
+                    new NativeList<FixedString32Bytes>(Allocator.Temp)
+                    {
+                        new FixedString32Bytes("foobar"),
+                        new FixedString32Bytes("12345678901234567890123456789")
+                    },
+                    new NativeList<FixedString32Bytes>(Allocator.Temp)
+                    {
+                        new FixedString32Bytes("BazQux"),
+                        new FixedString32Bytes("98765432109876543210987654321"),
+                        new FixedString32Bytes("FixedString32Bytes")
                     });
             }
         }
