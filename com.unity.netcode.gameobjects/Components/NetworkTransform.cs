@@ -349,8 +349,7 @@ namespace Unity.Netcode.Components
                 {
                     if (isWriting)
                     {
-                        //BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
-                        serializer.SerializeValue(ref m_Bitset);
+                        BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
@@ -358,8 +357,7 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        serializer.SerializeValue(ref m_Bitset);
-                        //ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
+                        ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
