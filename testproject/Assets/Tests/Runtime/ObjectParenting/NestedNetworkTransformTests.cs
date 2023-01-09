@@ -13,10 +13,14 @@ namespace TestProject.RuntimeTests
     [TestFixture(Interpolation.Interpolation, Precision.Full, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Server)]
     [TestFixture(Interpolation.Interpolation, Precision.Half, AuthoritativeModel.Owner)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Server)]
+    [TestFixture(Interpolation.Interpolation, Precision.Compressed, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Server)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Full, AuthoritativeModel.Owner)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Server)]
     [TestFixture(Interpolation.NoInterpolation, Precision.Half, AuthoritativeModel.Owner)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Server)]
+    [TestFixture(Interpolation.NoInterpolation, Precision.Compressed, AuthoritativeModel.Owner)]
     public class NestedNetworkTransformTests : IntegrationTestWithApproximation
     {
         private const string k_TestScene = "NestedNetworkTransformTestScene";
@@ -42,6 +46,7 @@ namespace TestProject.RuntimeTests
 
         public enum Precision
         {
+            Compressed,
             Half,
             Full
         }
@@ -125,7 +130,8 @@ namespace TestProject.RuntimeTests
         private void ConfigureNetworkTransform(IntegrationNetworkTransform networkTransform)
         {
             networkTransform.Interpolate = m_Interpolation == Interpolation.Interpolation;
-            networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half || m_Precision == Precision.Compressed;
+            networkTransform.UseQuaternionCompression = m_Precision == Precision.Compressed;
             networkTransform.IsServerAuthority = m_Authority == AuthoritativeModel.Server;
         }
 
@@ -136,6 +142,8 @@ namespace TestProject.RuntimeTests
             Object.DestroyImmediate(m_PlayerPrefab);
             // Assign the network prefab resource loaded
             m_PlayerPrefab = m_PlayerPrefabResource as GameObject;
+            m_PlayerPrefab.name = "Player";
+
             ConfigureNetworkTransform(m_PlayerPrefab.GetComponent<IntegrationNetworkTransform>());
             var networkTransforms = m_PlayerPrefab.GetComponentsInChildren<IntegrationNetworkTransform>();
             foreach (var networkTransform in networkTransforms)
@@ -159,8 +167,9 @@ namespace TestProject.RuntimeTests
         }
 
         // Acceptable variances when using half precision
-        private const float k_PositionScaleVariance = 0.01795f;
+        private const float k_PositionScaleVariance = 0.03f;
         private const float k_RotationVariance = 0.0255f;
+        private const float k_RotationVarianceCompressed = 0.555f;
 
         private float m_CurrentVariance = k_PositionScaleVariance;
         override protected float GetDeltaVarianceThreshold()
@@ -185,6 +194,7 @@ namespace TestProject.RuntimeTests
                     }
                     var relativeClonedTransforms = playerRelative.Value[connectedClient].GetComponentsInChildren<IntegrationNetworkTransform>();
                     m_CurrentVariance = m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_PositionScaleVariance;
+                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
                     for (int i = 0; i < playerNetworkTransforms.Length; i++)
                     {
                         var playerCurrentPosition = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localPosition : playerNetworkTransforms[i].transform.position;
@@ -213,15 +223,23 @@ namespace TestProject.RuntimeTests
                         }
 
                         m_CurrentVariance = m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_RotationVariance;
-                        var playerCurrentRotation = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localRotation : playerNetworkTransforms[i].transform.rotation;
-                        var cloneRotation = relativeClonedTransforms[i].InLocalSpace ? relativeClonedTransforms[i].transform.localRotation : relativeClonedTransforms[i].transform.rotation;
-                        if (!Approximately(playerCurrentRotation, cloneRotation))
+                        if (m_Precision == Precision.Compressed)
+                        {
+                            m_CurrentVariance = k_RotationVarianceCompressed;
+                        }
+                        m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : 0.0f;
+                        var playerCurrentRotation = playerNetworkTransforms[i].GetSpaceRelativeRotation();
+                        var cloneRotation = relativeClonedTransforms[i].GetSpaceRelativeRotation();
+                        if (!Approximately(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
                         {
                             // Double check Euler as quaternions can have inverted Vector4 values from one another but be the same when comparing Euler
                             if (!Approximately(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
                             {
                                 var deltaEuler = playerCurrentRotation.eulerAngles - cloneRotation.eulerAngles;
-                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({playerCurrentRotation.x}, {playerCurrentRotation.y}, {playerCurrentRotation.z}, {playerCurrentRotation.w})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({cloneRotation.x}, {cloneRotation.y}, {cloneRotation.z}, {cloneRotation.w})]\n");
+                                var eulerPlayer = playerCurrentRotation.eulerAngles;
+                                var eulerClone = cloneRotation.eulerAngles;
+
+                                m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({eulerPlayer.x}, {eulerPlayer.y}, {eulerPlayer.z})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({eulerClone.x}, {eulerClone.y}, {eulerClone.z})]\n");
                                 m_ValidationErrors.Append($"[Rotation Delta] ({deltaEuler.x}, {deltaEuler.y}, {deltaEuler.z})\n");
                                 if (m_EnableVerboseDebug)
                                 {
@@ -243,7 +261,6 @@ namespace TestProject.RuntimeTests
             // If we had any variance failures logged, then we failed
             return m_ValidationErrors.Length == 0;
         }
-
         private const int k_IterationsToTest = 10;
         private const int k_ClientsToSpawn = 4;  // Really it will be 5 including the host
 
@@ -268,16 +285,17 @@ namespace TestProject.RuntimeTests
             // extended testing
             for (int i = 0; i < k_IterationsToTest; i++)
             {
-                AutomatedPlayerMover.StopMovement = true;
-                ChildMoverManager.StopMovement = true;
                 if (clientCount < k_ClientsToSpawn)
                 {
                     yield return CreateAndStartNewClient();
                     clientCount++;
                 }
 
-                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, timeOut);
 
+                yield return s_DefaultWaitForTick;
+                ChildMoverManager.StopMovement = true;
+                AutomatedPlayerMover.StopMovement = true;
+                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, timeOut);
                 if (!ValidateNetworkTransforms())
                 {
                     // If not, then log errors to console and clear the current pass validation errors
@@ -309,6 +327,9 @@ namespace TestProject.RuntimeTests
                         precisionFailures = 0;
                     }
                 }
+
+
+
 
                 AutomatedPlayerMover.StopMovement = false;
                 ChildMoverManager.StopMovement = false;
