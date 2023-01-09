@@ -349,7 +349,8 @@ namespace Unity.Netcode.Components
                 {
                     if (isWriting)
                     {
-                        BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
+                        //BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
+                        serializer.SerializeValue(ref m_Bitset);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         BytePacker.WriteValueBitPacked(m_Writer, NetworkTick);
@@ -357,7 +358,8 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
+                        serializer.SerializeValue(ref m_Bitset);
+                        //ByteUnpacker.ReadValueBitPacked(m_Reader, out m_Bitset);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
                         ByteUnpacker.ReadValueBitPacked(m_Reader, out NetworkTick);
@@ -418,29 +420,33 @@ namespace Unity.Netcode.Components
                         {
                             if (QuaternionCompression)
                             {
-                                if (serializer.IsWriter)
+                                if (isWriting)
                                 {
                                     QuaternionCompressed = QuaternionCompressor.CompressQuaternion(ref Rotation);
                                 }
-                                else
+
+                                serializer.SerializeValue(ref QuaternionCompressed);
+
+                                if (!isWriting)
                                 {
                                     QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
                                 }
-                                serializer.SerializeValue(ref QuaternionCompressed);
                             }
                             else
                             {
                                 if (UseHalfFloatPrecision)
                                 {
-                                    if (serializer.IsWriter)
+                                    if (isWriting)
                                     {
                                         HalfVectorRotation.FromQuaternion(ref Rotation);
                                     }
-                                    else
+
+                                    serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
+
+                                    if (!isWriting)
                                     {
                                         HalfVectorRotation.ToQuaternion(ref Rotation);
                                     }
-                                    serializer.SerializeNetworkSerializable(ref HalfVectorRotation);
                                 }
                                 else
                                 {
@@ -1159,30 +1165,51 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
+            if (!UseQuaternionSynchronization)
             {
-                networkState.RotAngleX = rotAngles.x;
-                networkState.HasRotAngleX = true;
-                isRotationDirty = true;
-            }
+                if (SyncRotAngleX && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleX, rotAngles.x)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
+                {
+                    networkState.RotAngleX = rotAngles.x;
+                    networkState.HasRotAngleX = true;
+                    isRotationDirty = true;
+                }
 
-            if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
-            {
-                networkState.RotAngleY = rotAngles.y;
-                networkState.HasRotAngleY = true;
-                isRotationDirty = true;
-            }
+                if (SyncRotAngleY && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleY, rotAngles.y)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
+                {
+                    networkState.RotAngleY = rotAngles.y;
+                    networkState.HasRotAngleY = true;
+                    isRotationDirty = true;
+                }
 
-            if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
-            {
-                networkState.RotAngleZ = rotAngles.z;
-                networkState.HasRotAngleZ = true;
-                isRotationDirty = true;
+                if (SyncRotAngleZ && (Mathf.Abs(Mathf.DeltaAngle(networkState.RotAngleZ, rotAngles.z)) >= RotAngleThreshold || networkState.IsTeleportingNextFrame))
+                {
+                    networkState.RotAngleZ = rotAngles.z;
+                    networkState.HasRotAngleZ = true;
+                    isRotationDirty = true;
+                }
             }
-
-            if (networkState.HasRotAngleChange && networkState.QuaternionSync)
+            else
             {
-                networkState.Rotation = GetSpaceRelativeRotation();
+                // For quaternion synchronization, if one angle is dirty we send a full update
+                if (!isRotationDirty)
+                {
+                    var previousRotation = networkState.Rotation.eulerAngles;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        if (Mathf.Abs(Mathf.DeltaAngle(previousRotation[i], rotAngles[i])) >= RotAngleThreshold)
+                        {
+                            isRotationDirty = true;
+                            break;
+                        }
+                    }
+                }
+                if (isRotationDirty)
+                {
+                    networkState.Rotation = InLocalSpace ? transformToUse.localRotation : transformToUse.rotation;
+                    networkState.HasRotAngleX = true;
+                    networkState.HasRotAngleY = true;
+                    networkState.HasRotAngleZ = true;
+                }
             }
 
             // Only if we are not synchronizing...
@@ -1672,7 +1699,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void OnNetworkStateChanged(NetworkTransformState oldState, NetworkTransformState newState)
         {
-            if (!NetworkObject.IsSpawned)
+            if (!NetworkObject.IsSpawned || CanCommitToTransform)
             {
                 return;
             }
@@ -2011,7 +2038,12 @@ namespace Unity.Netcode.Components
                 var serverTime = NetworkManager.ServerTime;
                 var cachedDeltaTime = Time.deltaTime;
                 var cachedServerTime = serverTime.Time;
-                var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
+                // TODO: Investigate Further
+                // With owner authoritative mode, non-authority clients can lag behind
+                // by more than 1 tick period of time. The current "solution" for now
+                // is to make their cachedRenderTime run 2 ticks behind.
+                var ticksAgo = !IsServerAuthoritative() && !IsServer ? 2 : 1;
+                var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
                 foreach (var interpolator in m_AllFloatInterpolators)
                 {
                     interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
