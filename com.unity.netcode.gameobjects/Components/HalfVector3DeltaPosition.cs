@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
-    public struct HalfVector3 : INetworkSerializable
+    public struct HalfVector3DeltaPosition : INetworkSerializable
     {
         /// <summary>
         /// The Half Float Delta Position X Value
@@ -40,7 +40,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Gets the full Vector3 position.
         /// </summary>
-        /// <param name="tick">the network tick state applied to this HalfVector3</param>
+        /// <param name="tick">the network tick state applied to this HalfVector3DeltaPosition</param>
         /// <returns>the <see cref="Vector3"/> full position value</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 ToVector3(int tick)
@@ -154,7 +154,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// One of two constructors that should be called to set the initial position.
         /// </summary>
-        public HalfVector3(Vector3 vector3, int networkTick)
+        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick)
         {
             X = Y = Z = 0;
             NetworkTick = networkTick;
@@ -169,7 +169,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// One of two constructors that should be called to set the initial position.
         /// </summary>
-        public HalfVector3(float x, float y, float z, int networkTick)
+        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick)
         {
             X = Y = Z = 0;
             NetworkTick = networkTick;
