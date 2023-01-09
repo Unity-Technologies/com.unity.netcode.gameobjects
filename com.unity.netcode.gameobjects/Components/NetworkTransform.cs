@@ -967,6 +967,7 @@ namespace Unity.Netcode.Components
             networkState.UseInterpolation = Interpolate;
             networkState.QuaternionSync = UseQuaternionSynchronization;
             networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
+            networkState.QuaternionCompression = UseQuaternionCompression;
 
             return ApplyTransformToNetworkStateWithInfo(ref networkState, ref transformToUse);
         }
@@ -992,6 +993,7 @@ namespace Unity.Netcode.Components
             {
                 networkState.InLocalSpace = InLocalSpace;
                 isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
             }
 
             if (Interpolate != networkState.UseInterpolation)
@@ -1165,7 +1167,7 @@ namespace Unity.Netcode.Components
             else
             {
                 // For quaternion synchronization, if one angle is dirty we send a full update
-                if (!isRotationDirty)
+                if (!isRotationDirty & SynchronizeRotation)
                 {
                     var previousRotation = networkState.Rotation.eulerAngles;
                     for (int i = 0; i < 3; i++)
@@ -1212,7 +1214,7 @@ namespace Unity.Netcode.Components
                         isScaleDirty = true;
                     }
                 }
-                else
+                else if (SynchronizeScale)
                 {
                     var previousScale = networkState.Scale;
                     for (int i = 0; i < 3; i++)
@@ -1275,7 +1277,10 @@ namespace Unity.Netcode.Components
 
             if (isDirty)
             {
-                networkState.NetworkTick = NetworkManager.ServerTime.Tick;
+                if (enabled)
+                {
+                    networkState.NetworkTick = NetworkManager.ServerTime.Tick;
+                }
             }
 
             // Mark the state dirty for the next network tick update to clear out the bitset values
@@ -1357,12 +1362,12 @@ namespace Unity.Netcode.Components
                 // Non-Interpolated Position and Scale
                 if (UseHalfFloatPrecision)
                 {
-                    if (networkState.HasPositionChange)
+                    if (networkState.HasPositionChange && SynchronizePosition)
                     {
                         adjustedPosition = networkState.CurrentPosition;
                     }
 
-                    if (networkState.HasScaleChange)
+                    if (networkState.HasScaleChange && SynchronizeScale)
                     {
                         for (int i = 0; i < 3; i++)
                         {
@@ -1384,16 +1389,19 @@ namespace Unity.Netcode.Components
                 }
 
                 // Non-interpolated rotation
-                if (networkState.QuaternionSync && networkState.HasRotAngleChange)
+                if (SynchronizeRotation)
                 {
-                    adjustedRotation = networkState.Rotation;
-                }
-                else
-                {
-                    if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
-                    if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
-                    if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
-                    adjustedRotation.eulerAngles = adjustedRotAngles;
+                    if (networkState.QuaternionSync)
+                    {
+                        adjustedRotation = networkState.Rotation;
+                    }
+                    else
+                    {
+                        if (networkState.HasRotAngleX) { adjustedRotAngles.x = networkState.RotAngleX; }
+                        if (networkState.HasRotAngleY) { adjustedRotAngles.y = networkState.RotAngleY; }
+                        if (networkState.HasRotAngleZ) { adjustedRotAngles.z = networkState.RotAngleZ; }
+                        adjustedRotation.eulerAngles = adjustedRotAngles;
+                    }
                 }
             }
 
@@ -1408,7 +1416,7 @@ namespace Unity.Netcode.Components
             // always applied each frame.
 
             // Apply the new position if it has changed or we are interpolating and synchronizing position
-            if (networkState.HasPositionChange || (Interpolate && SynchronizePosition))
+            if (networkState.HasPositionChange || SynchronizePosition)
             {
                 if (InLocalSpace)
                 {
@@ -1421,7 +1429,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new rotation if it has changed or we are interpolating and synchronizing rotation
-            if (networkState.HasRotAngleChange || (Interpolate && SynchronizeRotation))
+            if (networkState.HasRotAngleChange || SynchronizeRotation)
             {
                 if (InLocalSpace)
                 {
@@ -1434,7 +1442,7 @@ namespace Unity.Netcode.Components
             }
 
             // Apply the new scale if it has changed or we are interpolating and synchronizing scale
-            if (networkState.HasScaleChange || (Interpolate && SynchronizeScale))
+            if (networkState.HasScaleChange || SynchronizeScale)
             {
                 transform.localScale = adjustedScale;
             }
