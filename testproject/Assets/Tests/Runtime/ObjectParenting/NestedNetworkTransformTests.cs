@@ -291,7 +291,6 @@ namespace TestProject.RuntimeTests
                     clientCount++;
                 }
 
-
                 yield return s_DefaultWaitForTick;
                 ChildMoverManager.StopMovement = true;
                 AutomatedPlayerMover.StopMovement = true;
@@ -327,9 +326,6 @@ namespace TestProject.RuntimeTests
                         precisionFailures = 0;
                     }
                 }
-
-
-
 
                 AutomatedPlayerMover.StopMovement = false;
                 ChildMoverManager.StopMovement = false;
