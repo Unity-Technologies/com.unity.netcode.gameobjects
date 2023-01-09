@@ -107,15 +107,15 @@ MonoBehaviour:
   SyncScaleZ: 1
   SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 0
+  Interpolate: 1
+  IsServerAuthority: 0
   DebugTransform: 0
-  IsServerAuthoritative: 1
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
@@ -139,6 +139,7 @@ GameObject:
   - component: {fileID: 3387617782067200397}
   - component: {fileID: 8032388276441906958}
   - component: {fileID: 1804311265969550177}
+  - component: {fileID: 4682031351736954066}
   m_Layer: 0
   m_Name: PlayerNestedTransforms
   m_TagString: Target
@@ -227,6 +228,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!114 &3387617782067200397
@@ -282,21 +284,33 @@ MonoBehaviour:
   SyncScaleZ: 1
   SlerpPosition: 0
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
-  Interpolate: 0
+  Interpolate: 1
+  IsServerAuthority: 0
   DebugTransform: 0
-  IsServerAuthoritative: 1
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4682031351736954066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6307603743893504780}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a915cfb2e4f748e4f9526a8bf5ee84f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6425543486096047037
 GameObject:
   m_ObjectHideFlags: 0
@@ -404,15 +418,15 @@ MonoBehaviour:
   SyncScaleZ: 1
   SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 0
+  Interpolate: 1
+  IsServerAuthority: 0
   DebugTransform: 0
-  IsServerAuthoritative: 1
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
