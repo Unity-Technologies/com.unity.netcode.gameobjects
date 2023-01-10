@@ -40,7 +40,7 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList>{prefabs} },
+                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList> { prefabs } },
                 NetworkTransport = unityTransport
             };
             m_ServerNetworkManager.StartHost();

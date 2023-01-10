@@ -34,7 +34,7 @@ namespace TestProject.RuntimeTests
             networkManager.NetworkConfig = new NetworkConfig()
             {
                 ConnectionApproval = false,
-                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList>{ prefabs } },
+                Prefabs = new NetworkPrefabs { NetworkPrefabsLists = new List<NetworkPrefabsList> { prefabs } },
                 NetworkTransport = unityTransport
             };
 
