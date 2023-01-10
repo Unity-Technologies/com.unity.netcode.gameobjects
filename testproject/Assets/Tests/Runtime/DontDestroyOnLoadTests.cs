@@ -79,7 +79,12 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager = null;
             m_ClientNetworkManagers = null;
 
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID);
+#else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>();
+#endif
+
             foreach (var netObject in networkObjects)
             {
                 Object.DestroyImmediate(netObject);

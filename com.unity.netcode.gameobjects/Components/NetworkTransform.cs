@@ -1092,10 +1092,9 @@ namespace Unity.Netcode.Components
         /// <param name="posIn"></param> new position to move to.  Can be null
         /// <param name="rotIn"></param> new rotation to rotate to.  Can be null
         /// <param name="scaleIn">new scale to scale to. Can be null</param>
-        /// <param name="shouldGhostsInterpolate">Should other clients interpolate this change or not. True by default</param>
-        /// new scale to scale to.  Can be null
+        /// <param name="teleportDisabled">When true (the default) the <see cref="NetworkObject"/> will not be teleported and, if enabled, will interpolate. When false the <see cref="NetworkObject"/> will teleport/apply the parameters provided immediately.</param>
         /// <exception cref="Exception"></exception>
-        public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool shouldGhostsInterpolate = true)
+        public void SetState(Vector3? posIn = null, Quaternion? rotIn = null, Vector3? scaleIn = null, bool teleportDisabled = true)
         {
             if (!IsSpawned)
             {
@@ -1119,16 +1118,16 @@ namespace Unity.Netcode.Components
                 {
                     m_ClientIds[0] = OwnerClientId;
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientIds;
-                    SetStateClientRpc(pos, rot, scale, !shouldGhostsInterpolate, m_ClientRpcParams);
+                    SetStateClientRpc(pos, rot, scale, !teleportDisabled, m_ClientRpcParams);
                 }
                 else // Preserving the ability for server authoritative mode to accept state changes from owner
                 {
-                    SetStateServerRpc(pos, rot, scale, !shouldGhostsInterpolate);
+                    SetStateServerRpc(pos, rot, scale, !teleportDisabled);
                 }
                 return;
             }
 
-            SetStateInternal(pos, rot, scale, !shouldGhostsInterpolate);
+            SetStateInternal(pos, rot, scale, !teleportDisabled);
         }
 
         /// <summary>

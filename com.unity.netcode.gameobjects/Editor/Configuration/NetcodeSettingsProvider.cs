@@ -25,14 +25,47 @@ namespace Unity.Netcode.Editor.Configuration
             return provider;
         }
 
-        internal static NetcodeSettingsLabel NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObject Helper Settings", 20);
-        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObject component", "When enabled, NetworkObject components are automatically added to GameObjects when NetworkBehaviour components are added first.", 20);
-        internal static NetcodeSettingsLabel MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
-        internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle = new NetcodeSettingsToggle("Multiplayer Tools Install Reminder", "When enabled, the NetworkManager will display " +
-            "the notification to install the multiplayer tools package.", 20);
+
+        internal static NetcodeSettingsLabel NetworkObjectsSectionLabel;
+        internal static NetcodeSettingsToggle AutoAddNetworkObjectToggle;
+        internal static NetcodeSettingsLabel MultiplayerToolsLabel;
+        internal static NetcodeSettingsToggle MultiplayerToolTipStatusToggle;
+
+        /// <summary>
+        /// Creates an instance of the settings UI Elements if they don't already exist.
+        /// </summary>
+        /// <remarks>
+        /// We have to construct any NetcodeGUISettings derived classes here because in
+        /// version 2020.x.x EditorStyles.label does not exist yet (higher versions it does)
+        /// </remarks>
+        private static void CheckForInitialize()
+        {
+            if (NetworkObjectsSectionLabel == null)
+            {
+                NetworkObjectsSectionLabel = new NetcodeSettingsLabel("NetworkObject Helper Settings", 20);
+            }
+
+            if (AutoAddNetworkObjectToggle == null)
+            {
+                AutoAddNetworkObjectToggle = new NetcodeSettingsToggle("Auto-Add NetworkObject Component", "When enabled, NetworkObject components are automatically added to GameObjects when NetworkBehaviour components are added first.", 20);
+            }
+
+            if (MultiplayerToolsLabel == null)
+            {
+                MultiplayerToolsLabel = new NetcodeSettingsLabel("Multiplayer Tools", 20);
+            }
+
+            if (MultiplayerToolTipStatusToggle == null)
+            {
+                MultiplayerToolTipStatusToggle = new NetcodeSettingsToggle("Multiplayer Tools Install Reminder", "When enabled, the NetworkManager will display the notification to install the multiplayer tools package.", 20);
+            }
+        }
 
         private static void OnGuiHandler(string obj)
         {
+            // Make sure all NetcodeGUISettings derived classes are instantiated first
+            CheckForInitialize();
+
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetAutoAddNetworkObjectSetting();
             var multiplayerToolsTipStatus = NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
             var settings = NetcodeForGameObjectsProjectSettings.instance;
@@ -108,7 +141,7 @@ namespace Unity.Netcode.Editor.Configuration
         public NetcodeSettingsLabel(string labelText, float layoutOffset = 0.0f)
         {
             m_LabelContent = labelText;
-            AdjustLableSize(labelText, layoutOffset);
+            AdjustLabelSize(labelText, layoutOffset);
         }
     }
 
@@ -124,7 +157,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         public NetcodeSettingsToggle(string labelText, string toolTip, float layoutOffset)
         {
-            AdjustLableSize(labelText, layoutOffset);
+            AdjustLabelSize(labelText, layoutOffset);
             m_ToggleContent = new GUIContent(labelText, toolTip);
         }
     }
@@ -136,7 +169,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         protected GUILayoutOption m_LayoutWidth { get; private set; }
 
-        protected void AdjustLableSize(string labelText, float offset = 0.0f)
+        protected void AdjustLabelSize(string labelText, float offset = 0.0f)
         {
             m_LabelSize = Mathf.Min(k_MaxLabelWidth, EditorStyles.label.CalcSize(new GUIContent(labelText)).x);
             m_LayoutWidth = GUILayout.Width(m_LabelSize + offset);

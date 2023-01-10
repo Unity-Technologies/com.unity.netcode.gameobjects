@@ -18,6 +18,11 @@ namespace Unity.Netcode
         /// </summary>
         private protected NetworkBehaviour m_NetworkBehaviour;
 
+        public NetworkBehaviour GetBehaviour()
+        {
+            return m_NetworkBehaviour;
+        }
+
         /// <summary>
         /// Initializes the NetworkVariable
         /// </summary>

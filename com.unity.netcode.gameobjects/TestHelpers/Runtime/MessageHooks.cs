@@ -44,7 +44,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
         {
-            if (!CurrentMessageHasTriggerdAHook && IsWaiting && (HandleCheck == null || HandleCheck.Invoke(messageType)))
+            if (!CurrentMessageHasTriggerdAHook && IsWaiting && ReceiptCheck != null && ReceiptCheck.Invoke(messageType))
             {
                 IsWaiting = false;
                 CurrentMessageHasTriggerdAHook = true;
@@ -92,7 +92,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
         {
-            if (!CurrentMessageHasTriggerdAHook && IsWaiting && (HandleCheck == null || HandleCheck.Invoke(message)))
+            if (!CurrentMessageHasTriggerdAHook && IsWaiting && HandleCheck != null && HandleCheck.Invoke(message))
             {
                 IsWaiting = false;
                 CurrentMessageHasTriggerdAHook = true;

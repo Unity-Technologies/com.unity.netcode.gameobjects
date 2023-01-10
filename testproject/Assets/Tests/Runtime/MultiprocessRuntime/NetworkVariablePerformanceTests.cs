@@ -182,7 +182,13 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             yield return new ExecuteStepInContext(StepExecutionContext.Clients, nbObjectsBytes =>
             {
                 var nbObjectsParam = BitConverter.ToInt32(nbObjectsBytes, 0);
+#if UNITY_2023_1_OR_NEWER
+                Assert.That(Object.FindObjectsByType<OneNetVar>(FindObjectsSortMode.None).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
+#else
                 Assert.That(Object.FindObjectsOfType(typeof(OneNetVar)).Length, Is.EqualTo(nbObjectsParam + 1), "Wrong number of spawned objects client side"); // +1 for the prefab to spawn
+#endif
+
+
             }, paramToPass: BitConverter.GetBytes(nbObjects));
             yield return new ExecuteStepInContext(StepExecutionContext.Server, bytes =>
             {

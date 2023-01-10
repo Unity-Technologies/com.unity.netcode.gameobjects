@@ -314,18 +314,18 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer { get; private set; }
+        public bool IsServer { get; private set; }
 
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient { get; private set; }
+        public bool IsClient { get; private set; }
 
 
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost { get; private set; }
+        public bool IsHost { get; private set; }
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -570,11 +570,11 @@ namespace Unity.Netcode
             if (list == null)
             {
                 list = new List<FieldInfo>();
-                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
             }
             else
             {
-                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
+                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
             }
 
             if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
