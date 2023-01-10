@@ -778,6 +778,10 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Checks for changes in both Animator parameters and state.
         /// </summary>
+        /// <remarks>
+        /// This is only invoked by clients that are the owner when not in server authoritative mode
+        /// or by the server itself when in server authoritative mode.
+        /// </remarks>
         internal void CheckForAnimatorChanges()
         {
             if (!IsSpawned || (!IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && !IsServer))
