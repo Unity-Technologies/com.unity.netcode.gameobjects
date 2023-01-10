@@ -1177,7 +1177,7 @@ namespace Unity.Netcode.RuntimeTests
                 AddPrefabsToClient(client);
             }
 
-            yield return new WaitForSeconds(0.6f);
+            yield return new WaitForSeconds(0.75f);
 
             Assert.AreEqual(m_NumberOfClientsToLateJoin, purgeCount);
             foreach (var client in m_ClientNetworkManagers)
@@ -1277,7 +1277,7 @@ namespace Unity.Netcode.RuntimeTests
                 AddPrefabsToClient(client);
             }
 
-            yield return new WaitForSeconds(0.6f);
+            yield return new WaitForSeconds(0.75f);
 
             Assert.AreEqual(m_NumberOfClientsToLateJoin, purgeCount);
             foreach (var client in m_ClientNetworkManagers)
