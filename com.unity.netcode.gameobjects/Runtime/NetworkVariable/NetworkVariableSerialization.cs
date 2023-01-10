@@ -602,8 +602,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            TValueType* aptr = (TValueType*)a.GetUnsafePtr();
-            TValueType* bptr = (TValueType*)b.GetUnsafePtr();
+            var aptr = (TValueType*)a.GetUnsafePtr();
+            var bptr = (TValueType*)b.GetUnsafePtr();
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType) * a.Length) == 0;
         }
 
@@ -617,8 +617,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            TValueType* aptr = (TValueType*)a.GetUnsafePtr();
-            TValueType* bptr = (TValueType*)b.GetUnsafePtr();
+            var aptr = (TValueType*)a.GetUnsafePtr();
+            var bptr = (TValueType*)b.GetUnsafePtr();
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType) * a.Length) == 0;
         }
 
@@ -652,8 +652,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            TValueType* aptr = (TValueType*)a.GetUnsafePtr();
-            TValueType* bptr = (TValueType*)b.GetUnsafePtr();
+            var aptr = (TValueType*)a.GetUnsafePtr();
+            var bptr = (TValueType*)b.GetUnsafePtr();
             for (var i = 0; i < a.Length; ++i)
             {
                 if (!EqualityEquals(ref aptr[i], ref bptr[i]))
@@ -675,8 +675,8 @@ namespace Unity.Netcode
                 return false;
             }
 
-            TValueType* aptr = (TValueType*)a.GetUnsafePtr();
-            TValueType* bptr = (TValueType*)b.GetUnsafePtr();
+            var aptr = (TValueType*)a.GetUnsafePtr();
+            var bptr = (TValueType*)b.GetUnsafePtr();
             for (var i = 0; i < a.Length; ++i)
             {
                 if (!EqualityEquals(ref aptr[i], ref bptr[i]))

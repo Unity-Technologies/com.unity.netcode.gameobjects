@@ -2231,7 +2231,7 @@ namespace Unity.Netcode
         {
             ReadUnmanagedSafe(out int length);
             value = new NativeArray<T>(length, allocator);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             for (var i = 0; i < length; ++i)
             {
                 ReadValueSafeInPlace(ref ptr[i]);
@@ -2253,7 +2253,7 @@ namespace Unity.Netcode
         {
             ReadUnmanagedSafe(out int length);
             value = new NativeArray<T>(length, Allocator.Temp);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             for (var i = 0; i < length; ++i)
             {
                 ReadValueSafeInPlace(ref ptr[i]);

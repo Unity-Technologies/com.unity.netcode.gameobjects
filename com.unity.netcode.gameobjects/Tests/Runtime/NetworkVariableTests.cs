@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Vector3> ServerWritable_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableBase.DefaultReadPerm, NetworkVariableWritePermission.Server);
         public NetworkVariable<Vector3> OwnerReadWrite_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
     }
-    
+
     public enum ByteEnum : byte
     {
         A,
@@ -59,7 +59,7 @@ namespace Unity.Netcode.RuntimeTests
         B,
         C = long.MaxValue
     }
-    public  enum ULongEnum : ulong
+    public enum ULongEnum : ulong
     {
         A,
         B,
@@ -1338,7 +1338,7 @@ namespace Unity.Netcode.RuntimeTests
             writer.Seek(0);
 
             serverVariable.WriteDelta(writer);
-            
+
             Assert.IsFalse(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
 
             using var reader2 = new FastBufferReader(writer, Allocator.None);
@@ -1423,7 +1423,7 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNetworkVariables_ValuesAreSerializedCorrectly(
-            
+
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
@@ -1450,135 +1450,135 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(int))
             {
-                TestValueType<int>(int.MinValue + 5, int.MaxValue);
+                TestValueType(int.MinValue + 5, int.MaxValue);
             }
             else if (testType == typeof(uint))
             {
-                TestValueType<uint>(uint.MinValue + 5, uint.MaxValue);
+                TestValueType(uint.MinValue + 5, uint.MaxValue);
             }
             else if (testType == typeof(long))
             {
-                TestValueType<long>(long.MinValue + 5, long.MaxValue);
+                TestValueType(long.MinValue + 5, long.MaxValue);
             }
             else if (testType == typeof(ulong))
             {
-                TestValueType<ulong>(ulong.MinValue + 5, ulong.MaxValue);
+                TestValueType(ulong.MinValue + 5, ulong.MaxValue);
             }
             else if (testType == typeof(bool))
             {
-                TestValueType<bool>(true, false);
+                TestValueType(true, false);
             }
             else if (testType == typeof(char))
             {
-                TestValueType<char>('z', ' ');
+                TestValueType('z', ' ');
             }
             else if (testType == typeof(float))
             {
-                TestValueType<float>(float.MinValue + 5.12345678f, float.MaxValue);
+                TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
             }
             else if (testType == typeof(double))
             {
-                TestValueType<double>(double.MinValue + 5.12345678, double.MaxValue);
+                TestValueType(double.MinValue + 5.12345678, double.MaxValue);
             }
             else if (testType == typeof(ByteEnum))
             {
-                TestValueType<ByteEnum>(ByteEnum.B, ByteEnum.C);
+                TestValueType(ByteEnum.B, ByteEnum.C);
             }
             else if (testType == typeof(SByteEnum))
             {
-                TestValueType<SByteEnum>(SByteEnum.B, SByteEnum.C);
+                TestValueType(SByteEnum.B, SByteEnum.C);
             }
             else if (testType == typeof(ShortEnum))
             {
-                TestValueType<ShortEnum>(ShortEnum.B, ShortEnum.C);
+                TestValueType(ShortEnum.B, ShortEnum.C);
             }
             else if (testType == typeof(UShortEnum))
             {
-                TestValueType<UShortEnum>(UShortEnum.B, UShortEnum.C);
+                TestValueType(UShortEnum.B, UShortEnum.C);
             }
             else if (testType == typeof(IntEnum))
             {
-                TestValueType<IntEnum>(IntEnum.B, IntEnum.C);
+                TestValueType(IntEnum.B, IntEnum.C);
             }
             else if (testType == typeof(UIntEnum))
             {
-                TestValueType<UIntEnum>(UIntEnum.B, UIntEnum.C);
+                TestValueType(UIntEnum.B, UIntEnum.C);
             }
             else if (testType == typeof(LongEnum))
             {
-                TestValueType<LongEnum>(LongEnum.B, LongEnum.C);
+                TestValueType(LongEnum.B, LongEnum.C);
             }
             else if (testType == typeof(ULongEnum))
             {
-                TestValueType<ULongEnum>(ULongEnum.B, ULongEnum.C);
+                TestValueType(ULongEnum.B, ULongEnum.C);
             }
             else if (testType == typeof(Vector2))
             {
-                TestValueType<Vector2>(
+                TestValueType(
                     new Vector2(5, 10),
                     new Vector2(15, 20));
             }
             else if (testType == typeof(Vector3))
             {
-                TestValueType<Vector3>(
+                TestValueType(
                     new Vector3(5, 10, 15),
                     new Vector3(20, 25, 30));
             }
             else if (testType == typeof(Vector2Int))
             {
-                TestValueType<Vector2Int>(
+                TestValueType(
                     new Vector2Int(5, 10),
                     new Vector2Int(15, 20));
             }
             else if (testType == typeof(Vector3Int))
             {
-                TestValueType<Vector3Int>(
+                TestValueType(
                     new Vector3Int(5, 10, 15),
                     new Vector3Int(20, 25, 30));
             }
             else if (testType == typeof(Vector4))
             {
-                TestValueType<Vector4>(
+                TestValueType(
                     new Vector4(5, 10, 15, 20),
                     new Vector4(25, 30, 35, 40));
             }
             else if (testType == typeof(Quaternion))
             {
-                TestValueType<Quaternion>(
+                TestValueType(
                     new Quaternion(5, 10, 15, 20),
                     new Quaternion(25, 30, 35, 40));
             }
             else if (testType == typeof(Color))
             {
-                TestValueType<Color>(
+                TestValueType(
                     new Color(1, 0, 0),
                     new Color(0, 1, 1));
             }
             else if (testType == typeof(Color32))
             {
-                TestValueType<Color32>(
+                TestValueType(
                     new Color32(255, 0, 0, 128),
                     new Color32(0, 255, 255, 255));
             }
             else if (testType == typeof(Ray))
             {
-                TestValueType<Ray>(
+                TestValueType(
                     new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
                     new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)));
             }
             else if (testType == typeof(Ray2D))
             {
-                TestValueType<Ray2D>(
+                TestValueType(
                     new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
                     new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                TestValueType<NetworkVariableTestStruct>(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
+                TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                TestValueType<FixedString32Bytes>(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
+                TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
             }
         }
 
@@ -1595,175 +1595,175 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                TestValueTypeNativeArray<byte>(
+                TestValueTypeNativeArray(
                     new NativeArray<byte>(new byte[] { byte.MinValue + 5, byte.MaxValue }, Allocator.Temp),
                     new NativeArray<byte>(new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(sbyte))
             {
-                TestValueTypeNativeArray<sbyte>(
+                TestValueTypeNativeArray(
                     new NativeArray<sbyte>(new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue }, Allocator.Temp),
                     new NativeArray<sbyte>(new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(short))
             {
-                TestValueTypeNativeArray<short>(
+                TestValueTypeNativeArray(
                     new NativeArray<short>(new short[] { short.MinValue + 5, short.MaxValue }, Allocator.Temp),
                     new NativeArray<short>(new short[] { 0, short.MinValue + 10, short.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(ushort))
             {
-                TestValueTypeNativeArray<ushort>(
+                TestValueTypeNativeArray(
                     new NativeArray<ushort>(new ushort[] { ushort.MinValue + 5, ushort.MaxValue }, Allocator.Temp),
                     new NativeArray<ushort>(new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(int))
             {
-                TestValueTypeNativeArray<int>(
+                TestValueTypeNativeArray(
                     new NativeArray<int>(new int[] { int.MinValue + 5, int.MaxValue }, Allocator.Temp),
                     new NativeArray<int>(new int[] { 0, int.MinValue + 10, int.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(uint))
             {
-                TestValueTypeNativeArray<uint>(
+                TestValueTypeNativeArray(
                     new NativeArray<uint>(new uint[] { uint.MinValue + 5, uint.MaxValue }, Allocator.Temp),
                     new NativeArray<uint>(new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(long))
             {
-                TestValueTypeNativeArray<long>(
+                TestValueTypeNativeArray(
                     new NativeArray<long>(new long[] { long.MinValue + 5, long.MaxValue }, Allocator.Temp),
                     new NativeArray<long>(new long[] { 0, long.MinValue + 10, long.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(ulong))
             {
-                TestValueTypeNativeArray<ulong>(
+                TestValueTypeNativeArray(
                     new NativeArray<ulong>(new ulong[] { ulong.MinValue + 5, ulong.MaxValue }, Allocator.Temp),
                     new NativeArray<ulong>(new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 }, Allocator.Temp));
             }
             else if (testType == typeof(bool))
             {
-                TestValueTypeNativeArray<bool>(
+                TestValueTypeNativeArray(
                     new NativeArray<bool>(new bool[] { true, false, true }, Allocator.Temp),
                     new NativeArray<bool>(new bool[] { false, true, false, true, false }, Allocator.Temp));
             }
             else if (testType == typeof(char))
             {
-                TestValueTypeNativeArray<char>(
+                TestValueTypeNativeArray(
                     new NativeArray<char>(new char[] { 'z', ' ', '?' }, Allocator.Temp),
                     new NativeArray<char>(new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' }, Allocator.Temp));
             }
             else if (testType == typeof(float))
             {
-                TestValueTypeNativeArray<float>(
+                TestValueTypeNativeArray(
                     new NativeArray<float>(new float[] { float.MinValue + 5.12345678f, float.MaxValue }, Allocator.Temp),
                     new NativeArray<float>(new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f }, Allocator.Temp));
             }
             else if (testType == typeof(double))
             {
-                TestValueTypeNativeArray<double>(
+                TestValueTypeNativeArray(
                     new NativeArray<double>(new double[] { double.MinValue + 5.12345678, double.MaxValue }, Allocator.Temp),
                     new NativeArray<double>(new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 }, Allocator.Temp));
             }
             else if (testType == typeof(ByteEnum))
             {
-                TestValueTypeNativeArray<ByteEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A }, Allocator.Temp),
                     new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(SByteEnum))
             {
-                TestValueTypeNativeArray<SByteEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A }, Allocator.Temp),
                     new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(ShortEnum))
             {
-                TestValueTypeNativeArray<ShortEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A }, Allocator.Temp),
                     new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(UShortEnum))
             {
-                TestValueTypeNativeArray<UShortEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A }, Allocator.Temp),
                     new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(IntEnum))
             {
-                TestValueTypeNativeArray<IntEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<IntEnum>(new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A }, Allocator.Temp),
                     new NativeArray<IntEnum>(new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(UIntEnum))
             {
-                TestValueTypeNativeArray<UIntEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A }, Allocator.Temp),
                     new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(LongEnum))
             {
-                TestValueTypeNativeArray<LongEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<LongEnum>(new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A }, Allocator.Temp),
                     new NativeArray<LongEnum>(new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(ULongEnum))
             {
-                TestValueTypeNativeArray<ULongEnum>(
+                TestValueTypeNativeArray(
                     new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A }, Allocator.Temp),
                     new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C }, Allocator.Temp));
             }
             else if (testType == typeof(Vector2))
             {
-                TestValueTypeNativeArray<Vector2>(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector2>(new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) }, Allocator.Temp),
                     new NativeArray<Vector2>(new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) }, Allocator.Temp));
             }
             else if (testType == typeof(Vector3))
             {
-                TestValueTypeNativeArray<Vector3>(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector3>(new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) }, Allocator.Temp),
                     new NativeArray<Vector3>(new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) }, Allocator.Temp));
             }
             else if (testType == typeof(Vector2Int))
             {
-                TestValueTypeNativeArray<Vector2Int>(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) }, Allocator.Temp),
                     new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) }, Allocator.Temp));
             }
             else if (testType == typeof(Vector3Int))
             {
-                TestValueTypeNativeArray<Vector3Int>(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) }, Allocator.Temp),
                     new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) }, Allocator.Temp));
             }
             else if (testType == typeof(Vector4))
             {
-                TestValueTypeNativeArray<Vector4>(
+                TestValueTypeNativeArray(
                     new NativeArray<Vector4>(new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) }, Allocator.Temp),
                     new NativeArray<Vector4>(new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) }, Allocator.Temp));
             }
             else if (testType == typeof(Quaternion))
             {
-                TestValueTypeNativeArray<Quaternion>(
+                TestValueTypeNativeArray(
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) }, Allocator.Temp),
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) }, Allocator.Temp));
             }
             else if (testType == typeof(Color))
             {
-                TestValueTypeNativeArray<Color>(
+                TestValueTypeNativeArray(
                     new NativeArray<Color>(new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) }, Allocator.Temp),
                     new NativeArray<Color>(new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) }, Allocator.Temp));
             }
             else if (testType == typeof(Color32))
             {
-                TestValueTypeNativeArray<Color32>(
+                TestValueTypeNativeArray(
                     new NativeArray<Color32>(new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) }, Allocator.Temp),
                     new NativeArray<Color32>(new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) }, Allocator.Temp));
             }
             else if (testType == typeof(Ray))
             {
-                TestValueTypeNativeArray<Ray>(
+                TestValueTypeNativeArray(
                     new NativeArray<Ray>(new Ray[]
                     {
                         new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
@@ -1778,7 +1778,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Ray2D))
             {
-                TestValueTypeNativeArray<Ray2D>(
+                TestValueTypeNativeArray(
                     new NativeArray<Ray2D>(new Ray2D[]
                     {
                         new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
@@ -1793,7 +1793,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                TestValueTypeNativeArray<NetworkVariableTestStruct>(
+                TestValueTypeNativeArray(
                     new NativeArray<NetworkVariableTestStruct>(new NetworkVariableTestStruct[]
                     {
                         NetworkVariableTestStruct.GetTestStruct(),
@@ -1808,7 +1808,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                TestValueTypeNativeArray<FixedString32Bytes>(
+                TestValueTypeNativeArray(
                     new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
                     {
                         new FixedString32Bytes("foobar"),
@@ -1825,7 +1825,7 @@ namespace Unity.Netcode.RuntimeTests
 
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
-            
+
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
@@ -1836,175 +1836,175 @@ namespace Unity.Netcode.RuntimeTests
         {
             if (testType == typeof(byte))
             {
-                TestValueTypeNativeList<byte>(
-                    new NativeList<byte>(Allocator.Temp){byte.MinValue + 5, byte.MaxValue}, 
-                    new NativeList<byte>(Allocator.Temp){0, byte.MinValue + 10, byte.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<byte>(Allocator.Temp) { byte.MinValue + 5, byte.MaxValue },
+                    new NativeList<byte>(Allocator.Temp) { 0, byte.MinValue + 10, byte.MaxValue - 10 });
             }
             else if (testType == typeof(sbyte))
             {
-                TestValueTypeNativeList<sbyte>(
-                    new NativeList<sbyte>(Allocator.Temp){sbyte.MinValue + 5, sbyte.MaxValue}, 
-                    new NativeList<sbyte>(Allocator.Temp){0, sbyte.MinValue + 10, sbyte.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<sbyte>(Allocator.Temp) { sbyte.MinValue + 5, sbyte.MaxValue },
+                    new NativeList<sbyte>(Allocator.Temp) { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
             }
             else if (testType == typeof(short))
             {
-                TestValueTypeNativeList<short>(
-                    new NativeList<short>(Allocator.Temp){short.MinValue + 5, short.MaxValue}, 
-                    new NativeList<short>(Allocator.Temp){0, short.MinValue + 10, short.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<short>(Allocator.Temp) { short.MinValue + 5, short.MaxValue },
+                    new NativeList<short>(Allocator.Temp) { 0, short.MinValue + 10, short.MaxValue - 10 });
             }
             else if (testType == typeof(ushort))
             {
-                TestValueTypeNativeList<ushort>(
-                    new NativeList<ushort>(Allocator.Temp){ushort.MinValue + 5, ushort.MaxValue}, 
-                    new NativeList<ushort>(Allocator.Temp){0, ushort.MinValue + 10, ushort.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<ushort>(Allocator.Temp) { ushort.MinValue + 5, ushort.MaxValue },
+                    new NativeList<ushort>(Allocator.Temp) { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
             }
             else if (testType == typeof(int))
             {
-                TestValueTypeNativeList<int>(
-                    new NativeList<int>(Allocator.Temp){int.MinValue + 5, int.MaxValue}, 
-                    new NativeList<int>(Allocator.Temp){0, int.MinValue + 10, int.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<int>(Allocator.Temp) { int.MinValue + 5, int.MaxValue },
+                    new NativeList<int>(Allocator.Temp) { 0, int.MinValue + 10, int.MaxValue - 10 });
             }
             else if (testType == typeof(uint))
             {
-                TestValueTypeNativeList<uint>(
-                    new NativeList<uint>(Allocator.Temp){uint.MinValue + 5, uint.MaxValue}, 
-                    new NativeList<uint>(Allocator.Temp){0, uint.MinValue + 10, uint.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<uint>(Allocator.Temp) { uint.MinValue + 5, uint.MaxValue },
+                    new NativeList<uint>(Allocator.Temp) { 0, uint.MinValue + 10, uint.MaxValue - 10 });
             }
             else if (testType == typeof(long))
             {
-                TestValueTypeNativeList<long>(
-                    new NativeList<long>(Allocator.Temp){long.MinValue + 5, long.MaxValue}, 
-                    new NativeList<long>(Allocator.Temp){0, long.MinValue + 10, long.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<long>(Allocator.Temp) { long.MinValue + 5, long.MaxValue },
+                    new NativeList<long>(Allocator.Temp) { 0, long.MinValue + 10, long.MaxValue - 10 });
             }
             else if (testType == typeof(ulong))
             {
-                TestValueTypeNativeList<ulong>(
-                    new NativeList<ulong>(Allocator.Temp){ulong.MinValue + 5, ulong.MaxValue}, 
-                    new NativeList<ulong>(Allocator.Temp){0, ulong.MinValue + 10, ulong.MaxValue - 10});
+                TestValueTypeNativeList(
+                    new NativeList<ulong>(Allocator.Temp) { ulong.MinValue + 5, ulong.MaxValue },
+                    new NativeList<ulong>(Allocator.Temp) { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
             }
             else if (testType == typeof(bool))
             {
-                TestValueTypeNativeList<bool>(
-                    new NativeList<bool>(Allocator.Temp){true, false, true}, 
-                    new NativeList<bool>(Allocator.Temp){false, true, false, true, false});
+                TestValueTypeNativeList(
+                    new NativeList<bool>(Allocator.Temp) { true, false, true },
+                    new NativeList<bool>(Allocator.Temp) { false, true, false, true, false });
             }
             else if (testType == typeof(char))
             {
-                TestValueTypeNativeList<char>(
-                    new NativeList<char>(Allocator.Temp){'z', ' ', '?'}, 
-                    new NativeList<char>(Allocator.Temp){'n','e','w',' ','v','a','l','u','e'});
+                TestValueTypeNativeList(
+                    new NativeList<char>(Allocator.Temp) { 'z', ' ', '?' },
+                    new NativeList<char>(Allocator.Temp) { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
             }
             else if (testType == typeof(float))
             {
-                TestValueTypeNativeList<float>(
-                    new NativeList<float>(Allocator.Temp){float.MinValue + 5.12345678f, float.MaxValue}, 
-                    new NativeList<float>(Allocator.Temp){0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f});
+                TestValueTypeNativeList(
+                    new NativeList<float>(Allocator.Temp) { float.MinValue + 5.12345678f, float.MaxValue },
+                    new NativeList<float>(Allocator.Temp) { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
             }
             else if (testType == typeof(double))
             {
-                TestValueTypeNativeList<double>(
-                    new NativeList<double>(Allocator.Temp){double.MinValue + 5.12345678, double.MaxValue}, 
-                    new NativeList<double>(Allocator.Temp){0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468});
+                TestValueTypeNativeList(
+                    new NativeList<double>(Allocator.Temp) { double.MinValue + 5.12345678, double.MaxValue },
+                    new NativeList<double>(Allocator.Temp) { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
             }
             else if (testType == typeof(ByteEnum))
             {
-                TestValueTypeNativeList<ByteEnum>(
-                    new NativeList<ByteEnum>(Allocator.Temp){ByteEnum.C, ByteEnum.B, ByteEnum.A}, 
-                    new NativeList<ByteEnum>(Allocator.Temp){ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<ByteEnum>(Allocator.Temp) { ByteEnum.C, ByteEnum.B, ByteEnum.A },
+                    new NativeList<ByteEnum>(Allocator.Temp) { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
             }
             else if (testType == typeof(SByteEnum))
             {
-                TestValueTypeNativeList<SByteEnum>(
-                    new NativeList<SByteEnum>(Allocator.Temp){SByteEnum.C, SByteEnum.B, SByteEnum.A}, 
-                    new NativeList<SByteEnum>(Allocator.Temp){SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<SByteEnum>(Allocator.Temp) { SByteEnum.C, SByteEnum.B, SByteEnum.A },
+                    new NativeList<SByteEnum>(Allocator.Temp) { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
             }
             else if (testType == typeof(ShortEnum))
             {
-                TestValueTypeNativeList<ShortEnum>(
-                    new NativeList<ShortEnum>(Allocator.Temp){ShortEnum.C, ShortEnum.B, ShortEnum.A}, 
-                    new NativeList<ShortEnum>(Allocator.Temp){ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<ShortEnum>(Allocator.Temp) { ShortEnum.C, ShortEnum.B, ShortEnum.A },
+                    new NativeList<ShortEnum>(Allocator.Temp) { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
             }
             else if (testType == typeof(UShortEnum))
             {
-                TestValueTypeNativeList<UShortEnum>(
-                    new NativeList<UShortEnum>(Allocator.Temp){UShortEnum.C, UShortEnum.B, UShortEnum.A}, 
-                    new NativeList<UShortEnum>(Allocator.Temp){UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<UShortEnum>(Allocator.Temp) { UShortEnum.C, UShortEnum.B, UShortEnum.A },
+                    new NativeList<UShortEnum>(Allocator.Temp) { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
             }
             else if (testType == typeof(IntEnum))
             {
-                TestValueTypeNativeList<IntEnum>(
-                    new NativeList<IntEnum>(Allocator.Temp){IntEnum.C, IntEnum.B, IntEnum.A}, 
-                    new NativeList<IntEnum>(Allocator.Temp){IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<IntEnum>(Allocator.Temp) { IntEnum.C, IntEnum.B, IntEnum.A },
+                    new NativeList<IntEnum>(Allocator.Temp) { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
             }
             else if (testType == typeof(UIntEnum))
             {
-                TestValueTypeNativeList<UIntEnum>(
-                    new NativeList<UIntEnum>(Allocator.Temp){UIntEnum.C, UIntEnum.B, UIntEnum.A}, 
-                    new NativeList<UIntEnum>(Allocator.Temp){UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<UIntEnum>(Allocator.Temp) { UIntEnum.C, UIntEnum.B, UIntEnum.A },
+                    new NativeList<UIntEnum>(Allocator.Temp) { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
             }
             else if (testType == typeof(LongEnum))
             {
-                TestValueTypeNativeList<LongEnum>(
-                    new NativeList<LongEnum>(Allocator.Temp){LongEnum.C, LongEnum.B, LongEnum.A}, 
-                    new NativeList<LongEnum>(Allocator.Temp){LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<LongEnum>(Allocator.Temp) { LongEnum.C, LongEnum.B, LongEnum.A },
+                    new NativeList<LongEnum>(Allocator.Temp) { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
             }
             else if (testType == typeof(ULongEnum))
             {
-                TestValueTypeNativeList<ULongEnum>(
-                    new NativeList<ULongEnum>(Allocator.Temp){ULongEnum.C, ULongEnum.B, ULongEnum.A}, 
-                    new NativeList<ULongEnum>(Allocator.Temp){ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C});
+                TestValueTypeNativeList(
+                    new NativeList<ULongEnum>(Allocator.Temp) { ULongEnum.C, ULongEnum.B, ULongEnum.A },
+                    new NativeList<ULongEnum>(Allocator.Temp) { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
             }
             else if (testType == typeof(Vector2))
             {
-                TestValueTypeNativeList<Vector2>(
-                    new NativeList<Vector2>(Allocator.Temp){new Vector2(5, 10), new Vector2(15, 20)}, 
-                    new NativeList<Vector2>(Allocator.Temp){new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50)});
+                TestValueTypeNativeList(
+                    new NativeList<Vector2>(Allocator.Temp) { new Vector2(5, 10), new Vector2(15, 20) },
+                    new NativeList<Vector2>(Allocator.Temp) { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
             }
             else if (testType == typeof(Vector3))
             {
-                TestValueTypeNativeList<Vector3>(
-                    new NativeList<Vector3>(Allocator.Temp){new Vector3(5, 10, 15), new Vector3(20, 25, 30)}, 
-                    new NativeList<Vector3>(Allocator.Temp){new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75)});
+                TestValueTypeNativeList(
+                    new NativeList<Vector3>(Allocator.Temp) { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
+                    new NativeList<Vector3>(Allocator.Temp) { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
             }
             else if (testType == typeof(Vector2Int))
             {
-                TestValueTypeNativeList<Vector2Int>(
-                    new NativeList<Vector2Int>(Allocator.Temp){new Vector2Int(5, 10), new Vector2Int(15, 20)}, 
-                    new NativeList<Vector2Int>(Allocator.Temp){new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50)});
+                TestValueTypeNativeList(
+                    new NativeList<Vector2Int>(Allocator.Temp) { new Vector2Int(5, 10), new Vector2Int(15, 20) },
+                    new NativeList<Vector2Int>(Allocator.Temp) { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
             }
             else if (testType == typeof(Vector3Int))
             {
-                TestValueTypeNativeList<Vector3Int>(
-                    new NativeList<Vector3Int>(Allocator.Temp){new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30)}, 
-                    new NativeList<Vector3Int>(Allocator.Temp){new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75)});
+                TestValueTypeNativeList(
+                    new NativeList<Vector3Int>(Allocator.Temp) { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
+                    new NativeList<Vector3Int>(Allocator.Temp) { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
             }
             else if (testType == typeof(Vector4))
             {
-                TestValueTypeNativeList<Vector4>(
-                    new NativeList<Vector4>(Allocator.Temp){new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40)}, 
-                    new NativeList<Vector4>(Allocator.Temp){new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100)});
+                TestValueTypeNativeList(
+                    new NativeList<Vector4>(Allocator.Temp) { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
+                    new NativeList<Vector4>(Allocator.Temp) { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
             }
             else if (testType == typeof(Quaternion))
             {
-                TestValueTypeNativeList<Quaternion>(
-                    new NativeList<Quaternion>(Allocator.Temp){new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40)}, 
-                    new NativeList<Quaternion>(Allocator.Temp){new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100)});
+                TestValueTypeNativeList(
+                    new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
+                    new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
             }
             else if (testType == typeof(Color))
             {
-                TestValueTypeNativeList<Color>(
-                    new NativeList<Color>(Allocator.Temp){new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f)}, 
-                    new NativeList<Color>(Allocator.Temp){new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f)});
+                TestValueTypeNativeList(
+                    new NativeList<Color>(Allocator.Temp) { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
+                    new NativeList<Color>(Allocator.Temp) { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
             }
             else if (testType == typeof(Color32))
             {
-                TestValueTypeNativeList<Color32>(
-                    new NativeList<Color32>(Allocator.Temp){new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40)}, 
-                    new NativeList<Color32>(Allocator.Temp){new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100)});
+                TestValueTypeNativeList(
+                    new NativeList<Color32>(Allocator.Temp) { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
+                    new NativeList<Color32>(Allocator.Temp) { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
             }
             else if (testType == typeof(Ray))
             {
-                TestValueTypeNativeList<Ray>(
+                TestValueTypeNativeList(
                     new NativeList<Ray>(Allocator.Temp)
                     {
                         new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
@@ -2019,7 +2019,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(Ray2D))
             {
-                TestValueTypeNativeList<Ray2D>(
+                TestValueTypeNativeList(
                     new NativeList<Ray2D>(Allocator.Temp)
                     {
                         new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
@@ -2034,7 +2034,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(NetworkVariableTestStruct))
             {
-                TestValueTypeNativeList<NetworkVariableTestStruct>(
+                TestValueTypeNativeList(
                     new NativeList<NetworkVariableTestStruct>(Allocator.Temp)
                     {
                         NetworkVariableTestStruct.GetTestStruct(),
@@ -2049,7 +2049,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             else if (testType == typeof(FixedString32Bytes))
             {
-                TestValueTypeNativeList<FixedString32Bytes>(
+                TestValueTypeNativeList(
                     new NativeList<FixedString32Bytes>(Allocator.Temp)
                     {
                         new FixedString32Bytes("foobar"),

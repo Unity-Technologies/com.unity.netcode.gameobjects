@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added support for native containers in FastBufferReader/Writer, BufferSerializer, NetworkVariable, and RPCs.
+
 ### Changed
 
 - The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)

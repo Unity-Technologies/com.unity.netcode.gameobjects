@@ -957,7 +957,7 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanaged<T>(NativeArray<T> value) where T : unmanaged
         {
             WriteUnmanaged(value.Length);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytes(bytes, sizeof(T) * value.Length);
@@ -967,7 +967,7 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanagedSafe<T>(NativeArray<T> value) where T : unmanaged
         {
             WriteUnmanagedSafe(value.Length);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytesSafe(bytes, sizeof(T) * value.Length);
@@ -978,7 +978,7 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanaged<T>(NativeList<T> value) where T : unmanaged
         {
             WriteUnmanaged(value.Length);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytes(bytes, sizeof(T) * value.Length);
@@ -988,7 +988,7 @@ namespace Unity.Netcode
         internal unsafe void WriteUnmanagedSafe<T>(NativeList<T> value) where T : unmanaged
         {
             WriteUnmanagedSafe(value.Length);
-            T* ptr = (T*)value.GetUnsafePtr();
+            var ptr = (T*)value.GetUnsafePtr();
             {
                 byte* bytes = (byte*)ptr;
                 WriteBytesSafe(bytes, sizeof(T) * value.Length);
@@ -2140,7 +2140,7 @@ namespace Unity.Netcode
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }
@@ -2159,7 +2159,7 @@ namespace Unity.Netcode
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }
@@ -2178,7 +2178,7 @@ namespace Unity.Netcode
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }
@@ -2222,7 +2222,7 @@ namespace Unity.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }
@@ -2245,7 +2245,7 @@ namespace Unity.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }
@@ -2268,7 +2268,7 @@ namespace Unity.Netcode
                 throw new OverflowException("Writing past the end of the buffer");
             }
             WriteUnmanaged(value.Length);
-            foreach(var str in value)
+            foreach (var str in value)
             {
                 WriteValue(str);
             }

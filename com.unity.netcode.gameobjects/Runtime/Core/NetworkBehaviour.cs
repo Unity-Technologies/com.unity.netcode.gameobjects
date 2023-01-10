@@ -279,7 +279,7 @@ namespace Unity.Netcode
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal static NativeList<T> __createNativeList<T>() where T: unmanaged
+        internal static NativeList<T> __createNativeList<T>() where T : unmanaged
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
             return new NativeList<T>(Allocator.Temp);

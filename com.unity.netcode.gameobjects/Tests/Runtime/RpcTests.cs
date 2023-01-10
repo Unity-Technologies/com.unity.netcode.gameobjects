@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
 using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine.TestTools;
@@ -70,7 +69,7 @@ namespace Unity.Netcode.RuntimeTests
 
             var vector3 = new Vector3(1, 2, 3);
             Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
-            using NativeList<Vector3> vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent);
+            using var vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent);
             vector3sNativeList.Add(new Vector3(10, 11, 12));
             vector3sNativeList.Add(new Vector3(13, 14, 15));
 
