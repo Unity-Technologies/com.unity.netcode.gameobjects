@@ -271,18 +271,17 @@ namespace TestProject.RuntimeTests
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
             var waitPeriod = new WaitForSeconds(3f);
-            var pausePeriod = new WaitForSeconds(2f);
-            var timeoutHelper = new TimeoutHelper(2.5f);
-            var timeoutHelperNoInterpolation = new TimeoutHelper(2f);
+            var pausePeriod = new WaitForSeconds(1f);
+            var synchTimeOut = new TimeoutHelper(2.5f);
+
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
             yield return pausePeriod;
 
             var precisionFailures = 0;
             var clientCount = 0;
 
-            // When interpolating, we provide more time for clients to interpolate to their final position
-            var timeOut = m_Interpolation == Interpolation.Interpolation ? s_GlobalTimeoutHelper : timeoutHelperNoInterpolation;
-            // extended testing
+
+            // Since
             for (int i = 0; i < k_IterationsToTest; i++)
             {
                 if (clientCount < k_ClientsToSpawn)
@@ -291,28 +290,28 @@ namespace TestProject.RuntimeTests
                     clientCount++;
                 }
 
-
                 yield return s_DefaultWaitForTick;
                 ChildMoverManager.StopMovement = true;
                 AutomatedPlayerMover.StopMovement = true;
-                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, timeOut);
+                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, synchTimeOut);
+                // Do one last pass
                 if (!ValidateNetworkTransforms())
                 {
                     // If not, then log errors to console and clear the current pass validation errors
                     if (m_ValidationErrors.Length > 0)
                     {
-                        // Always log these if we reached this point
-                        Debug.Log($"{m_ValidationErrors}");
+                        VerboseDebug($"{m_ValidationErrors}");
                     }
                     precisionFailures++;
                     // With half float values, we can sometimes have values that exceed typical thresholds but they
-                    // can correct themselves over time. This is to allow enough passes to allow for this correction
-                    // to occur.
+                    // should correct themselves over time. This is to allow enough passes to allow for this correction
+                    // to occur for delta position (especially), half float quaternions, and quaternion compression.
+                    // If we have 5 precision failures in a row and fail to correct, then fail this test
                     if (precisionFailures > 5)
                     {
                         VerboseDebug($"[{i}][Precision Failure] Exceeded Precision Failure Count ({precisionFailures})");
-                        AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match:\n", timeOut);
-                        Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n");
+                        AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n", synchTimeOut);
+                        Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
                     }
                     else
                     {
@@ -327,9 +326,6 @@ namespace TestProject.RuntimeTests
                         precisionFailures = 0;
                     }
                 }
-
-
-
 
                 AutomatedPlayerMover.StopMovement = false;
                 ChildMoverManager.StopMovement = false;

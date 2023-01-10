@@ -590,6 +590,22 @@ namespace Unity.Netcode
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
 
+        /// <summary>
+        /// Returns the last known cached WorldPositionStays value for this NetworkObject
+        /// </summary>
+        /// <remarks>
+        /// When parenting NetworkObjects, the optional WorldPositionStays value is cached and synchronized with clients.
+        /// This method provides access to the instance relative cached value.
+        /// <see cref="TrySetParent(GameObject, bool)"/>
+        /// <see cref="TrySetParent(NetworkObject, bool)"/>
+        /// <see cref="TrySetParent(Transform, bool)"/>
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool WorldPositionStays()
+        {
+            return m_CachedWorldPositionStays;
+        }
+
         internal void SetCachedParent(Transform parentTransform)
         {
             m_CachedParent = parentTransform;

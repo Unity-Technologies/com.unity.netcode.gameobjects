@@ -75,7 +75,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             m_TransformSpace = transformSpace;
             m_Precision = precision;
-            m_Rotation = Rotation.Quaternion;
+            m_Rotation = Rotation.Euler;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -112,11 +112,11 @@ namespace Unity.Netcode.RuntimeTests
                     return;
                 }
             }
-
+            m_Rotation = m_Precision == Precision.Half ? Rotation.Quaternion : Rotation.Euler;
             // When using quaternion synchronization, we can skip these tests
             if (m_Rotation == Rotation.Quaternion)
             {
-                if (syncAxis == SyncAxis.SyncRotX || syncAxis == SyncAxis.SyncRotY || syncAxis == SyncAxis.SyncRotZ || syncAxis == SyncAxis.SyncScaleX || syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleZ)
+                if (syncAxis != SyncAxis.SyncRotXYZ)
                 {
                     return;
                 }

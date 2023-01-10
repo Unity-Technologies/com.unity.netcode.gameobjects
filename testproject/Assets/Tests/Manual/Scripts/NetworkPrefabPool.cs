@@ -311,27 +311,26 @@ namespace TestProject.ManualTests
 
             m_LabelEnabled = LabelEnabled;
 
-            m_UseHalfFloatPrecision = HalfFloat.isOn;
-            m_QuaternionSynchronization = QuatSynch.isOn;
-            m_CompressQuaternions = QuatComp.isOn;
-
-
-
             if (HalfFloat != null)
             {
-                HalfFloat.isOn = m_UseHalfFloatPrecision;
+                m_UseHalfFloatPrecision = HalfFloat.isOn;
             }
 
             if (QuatSynch != null)
             {
-                QuatSynch.isOn = m_QuaternionSynchronization;
+                m_QuaternionSynchronization = QuatSynch.isOn;
             }
 
             if (QuatComp != null)
             {
-                QuatComp.isOn = m_CompressQuaternions;
+                m_CompressQuaternions = QuatComp.isOn;
             }
+            HalfFloat.gameObject.SetActive(false);
+            QuatComp.gameObject.SetActive(false);
+            QuatSynch.gameObject.SetActive(false);
         }
+
+        private bool m_LatencyAveraging;
 
         private bool m_LabelEnabled;
         private bool m_UseHalfFloatPrecision;
@@ -342,7 +341,7 @@ namespace TestProject.ManualTests
         private void ShowHideObjectIdLabelClientRpc(bool isVisible)
         {
             m_LabelEnabled = isVisible;
-            foreach(var spawnObject in m_ObjectPool)
+            foreach (var spawnObject in m_ObjectPool)
             {
                 var networkObjectLabel = spawnObject.GetComponentInChildren<NetworkObjectLabel>();
                 if (networkObjectLabel != null)
@@ -351,7 +350,6 @@ namespace TestProject.ManualTests
                 }
             }
         }
-
 
         /// <summary>
         /// Override NetworkBehaviour.NetworkStart
@@ -370,7 +368,11 @@ namespace TestProject.ManualTests
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
                 }
+                HalfFloat.gameObject.SetActive(true);
+                QuatComp.gameObject.SetActive(true);
+                QuatSynch.gameObject.SetActive(true);
             }
+
         }
 
         /// <summary>

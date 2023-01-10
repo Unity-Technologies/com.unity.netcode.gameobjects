@@ -3,183 +3,134 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
+    public struct HalfVector3AxisToSynchronize
+    {
+        public bool X;
+        public bool Y;
+        public bool Z;
+
+        public HalfVector3AxisToSynchronize(bool x = true, bool y = true, bool z = true)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+        }
+    }
+
     public struct HalfVector3 : INetworkSerializable
     {
-        /// <summary>
-        /// The Half Float Delta Position X Value
-        /// </summary>
         public ushort X;
-        /// <summary>
-        /// The Half Float Delta Position Y Value
-        /// </summary>
         public ushort Y;
-        /// <summary>
-        /// The Half Float Delta Position Z Value
-        /// </summary>
         public ushort Z;
 
-        public Vector3 CurrentBasePosition;
-
-        internal Vector3 PrecisionLossDelta;
-        internal Vector3 HalfDeltaConvertedBack;
-        internal Vector3 PreviousPosition;
-        internal Vector3 DeltaPosition;
-        internal int NetworkTick;
-
-        private const float k_MaxDeltaBeforeAdjustment = 128.0f;
-        private const float k_AdjustmentUp = 100.0f;
-        private const float k_AdjustmentDown = 0.01f;
+        private float m_PrecisionAdjustmentUp;
+        private float m_PrecisionAdjustmentDown;
+        private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref X);
-            serializer.SerializeValue(ref Y);
-            serializer.SerializeValue(ref Z);
+            if (m_HalfVector3AxisToSynchronize.X)
+            {
+                serializer.SerializeValue(ref X);
+            }
+
+            if (m_HalfVector3AxisToSynchronize.Y)
+            {
+                serializer.SerializeValue(ref Y);
+            }
+
+            if (m_HalfVector3AxisToSynchronize.Z)
+            {
+                serializer.SerializeValue(ref Z);
+            }
         }
 
         /// <summary>
-        /// Gets the full Vector3 position.
+        /// Converts the <see cref="HalfVector3"/> to a full precision <see cref="Vector3"/>
         /// </summary>
-        /// <param name="tick">the network tick state applied to this HalfVector3</param>
-        /// <returns>the <see cref="Vector3"/> full position value</returns>
+        /// <param name="vector3">the <see cref="Vector3"/> to store the full precision values in</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 ToVector3(int tick)
+        public void ToVector3(ref Vector3 vector3)
         {
-            // When synchronizing, it is possible to have a state update arrive
-            // for the same synchronization network tick.  Under this scenario,
-            // we only want to return the existing CurrentBasePosition + DeltaPosition
-            // values and not process the X, Y, or Z values.
-            // (See the constructors below)
-            if (tick == NetworkTick)
-            {
-                return CurrentBasePosition + DeltaPosition;
-            }
-
-            DeltaPosition.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
-            DeltaPosition.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
-            DeltaPosition.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
-
-            // If we exceed or are equal to the maximum delta value then we need to
-            // apply the delta to the CurrentBasePosition value and reset the delta
-            // position for the axis.
-            if (Mathf.Abs(DeltaPosition.x) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.x += DeltaPosition.x;
-                DeltaPosition.x = 0.0f;
-                X = 0;
-            }
-
-            if (Mathf.Abs(DeltaPosition.y) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.y += DeltaPosition.y;
-                DeltaPosition.y = 0.0f;
-                Y = 0;
-            }
-
-            if (Mathf.Abs(DeltaPosition.z) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.z += DeltaPosition.z;
-                DeltaPosition.z = 0.0f;
-                Z = 0;
-            }
-
-            return CurrentBasePosition + DeltaPosition;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetFullPosition()
-        {
-            return CurrentBasePosition + DeltaPosition;
+            vector3.x = Mathf.HalfToFloat(X);
+            vector3.y = Mathf.HalfToFloat(Y);
+            vector3.z = Mathf.HalfToFloat(Z);
+            vector3 *= m_PrecisionAdjustmentDown;
         }
 
         /// <summary>
-        /// The half float vector3 version of the current delta position.
-        /// Only applies to the authoritative side for <see cref="NetworkTransform"/>
-        /// instances.
+        /// Converts a <see cref="Vector3"/> full precision to a <see cref="HalfVector3"/>
         /// </summary>
+        /// <param name="vector3">the <see cref="Vector3"/> to convert to a half precision <see cref="Vector3"/></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetConvertedDelta()
+        public void FromVector3(ref Vector3 vector3)
         {
-            return HalfDeltaConvertedBack;
+            vector3 *= m_PrecisionAdjustmentUp;
+            X = Mathf.FloatToHalf(vector3.x);
+            Y = Mathf.FloatToHalf(vector3.y);
+            Z = Mathf.FloatToHalf(vector3.z);
+        }
+
+        public void SetDecimalPrecision(int decimalPrecision)
+        {
+            decimalPrecision = Mathf.Clamp(decimalPrecision, 0, 4);
+            m_PrecisionAdjustmentUp = Mathf.Pow(10.0f, decimalPrecision);
+            m_PrecisionAdjustmentDown = Mathf.Pow(10.0f, 1.0f / decimalPrecision);
         }
 
         /// <summary>
-        /// The full precision current delta position.
+        /// Constructor that initializes the HalfVector3 along with its precision adjustment
         /// </summary>
         /// <remarks>
-        /// Authoritative: Will have no precision loss
-        /// Non-Authoritative: Has the current network tick's loss of precision.
-        /// Precision loss adjustments are one network tick behind on the
-        /// non-authoritative side.
+        /// Note about decimal precision:
+        /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
+        /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
+        /// valid values range from 0 to 4.  Where 10 ^ 0 is 1 (i.e. no decimal place adjustment).
+        /// Thus 10 ^ 4 is 10000 (4 decimal places to the right) when converting to a half float value, and 10 ^ 1/4 is 0.0001 (4
+        /// decimal places to the left) when converting from the half float to full precision float value.
+        /// Using 4 decimal places typically should only be used if the Vector3 you are converting to half float precision is normalized.
         /// </remarks>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetDeltaPosition()
-        {
-            return DeltaPosition;
-        }
-
-        /// <summary>
-        /// Sets the new position delta based off of the initial position.
-        /// </summary>
-        /// <param name="vector3">the full <see cref="Vector3"/> to generate a delta from</param>
-        /// <param name="tick">the network tick when this Vector3 value is applied</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FromVector3(ref Vector3 vector3, int tick)
-        {
-            NetworkTick = tick;
-            DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
-
-            X = Mathf.FloatToHalf(DeltaPosition.x * k_AdjustmentUp);
-            Y = Mathf.FloatToHalf(DeltaPosition.y * k_AdjustmentUp);
-            Z = Mathf.FloatToHalf(DeltaPosition.z * k_AdjustmentUp);
-
-            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
-            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
-            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
-
-            PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
-
-            for (int i = 0; i < 3; i++)
-            {
-                if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= k_MaxDeltaBeforeAdjustment)
-                {
-                    CurrentBasePosition[i] += HalfDeltaConvertedBack[i];
-                    HalfDeltaConvertedBack[i] = 0.0f;
-                    DeltaPosition[i] = 0.0f;
-                }
-            }
-            PreviousPosition = vector3;
-        }
-
-        /// <summary>
-        /// One of two constructors that should be called to set the initial position.
-        /// </summary>
-        public HalfVector3(Vector3 vector3, int networkTick)
+        /// <param name="vector3">the vector3 to initialize the HalfVector3 with</param>
+        /// <param name="decimalPrecision">
+        /// The number of decimal places to move the <see cref="Vector3"/> values prior to converting to half precision and back when converting to
+        /// a full precision <see cref="Vector3"/>. The default value is 0 (i.e. don't adjust the decimal place).
+        /// </param>
+        public HalfVector3(Vector3 vector3, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize, int decimalPrecision = 0)
         {
             X = Y = Z = 0;
-            NetworkTick = networkTick;
-            CurrentBasePosition = vector3;
-            PreviousPosition = vector3;
-            PrecisionLossDelta = Vector3.zero;
-            DeltaPosition = Vector3.zero;
-            HalfDeltaConvertedBack = Vector3.zero;
-            FromVector3(ref vector3, networkTick);
+            m_PrecisionAdjustmentUp = m_PrecisionAdjustmentDown = 0.0f;
+            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
+            SetDecimalPrecision(decimalPrecision);
+            FromVector3(ref vector3);
         }
 
         /// <summary>
-        /// One of two constructors that should be called to set the initial position.
+        /// Constructor that initializes the HalfVector3 along with its precision adjustment
         /// </summary>
-        public HalfVector3(float x, float y, float z, int networkTick)
+        /// <remarks>
+        /// Note about decimal precision:
+        /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
+        /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
+        /// valid values range from 0 to 4.  Where 10 ^ 0 is 1 (i.e. no decimal place adjustment).
+        /// Thus 10 ^ 4 is 10000 (4 decimal places to the right) when converting to a half float value, and 10 ^ 1/4 is 0.0001 (4
+        /// decimal places to the left) when converting from the half float to full precision float value.
+        /// Using 4 decimal places typically should only be used if the Vector3 you are converting to half float precision is normalized.
+        /// </remarks>
+        /// <param name="x">x component to initialize the HalfVector3 with</param>
+        /// <param name="y">y component of initialize the HalfVector3 with</param>
+        /// <param name="z">z component of initialize the HalfVector3 with</param>
+        /// <param name="decimalPrecision">
+        /// The number of decimal places to move the <see cref="Vector3"/> values prior to converting to half precision and back when converting to
+        /// a full precision <see cref="Vector3"/>. The default value is 0 (i.e. don't adjust the decimal place).
+        /// </param>
+        public HalfVector3(float x, float y, float z, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize, int decimalPrecision = 0)
         {
             X = Y = Z = 0;
-            NetworkTick = networkTick;
+            m_PrecisionAdjustmentUp = m_PrecisionAdjustmentDown = 0.0f;
+            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
             var vector3 = new Vector3(x, y, z);
-            CurrentBasePosition = vector3;
-            PreviousPosition = vector3;
-            PrecisionLossDelta = Vector3.zero;
-            DeltaPosition = Vector3.zero;
-            HalfDeltaConvertedBack = Vector3.zero;
-            FromVector3(ref vector3, networkTick);
+            SetDecimalPrecision(decimalPrecision);
+            FromVector3(ref vector3);
         }
     }
 }

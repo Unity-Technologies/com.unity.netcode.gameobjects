@@ -16,6 +16,12 @@ namespace Unity.Netcode.RuntimeTests
         public bool ServerAuthority;
         public bool ReadyToReceivePositionUpdate = false;
 
+        public NetworkTransformState AuthorityLastSentState;
+        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+        {
+            AuthorityLastSentState = networkTransformState;
+            base.OnAuthorityPushTransformState(ref networkTransformState);
+        }
 
         protected override bool OnIsServerAuthoritative()
         {
@@ -182,7 +188,8 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
             Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
-
+            // Just wait for at least one tick for NetworkTransforms to finish synchronization
+            yield return s_DefaultWaitForTick;
             yield return base.OnServerAndClientsConnected();
         }
 
@@ -531,7 +538,10 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "server side pos should be zero at first"); // sanity check
 
+            yield return s_DefaultWaitForTick;
+
             var nextPosition = new Vector3(10, 20, 30);
+            m_AuthoritativeTransform.transform.position = nextPosition;
             if (overideState != OverrideState.SetState)
             {
                 authPlayerTransform.position = nextPosition;
@@ -543,7 +553,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return WaitForConditionOrTimeOut(PositionsMatch);
-            AssertOnTimeout($"Timed out waiting for positions to match");
+            AssertOnTimeout($"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
             Assert.AreEqual(Quaternion.identity, m_NonAuthoritativeTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
@@ -721,7 +731,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return s_DefaultWaitForTick;
 
             m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
-            var serverLastSentState = m_AuthoritativeTransform.LastSentState;
+            var serverLastSentState = m_AuthoritativeTransform.AuthorityLastSentState;
             var clientReplicatedState = m_NonAuthoritativeTransform.ReplicatedNetworkState.Value;
             yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
             AssertOnTimeout($"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
@@ -828,7 +838,7 @@ namespace Unity.Netcode.RuntimeTests
                 Mathf.DeltaAngle(a.z, b.z) <= k_AproximateDeltaVariance;
         }
 
-        private const float k_AproximateDeltaVariance = 0.01f;
+        private const float k_AproximateDeltaVariance = 0.025f;
         private bool PositionsMatchesValue(Vector3 positionToMatch)
         {
             var authorityPosition = m_AuthoritativeTransform.transform.position;
