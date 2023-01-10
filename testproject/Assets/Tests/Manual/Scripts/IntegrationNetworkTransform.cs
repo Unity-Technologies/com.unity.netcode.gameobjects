@@ -32,6 +32,13 @@ namespace TestProject.ManualTests
         public Vector3 PreviousUpdatedScale;
         public Quaternion PreviousUpdatedRotation;
 
+        [SerializeField]
+        private int m_StatesToLog = k_StatesToLog;
+        public void SetStatesToLog(int count)
+        {
+            m_StatesToLog = count;
+        }
+
         protected override void Awake()
         {
             base.Awake();
@@ -181,7 +188,7 @@ namespace TestProject.ManualTests
                 ownerTable.Add(localClientId, new List<HalfPosDebugStates>());
             }
             ownerTable[localClientId].Add(state);
-            if (ownerTable[localClientId].Count == k_StatesToLog)
+            if (ownerTable[localClientId].Count >= m_StatesToLog)
             {
                 m_StopLoggingStates = true;
                 if (IsServer)
@@ -224,7 +231,7 @@ namespace TestProject.ManualTests
 
             ownerTableClientRelative.Add(logEntry);
 
-            if (ownerTableClientRelative.Count == k_StatesToLog)
+            if (ownerTableClientRelative.Count >= m_StatesToLog)
             {
                 LogInitialTransformStates(serverRpcParams.Receive.SenderClientId, ownerId);
             }
