@@ -55,18 +55,18 @@ namespace TestProject.ManualTests
 
         private void UpdateTextInfo(ref InfoEntry infoEntry, ref Vector3 info)
         {
-            infoEntry.Text.text  = $"{infoEntry.Prefix} ({info.x}, {info.y}, {info.z})";
+            infoEntry.Text.text = $"{infoEntry.Prefix} ({info.x}, {info.y}, {info.z})";
         }
 
         private void OnGUI()
         {
             if (IsSpawned)
             {
-                for(int i = 0; i <  InfoEntries.Count; i++)
+                for (int i = 0; i < InfoEntries.Count; i++)
                 {
                     var infoEntry = InfoEntries[i];
                     var infoValue = Vector3.zero;
-                    switch(infoEntry.InfoEntryType)
+                    switch (infoEntry.InfoEntryType)
                     {
                         case InfoEntry.InfoEntryTypes.Direciton:
                             {
@@ -84,7 +84,7 @@ namespace TestProject.ManualTests
                                 break;
                             }
                     }
-                    UpdateTextInfo(ref infoEntry,ref infoValue);
+                    UpdateTextInfo(ref infoEntry, ref infoValue);
                 }
             }
         }

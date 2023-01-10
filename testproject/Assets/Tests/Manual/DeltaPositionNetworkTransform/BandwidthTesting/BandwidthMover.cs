@@ -7,10 +7,10 @@ namespace TestProject.ManualTests
     {
         public Vector3 Direction;
 
-        [Range(0.01f,40.0f)]
+        [Range(0.01f, 40.0f)]
         public float MoveSpeed = 5.0f;
 
-        [Range(0.01f,40.0f)]
+        [Range(0.01f, 40.0f)]
         public float RotationSpeed = 2.0f;
 
         private Vector3 m_Rotation;
