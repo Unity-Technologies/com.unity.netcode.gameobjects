@@ -912,7 +912,7 @@ namespace Unity.Netcode.RuntimeTests
                 manager.OnBeforePurge = beforePurge;
             }
 
-            yield return new WaitForSeconds(timeout + 0.1f);
+            yield return new WaitForSeconds(timeout + 0.25f);
 
             bool HaveAllClientsPurged()
             {
@@ -1082,7 +1082,7 @@ namespace Unity.Netcode.RuntimeTests
                 manager.OnBeforePurge = beforePurge;
             }
 
-            yield return new WaitForSeconds(timeout + 0.1f);
+            yield return new WaitForSeconds(timeout + 0.25f);
             foreach (var client in m_ClientNetworkManagers)
             {
                 AddPrefabsToClient(client);
