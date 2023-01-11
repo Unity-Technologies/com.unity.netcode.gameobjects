@@ -48,6 +48,9 @@ namespace Unity.Netcode.Components
         /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
+        /// <summary>
+        /// Data structure used to synchronize the <see cref="NetworkTransform"/>
+        /// </summary>
         public struct NetworkTransformState : INetworkSerializable
         {
             private const int k_InLocalSpaceBit = 0;
@@ -70,43 +73,71 @@ namespace Unity.Netcode.Components
 
             private uint m_Bitset;
 
+            /// <summary>
+            /// When set, the <see cref="NetworkTransform"/> is operating in local space
+            /// </summary>
             public bool InLocalSpace
             {
                 get => BitGet(k_InLocalSpaceBit);
-                set
+                internal set
                 {
                     BitSet(value, k_InLocalSpaceBit);
                 }
             }
 
             // Position
+            /// <summary>
+            /// When set, the position X-Axis value has been updated
+            /// </summary>
+            /// When half float precision is enabled:
+            /// - Position will always update all axis
+            /// </remarks>
             public bool HasPositionX
             {
                 get => BitGet(k_PositionXBit);
-                set
+                internal set
                 {
                     BitSet(value, k_PositionXBit);
                 }
             }
 
+            /// <summary>
+            /// When set, the position Y-Axis value has been updated
+            /// </summary>
+            /// When half float precision is enabled:
+            /// - Position will always update all axis
+            /// </remarks>
             public bool HasPositionY
             {
                 get => BitGet(k_PositionYBit);
-                set
+                internal set
                 {
                     BitSet(value, k_PositionYBit);
                 }
             }
 
+            /// <summary>
+            /// When set, the position X-Axis value has been updated
+            /// </summary>
+            /// When half float precision is enabled:
+            /// - Position will always update all axis
+            /// </remarks>
             public bool HasPositionZ
             {
                 get => BitGet(k_PositionZBit);
-                set
+                internal set
                 {
                     BitSet(value, k_PositionZBit);
                 }
             }
 
+            /// <summary>
+            /// When set, position values have been updated.
+            /// </summary>
+            /// <remarks>
+            /// When half float precision is enabled:
+            /// - Position will always update all axis
+            /// </remarks>
             public bool HasPositionChange
             {
                 get
@@ -116,6 +147,12 @@ namespace Unity.Netcode.Components
             }
 
             // RotAngles
+            /// <summary>
+            /// When set, the rotation (Euler) X-Axis value has been updated
+            /// </summary>
+            /// <remarks>
+            /// When quaternion synchronization is enabled all axis are updated
+            /// </remarks>
             public bool HasRotAngleX
             {
                 get => BitGet(k_RotAngleXBit);
@@ -125,15 +162,27 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// When set, the rotation (Euler) Y-Axis value has been updated
+            /// </summary>
+            /// <remarks>
+            /// When quaternion synchronization is enabled all axis are updated
+            /// </remarks>
             public bool HasRotAngleY
             {
                 get => BitGet(k_RotAngleYBit);
-                set
+                internal set
                 {
                     BitSet(value, k_RotAngleYBit);
                 }
             }
 
+            /// <summary>
+            /// When set, the rotation (Euler) Z-Axis value has been updated
+            /// </summary>
+            /// <remarks>
+            /// When quaternion synchronization is enabled all axis are updated
+            /// </remarks>
             public bool HasRotAngleZ
             {
                 get => BitGet(k_RotAngleZBit);
@@ -143,6 +192,13 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// When set, rotation values have been updated.
+            /// </summary>
+            /// <remarks>
+            /// When half float precision is enabled:
+            /// - Rotation will always update all axis
+            /// </remarks>
             public bool HasRotAngleChange
             {
                 get
@@ -164,33 +220,45 @@ namespace Unity.Netcode.Components
             }
 
             // Scale
+            /// <summary>
+            /// When set, the scale Z-Axis value has been updated
+            /// </summary>
             public bool HasScaleX
             {
                 get => BitGet(k_ScaleXBit);
-                set
+                internal set
                 {
                     BitSet(value, k_ScaleXBit);
                 }
             }
 
+            /// <summary>
+            /// When set, the scale Y-Axis value has been updated
+            /// </summary>
             public bool HasScaleY
             {
                 get => BitGet(k_ScaleYBit);
-                set
+                internal set
                 {
                     BitSet(value, k_ScaleYBit);
                 }
             }
 
+            /// <summary>
+            /// When set, the scale Z-Axis value has been updated
+            /// </summary>
             public bool HasScaleZ
             {
                 get => BitGet(k_ScaleZBit);
-                set
+                internal set
                 {
                     BitSet(value, k_ScaleZBit);
                 }
             }
 
+            /// <summary>
+            /// When set, scale values have been updated.
+            /// </summary>
             public bool HasScaleChange
             {
                 get
@@ -199,51 +267,73 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// When set, this state is considered a "teleport" command
+            /// </summary>
             public bool IsTeleportingNextFrame
             {
                 get => BitGet(k_TeleportingBit);
-                set
+                internal set
                 {
                     BitSet(value, k_TeleportingBit);
                 }
             }
 
+            /// <summary>
+            /// Synchronized by authority, when set the <see cref="NetworkTransform"/> is using interpolation
+            /// </summary>
             public bool UseInterpolation
             {
                 get => BitGet(k_Interpolate);
-                set
+                internal set
                 {
                     BitSet(value, k_Interpolate);
                 }
             }
 
+            /// <summary>
+            /// When set this state is using <see cref="Quaternion"/> synchronization
+            /// </summary>
             public bool QuaternionSync
             {
                 get => BitGet(k_QuaternionSync);
-                set
+                internal set
                 {
                     BitSet(value, k_QuaternionSync);
                 }
             }
 
+            /// <summary>
+            /// When set this state is using <see cref="Quaternion"/> compression
+            /// </summary>
+            /// <remarks>
+            /// Only when <see cref="QuaternionSync"/> is set
+            /// </remarks>
             public bool QuaternionCompression
             {
                 get => BitGet(k_QuaternionCompress);
-                set
+                internal set
                 {
                     BitSet(value, k_QuaternionCompress);
                 }
             }
 
+            /// <summary>
+            /// When set, this state is using half float precision
+            /// </summary>
             public bool UseHalfFloatPrecision
             {
                 get => BitGet(k_UseHalfFloats);
-                set
+                internal set
                 {
                     BitSet(value, k_UseHalfFloats);
                 }
             }
 
+            /// <summary>
+            /// When set, this is the first state being synchronized.
+            /// Typically when the associate <see cref="NetworkObject"/> is spawned.
+            /// </summary>
             public bool IsSynchronizing
             {
                 get => BitGet(k_Synchronization);
@@ -253,10 +343,13 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            /// <summary>
+            /// Determines if position interpolation will Slerp to its target
+            /// </summary>
             public bool UsePositionSlerp
             {
                 get => BitGet(k_PositionSlerp);
-                set
+                internal set
                 {
                     BitSet(value, k_PositionSlerp);
                 }
@@ -296,6 +389,12 @@ namespace Unity.Netcode.Components
             internal uint QuaternionCompressed;
 
             internal Quaternion Rotation;
+
+            /// <summary>
+            /// Returns the current rotation when quaternion synchronization is enabled.
+            /// <see cref="HasRotAngleChange"/>
+            /// </summary>
+            /// <returns><see cref="Quaternion"/></returns>
             public Quaternion GetRotation()
             {
                 return Rotation;
@@ -310,6 +409,10 @@ namespace Unity.Netcode.Components
             // Used for HalfVector3DeltaPosition delta position synchronization
             internal int NetworkTick;
 
+            /// <summary>
+            /// The network tick that this state was sent
+            /// </summary>
+            /// <returns><see cref="int"/></returns>
             public int GetNetworkTick()
             {
                 return NetworkTick;
@@ -318,10 +421,7 @@ namespace Unity.Netcode.Components
             internal bool TrackByStateId;
             internal int StateId;
 
-            /// <summary>
-            /// This will reset the NetworkTransform state's internal flags
-            /// </summary>
-            public void ClearBitSetForNextTick()
+            internal void ClearBitSetForNextTick()
             {
                 // Preserve the global flags
                 var preserveFlags = (uint)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | (1 << k_UseHalfFloats) | (1 << k_QuaternionSync) | (1 << k_QuaternionCompress) | (1 << k_PositionSlerp));
@@ -332,6 +432,9 @@ namespace Unity.Netcode.Components
             private FastBufferReader m_Reader;
             private FastBufferWriter m_Writer;
 
+            /// <summary>
+            /// Serializes this <see cref="NetworkTransformState"/>
+            /// </summary>
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
                 // Used to calculate the LastSerializedSize value
@@ -616,8 +719,28 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Enable this on the authority side for quaternion synchronization
+        /// </summary>
         public bool UseQuaternionSynchronization = false;
+
+        /// <summary>
+        /// Enabled this on the authority side for quaternion compression
+        /// </summary>
+        /// <remarks>
+        /// This has a lower precision than half float precision. Recommended
+        /// only for low precision scenarios.
+        /// <see cref="UseHalfFloatPrecision"/> provides better precision at
+        /// roughly half the cost of a fully quaternion update.
+        /// </remarks>
         public bool UseQuaternionCompression = false;
+
+        /// <summary>
+        /// Enable this to use half float precision for position, rotation, and scale.
+        /// </summary>
+        /// <remarks>
+        /// When enabled, delta position synchronization is used.
+        /// </remarks>
         public bool UseHalfFloatPrecision = false;
 
         /// <summary>
@@ -1796,12 +1919,6 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked on the non-authoritative side when the NetworkTransformState has been updated
         /// </summary>
-        /// <remarks>
-        /// This is useful to know precisely when the transform has been updated when trying to implement any form of prediction.
-        /// !! NOTE !!:
-        /// The oldState will not always contain the last updates all portions of the transform, but just the previous state update
-        /// applied.
-        /// </remarks>
         /// <param name="oldState">the previous <see cref="NetworkTransformState"/></param>
         /// <param name="newState">the new <see cref="NetworkTransformState"/></param>
         protected virtual void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
