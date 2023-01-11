@@ -2044,8 +2044,8 @@ namespace Unity.Netcode.Components
             if (!IsServer && !IsOwner)
             {
                 var errorMessage = gameObject != NetworkObject.gameObject ?
-    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform on {gameObject.name}!" :
-    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform!";
+                    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform on {gameObject.name}!" :
+                    $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform!";
                 NetworkLog.LogError(errorMessage);
                 return;
             }
