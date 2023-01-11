@@ -117,7 +117,7 @@ namespace Unity.Netcode.Components
         {
             decimalPrecision = Mathf.Clamp(decimalPrecision, 0, 4);
             m_PrecisionAdjustmentUp = Mathf.Pow(10.0f, decimalPrecision);
-            m_PrecisionAdjustmentDown = Mathf.Pow(10.0f, 1.0f / decimalPrecision);
+            m_PrecisionAdjustmentDown = 1.0f / m_PrecisionAdjustmentUp;
         }
 
         /// <summary>
