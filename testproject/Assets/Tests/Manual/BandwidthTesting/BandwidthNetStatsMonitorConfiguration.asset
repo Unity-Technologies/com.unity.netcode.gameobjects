@@ -15,7 +15,7 @@ MonoBehaviour:
   <DisplayElements>k__BackingField:
   - <FieldsInitialized>k__BackingField: 1
     <Type>k__BackingField: 2
-    <Label>k__BackingField: Size Per Update
+    <Label>k__BackingField: Bytes per Second
     <Stats>k__BackingField:
     - <TypeIndex>k__BackingField: 1
       <EnumValue>k__BackingField: 1
@@ -44,7 +44,7 @@ MonoBehaviour:
       <ValueName>k__BackingField: BytesPerSecond
   - <FieldsInitialized>k__BackingField: 1
     <Type>k__BackingField: 0
-    <Label>k__BackingField: Bytes Per Second Gauge
+    <Label>k__BackingField: 'Bytes Per Second '
     <Stats>k__BackingField:
     - <TypeIndex>k__BackingField: 1
       <EnumValue>k__BackingField: 2
@@ -85,7 +85,7 @@ MonoBehaviour:
       <ExponentialMovingAverageParams>k__BackingField:
         m_HalfLife: 1000000000
       <SimpleMovingAverageParams>k__BackingField:
-        m_SampleCount: 29
+        m_SampleCount: 30
         <SampleRate>k__BackingField: 0
     <GraphConfiguration>k__BackingField:
       m_SampleCount: 512
@@ -98,3 +98,63 @@ MonoBehaviour:
     - <TypeName>k__BackingField: TestProject.ManualTests.NetworkTransformStats, TestProject.ManualTests,
         Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
       <ValueName>k__BackingField: BytesPerUpdate
+  - <FieldsInitialized>k__BackingField: 1
+    <Type>k__BackingField: 0
+    <Label>k__BackingField: Total BPS Send
+    <Stats>k__BackingField:
+    - <TypeIndex>k__BackingField: 0
+      <EnumValue>k__BackingField: 6
+    <CounterConfiguration>k__BackingField:
+      <SmoothingMethod>k__BackingField: 1
+      <AggregationMethod>k__BackingField: 1
+      m_SignificantDigits: 3
+      <HighlightLowerBound>k__BackingField: -3.4028235e+38
+      <HighlightUpperBound>k__BackingField: 3.402823e+38
+      <ExponentialMovingAverageParams>k__BackingField:
+        m_HalfLife: 1000000000
+      <SimpleMovingAverageParams>k__BackingField:
+        m_SampleCount: 6
+        <SampleRate>k__BackingField: 1
+    <GraphConfiguration>k__BackingField:
+      m_SampleCount: 10
+      <SampleRate>k__BackingField: 1
+      <VariableColors>k__BackingField:
+      - {r: 0.04356533, g: 0.5935054, b: 0.8396226, a: 1}
+      - {r: 0.039159846, g: 0.754717, b: 0.06835823, a: 1}
+      <XAxisType>k__BackingField: 0
+      <LineGraphConfiguration>k__BackingField:
+        m_LineThickness: 1
+    <SerializedStats>k__BackingField:
+    - <TypeName>k__BackingField: Unity.Multiplayer.Tools.MetricTypes.DirectedMetricType,
+        Unity.Multiplayer.Tools.MetricTypes, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      <ValueName>k__BackingField: TotalBytesSent
+  - <FieldsInitialized>k__BackingField: 1
+    <Type>k__BackingField: 0
+    <Label>k__BackingField: Total BPS Receive
+    <Stats>k__BackingField:
+    - <TypeIndex>k__BackingField: 0
+      <EnumValue>k__BackingField: 5
+    <CounterConfiguration>k__BackingField:
+      <SmoothingMethod>k__BackingField: 1
+      <AggregationMethod>k__BackingField: 1
+      m_SignificantDigits: 3
+      <HighlightLowerBound>k__BackingField: -3.4028235e+38
+      <HighlightUpperBound>k__BackingField: 3.402823e+38
+      <ExponentialMovingAverageParams>k__BackingField:
+        m_HalfLife: 1000000000
+      <SimpleMovingAverageParams>k__BackingField:
+        m_SampleCount: 6
+        <SampleRate>k__BackingField: 1
+    <GraphConfiguration>k__BackingField:
+      m_SampleCount: 10
+      <SampleRate>k__BackingField: 1
+      <VariableColors>k__BackingField:
+      - {r: 0.04356533, g: 0.5935054, b: 0.8396226, a: 1}
+      - {r: 0.039159846, g: 0.754717, b: 0.06835823, a: 1}
+      <XAxisType>k__BackingField: 0
+      <LineGraphConfiguration>k__BackingField:
+        m_LineThickness: 1
+    <SerializedStats>k__BackingField:
+    - <TypeName>k__BackingField: Unity.Multiplayer.Tools.MetricTypes.DirectedMetricType,
+        Unity.Multiplayer.Tools.MetricTypes, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+      <ValueName>k__BackingField: TotalBytesReceived
