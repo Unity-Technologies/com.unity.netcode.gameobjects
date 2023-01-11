@@ -899,6 +899,7 @@ namespace Unity.Netcode
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
         /// is in read mode or write mode.
         /// </typeparam>
+        /// <param name="targetClientId">the relative client identifier being synchronized</param>
         protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
         {
 

@@ -3,6 +3,10 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
+    /// <summary>
+    /// Half float precision <see cref="Vector3"/> that is used for delta position
+    /// synchronization.
+    /// </summary>
     public struct HalfVector3DeltaPosition : INetworkSerializable
     {
         /// <summary>
@@ -30,6 +34,11 @@ namespace Unity.Netcode.Components
         private const float k_AdjustmentUp = 100.0f;
         private const float k_AdjustmentDown = 0.01f;
 
+        /// <summary>
+        /// The serialization implementation of <see cref="INetworkSerializable"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref X);
@@ -153,7 +162,10 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// One of two constructors that should be called to set the initial position.
+        /// This uses a <see cref="Vector3"/> for initialization.
         /// </summary>
+        /// <param name="vector3">the <see cref="Vector3"/> to initialize this instance with</param>
+        /// <param name="networkTick">use the network tick when creating</param>
         public HalfVector3DeltaPosition(Vector3 vector3, int networkTick)
         {
             X = Y = Z = 0;
@@ -168,7 +180,12 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// One of two constructors that should be called to set the initial position.
+        /// This uses individual x, y, and z floats for initialization.
         /// </summary>
+        /// <param name="x">x-axis value to set</param>
+        /// <param name="y">y-axis value to set</param>
+        /// <param name="z">z-axis value to set</param>
+        /// <param name="networkTick">use the network tick when creating</param>
         public HalfVector3DeltaPosition(float x, float y, float z, int networkTick)
         {
             X = Y = Z = 0;

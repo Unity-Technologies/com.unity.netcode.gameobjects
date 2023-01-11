@@ -48,6 +48,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Compresses a Quaternion into an unsigned integer
         /// </summary>
+        /// <param name="quaternion">the <see cref="Quaternion"/> to be compressed</param>
+        /// <returns>the <see cref="Quaternion"/> compressed as an unsigned integer</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public uint CompressQuaternion(ref Quaternion quaternion)
         {

@@ -402,9 +402,12 @@ namespace Unity.Netcode.Components
 
             // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
             // dirty or not.
-            public bool IsDirty { get; internal set; }
+            internal bool IsDirty { get; set; }
 
-            public int LastSerializedSize;
+            /// <summary>
+            /// The last calculated size of the <see cref="NetworkTransform"/> when serialized.
+            /// </summary>
+            public int LastSerializedSize { get; internal set; }
 
             // Used for HalfVector3DeltaPosition delta position synchronization
             internal int NetworkTick;
@@ -852,8 +855,9 @@ namespace Unity.Netcode.Components
         private Vector3 m_CurrentScale;
         private Quaternion m_CurrentRotation;
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected void UpdatePositionInterpolator(Vector3 position, double time, bool resetInterpolator = false)
+        internal void UpdatePositionInterpolator(Vector3 position, double time, bool resetInterpolator = false)
         {
             if (!CanCommitToTransform)
             {
@@ -935,6 +939,9 @@ namespace Unity.Netcode.Components
         /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
         /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well
         /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializer"></param>
+        /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
         {
             var synchronizationState = new NetworkTransformState();
@@ -2317,8 +2324,12 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// Method to determine if this <see cref="NetworkTransform"/> instance is owner or server authoritative.
         /// </summary>
+        /// <remarks>
+        /// Used by <see cref="NetworkRigidbody"/> to determines if this is server or owner authoritative.
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
         public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritative();
