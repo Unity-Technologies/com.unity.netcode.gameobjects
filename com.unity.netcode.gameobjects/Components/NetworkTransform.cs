@@ -792,6 +792,18 @@ namespace Unity.Netcode.Components
         public bool CanCommitToTransform { get; protected set; }
 
         /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
+        /// was instantiated on the server side or not.
+        /// </summary>
+        protected bool m_CachedIsServer;
+
+        /// <summary>
+        /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
+        /// this <see cref="NetworkBehaviour"/> derived class instance.
+        /// </summary>
+        protected NetworkManager m_CachedNetworkManager;
+
+        /// <summary>
         /// We have two internal NetworkVariables.
         /// One for server authoritative and one for "client/owner" authoritative.
         /// </summary>
@@ -2028,6 +2040,10 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            // NOTE: Legacy and not used
+            m_CachedIsServer = IsServer;
+            m_CachedNetworkManager = NetworkManager;
+
             Initialize();
             // This assures the initial spawning of the object synchronizes all connected clients
             // with the current transform values. This should not be placed within Initialize since
