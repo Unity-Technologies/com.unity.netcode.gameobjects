@@ -39,10 +39,10 @@ namespace Unity.Netcode.RuntimeTests
 
             m_PrefabToSpawn = new NetworkPrefab() { Prefab = gameObject };
 
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(m_PrefabToSpawn);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(m_PrefabToSpawn);
+                client.NetworkConfig.Prefabs.Add(m_PrefabToSpawn);
             }
         }
 

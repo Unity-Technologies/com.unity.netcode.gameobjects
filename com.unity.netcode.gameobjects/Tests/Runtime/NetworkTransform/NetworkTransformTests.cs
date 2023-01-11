@@ -402,7 +402,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            networkManager.NetworkConfig.NetworkPrefabs = m_ServerNetworkManager.NetworkConfig.NetworkPrefabs;
+            networkManager.NetworkConfig.Prefabs = m_ServerNetworkManager.NetworkConfig.Prefabs;
             base.OnNewClientCreated(networkManager);
         }
 
