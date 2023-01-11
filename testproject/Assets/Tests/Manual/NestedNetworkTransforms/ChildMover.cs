@@ -1,5 +1,5 @@
 using UnityEngine;
-using Unity.Netcode;
+
 #if UNITY_EDITOR
 using UnityEditor;
 [CustomEditor(typeof(TestProject.ManualTests.ChildMover))]

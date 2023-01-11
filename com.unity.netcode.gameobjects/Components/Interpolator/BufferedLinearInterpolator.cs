@@ -329,8 +329,15 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// A <see cref="BufferedLinearInterpolator<T>"/> <see cref="Vector3"/> implementation.
+    /// </summary>
     public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
     {
+        /// <summary>
+        /// Use <see cref="Vector3.Slerp"/> when <see cref="true"/>.
+        /// Use <see cref="Vector3.Lerp"/> when <see cref="false"/>
+        /// </summary>
         public bool IsSlerp;
         /// <inheritdoc />
         protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)

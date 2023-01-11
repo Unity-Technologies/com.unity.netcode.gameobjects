@@ -129,7 +129,8 @@ namespace TestProject.ManualTests
                 var isPositionDirty = m_LastInterpolateState != Interpolate;
                 var deltaPosition = m_HalfVector3Server.GetDeltaPosition();
                 ServerDelta.text = $"S-Delta:({deltaPosition.x}, {deltaPosition.y}, {deltaPosition.z})";
-                ServerCurrent.text = $"S-Curr:({m_HalfVector3Server.CurrentBasePosition.x}, {m_HalfVector3Server.CurrentBasePosition.y}, {m_HalfVector3Server.CurrentBasePosition.z})";
+                var currentBasePosition = m_HalfVector3Server.GetCurrentBasePosition();
+                ServerCurrent.text = $"S-Curr:({currentBasePosition.x}, {currentBasePosition.y}, {currentBasePosition.z})";
                 var fullPosition = m_HalfVector3Server.GetFullPosition();
                 ServerFull.text = $"S-Full:({fullPosition.x}, {fullPosition.y}, {fullPosition.z})";
 

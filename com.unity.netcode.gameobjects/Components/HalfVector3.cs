@@ -3,12 +3,33 @@ using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
+    /// <summary>
+    /// Structure that defines which axis of a <see cref="HalfVector3"/> will
+    /// be serialized.
+    /// </summary>
     public struct HalfVector3AxisToSynchronize
     {
+        /// <summary>
+        /// When enabled, serialize the X axis
+        /// </summary>
         public bool X;
+
+        /// <summary>
+        /// When enabled, serialize the Y axis
+        /// </summary>
         public bool Y;
+
+        /// <summary>
+        /// When enabled, serialize the Z axis
+        /// </summary>
         public bool Z;
 
+        /// <summary>
+        /// Constructor to preinitialize the x, y, and z values
+        /// </summary>
+        /// <param name="x">when <see cref="true"/> the x-axis will be serialized</param>
+        /// <param name="y">when <see cref="true"/> the y-axis will be serialized</param>
+        /// <param name="z">when <see cref="true"/> the z-axis will be serialized</param>
         public HalfVector3AxisToSynchronize(bool x = true, bool y = true, bool z = true)
         {
             X = x;
@@ -17,16 +38,33 @@ namespace Unity.Netcode.Components
         }
     }
 
+    /// <summary>
+    /// Half float precision <see cref="Vector3"/>
+    /// </summary>
     public struct HalfVector3 : INetworkSerializable
     {
+        /// <summary>
+        /// The half float precision value of the x-axis as a <see cref="ushort"/>
+        /// </summary>
         public ushort X;
+        /// <summary>
+        /// The half float precision value of the y-axis as a <see cref="ushort"/>
+        /// </summary>
         public ushort Y;
+        /// <summary>
+        /// The half float precision value of the z-axis as a <see cref="ushort"/>
+        /// </summary>
         public ushort Z;
 
         private float m_PrecisionAdjustmentUp;
         private float m_PrecisionAdjustmentDown;
         private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
 
+        /// <summary>
+        /// The serialization implementation of <see cref="INetworkSerializable"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (m_HalfVector3AxisToSynchronize.X)
@@ -71,6 +109,10 @@ namespace Unity.Netcode.Components
             Z = Mathf.FloatToHalf(vector3.z);
         }
 
+        /// <summary>
+        /// Sets the precision of this instance
+        /// </summary>
+        /// <param name="decimalPrecision"></param>
         public void SetDecimalPrecision(int decimalPrecision)
         {
             decimalPrecision = Mathf.Clamp(decimalPrecision, 0, 4);

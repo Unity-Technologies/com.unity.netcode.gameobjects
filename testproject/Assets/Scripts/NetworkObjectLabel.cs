@@ -31,7 +31,7 @@ public class NetworkObjectLabel : NetworkBehaviour
 
     private void OnEnable()
     {
-        if(m_IsLabelVisible)
+        if (m_IsLabelVisible)
         {
             ShowHideLabel(true);
         }
