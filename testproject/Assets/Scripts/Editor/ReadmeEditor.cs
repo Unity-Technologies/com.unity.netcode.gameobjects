@@ -58,28 +58,25 @@ namespace Testproject.Editor
 
         private static void SelectReadmeAutomatically()
         {
-            if (!SessionState.GetBool(k_ShowedReadmeSessionStateName, false))
-            {
-                var readme = SelectReadme();
-                SessionState.SetBool(k_ShowedReadmeSessionStateName, true);
+            //if (!SessionState.GetBool(k_ShowedReadmeSessionStateName, false))
+            //{
+            //    var readme = SelectReadme();
+            //    SessionState.SetBool(k_ShowedReadmeSessionStateName, true);
 
-                if (readme && !readme.LoadedLayout)
-                {
-                    LoadLayout();
-                    readme.LoadedLayout = true;
-                }
-            }
+            //    if (readme && !readme.LoadedLayout)
+            //    {
+            //        LoadLayout();
+            //        readme.LoadedLayout = true;
+            //    }
+            //}
         }
 
         private static void LoadLayout()
         {
             var assembly = typeof(EditorApplication).Assembly;
             var windowLayoutType = assembly.GetType("UnityEditor.WindowLayout", true);
-            var method = windowLayoutType.GetMethod("LoadWindowLayout", BindingFlags.Public | BindingFlags.Static);
-            method?.Invoke(null, new object[] { Path.Combine(Application.dataPath, "TutorialInfo/Layout.wlt"), false });
         }
 
-        //[MenuItem("Boss Room/Show Sample Instructions")]
         private static Readme SelectReadme()
         {
             var ids = AssetDatabase.FindAssets("Readme t:Readme");

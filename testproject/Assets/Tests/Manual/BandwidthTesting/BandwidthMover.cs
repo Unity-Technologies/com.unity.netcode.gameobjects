@@ -56,6 +56,12 @@ namespace TestProject.ManualTests
             {
                 GenerateNewTargetScale();
             }
+            else
+            {
+                var cameraFollower = FindObjectOfType<CameraFollower>();
+                var position = transform.position;
+                cameraFollower.UpdateOffset(ref position);
+            }
             base.OnNetworkSpawn();
         }
 

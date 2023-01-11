@@ -509,7 +509,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ObjectToFollow: {fileID: 975438769}
-  CameraSmoothing: 0.5
+  CameraSmoothing: 1000
 --- !u!1 &387018781
 GameObject:
   m_ObjectHideFlags: 0
@@ -1267,8 +1267,8 @@ MonoBehaviour:
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 0
   PositionThreshold: 0.001
-  RotAngleThreshold: 0.001
-  ScaleThreshold: 0.001
+  RotAngleThreshold: 0.0001
+  ScaleThreshold: 0.0001
   InLocalSpace: 0
   Interpolate: 1
   Direction: {x: 1, y: 1, z: 1}
