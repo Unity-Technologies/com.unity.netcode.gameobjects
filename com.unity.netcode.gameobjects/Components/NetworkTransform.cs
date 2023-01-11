@@ -861,8 +861,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Only authority is allowed to commit a transform
-            if (!CanCommitToTransform)
+            // Only the server or the owner is allowed to commit a transform
+            if (!IsServer && !IsOwner)
             {
                 var errorMessage = gameObject != NetworkObject.gameObject ?
                     $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform on {gameObject.name}!" :
@@ -907,7 +907,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void TryCommitTransform(ref Transform transformToCommit, bool synchronize = false)
         {
-            if (!CanCommitToTransform && !IsOwner)
+            // Only the server or the owner is allowed to commit a transform
+            if (!IsServer && !IsOwner)
             {
                 NetworkLog.LogError($"[{name}] is trying to commit the transform without authority!");
                 return;
@@ -2039,8 +2040,8 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Only the server or owner can invoke this method
-            if (!CanCommitToTransform)
+            // Only the server or the owner is allowed to commit a transform
+            if (!IsServer && !IsOwner)
             {
                 var errorMessage = gameObject != NetworkObject.gameObject ?
     $"Non-authority instance of {NetworkObject.gameObject.name} is trying to commit a transform on {gameObject.name}!" :
