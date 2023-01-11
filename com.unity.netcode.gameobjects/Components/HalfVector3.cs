@@ -127,10 +127,7 @@ namespace Unity.Netcode.Components
         /// Note about decimal precision:
         /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
         /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
-        /// valid values range from 0 to 4.  Where 10 ^ 0 is 1 (i.e. no decimal place adjustment).
-        /// Thus 10 ^ 4 is 10000 (4 decimal places to the right) when converting to a half float value, and 10 ^ 1/4 is 0.0001 (4
-        /// decimal places to the left) when converting from the half float to full precision float value.
-        /// Using 4 decimal places typically should only be used if the Vector3 you are converting to half float precision is normalized.
+        /// valid values range from 0 to 4 decimal places to adjust up and back down (1000 to 1 : 1 to 0.001).
         /// </remarks>
         /// <param name="vector3">the vector3 to initialize the HalfVector3 with</param>
         /// <param name="decimalPrecision">
@@ -153,10 +150,7 @@ namespace Unity.Netcode.Components
         /// Note about decimal precision:
         /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
         /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
-        /// valid values range from 0 to 4.  Where 10 ^ 0 is 1 (i.e. no decimal place adjustment).
-        /// Thus 10 ^ 4 is 10000 (4 decimal places to the right) when converting to a half float value, and 10 ^ 1/4 is 0.0001 (4
-        /// decimal places to the left) when converting from the half float to full precision float value.
-        /// Using 4 decimal places typically should only be used if the Vector3 you are converting to half float precision is normalized.
+        /// valid values range from 0 to 4 decimal places to adjust up and back down (1000 to 1 : 1 to 0.001).
         /// </remarks>
         /// <param name="x">x component to initialize the HalfVector3 with</param>
         /// <param name="y">y component of initialize the HalfVector3 with</param>
