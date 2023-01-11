@@ -10,20 +10,20 @@ namespace Unity.Netcode.Components
     public struct HalfVector3DeltaPosition : INetworkSerializable
     {
         /// <summary>
-        /// The Half Float Delta Position X Value
+        /// The <see cref="ushort"/> half float delta position X value
         /// </summary>
         public ushort X;
         /// <summary>
-        /// The Half Float Delta Position Y Value
+        /// The <see cref="ushort"/> half float delta position Y value
         /// </summary>
         public ushort Y;
         /// <summary>
-        /// The Half Float Delta Position Z Value
+        /// The <see cref="ushort"/> half float delta position Z value
         /// </summary>
         public ushort Z;
 
-        public Vector3 CurrentBasePosition;
 
+        internal Vector3 CurrentBasePosition;
         internal Vector3 PrecisionLossDelta;
         internal Vector3 HalfDeltaConvertedBack;
         internal Vector3 PreviousPosition;
@@ -95,6 +95,20 @@ namespace Unity.Netcode.Components
             return CurrentBasePosition + DeltaPosition;
         }
 
+        /// <summary>
+        /// Returns the base position without the delta
+        /// </summary>
+        /// <returns><see cref="Vector3"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetCurrentBasePosition()
+        {
+            return CurrentBasePosition;
+        }
+
+        /// <summary>
+        /// Returns the full position with the delta
+        /// </summary>
+        /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetFullPosition()
         {

@@ -169,7 +169,7 @@ namespace TestProject.ManualTests
 
             state.Tick = networkTransformState.GetNetworkTick();
             state.ClientTarget = targetClient;
-            state.BasePosition = halfPositionState.CurrentBasePosition;
+            state.BasePosition = halfPositionState.GetCurrentBasePosition();
             state.HalfBackDelta = halfPositionState.GetConvertedDelta();
             state.DeltaPosition = halfPositionState.GetDeltaPosition();
             state.FullPosition = halfPositionState.GetFullPosition();
