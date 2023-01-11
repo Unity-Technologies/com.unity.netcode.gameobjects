@@ -555,7 +555,6 @@ namespace Unity.Netcode.Components
                                 {
                                     QuaternionCompressor.DecompressQuaternion(ref Rotation, QuaternionCompressed);
                                 }
-                                serializer.SerializeValue(ref QuaternionCompressed);
                             }
                             else
                             {
