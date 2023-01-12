@@ -167,7 +167,7 @@ namespace TestProject.RuntimeTests
         }
 
         // Acceptable variances when using half precision
-        private const float k_PositionScaleVariance = 0.03f;
+        private const float k_PositionScaleVariance = 0.0255f;
         private const float k_RotationVariance = 0.0255f;
         private const float k_RotationVarianceCompressed = 0.555f;
 
@@ -178,6 +178,11 @@ namespace TestProject.RuntimeTests
         }
 
         private StringBuilder m_ValidationErrors;
+
+        private string GetVector3Values(ref Vector3 vector3)
+        {
+            return $"({vector3.x.ToString("G6")},{vector3.y.ToString("G6")},{vector3.z.ToString("G6")})";
+        }
 
         private bool ValidateNetworkTransforms()
         {
@@ -194,7 +199,7 @@ namespace TestProject.RuntimeTests
                     }
                     var relativeClonedTransforms = playerRelative.Value[connectedClient].GetComponentsInChildren<IntegrationNetworkTransform>();
                     m_CurrentVariance = m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_PositionScaleVariance;
-                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
+                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
                     for (int i = 0; i < playerNetworkTransforms.Length; i++)
                     {
                         var playerCurrentPosition = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localPosition : playerNetworkTransforms[i].transform.position;
@@ -203,7 +208,7 @@ namespace TestProject.RuntimeTests
                         var cloneGameObjectName = relativeClonedTransforms[i].gameObject.name;
                         if (!Approximately(playerCurrentPosition, clonePosition))
                         {
-                            m_ValidationErrors.Append($"[Position][Client-{connectedClient}-{playerGameObjectName} {playerCurrentPosition}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} {clonePosition}]\n");
+                            m_ValidationErrors.Append($"[Position][Client-{connectedClient}-{playerGameObjectName} {GetVector3Values(ref playerCurrentPosition)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} {GetVector3Values(ref clonePosition)}]\n");
                             if (m_EnableVerboseDebug)
                             {
                                 if (!Approximately(playerNetworkTransforms[i].LastUpdatedPosition, clonePosition))
@@ -267,6 +272,7 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
         {
+            m_EnableVerboseDebug = true;
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
@@ -320,9 +326,9 @@ namespace TestProject.RuntimeTests
                 }
                 else
                 {
-                    VerboseDebug($"[{i}][Precision Corrected] Synchronized After");
                     if (precisionFailures > 0)
                     {
+                        VerboseDebug($"[{i}][Precision Corrected] Synchronized After");
                         precisionFailures = 0;
                     }
                 }

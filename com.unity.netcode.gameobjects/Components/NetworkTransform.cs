@@ -1674,6 +1674,7 @@ namespace Unity.Netcode.Components
                             m_HalfPositionState.X = newState.HalfVectorPosition.X;
                             m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
                             m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
+                            m_HalfPositionState.CompressedDeltaPosition = newState.HalfVectorPosition.CompressedDeltaPosition;
                             m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
                             currentPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
                         }
@@ -1827,6 +1828,7 @@ namespace Unity.Netcode.Components
             {
                 // Since serialization creates a new NetworkTransformState, Non-Authority needs to
                 // carry over the HalfVector3DeltaPosition state to the new state's HalfVector3DeltaPosition
+                m_HalfPositionState.CompressedDeltaPosition = m_LocalAuthoritativeNetworkState.HalfVectorPosition.CompressedDeltaPosition;
                 m_HalfPositionState.X = m_LocalAuthoritativeNetworkState.HalfVectorPosition.X;
                 m_HalfPositionState.Y = m_LocalAuthoritativeNetworkState.HalfVectorPosition.Y;
                 m_HalfPositionState.Z = m_LocalAuthoritativeNetworkState.HalfVectorPosition.Z;
