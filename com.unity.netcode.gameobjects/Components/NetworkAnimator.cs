@@ -275,7 +275,7 @@ namespace Unity.Netcode.Components
         private void BuildTransitionStateInfoList()
         {
 #if UNITY_EDITOR
-            if (UnityEditor.EditorApplication.isUpdating)
+            if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }

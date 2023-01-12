@@ -929,18 +929,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(m_ServerNetworkManager, prefabCreateAssertError);
             Assert.IsFalse(m_ServerNetworkManager.IsListening, prefabCreateAssertError);
 
-            var gameObject = new GameObject();
-            gameObject.name = baseName;
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.NetworkManagerOwner = m_ServerNetworkManager;
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
-            }
-            return gameObject;
+            return NetcodeIntegrationTestHelpers.CreateNetworkObjectPrefab(baseName, m_ServerNetworkManager, m_ClientNetworkManagers);
         }
 
         /// <summary>
