@@ -828,12 +828,22 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If InLocalSpace is <see cref="true"/> then it returns the transform.localPosition
         /// If InLocalSpace is <see cref="false"/> then it returns the transform.position
+        /// When getting the authority's state, it will return the most recent updated
+        /// value. If invoked on the authority side, it will return the relative position.
         /// </remarks>
+        /// <param name="getCurrentAuthorityState">returns the authority's position</param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetSpaceRelativePosition()
+        public Vector3 GetSpaceRelativePosition(bool getCurrentAuthorityState = false)
         {
-            return InLocalSpace ? transform.localPosition : transform.position;
+            if (!getCurrentAuthorityState || CanCommitToTransform)
+            {
+                return InLocalSpace ? transform.localPosition : transform.position;
+            }
+            else
+            {
+                return m_CurrentPosition;
+            }
         }
 
         /// <summary>
@@ -842,12 +852,44 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation
         /// If InLocalSpace is <see cref="false"/> then it returns the transform.rotation
+        /// When getting the authority's state, it will return the most recent updated
+        /// value. If invoked on the authority side, it will return the transform rotation.
         /// </remarks>
+        /// <param name="getCurrentAuthorityState">returns the authority's rotation</param>
         /// <returns><see cref="Quaternion"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Quaternion GetSpaceRelativeRotation()
+        public Quaternion GetSpaceRelativeRotation(bool getCurrentAuthorityState = false)
         {
-            return InLocalSpace ? transform.localRotation : transform.rotation;
+            if (!getCurrentAuthorityState || CanCommitToTransform)
+            {
+                return InLocalSpace ? transform.localRotation : transform.rotation;
+            }
+            else
+            {
+                return m_CurrentRotation;
+            }
+        }
+
+        /// <summary>
+        /// Helper method that returns the scale of the transform.
+        /// </summary>
+        /// <remarks>
+        /// When getting the authority's state, it will return the most recent updated
+        /// value. If invoked on the authority side, it will return the transform scale.
+        /// </remarks>
+        /// <param name="getCurrentAuthorityState">returns the authority's scale</param>
+        /// <returns><see cref="Vector3"/></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 GetScale(bool getCurrentAuthorityState = false)
+        {
+            if (!getCurrentAuthorityState || CanCommitToTransform)
+            {
+                return transform.localScale;
+            }
+            else
+            {
+                return m_CurrentScale;
+            }
         }
 
         // Used by both authoritative and non-authoritative instances.
@@ -921,6 +963,7 @@ namespace Unity.Netcode.Components
         /// Only used when UseHalfFloatPrecision is enabled
         /// </summary>
         private HalfVector3DeltaPosition m_HalfPositionState = new HalfVector3DeltaPosition();
+
 
         internal void UpdatePositionSlerp()
         {
