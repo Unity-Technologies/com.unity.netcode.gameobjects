@@ -26,7 +26,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed a case where data corruption could occur when using UnityTransport when reaching a certain level of send throughput. (#2332)
 - Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server). (#2321)
 - Fixed `NetworkAnimator` issue where it was not checking for `AnimatorStateTtansition.destinationStateMachine` and any possible sub-states defined within it. (#2309)
-
+- Fixed `NetworkAnimator` issue where the host client was receiving the ClientRpc animation updates when the host was the owner.(#2309)
+- Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
+- Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
 
 ## [1.2.0] - 2022-11-21
 
