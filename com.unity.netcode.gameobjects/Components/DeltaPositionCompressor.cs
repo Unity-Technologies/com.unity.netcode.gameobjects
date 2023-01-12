@@ -98,11 +98,12 @@ namespace Unity.Netcode.Components
             var directionTowards = (currentPosition - previousPosition);
             CompressDeltaPosition(ref directionTowards, ref compressedDeltaPosition);
         }
+
         /// <summary>
         /// Compress a delta position
         /// </summary>
         /// <param name="positionDelta">the delta between two positions</param>
-        /// <returns></returns>
+        /// <param name="compressedDeltaPosition"></param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static public void CompressDeltaPosition(ref Vector3 positionDelta, ref CompressedDeltaPosition compressedDeltaPosition)
         {
@@ -110,7 +111,7 @@ namespace Unity.Netcode.Components
             compressedDeltaPosition.Header = 0;
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
-            var magnitudeIsFractional = (magnitude < 0.22f);
+            var magnitudeIsFractional = (magnitude < 0.01f);
             // Set the combined decimal place flag if the magnitude falls below 0.21f
             compressedDeltaPosition.Compressed = (uint)((magnitudeIsFractional ? k_True : k_False) << 31);
             // Store off the absolute value for each Quaternion element

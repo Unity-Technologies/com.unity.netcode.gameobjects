@@ -31,7 +31,7 @@ namespace Unity.Netcode.Components
         internal Vector3 DeltaPosition;
         internal int NetworkTick;
 
-        private const float k_MaxDeltaBeforeAdjustment = 255f;
+        private const float k_MaxDeltaBeforeAdjustment = 64f;
         private const float k_AdjustmentUp = 100.0f;
         private const float k_AdjustmentDown = 0.01f;
 

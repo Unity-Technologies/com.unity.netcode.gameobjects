@@ -1801,7 +1801,7 @@ MonoBehaviour:
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 1
-  PositionThreshold: 0.0001
+  PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 0
@@ -1814,10 +1814,11 @@ MonoBehaviour:
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_StatesToLog: 80
   SimulateClient: 0
   Speed: 5.327
   StartingDirection: 1
-  DirectionDuration: 3
+  DirectionDuration: 1
   ClientPositionVisual: {fileID: 6442405536196151246}
   RandomDirections: 1
   PositionOffset: {x: 64500, y: 0, z: 64500}
@@ -1843,6 +1844,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3332253629
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!4 &4610159714420728812
