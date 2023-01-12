@@ -113,7 +113,7 @@ MonoBehaviour:
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 1
+  Interpolate: 0
   IsServerAuthority: 1
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
@@ -122,6 +122,7 @@ MonoBehaviour:
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_StatesToLog: 80
   RotationSpeed: 5
   RotateBasedOnDirection: 0
 --- !u!1 &6307603743893504780
@@ -290,7 +291,7 @@ MonoBehaviour:
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
-  Interpolate: 1
+  Interpolate: 0
   IsServerAuthority: 1
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
@@ -299,6 +300,7 @@ MonoBehaviour:
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_StatesToLog: 80
 --- !u!114 &4682031351736954066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -424,7 +426,7 @@ MonoBehaviour:
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 1
+  Interpolate: 0
   IsServerAuthority: 1
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
@@ -433,6 +435,7 @@ MonoBehaviour:
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  m_StatesToLog: 80
   RotationSpeed: 5
   RotateBasedOnDirection: 0
 --- !u!1 &8494372709139388141
