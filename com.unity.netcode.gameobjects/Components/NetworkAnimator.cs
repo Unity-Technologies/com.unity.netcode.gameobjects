@@ -758,7 +758,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Used to synchronize newly joined clients
         /// </summary>
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId)
         {
             if (serializer.IsWriter)
             {
