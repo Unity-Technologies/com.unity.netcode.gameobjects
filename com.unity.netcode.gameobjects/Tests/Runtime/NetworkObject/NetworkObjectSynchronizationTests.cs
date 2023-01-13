@@ -78,13 +78,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_VariableLengthSafety == VariableLengthSafety.EnabledNetVarSafety;
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.NetworkPrefabs)
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
             {
                 // To simulate a failure, we exclude the m_InValidNetworkPrefab from the connecting
                 // client's side.
                 if (networkPrefab.Prefab.name != m_InValidNetworkPrefab.name)
                 {
-                    networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
                 }
             }
             // Disable forcing the same prefabs to avoid failed connections

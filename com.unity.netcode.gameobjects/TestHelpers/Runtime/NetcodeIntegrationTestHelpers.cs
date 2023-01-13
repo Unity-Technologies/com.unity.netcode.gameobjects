@@ -182,11 +182,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
             unityTransport.ConnectTimeoutMS = 500;
 
             // Set the NetworkConfig
-            networkManager.NetworkConfig = new NetworkConfig()
-            {
-                // Set transport
-                NetworkTransport = unityTransport
-            };
+            networkManager.NetworkConfig ??= new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = unityTransport;
         }
 
         public static NetworkManager CreateServer()
@@ -484,6 +481,34 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
                 }
             }
+        }
+
+        public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager server, params NetworkManager[] clients)
+        {
+            void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
+            {
+                config.Prefabs.Add(prefab);
+            }
+
+            var prefabCreateAssertError = $"You can only invoke this method before starting the network manager(s)!";
+            Assert.IsNotNull(server, prefabCreateAssertError);
+            Assert.IsFalse(server.IsListening, prefabCreateAssertError);
+
+            var gameObject = new GameObject();
+            gameObject.name = baseName;
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            networkObject.NetworkManagerOwner = server;
+            MakeNetworkObjectTestPrefab(networkObject);
+            var networkPrefab = new NetworkPrefab() { Prefab = gameObject };
+
+            // We could refactor this test framework to share a NetworkPrefabList instance, but at this point it's
+            // probably more trouble than it's worth to verify these lists stay in sync across all tests...
+            AddNetworkPrefab(server.NetworkConfig, networkPrefab);
+            foreach (var clientNetworkManager in clients)
+            {
+                AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
+            }
+            return gameObject;
         }
 
         // We use GameObject instead of SceneObject to be able to keep hierarchy

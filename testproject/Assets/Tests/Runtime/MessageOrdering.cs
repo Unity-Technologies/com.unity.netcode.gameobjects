@@ -59,10 +59,10 @@ namespace TestProject.RuntimeTests
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             foreach (var client in clients)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
 
             // Start the instances
@@ -116,10 +116,10 @@ namespace TestProject.RuntimeTests
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
 
             // Start the instances
@@ -216,10 +216,10 @@ namespace TestProject.RuntimeTests
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             foreach (var client in clients)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
 
             var waitForTickInterval = new WaitForSeconds(1.0f / server.NetworkConfig.TickRate);

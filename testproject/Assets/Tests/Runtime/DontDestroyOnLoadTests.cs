@@ -41,13 +41,13 @@ namespace TestProject.RuntimeTests
             // Set the player prefab
             server.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             // Add our test NetworkObject to be moved into the DontDestroyOnLoad scene
-            server.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.None, Prefab = m_DontDestroyOnLoadObject });
+            server.NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.None, Prefab = m_DontDestroyOnLoadObject });
 
             // Apply the same settings for the clients
             for (int i = 0; i < clients.Length; i++)
             {
                 clients[i].NetworkConfig.PlayerPrefab = m_PlayerPrefab;
-                clients[i].NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.None, Prefab = m_DontDestroyOnLoadObject });
+                clients[i].NetworkConfig.Prefabs.Add(new NetworkPrefab() { Override = NetworkPrefabOverride.None, Prefab = m_DontDestroyOnLoadObject });
             }
 
             m_ServerNetworkManager = server;
