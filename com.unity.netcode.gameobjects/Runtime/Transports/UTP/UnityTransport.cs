@@ -145,7 +145,7 @@ namespace Unity.Netcode.Transports.UTP
 
         // Maximum reliable throughput, assuming the full reliable window can be sent on every
         // frame at 60 FPS. This will be a large over-estimation in any realistic scenario.
-        private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 32 * 60) / 1000; // bytes per millisecond
+        private const int k_MaxReliableThroughput = (NetworkParameterConstants.MTU * 64 * 60) / 1000; // bytes per millisecond
 
         private static ConnectionAddressData s_DefaultConnectionAddressData = new ConnectionAddressData { Address = "127.0.0.1", Port = 7777, ServerListenAddress = string.Empty };
 
@@ -1175,17 +1175,20 @@ namespace Unity.Netcode.Transports.UTP
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
-#if !UNITY_WEBGL
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
             // account for the overhead of its length when we store it in the send queue.
             var fragmentationCapacity = m_MaxPayloadSize + BatchedSendQueue.PerMessageOverhead;
-
             m_NetworkSettings.WithFragmentationStageParameters(payloadCapacity: fragmentationCapacity);
-#if !UTP_TRANSPORT_2_0_ABOVE
+
+            // Bump the reliable window size to its maximum size of 64. Since NGO makes heavy use of
+            // reliable delivery, we're better off with the increased window size compared to the
+            // extra 4 bytes of header that this costs us.
+            m_NetworkSettings.WithReliableStageParameters(windowSize: 64);
+
+#if !UTP_TRANSPORT_2_0_ABOVE && !UNITY_WEBGL
             m_NetworkSettings.WithBaselibNetworkInterfaceParameters(
                 receiveQueueCapacity: m_MaxPacketQueueSize,
                 sendQueueCapacity: m_MaxPacketQueueSize);
-#endif
 #endif
         }
 
