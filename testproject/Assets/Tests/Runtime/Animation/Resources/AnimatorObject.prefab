@@ -378,7 +378,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableData:
+  TransitionStateInfoList:
   - Layer: 0
     OriginatingState: 2081823275
     DestinationState: -570305638
@@ -394,9 +394,27 @@ MonoBehaviour:
   - Layer: 1
     OriginatingState: 2081823275
     DestinationState: -623385122
-    TransitionDuration: 0.8019884
+    TransitionDuration: 2.2832582
     TriggerNameHash: -623385122
     TransitionIndex: 0
+  - Layer: 3
+    OriginatingState: 2081823275
+    DestinationState: -1829531531
+    TransitionDuration: 0.25
+    TriggerNameHash: 1080829965
+    TransitionIndex: 0
+  - Layer: 3
+    OriginatingState: 2081823275
+    DestinationState: 705160537
+    TransitionDuration: 0.25
+    TriggerNameHash: 1080829965
+    TransitionIndex: 1
+  - Layer: 3
+    OriginatingState: 2081823275
+    DestinationState: 801385362
+    TransitionDuration: 0.25
+    TriggerNameHash: 1080829965
+    TransitionIndex: 2
   m_Animator: {fileID: 6515743261518512780}
 --- !u!114 &-8876216387850298050
 MonoBehaviour:

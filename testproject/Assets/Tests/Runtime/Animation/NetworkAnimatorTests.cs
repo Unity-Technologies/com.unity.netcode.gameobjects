@@ -71,7 +71,7 @@ namespace TestProject.RuntimeTests
             networkObjectServer.name = "ServerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectServer);
             var networkAnimatorServerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectServer.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorServerAuthPrefab);
 
             // Owner authority prefab
             var networkObjectOwner = (m_OwnerAnimatorObjectPrefab as GameObject).GetComponent<NetworkObject>();
@@ -79,12 +79,12 @@ namespace TestProject.RuntimeTests
             networkObjectOwner.name = "OwnerAuthority";
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObjectOwner);
             var networkAnimatorOwnerAuthPrefab = new NetworkPrefab() { Prefab = networkObjectOwner.gameObject };
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorOwnerAuthPrefab);
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorServerAuthPrefab);
-                clientNetworkManager.NetworkConfig.NetworkPrefabs.Add(networkAnimatorOwnerAuthPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorServerAuthPrefab);
+                clientNetworkManager.NetworkConfig.Prefabs.Add(networkAnimatorOwnerAuthPrefab);
             }
 
             base.OnServerAndClientsCreated();
@@ -257,12 +257,9 @@ namespace TestProject.RuntimeTests
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
 
-            // Since the com.unity.netcode.components does not allow test project to access its internals
-            // during runtime, this is only used when running test runner from within the editor
-#if UNITY_EDITOR
             var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
             Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
-#endif
+
             if (authoritativeMode == AuthoritativeMode.ServerAuth)
             {
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
@@ -324,6 +321,40 @@ namespace TestProject.RuntimeTests
                 rotateToggle = !rotateToggle;
             }
 #endif
+            CheckStateEnterCount.ResetTest();
+            if (m_EnableVerboseDebug)
+            {
+                var retryTrigger = true;
+                var timeOutHelper = new TimeoutHelper(1.0f);
+                var count = 0;
+                while (retryTrigger)
+                {
+                    VerboseDebug($"Current Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    VerboseDebug($"Setting Attack Trigger ");
+                    var animator = animatorTestHelper.GetAnimator();
+                    animator.SetInteger("WeaponType", 1);
+                    animatorTestHelper.SetTrigger("Attack");
+                    VerboseDebug($"New Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    // Wait for all triggers to fire
+                    yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode), timeOutHelper);
+                    retryTrigger = timeOutHelper.TimedOut;
+                    if (retryTrigger)
+                    {
+                        count++;
+                        Debug.LogWarning($"[{ownerShipMode}][{count}] Resending trigger!");
+                    }
+                }
+            }
+            else
+            {
+                var animator = animatorTestHelper.GetAnimator();
+                animator.SetInteger("WeaponType", 1);
+                animatorTestHelper.SetTrigger("Attack");
+                // Wait for all triggers to fire
+                yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
+                AssertOnTimeout($"Timed out waiting for all triggers to match!");
+            }
+
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
@@ -331,9 +362,9 @@ namespace TestProject.RuntimeTests
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             var networkPrefab = new NetworkPrefab() { Prefab = m_AnimationTestPrefab };
-            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
-            networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+            networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
         }
 
         /// <summary>
@@ -477,7 +508,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => Mathf.Approximately(firstClientAnimatorTestHelper.transform.rotation.eulerAngles.y, 180.0f));
             AssertOnTimeout($"Timed out waiting for client-side cube to reach 180.0f!");
 
-            m_ServerNetworkManager.OnClientConnectedCallback += Server_OnClientConnectedCallback;
+            AnimatorTestHelper.ServerSideInstance.GetNetworkAnimator().SynchronizationStateInfo = new List<AnimatorStateInfo>();
             // Create and join a new client (late joining client)
             yield return CreateAndStartNewClient();
 
@@ -505,25 +536,6 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Update Server Side Animator Layer's AnimationStateInfo when late joining
-        /// client connects to get the values being sent to the late joining client
-        /// during NetworkAnimator synchronization.
-        /// </summary>
-        private void Server_OnClientConnectedCallback(ulong obj)
-        {
-            m_ServerNetworkManager.OnClientConnectedCallback -= Server_OnClientConnectedCallback;
-            var serverAnimator = AnimatorTestHelper.ServerSideInstance.GetAnimator();
-
-            // Only update the 3rd layer since this is where we want to assure all values are synchronized to the
-            // same values upon the client connecting.
-            var index = 2;
-            Assert.True(StateSyncTest.StatesEntered.ContainsKey(m_ServerNetworkManager.LocalClientId), $"Server does not have an entry for layer {index}!");
-            var animationStateInfo = serverAnimator.GetCurrentAnimatorStateInfo(index);
-            StateSyncTest.StatesEntered[m_ServerNetworkManager.LocalClientId][index] = animationStateInfo;
-            VerboseDebug($"[{index}][STATE-REFRESH][{m_ServerNetworkManager.name}] updated state normalized time ({animationStateInfo.normalizedTime}) to compare with late joined client.");
-        }
-
-        /// <summary>
         /// Used by: LateJoinSynchronizationTest
         /// Wait condition method that compares the states of the late joined client
         /// and the server.
@@ -547,7 +559,7 @@ namespace TestProject.RuntimeTests
 
             // We only check the last layer for this test as the other layers will have their normalized time slightly out of sync
             var index = 2;
-            var serverAnimState = serverStates[index];
+            var serverAnimState = AnimatorTestHelper.ServerSideInstance.GetNetworkAnimator().SynchronizationStateInfo[index];// serverStates[index];
             if (clientStates[index].shortNameHash != serverAnimState.shortNameHash)
             {
                 VerboseDebug($"[Hash Fail] Server({serverAnimState.shortNameHash}) | Client({clientStates[index].shortNameHash}) ");
@@ -626,8 +638,8 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.NetworkPrefabs[0].Prefab = m_PlayerPrefab;
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
+            m_ClientNetworkManagers[0].NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
             OnCreatePlayerPrefab();
 
             // Now, restart the server and the client
