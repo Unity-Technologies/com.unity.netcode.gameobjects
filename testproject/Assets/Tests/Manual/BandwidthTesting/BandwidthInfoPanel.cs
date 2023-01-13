@@ -122,6 +122,14 @@ namespace TestProject.ManualTests
             }
         }
 
+        public void OnInterpolate(bool isOn)
+        {
+            if (BandwidthMover != null && IsServer)
+            {
+                BandwidthMover.Interpolate = isOn;
+            }
+        }
+
         private void UpdateTextInfo(ref InfoEntry infoEntry, ref Vector3 info)
         {
             infoEntry.Text.text  = $"{infoEntry.Prefix} ({info.x}, {info.y}, {info.z})";
