@@ -1622,7 +1622,12 @@ namespace Unity.Netcode
                 OnSynchronize?.Invoke(m_NetworkManager.LocalClientId);
 
                 // Clear the in-scene placed NetworkObjects when we load the first scene in our synchronization process
-                ScenePlacedObjects.Clear();
+                // But only clear the in-scene placed NetworkObjects if we are loading in Single mode, otherwise we could
+                // already have scene placed objects populated
+                if (loadSceneMode == LoadSceneMode.Single)
+                {
+                    ScenePlacedObjects.Clear();
+                }
             }
 
             // Always check to see if the scene needs to be validated
