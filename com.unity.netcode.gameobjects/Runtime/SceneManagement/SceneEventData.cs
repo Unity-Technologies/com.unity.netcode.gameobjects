@@ -139,6 +139,8 @@ namespace Unity.Netcode
         internal Queue<uint> ScenesToSynchronize;
         internal Queue<uint> SceneHandlesToSynchronize;
 
+        internal LoadSceneMode ClientSynchronizationMode;
+
 
         /// <summary>
         /// Server Side:
@@ -392,6 +394,10 @@ namespace Unity.Netcode
             {
                 writer.WriteValueSafe(SceneEventProgressId);
             }
+            else
+            {
+                writer.WriteValueSafe(ClientSynchronizationMode);
+            }
 
             // Write the scene index and handle
             writer.WriteValueSafe(SceneHash);
@@ -542,6 +548,10 @@ namespace Unity.Netcode
             if (SceneEventType != SceneEventType.Synchronize)
             {
                 reader.ReadValueSafe(out SceneEventProgressId);
+            }
+            else
+            {
+                reader.ReadValueSafe(out ClientSynchronizationMode);
             }
 
             reader.ReadValueSafe(out SceneHash);

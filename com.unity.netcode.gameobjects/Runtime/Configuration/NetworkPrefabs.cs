@@ -53,11 +53,22 @@ namespace Unity.Netcode
 
         ~NetworkPrefabs()
         {
+            Shutdown();
+        }
+
+        /// <summary>
+        /// Deregister from add and remove events
+        /// Clear the list
+        /// </summary>
+        internal void Shutdown()
+        {
             foreach (var list in NetworkPrefabsLists)
             {
                 list.OnAdd -= AddTriggeredByNetworkPrefabList;
                 list.OnRemove -= RemoveTriggeredByNetworkPrefabList;
             }
+
+            NetworkPrefabsLists.Clear();
         }
 
         /// <summary>

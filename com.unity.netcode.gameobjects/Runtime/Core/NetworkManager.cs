@@ -1277,6 +1277,8 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+            // This cleans up the internal prefabs list
+            NetworkConfig?.Prefabs.Shutdown();
         }
 
         /// <inheritdoc />
