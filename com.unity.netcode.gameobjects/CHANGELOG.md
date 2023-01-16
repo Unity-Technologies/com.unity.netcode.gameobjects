@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Network prefabs are now stored in a ScriptableObject that can be shared between NetworkManagers, and have been exposed for public access. By default, a Default Prefabs List is created that contains all NetworkObject prefabs in the project, and new NetworkManagers will default to using that unless that option is turned off in the Netcode for GameObjects settings. Existing NetworkManagers will maintain their existing lists, which can be migrated to the new format via a button in their inspector. (#2322)
 
 ### Fixed
+- Fixed issue when the ClientSynchronizationMode is additive and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
 - Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)
 - Fixed issue where `NetcodeSettingsProvider` would throw an exception in Unity 2020.3.x versions. (#2345)
 - Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
