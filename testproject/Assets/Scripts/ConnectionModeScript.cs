@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine.SceneManagement;
 #if ENABLE_RELAY_SERVICE
 using System;
 using Unity.Services.Core;
@@ -24,6 +25,13 @@ public class ConnectionModeScript : MonoBehaviour
 
     [SerializeField]
     private int m_MaxConnections = 10;
+
+    [SerializeField]
+    private LoadSceneMode m_ClientSynchronizationMode;
+
+    [SerializeField]
+    private GameObject m_DisconnectClientButton;
+
 
     private CommandLineProcessor m_CommandLineProcessor;
 
@@ -95,10 +103,20 @@ public class ConnectionModeScript : MonoBehaviour
             }
             else
             {
-
                 m_JoinCodeInput.SetActive(false);
                 m_AuthenticationButtons.SetActive(false);
                 m_ConnectionModeButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening);
+            }
+            if (m_DisconnectClientButton != null)
+            {
+                if (!NetworkManager.Singleton.IsListening)
+                {
+                    m_DisconnectClientButton.SetActive(false);
+                }
+                else
+                {
+                    m_DisconnectClientButton.SetActive(!NetworkManager.Singleton.IsServer);
+                }
             }
         }
     }
@@ -134,6 +152,7 @@ public class ConnectionModeScript : MonoBehaviour
     private void StartServer()
     {
         NetworkManager.Singleton.StartServer();
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(m_ClientSynchronizationMode);
         OnNotifyConnectionEventServer?.Invoke();
         m_ConnectionModeButtons.SetActive(false);
     }
@@ -193,6 +212,7 @@ public class ConnectionModeScript : MonoBehaviour
     private void StartHost()
     {
         NetworkManager.Singleton.StartHost();
+        NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(m_ClientSynchronizationMode);
         OnNotifyConnectionEventHost?.Invoke();
         m_ConnectionModeButtons.SetActive(false);
     }
@@ -220,6 +240,16 @@ public class ConnectionModeScript : MonoBehaviour
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();
         m_ConnectionModeButtons.SetActive(false);
+        m_DisconnectClientButton.SetActive(true);
+    }
+
+    public void DisconnectClient()
+    {
+        if (NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.IsServer)
+        {
+            NetworkManager.Singleton.Shutdown();
+            m_ConnectionModeButtons.SetActive(true);
+        }
     }
 
 

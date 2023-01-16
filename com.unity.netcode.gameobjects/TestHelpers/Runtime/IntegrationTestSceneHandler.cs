@@ -15,6 +15,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
     {
+        private Scene m_InvalidScene = new Scene();
+
+        internal struct SceneEntry
+        {
+            public bool IsAssigned;
+            public Scene Scene;
+        }
+
+        internal Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>> SceneNameToSceneHandles = new Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>>();
+
         // All IntegrationTestSceneHandler instances register their associated NetworkManager
         internal static List<NetworkManager> NetworkManagers = new List<NetworkManager>();
 
@@ -364,6 +374,138 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
             return true;
         }
+
+        public void ClearSceneTracking(NetworkManager networkManager)
+        {
+            SceneNameToSceneHandles.Clear();
+        }
+
+        public void StopTrackingScene(int handle, string name, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return;
+            }
+
+            if (SceneNameToSceneHandles[networkManager].ContainsKey(name))
+            {
+                if (SceneNameToSceneHandles[networkManager][name].ContainsKey(handle))
+                {
+                    SceneNameToSceneHandles[networkManager][name].Remove(handle);
+                    if (SceneNameToSceneHandles[networkManager][name].Count == 0)
+                    {
+                        SceneNameToSceneHandles[networkManager].Remove(name);
+                    }
+                }
+            }
+        }
+
+        public void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                SceneNameToSceneHandles.Add(networkManager, new Dictionary<string, Dictionary<int, SceneEntry>>());
+            }
+
+            if (!SceneNameToSceneHandles[networkManager].ContainsKey(scene.name))
+            {
+                SceneNameToSceneHandles[networkManager].Add(scene.name, new Dictionary<int, SceneEntry>());
+            }
+
+            if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
+            {
+                var sceneEntry = new SceneEntry()
+                {
+                    IsAssigned = true,
+                    Scene = scene
+                };
+                SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
+            }
+            else
+            {
+                throw new Exception($"[{networkManager.LocalClient.PlayerObject.name}][Duplicate Handle] Scene {scene.name} already has scene handle {scene.handle} registered!");
+            }
+        }
+
+        public bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return false;
+            }
+            if (SceneNameToSceneHandles[networkManager].ContainsKey(sceneName))
+            {
+                foreach (var sceneHandleEntry in SceneNameToSceneHandles[networkManager][sceneName])
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public Scene GetSceneFromLoadedScenes(string sceneName, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return m_InvalidScene;
+            }
+            if (SceneNameToSceneHandles[networkManager].ContainsKey(sceneName))
+            {
+                foreach (var sceneHandleEntry in SceneNameToSceneHandles[networkManager][sceneName])
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        var sceneEntry = sceneHandleEntry.Value;
+                        sceneEntry.IsAssigned = true;
+                        SceneNameToSceneHandles[networkManager][sceneName][sceneHandleEntry.Key] = sceneEntry;
+                        return sceneEntry.Scene;
+                    }
+                }
+            }
+            // If we found nothing return an invalid scene
+            return m_InvalidScene;
+        }
+
+        public void PopulateLoadedScenes(ref Dictionary<int, Scene> scenesLoaded, NetworkManager networkManager)
+        {
+            SceneNameToSceneHandles.Clear();
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                SceneNameToSceneHandles.Add(networkManager, new Dictionary<string, Dictionary<int, SceneEntry>>());
+            }
+
+            var sceneCount = SceneManager.sceneCount;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (!SceneNameToSceneHandles[networkManager].ContainsKey(scene.name))
+                {
+                    SceneNameToSceneHandles[networkManager].Add(scene.name, new Dictionary<int, SceneEntry>());
+                }
+
+                if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
+                {
+                    var sceneEntry = new SceneEntry()
+                    {
+                        IsAssigned = false,
+                        Scene = scene
+                    };
+                    SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
+                    if (!scenesLoaded.ContainsKey(scene.handle))
+                    {
+                        scenesLoaded.Add(scene.handle, scene);
+                    }
+                }
+                else
+                {
+                    throw new Exception($"[{networkManager.LocalClient.PlayerObject.name}][Duplicate Handle] Scene {scene.name} already has scene handle {scene.handle} registered!");
+                }
+            }
+        }
+
 
         /// <summary>
         /// Constructor now must take NetworkManager
