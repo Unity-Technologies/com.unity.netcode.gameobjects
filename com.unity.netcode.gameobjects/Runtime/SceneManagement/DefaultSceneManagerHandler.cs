@@ -165,5 +165,53 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        private List<Scene> m_ScenesToUnload = new List<Scene>();
+
+        /// <summary>
+        /// Unloads any scenes that have not been assigned.
+        /// TODO: There needs to be a way to validate if a scene should be unloaded
+        /// or not (i.e. local client-side UI loaded additively)
+        /// </summary>
+        /// <param name="networkManager"></param>
+        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        {
+            SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
+            foreach (var sceneEntry in SceneNameToSceneHandles)
+            {
+                var scenHandleEntries = SceneNameToSceneHandles[sceneEntry.Key];
+                foreach (var sceneHandleEntry in scenHandleEntries)
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                    }
+                }
+            }
+            foreach (var sceneToUnload in m_ScenesToUnload)
+            {
+                SceneManager.UnloadSceneAsync(sceneToUnload);
+            }
+        }
+
+        private void SceneManager_SceneUnloaded(Scene scene)
+        {
+            if (SceneNameToSceneHandles.ContainsKey(scene.name))
+            {
+                if (SceneNameToSceneHandles[scene.name].ContainsKey(scene.handle))
+                {
+                    SceneNameToSceneHandles[scene.name].Remove(scene.handle);
+                }
+                if (SceneNameToSceneHandles[scene.name].Count == 0)
+                {
+                    SceneNameToSceneHandles.Remove(scene.name);
+                }
+                m_ScenesToUnload.Remove(scene);
+                if (m_ScenesToUnload.Count == 0)
+                {
+                    SceneManager.sceneUnloaded -= SceneManager_SceneUnloaded;
+                }
+            }
+        }
     }
 }

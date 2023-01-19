@@ -1778,6 +1778,8 @@ namespace Unity.Netcode
 
                             OnSynchronizeComplete?.Invoke(m_NetworkManager.LocalClientId);
 
+                            SceneManagerHandler.UnloadUnassignedScenes(m_NetworkManager);
+
                             EndSceneEvent(sceneEventId);
                         }
                         break;

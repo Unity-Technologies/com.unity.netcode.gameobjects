@@ -24,5 +24,7 @@ namespace Unity.Netcode
         void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager = null);
 
         void ClearSceneTracking(NetworkManager networkManager = null);
+
+        void UnloadUnassignedScenes(NetworkManager networkManager = null);
     }
 }

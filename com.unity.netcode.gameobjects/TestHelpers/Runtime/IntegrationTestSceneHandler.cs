@@ -506,6 +506,75 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        private Dictionary<Scene, NetworkManager> m_ScenesToUnload = new Dictionary<Scene, NetworkManager>();
+
+        // When true, any remaining scenes loaded will be unloaded
+        // TODO: There needs to be a way to validate if a scene should be unloaded
+        // or not (i.e. local client-side UI loaded additively)
+        public bool AllowUnassignedScenesToBeUnloaded = false;
+
+        /// <summary>
+        /// Handles unloading any scenes that might remain on a client that
+        /// need to be unloaded.
+        /// </summary>
+        /// <param name="networkManager"></param>
+        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        {
+            // Only if we are specifically testing this functionality
+            if (!AllowUnassignedScenesToBeUnloaded)
+            {
+                return;
+            }
+
+            SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
+            var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
+
+            foreach (var sceneEntry in relativeSceneNameToSceneHandles)
+            {
+                var scenHandleEntries = relativeSceneNameToSceneHandles[sceneEntry.Key];
+                foreach (var sceneHandleEntry in scenHandleEntries)
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene, networkManager);
+                    }
+                }
+            }
+            foreach (var sceneToUnload in m_ScenesToUnload)
+            {
+                SceneManager.UnloadSceneAsync(sceneToUnload.Key);
+            }
+        }
+
+        /// <summary>
+        /// Removes the scene entry from the scene name to scene handle table
+        /// </summary>
+        private void SceneManager_SceneUnloaded(Scene scene)
+        {
+            if (m_ScenesToUnload.ContainsKey(scene))
+            {
+                var networkManager = m_ScenesToUnload[scene];
+                var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
+                if (relativeSceneNameToSceneHandles.ContainsKey(scene.name))
+                {
+                    var scenHandleEntries = relativeSceneNameToSceneHandles[scene.name];
+                    if (scenHandleEntries.ContainsKey(scene.handle))
+                    {
+                        scenHandleEntries.Remove(scene.handle);
+                        if (scenHandleEntries.Count == 0)
+                        {
+                            relativeSceneNameToSceneHandles.Remove(scene.name);
+                        }
+                        m_ScenesToUnload.Remove(scene);
+                        if (m_ScenesToUnload.Count == 0)
+                        {
+                            SceneManager.sceneUnloaded -= SceneManager_SceneUnloaded;
+                        }
+                    }
+                }
+            }
+        }
+
 
         /// <summary>
         /// Constructor now must take NetworkManager
