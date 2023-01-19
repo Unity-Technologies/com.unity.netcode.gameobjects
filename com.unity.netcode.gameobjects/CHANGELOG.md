@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 - Fixed issue when the ClientSynchronizationMode is additive and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+    - This removes the need to resync the whole scene when players disconnect and reconnect while still being in the same scene.
 - Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)
 - Fixed issue where `NetcodeSettingsProvider` would throw an exception in Unity 2020.3.x versions. (#2345)
 - Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
