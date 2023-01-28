@@ -1509,7 +1509,8 @@ MonoBehaviour:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1077575907}
     PlayerPrefab: {fileID: 0}
-    NetworkPrefabs: []
+    Prefabs:
+      NetworkPrefabsLists: []
     TickRate: 32
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -1525,6 +1526,7 @@ MonoBehaviour:
     LoadSceneTimeOut: 120
     SpawnTimeout: 1
     EnableNetworkLogs: 1
+    OldPrefabList: []
 --- !u!4 &1077575911
 Transform:
   m_ObjectHideFlags: 0
@@ -1801,7 +1803,7 @@ MonoBehaviour:
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 1
-  PositionThreshold: 0.001
+  PositionThreshold: 0.01
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 0
@@ -1816,9 +1818,9 @@ MonoBehaviour:
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
   m_StatesToLog: 80
   SimulateClient: 0
-  Speed: 5.327
+  Speed: 5.3343
   StartingDirection: 1
-  DirectionDuration: 1
+  DirectionDuration: 0.15
   ClientPositionVisual: {fileID: 6442405536196151246}
   RandomDirections: 1
   PositionOffset: {x: 64500, y: 0, z: 64500}

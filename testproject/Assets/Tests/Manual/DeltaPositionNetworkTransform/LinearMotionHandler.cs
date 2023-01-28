@@ -128,11 +128,11 @@ namespace TestProject.ManualTests
                 var position = InLocalSpace ? transform.localPosition : transform.position;
                 var isPositionDirty = m_LastInterpolateState != Interpolate;
                 var deltaPosition = m_HalfVector3Server.GetDeltaPosition();
-                ServerDelta.text = $"S-Delta:({deltaPosition.x}, {deltaPosition.y}, {deltaPosition.z})";
+                ServerDelta.text = $"S-Delta:{GetVector3AsString(ref deltaPosition)}";
                 var currentBasePosition = m_HalfVector3Server.GetCurrentBasePosition();
-                ServerCurrent.text = $"S-Curr:({currentBasePosition.x}, {currentBasePosition.y}, {currentBasePosition.z})";
+                ServerCurrent.text = $"S-Curr:{GetVector3AsString(ref currentBasePosition)}";
                 var fullPosition = m_HalfVector3Server.GetFullPosition();
-                ServerFull.text = $"S-Full:({fullPosition.x}, {fullPosition.y}, {fullPosition.z})";
+                ServerFull.text = $"S-Full:{GetVector3AsString(ref fullPosition)}";
 
 
                 if (isPositionDirty)
@@ -178,6 +178,11 @@ namespace TestProject.ManualTests
             }
         }
 
+        private string GetVector3AsString(ref Vector3 vector)
+        {
+            return $"({vector.x:0.000}, {vector.y:0.000}, {vector.z:0.000})";
+        }
+
         private void UpdateClientPositionInfo()
         {
             var targetPosition = m_NetworkTransformStateUpdate.Position;
@@ -185,13 +190,13 @@ namespace TestProject.ManualTests
             var delta = targetPosition - currentPosition;
             if (Interpolate)
             {
-                ClientDelta.text = $"C-Delta: ({delta.x}, {delta.y}, {delta.z})";
+                ClientDelta.text = $"C-Delta: {GetVector3AsString(ref delta)}";
             }
             else
             {
                 ClientDelta.text = "--Interpolate Off--";
             }
-            ClientPosition.text = $"Client: ({currentPosition.x}, {currentPosition.y}, {currentPosition.z})";
+            ClientPosition.text = $"Client: {GetVector3AsString(ref currentPosition)}";
         }
 
         public override void OnNetworkDespawn()
@@ -281,12 +286,24 @@ namespace TestProject.ManualTests
             {
                 return;
             }
-            if (IsServer && !m_StopMoving && ShouldRun())
+            if (IsServer && ShouldRun())
             {
                 var position = transform.position;
                 var rotation = transform.rotation;
                 var yAxis = position.y;
-                position += (m_Direction * Speed);
+                if (!m_StopMoving)
+                {
+                    position += (m_Direction * Speed);
+                }
+                else
+                {
+                    position += m_DecayToStop;
+                    m_DecayToStop = Vector3.Lerp(m_DecayToStop, Vector3.zero, Time.fixedDeltaTime * 16.0f);
+                    if (m_DecayToStop.magnitude < 0.01f)
+                    {
+                        m_DecayToStop = Vector3.zero;
+                    }
+                }
                 position.y = yAxis;
                 position = Vector3.Lerp(transform.position, position, Time.fixedDeltaTime);
                 rotation = Quaternion.LookRotation(m_Direction);
@@ -303,6 +320,7 @@ namespace TestProject.ManualTests
             TimeMoving.text = $"Time Moving: {m_TotalTimeMoving}";
         }
 
+        private Vector3 m_DecayToStop;
         private void LateUpdate()
         {
             if (!IsSpawned)
@@ -322,6 +340,10 @@ namespace TestProject.ManualTests
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 m_StopMoving = !m_StopMoving;
+                if (m_StopMoving)
+                {
+                    m_DecayToStop = (m_Direction * Speed);
+                }
             }
 
             if (!m_StopMoving && ShouldRun())
@@ -346,9 +368,9 @@ namespace TestProject.ManualTests
 
         private void SetPositionText()
         {
-            ServerPosition.text = $"Server: ({m_ServerPosition.x}, {m_ServerPosition.y}, {m_ServerPosition.z})";
-            ClientPosition.text = $"Client: ({m_ClientPosition.x}, {m_ClientPosition.y}, {m_ClientPosition.z})";
-            ClientDelta.text = $"C-Delta: ({m_ClientDelta.x}, {m_ClientDelta.y}, {m_ClientDelta.z})";
+            ServerPosition.text = $"Server: {GetVector3AsString(ref m_ServerPosition)}";
+            ClientPosition.text = $"Client: {GetVector3AsString(ref m_ClientPosition)}";
+            ClientDelta.text = $"C-Delta: {GetVector3AsString(ref m_ClientDelta)}";
         }
 
         [ServerRpc(RequireOwnership = false)]
