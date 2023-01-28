@@ -56,8 +56,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         public ushort Z;
 
-        private float m_PrecisionAdjustmentUp;
-        private float m_PrecisionAdjustmentDown;
         private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
 
         /// <summary>
@@ -93,7 +91,6 @@ namespace Unity.Netcode.Components
             vector3.x = Mathf.HalfToFloat(X);
             vector3.y = Mathf.HalfToFloat(Y);
             vector3.z = Mathf.HalfToFloat(Z);
-            vector3 *= m_PrecisionAdjustmentDown;
         }
 
         /// <summary>
@@ -103,21 +100,9 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FromVector3(ref Vector3 vector3)
         {
-            vector3 *= m_PrecisionAdjustmentUp;
             X = Mathf.FloatToHalf(vector3.x);
             Y = Mathf.FloatToHalf(vector3.y);
             Z = Mathf.FloatToHalf(vector3.z);
-        }
-
-        /// <summary>
-        /// Sets the precision of this instance
-        /// </summary>
-        /// <param name="decimalPrecision"></param>
-        public void SetDecimalPrecision(int decimalPrecision)
-        {
-            decimalPrecision = Mathf.Clamp(decimalPrecision, 0, 4);
-            m_PrecisionAdjustmentUp = Mathf.Pow(10.0f, decimalPrecision);
-            m_PrecisionAdjustmentDown = 1.0f / m_PrecisionAdjustmentUp;
         }
 
         /// <summary>
@@ -130,16 +115,10 @@ namespace Unity.Netcode.Components
         /// valid values range from 0 to 4 decimal places to adjust up and back down (1000 to 1 : 1 to 0.001).
         /// </remarks>
         /// <param name="vector3">the vector3 to initialize the HalfVector3 with</param>
-        /// <param name="decimalPrecision">
-        /// The number of decimal places to move the <see cref="Vector3"/> values prior to converting to half precision and back when converting to
-        /// a full precision <see cref="Vector3"/>. The default value is 0 (i.e. don't adjust the decimal place).
-        /// </param>
-        public HalfVector3(Vector3 vector3, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize, int decimalPrecision = 0)
+        public HalfVector3(Vector3 vector3, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
         {
             X = Y = Z = 0;
-            m_PrecisionAdjustmentUp = m_PrecisionAdjustmentDown = 0.0f;
             m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
-            SetDecimalPrecision(decimalPrecision);
             FromVector3(ref vector3);
         }
 
@@ -155,18 +134,8 @@ namespace Unity.Netcode.Components
         /// <param name="x">x component to initialize the HalfVector3 with</param>
         /// <param name="y">y component of initialize the HalfVector3 with</param>
         /// <param name="z">z component of initialize the HalfVector3 with</param>
-        /// <param name="decimalPrecision">
-        /// The number of decimal places to move the <see cref="Vector3"/> values prior to converting to half precision and back when converting to
-        /// a full precision <see cref="Vector3"/>. The default value is 0 (i.e. don't adjust the decimal place).
-        /// </param>
-        public HalfVector3(float x, float y, float z, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize, int decimalPrecision = 0)
+        public HalfVector3(float x, float y, float z, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize) : this(new Vector3(x, y, z), halfVector3AxisToSynchronize)
         {
-            X = Y = Z = 0;
-            m_PrecisionAdjustmentUp = m_PrecisionAdjustmentDown = 0.0f;
-            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
-            var vector3 = new Vector3(x, y, z);
-            SetDecimalPrecision(decimalPrecision);
-            FromVector3(ref vector3);
         }
     }
 }

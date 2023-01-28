@@ -610,7 +610,7 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
-                            HalfVectorScale = new HalfVector3(Scale, new HalfVector3AxisToSynchronize(HasScaleX, HasScaleY, HasScaleZ), 3);
+                            HalfVectorScale = new HalfVector3(Scale, new HalfVector3AxisToSynchronize(HasScaleX, HasScaleY, HasScaleZ));
                             serializer.SerializeValue(ref HalfVectorScale);
                             if (!isWriting)
                             {
@@ -1246,10 +1246,9 @@ namespace Unity.Netcode.Components
                 // For HalfVector3DeltaPosition, if any axial value is dirty then we always send a full update
                 if (!isPositionDirty)
                 {
-                    var delta = position - m_HalfPositionState.PreviousPosition;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Mathf.Abs(delta[i]) >= PositionThreshold)
+                        if (Math.Abs(position[i] - m_HalfPositionState.PreviousPosition[i]) >= PositionThreshold)
                         {
                             isPositionDirty = true;
                             break;
@@ -1714,7 +1713,6 @@ namespace Unity.Netcode.Components
                             m_HalfPositionState.X = newState.HalfVectorPosition.X;
                             m_HalfPositionState.Y = newState.HalfVectorPosition.Y;
                             m_HalfPositionState.Z = newState.HalfVectorPosition.Z;
-                            m_HalfPositionState.CompressedDeltaPosition = newState.HalfVectorPosition.CompressedDeltaPosition;
                             m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
                             currentPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
                         }
@@ -1868,7 +1866,6 @@ namespace Unity.Netcode.Components
             {
                 // Since serialization creates a new NetworkTransformState, Non-Authority needs to
                 // carry over the HalfVector3DeltaPosition state to the new state's HalfVector3DeltaPosition
-                m_HalfPositionState.CompressedDeltaPosition = m_LocalAuthoritativeNetworkState.HalfVectorPosition.CompressedDeltaPosition;
                 m_HalfPositionState.X = m_LocalAuthoritativeNetworkState.HalfVectorPosition.X;
                 m_HalfPositionState.Y = m_LocalAuthoritativeNetworkState.HalfVectorPosition.Y;
                 m_HalfPositionState.Z = m_LocalAuthoritativeNetworkState.HalfVectorPosition.Z;

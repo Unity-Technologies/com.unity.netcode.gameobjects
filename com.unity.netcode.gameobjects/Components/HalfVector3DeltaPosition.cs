@@ -22,8 +22,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         public ushort Z;
 
-        public CompressedDeltaPosition CompressedDeltaPosition;
-
         internal Vector3 CurrentBasePosition;
         internal Vector3 PrecisionLossDelta;
         internal Vector3 HalfDeltaConvertedBack;
@@ -32,8 +30,6 @@ namespace Unity.Netcode.Components
         internal int NetworkTick;
 
         private const float k_MaxDeltaBeforeAdjustment = 64f;
-        private const float k_AdjustmentUp = 100.0f;
-        private const float k_AdjustmentDown = 0.01f;
 
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
@@ -42,10 +38,9 @@ namespace Unity.Netcode.Components
         /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            //serializer.SerializeValue(ref X);
-            //serializer.SerializeValue(ref Y);
-            //serializer.SerializeValue(ref Z);
-            serializer.SerializeNetworkSerializable(ref CompressedDeltaPosition);
+            serializer.SerializeValue(ref X);
+            serializer.SerializeValue(ref Y);
+            serializer.SerializeValue(ref Z);
         }
 
         /// <summary>
@@ -66,11 +61,9 @@ namespace Unity.Netcode.Components
                 return CurrentBasePosition + DeltaPosition;
             }
 
-            DeltaPositionCompressor.DecompressDeltaPosition(ref DeltaPosition, ref CompressedDeltaPosition);
-
-            //DeltaPosition.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
-            //DeltaPosition.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
-            //DeltaPosition.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
+            DeltaPosition.x = Mathf.HalfToFloat(X);
+            DeltaPosition.y = Mathf.HalfToFloat(Y);
+            DeltaPosition.z = Mathf.HalfToFloat(Z);
 
             // If we exceed or are equal to the maximum delta value then we need to
             // apply the delta to the CurrentBasePosition value and reset the delta
@@ -156,15 +149,13 @@ namespace Unity.Netcode.Components
             NetworkTick = tick;
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
 
-            DeltaPositionCompressor.CompressDeltaPosition(ref DeltaPosition, ref CompressedDeltaPosition);
-            DeltaPositionCompressor.DecompressDeltaPosition(ref HalfDeltaConvertedBack, ref CompressedDeltaPosition);
-            //X = Mathf.FloatToHalf(DeltaPosition.x * k_AdjustmentUp);
-            //Y = Mathf.FloatToHalf(DeltaPosition.y * k_AdjustmentUp);
-            //Z = Mathf.FloatToHalf(DeltaPosition.z * k_AdjustmentUp);
+            X = Mathf.FloatToHalf(DeltaPosition.x);
+            Y = Mathf.FloatToHalf(DeltaPosition.y);
+            Z = Mathf.FloatToHalf(DeltaPosition.z);
 
-            //HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X) * k_AdjustmentDown;
-            //HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y) * k_AdjustmentDown;
-            //HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z) * k_AdjustmentDown;
+            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X);
+            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y);
+            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z);
 
             PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
 
@@ -195,7 +186,6 @@ namespace Unity.Netcode.Components
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
             HalfDeltaConvertedBack = Vector3.zero;
-            CompressedDeltaPosition = new CompressedDeltaPosition();
             FromVector3(ref vector3, networkTick);
         }
 
@@ -207,18 +197,8 @@ namespace Unity.Netcode.Components
         /// <param name="y">y-axis value to set</param>
         /// <param name="z">z-axis value to set</param>
         /// <param name="networkTick">use the network tick when creating</param>
-        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick)
+        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick, int precision) : this(new Vector3(x, y, z), networkTick)
         {
-            X = Y = Z = 0;
-            NetworkTick = networkTick;
-            var vector3 = new Vector3(x, y, z);
-            CurrentBasePosition = vector3;
-            PreviousPosition = vector3;
-            PrecisionLossDelta = Vector3.zero;
-            DeltaPosition = Vector3.zero;
-            HalfDeltaConvertedBack = Vector3.zero;
-            CompressedDeltaPosition = new CompressedDeltaPosition();
-            FromVector3(ref vector3, networkTick);
         }
     }
 }

@@ -13,13 +13,14 @@ namespace Unity.Netcode.Components
         /// bits 14 - 15: The index of the largest axial value
         /// </remarks>
         public ushort Header;
+
         /// <summary>
         /// Contains the compressed values
         /// </summary>
         /// <remarks>
         /// Bits 0-21: The smallest two normalized axial values with 11 bit precision
         /// Bits 22-30: The unsigned int value of the magnitude
-        /// Bit 31: When set, the magnitude is < 0.22f
+        /// Bit 31: When set, the magnitude is <= 0.99993967f
         /// When Magnitude is only a fractional value:
         /// Bits 22-30: high 9 bits of value (header is the lower 10bits giving 19 bit precision)
         /// </remarks>
@@ -111,7 +112,7 @@ namespace Unity.Netcode.Components
             compressedDeltaPosition.Header = 0;
             var normalizedDir = positionDelta.normalized;
             var magnitude = positionDelta.magnitude;
-            var magnitudeIsFractional = (magnitude < 0.01f);
+            var magnitudeIsFractional = (magnitude <= 0.99993967f);
             // Set the combined decimal place flag if the magnitude falls below 0.21f
             compressedDeltaPosition.Compressed = (uint)((magnitudeIsFractional ? k_True : k_False) << 31);
             // Store off the absolute value for each Quaternion element

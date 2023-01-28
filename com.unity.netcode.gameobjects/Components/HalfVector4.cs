@@ -9,12 +9,6 @@ namespace Unity.Netcode.Components
         public ushort Z;
         public ushort W;
 
-        // Since Quaternions are normalized, we increase their half precision
-        // by multiplying each value by 1000 when converting to a half float
-        // and then reverting that when converting back to a full float.
-        private const float k_PrecisionAdjustmentUp = 10000.0f;
-        private const float k_PrecisionAdjustmentDown = 0.0001f;
-
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref X);
@@ -30,12 +24,13 @@ namespace Unity.Netcode.Components
             halfVector4.z = Mathf.HalfToFloat(Z);
             halfVector4.w = Mathf.HalfToFloat(W);
         }
+
         public void ToQuaternion(ref Quaternion quaternion)
         {
-            quaternion.x = Mathf.HalfToFloat(X) * k_PrecisionAdjustmentDown;
-            quaternion.y = Mathf.HalfToFloat(Y) * k_PrecisionAdjustmentDown;
-            quaternion.z = Mathf.HalfToFloat(Z) * k_PrecisionAdjustmentDown;
-            quaternion.w = Mathf.HalfToFloat(W) * k_PrecisionAdjustmentDown;
+            quaternion.x = Mathf.HalfToFloat(X);
+            quaternion.y = Mathf.HalfToFloat(Y);
+            quaternion.z = Mathf.HalfToFloat(Z);
+            quaternion.w = Mathf.HalfToFloat(W);
         }
 
         public void FromVector4(ref Vector4 vector4)
@@ -48,10 +43,10 @@ namespace Unity.Netcode.Components
 
         public void FromQuaternion(ref Quaternion quaternion)
         {
-            X = Mathf.FloatToHalf(quaternion.x * k_PrecisionAdjustmentUp);
-            Y = Mathf.FloatToHalf(quaternion.y * k_PrecisionAdjustmentUp);
-            Z = Mathf.FloatToHalf(quaternion.z * k_PrecisionAdjustmentUp);
-            W = Mathf.FloatToHalf(quaternion.w * k_PrecisionAdjustmentUp);
+            X = Mathf.FloatToHalf(quaternion.x);
+            Y = Mathf.FloatToHalf(quaternion.y);
+            Z = Mathf.FloatToHalf(quaternion.z);
+            W = Mathf.FloatToHalf(quaternion.w);
         }
 
         public HalfVector4(Vector4 vector4)
