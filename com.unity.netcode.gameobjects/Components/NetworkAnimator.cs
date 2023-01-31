@@ -1100,6 +1100,16 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal void UpdateAnimationState(AnimationState animationState)
         {
+            // Handle updating layer weights first.
+            if (animationState.Layer < m_LayerWeights.Length)
+            {
+                if (m_LayerWeights[animationState.Layer] != animationState.Weight)
+                {
+                    m_Animator.SetLayerWeight(animationState.Layer, animationState.Weight);
+                }
+            }
+
+            // If there is no state transition then return
             if (animationState.StateHash == 0)
             {
                 return;
@@ -1147,7 +1157,6 @@ namespace Unity.Netcode.Components
                     m_Animator.Play(animationState.StateHash, animationState.Layer, animationState.NormalizedTime);
                 }
             }
-            m_Animator.SetLayerWeight(animationState.Layer, animationState.Weight);
         }
 
         /// <summary>
