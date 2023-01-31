@@ -31,7 +31,7 @@ namespace Unity.Netcode.RuntimeTests
 
         public void CommitToTransform()
         {
-            TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+            TryCommitTransformToServer(transform, NetworkManager.LocalTime);
         }
 
         public (bool isDirty, bool isPositionDirty, bool isRotationDirty, bool isScaleDirty) ApplyState()
@@ -390,8 +390,8 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private IEnumerator WaitForNextTick()
         {
-            var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
-            while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
+            var currentTick = m_AuthoritativeTransform.NetworkManager.NetworkTickSystem.CurrentTick;
+            while (m_AuthoritativeTransform.NetworkManager.NetworkTickSystem.CurrentTick == currentTick)
             {
                 yield return null;
             }
@@ -723,7 +723,7 @@ namespace Unity.Netcode.RuntimeTests
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             var authTransform = m_AuthoritativeTransform.transform;
             var nonAuthPosition = m_NonAuthoritativeTransform.transform.position;
-            var currentTick = m_AuthoritativeTransform.NetworkManager.ServerTime.Tick;
+            var currentTick = m_AuthoritativeTransform.NetworkManager.NetworkTickSystem.CurrentTick;
             m_DetectedPotentialInterpolatedTeleport = 0.0f;
             var teleportDestination = new Vector3(100.00f, 100.00f, 100.00f);
             var targetDistance = Mathf.Abs(Vector3.Distance(nonAuthPosition, teleportDestination));

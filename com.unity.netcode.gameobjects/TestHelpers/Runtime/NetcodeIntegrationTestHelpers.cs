@@ -542,8 +542,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         public static IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {
-            var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= targetTick);
+            var startTime = Time.realtimeSinceStartup;
+            yield return new WaitUntil(() => Time.realtimeSinceStartup >= startTime + count / (double)networkManager.NetworkTickSystem.TickRate);
         }
 
         /// <summary>

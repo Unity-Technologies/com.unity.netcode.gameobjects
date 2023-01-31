@@ -39,7 +39,7 @@ namespace Unity.Netcode
         /// The tickrate of network ticks. This value controls how often netcode runs user code and sends out data.
         /// </summary>
         [Tooltip("The tickrate. This value controls how often netcode runs user code and sends out data. The value is in 'ticks per seconds' which means a value of 50 will result in 50 ticks being executed per second or a fixed delta time of 0.02.")]
-        public uint TickRate = 30;
+        public int TickRate = 30;
 
         /// <summary>
         /// The amount of seconds for the server to wait for the connection approval handshake to complete before the client is disconnected.

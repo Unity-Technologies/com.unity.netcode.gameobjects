@@ -163,9 +163,9 @@ namespace Unity.Netcode
         /// <param name="deltaTime">time since call</param>
         /// <param name="serverTime">current server time</param>
         /// <returns>The newly interpolated value of type 'T'</returns>
-        public T Update(float deltaTime, NetworkTime serverTime)
+        public T Update(float deltaTime, double currentTime)
         {
-            return Update(deltaTime, serverTime.TimeTicksAgo(1).Time, serverTime.Time);
+            return Update(deltaTime, currentTime - deltaTime, currentTime);
         }
 
         /// <summary>

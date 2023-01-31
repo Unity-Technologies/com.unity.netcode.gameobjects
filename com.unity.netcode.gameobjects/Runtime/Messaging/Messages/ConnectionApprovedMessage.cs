@@ -113,9 +113,9 @@ namespace Unity.Netcode
             networkManager.LocalClientId = OwnerClientId;
             networkManager.NetworkMetrics.SetConnectionId(networkManager.LocalClientId);
 
-            var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
-            networkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
-            networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
+            //            var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
+            //            networkManager.NetworkTimeSystem.Reset(0, 0);
+            networkManager.NetworkTickSystem.Reset();
 
             networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
             networkManager.IsApproved = true;

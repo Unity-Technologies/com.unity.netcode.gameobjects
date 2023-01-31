@@ -25,8 +25,7 @@ namespace Unity.Netcode
         public void Handle(ref NetworkContext context)
         {
             var networkManager = (NetworkManager)context.SystemOwner;
-            var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, Tick);
-            networkManager.NetworkTimeSystem.Sync(time.Time, networkManager.NetworkConfig.NetworkTransport.GetCurrentRtt(context.SenderId) / 1000d);
+            //todo
         }
     }
 }

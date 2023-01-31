@@ -21,19 +21,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The TickRate of the tick system. This is used to decide how often a fixed network tick is run.
         /// </summary>
-        public uint TickRate { get; internal set; }
-
-        /// <summary>
-        /// The current local time. This is the time at which predicted or client authoritative objects move.
-        ///  This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
-        /// </summary>
-        public NetworkTime LocalTime { get; internal set; }
-
-        /// <summary>
-        /// The current server time. This value is mostly used for internal purposes and to interpolate state received from the server.
-        ///  This value is accurate when called in Update or during the <see cref="Tick"/> event but does not work correctly for FixedUpdate.
-        /// </summary>
-        public NetworkTime ServerTime { get; internal set; }
+        public int TickRate { get; protected set; }
 
         /// <summary>
         /// Gets invoked before every network tick.
@@ -44,9 +32,7 @@ namespace Unity.Netcode
         /// Creates a new instance of the <see cref="NetworkTickSystem"/> class.
         /// </summary>
         /// <param name="tickRate">The tick rate</param>
-        /// <param name="localTimeSec">The initial local time to start at.</param>
-        /// <param name="serverTimeSec">The initial server time to start at.</param>
-        public NetworkTickSystem(uint tickRate, double localTimeSec, double serverTimeSec)
+        public NetworkTickSystem(int tickRate)
         {
             if (tickRate == 0)
             {
@@ -55,8 +41,6 @@ namespace Unity.Netcode
 
             TickRate = tickRate;
             Tick = null;
-            LocalTime = new NetworkTime(tickRate, localTimeSec);
-            ServerTime = new NetworkTime(tickRate, serverTimeSec);
         }
 
         /// <summary>
@@ -64,37 +48,23 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="localTimeSec">The local time in seconds.</param>
         /// <param name="serverTimeSec">The server time in seconds.</param>
-        public void Reset(double localTimeSec, double serverTimeSec)
+        public void Reset()
         {
-            LocalTime = new NetworkTime(TickRate, localTimeSec);
-            ServerTime = new NetworkTime(TickRate, serverTimeSec);
+            FractionTick = 0.0;
+            CurrentTick = 0;
         }
 
         /// <summary>
         /// Called after advancing the time system to run ticks based on the difference in time.
         /// </summary>
-        /// <param name="localTimeSec">The local time in seconds</param>
-        /// <param name="serverTimeSec">The server time in seconds</param>
-        public void UpdateTick(double localTimeSec, double serverTimeSec)
+        /// <param name="timeElapsed">Amount of time passed since last call to this</param>
+        public void UpdateTick(double timeElapsed)
         {
-            // store old local tick to know how many fixed ticks passed
-            var previousLocalTick = LocalTime.Tick;
-
-            LocalTime = new NetworkTime(TickRate, localTimeSec);
-            ServerTime = new NetworkTime(TickRate, serverTimeSec);
-
-            // cache times here so that we can adjust them to temporary values while simulating ticks.
-            var cacheLocalTime = LocalTime;
-            var cacheServerTime = ServerTime;
-
-            var currentLocalTick = LocalTime.Tick;
-            var localToServerDifference = currentLocalTick - ServerTime.Tick;
-
-            for (int i = previousLocalTick + 1; i <= currentLocalTick; i++)
+            FractionTick += timeElapsed;
+            while (FractionTick >= 1.0 / TickRate)
             {
-                // set exposed time values to correct fixed values
-                LocalTime = new NetworkTime(TickRate, i);
-                ServerTime = new NetworkTime(TickRate, i - localToServerDifference);
+                FractionTick -= 1.0 / TickRate;
+                CurrentTick++;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_Tick.Begin();
@@ -104,10 +74,15 @@ namespace Unity.Netcode
                 s_Tick.End();
 #endif
             }
-
-            // Set exposed time to values from tick system
-            LocalTime = cacheLocalTime;
-            ServerTime = cacheServerTime;
         }
+
+        public int CurrentTick { get; protected set; }
+        public double FractionTick { get; protected set; }
+
+        public double CurrentTime()
+        {
+            return CurrentTick * TickRate + FractionTick;
+        }
+
     }
 }

@@ -214,12 +214,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Accessor for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
-        /// Prefer the use of the LocalTime and ServerTime properties
-        /// </summary>
-        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
-
-        /// <summary>
         /// Accessor for the <see cref="NetworkTickSystem"/> of the NetworkManager.
         /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
@@ -227,12 +221,12 @@ namespace Unity.Netcode
         /// <summary>
         /// The local <see cref="NetworkTime"/>
         /// </summary>
-        public NetworkTime LocalTime => NetworkTickSystem?.LocalTime ?? default;
+        public double LocalTime => NetworkTickSystem.CurrentTime();
 
         /// <summary>
         /// The <see cref="NetworkTime"/> on the server
         /// </summary>
-        public NetworkTime ServerTime => NetworkTickSystem?.ServerTime ?? default;
+        public double ServerTime => NetworkTickSystem.CurrentTime();
 
         /// <summary>
         /// Gets or sets if the application should be set to run in background
@@ -730,16 +724,7 @@ namespace Unity.Netcode
 
             NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
 
-            if (server)
-            {
-                NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
-            }
-            else
-            {
-                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, k_DefaultBufferSizeSec, 0.2);
-            }
-
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate);
             NetworkTickSystem.Tick += OnNetworkManagerTick;
 
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
@@ -1375,18 +1360,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            // Only update RTT here, server time is updated by time sync messages
-            var reset = NetworkTimeSystem.Advance(Time.unscaledDeltaTime);
-            if (reset)
-            {
-                NetworkTickSystem.Reset(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
-            }
-            NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
-
-            if (IsServer == false)
-            {
-                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.unscaledDeltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
-            }
+            NetworkTickSystem.UpdateTick(Time.deltaTime);
         }
 
         private void OnNetworkPostLateUpdate()
@@ -1429,12 +1403,6 @@ namespace Unity.Netcode
                 }
             }
             ObjectsToShowToClient.Clear();
-
-            int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
-            if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
-            {
-                SyncTime();
-            }
         }
 
         private void SendConnectionRequest()
@@ -1468,7 +1436,7 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timeStarted = Time.realtimeSinceStartup;
             var timedOut = false;
             var connectionApproved = false;
             var connectionNotApproved = false;
@@ -1478,7 +1446,7 @@ namespace Unity.Netcode
             {
                 yield return null;
                 // Check if we timed out
-                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
+                timedOut = timeoutMarker < Time.realtimeSinceStartup;
 
                 if (IsServer)
                 {
@@ -1943,7 +1911,7 @@ namespace Unity.Netcode
 
             var message = new TimeSyncMessage
             {
-                Tick = NetworkTickSystem.ServerTime.Tick
+                Tick = NetworkTickSystem.CurrentTick
             };
             SendMessage(ref message, NetworkDelivery.Unreliable, ConnectedClientsIds);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -2009,7 +1977,7 @@ namespace Unity.Netcode
                     var message = new ConnectionApprovedMessage
                     {
                         OwnerClientId = ownerClientId,
-                        NetworkTick = LocalTime.Tick
+                        NetworkTick = NetworkTickSystem.CurrentTick
                     };
                     if (!NetworkConfig.EnableSceneManagement)
                     {

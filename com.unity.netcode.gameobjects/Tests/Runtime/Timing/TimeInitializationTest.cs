@@ -29,22 +29,22 @@ namespace Unity.Netcode.RuntimeTests
             NetcodeIntegrationTestHelpers.Start(false, server, new NetworkManager[] { }); // passing no clients on purpose to start them manually later
 
             // 0 ticks should have passed
-            var serverTick = server.NetworkTickSystem.ServerTime.Tick;
+            var serverTick = server.NetworkTickSystem.CurrentTick;
             Assert.AreEqual(0, serverTick);
 
             // server time should be 0
-            Assert.AreEqual(0, server.NetworkTickSystem.ServerTime.Time);
+            Assert.AreEqual(0, server.NetworkTickSystem.CurrentTime());
 
             // wait until at least more than 2 server ticks have passed
             // Note: Waiting for more than 2 ticks on the server is due
             // to the time system applying buffering to the received time
             // in NetworkTimeSystem.Sync
-            yield return new WaitUntil(() => server.NetworkTickSystem.ServerTime.Tick > 2);
+            yield return new WaitUntil(() => server.NetworkTickSystem.CurrentTick > 2);
 
-            var serverTimePassed = server.NetworkTickSystem.ServerTime.Time;
+            var serverTimePassed = server.NetworkTickSystem.CurrentTime();
             var expectedServerTickCount = Mathf.FloorToInt((float)(serverTimePassed * 30));
 
-            var ticksPassed = server.NetworkTickSystem.ServerTime.Tick - serverTick;
+            var ticksPassed = server.NetworkTickSystem.CurrentTick - serverTick;
             Assert.AreEqual(expectedServerTickCount, ticksPassed);
 
             yield return new WaitForSeconds(clientStartDelay);
@@ -80,14 +80,14 @@ namespace Unity.Netcode.RuntimeTests
 
         private void NetworkTickSystemOnTick()
         {
-            Debug.Log(m_Client.NetworkTickSystem.ServerTime.Tick);
+            Debug.Log(m_Client.NetworkTickSystem.CurrentTick);
             m_ClientTickCounter++;
         }
 
         private void ClientOnOnClientConnectedCallback(ulong id)
         {
             // client connected to server
-            m_ConnectedTick = m_Client.NetworkTickSystem.ServerTime.Tick;
+            m_ConnectedTick = m_Client.NetworkTickSystem.CurrentTick;
             Debug.Log($"Connected tick: {m_ConnectedTick}");
         }
 

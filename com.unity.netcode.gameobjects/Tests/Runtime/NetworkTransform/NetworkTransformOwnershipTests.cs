@@ -262,7 +262,7 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     if (CanCommitToTransform)
                     {
-                        TryCommitTransformToServer(transform, NetworkManager.LocalTime.Time);
+                        TryCommitTransformToServer(transform, NetworkManager.LocalTime);
                     }
                 }
             }

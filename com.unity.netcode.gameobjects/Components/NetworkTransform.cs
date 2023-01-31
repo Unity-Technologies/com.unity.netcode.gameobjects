@@ -468,7 +468,7 @@ namespace Unity.Netcode.Components
             if (serializer.IsWriter)
             {
                 synchronizationState.IsTeleportingNextFrame = true;
-                ApplyTransformToNetworkStateWithInfo(ref synchronizationState, m_CachedNetworkManager.LocalTime.Time, transform);
+                ApplyTransformToNetworkStateWithInfo(ref synchronizationState, m_CachedNetworkManager.NetworkTickSystem.CurrentTime(), transform);
                 synchronizationState.NetworkSerialize(serializer);
             }
             else
@@ -542,7 +542,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void ResetInterpolatedStateToCurrentAuthoritativeState()
         {
-            var serverTime = NetworkManager.ServerTime.Time;
+            var serverTime = NetworkManager.NetworkTickSystem.CurrentTime();
             var position = InLocalSpace ? transform.localPosition : transform.position;
             m_PositionXInterpolator.ResetTo(position.x, serverTime);
             m_PositionYInterpolator.ResetTo(position.y, serverTime);
@@ -571,7 +571,7 @@ namespace Unity.Netcode.Components
             m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
 
             // Now check the transform for any threshold value changes
-            ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.LocalTime.Time, transform);
+            ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, m_CachedNetworkManager.NetworkTickSystem.CurrentTime(), transform);
 
             // Return the entire state to be used by the integration test
             return m_LocalAuthoritativeNetworkState;
@@ -1024,7 +1024,7 @@ namespace Unity.Netcode.Components
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
-                TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+                TryCommitTransform(transform, m_CachedNetworkManager.NetworkTickSystem.CurrentTime());
             }
         }
 
@@ -1149,7 +1149,7 @@ namespace Unity.Netcode.Components
             transform.localScale = scale;
             m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = shouldTeleport;
 
-            TryCommitTransform(transform, m_CachedNetworkManager.LocalTime.Time);
+            TryCommitTransform(transform, m_CachedNetworkManager.NetworkTickSystem.CurrentTime());
         }
 
         /// <summary>
@@ -1198,7 +1198,7 @@ namespace Unity.Netcode.Components
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
             }
 
-            TryCommitTransform(transformSource, m_CachedNetworkManager.LocalTime.Time);
+            TryCommitTransform(transformSource, m_CachedNetworkManager.NetworkTickSystem.CurrentTime());
         }
 
         /// <inheritdoc/>
@@ -1226,8 +1226,8 @@ namespace Unity.Netcode.Components
                 {
                     var serverTime = NetworkManager.ServerTime;
                     var cachedDeltaTime = Time.deltaTime;
-                    var cachedServerTime = serverTime.Time;
-                    var cachedRenderTime = serverTime.TimeTicksAgo(1).Time;
+                    var cachedServerTime = serverTime;
+                    var cachedRenderTime = serverTime - 1.0 / NetworkManager.NetworkTickSystem.TickRate;
                     foreach (var interpolator in m_AllFloatInterpolators)
                     {
                         interpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
