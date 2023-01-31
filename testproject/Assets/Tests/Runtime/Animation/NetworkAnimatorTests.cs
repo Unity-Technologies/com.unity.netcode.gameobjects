@@ -435,6 +435,7 @@ namespace TestProject.RuntimeTests
 
             // Verify the late joined client is synchronized to the changed weight
             yield return WaitForConditionOrTimeOut(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
+            AssertOnTimeout($"[Late-Join] Timed out waiting for all instances to match weight 0.75 on layer 1!");
 
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Weight Test [{ownerShipMode}] Stopping ------------------ ");
