@@ -561,6 +561,7 @@ namespace Unity.Netcode.RuntimeTests
                         Debug.Log("Running HideThenShowAndRPC");
                         ShowHideObject.ClientIdsRpcCalledOn = new List<ulong>();
                         yield return HideThenShowAndRPC();
+                        // Provide enough time for slower systems or VM systems possibly under a heavy load could fail on this test
                         yield return WaitForConditionOrTimeOut(() => ShowHideObject.ClientIdsRpcCalledOn.Count == NumberOfClients + 1);
                         AssertOnTimeout($"Timed out waiting for ClientIdsRpcCalledOn.Count ({ShowHideObject.ClientIdsRpcCalledOn.Count}) to equal ({NumberOfClients + 1})!");
                         break;
