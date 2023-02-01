@@ -1067,7 +1067,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             m_WaitForLog.Clear();
         }
 
-        protected IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
+        private IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
         {
             var tickAndFramesConditionMet = false;
             var frameCount = 0;
@@ -1076,6 +1076,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
             while (!tickAndFramesConditionMet)
             {
+                // Wait until both tick and frame counts have reached their targeted values
                 if ((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
                 {
                     tickAndFramesConditionMet = true;
@@ -1084,6 +1085,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     yield return waitForFixedUpdate;
                     frameCount++;
+                    // In the event something is broken with time systems (or the like)
+                    // Exit if we have exceeded 1000 frames
                     if (frameCount >= 1000.0f)
                     {
                         tickAndFramesConditionMet = true;
@@ -1095,17 +1098,21 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Yields until specified amount of network ticks (or the expected number of frames) has been passed.
+        /// Yields until specified amount of network ticks and the expected number of frames has been passed.
         /// </summary>
         protected IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {
             var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
+
+            // Calculate the expected number of frame updates that should occur during the tick count wait period
             var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
             var tickFrequency = 1.0f / networkManager.NetworkConfig.TickRate;
             var framesPerTick = tickFrequency / frameFrequency;
 
+            // Total number of frames to occur over the specified number of ticks
+            var totalFrameCount = framesPerTick * count;
             m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
-            yield return WaitForTickAndFrames(networkManager, count, framesPerTick * count);
+            yield return WaitForTickAndFrames(networkManager, count, totalFrameCount);
         }
     }
 }
