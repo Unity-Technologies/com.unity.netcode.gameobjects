@@ -550,7 +550,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var tickAndFramesConditionMet = false;
             var frameCount = 0;
             var waitForEndOfFrame = new WaitForEndOfFrame();
-            s_WaitForLog.Append($"[Waiting-WaitForTicks] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
+            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-Begin] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
             var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
             while (!tickAndFramesConditionMet)
             {
@@ -564,7 +564,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     frameCount++;
                 }
             }
-            s_WaitForLog.Append($"[Waited-WaitForTicks] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
+            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
             yield break;
         }
 
@@ -577,7 +577,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var frameFrequency = 1.0f / Application.targetFrameRate;
             var tickFrequency = 1.0f / networkManager.NetworkConfig.TickRate;
             var framesPerTick = tickFrequency / frameFrequency;
-            s_WaitForLog.Append($"[WaitForTicks-Start] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
+            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
             //yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= targetTick);
             yield return WaitForTickAndFrames(networkManager, count, framesPerTick * count);
         }
