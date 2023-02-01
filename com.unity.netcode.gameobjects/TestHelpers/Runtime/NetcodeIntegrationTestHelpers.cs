@@ -554,7 +554,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
             while (!tickAndFramesConditionMet)
             {
-                if((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
+                if ((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
                 {
                     tickAndFramesConditionMet = true;
                 }
