@@ -549,7 +549,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var tickAndFramesConditionMet = false;
             var frameCount = 0;
-            var waitForEndOfFrame = new WaitForEndOfFrame();
+            var waitForFixedUpdate = new WaitForFixedUpdate();
             s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-Begin] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
             var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
             while (!tickAndFramesConditionMet)
@@ -560,8 +560,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 else
                 {
-                    yield return waitForEndOfFrame;
+                    yield return waitForFixedUpdate;
                     frameCount++;
+                    if (frameCount >= 1000.0f)
+                    {
+                        tickAndFramesConditionMet = true;
+                    }
                 }
             }
             s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
@@ -574,7 +578,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public static IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {
             var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            var frameFrequency = 1.0f / Application.targetFrameRate;
+            var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
             var tickFrequency = 1.0f / networkManager.NetworkConfig.TickRate;
             var framesPerTick = tickFrequency / frameFrequency;
             s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
