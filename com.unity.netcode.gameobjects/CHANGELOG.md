@@ -31,6 +31,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkAnimator` issue where the host client was receiving the ClientRpc animation updates when the host was the owner.(#2309)
 - Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
 - Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
+- Corrected an issue with the documentation for BufferSerializer (#2401)
 
 ## [1.2.0] - 2022-11-21
 
