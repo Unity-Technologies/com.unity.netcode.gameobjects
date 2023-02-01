@@ -545,7 +545,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             s_WaitForLog.Clear();
         }
 
-        private static IEnumerator WaitForTickOrFrames(NetworkManager networkManager, int tickCount, float targetFrames)
+        private static IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
         {
             var tickAndFramesConditionMet = false;
             var frameCount = 0;
@@ -579,7 +579,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var framesPerTick = tickFrequency / frameFrequency;
             s_WaitForLog.Append($"[WaitForTicks-Start] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
             //yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= targetTick);
-            yield return WaitForTickOrFrames(networkManager, count, framesPerTick * count);
+            yield return WaitForTickAndFrames(networkManager, count, framesPerTick * count);
         }
 
         /// <summary>
