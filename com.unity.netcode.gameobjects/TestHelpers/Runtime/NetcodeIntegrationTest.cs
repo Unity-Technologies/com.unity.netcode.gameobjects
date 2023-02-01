@@ -701,6 +701,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             VerboseDebug($"Exiting {nameof(TearDown)}");
+            NetcodeIntegrationTestHelpers.LogWaitForMessages();
             NetcodeLogAssert.Dispose();
         }
 
