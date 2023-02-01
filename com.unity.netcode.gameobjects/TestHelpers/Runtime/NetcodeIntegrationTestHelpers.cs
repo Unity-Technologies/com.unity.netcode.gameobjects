@@ -537,55 +537,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        private static System.Text.StringBuilder s_WaitForLog = new System.Text.StringBuilder();
-
-        public static void LogWaitForMessages()
-        {
-            Debug.Log(s_WaitForLog);
-            s_WaitForLog.Clear();
-        }
-
-        private static IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
-        {
-            var tickAndFramesConditionMet = false;
-            var frameCount = 0;
-            var waitForFixedUpdate = new WaitForFixedUpdate();
-            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-Begin] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
-            var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
-            while (!tickAndFramesConditionMet)
-            {
-                if ((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
-                {
-                    tickAndFramesConditionMet = true;
-                }
-                else
-                {
-                    yield return waitForFixedUpdate;
-                    frameCount++;
-                    if (frameCount >= 1000.0f)
-                    {
-                        tickAndFramesConditionMet = true;
-                    }
-                }
-            }
-            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
-            yield break;
-        }
-
-        /// <summary>
-        /// Waits (yields) until specified amount of network ticks has been passed.
-        /// </summary>
-        public static IEnumerator WaitForTicks(NetworkManager networkManager, int count)
-        {
-            var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
-            var tickFrequency = 1.0f / networkManager.NetworkConfig.TickRate;
-            var framesPerTick = tickFrequency / frameFrequency;
-            s_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
-            //yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= targetTick);
-            yield return WaitForTickAndFrames(networkManager, count, framesPerTick * count);
-        }
-
         /// <summary>
         /// Waits on the client side to be connected.
         /// </summary>

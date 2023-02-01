@@ -701,7 +701,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             VerboseDebug($"Exiting {nameof(TearDown)}");
-            NetcodeIntegrationTestHelpers.LogWaitForMessages();
+            LogWaitForMessages();
             NetcodeLogAssert.Dispose();
         }
 
@@ -1057,6 +1057,55 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 VerboseDebug($"Unloading scene {scene.name}-{scene.handle}");
                 var asyncOperation = SceneManager.UnloadSceneAsync(scene);
             }
+        }
+
+        private System.Text.StringBuilder m_WaitForLog = new System.Text.StringBuilder();
+
+        private void LogWaitForMessages()
+        {
+            VerboseDebug(m_WaitForLog.ToString());
+            m_WaitForLog.Clear();
+        }
+
+        protected IEnumerator WaitForTickAndFrames(NetworkManager networkManager, int tickCount, float targetFrames)
+        {
+            var tickAndFramesConditionMet = false;
+            var frameCount = 0;
+            var waitForFixedUpdate = new WaitForFixedUpdate();
+            m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-Begin] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
+            var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
+            while (!tickAndFramesConditionMet)
+            {
+                if ((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
+                {
+                    tickAndFramesConditionMet = true;
+                }
+                else
+                {
+                    yield return waitForFixedUpdate;
+                    frameCount++;
+                    if (frameCount >= 1000.0f)
+                    {
+                        tickAndFramesConditionMet = true;
+                    }
+                }
+            }
+            m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
+            yield break;
+        }
+
+        /// <summary>
+        /// Yields until specified amount of network ticks (or the expected number of frames) has been passed.
+        /// </summary>
+        protected IEnumerator WaitForTicks(NetworkManager networkManager, int count)
+        {
+            var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
+            var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
+            var tickFrequency = 1.0f / networkManager.NetworkConfig.TickRate;
+            var framesPerTick = tickFrequency / frameFrequency;
+
+            m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
+            yield return WaitForTickAndFrames(networkManager, count, framesPerTick * count);
         }
     }
 }
