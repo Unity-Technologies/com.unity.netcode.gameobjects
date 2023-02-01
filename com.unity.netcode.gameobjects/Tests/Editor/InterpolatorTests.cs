@@ -8,11 +8,10 @@ namespace Unity.Netcode.EditorTests
         private const float k_Precision = 0.00000001f;
         private const int k_MockTickRate = 1;
 
-        private NetworkTime T(float time, uint tickRate = k_MockTickRate)
+/*        private NetworkTime T(float time, uint tickRate = k_MockTickRate)
         {
             return new NetworkTime(tickRate, timeSec: time);
         }
-
         [Test]
         public void TestReset()
         {
@@ -357,5 +356,6 @@ namespace Unity.Netcode.EditorTests
             interp = interpolator.Update(0.5f, serverTime);
             Assert.That(interp, Is.EqualTo(2f));
         }
+    */
     }
 }

@@ -31,30 +31,15 @@ namespace Unity.Netcode.EditorTests
 
         public delegate void StepCheckResetDelegate(int step, bool reset);
 
-        public static void ApplySteps(NetworkTimeSystem timeSystem, NetworkTickSystem tickSystem, List<float> steps, StepCheckDelegate stepCheck = null)
+        public static void ApplySteps(NetworkTickSystem tickSystem, List<float> steps, StepCheckDelegate stepCheck = null)
         {
             for (var i = 0; i < steps.Count; i++)
             {
                 var step = steps[i];
-                timeSystem.Advance(step);
-                tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
+                tickSystem.UpdateTick(step);
                 if (stepCheck != null)
                 {
                     stepCheck(i);
-                }
-            }
-        }
-
-        public static void ApplySteps(NetworkTimeSystem timeSystem, NetworkTickSystem tickSystem, List<float> steps, StepCheckResetDelegate stepCheck = null)
-        {
-            for (var i = 0; i < steps.Count; i++)
-            {
-                var step = steps[i];
-                var reset = timeSystem.Advance(step);
-                tickSystem.UpdateTick(timeSystem.LocalTime, timeSystem.ServerTime);
-                if (stepCheck != null)
-                {
-                    stepCheck(i, reset);
                 }
             }
         }

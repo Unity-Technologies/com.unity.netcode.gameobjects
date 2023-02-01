@@ -81,7 +81,7 @@ namespace Unity.Netcode
 
         public double CurrentTime()
         {
-            return CurrentTick * TickRate + FractionTick;
+            return (double)CurrentTick / TickRate + FractionTick;
         }
 
     }
