@@ -76,7 +76,7 @@ namespace Unity.Netcode
             }
         }
 
-        public int CurrentTick { get; protected set; }
+        public int CurrentTick { get; protected internal set; }
         public double FractionTick { get; protected set; }
 
         public double CurrentTime()

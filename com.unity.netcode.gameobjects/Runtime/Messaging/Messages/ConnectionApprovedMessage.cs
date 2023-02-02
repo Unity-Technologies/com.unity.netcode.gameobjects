@@ -115,7 +115,7 @@ namespace Unity.Netcode
 
             //            var time = new NetworkTime(networkManager.NetworkTickSystem.TickRate, NetworkTick);
             //            networkManager.NetworkTimeSystem.Reset(0, 0);
-            networkManager.NetworkTickSystem.Reset();
+            networkManager.NetworkTickSystem.CurrentTick = NetworkTick;
 
             networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
             networkManager.IsApproved = true;
