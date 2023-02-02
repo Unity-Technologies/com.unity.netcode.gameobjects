@@ -22,6 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
 - Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
 - Fixed issue where a dynamically spawned `NetworkObject` parented under an in-scene placed `NetworkObject` would have its `InScenePlaced` value changed to `true`. This would result in a soft synchronization error for late joining clients. (#2396)
 - Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)

@@ -153,5 +153,15 @@ namespace TestProject.RuntimeTests
         {
             return m_NetworkAnimator;
         }
+
+        public void SetLayerWeight(int layer, float weight)
+        {
+            m_Animator.SetLayerWeight(layer, weight);
+        }
+
+        public float GetLayerWeight(int layer)
+        {
+            return m_Animator.GetLayerWeight(layer);
+        }
     }
 }
