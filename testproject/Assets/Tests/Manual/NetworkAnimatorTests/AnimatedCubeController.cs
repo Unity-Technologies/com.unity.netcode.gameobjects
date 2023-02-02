@@ -179,6 +179,16 @@ namespace Tests.Manual.NetworkAnimatorTests
             m_NetworkAnimator.SetTrigger("Attack");
         }
 
+        private void SetLayerWeight(int layer, float weight)
+        {
+            m_Animator.SetLayerWeight(layer, weight);
+        }
+
+        private float GetLayerWeight(int layer)
+        {
+            return m_Animator.GetLayerWeight(layer);
+        }
+
         private void LateUpdate()
         {
 
@@ -186,6 +196,10 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 if (!IsOwner && IsSpawned)
                 {
+                    if (Input.GetKeyDown(KeyCode.Alpha4))
+                    {
+                        Debug.Log($"Layer 1 weight: {GetLayerWeight(1)}");
+                    }
                     DisplayTestIntValueIfChanged();
                     return;
                 }
@@ -229,6 +243,10 @@ namespace Tests.Manual.NetworkAnimatorTests
                 BeginAttack(2);
             }
 
+            if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                SetLayerWeight(1, 0.75f);
+            }
         }
     }
 }
