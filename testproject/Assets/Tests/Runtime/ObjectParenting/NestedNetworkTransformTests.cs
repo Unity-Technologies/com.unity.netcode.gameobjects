@@ -150,6 +150,7 @@ namespace TestProject.RuntimeTests
             return m_ValidationErrors.Length == 0;
         }
 
+        [Ignore("Issues with this test are resolved in PR-2388, has too many instabilities currently so disabling until PR is merged")]
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
         {
