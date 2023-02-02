@@ -190,7 +190,6 @@ namespace TestProject.RuntimeTests
 
         private bool AllTriggersDetected(OwnerShipMode ownerShipMode)
         {
-            var serverParameters = AnimatorTestHelper.ServerSideInstance.GetParameterValues();
             if (ownerShipMode == OwnerShipMode.ClientOwner)
             {
                 if (!TriggerTest.ClientsThatTriggered.Contains(m_ServerNetworkManager.LocalClientId))
@@ -206,6 +205,31 @@ namespace TestProject.RuntimeTests
                     continue;
                 }
                 if (!TriggerTest.ClientsThatTriggered.Contains(animatorTestHelper.Value.NetworkManager.LocalClientId))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private bool AllInstancesSameLayerWeight(OwnerShipMode ownerShipMode, int layer, float targetWeight)
+        {
+
+            if (ownerShipMode == OwnerShipMode.ClientOwner)
+            {
+                if (AnimatorTestHelper.ServerSideInstance.GetLayerWeight(layer) != targetWeight)
+                {
+                    return false;
+                }
+            }
+
+            foreach (var animatorTestHelper in AnimatorTestHelper.ClientSideInstances)
+            {
+                if (ownerShipMode == OwnerShipMode.ClientOwner && animatorTestHelper.Value.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId)
+                {
+                    continue;
+                }
+                if (animatorTestHelper.Value.GetLayerWeight(layer) != targetWeight)
                 {
                     return false;
                 }
@@ -365,6 +389,56 @@ namespace TestProject.RuntimeTests
             networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             networkPrefab = new NetworkPrefab() { Prefab = m_AnimationOwnerTestPrefab };
             networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+        }
+
+        /// <summary>
+        /// Verifies that triggers are synchronized with currently connected clients
+        /// </summary>
+        /// <param name="authoritativeMode">Server or Owner authoritative</param>
+        [UnityTest]
+        public IEnumerator WeightUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        {
+            CheckStateEnterCount.ResetTest();
+            TriggerTest.ResetTest();
+            VerboseDebug($" ++++++++++++++++++ Weight Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
+            TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
+            AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
+
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
+
+            // Wait for it to spawn server-side
+            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
+            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
+            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            var layerCount = animatorTestHelper.GetAnimator().layerCount;
+
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+            Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
+            }
+
+            animatorTestHelper.SetLayerWeight(1, 0.75f);
+            // Wait for all instances to update their weight value for layer 1
+            yield return WaitForConditionOrTimeOut(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
+            AssertOnTimeout($"Timed out waiting for all instances to match weight 0.75 on layer 1!");
+
+            // Now late join a client
+            yield return CreateAndStartNewClient();
+
+            // Verify the late joined client is synchronized to the changed weight
+            yield return WaitForConditionOrTimeOut(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
+            AssertOnTimeout($"[Late-Join] Timed out waiting for all instances to match weight 0.75 on layer 1!");
+
+            AnimatorTestHelper.IsTriggerTest = false;
+            VerboseDebug($" ------------------ Weight Test [{ownerShipMode}] Stopping ------------------ ");
         }
 
         /// <summary>
