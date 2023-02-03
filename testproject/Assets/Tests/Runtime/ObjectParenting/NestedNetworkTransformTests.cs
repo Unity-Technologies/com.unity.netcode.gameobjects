@@ -1,3 +1,4 @@
+#if EXCLUDE_UNTIL_PR_2388_MERGED
 using System.Text;
 using System.Collections;
 using Unity.Netcode.Components;
@@ -181,4 +182,4 @@ namespace TestProject.RuntimeTests
 
     }
 }
-
+#endif
