@@ -538,15 +538,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
-        /// Waits (yields) until specified amount of network ticks has been passed.
-        /// </summary>
-        public static IEnumerator WaitForTicks(NetworkManager networkManager, int count)
-        {
-            var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
-            yield return new WaitUntil(() => networkManager.NetworkTickSystem.LocalTime.Tick >= targetTick);
-        }
-
-        /// <summary>
         /// Waits on the client side to be connected.
         /// </summary>
         /// <param name="client">The client</param>
