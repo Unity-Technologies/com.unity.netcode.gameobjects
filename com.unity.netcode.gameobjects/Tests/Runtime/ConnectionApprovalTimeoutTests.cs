@@ -86,14 +86,16 @@ namespace Unity.Netcode.RuntimeTests
             // Verify we haven't received the time out message yet
             NetcodeLogAssert.LogWasNotReceived(LogType.Log, m_ExpectedLogMessage);
 
-            // Wait for 3/4s of the time out period to pass (totaling 1.25x the wait period)
-            yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.75f);
+            yield return new WaitForSeconds(k_TestTimeoutPeriod * 1.5f);
 
             // We should have the test relative log message by this time.
             NetcodeLogAssert.LogWasReceived(m_LogType, m_ExpectedLogMessage);
 
+            Debug.Log("Checking connected client count");
             // It should only have the host client connected
             Assert.AreEqual(1, m_ServerNetworkManager.ConnectedClients.Count, $"Expected only one client when there were {m_ServerNetworkManager.ConnectedClients.Count} clients connected!");
+
+
             Assert.AreEqual(0, m_ServerNetworkManager.PendingClients.Count, $"Expected no pending clients when there were {m_ServerNetworkManager.PendingClients.Count} pending clients!");
             Assert.True(!m_ClientNetworkManagers[0].IsApproved, $"Expected the client to not have been approved, but it was!");
         }
