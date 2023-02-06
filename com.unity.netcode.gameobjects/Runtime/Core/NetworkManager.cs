@@ -40,7 +40,7 @@ namespace Unity.Netcode
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
         private static ProfilerMarker s_TransportPoll = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(HandleIncomingData)}");
+        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(MessagingSystem.HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
@@ -1080,8 +1080,6 @@ namespace Unity.Netcode
             }
         }
 
-
-
         /// <summary>
         /// Globally shuts down the library.
         /// Disconnects clients if connected and stops server if running.
@@ -1359,6 +1357,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
+
                     ConnectionManager.ConnectedEvent(clientId);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1367,9 +1366,15 @@ namespace Unity.Netcode
                     break;
                 case NetworkEvent.Data:
                     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        s_HandleIncomingData.Begin();
+#endif
                         clientId = ConnectionManager.TransportIdToClientId(clientId);
+                        MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
 
-                        HandleIncomingData(clientId, payload, receiveTime);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                        s_HandleIncomingData.End();
+#endif
                         break;
                     }
                 case NetworkEvent.Disconnect:
@@ -1398,7 +1403,7 @@ namespace Unity.Netcode
 
                     if (IsServer)
                     {
-                        OnClientDisconnectFromServer(clientId);
+                        ConnectionManager.OnClientDisconnectFromServer(clientId);
                     }
                     else
                     {
@@ -1420,8 +1425,6 @@ namespace Unity.Netcode
                     break;
             }
         }
-
-
 
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
@@ -1519,19 +1522,6 @@ namespace Unity.Netcode
             return MessagingSystem.SendPreSerializedMessage(writer, maxSize, ref message, delivery, clientId);
         }
 
-        internal void HandleIncomingData(ulong clientId, ArraySegment<byte> payload, float receiveTime)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleIncomingData.Begin();
-#endif
-
-            MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleIncomingData.End();
-#endif
-        }
-
         /// <summary>
         /// Disconnects the remote client.
         /// </summary>
@@ -1560,91 +1550,7 @@ namespace Unity.Netcode
                 disconnectReason.Reason = reason;
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
-            MessagingSystem.ProcessSendQueues();
-
-            OnClientDisconnectFromServer(clientId);
             ConnectionManager.DisconnectRemoteClient(clientId);
-        }
-
-        private void OnClientDisconnectFromServer(ulong clientId)
-        {
-            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
-            {
-                if (IsServer)
-                {
-                    var playerObject = networkClient.PlayerObject;
-                    if (playerObject != null)
-                    {
-                        if (!playerObject.DontDestroyWithOwner)
-                        {
-                            if (PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
-                            {
-                                PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
-                            }
-                            else
-                            {
-                                // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked
-                                // on the server-side (when the client side disconnected).
-                                // This prevents the issue (when just destroying the GameObject) where
-                                // any NetworkBehaviour component(s) destroyed before the NetworkObject
-                                // would not have OnNetworkDespawn invoked.
-                                SpawnManager.DespawnObject(playerObject, true);
-                            }
-                        }
-                        else
-                        {
-                            playerObject.RemoveOwnership();
-                        }
-                    }
-
-                    // Get the NetworkObjects owned by the disconnected client
-                    var clientOwnedObjects = SpawnManager.GetClientOwnedObjects(clientId);
-                    if (clientOwnedObjects == null)
-                    {
-                        // This could happen if a client is never assigned a player object and is disconnected
-                        // Only log this in verbose/developer mode
-                        if (LogLevel == LogLevel.Developer)
-                        {
-                            NetworkLog.LogWarning($"ClientID {clientId} disconnected with (0) zero owned objects!  Was a player prefab not assigned?");
-                        }
-                    }
-                    else
-                    {
-                        // Handle changing ownership and prefab handlers
-                        for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
-                        {
-                            var ownedObject = clientOwnedObjects[i];
-                            if (ownedObject != null)
-                            {
-                                if (!ownedObject.DontDestroyWithOwner)
-                                {
-                                    if (PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
-                                    {
-                                        PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
-                                    }
-                                    else
-                                    {
-                                        Destroy(ownedObject.gameObject);
-                                    }
-                                }
-                                else
-                                {
-                                    ownedObject.RemoveOwnership();
-                                }
-                            }
-                        }
-                    }
-
-                    // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
-                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                    {
-                        sobj.Observers.Remove(clientId);
-                    }
-                }
-
-                ConnectionManager.RemoveClient(clientId);
-            }
-            MessagingSystem.ClientDisconnected(clientId);
         }
 
         private void SyncTime()

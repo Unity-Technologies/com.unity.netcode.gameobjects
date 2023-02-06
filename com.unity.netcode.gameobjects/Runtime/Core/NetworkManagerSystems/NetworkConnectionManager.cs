@@ -9,6 +9,7 @@ using Unity.Multiplayer.Tools;
 #endif
 
 using System.Runtime.CompilerServices;
+using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
@@ -44,6 +45,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdCleanUp(ulong clientId, ulong transportId)
         {
+            PendingClients.Remove(clientId);
             // This check is for clients that attempted to connect but failed.
             // When this happens, the client will not have an entry within the
             // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
@@ -382,15 +384,6 @@ namespace Unity.Netcode
             }
         }
 
-        internal void DisconnectRemoteClient(ulong clientId)
-        {
-            if (ClientIdToTransportIdMap.ContainsKey(clientId))
-            {
-                var transportId = ClientIdToTransportId(clientId);
-                NetworkManager.MessagingSystem.ProcessSendQueues();
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
-            }
-        }
 
         internal NetworkClient AddClient(ulong clientId)
         {
@@ -405,25 +398,8 @@ namespace Unity.Netcode
             return networkClient;
         }
 
-        internal void RemoveClient(ulong clientId)
-        {
-            PendingClients.Remove(clientId);
-            if (!ConnectedClients.ContainsKey(clientId))
-            {
-                if(NetworkLog.CurrentLogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogWarning($"Trying to remove Client-{clientId} when the client no longer exists!");
-                }
-                return;
-            }
-            var networkClient = ConnectedClients[clientId];
-            ConnectedClientsList.Remove(networkClient);
-            ConnectedClientIds.Remove(clientId);
-        }
-
         internal void Shutdown()
         {
-
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
@@ -432,6 +408,7 @@ namespace Unity.Netcode
                     NetworkManager.MessagingSystem.ProcessSendQueues();
                 }
 
+                // Build a list of all client ids to be disconnected
                 var disconnectedIds = new HashSet<ulong>();
 
                 //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shutdown. But this way the clients get a disconnect message from server (so long it does't get lost)
@@ -446,8 +423,6 @@ namespace Unity.Netcode
                         {
                             continue;
                         }
-
-                        DisconnectRemoteClient(pair.Key);
                     }
                 }
 
@@ -460,16 +435,130 @@ namespace Unity.Netcode
                         {
                             continue;
                         }
-
-                        DisconnectRemoteClient(pair.Key);
                     }
                 }
+
+                foreach (var clientId in disconnectedIds)
+                {
+                    DisconnectRemoteClient(clientId);
+                }
+
             }
             else if (NetworkManager != null && NetworkManager.IsListening)
             {
                 // Client only, send disconnect to server
                 NetworkManager.NetworkConfig.NetworkTransport.DisconnectLocalClient();
             }
+        }
+
+        internal void OnClientDisconnectFromServer(ulong clientId)
+        {
+            if (!LocalClient.IsServer)
+            {
+                throw new Exception("[OnClientDisconnectFromServer] Was invoked by non-server instance!");
+            }
+
+            // If we are shutting down and this is the server or host disconnecting, then ignore
+            // clean up as everything that needs to be destroyed will be during shutdown.
+            if (NetworkManager.ShutdownInProgress && clientId == NetworkManager.ServerClientId)
+            {
+                return;
+            }
+            if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
+            {
+                var playerObject = networkClient.PlayerObject;
+                if (playerObject != null)
+                {
+                    if (!playerObject.DontDestroyWithOwner)
+                    {
+                        if (NetworkManager.PrefabHandler.ContainsHandler(ConnectedClients[clientId].PlayerObject.GlobalObjectIdHash))
+                        {
+                            NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
+                        }
+                        else
+                        {
+                            // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked
+                            // on the server-side (when the client side disconnected).
+                            // This prevents the issue (when just destroying the GameObject) where
+                            // any NetworkBehaviour component(s) destroyed before the NetworkObject
+                            // would not have OnNetworkDespawn invoked.
+                            NetworkManager.SpawnManager.DespawnObject(playerObject, true);
+                        }
+                    }
+                    else
+                    {
+                        playerObject.RemoveOwnership();
+                    }
+                }
+
+                // Get the NetworkObjects owned by the disconnected client
+                var clientOwnedObjects = NetworkManager.SpawnManager.GetClientOwnedObjects(clientId);
+                if (clientOwnedObjects == null)
+                {
+                    // This could happen if a client is never assigned a player object and is disconnected
+                    // Only log this in verbose/developer mode
+                    if (NetworkManager.LogLevel == LogLevel.Developer)
+                    {
+                        NetworkLog.LogWarning($"ClientID {clientId} disconnected with (0) zero owned objects!  Was a player prefab not assigned?");
+                    }
+                }
+                else
+                {
+                    // Handle changing ownership and prefab handlers
+                    // TODO-2023: Look into whether in-scene placed NetworkObjects could be destroyed if ownership changes to a client
+                    for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
+                    {
+                        var ownedObject = clientOwnedObjects[i];
+                        if (ownedObject != null)
+                        {
+                            if (!ownedObject.DontDestroyWithOwner)
+                            {
+                                if (NetworkManager.PrefabHandler.ContainsHandler(clientOwnedObjects[i].GlobalObjectIdHash))
+                                {
+                                    NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(clientOwnedObjects[i]);
+                                }
+                                else
+                                {
+                                    Object.Destroy(ownedObject.gameObject);
+                                }
+                            }
+                            else
+                            {
+                                ownedObject.RemoveOwnership();
+                            }
+                        }
+                    }
+                }
+
+                // TODO: Could(should?) be replaced with more memory per client, by storing the visibility
+                foreach (var sobj in NetworkManager.SpawnManager.SpawnedObjectsList)
+                {
+                    sobj.Observers.Remove(clientId);
+                }
+
+                if (ConnectedClients.ContainsKey(clientId))
+                {
+                    ConnectedClientsList.Remove(ConnectedClients[clientId]);
+                    ConnectedClients.Remove(clientId);
+                }
+                ConnectedClientIds.Remove(clientId);
+
+            }
+            if (ClientIdToTransportIdMap.ContainsKey(clientId))
+            {
+                var transportId = ClientIdToTransportId(clientId);
+
+                NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+            }
+            NetworkManager.MessagingSystem.ClientDisconnected(clientId);
+            PendingClients.Remove(clientId);
+        }
+
+
+        internal void DisconnectRemoteClient(ulong clientId)
+        {
+            NetworkManager.MessagingSystem.ProcessSendQueues();
+            OnClientDisconnectFromServer(clientId);
         }
 
         internal void ClearClients()
