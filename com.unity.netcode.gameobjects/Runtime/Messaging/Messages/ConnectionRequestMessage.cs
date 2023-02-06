@@ -162,7 +162,7 @@ namespace Unity.Netcode
                     Approved = true,
                     CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null
                 };
-                networkManager.HandleConnectionApproval(senderId, response);
+                networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
             }
         }
     }
