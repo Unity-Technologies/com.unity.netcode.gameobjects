@@ -784,6 +784,15 @@ namespace Unity.Netcode.Transports.UTP
 
         }
 
+        /// <summary>
+        /// UnityTransport uses OnTransportEvent to notify subscribers
+        /// when NetworkEvents occur, so it can opt out from polling.
+        /// </summary>
+        protected override bool OnUseTransportPolling()
+        {
+            return false;
+        }
+
         private void ReceiveMessages(ulong clientId, NetworkPipeline pipeline, DataStreamReader dataReader)
         {
             BatchedReceiveQueue queue;

@@ -369,7 +369,7 @@ namespace Unity.Netcode
                     DestroyGameObject = !IsSceneObject.Value
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -785,7 +785,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 

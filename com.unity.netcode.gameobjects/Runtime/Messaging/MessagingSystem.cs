@@ -204,6 +204,15 @@ namespace Unity.Netcode
             return m_LocalVersions[messageType];
         }
 
+        /// <summary>
+        /// TODO 2023: Assign attribute to register for the equivalent update stage
+        /// </summary>
+        internal void OnEarlyUpdate()
+        {
+            ProcessIncomingMessageQueue();
+            CleanupDisconnectedClients();
+        }
+
         internal void HandleIncomingData(ulong clientId, ArraySegment<byte> data, float receiveTime)
         {
             unsafe

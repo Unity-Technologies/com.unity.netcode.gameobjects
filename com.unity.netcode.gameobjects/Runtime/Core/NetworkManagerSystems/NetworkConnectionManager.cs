@@ -2,7 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Profiling;
 using UnityEngine;
+
 
 #if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools;
@@ -15,10 +18,14 @@ namespace Unity.Netcode
 {
     public class NetworkConnectionManager
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
+        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
+#endif
         private ulong m_NextClientId = 1;
         internal NetworkManager NetworkManager;
         internal NetworkClient LocalClient;
-
+        internal Dictionary<ulong, NetworkManager.ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
         internal Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
         internal Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
         internal Dictionary<ulong, ulong> ClientIdToTransportIdMap = new Dictionary<ulong, ulong>();
@@ -26,7 +33,7 @@ namespace Unity.Netcode
 
         internal List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
         internal List<ulong> ConnectedClientIds = new List<ulong>();
-
+        internal Action<NetworkManager.ConnectionApprovalRequest, NetworkManager.ConnectionApprovalResponse> ConnectionApprovalCallback;
 
         internal ulong TransportIdToClientId(ulong transportId)
         {
@@ -64,7 +71,31 @@ namespace Unity.Netcode
             return clientId;
         }
 
+        /// <summary>
+        /// TODO 2023: Assign attribute to register for the equivalent update stage
+        /// </summary>
+        internal void OnEarlyUpdate()
+        {
+            ProcessPendingApprovals();
 
+            if (NetworkManager.NetworkConfig.NetworkTransport.UseTransportPolling())
+            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_TransportPollMarker.Begin();
+#endif
+                NetworkEvent networkEvent;
+                do
+                {
+                    networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime);
+                    NetworkManager.HandleRawTransportPoll(networkEvent, clientId, payload, receiveTime);
+                    // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_TransportPollMarker.End();
+#endif
+            }
+        }
 
         /// <summary>
         /// Gets the networkId of the server
@@ -83,6 +114,9 @@ namespace Unity.Netcode
 
         internal void ConnectedEvent(ulong transportClientId)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportConnect.Begin();
+#endif
             // Assumptions:
             // - When server receives a connection, it *must be* a client
             // - When client receives one, it *must be* the server
@@ -128,6 +162,61 @@ namespace Unity.Netcode
                 NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
             }
 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportConnect.End();
+#endif
+        }
+
+        internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
+        {
+            // Note: Delegate creation allocates.
+            // Note: ToArray() also allocates. :(
+            var response = new NetworkManager.ConnectionApprovalResponse();
+            ClientsToApprove[context.SenderId] = response;
+
+            ConnectionApprovalCallback(
+                new NetworkManager.ConnectionApprovalRequest
+                {
+                    Payload = connectionRequestMessage.ConnectionData,
+                    ClientNetworkId = context.SenderId
+                }, response);
+        }
+
+        private void ProcessPendingApprovals()
+        {
+            List<ulong> senders = null;
+
+            foreach (var responsePair in ClientsToApprove)
+            {
+                var response = responsePair.Value;
+                var senderId = responsePair.Key;
+
+                if (!response.Pending)
+                {
+                    try
+                    {
+                        HandleConnectionApproval(senderId, response);
+
+                        if (senders == null)
+                        {
+                            senders = new List<ulong>();
+                        }
+                        senders.Add(senderId);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
+
+            if (senders != null)
+            {
+                foreach (var sender in senders)
+                {
+                    ClientsToApprove.Remove(sender);
+                }
+            }
         }
 
         private void SendConnectionRequest()
@@ -155,7 +244,7 @@ namespace Unity.Netcode
                 }
             }
 
-            NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
+            SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ServerClientId);
             message.MessageVersions.Dispose();
         }
 
@@ -310,7 +399,7 @@ namespace Unity.Netcode
                         }
                     }
 
-                    NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
+                    SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                     message.MessageVersions.Dispose();
 
                     // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
@@ -343,7 +432,7 @@ namespace Unity.Netcode
                 {
                     var disconnectReason = new DisconnectReasonMessage();
                     disconnectReason.Reason = response.Reason;
-                    NetworkManager.SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
+                    SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
 
                     NetworkManager.MessagingSystem.ProcessSendQueues();
                 }
@@ -379,7 +468,7 @@ namespace Unity.Netcode
                 message.ObjectInfo.HasParent = false;
                 message.ObjectInfo.IsPlayerObject = true;
                 message.ObjectInfo.OwnerClientId = clientId;
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
+                var size = SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientPair.Key);
                 NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientPair.Key, ConnectedClients[clientId].PlayerObject, size);
             }
         }
@@ -397,6 +486,98 @@ namespace Unity.Netcode
             ConnectedClientIds.Add(clientId);
             return networkClient;
         }
+
+
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+    where TMessageType : INetworkMessage
+    where TClientIdListType : IReadOnlyList<ulong>
+        {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer)
+            {
+                ulong* nonServerIds = stackalloc ulong[clientIds.Count];
+                int newIdx = 0;
+                for (int idx = 0; idx < clientIds.Count; ++idx)
+                {
+                    if (clientIds[idx] == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
+
+                    nonServerIds[newIdx++] = clientIds[idx];
+                }
+
+                if (newIdx == 0)
+                {
+                    return 0;
+                }
+                return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+            }
+            // else
+            if (clientIds.Count != 1 || clientIds[0] != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
+
+            return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, clientIds);
+        }
+
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
+            ulong* clientIds, int numClientIds)
+            where T : INetworkMessage
+        {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer)
+            {
+                ulong* nonServerIds = stackalloc ulong[numClientIds];
+                int newIdx = 0;
+                for (int idx = 0; idx < numClientIds; ++idx)
+                {
+                    if (clientIds[idx] == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
+
+                    nonServerIds[newIdx++] = clientIds[idx];
+                }
+
+                if (newIdx == 0)
+                {
+                    return 0;
+                }
+                return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+            }
+            // else
+            if (numClientIds != 1 || clientIds[0] != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
+
+            return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
+        }
+
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+        }
+
+        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage
+        {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer && clientId == NetworkManager.ServerClientId)
+            {
+                return 0;
+            }
+
+            if (!LocalClient.IsServer && clientId != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
+            return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, clientId);
+        }
+
 
         internal void Shutdown()
         {
@@ -561,6 +742,22 @@ namespace Unity.Netcode
             OnClientDisconnectFromServer(clientId);
         }
 
+        internal void DisconnectClient(ulong clientId, string reason = null)
+        {
+            if (!LocalClient.IsServer)
+            {
+                throw new NotServerException($"Only server can disconnect remote clients. Please use `{nameof(Shutdown)}()` instead.");
+            }
+
+            if (!string.IsNullOrEmpty(reason))
+            {
+                var disconnectReason = new DisconnectReasonMessage();
+                disconnectReason.Reason = reason;
+                SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
+            }
+            DisconnectRemoteClient(clientId);
+        }
+
         internal void ClearClients()
         {
             PendingClients.Clear();
@@ -569,6 +766,7 @@ namespace Unity.Netcode
             ConnectedClientIds.Clear();
             ClientIdToTransportIdMap.Clear();
             TransportIdToClientIdMap.Clear();
+            ClientsToApprove.Clear();
         }
 
         public NetworkConnectionManager()

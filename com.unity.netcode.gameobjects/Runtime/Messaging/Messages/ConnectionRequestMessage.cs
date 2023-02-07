@@ -143,17 +143,8 @@ namespace Unity.Netcode
 
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
-                // Note: Delegate creation allocates.
-                // Note: ToArray() also allocates. :(
-                var response = new NetworkManager.ConnectionApprovalResponse();
-                networkManager.ClientsToApprove[senderId] = response;
-
-                networkManager.ConnectionApprovalCallback(
-                    new NetworkManager.ConnectionApprovalRequest
-                    {
-                        Payload = ConnectionData,
-                        ClientNetworkId = senderId
-                    }, response);
+                var messageRequest = this;
+                networkManager.ConnectionManager.ApproveConnection(ref messageRequest, ref context);
             }
             else
             {

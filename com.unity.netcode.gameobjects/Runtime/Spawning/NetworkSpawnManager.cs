@@ -223,7 +223,7 @@ namespace Unity.Netcode
                 NetworkObjectId = networkObject.NetworkObjectId,
                 OwnerClientId = networkObject.OwnerClientId
             };
-            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
 
             foreach (var client in NetworkManager.ConnectedClients)
             {
@@ -286,7 +286,7 @@ namespace Unity.Netcode
             {
                 if (networkObject.IsNetworkVisibleTo(client.Value.ClientId))
                 {
-                    var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
+                    var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, client.Value.ClientId);
                     NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
                 }
             }
@@ -619,7 +619,7 @@ namespace Unity.Netcode
             {
                 ObjectInfo = networkObject.GetMessageSceneObject(clientId)
             };
-            var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
+            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, clientId);
             NetworkManager.NetworkMetrics.TrackObjectSpawnSent(clientId, networkObject, size);
         }
 
@@ -869,7 +869,7 @@ namespace Unity.Netcode
                             NetworkObjectId = networkObject.NetworkObjectId,
                             DestroyGameObject = networkObject.IsSceneObject != false ? destroyGameObject : true
                         };
-                        var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
+                        var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, m_TargetClientIds);
                         foreach (var targetClientId in m_TargetClientIds)
                         {
                             NetworkManager.NetworkMetrics.TrackObjectDestroySent(targetClientId, networkObject, size);
