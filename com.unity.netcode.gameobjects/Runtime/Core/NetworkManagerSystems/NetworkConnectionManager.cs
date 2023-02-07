@@ -24,7 +24,7 @@ namespace Unity.Netcode
 #endif
         private ulong m_NextClientId = 1;
         internal NetworkManager NetworkManager;
-        internal NetworkClient LocalClient;
+        internal NetworkClient LocalClient = new NetworkClient();
         internal Dictionary<ulong, NetworkManager.ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
         internal Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
         internal Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
@@ -105,7 +105,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ulong GetServerTransporId()
         {
-            if(NetworkManager != null)
+            if (NetworkManager != null)
             {
                 return NetworkManager.NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
             }
@@ -473,7 +473,6 @@ namespace Unity.Netcode
             }
         }
 
-
         internal NetworkClient AddClient(ulong clientId)
         {
             var networkClient = LocalClient;
@@ -487,10 +486,9 @@ namespace Unity.Netcode
             return networkClient;
         }
 
-
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
-    where TMessageType : INetworkMessage
-    where TClientIdListType : IReadOnlyList<ulong>
+            where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
             // Prevent server sending to itself
             if (LocalClient.IsServer)
@@ -577,7 +575,6 @@ namespace Unity.Netcode
             }
             return NetworkManager.MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
-
 
         internal void Shutdown()
         {
@@ -735,7 +732,6 @@ namespace Unity.Netcode
             PendingClients.Remove(clientId);
         }
 
-
         internal void DisconnectRemoteClient(ulong clientId)
         {
             NetworkManager.MessagingSystem.ProcessSendQueues();
@@ -769,9 +765,9 @@ namespace Unity.Netcode
             ClientsToApprove.Clear();
         }
 
-        public NetworkConnectionManager()
+        public void Initialize(NetworkManager networkManager)
         {
-            LocalClient = new NetworkClient();
+            NetworkManager = networkManager;
         }
     }
 }

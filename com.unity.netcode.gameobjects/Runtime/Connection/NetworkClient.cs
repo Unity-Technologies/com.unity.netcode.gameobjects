@@ -18,6 +18,17 @@ namespace Unity.Netcode
 
         public bool IsHost => IsClient && IsServer;
 
+        internal void SetRole(bool isServer, bool isClient)
+        {
+            IsServer = isServer;
+            IsClient = isClient;
+            if (!IsServer && !isClient)
+            {
+                PlayerObject = null;
+                ClientId = ulong.MaxValue;
+            }
+        }
+
         /// <summary>
         /// The ClientId of the NetworkClient
         /// </summary>
@@ -50,23 +61,13 @@ namespace Unity.Netcode
 
         public NetworkClient(bool isServer, bool isClient, ulong clientId)
         {
-            IsServer = isServer;
-            IsClient = isClient;
+            SetRole(isServer, isClient);
             ClientId = clientId;
-        }
-
-        public NetworkClient(bool isServer, bool isClient)
-        {
-            IsServer = isServer;
-            IsClient = isClient;
         }
 
         public NetworkClient()
         {
-            IsServer = false;
-            IsClient = false;
-            ClientId = ulong.MaxValue;
-            PlayerObject = null;
+            SetRole(false, false);
         }
     }
 }

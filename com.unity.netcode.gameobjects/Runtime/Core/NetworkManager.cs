@@ -628,7 +628,7 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
-            ConnectionManager.NetworkManager = this;
+            ConnectionManager.Initialize(this);
             // Don't allow the user to start a network session if the NetworkManager is
             // still parented under another GameObject
             if (NetworkManagerCheckForParent(true))
@@ -753,7 +753,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient = new NetworkClient(true, false);
+            ConnectionManager.LocalClient.SetRole(true, false);
             Initialize(true);
             IsListening = true;
             LocalClientId = ServerClientId;
@@ -771,7 +771,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    ConnectionManager.LocalClient = new NetworkClient();
+                    ConnectionManager.LocalClient.SetRole(false, false);
                     IsListening = false;
 
                     Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
@@ -781,7 +781,7 @@ namespace Unity.Netcode
             }
             catch (Exception)
             {
-                ConnectionManager.LocalClient = new NetworkClient();
+                ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
                 throw;
             }
@@ -804,7 +804,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient = new NetworkClient(false, true);
+            ConnectionManager.LocalClient.SetRole(false, true);
 
             Initialize(false);
             MessagingSystem.ClientConnected(ServerClientId);
@@ -837,7 +837,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient = new NetworkClient(true, true);
+            ConnectionManager.LocalClient.SetRole(true, true);
 
             Initialize(true);
 
@@ -852,7 +852,7 @@ namespace Unity.Netcode
                     OnTransportFailure?.Invoke();
                     Shutdown();
 
-                    ConnectionManager.LocalClient = new NetworkClient();
+                    ConnectionManager.LocalClient.SetRole(false, false);
                     IsListening = false;
 
                     return false;
@@ -860,7 +860,7 @@ namespace Unity.Netcode
             }
             catch (Exception)
             {
-                ConnectionManager.LocalClient = new NetworkClient();
+                ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
                 throw;
             }
@@ -1113,7 +1113,7 @@ namespace Unity.Netcode
                 SpawnManager = null;
             }
 
-            ConnectionManager.LocalClient = new NetworkClient();
+            ConnectionManager.LocalClient.SetRole(false, false);
 
             this.UnregisterAllNetworkUpdates();
 
