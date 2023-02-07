@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added support for native containers in FastBufferReader/Writer, BufferSerializer, NetworkVariable, and RPCs.
+- Added support for native containers in FastBufferReader/Writer, BufferSerializer, NetworkVariable, and RPCs. (#2375)
 
 ### Changed
 
