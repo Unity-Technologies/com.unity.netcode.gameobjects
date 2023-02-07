@@ -165,12 +165,28 @@ namespace Tests.Manual.NetworkAnimatorTests
                 m_TestIntValue = testIntValue;
                 Debug.Log($"[{name}]TestInt value changed to = {m_TestIntValue}");
             }
-            var testFloatValue = m_Animator.GetInteger("TestFloat");
+            var testFloatValue = m_Animator.GetFloat("TestFloat");
             if (m_TestFloatValue != testFloatValue)
             {
                 m_TestFloatValue = testFloatValue;
                 Debug.Log($"[{name}]TestFloat value changed to = {m_TestIntValue}");
             }
+        }
+
+        private void BeginAttack(int weaponType)
+        {
+            m_Animator.SetInteger("WeaponType", weaponType);
+            m_NetworkAnimator.SetTrigger("Attack");
+        }
+
+        private void SetLayerWeight(int layer, float weight)
+        {
+            m_Animator.SetLayerWeight(layer, weight);
+        }
+
+        private float GetLayerWeight(int layer)
+        {
+            return m_Animator.GetLayerWeight(layer);
         }
 
         private void LateUpdate()
@@ -180,6 +196,10 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 if (!IsOwner && IsSpawned)
                 {
+                    if (Input.GetKeyDown(KeyCode.Alpha4))
+                    {
+                        Debug.Log($"Layer 1 weight: {GetLayerWeight(1)}");
+                    }
                     DisplayTestIntValueIfChanged();
                     return;
                 }
@@ -211,6 +231,21 @@ namespace Tests.Manual.NetworkAnimatorTests
             {
                 Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
                 Debug.Log($"[{name}] TestInt value = {m_TestIntValue}");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                BeginAttack(1);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                BeginAttack(2);
+            }
+
+            if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                SetLayerWeight(1, 0.75f);
             }
         }
     }

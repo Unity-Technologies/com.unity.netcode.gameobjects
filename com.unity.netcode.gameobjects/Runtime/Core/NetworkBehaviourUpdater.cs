@@ -72,6 +72,23 @@ namespace Unity.Netcode
                         }
                     }
                 }
+
+                foreach (var dirtyObj in m_DirtyNetworkObjects)
+                {
+                    for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
+                    {
+                        var behaviour = dirtyObj.ChildNetworkBehaviours[k];
+                        for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
+                        {
+                            if (behaviour.NetworkVariableFields[i].IsDirty() &&
+                                !behaviour.NetworkVariableIndexesToResetSet.Contains(i))
+                            {
+                                behaviour.NetworkVariableIndexesToResetSet.Add(i);
+                                behaviour.NetworkVariableIndexesToReset.Add(i);
+                            }
+                        }
+                    }
+                }
                 // Now, reset all the no-longer-dirty variables
                 foreach (var dirtyobj in m_DirtyNetworkObjects)
                 {
