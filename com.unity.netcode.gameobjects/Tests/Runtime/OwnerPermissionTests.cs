@@ -197,9 +197,9 @@ namespace Unity.Netcode.RuntimeTests
                     // Verify client-owned networkList can only be written by owner
                     Debug.Assert(gotException == (clientWriting != objectIndex));
 
-                    yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
-                    yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[0], 5);
-                    yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ClientNetworkManagers[1], 5);
+                    yield return WaitForTicks(m_ServerNetworkManager, 5);
+                    yield return WaitForTicks(m_ClientNetworkManagers[0], 5);
+                    yield return WaitForTicks(m_ClientNetworkManagers[1], 5);
 
                     OwnerPermissionObject.VerifyConsistency();
                 }
