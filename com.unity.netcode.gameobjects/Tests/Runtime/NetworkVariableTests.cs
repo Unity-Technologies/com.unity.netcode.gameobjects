@@ -236,7 +236,7 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            yield return WaitForTicks(m_ServerNetworkManager, 2);
 
             yield return WaitForOwnerWritableAreEqualOnAll();
 
@@ -269,7 +269,7 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            yield return WaitForTicks(m_ServerNetworkManager, 2);
 
             yield return WaitForOwnerWritableAreEqualOnAll();
 
@@ -301,7 +301,7 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            yield return WaitForTicks(m_ServerNetworkManager, 2);
 
             yield return WaitForServerWritableAreEqualOnAll();
 
@@ -333,7 +333,7 @@ namespace Unity.Netcode.RuntimeTests
             int clientManagerIndex = m_ClientNetworkManagers.Length - 1;
             var newOwnerClientId = m_ClientNetworkManagers[clientManagerIndex].LocalClientId;
             testObjServer.ChangeOwnership(newOwnerClientId);
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 2);
+            yield return WaitForTicks(m_ServerNetworkManager, 2);
 
             yield return WaitForOwnerWritableAreEqualOnAll();
 

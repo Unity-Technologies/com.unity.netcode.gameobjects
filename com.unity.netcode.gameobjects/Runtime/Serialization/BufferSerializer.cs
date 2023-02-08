@@ -7,14 +7,10 @@ namespace Unity.Netcode
     /// <summary>
     /// Two-way serializer wrapping FastBufferReader or FastBufferWriter.
     ///
-    /// Implemented as a ref struct for two reasons:
-    /// 1. The BufferSerializer cannot outlive the FBR/FBW it wraps or using it will cause a crash
-    /// 2. The BufferSerializer must always be passed by reference and can't be copied
+    /// Implemented as a ref struct to help enforce the requirement that
+    /// the BufferSerializer cannot outlive the FBR/FBW it wraps or using it will cause a crash
     ///
-    /// Ref structs help enforce both of those rules: they can't ref live the stack context in which they were
-    /// created, and they're always passed by reference no matter what.
-    ///
-    /// BufferSerializer doesn't wrapp FastBufferReader or FastBufferWriter directly because it can't.
+    /// BufferSerializer doesn't wrap FastBufferReader or FastBufferWriter directly because it can't.
     /// ref structs can't implement interfaces, and in order to be able to have two different implementations with
     /// the same interface (which allows us to avoid an "if(IsReader)" on every call), the thing directly wrapping
     /// the struct has to implement an interface. So IReaderWriter exists as the interface,
