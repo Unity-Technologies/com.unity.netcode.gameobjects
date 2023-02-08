@@ -53,7 +53,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsNotNull(serverPlayer);
             Assert.IsNotNull(clientPlayer);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+            yield return WaitForTicks(m_ServerNetworkManager, 5);
 
             // server rigidbody has authority and should have a kinematic mode of false
             Assert.True(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
@@ -66,12 +66,12 @@ namespace Unity.Netcode.RuntimeTests
             // despawn the server player, (but keep it around on the server)
             serverPlayer.GetComponent<NetworkObject>().Despawn(false);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+            yield return WaitForTicks(m_ServerNetworkManager, 5);
 
             // This should equal Kinematic
             Assert.IsTrue(serverPlayer.GetComponent<Rigidbody2D>().isKinematic == Kinematic);
 
-            yield return NetcodeIntegrationTestHelpers.WaitForTicks(m_ServerNetworkManager, 5);
+            yield return WaitForTicks(m_ServerNetworkManager, 5);
 
             Assert.IsTrue(clientPlayer == null); // safety check that object is actually despawned.
         }
