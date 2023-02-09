@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+- `UnityTransport` will now emit a warning if binding to a loopback address with an empty 'Server Listen Address' setting. The warning can be silenced by entering a valid IP address (127.0.0.1 is recommended for local development, 0.0.0.0 if accepting remote connections is required).
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
 - `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
 - Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.

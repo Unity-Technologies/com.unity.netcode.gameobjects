@@ -330,7 +330,30 @@ namespace Unity.Netcode.Transports.UTP
             /// <summary>
             /// Endpoint (IP address and port) server will listen/bind on.
             /// </summary>
-            public NetworkEndpoint ListenEndPoint => ParseNetworkEndpoint((ServerListenAddress?.Length == 0) ? Address : ServerListenAddress, Port);
+            public NetworkEndpoint ListenEndPoint
+            {
+                get
+                {
+                    if (string.IsNullOrEmpty(ServerListenAddress))
+                    {
+                        var ep = ParseNetworkEndpoint(Address, Port);
+
+                        if (ep.IsLoopback)
+                        {
+                            Debug.LogWarning("Server/host will only listen for local connections. To allow connections " +
+                                "from remote devices, set the 'Server Listen Address' setting of the 'Unity Transport' " +
+                                "component to 0.0.0.0. To preserve the current behavior and silence this warning, set " +
+                                "it to 127.0.0.1 instead.");
+                        }
+
+                        return ep;
+                    }
+                    else
+                    {
+                        return ParseNetworkEndpoint(ServerListenAddress, Port);
+                    }
+                }
+            }
         }
 
         /// <summary>
