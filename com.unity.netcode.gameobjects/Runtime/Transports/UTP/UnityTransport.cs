@@ -529,7 +529,7 @@ namespace Unity.Netcode.Transports.UTP
             int result = m_Driver.Bind(endPoint);
             if (result != 0)
             {
-                Debug.LogError("Server failed to bind");
+                Debug.LogError("Server failed to bind. This is usually caused by another process being bound to the same port.");
                 return false;
             }
 
@@ -1476,7 +1476,7 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     if (NetworkManager.IsServer)
                     {
-                        if (String.IsNullOrEmpty(m_ServerCertificate) || String.IsNullOrEmpty(m_ServerPrivateKey))
+                        if (string.IsNullOrEmpty(m_ServerCertificate) || string.IsNullOrEmpty(m_ServerPrivateKey))
                         {
                             throw new Exception("In order to use encrypted communications, when hosting, you must set the server certificate and key.");
                         }
@@ -1485,11 +1485,11 @@ namespace Unity.Netcode.Transports.UTP
                     }
                     else
                     {
-                        if (String.IsNullOrEmpty(m_ServerCommonName))
+                        if (string.IsNullOrEmpty(m_ServerCommonName))
                         {
                             throw new Exception("In order to use encrypted communications, clients must set the server common name.");
                         }
-                        else if (String.IsNullOrEmpty(m_ClientCaCertificate))
+                        else if (string.IsNullOrEmpty(m_ClientCaCertificate))
                         {
                             m_NetworkSettings.WithSecureClientParameters(m_ServerCommonName);
                         }
