@@ -559,7 +559,7 @@ namespace Unity.Netcode.Transports.UTP
             result = m_Driver.Listen();
             if (result != 0)
             {
-                Debug.LogError("Server failed to listen");
+                Debug.LogError("Server failed to listen.");
                 return false;
             }
 
