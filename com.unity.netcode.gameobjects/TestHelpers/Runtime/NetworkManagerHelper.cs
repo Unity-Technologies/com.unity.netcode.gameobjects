@@ -69,6 +69,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Debug.Log($"{nameof(NetworkManager)} Instantiated.");
 
                 var unityTransport = NetworkManagerGameObject.AddComponent<UnityTransport>();
+                unityTransport.SetConnectionData("127.0.0.1", 7777, "127.0.0.1");
                 if (networkConfig == null)
                 {
                     networkConfig = new NetworkConfig

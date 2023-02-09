@@ -181,6 +181,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             unityTransport.MaxConnectAttempts = 4;
             unityTransport.ConnectTimeoutMS = 500;
 
+            // Prevent the warning about binding to localhost.
+            unityTransport.SetConnectionData("127.0.0.1", 7777, "127.0.0.1");
+
             // Set the NetworkConfig
             networkManager.NetworkConfig ??= new NetworkConfig();
             networkManager.NetworkConfig.NetworkTransport = unityTransport;

@@ -51,7 +51,11 @@ namespace Unity.Netcode.RuntimeTests
 
             if (family == NetworkFamily.Ipv6)
             {
-                transport.SetConnectionData("::1", 7777);
+                transport.SetConnectionData("::1", 7777, "::1");
+            }
+            else
+            {
+                transport.SetConnectionData("127.0.0.1", 7777, "127.0.0.1");
             }
 
             transport.Initialize();
