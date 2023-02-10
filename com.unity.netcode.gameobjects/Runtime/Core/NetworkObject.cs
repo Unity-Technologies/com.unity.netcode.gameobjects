@@ -103,7 +103,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
-        public bool DestroyWithScene = true;
+        public bool DestroyWithScene { get; set; }
 
         /// <summary>
         /// When set to true, this will automatically migrate the NetworkObject to a newly assigned active scene
