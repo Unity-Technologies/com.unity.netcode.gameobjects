@@ -1865,14 +1865,14 @@ namespace Unity.Netcode
             HandleClientSceneEvent(sceneEventId);
         }
 
-        private void MigrateNetworkObjectsToTheirProperScenes()
+        private void MigrateNetworkObjectsToAssignedScene()
         {
             foreach (var networkObject in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
                 // This is only done for dynamically spawned NetworkObjects
                 // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
                 // then skip it.
-                if (networkObject.IsSceneObject != false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+                if (networkObject.IsSceneObject.Value == false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
                 {
                     networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
@@ -1882,16 +1882,6 @@ namespace Unity.Netcode
                     {
                         var scene = HandleToScene[networkObject.SceneOriginHandle];
                         SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
-
-                        //for (int i = 0; i < SceneManager.sceneCount; i++)
-                        //{
-                        //    var scene = SceneManager.GetSceneAt(i);
-                        //    if (networkObject.SceneOriginHandle == scene.handle)
-                        //    {
-                        //        SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
-                        //        break;
-                        //    }
-                        //}
                     }
                 }
             }
@@ -1953,7 +1943,7 @@ namespace Unity.Netcode
                             }
 
                             // Now migrate any dynamically spawned NetworkObjects that are not in the same scene as on the server side
-                            MigrateNetworkObjectsToTheirProperScenes();
+                            MigrateNetworkObjectsToAssignedScene();
 
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
