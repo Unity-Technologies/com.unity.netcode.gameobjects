@@ -2205,13 +2205,13 @@ namespace Unity.Netcode
             var localSpawnedObjectsHashSet = new HashSet<NetworkObject>(m_NetworkManager.SpawnManager.SpawnedObjectsList);
             foreach (var networkObject in localSpawnedObjectsHashSet)
             {
-                if (networkObject == null)
+                if (networkObject == null || (networkObject != null && networkObject.gameObject.scene == DontDestroyOnLoadScene))
                 {
                     continue;
                 }
 
-                // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL
-                if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != DontDestroyOnLoadScene)
+                // Only NetworkObjects marked to not be destroyed with the scene
+                if (!networkObject.DestroyWithScene)
                 {
                     // Only move dynamically spawned NetworkObjects with no parent as the children will follow
                     if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
