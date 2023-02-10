@@ -103,7 +103,14 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
-        public bool DestroyWithScene { get; set; }
+        public bool DestroyWithScene = true;
+
+        /// <summary>
+        /// When set to true, this will automatically migrate the NetworkObject to a newly assigned active scene
+        /// </summary>
+        public bool AutoSynchActiveScene;
+
+        public Action MigratedToNewScene;
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -187,6 +194,11 @@ namespace Unity.Netcode
         ///  placed NetworkObjects
         /// </summary>
         internal int SceneOriginHandle = 0;
+
+        /// <summary>
+        /// The server-side scene origin handle
+        /// </summary>
+        internal int NetworkSceneHandle = 0;
 
         private Scene m_SceneOrigin;
         /// <summary>
@@ -1118,6 +1130,12 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 5, value);
             }
 
+            public bool DestroyWithScene
+            {
+                get => ByteUtility.GetBit(m_BitField, 6);
+                set => ByteUtility.SetBit(ref m_BitField, 6, value);
+            }
+
             //If(Metadata.HasParent)
             public ulong ParentObjectId;
 
@@ -1160,7 +1178,8 @@ namespace Unity.Netcode
 
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                writeSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                //writeSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                writeSize += FastBufferWriter.GetWriteSize<int>();
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
@@ -1176,10 +1195,11 @@ namespace Unity.Netcode
                 // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
                 // this to locate their local instance of the in-scene placed NetworkObject instance.
                 // Only written for in-scene placed NetworkObjects.
-                if (IsSceneObject)
-                {
-                    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
-                }
+                //if (IsSceneObject)
+                //{
+                //    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
+                //}
+                writer.WriteValue(OwnerObject.GetSceneOriginHandle());
 
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
@@ -1205,7 +1225,8 @@ namespace Unity.Netcode
 
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                readSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                //readSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                readSize += FastBufferWriter.GetWriteSize<int>();
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
@@ -1222,10 +1243,11 @@ namespace Unity.Netcode
                 // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
                 // this to locate their local instance of the in-scene placed NetworkObject instance.
                 // Only read for in-scene placed NetworkObjects
-                if (IsSceneObject)
-                {
-                    reader.ReadValue(out NetworkSceneHandle);
-                }
+                //if (IsSceneObject)
+                //{
+                //    reader.ReadValue(out NetworkSceneHandle);
+                //}
+                reader.ReadValue(out NetworkSceneHandle);
             }
         }
 
@@ -1317,6 +1339,7 @@ namespace Unity.Netcode
                 OwnerClientId = OwnerClientId,
                 IsPlayerObject = IsPlayerObject,
                 IsSceneObject = IsSceneObject ?? true,
+                DestroyWithScene = DestroyWithScene,
                 Hash = HostCheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId
@@ -1438,6 +1461,47 @@ namespace Unity.Netcode
             networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, false);
 
             return networkObject;
+        }
+
+        /// <summary>
+        /// Subscribes to changes in the currently active scene
+        /// </summary>
+        /// <remarks>
+        /// Only for dynamically spawned NetworkObjects
+        /// </remarks>
+        internal void SubscribeToActiveSceneForSynch()
+        {
+            if (AutoSynchActiveScene)
+            {
+                if (IsSceneObject.HasValue && !IsSceneObject.Value)
+                {
+                    // Just in case it is a recycled NetworkObject, unsubscribe first
+                    SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
+                    SceneManager.activeSceneChanged += CurrentlyActiveSceneChanged;
+                }
+            }
+        }
+
+        private void CurrentlyActiveSceneChanged(Scene current, Scene next)
+        {
+            // This check is here in the event a user wants to disable this for some reason but also wants
+            // the NetworkObject to synchronize to changes in the currently active scene at some later time.
+            if (AutoSynchActiveScene)
+            {
+                // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
+                // and update their scene handles
+                if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
+                {
+                    SceneManager.MoveGameObjectToScene(gameObject, next);
+                    SceneOriginHandle = next.handle;
+                    if (NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
+                    {
+                        NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+                    }
+
+                    MigratedToNewScene?.Invoke();
+                }
+            }
         }
 
         /// <summary>

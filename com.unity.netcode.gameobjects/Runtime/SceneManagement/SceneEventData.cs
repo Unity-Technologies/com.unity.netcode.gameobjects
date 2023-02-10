@@ -80,6 +80,11 @@ namespace Unity.Netcode
         /// <b>Event Notification:</b> Both server and client receive a local notification.
         /// </summary>
         SynchronizeComplete,
+
+        /// <summary>
+        /// Notifies clients that the active scene has changed
+        /// </summary>
+        ActiveSceneChanged,
     }
 
     /// <summary>
@@ -94,7 +99,7 @@ namespace Unity.Netcode
         internal ForceNetworkSerializeByMemcpy<Guid> SceneEventProgressId;
         internal uint SceneEventId;
 
-
+        internal uint ActiveSceneHash;
         internal uint SceneHash;
         internal int SceneHandle;
 
@@ -311,6 +316,7 @@ namespace Unity.Netcode
         {
             switch (SceneEventType)
             {
+                case SceneEventType.ActiveSceneChanged:
                 case SceneEventType.Load:
                 case SceneEventType.Unload:
                 case SceneEventType.Synchronize:
@@ -386,6 +392,12 @@ namespace Unity.Netcode
             // Write the scene event type
             writer.WriteValueSafe(SceneEventType);
 
+            if (SceneEventType == SceneEventType.ActiveSceneChanged)
+            {
+                writer.WriteValueSafe(ActiveSceneHash);
+                return;
+            }
+
             // Write the scene loading mode
             writer.WriteValueSafe((byte)LoadSceneMode);
 
@@ -407,6 +419,7 @@ namespace Unity.Netcode
             {
                 case SceneEventType.Synchronize:
                     {
+                        writer.WriteValueSafe(ActiveSceneHash);
                         WriteSceneSynchronizationData(writer);
                         break;
                     }
@@ -542,6 +555,12 @@ namespace Unity.Netcode
         internal void Deserialize(FastBufferReader reader)
         {
             reader.ReadValueSafe(out SceneEventType);
+            if (SceneEventType == SceneEventType.ActiveSceneChanged)
+            {
+                reader.ReadValueSafe(out ActiveSceneHash);
+                return;
+            }
+
             reader.ReadValueSafe(out byte loadSceneMode);
             LoadSceneMode = (LoadSceneMode)loadSceneMode;
 
@@ -561,6 +580,7 @@ namespace Unity.Netcode
             {
                 case SceneEventType.Synchronize:
                     {
+                        reader.ReadValueSafe(out ActiveSceneHash);
                         CopySceneSynchronizationData(reader);
                         break;
                     }

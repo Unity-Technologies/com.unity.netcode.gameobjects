@@ -1976,6 +1976,9 @@ namespace Unity.Netcode
                     var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
 
                     // Generate a SceneObject for the player object to spawn
+                    // Note: This is only to create the local NetworkObject,
+                    // many of the serialized properties of the player prefab
+                    // will be set when instantiated.
                     var sceneObject = new NetworkObject.SceneObject
                     {
                         OwnerClientId = ownerClientId,

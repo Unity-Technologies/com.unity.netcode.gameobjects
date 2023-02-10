@@ -405,6 +405,29 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
+                networkObject.DestroyWithScene = sceneObject.DestroyWithScene;
+                networkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
+
+                // For dynamically spawned NetworkObjects, check to make sure it is in the right scene and if not migrate it to the right scene
+                if (!sceneObject.IsSceneObject && NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+                {
+                    networkObject.SceneOriginHandle = NetworkManager.SceneManager.ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
+
+                    // If the NetworkObject is not in the scene it should be in, then find the right scene and migrate it to that scene
+                    if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
+                    {
+                        for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+                        {
+                            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                            if (networkObject.SceneOriginHandle == scene.handle)
+                            {
+                                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
                 // more scenes that contain nested in-scene placed NetworkObject children yet the server's
@@ -604,6 +627,12 @@ namespace Unity.Netcode
             foreach (var childObject in children)
             {
                 childObject.IsSceneObject = sceneObject;
+            }
+
+            // Only dynamically spawned NetworkObjects are allowed
+            if (!sceneObject)
+            {
+                networkObject.SubscribeToActiveSceneForSynch();
             }
         }
 
