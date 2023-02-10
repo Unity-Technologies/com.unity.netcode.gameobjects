@@ -1178,7 +1178,6 @@ namespace Unity.Netcode
 
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                //writeSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
                 writeSize += FastBufferWriter.GetWriteSize<int>();
 
                 if (!writer.TryBeginWrite(writeSize))
@@ -1191,14 +1190,8 @@ namespace Unity.Netcode
                     writer.WriteValue(Transform);
                 }
 
-                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
-                // this to locate their local instance of the in-scene placed NetworkObject instance.
-                // Only written for in-scene placed NetworkObjects.
-                //if (IsSceneObject)
-                //{
-                //    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
-                //}
+                // The NetworkSceneHandle is the server-side relative
+                // scene handle that the NetworkObject resides in.
                 writer.WriteValue(OwnerObject.GetSceneOriginHandle());
 
                 // Synchronize NetworkVariables and NetworkBehaviours
@@ -1225,7 +1218,6 @@ namespace Unity.Netcode
 
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                //readSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
                 readSize += FastBufferWriter.GetWriteSize<int>();
 
                 // Try to begin reading the remaining bytes
@@ -1239,14 +1231,8 @@ namespace Unity.Netcode
                     reader.ReadValue(out Transform);
                 }
 
-                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
-                // this to locate their local instance of the in-scene placed NetworkObject instance.
-                // Only read for in-scene placed NetworkObjects
-                //if (IsSceneObject)
-                //{
-                //    reader.ReadValue(out NetworkSceneHandle);
-                //}
+                // The NetworkSceneHandle is the server-side relative
+                // scene handle that the NetworkObject resides in.
                 reader.ReadValue(out NetworkSceneHandle);
             }
         }
