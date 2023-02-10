@@ -110,6 +110,9 @@ namespace Unity.Netcode
         /// </summary>
         public bool AutoSynchActiveScene;
 
+        /// <summary>
+        /// Notifies when a NetworkObject is migrated into a new scene
+        /// </summary>
         public Action MigratedToNewScene;
 
         /// <summary>
@@ -1130,6 +1133,12 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 5, value);
             }
 
+            /// <summary>
+            /// Even though the server sends notifications for NetworkObjects that get
+            /// destroyed when a scene is unloaded, we want to synchronize this so
+            /// the client side can use it as part of a filter for automatically migrating
+            /// to the current active scene when its scene is unloaded. (only for dynamically spawned)
+            /// </summary>
             public bool DestroyWithScene
             {
                 get => ByteUtility.GetBit(m_BitField, 6);
