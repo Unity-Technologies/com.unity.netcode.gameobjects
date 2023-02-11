@@ -345,11 +345,11 @@ namespace Unity.Netcode
                     m_ActiveSceneSynchronizationEnabled = value;
                     if (m_ActiveSceneSynchronizationEnabled)
                     {
-                        SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
+                        SceneManager.activeSceneChanged += SceneManager_ActiveSceneChanged;
                     }
                     else
                     {
-                        SceneManager.activeSceneChanged -= SceneManager_activeSceneChanged;
+                        SceneManager.activeSceneChanged -= SceneManager_ActiveSceneChanged;
                     }
                 }
             }
@@ -690,7 +690,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Synchronizes clients when the currently active scene is changed
         /// </summary>
-        private void SceneManager_activeSceneChanged(Scene current, Scene next)
+        private void SceneManager_ActiveSceneChanged(Scene current, Scene next)
         {
             // If no clients are connected, then don't worry about notifications
             if (!(m_NetworkManager.ConnectedClientsIds.Count > (m_NetworkManager.IsHost ? 1 : 0)))
