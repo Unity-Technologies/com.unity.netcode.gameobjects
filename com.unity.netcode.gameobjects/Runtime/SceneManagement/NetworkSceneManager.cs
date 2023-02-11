@@ -1865,7 +1865,7 @@ namespace Unity.Netcode
             HandleClientSceneEvent(sceneEventId);
         }
 
-        private void MigrateNetworkObjectsToAssignedScene()
+        private void SynchronizeNetworkObjectScene()
         {
             foreach (var networkObject in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
@@ -1880,8 +1880,16 @@ namespace Unity.Netcode
                     // only if it does not have a parent.
                     if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
                     {
-                        var scene = HandleToScene[networkObject.SceneOriginHandle];
-                        SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                        if (HandleToScene.ContainsKey(networkObject.SceneOriginHandle))
+                        {
+                            var scene = HandleToScene[networkObject.SceneOriginHandle];
+                            SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                        }
+                        else if (m_NetworkManager.LogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarningServer($"[Client-{m_NetworkManager.LocalClientId}][{networkObject.gameObject.name}] Server - " +
+                                $"client scene mismatch detected! Client-side has no scene loaded with handle ({networkObject.SceneOriginHandle})!");
+                        }
                     }
                 }
             }
@@ -1907,6 +1915,11 @@ namespace Unity.Netcode
                                 SceneManager.SetActiveScene(scene);
                             }
                         }
+                        break;
+                    }
+                case SceneEventType.ObjectSceneChanged:
+                    {
+                        MigrateNetworkObjectsIntoScenes();
                         break;
                     }
                 case SceneEventType.Load:
@@ -1942,8 +1955,8 @@ namespace Unity.Netcode
                                 }
                             }
 
-                            // Now migrate any dynamically spawned NetworkObjects that are not in the same scene as on the server side
-                            MigrateNetworkObjectsToAssignedScene();
+                            // Now Synchronize dynamically spawned NetworkObjects to reside in the same scene as on the server side
+                            SynchronizeNetworkObjectScene();
 
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
                             SendSceneEventData(sceneEventId, new ulong[] { NetworkManager.ServerClientId });
@@ -2292,6 +2305,111 @@ namespace Unity.Netcode
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Holds a list of scene handles (server-side relative) and NetworkObjects migrated into it
+        /// during the current frame.
+        /// </summary>
+        internal Dictionary<int, List<NetworkObject>> ObjectsMigratedIntoNewScene = new Dictionary<int, List<NetworkObject>>();
+
+        /// <summary>
+        /// Handles notifying clients when a NetworkObject has been migrated into a new scene
+        /// </summary>
+        internal void NotifyNetworkObjectSceneChanged(NetworkObject networkObject)
+        {
+            // Really, this should never happen but in case it does
+            if (!m_NetworkManager.IsServer)
+            {
+                if (m_NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogErrorServer("[Please Report This Error][NotifyNetworkObjectSceneChanged] A client is trying to notify of an object's scene change!");
+                }
+                return;
+            }
+
+            // Ignore in-scene placed NetworkObjects
+            if (networkObject.IsSceneObject != false)
+            {
+                // Really, this should ever happen but in case it does
+                if (m_NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogErrorServer("[Please Report This Error][NotifyNetworkObjectSceneChanged] Trying to notify in-scene placed object scene change!");
+                }
+                return;
+            }
+
+            // Ignore if the scene is the currently active scene and the NetworkObject is auto synchronizing/migrating
+            // to the currently active scene.
+            if (networkObject.gameObject.scene == SceneManager.GetActiveScene() && networkObject.ActiveSceneSynchronization)
+            {
+                return;
+            }
+
+            // Don't notify if a scene event is in progress
+            foreach (var sceneEventEntry in SceneEventProgressTracking)
+            {
+                if (!sceneEventEntry.Value.HasTimedOut() && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started)
+                {
+                    return;
+                }
+            }
+
+            // Otherwise, add the NetworkObject into the list of NetworkObjects who's scene has changed
+            if (!ObjectsMigratedIntoNewScene.ContainsKey(networkObject.gameObject.scene.handle))
+            {
+                ObjectsMigratedIntoNewScene.Add(networkObject.gameObject.scene.handle, new List<NetworkObject>());
+            }
+            ObjectsMigratedIntoNewScene[networkObject.gameObject.scene.handle].Add(networkObject);
+        }
+
+        /// <summary>
+        /// Invoked by clients when processing a <see cref="SceneEventType.ObjectSceneChanged"/> event
+        /// </summary>
+        private void MigrateNetworkObjectsIntoScenes()
+        {
+            try
+            {
+                foreach (var sceneEntry in ObjectsMigratedIntoNewScene)
+                {
+                    if (ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEntry.Key))
+                    {
+                        var clientSceneHandle = ServerSceneHandleToClientSceneHandle[sceneEntry.Key];
+                        if (HandleToScene.ContainsKey(ServerSceneHandleToClientSceneHandle[sceneEntry.Key]))
+                        {
+                            var scene = HandleToScene[clientSceneHandle];
+                            foreach (var networkObject in sceneEntry.Value)
+                            {
+                                SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                NetworkLog.LogErrorServer($"{ex.Message}\n Stack Trace:\n {ex.StackTrace}");
+            }
+
+            // Clear out the list once complete
+            ObjectsMigratedIntoNewScene.Clear();
+        }
+
+        /// <summary>
+        /// Should be invoked during PostLateUpdate just prior to the
+        /// MessagingSystem processes its outbound message queue.
+        /// </summary>
+        internal void CheckForAndSendNetworkObjectSceneChanged()
+        {
+            // Early exit if not the server or there is nothing pending
+            if (!m_NetworkManager.IsServer || ObjectsMigratedIntoNewScene.Count == 0)
+            {
+                return;
+            }
+            var sceneEvent = BeginSceneEvent();
+            sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
+            SendSceneEventData(sceneEvent.SceneEventId, m_NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
+            EndSceneEvent(sceneEvent.SceneEventId);
         }
     }
 }

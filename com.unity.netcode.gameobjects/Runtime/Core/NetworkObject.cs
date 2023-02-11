@@ -106,14 +106,53 @@ namespace Unity.Netcode
         public bool DestroyWithScene { get; set; }
 
         /// <summary>
-        /// When set to true, this will automatically migrate the NetworkObject to a newly assigned active scene
+        /// When set to true and the active scene is changed, this will automatically migrate the <see cref="NetworkObject"/>
+        /// into the new active scene on both the server and client instances.
         /// </summary>
-        public bool AutoSynchActiveScene;
+        /// <remarks>
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        ///
+        /// If there are more than one scenes loaded and the currently active scene is unloaded, then typically
+        /// the <see cref="SceneManager"/> will automatically assign a new active scene. Similar to <see cref="DestroyWithScene"/>
+        /// being set to <see cref="false"/>, this prevents any <see cref="NetworkObject"/> from being destroyed
+        /// with the unloaded active scene by migrating it into the automatically assigned active scene.
+        /// Additionally, this is can be useful in some seamless scene streaming implementations.
+        /// Note:
+        /// Only having <see cref="ActiveSceneSynchronization"/> set to true will *not* synchronize clients when
+        /// changing a <see cref="NetworkObject"/>'s scene via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/>.
+        /// To synchronize clients of a <see cref="NetworkObject"/>'s scene being changed via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/>,
+        /// make sure <see cref="SceneMigrationSynchronization"/> is enabled (it is by default).
+        /// </remarks>
+        public bool ActiveSceneSynchronization;
 
         /// <summary>
-        /// Notifies when a NetworkObject is migrated into a new scene
+        /// When enabled (the default), if a <see cref="NetworkObject"/> is migrated to a different scene (active or not)
+        /// via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/> on the server side all client
+        /// instances will be synchronized  and the <see cref="NetworkObject"/> migrated into the newly assigned scene.
+        /// The updated scene migration will get synchronized with late joining clients as well.
         /// </summary>
-        public Action MigratedToNewScene;
+        /// <remarks>
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        /// Note:
+        /// You can have both <see cref="ActiveSceneSynchronization"/> and <see cref="SceneMigrationSynchronization"/> enabled.
+        /// The primary difference between the two is that <see cref="SceneMigrationSynchronization"/> only synchronizes clients
+        /// when the server migrates a <see cref="NetworkObject"/> to a new scene. If the scene is unloaded and <see cref="DestroyWithScene"/>
+        /// is <see cref="true"/> and <see cref="ActiveSceneSynchronization"/> is <see cref="false"/> and the scene is not the currently
+        /// active scene, then the <see cref="NetworkObject"/> will be destroyed.
+        /// </remarks>
+        public bool SceneMigrationSynchronization = true;
+
+        /// <summary>
+        /// Notifies when the NetworkObject is migrated into a new scene
+        /// </summary>
+        /// <remarks>
+        /// - <see cref="ActiveSceneSynchronization"/> or <see cref="SceneMigrationSynchronization"/> (or both) need to be enabled
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        /// </remarks>
+        public Action OnMigratedToNewScene;
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -1466,7 +1505,7 @@ namespace Unity.Netcode
         /// </remarks>
         internal void SubscribeToActiveSceneForSynch()
         {
-            if (AutoSynchActiveScene)
+            if (ActiveSceneSynchronization)
             {
                 if (IsSceneObject.HasValue && !IsSceneObject.Value)
                 {
@@ -1477,26 +1516,100 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// If AutoSynchActiveScene is enabled, then this is the callback that handles updating
+        /// a NetworkObject's scene information.
+        /// </summary>
         private void CurrentlyActiveSceneChanged(Scene current, Scene next)
         {
+            // Early exit if there is no NetworkManager assigned, the NetworkManager is shutting down, the NetworkObject
+            // is not spawned, or an in-scene placed NetworkObject
+            if (NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
+            {
+                return;
+            }
             // This check is here in the event a user wants to disable this for some reason but also wants
             // the NetworkObject to synchronize to changes in the currently active scene at some later time.
-            if (AutoSynchActiveScene)
+            if (ActiveSceneSynchronization)
             {
                 // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
                 // and update their scene handles
                 if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
                 {
                     SceneManager.MoveGameObjectToScene(gameObject, next);
-                    SceneOriginHandle = next.handle;
-                    if (NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
-                    {
-                        NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
-                    }
-
-                    MigratedToNewScene?.Invoke();
+                    SceneChangedUpdate(next);
                 }
             }
+        }
+
+        /// <summary>
+        /// Handles updating the NetworkObject's tracked scene handles
+        /// </summary>
+        internal void SceneChangedUpdate(Scene scene, bool notify = false)
+        {
+            // Avoiding edge case scenarios, if no NetworkSceneManager exit early
+            if (NetworkManager.SceneManager == null)
+            {
+                return;
+            }
+
+            SceneOriginHandle = scene.handle;
+            // Clients need to update the NetworkSceneHandle
+            if (!NetworkManager.IsServer && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
+            {
+                NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+            }
+            else if (NetworkManager.IsServer)
+            {
+                // Since the server is the source of truth for the NetworkSceneHandle,
+                // the NetworkSceneHandle is the same as the SceneOriginHandle.
+                NetworkSceneHandle = SceneOriginHandle;
+            }
+            else // Otherwise, the client did not find the client to server scene handle
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
+                // into, but that scenario seemed very edge case and under most instances a user should be notified that this
+                // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
+                // the server-side too.
+                NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{gameObject.name}] Server - " +
+                    $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
+                    $"has no associated server side (network) scene handle!");
+            }
+            OnMigratedToNewScene?.Invoke();
+
+            // Only the server side will notify clients of non-parented NetworkObject scene changes
+            if (NetworkManager.IsServer && notify && transform.parent == null)
+            {
+                NetworkManager.SceneManager.NotifyNetworkObjectSceneChanged(this);
+            }
+        }
+
+        /// <summary>
+        /// Update
+        /// Detects if a NetworkObject's scene has changed for both server and client instances
+        /// </summary>
+        /// <remarks>
+        /// About In-Scene Placed NetworkObjects:
+        /// Since the same scene can be loaded more than once and in-scene placed NetworkObjects GlobalObjectIdHash
+        /// values are only unique to the scene asset itself (and not per scene instance loaded), we will not be able
+        /// to add this same functionality to in-scene placed NetworkObjects until we have a way to generate
+        /// per-NetworkObject-instance unique GlobalObjectIdHash values for in-scene placed NetworkObjects.
+        /// </remarks>
+        private void Update()
+        {
+            // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
+            // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
+            // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
+            if (!SceneMigrationSynchronization || NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned
+                || IsSceneObject != false || gameObject.scene.handle == SceneOriginHandle)
+            {
+                return;
+            }
+
+            // Otherwise, this has to be a dynamically spawned NetworkObject that has been
+            // migrated to a new scene.
+            SceneChangedUpdate(gameObject.scene, true);
         }
 
         /// <summary>
