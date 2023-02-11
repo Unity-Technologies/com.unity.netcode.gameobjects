@@ -94,13 +94,13 @@ namespace Unity.Netcode.Editor
 
             serializedObject.ApplyModifiedProperties();
 
-            EditorGUILayout.HelpBox("It's recommended to leave this disabled for local testing to avoid exposing ports on your device.", MessageType.Info);
-            bool allowIncomingConnections = m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv4 && m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv6 && !string.IsNullOrEmpty(m_UnityTransport.ConnectionData.ServerListenAddress);
-            allowIncomingConnections = EditorGUILayout.Toggle(new GUIContent("Allow Incoming Connections", $"Bind IP: {m_UnityTransport.ConnectionData.ServerListenAddress}"), allowIncomingConnections);
+            EditorGUILayout.HelpBox("It's recommended to leave remote connections disabled for local testing to avoid exposing ports on your device.", MessageType.Info);
+            bool allowRemoteConnections = m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv4 && m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv6 && !string.IsNullOrEmpty(m_UnityTransport.ConnectionData.ServerListenAddress);
+            allowRemoteConnections = EditorGUILayout.Toggle(new GUIContent("Allow Remote Connections?", $"Bind IP: {m_UnityTransport.ConnectionData.ServerListenAddress}"), allowRemoteConnections);
 
             bool isIpV6 = m_UnityTransport.ConnectionData.IsIpv6;
 
-            if (!allowIncomingConnections)
+            if (!allowRemoteConnections)
             {
                 if (m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv4 && m_UnityTransport.ConnectionData.ServerListenAddress != k_LoopbackIpv6)
                 {
@@ -116,7 +116,7 @@ namespace Unity.Netcode.Editor
                 }
             }
 
-            using (new EditorGUI.DisabledScope(!allowIncomingConnections))
+            using (new EditorGUI.DisabledScope(!allowRemoteConnections))
             {
                 string overrideIp = m_UnityTransport.ConnectionData.ServerListenAddress;
                 if (overrideIp == k_AnyIpv4 || overrideIp == k_AnyIpv6 || overrideIp == k_LoopbackIpv4 || overrideIp == k_LoopbackIpv6)
@@ -125,7 +125,7 @@ namespace Unity.Netcode.Editor
                 }
 
                 overrideIp = EditorGUILayout.TextField("Override Bind IP (optional)", overrideIp);
-                if (allowIncomingConnections)
+                if (allowRemoteConnections)
                 {
                     if (overrideIp == "")
                     {
