@@ -7,9 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 ## [Unreleased - Post v1.3.0]
 ### Added
-- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that will synchronize clients when the active scene is changed on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that will synchronize clients when the active scene is changed on the server side. (#2383)
 - Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
-- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
 
 ### Changed
 - Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
