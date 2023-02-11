@@ -5,10 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
+## [Unreleased - Post v1.3.0]
+### Added
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that will synchronize clients when the active scene is changed on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
+- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene. (#2383)
+
+### Changed
+- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
+- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+
+### Fixed:
+- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 
 ## [Unreleased]
-
-### Added
 
 ### Changed
 
@@ -25,8 +36,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
 - Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
 - Fixed issue where a dynamically spawned `NetworkObject` parented under an in-scene placed `NetworkObject` would have its `InScenePlaced` value changed to `true`. This would result in a soft synchronization error for late joining clients. (#2396)
-- Fixed issue when the ClientSynchronizationMode is additive and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
-    - This removes the need to resync the whole scene when players disconnect and reconnect while still being in the same scene.
 - Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)
 - Fixed issue where `NetcodeSettingsProvider` would throw an exception in Unity 2020.3.x versions. (#2345)
 - Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
