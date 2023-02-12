@@ -1492,7 +1492,7 @@ namespace Unity.Netcode
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
             // Spawn the NetworkObject
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, false);
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
 
             return networkObject;
         }

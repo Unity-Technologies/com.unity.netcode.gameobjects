@@ -575,6 +575,72 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Integration test version that handles migrating dynamically spawned NetworkObjects to
+        /// the DDOL when a scene is unloaded
+        /// </summary>
+        /// <param name="networkManager"><see cref="NetworkManager"/> relative instance</param>
+        /// <param name="scene">scene being unloaded</param>
+        public void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene)
+        {
+            // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
+            // are despawned.
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
+            foreach (var networkObject in networkObjects)
+            {
+                if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
+                {
+                    if (networkObject != null)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Ignoring {networkObject.gameObject.name} because it isn't in scene {networkObject.gameObject.scene.name} ");
+                    }
+                    continue;
+                }
+
+                bool skipPrefab = false;
+
+                foreach (var networkPrefab in networkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    if (networkPrefab.Prefab == null)
+                    {
+                        continue;
+                    }
+                    if (networkObject == networkPrefab.Prefab.GetComponent<NetworkObject>())
+                    {
+                        skipPrefab = true;
+                        break;
+                    }
+                }
+                if (skipPrefab)
+                {
+                    continue;
+                }
+
+                // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL are preserved
+                if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
+                {
+                    // Only move dynamically spawned NetworkObjects with no parent as the children will follow
+                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Moving {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
+                        Object.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+                }
+                else if (networkManager.IsServer)
+                {
+                    if (networkObject.NetworkManager == networkManager)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Destroying {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
+                        networkObject.Despawn();
+                    }
+                    else //For integration testing purposes, migrate remaining into DDOL
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Temporarily migrating {networkObject.gameObject.name} into DDOL to await server destroy message.");
+                        Object.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Constructor now must take NetworkManager

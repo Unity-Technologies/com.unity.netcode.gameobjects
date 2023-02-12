@@ -26,5 +26,7 @@ namespace Unity.Netcode
         void ClearSceneTracking(NetworkManager networkManager = null);
 
         void UnloadUnassignedScenes(NetworkManager networkManager = null);
+
+        void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene);
     }
 }

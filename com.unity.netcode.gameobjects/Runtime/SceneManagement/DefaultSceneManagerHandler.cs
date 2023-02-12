@@ -213,5 +213,43 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        /// <summary>
+        /// Handles migrating dynamically spawned NetworkObjects to the DDOL when a scene is unloaded
+        /// </summary>
+        /// <param name="networkManager"><see cref="NetworkManager"/>relative instance</param>
+        /// <param name="scene">scene being unloaded</param>
+        public void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene)
+        {
+            bool isActiveScene = scene == SceneManager.GetActiveScene();
+            // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
+            // are despawned.
+            var localSpawnedObjectsHashSet = new HashSet<NetworkObject>(networkManager.SpawnManager.SpawnedObjectsList);
+            foreach (var networkObject in localSpawnedObjectsHashSet)
+            {
+                if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
+                {
+                    continue;
+                }
+
+                // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL are preserved
+                if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
+                {
+                    // Only move dynamically spawned NetworkObjects with no parent as the children will follow
+                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    {
+                        UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+                }
+                else if (networkManager.IsServer)
+                {
+                    networkObject.Despawn();
+                }
+                else // We are a client, migrate the object into the DDOL temporarily until it receives the destroy command from the server
+                {
+                    UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
+                }
+            }
+        }
     }
 }
