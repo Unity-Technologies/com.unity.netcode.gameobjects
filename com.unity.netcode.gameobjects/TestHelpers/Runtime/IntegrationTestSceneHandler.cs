@@ -427,13 +427,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 };
                 SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
             }
-            //else
-            //{
-            //    if (exceptionOnExisting)
-            //    {
-            //        throw new Exception($"[{networkManager.LocalClient.PlayerObject.name}][Duplicate Handle] Scene {scene.name} already has scene handle {scene.handle} registered!");
-            //    }
-            //}
         }
 
         private bool DoesANetworkManagerHoldThisScene(Scene scene)
