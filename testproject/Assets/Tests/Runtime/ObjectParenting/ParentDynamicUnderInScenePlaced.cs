@@ -40,6 +40,12 @@ namespace TestProject.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
+        protected override IEnumerator OnStartedServerAndClients()
+        {
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+            return base.OnStartedServerAndClients();
+        }
+
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
             foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)

@@ -576,6 +576,11 @@ namespace Unity.Netcode
         /// </summary>
         internal void GenerateScenesInBuild()
         {
+            // TODO 2023: We could support addressable or asset bundle scenes by
+            // adding a method that would allow users to add scenes to this.
+            // The method would be server-side only and require an additional SceneEventType
+            // that would be used to notify clients of the added scene. This might need
+            // to include information about the addressable or asset bundle (i.e. address to load assets)
             HashToBuildIndex.Clear();
             BuildIndexToHash.Clear();
             for (int i = 0; i < SceneManager.sceneCountInBuildSettings; i++)
@@ -675,7 +680,8 @@ namespace Unity.Netcode
         /// <param name="mode"><see cref="LoadSceneMode"/> for initial client synchronization</param>
         public void SetClientSynchronizationMode(LoadSceneMode mode)
         {
-            ClientSynchronizationMode = mode;
+            var networkManager = m_NetworkManager;
+            SceneManagerHandler.SetClientSynchronizationMode(ref networkManager, mode);
         }
 
         /// <summary>
@@ -688,11 +694,13 @@ namespace Unity.Netcode
             m_NetworkManager = networkManager;
             SceneEventDataStore = new Dictionary<uint, SceneEventData>();
 
+            // Generates the scene name to hash value
             GenerateScenesInBuild();
 
             // Since NetworkManager is now always migrated to the DDOL we will use this to get the DDOL scene
             DontDestroyOnLoadScene = networkManager.gameObject.scene;
 
+            // Add to the server to client scene handle table
             UpdateServerClientSceneHandle(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
             ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
         }
@@ -2256,7 +2264,8 @@ namespace Unity.Netcode
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
                 var sceneHandle = networkObjectInstance.GetSceneOriginHandle();
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
-                if (networkObjectInstance.IsSceneObject != false && networkObjectInstance.NetworkManager == m_NetworkManager && sceneHandle == sceneToFilterBy.handle)
+                if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == m_NetworkManager ||
+                    networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)
                 {
                     if (!ScenePlacedObjects.ContainsKey(globalObjectIdHash))
                     {

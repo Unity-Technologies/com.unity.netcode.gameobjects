@@ -28,5 +28,7 @@ namespace Unity.Netcode
         void UnloadUnassignedScenes(NetworkManager networkManager = null);
 
         void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene);
+
+        void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
     }
 }

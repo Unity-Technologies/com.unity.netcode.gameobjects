@@ -91,16 +91,49 @@ namespace Unity.Netcode
         /// </summary>
         public bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager)
         {
-            if (SceneNameToSceneHandles.ContainsKey(sceneName))
+            var scenesWithSceneName = new List<Scene>();
+
+            // Get all loaded scenes with the same name
+            for (int i = 0; i < SceneManager.sceneCount; i++)
             {
-                foreach (var sceneHandleEntry in SceneNameToSceneHandles[sceneName])
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.name == sceneName)
                 {
-                    if (!sceneHandleEntry.Value.IsAssigned)
-                    {
-                        return true;
-                    }
+                    scenesWithSceneName.Add(scene);
                 }
             }
+
+            // If there are no scenes of this name loaded then we have no loaded scenes
+            // to use
+            if (scenesWithSceneName.Count == 0)
+            {
+                return false;
+            }
+
+            // If we have 1 or more scenes with the name and we have no entries, then we do have
+            // a scene to use
+            if (scenesWithSceneName.Count > 0 && !SceneNameToSceneHandles.ContainsKey(sceneName))
+            {
+                return true;
+            }
+
+            // Determine if any of the loaded scenes has been used for synchronizing
+            foreach (var scene in scenesWithSceneName)
+            {
+                // If we don't have the handle, then we can use that scene
+                if (!SceneNameToSceneHandles[scene.name].ContainsKey(scene.handle))
+                {
+                    return true;
+                }
+
+                // If we have an entry, but it is not yet assigned (i.e. preloaded)
+                // then we can use that.
+                if (!SceneNameToSceneHandles[scene.name][scene.handle].IsAssigned)
+                {
+                    return true;
+                }
+            }
+            // If none were found, then we have no available scene (which most likely means one will get loaded)
             return false;
         }
 
@@ -250,6 +283,49 @@ namespace Unity.Netcode
                     UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
             }
+        }
+
+        /// <summary>
+        /// Sets the client synchronization mode which impacts whether both the server or client take into consideration scenes loaded before
+        /// starting the <see cref="NetworkManager"/>.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="LoadSceneMode.Single"/>: Does not take preloaded scenes into consideration
+        /// <see cref="LoadSceneMode.Single"/>: Does take preloaded scenes into consideration
+        /// </remarks>
+        /// <param name="networkManager">relative <see cref="NetworkManager"/> instance</param>
+        /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
+        public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
+        {
+            var sceneManager = networkManager.SceneManager;
+
+            // For additive client synchronization, we take into consideration scenes
+            // already loaded.
+            if (mode == LoadSceneMode.Additive)
+            {
+                for (int i = 0; i < SceneManager.sceneCount; i++)
+                {
+                    var scene = SceneManager.GetSceneAt(i);
+
+                    // If using scene verification
+                    if (sceneManager.VerifySceneBeforeLoading != null)
+                    {
+                        // Determine if we should take this scene into consideration
+                        if (!sceneManager.VerifySceneBeforeLoading.Invoke(scene.buildIndex, scene.name, LoadSceneMode.Additive))
+                        {
+                            continue;
+                        }
+                    }
+
+                    // If the scene is not already in the ScenesLoaded list, then add it
+                    if (!sceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                    {
+                        sceneManager.ScenesLoaded.Add(scene.handle, scene);
+                    }
+                }
+            }
+            // Set the client synchronization mode
+            sceneManager.ClientSynchronizationMode = mode;
         }
     }
 }
