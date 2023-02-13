@@ -518,8 +518,9 @@ namespace Unity.Netcode
         /// </summary>
         public void Dispose()
         {
+            // Always assure we no longer listen to scene changes when disposed.
+            SceneManager.activeSceneChanged -= SceneManager_ActiveSceneChanged;
             SceneUnloadEventHandler.Shutdown();
-
             foreach (var keypair in SceneEventDataStore)
             {
                 if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
