@@ -303,20 +303,23 @@ namespace Unity.Netcode.Transports.UTP
             public ushort Port;
 
             /// <summary>
-            /// IP address the server will listen on. If not provided, will use 0.0.0.0.
+            /// IP address the server will listen on. If not provided, will use localhost.
             /// </summary>
-            [Tooltip("IP address the server will listen on. If not provided, will use 0.0.0.0.")]
+            [Tooltip("IP address the server will listen on. If not provided, will use localhost.")]
             [SerializeField]
             public string ServerListenAddress;
 
-            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port)
+            private static NetworkEndpoint ParseNetworkEndpoint(string ip, ushort port, bool silent = false)
             {
                 NetworkEndpoint endpoint = default;
 
                 if (!NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv4) &&
                     !NetworkEndpoint.TryParse(ip, port, out endpoint, NetworkFamily.Ipv6))
                 {
-                    Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
+                    if (!silent)
+                    {
+                        Debug.LogError($"Invalid network endpoint: {ip}:{port}.");
+                    }
                 }
 
                 return endpoint;
@@ -336,13 +339,13 @@ namespace Unity.Netcode.Transports.UTP
                 {
                     if (string.IsNullOrEmpty(ServerListenAddress))
                     {
-                        var ep = NetworkEndpoint.AnyIpv4;
+                        var ep = NetworkEndpoint.LoopbackIpv4;
 
-                        // If an address was entered and it's IPv6, switch to using :: as the
+                        // If an address was entered and it's IPv6, switch to using ::1 as the
                         // default listen address. (Otherwise we always assume IPv4.)
                         if (!string.IsNullOrEmpty(Address) && ServerEndPoint.Family == NetworkFamily.Ipv6)
                         {
-                            ep = NetworkEndpoint.AnyIpv6;
+                            ep = NetworkEndpoint.LoopbackIpv6;
                         }
 
                         return ep.WithPort(Port);
@@ -353,7 +356,10 @@ namespace Unity.Netcode.Transports.UTP
                     }
                 }
             }
+
+            public bool IsIpv6 => !string.IsNullOrEmpty(Address) && ParseNetworkEndpoint(Address, Port, true).Family == NetworkFamily.Ipv6;
         }
+
 
         /// <summary>
         /// The connection (address) data for this <see cref="UnityTransport"/> instance.
