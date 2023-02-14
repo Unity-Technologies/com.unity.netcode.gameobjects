@@ -603,6 +603,11 @@ namespace Unity.Netcode
             var children = networkObject.GetComponentsInChildren<NetworkObject>();
             foreach (var childObject in children)
             {
+                // Do not propagate the in-scene object setting if a child was dynamically spawned.
+                if (childObject.IsSceneObject.HasValue && !childObject.IsSceneObject.Value)
+                {
+                    continue;
+                }
                 childObject.IsSceneObject = sceneObject;
             }
         }
