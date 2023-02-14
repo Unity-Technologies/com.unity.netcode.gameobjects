@@ -753,7 +753,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient.SetRole(true, false);
+            ConnectionManager.LocalClient.SetRole(true, false, this);
             Initialize(true);
             IsListening = true;
             LocalClientId = ServerClientId;
@@ -804,7 +804,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient.SetRole(false, true);
+            ConnectionManager.LocalClient.SetRole(false, true, this);
 
             Initialize(false);
             MessagingSystem.ClientConnected(ServerClientId);
@@ -837,7 +837,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient.SetRole(true, true);
+            ConnectionManager.LocalClient.SetRole(true, true, this);
 
             Initialize(true);
 

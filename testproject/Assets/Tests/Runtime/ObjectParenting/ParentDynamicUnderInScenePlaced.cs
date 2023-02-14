@@ -58,14 +58,15 @@ namespace TestProject.RuntimeTests
 
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
-            networkManager.SceneManager.DisableValidationWarnings(true);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             base.OnNewClientStarted(networkManager);
         }
 
         private NetworkObject m_FailedValidation;
         private bool TestParentedAndNotInScenePlaced()
         {
-            var serverPlayer = m_ServerNetworkManager.LocalClient.PlayerObject;
+            // Always assign m_FailedValidation to avoid possible null reference crashes.
+            var serverPlayer = m_FailedValidation = m_ServerNetworkManager.LocalClient.PlayerObject;
             if (serverPlayer.transform.parent == null || serverPlayer.IsSceneObject.Value == true)
             {
                 m_FailedValidation = serverPlayer;
@@ -111,9 +112,11 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.SceneManager.LoadScene(k_SceneToLoad, LoadSceneMode.Additive);
             // Wait for the scene with the in-scene placed NetworkObject to be loaded
             yield return WaitForConditionOrTimeOut(() => m_SceneIsLoaded == true);
+            AssertOnTimeout($"Timed out waiting for the scene {k_SceneToLoad} to load!");
 
             // Wait for the host-server's player to be parented under the in-scene placed NetworkObject
             yield return WaitForConditionOrTimeOut(TestParentedAndNotInScenePlaced);
+            AssertOnTimeout($"[{m_FailedValidation.name}] Failed validation! InScenePlaced ({m_FailedValidation.IsSceneObject.Value}) | Was Parented ({m_FailedValidation.transform.position != null})");
 
             // Now dynamically spawn a NetworkObject to also test dynamically spawned NetworkObjects being parented
             // under in-scene placed NetworkObjects
