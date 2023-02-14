@@ -7,6 +7,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkClient
     {
+        internal NetworkManager NetworkManager { get; private set; }
+
         /// Gets Whether or not a server is running
         /// </summary>
         public bool IsServer { get; internal set; }
@@ -18,7 +20,7 @@ namespace Unity.Netcode
 
         public bool IsHost => IsClient && IsServer;
 
-        internal void SetRole(bool isServer, bool isClient)
+        internal void SetRole(bool isServer, bool isClient, NetworkManager networkManager = null)
         {
             IsServer = isServer;
             IsClient = isClient;
@@ -27,6 +29,7 @@ namespace Unity.Netcode
                 PlayerObject = null;
                 ClientId = ulong.MaxValue;
             }
+            NetworkManager = networkManager;
         }
 
         /// <summary>
@@ -46,9 +49,9 @@ namespace Unity.Netcode
         {
             get
             {
-                if (PlayerObject != null && PlayerObject.NetworkManager != null && PlayerObject.NetworkManager.IsListening)
+                if (NetworkManager != null && NetworkManager.IsListening)
                 {
-                    return PlayerObject.NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
+                    return NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
                 }
 
                 return new List<NetworkObject>();
@@ -59,9 +62,9 @@ namespace Unity.Netcode
             PlayerObject = networkObject;
         }
 
-        public NetworkClient(bool isServer, bool isClient, ulong clientId)
+        public NetworkClient(bool isServer, bool isClient, ulong clientId, NetworkManager networkManager)
         {
-            SetRole(isServer, isClient);
+            SetRole(isServer, isClient, networkManager);
             ClientId = clientId;
         }
 

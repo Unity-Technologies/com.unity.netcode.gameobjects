@@ -117,7 +117,7 @@ namespace Unity.Netcode
             networkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
             networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
 
-            networkManager.ConnectionManager.LocalClient = new NetworkClient(false, true, OwnerClientId);
+            networkManager.ConnectionManager.LocalClient = new NetworkClient(false, true, OwnerClientId, networkManager);
             networkManager.IsApproved = true;
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
