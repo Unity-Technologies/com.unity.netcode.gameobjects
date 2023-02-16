@@ -3,6 +3,7 @@ using Unity.Netcode;
 
 public class NetworkObjectLabel : NetworkBehaviour
 {
+    public static bool GlobalVisibility = true;
     private TextMesh m_ObjectLabel;
     private MeshRenderer m_Renderer;
 
@@ -33,7 +34,7 @@ public class NetworkObjectLabel : NetworkBehaviour
     {
         if (m_IsLabelVisible)
         {
-            ShowHideLabel(true);
+            ShowHideLabel(GlobalVisibility);
         }
     }
 
@@ -53,6 +54,7 @@ public class NetworkObjectLabel : NetworkBehaviour
         }
 
         m_ObjectLabel.text = NetworkObject.NetworkObjectId.ToString();
+        SetLabelVisibility(GlobalVisibility);
 
         base.OnNetworkSpawn();
     }

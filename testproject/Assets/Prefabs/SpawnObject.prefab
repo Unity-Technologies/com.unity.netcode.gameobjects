@@ -164,6 +164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 0
 --- !u!33 &771575417923360817

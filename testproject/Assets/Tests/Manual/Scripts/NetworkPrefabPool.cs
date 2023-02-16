@@ -300,6 +300,17 @@ namespace TestProject.ManualTests
             }
         }
 
+        private void SetGlobalTransformPropertiesUI(bool isVisible)
+        {
+            if (HalfFloat != null) { HalfFloat.gameObject.SetActive(isVisible); }
+            if (QuatComp != null) { QuatComp.gameObject.SetActive(isVisible); }
+            if (QuatSynch != null) { QuatSynch.gameObject.SetActive(isVisible); }
+        }
+
+        private void Awake()
+        {
+            SetGlobalTransformPropertiesUI(false);
+        }
 
         // Start is called before the first frame update
         private void Start()
@@ -310,7 +321,7 @@ namespace TestProject.ManualTests
             }
 
             m_LabelEnabled = LabelEnabled;
-
+            NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
             if (HalfFloat != null)
             {
                 m_UseHalfFloatPrecision = HalfFloat.isOn;
@@ -325,12 +336,7 @@ namespace TestProject.ManualTests
             {
                 m_CompressQuaternions = QuatComp.isOn;
             }
-            HalfFloat.gameObject.SetActive(false);
-            QuatComp.gameObject.SetActive(false);
-            QuatSynch.gameObject.SetActive(false);
         }
-
-        private bool m_LatencyAveraging;
 
         private bool m_LabelEnabled;
         private bool m_UseHalfFloatPrecision;
@@ -341,13 +347,12 @@ namespace TestProject.ManualTests
         private void ShowHideObjectIdLabelClientRpc(bool isVisible)
         {
             m_LabelEnabled = isVisible;
-            foreach (var spawnObject in m_ObjectPool)
+            NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
+            var labels = FindObjectsOfType<NetworkObjectLabel>();
+
+            foreach (var label in labels)
             {
-                var networkObjectLabel = spawnObject.GetComponentInChildren<NetworkObjectLabel>();
-                if (networkObjectLabel != null)
-                {
-                    networkObjectLabel.SetLabelVisibility(isVisible);
-                }
+                label.SetLabelVisibility(isVisible);
             }
         }
 
@@ -368,11 +373,8 @@ namespace TestProject.ManualTests
                     //Make sure our slider reflects the current spawn rate
                     UpdateSpawnsPerSecond();
                 }
-                HalfFloat.gameObject.SetActive(true);
-                QuatComp.gameObject.SetActive(true);
-                QuatSynch.gameObject.SetActive(true);
+                SetGlobalTransformPropertiesUI(true);
             }
-
         }
 
         /// <summary>
@@ -525,10 +527,12 @@ namespace TestProject.ManualTests
             if (m_LabelEnabled != LabelEnabled)
             {
                 m_LabelEnabled = LabelEnabled;
+                NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
                 ShowHideObjectIdLabelClientRpc(m_LabelEnabled);
             }
 
-            if (m_UseHalfFloatPrecision != HalfFloat.isOn || m_CompressQuaternions != QuatComp.isOn || m_QuaternionSynchronization != QuatSynch.isOn)
+            if ((HalfFloat != null && m_UseHalfFloatPrecision != HalfFloat.isOn) || (QuatComp != null && m_CompressQuaternions != QuatComp.isOn)
+                || (QuatSynch != null ) && m_QuaternionSynchronization != QuatSynch.isOn)
             {
                 m_UseHalfFloatPrecision = HalfFloat.isOn;
                 m_CompressQuaternions = QuatComp.isOn;
@@ -562,7 +566,6 @@ namespace TestProject.ManualTests
                 //Start spawning if auto spawn is enabled
                 if (AutoSpawnEnable)
                 {
-
                     float entitySpawnUpdateRate = 1.0f;
                     CheckPropertyChanges();
                     if (SpawnsPerSecond > 0)
