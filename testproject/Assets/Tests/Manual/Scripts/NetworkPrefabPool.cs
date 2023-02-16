@@ -532,7 +532,7 @@ namespace TestProject.ManualTests
             }
 
             if ((HalfFloat != null && m_UseHalfFloatPrecision != HalfFloat.isOn) || (QuatComp != null && m_CompressQuaternions != QuatComp.isOn)
-                || (QuatSynch != null ) && m_QuaternionSynchronization != QuatSynch.isOn)
+                || (QuatSynch != null) && m_QuaternionSynchronization != QuatSynch.isOn)
             {
                 m_UseHalfFloatPrecision = HalfFloat.isOn;
                 m_CompressQuaternions = QuatComp.isOn;
