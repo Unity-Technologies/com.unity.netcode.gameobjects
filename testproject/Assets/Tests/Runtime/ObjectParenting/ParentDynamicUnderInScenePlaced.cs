@@ -64,6 +64,7 @@ namespace TestProject.RuntimeTests
         private NetworkObject m_FailedValidation;
         private bool TestParentedAndNotInScenePlaced()
         {
+            // Always assign m_FailedValidation to avoid possible null reference crashes.
             var serverPlayer = m_FailedValidation = m_ServerNetworkManager.LocalClient.PlayerObject;
             if (serverPlayer.transform.parent == null || serverPlayer.IsSceneObject.Value == true)
             {
