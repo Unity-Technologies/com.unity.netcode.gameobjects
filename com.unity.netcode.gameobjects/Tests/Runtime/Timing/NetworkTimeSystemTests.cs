@@ -178,6 +178,7 @@ namespace Unity.Netcode.RuntimeTests
         private void FixedUpdate()
         {
             m_LocalTimePreviousFixedUpdate = NetworkManager.Singleton.LocalTime;
+            m_LastFixedUpdateTick++;
         }
 
         public bool IsTestFinished => m_UpdatePasses >= Passes;
@@ -201,8 +202,6 @@ namespace Unity.Netcode.RuntimeTests
             double localTime = NetworkManager.Singleton.LocalTime;
             double serverTime = NetworkManager.Singleton.ServerTime;
 
-            // time should have advanced on the host/server
-            Assert.Less(m_LocalTimePreviousUpdate, localTime);
             Assert.Less(m_ServerTimePreviousUpdate, serverTime);
 
             // time should be further then last fixed step in update

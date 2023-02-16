@@ -1073,11 +1073,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var frameCount = 0;
             var waitForFixedUpdate = new WaitForFixedUpdate();
             m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-Begin] Waiting for ({tickCount}) network ticks and ({targetFrames}) frames to pass.\n");
-            var tickStart = networkManager.NetworkTickSystem.LocalTime.Tick;
+            var tickStart = networkManager.NetworkTickSystem.CurrentTick;
             while (!tickAndFramesConditionMet)
             {
                 // Wait until both tick and frame counts have reached their targeted values
-                if ((networkManager.NetworkTickSystem.LocalTime.Tick - tickStart) >= tickCount && frameCount >= targetFrames)
+                if ((networkManager.NetworkTickSystem.CurrentTick - tickStart) >= tickCount && frameCount >= targetFrames)
                 {
                     tickAndFramesConditionMet = true;
                 }
@@ -1093,7 +1093,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     }
                 }
             }
-            m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.LocalTime.Tick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
+            m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks-End] Waited for ({networkManager.NetworkTickSystem.CurrentTick - tickStart}) network ticks and ({frameCount}) frames to pass.\n");
             yield break;
         }
 
@@ -1102,7 +1102,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected IEnumerator WaitForTicks(NetworkManager networkManager, int count)
         {
-            var targetTick = networkManager.NetworkTickSystem.LocalTime.Tick + count;
+            var targetTick = networkManager.NetworkTickSystem.CurrentTick + count;
 
             // Calculate the expected number of frame updates that should occur during the tick count wait period
             var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
