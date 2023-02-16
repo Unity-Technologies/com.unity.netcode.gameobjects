@@ -28,6 +28,7 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_UseQuaternionSynchronization;
         private SerializedProperty m_UseQuaternionCompression;
         private SerializedProperty m_UseHalfFloatPrecision;
+        private SerializedProperty m_SlerpPosition;
 
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
@@ -55,6 +56,7 @@ namespace Unity.Netcode.Editor
             m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
             m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
             m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
+            m_SlerpPosition = serializedObject.FindProperty(nameof(NetworkTransform.SlerpPosition));
         }
 
         /// <inheritdoc/>
@@ -132,6 +134,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
+            EditorGUILayout.PropertyField(m_SlerpPosition);
             EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
             if (m_UseQuaternionSynchronization.boolValue)
             {

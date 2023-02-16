@@ -707,13 +707,6 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool SyncScaleZ = true;
 
-        /// <summary>
-        /// When true and interpolation is enabled, this will Slerp
-        /// to the target position.
-        /// </summary>
-        [Tooltip("When enabled the position interpolator will Slerp towards its current target position.")]
-        public bool SlerpPosition = false;
-
         private bool SynchronizeScale
         {
             get
@@ -784,6 +777,13 @@ namespace Unity.Netcode.Components
         /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
         /// </summary>
         public bool Interpolate = true;
+
+        /// <summary>
+        /// When true and interpolation is enabled, this will Slerp
+        /// to the target position.
+        /// </summary>
+        [Tooltip("When enabled the position interpolator will Slerp towards its current target position.")]
+        public bool SlerpPosition = false;
 
         /// <summary>
         /// Used to determine who can write to this transform. Server only for this transform.
