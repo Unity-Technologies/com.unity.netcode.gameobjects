@@ -25,6 +25,10 @@ namespace Unity.Netcode.Editor
         private SerializedProperty m_InLocalSpaceProperty;
         private SerializedProperty m_InterpolateProperty;
 
+        private SerializedProperty m_UseQuaternionSynchronization;
+        private SerializedProperty m_UseQuaternionCompression;
+        private SerializedProperty m_UseHalfFloatPrecision;
+
         private static int s_ToggleOffset = 45;
         private static float s_MaxRowWidth = EditorGUIUtility.labelWidth + EditorGUIUtility.fieldWidth + 5;
         private static GUIContent s_PositionLabel = EditorGUIUtility.TrTextContent("Position");
@@ -48,6 +52,9 @@ namespace Unity.Netcode.Editor
             m_ScaleThresholdProperty = serializedObject.FindProperty(nameof(NetworkTransform.ScaleThreshold));
             m_InLocalSpaceProperty = serializedObject.FindProperty(nameof(NetworkTransform.InLocalSpace));
             m_InterpolateProperty = serializedObject.FindProperty(nameof(NetworkTransform.Interpolate));
+            m_UseQuaternionSynchronization = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionSynchronization));
+            m_UseQuaternionCompression = serializedObject.FindProperty(nameof(NetworkTransform.UseQuaternionCompression));
+            m_UseHalfFloatPrecision = serializedObject.FindProperty(nameof(NetworkTransform.UseHalfFloatPrecision));
         }
 
         /// <inheritdoc/>
@@ -71,6 +78,8 @@ namespace Unity.Netcode.Editor
 
                 GUILayout.EndHorizontal();
             }
+
+            if (!m_UseQuaternionSynchronization.boolValue)
             {
                 GUILayout.BeginHorizontal();
 
@@ -88,6 +97,13 @@ namespace Unity.Netcode.Editor
 
                 GUILayout.EndHorizontal();
             }
+            else
+            {
+                m_SyncRotationXProperty.boolValue = true;
+                m_SyncRotationYProperty.boolValue = true;
+                m_SyncRotationZProperty.boolValue = true;
+            }
+
             {
                 GUILayout.BeginHorizontal();
 
@@ -116,6 +132,16 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("Configurations", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_InLocalSpaceProperty);
             EditorGUILayout.PropertyField(m_InterpolateProperty);
+            EditorGUILayout.PropertyField(m_UseQuaternionSynchronization);
+            if (m_UseQuaternionSynchronization.boolValue)
+            {
+                EditorGUILayout.PropertyField(m_UseQuaternionCompression);
+            }
+            else
+            {
+                m_UseQuaternionCompression.boolValue = false;
+            }
+            EditorGUILayout.PropertyField(m_UseHalfFloatPrecision);
 
 #if COM_UNITY_MODULES_PHYSICS
             // if rigidbody is present but network rigidbody is not present

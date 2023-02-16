@@ -725,6 +725,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Enable this on the authority side for quaternion synchronization
         /// </summary>
+        [Tooltip("When enabled, this will synchronize the full Quaternion (i.e. all Euler rotation axis are updated if one axis has a delta)")]
         public bool UseQuaternionSynchronization = false;
 
         /// <summary>
@@ -736,6 +737,7 @@ namespace Unity.Netcode.Components
         /// <see cref="UseHalfFloatPrecision"/> provides better precision at
         /// roughly half the cost of a fully quaternion update.
         /// </remarks>
+        [Tooltip("When enabled, this uses a smallest three implementation that reduces full Quaternion updates down to the size of an unsigned integer (ignores half float precision settings).")]
         public bool UseQuaternionCompression = false;
 
         /// <summary>
@@ -744,6 +746,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// When enabled, delta position synchronization is used.
         /// </remarks>
+        [Tooltip("When enabled, this will use half float precision values for position (uses delta position updating), rotation (except when Quaternion compression is enabled), and scale.")]
         public bool UseHalfFloatPrecision = false;
 
         /// <summary>
