@@ -593,16 +593,12 @@ namespace Unity.Netcode.Components
             m_CachedAnimatorParameters = new NativeArray<AnimatorParamCache>(parameters.Length, Allocator.Persistent);
             m_ParametersToUpdate = new List<int>(parameters.Length);
 
+            // Include all parameters including any controlled by an AnimationCurve as this could change during runtime.
+            // We ignore changes to any parameter controlled by an AnimationCurve when we are checking for changes in
+            // the Animator's parameters.
             for (var i = 0; i < parameters.Length; i++)
             {
                 var parameter = parameters[i];
-
-                if (m_Animator.IsParameterControlledByCurve(parameter.nameHash))
-                {
-                    // we are ignoring parameters that are controlled by animation curves - syncing the layer
-                    //  states indirectly syncs the values that are driven by the animation curves
-                    continue;
-                }
 
                 var cacheParam = new AnimatorParamCache
                 {
@@ -648,6 +644,12 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            // If there is no assigned Animator then generate a server network warning (logged locally and if applicable on the server-host side as well).
+            if (m_Animator == null)
+            {
+                NetworkLog.LogWarningServer($"[{gameObject.name}][{nameof(NetworkAnimator)}] {nameof(Animator)} is not assigned! Animation synchronization will not work for this instance!");
+            }
+
             if (IsServer)
             {
                 m_ClientSendList = new List<ulong>(128);
@@ -911,6 +913,10 @@ namespace Unity.Netcode.Components
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
             {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
+
+                // If a parameter gets controlled by a curve during runtime after initialization of NetworkAnimator
+                // then ignore changes to this parameter. We are not removing the parameter in the event that
+                // it no longer is controlled by a curve.
                 if (m_Animator.IsParameterControlledByCurve(cacheValue.Hash))
                 {
                     continue;
