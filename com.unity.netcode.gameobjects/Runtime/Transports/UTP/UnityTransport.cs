@@ -816,6 +816,7 @@ namespace Unity.Netcode.Transports.UTP
                 if (message == default)
                 {
                     // Only happens if there's only a partial message in the queue (rare).
+                    Debug.Log("(Breaking on partial message.)");
                     break;
                 }
 

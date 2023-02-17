@@ -1,7 +1,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -68,6 +70,7 @@ namespace Unity.Netcode
         private object m_Owner;
         private IMessageSender m_MessageSender;
         private bool m_Disposed;
+        private Dictionary<ulong, ushort> PerClientMessageIds = new Dictionary<ulong, ushort>();
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
         internal MessageHandler[] MessageHandlers => m_MessageHandlers;
@@ -208,6 +211,8 @@ namespace Unity.Netcode
         {
             unsafe
             {
+                Debug.Log("Full receive array: " + ByteArrayToString(data.Array, 0, data.Array.Length));
+                Debug.Log($"Offset: {data.Offset}, Size: {data.Count}, Bytes: " + ByteArrayToString(data.Array, data.Offset, data.Count));
                 fixed (byte* nativeData = data.Array)
                 {
                     var batchReader =
@@ -225,6 +230,8 @@ namespace Unity.Netcode
                         m_Hooks[hookIdx].OnBeforeReceiveBatch(clientId, batchHeader.BatchSize, batchReader.Length);
                     }
 
+                    Debug.Log($"Received batch #{batchHeader.ID} of {batchHeader.BatchSize} messages totalling {batchReader.Length} bytes");
+
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchSize; ++messageIdx)
                     {
 
@@ -240,6 +247,8 @@ namespace Unity.Netcode
                             NetworkLog.LogWarning("Received a batch that didn't have enough data for all of its batches, ending early!");
                             throw;
                         }
+
+                        Debug.Log($"Message is {messageHeader.MessageSize} bytes and of type {messageHeader.MessageType} ({(m_ReverseTypeMap.Length <= messageHeader.MessageType ? "OOB" : m_ReverseTypeMap[messageHeader.MessageType].FullName)})");
 
                         var receivedHeaderSize = batchReader.Position - position;
 
@@ -417,6 +426,7 @@ namespace Unity.Netcode
             {
                 return;
             }
+            PerClientMessageIds[clientId] = 0;
             m_SendQueues[clientId] = new NativeList<SendQueueItem>(16, Allocator.Persistent);
         }
 
@@ -589,6 +599,18 @@ namespace Unity.Netcode
                 MessageSize = (uint)tmpSerializer.Length,
                 MessageType = m_MessageTypes[typeof(TMessageType)],
             };
+            var ids = "";
+            for (var i = 0; i < clientIds.Count; ++i)
+            {
+                var clientId = clientIds[i];
+                if (i != 0)
+                {
+                    ids += ", ";
+                }
+
+                ids += clientId.ToString();
+            }
+            Debug.Log($"Sending a message of size {header.MessageSize} bytes, type {header.MessageType} ({typeof(TMessageType).FullName}), to [{ids}]");
             BytePacker.WriteValueBitPacked(headerSerializer, header.MessageType);
             BytePacker.WriteValueBitPacked(headerSerializer, header.MessageSize);
 
@@ -736,6 +758,17 @@ namespace Unity.Netcode
             return SendMessage(ref message, delivery, new PointerListWrapper<ulong>((ulong*)clientIds.GetUnsafePtr(), clientIds.Length));
         }
 
+        private static string ByteArrayToString(byte[] ba, int offset, int count)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            for (int i = offset; i < offset + count; ++i)
+            {
+                hex.AppendFormat("{0:x2} ", ba[i]);
+            }
+
+            return hex.ToString();
+        }
+
         internal unsafe void ProcessSendQueues()
         {
             foreach (var kvp in m_SendQueues)
@@ -759,9 +792,13 @@ namespace Unity.Netcode
                     queueItem.Writer.Seek(0);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
-                    queueItem.Writer.Handle->AllowedWriteMark = 2;
+                    queueItem.Writer.Handle->AllowedWriteMark = sizeof(BatchHeader);
 #endif
+                    queueItem.BatchHeader.ID = PerClientMessageIds[clientId];
+                    PerClientMessageIds[clientId] = (ushort)(PerClientMessageIds[clientId] + 1);
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
+
+                    Debug.Log($"Sending batch #{queueItem.BatchHeader.ID} containing {queueItem.BatchHeader.BatchSize} messages to client {clientId} with total size {queueItem.Writer.Length}, bytes: " + ByteArrayToString(queueItem.Writer.ToArray(), 0, queueItem.Writer.Length));
 
                     try
                     {

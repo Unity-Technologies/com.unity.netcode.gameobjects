@@ -5,6 +5,7 @@ namespace Unity.Netcode
     /// </summary>
     internal struct BatchHeader : INetworkSerializeByMemcpy
     {
+        public ushort ID;
         /// <summary>
         /// Total number of messages in the batch.
         /// </summary>
