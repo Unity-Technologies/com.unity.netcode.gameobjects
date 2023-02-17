@@ -279,6 +279,11 @@ namespace Unity.Netcode.Components
             {
                 return;
             }
+            if (m_Animator == null)
+            {
+                return;
+            }
+
             TransitionStateInfoList = new List<TransitionStateinfo>();
             var animatorController = m_Animator.runtimeAnimatorController as AnimatorController;
             if (animatorController == null)
@@ -906,6 +911,10 @@ namespace Unity.Netcode.Components
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)
             {
                 ref var cacheValue = ref UnsafeUtility.ArrayElementAsRef<AnimatorParamCache>(m_CachedAnimatorParameters.GetUnsafePtr(), i);
+                if (m_Animator.IsParameterControlledByCurve(cacheValue.Hash))
+                {
+                    continue;
+                }
                 var hash = cacheValue.Hash;
                 if (cacheValue.Type == AnimationParamEnumWrapper.AnimatorControllerParameterInt)
                 {
