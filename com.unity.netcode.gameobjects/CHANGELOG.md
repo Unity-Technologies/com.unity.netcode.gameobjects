@@ -7,6 +7,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
 ## [Unreleased]
+### Added
+
+- Added `NetworkTransform.UseHalfFloatPrecision` property that, when enabled, will use half float values for position, rotation, and scale. This yields a 50% bandwidth savings a the cost of precision. (#2388)
+- Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
+- Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
+- Added `NetworkTransform.SlerpPosition` property that, when enabled along with interpolation being enabled, will interpolate using `Vector3.Slerp`. (#2388)
+- Added `BufferedLinearInterpolatorVector3` that replaces the float version, is now used by `NetworkTransform`, and provides the ability to enable or disable `Slerp`. (#2388)
+- Added `HalfVector3` used for scale when half float precision is enabled. (#2388)
+- Added `HalfVector4` used for rotation when half float precision and quaternion synchronization is enabled. (#2388)
+- Added `HalfVector3DeltaPosition` used for position when half float precision is enabled. This handles loss in position precision by updating only the delta position as opposed to the full position. (#2388)
+- Added `NetworkTransform.GetSpaceRelativePosition` and `NetworkTransform.GetSpaceRelativeRotation` helper methods to return the proper values depending upon whether local or world space. (#2388)
+- Added `NetworkTransform.OnAuthorityPushTransformState` virtual method that is invoked just prior to sending the `NetworkTransformState` to non-authoritative instances. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
+- Added `NetworkTransform.OnNetworkTransformStateUpdated` virtual method that is invoked just after the authoritative `NetworkTransformState` is applied. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
+- Added `NetworkTransform.OnInitialize`virtual method that is invoked after the `NetworkTransform` has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when `NetworkTransform` is initialized (i.e. resetting client prediction etc) (#2388)
+
+### Changed
+
+- Changed `NetworkTransform` authority handles delta checks on each new network tick and no longer consumes processing cycles checking for deltas for all frames in-between ticks. (#2388)
+- Changed The `NetworkTransformState` structure is now public and now has public methods that provide access to key properties of the `NetworkTransformState` structure. (#2388)
+- Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
+
+### Fixed
+- Fixed issue with a child's rotation rolling over when interpolation is enabled on a `NetworkTransform`. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
+- Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
+
+## [1.3.0]
 
 ### Added
 

@@ -2034,16 +2034,10 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Can be overridden to customize what is updated or make adjustments to the
-        /// transform prior to pushing the updates to non-authoritative instances.
+        /// Called by authority to check for deltas and update non-authoritative instances
+        /// if any are found.
         /// </summary>
-        /// <remarks>
-        /// !!! NOTE !!!
-        /// This also reset the m_LocalAuthoritativeNetworkState if it is still dirty
-        /// but the replicated network state is not.
-        /// </remarks>
-        /// <param name="transformSource">transform to be updated</param>
-        protected virtual void OnUpdateAuthoritativeState(ref Transform transformSource)
+        internal void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
             if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
@@ -2056,8 +2050,7 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// Authority subscribes to network tick events and will invoke
-        /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each
-        /// network tick.
+        /// <see cref="OnUpdateAuthoritativeState(ref Transform)"/> each network tick.
         /// </summary>
         private void NetworkTickSystem_Tick()
         {
@@ -2081,7 +2074,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
-            // NOTE: Legacy and not used
+            // NOTE: Legacy and no longer used (candidates for deprecation)
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
 
