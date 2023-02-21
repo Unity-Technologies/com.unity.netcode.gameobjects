@@ -84,9 +84,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
-            using var writer = new FastBufferWriter(1, Allocator.Temp);
-            writer.WriteByteSafe(0);
-            m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
+            var writer = new FastBufferWriter(1, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteByteSafe(0);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
+            }
 
             m_ClientNetworkManagers[0].MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
 
@@ -103,9 +106,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
-            using var writer = new FastBufferWriter(1, Allocator.Temp);
-            writer.WriteByteSafe(0);
-            m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
+            var writer = new FastBufferWriter(1, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteByteSafe(0);
+                m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
+            }
 
             m_ClientNetworkManagers[0].MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
 
@@ -122,9 +128,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
-            using var writer = new FastBufferWriter(1, Allocator.Temp);
-            writer.WriteByteSafe(0);
-            m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
+            var writer = new FastBufferWriter(1, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteByteSafe(0);
+                m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
+            }
 
             m_ServerNetworkManager.MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
 
@@ -141,9 +150,12 @@ namespace Unity.Netcode.RuntimeTests
 
             // Unnamed message is something to wait for. When this one is received,
             // we know the above one has also reached its destination.
-            using var writer = new FastBufferWriter(1, Allocator.Temp);
-            writer.WriteByteSafe(0);
-            m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
+            var writer = new FastBufferWriter(1, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteByteSafe(0);
+                m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
+            }
 
             m_ServerNetworkManager.MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
 
