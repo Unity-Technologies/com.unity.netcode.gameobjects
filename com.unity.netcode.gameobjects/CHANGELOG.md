@@ -21,6 +21,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Added `NetworkTransform.OnAuthorityPushTransformState` virtual method that is invoked just prior to sending the `NetworkTransformState` to non-authoritative instances. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
 - Added `NetworkTransform.OnNetworkTransformStateUpdated` virtual method that is invoked just after the authoritative `NetworkTransformState` is applied. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
 - Added `NetworkTransform.OnInitialize`virtual method that is invoked after the `NetworkTransform` has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when `NetworkTransform` is initialized (i.e. resetting client prediction etc) (#2388)
+- Added `NetworkObject.SynchronizeTransform` property (default is true) that provides users with another way to help with bandwidth optimizations where, when set to false, the `NetworkObject`'s associated transform will not be included when spawning and/or synchronizing late joining players. (#2388)
 
 ### Changed
 

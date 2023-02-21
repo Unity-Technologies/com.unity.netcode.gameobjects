@@ -287,7 +287,8 @@ namespace TestProject.RuntimeTests
             var clientCount = 0;
 
 
-            // Since
+            // 5 of the iterations are spent spawning
+            // All iterations test transform values against the authority and non-authority instances
             for (int i = 0; i < k_IterationsToTest; i++)
             {
                 if (clientCount < k_ClientsToSpawn)
@@ -300,7 +301,7 @@ namespace TestProject.RuntimeTests
                 ChildMoverManager.StopMovement = true;
                 AutomatedPlayerMover.StopMovement = true;
                 yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, synchTimeOut);
-                // Do one last pass
+                // Do one last validation pass to make sure one (or more) transforms does not fall within the acceptable ranges
                 if (!ValidateNetworkTransforms())
                 {
                     // If not, then log errors to console and clear the current pass validation errors
