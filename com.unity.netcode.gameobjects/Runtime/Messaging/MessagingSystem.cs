@@ -42,7 +42,7 @@ namespace Unity.Netcode
             {
                 Writer = new FastBufferWriter(writerSize, writerAllocator, maxWriterSize);
                 NetworkDelivery = delivery;
-                BatchHeader = new BatchHeader { Magic = BatchHeader.k_MagicValue };
+                BatchHeader = new BatchHeader { Magic = BatchHeader.MagicValue };
             }
         }
 
@@ -232,7 +232,7 @@ namespace Unity.Netcode
 
                     batchReader.ReadValue(out BatchHeader batchHeader);
 
-                    if (batchHeader.Magic != BatchHeader.k_MagicValue)
+                    if (batchHeader.Magic != BatchHeader.MagicValue)
                     {
                         NetworkLog.LogError($"Received a packet with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;

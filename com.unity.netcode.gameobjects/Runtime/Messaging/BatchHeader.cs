@@ -5,7 +5,7 @@ namespace Unity.Netcode
     /// </summary>
     internal struct BatchHeader : INetworkSerializeByMemcpy
     {
-        internal const ushort k_MagicValue = 0x1160;
+        internal const ushort MagicValue = 0x1160;
         /// <summary>
         /// A magic number to detect corrupt messages.
         /// Always set to k_MagicValue

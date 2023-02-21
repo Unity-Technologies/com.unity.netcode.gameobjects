@@ -141,7 +141,7 @@ namespace Unity.Netcode.EditorTests
                 writer.Seek(0);
                 batchHeader = new BatchHeader
                 {
-                    Magic = BatchHeader.k_MagicValue,
+                    Magic = BatchHeader.MagicValue,
                     BatchSize = writer.Length,
                     BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
                     BatchCount = 1
@@ -185,7 +185,7 @@ namespace Unity.Netcode.EditorTests
                 writer.Seek(0);
                 batchHeader = new BatchHeader
                 {
-                    Magic = BatchHeader.k_MagicValue,
+                    Magic = BatchHeader.MagicValue,
                     BatchSize = writer.Length,
                     BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
                     BatchCount = 1
@@ -235,7 +235,7 @@ namespace Unity.Netcode.EditorTests
                 writer.Seek(0);
                 batchHeader = new BatchHeader
                 {
-                    Magic = BatchHeader.k_MagicValue,
+                    Magic = BatchHeader.MagicValue,
                     BatchSize = writer.Length,
                     BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
                     BatchCount = 2
