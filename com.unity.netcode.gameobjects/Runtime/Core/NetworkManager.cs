@@ -414,6 +414,11 @@ namespace Unity.Netcode
         public event Action OnServerStarted = null;
 
         /// <summary>
+        /// The callback to invoke once the local server stops
+        /// </summary>
+        public event Action OnServerStopped = null;
+
+        /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
         /// </summary>
         /// <remarks>
@@ -1155,7 +1160,8 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
-            if (IsServer)
+            bool wasServer = IsServer;
+            if (wasServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
                 if (MessagingSystem != null)
@@ -1278,6 +1284,11 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+
+            if (wasServer)
+            {
+                OnServerStopped?.Invoke();
+            }
         }
 
         /// <inheritdoc />
