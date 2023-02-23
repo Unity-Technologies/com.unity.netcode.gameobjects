@@ -4,41 +4,6 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Structure that defines which axis of a <see cref="HalfVector3"/> will
-    /// be serialized.
-    /// </summary>
-    public struct HalfVector3AxisToSynchronize
-    {
-        /// <summary>
-        /// When enabled, serialize the X axis
-        /// </summary>
-        public bool X;
-
-        /// <summary>
-        /// When enabled, serialize the Y axis
-        /// </summary>
-        public bool Y;
-
-        /// <summary>
-        /// When enabled, serialize the Z axis
-        /// </summary>
-        public bool Z;
-
-        /// <summary>
-        /// Constructor to preinitialize the x, y, and z values
-        /// </summary>
-        /// <param name="x">when <see cref="true"/> the x-axis will be serialized</param>
-        /// <param name="y">when <see cref="true"/> the y-axis will be serialized</param>
-        /// <param name="z">when <see cref="true"/> the z-axis will be serialized</param>
-        public HalfVector3AxisToSynchronize(bool x = true, bool y = true, bool z = true)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-    }
-
-    /// <summary>
     /// Half float precision <see cref="Vector3"/>
     /// </summary>
     public struct HalfVector3 : INetworkSerializable
@@ -46,15 +11,17 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The half float precision value of the x-axis as a <see cref="ushort"/>
         /// </summary>
-        public ushort X;
+        public ushort X => Axis[0];
         /// <summary>
         /// The half float precision value of the y-axis as a <see cref="ushort"/>
         /// </summary>
-        public ushort Y;
+        public ushort Y => Axis[1];
         /// <summary>
         /// The half float precision value of the z-axis as a <see cref="ushort"/>
         /// </summary>
-        public ushort Z;
+        public ushort Z => Axis[2];
+
+        public ushort[] Axis;
 
         private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
 
@@ -65,19 +32,17 @@ namespace Unity.Netcode.Components
         /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            if (m_HalfVector3AxisToSynchronize.X)
+            for (int i = 0; i < 3; i++)
             {
-                serializer.SerializeValue(ref X);
-            }
-
-            if (m_HalfVector3AxisToSynchronize.Y)
-            {
-                serializer.SerializeValue(ref Y);
-            }
-
-            if (m_HalfVector3AxisToSynchronize.Z)
-            {
-                serializer.SerializeValue(ref Z);
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                {
+                    var axisValue = Axis[i];
+                    serializer.SerializeValue(ref axisValue);
+                    if (serializer.IsReader)
+                    {
+                        Axis[i] = axisValue;
+                    }
+                }
             }
         }
 
@@ -88,9 +53,13 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ToVector3(ref Vector3 vector3)
         {
-            vector3.x = Mathf.HalfToFloat(X);
-            vector3.y = Mathf.HalfToFloat(Y);
-            vector3.z = Mathf.HalfToFloat(Z);
+            for (int i = 0; i < 3; i++)
+            {
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                {
+                    vector3[i] = Mathf.HalfToFloat(Axis[i]);
+                }
+            }
         }
 
         /// <summary>
@@ -100,9 +69,13 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FromVector3(ref Vector3 vector3)
         {
-            X = Mathf.FloatToHalf(vector3.x);
-            Y = Mathf.FloatToHalf(vector3.y);
-            Z = Mathf.FloatToHalf(vector3.z);
+            for (int i = 0; i < 3; i++)
+            {
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                {
+                    Axis[i] = Mathf.FloatToHalf(vector3[i]);
+                }
+            }
         }
 
         /// <summary>
@@ -117,7 +90,7 @@ namespace Unity.Netcode.Components
         /// <param name="vector3">the vector3 to initialize the HalfVector3 with</param>
         public HalfVector3(Vector3 vector3, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
         {
-            X = Y = Z = 0;
+            Axis = new ushort[3];
             m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
             FromVector3(ref vector3);
         }

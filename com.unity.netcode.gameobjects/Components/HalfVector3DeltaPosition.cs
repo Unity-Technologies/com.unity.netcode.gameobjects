@@ -12,15 +12,17 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The <see cref="ushort"/> half float delta position X value
         /// </summary>
-        public ushort X;
+        public ushort X => Axis[0];
         /// <summary>
         /// The <see cref="ushort"/> half float delta position Y value
         /// </summary>
-        public ushort Y;
+        public ushort Y => Axis[1];
         /// <summary>
         /// The <see cref="ushort"/> half float delta position Z value
         /// </summary>
-        public ushort Z;
+        public ushort Z => Axis[2];
+
+        public ushort[] Axis;
 
         internal Vector3 CurrentBasePosition;
         internal Vector3 PrecisionLossDelta;
@@ -31,6 +33,8 @@ namespace Unity.Netcode.Components
 
         private const float k_MaxDeltaBeforeAdjustment = 64f;
 
+        private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
+
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
@@ -38,9 +42,18 @@ namespace Unity.Netcode.Components
         /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref X);
-            serializer.SerializeValue(ref Y);
-            serializer.SerializeValue(ref Z);
+            for (int i = 0; i < 3; i++)
+            {
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                {
+                    var axisValue = Axis[i];
+                    serializer.SerializeValue(ref axisValue);
+                    if (serializer.IsReader)
+                    {
+                        Axis[i] = axisValue;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -60,36 +73,28 @@ namespace Unity.Netcode.Components
             {
                 return CurrentBasePosition + DeltaPosition;
             }
-
-            DeltaPosition.x = Mathf.HalfToFloat(X);
-            DeltaPosition.y = Mathf.HalfToFloat(Y);
-            DeltaPosition.z = Mathf.HalfToFloat(Z);
-
-            // If we exceed or are equal to the maximum delta value then we need to
-            // apply the delta to the CurrentBasePosition value and reset the delta
-            // position for the axis.
-            if (Mathf.Abs(DeltaPosition.x) >= k_MaxDeltaBeforeAdjustment)
+            for (int i = 0; i < 3; i++)
             {
-                CurrentBasePosition.x += DeltaPosition.x;
-                DeltaPosition.x = 0.0f;
-                X = 0;
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                {
+                    DeltaPosition[i] = Mathf.HalfToFloat(Axis[i]);
+                    // If we exceed or are equal to the maximum delta value then we need to
+                    // apply the delta to the CurrentBasePosition value and reset the delta
+                    // position for the axis.
+                    if (Mathf.Abs(DeltaPosition[i]) >= k_MaxDeltaBeforeAdjustment)
+                    {
+                        CurrentBasePosition[i] += DeltaPosition[i];
+                        DeltaPosition[i] = 0.0f;
+                        Axis[i] = 0;
+                    }
+                }
             }
-
-            if (Mathf.Abs(DeltaPosition.y) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.y += DeltaPosition.y;
-                DeltaPosition.y = 0.0f;
-                Y = 0;
-            }
-
-            if (Mathf.Abs(DeltaPosition.z) >= k_MaxDeltaBeforeAdjustment)
-            {
-                CurrentBasePosition.z += DeltaPosition.z;
-                DeltaPosition.z = 0.0f;
-                Z = 0;
-            }
-
             return CurrentBasePosition + DeltaPosition;
+        }
+
+        public void UpdateAxisToSynchronize(HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
+        {
+            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
         }
 
         /// <summary>
@@ -149,23 +154,19 @@ namespace Unity.Netcode.Components
             NetworkTick = tick;
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
 
-            X = Mathf.FloatToHalf(DeltaPosition.x);
-            Y = Mathf.FloatToHalf(DeltaPosition.y);
-            Z = Mathf.FloatToHalf(DeltaPosition.z);
-
-            HalfDeltaConvertedBack.x = Mathf.HalfToFloat(X);
-            HalfDeltaConvertedBack.y = Mathf.HalfToFloat(Y);
-            HalfDeltaConvertedBack.z = Mathf.HalfToFloat(Z);
-
-            PrecisionLossDelta = DeltaPosition - HalfDeltaConvertedBack;
-
             for (int i = 0; i < 3; i++)
             {
-                if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= k_MaxDeltaBeforeAdjustment)
+                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
                 {
-                    CurrentBasePosition[i] += HalfDeltaConvertedBack[i];
-                    HalfDeltaConvertedBack[i] = 0.0f;
-                    DeltaPosition[i] = 0.0f;
+                    Axis[i] = Mathf.FloatToHalf(DeltaPosition[i]);
+                    HalfDeltaConvertedBack[i] = Mathf.HalfToFloat(Axis[i]);
+                    PrecisionLossDelta[i] = DeltaPosition[i] - HalfDeltaConvertedBack[i];
+                    if (Mathf.Abs(HalfDeltaConvertedBack[i]) >= k_MaxDeltaBeforeAdjustment)
+                    {
+                        CurrentBasePosition[i] += HalfDeltaConvertedBack[i];
+                        HalfDeltaConvertedBack[i] = 0.0f;
+                        DeltaPosition[i] = 0.0f;
+                    }
                 }
             }
             PreviousPosition = vector3;
@@ -177,9 +178,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="vector3">the <see cref="Vector3"/> to initialize this instance with</param>
         /// <param name="networkTick">use the network tick when creating</param>
-        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick)
+        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
         {
-            X = Y = Z = 0;
+            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
+            Axis = new ushort[3];
             NetworkTick = networkTick;
             CurrentBasePosition = vector3;
             PreviousPosition = vector3;
@@ -197,7 +199,8 @@ namespace Unity.Netcode.Components
         /// <param name="y">y-axis value to set</param>
         /// <param name="z">z-axis value to set</param>
         /// <param name="networkTick">use the network tick when creating</param>
-        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick, int precision) : this(new Vector3(x, y, z), networkTick)
+        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize) :
+            this(new Vector3(x, y, z), networkTick, halfVector3AxisToSynchronize)
         {
         }
     }
