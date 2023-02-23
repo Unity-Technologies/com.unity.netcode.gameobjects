@@ -184,6 +184,9 @@ namespace TestProject.RuntimeTests
             return $"({vector3.x.ToString("G6")},{vector3.y.ToString("G6")},{vector3.z.ToString("G6")})";
         }
 
+        /// <summary>
+        /// Validates all transform instance values match the authority's
+        /// </summary>
         private bool ValidateNetworkTransforms()
         {
             m_ValidationErrors.Clear();
@@ -269,6 +272,9 @@ namespace TestProject.RuntimeTests
         private const int k_IterationsToTest = 10;
         private const int k_ClientsToSpawn = 4;  // Really it will be 5 including the host
 
+        // Number of failures in a row with no correction in precision for the test to fail
+        private const int k_MaximumPrecisionFailures = 5;
+
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
         {
@@ -314,7 +320,7 @@ namespace TestProject.RuntimeTests
                     // should correct themselves over time. This is to allow enough passes to allow for this correction
                     // to occur for delta position (especially), half float quaternions, and quaternion compression.
                     // If we have 5 precision failures in a row and fail to correct, then fail this test
-                    if (precisionFailures > 5)
+                    if (precisionFailures >= k_MaximumPrecisionFailures)
                     {
                         VerboseDebug($"[{i}][Precision Failure] Exceeded Precision Failure Count ({precisionFailures})");
                         AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n", synchTimeOut);

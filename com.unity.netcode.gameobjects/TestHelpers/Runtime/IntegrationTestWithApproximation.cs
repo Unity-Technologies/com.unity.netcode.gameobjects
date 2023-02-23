@@ -40,5 +40,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Mathf.Abs(a.z - b.z) <= deltaVariance &&
                 Mathf.Abs(a.w - b.w) <= deltaVariance;
         }
+
+        protected bool ApproximatelyEuler(Vector3 a, Vector3 b)
+        {
+            return Mathf.DeltaAngle(a.x, b.x) <= k_AproximateDeltaVariance &&
+                Mathf.DeltaAngle(a.y, b.y) <= k_AproximateDeltaVariance &&
+                Mathf.DeltaAngle(a.z, b.z) <= k_AproximateDeltaVariance;
+        }
+
+        protected Vector3 GetRandomVector3(float min, float max)
+        {
+            return new Vector3(Random.Range(min, max), Random.Range(min, max), Random.Range(min, max));
+        }
+
     }
 }

@@ -103,24 +103,8 @@ namespace Unity.Netcode.RuntimeTests
             bool syncScaY = syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllY || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaZ = syncAxis == SyncAxis.SyncScaleZ || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllZ || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
 
-            // When using half precision, we send the full Vector3
-            // Skip individual axial checking
-            if (m_Precision == Precision.Half)
-            {
-                if (syncAxis != SyncAxis.SyncPosXYZ)
-                {
-                    return;
-                }
-            }
+
             m_Rotation = m_Precision == Precision.Half ? Rotation.Quaternion : Rotation.Euler;
-            // When using quaternion synchronization, we can skip these tests
-            if (m_Rotation == Rotation.Quaternion)
-            {
-                if (syncAxis != SyncAxis.SyncRotXYZ)
-                {
-                    return;
-                }
-            }
 
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
@@ -153,6 +137,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 InLocalSpace = inLocalSpace,
                 IsTeleportingNextFrame = isTeleporting,
+                HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new HalfVector3AxisToSynchronize(true))
             };
 
             // Step 1: change properties, expect state to be dirty
@@ -397,8 +382,8 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                // SyncRotAngleX
-                if (syncRotX)
+                // SyncRotAngleX - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotX && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleX = false;
 
@@ -421,8 +406,8 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
-                // SyncRotAngleY
-                if (syncRotY)
+                // SyncRotAngleY - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotY && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleY = false;
 
@@ -445,8 +430,8 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
-                // SyncRotAngleZ
-                if (syncRotZ)
+                // SyncRotAngleZ - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotZ && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleZ = false;
 

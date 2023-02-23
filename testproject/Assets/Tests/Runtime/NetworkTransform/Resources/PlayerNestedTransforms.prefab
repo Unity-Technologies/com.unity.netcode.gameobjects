@@ -105,16 +105,16 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
+  UseQuaternionCompression: 1
   UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 0
-  IsServerAuthority: 1
+  Interpolate: 1
+  SlerpPosition: 1
+  IsServerAuthority: 0
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
@@ -283,16 +283,16 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  SlerpPosition: 0
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
+  UseQuaternionCompression: 1
   UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 0
-  Interpolate: 0
-  IsServerAuthority: 1
+  Interpolate: 1
+  SlerpPosition: 0
+  IsServerAuthority: 0
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
@@ -418,16 +418,16 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  SlerpPosition: 1
   UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 0
+  UseQuaternionCompression: 1
   UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
   InLocalSpace: 1
-  Interpolate: 0
-  IsServerAuthority: 1
+  Interpolate: 1
+  SlerpPosition: 1
+  IsServerAuthority: 0
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
