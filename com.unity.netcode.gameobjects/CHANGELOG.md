@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added detection and graceful handling of corrupt packets for additional safety. (#2419)
+
 ### Changed
 
 - The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
