@@ -30,6 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
 
 ### Fixed
+- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue with a child's rotation rolling over when interpolation is enabled on a `NetworkTransform`. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
 - Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
 
@@ -49,7 +50,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
 - Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
 - Fixed issue where a dynamically spawned `NetworkObject` parented under an in-scene placed `NetworkObject` would have its `InScenePlaced` value changed to `true`. This would result in a soft synchronization error for late joining clients. (#2396)
