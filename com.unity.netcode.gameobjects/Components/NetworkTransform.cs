@@ -53,35 +53,86 @@ namespace Unity.Netcode.Components
         /// </summary>
         public struct NetworkTransformState : INetworkSerializable
         {
-            private const int k_InLocalSpaceBit = 0;
-            private const int k_PositionXBit = 1;
-            private const int k_PositionYBit = 2;
-            private const int k_PositionZBit = 3;
-            private const int k_RotAngleXBit = 4;
-            private const int k_RotAngleYBit = 5;
-            private const int k_RotAngleZBit = 6;
-            private const int k_ScaleXBit = 7;
-            private const int k_ScaleYBit = 8;
-            private const int k_ScaleZBit = 9;
-            private const int k_TeleportingBit = 10;
-            private const int k_Interpolate = 11;
-            private const int k_QuaternionSync = 12;
-            private const int k_QuaternionCompress = 13;
-            private const int k_UseHalfFloats = 14;
-            private const int k_Synchronization = 15;
-            private const int k_PositionSlerp = 16;
+            private const int k_InLocalSpaceBit = 0x00000001; // Persistent
+            private const int k_PositionXBit = 0x00000002;
+            private const int k_PositionYBit = 0x00000004;
+            private const int k_PositionZBit = 0x00000008;
+            private const int k_RotAngleXBit = 0x00000010;
+            private const int k_RotAngleYBit = 0x00000020;
+            private const int k_RotAngleZBit = 0x00000040;
+            private const int k_ScaleXBit = 0x00000080;
+            private const int k_ScaleYBit = 0x00000100;
+            private const int k_ScaleZBit = 0x00000200;
+            private const int k_TeleportingBit = 0x00000400;
+            private const int k_Interpolate = 0x00000800; // Persistent
+            private const int k_QuaternionSync = 0x00001000; // Persistent
+            private const int k_QuaternionCompress = 0x00002000; // Persistent
+            private const int k_UseHalfFloats = 0x00004000; // Persistent
+            private const int k_Synchronization = 0x00008000;
+            private const int k_PositionSlerp = 0x00010000; // Persistent
 
+            // Stores persistent and state relative flags
             private uint m_Bitset;
+
+            // Used to store the tick calculated sent time
+            internal double SentTime;
+
+            // Used for full precision position updates
+            internal float PositionX, PositionY, PositionZ;
+
+            // Used for full precision Euler updates
+            internal float RotAngleX, RotAngleY, RotAngleZ;
+
+            // Used for full precision quaternion updates
+            internal Quaternion Rotation;
+
+            // Used for full precision scale updates
+            internal float ScaleX, ScaleY, ScaleZ;
+
+            // Used for half precision delta position updates
+            internal Vector3 CurrentPosition;
+            internal Vector3 DeltaPosition;
+            internal HalfVector3DeltaPosition HalfVectorPosition;
+
+            // Used for half precision scale
+            internal HalfVector3 HalfVectorScale;
+            internal Vector3 Scale;
+
+            // Used for half precision quaternion
+            internal HalfVector4 HalfVectorRotation;
+
+            // Used to store a compressed quaternion
+            internal uint QuaternionCompressed;
+
+            // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
+            // dirty or not.
+            internal bool IsDirty { get; set; }
+
+            /// <summary>
+            /// The last calculated size of the <see cref="NetworkTransform"/> when serialized.
+            /// </summary>
+            public int LastSerializedSize { get; internal set; }
+
+            // Used for HalfVector3DeltaPosition delta position synchronization
+            internal int NetworkTick;
+
+            // Used when tracking by state ID is enabled
+            internal bool TrackByStateId;
+            internal int StateId;
+
+            // Used during serialization
+            private FastBufferReader m_Reader;
+            private FastBufferWriter m_Writer;
 
             /// <summary>
             /// When set, the <see cref="NetworkTransform"/> is operating in local space
             /// </summary>
             public bool InLocalSpace
             {
-                get => BitGet(k_InLocalSpaceBit);
+                get => GetFlag(k_InLocalSpaceBit);
                 internal set
                 {
-                    BitSet(value, k_InLocalSpaceBit);
+                    SetFlag(value, k_InLocalSpaceBit);
                 }
             }
 
@@ -94,10 +145,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasPositionX
             {
-                get => BitGet(k_PositionXBit);
+                get => GetFlag(k_PositionXBit);
                 internal set
                 {
-                    BitSet(value, k_PositionXBit);
+                    SetFlag(value, k_PositionXBit);
                 }
             }
 
@@ -109,10 +160,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasPositionY
             {
-                get => BitGet(k_PositionYBit);
+                get => GetFlag(k_PositionYBit);
                 internal set
                 {
-                    BitSet(value, k_PositionYBit);
+                    SetFlag(value, k_PositionYBit);
                 }
             }
 
@@ -124,10 +175,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasPositionZ
             {
-                get => BitGet(k_PositionZBit);
+                get => GetFlag(k_PositionZBit);
                 internal set
                 {
-                    BitSet(value, k_PositionZBit);
+                    SetFlag(value, k_PositionZBit);
                 }
             }
 
@@ -155,10 +206,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasRotAngleX
             {
-                get => BitGet(k_RotAngleXBit);
-                set
+                get => GetFlag(k_RotAngleXBit);
+                internal set
                 {
-                    BitSet(value, k_RotAngleXBit);
+                    SetFlag(value, k_RotAngleXBit);
                 }
             }
 
@@ -170,10 +221,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasRotAngleY
             {
-                get => BitGet(k_RotAngleYBit);
+                get => GetFlag(k_RotAngleYBit);
                 internal set
                 {
-                    BitSet(value, k_RotAngleYBit);
+                    SetFlag(value, k_RotAngleYBit);
                 }
             }
 
@@ -185,10 +236,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool HasRotAngleZ
             {
-                get => BitGet(k_RotAngleZBit);
-                set
+                get => GetFlag(k_RotAngleZBit);
+                internal set
                 {
-                    BitSet(value, k_RotAngleZBit);
+                    SetFlag(value, k_RotAngleZBit);
                 }
             }
 
@@ -210,13 +261,13 @@ namespace Unity.Netcode.Components
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal bool HasScale(int axisIndex)
             {
-                return BitGet(k_ScaleXBit + axisIndex);
+                return GetFlag(k_ScaleXBit << axisIndex);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             internal void SetHasScale(int axisIndex, bool isSet)
             {
-                BitSet(isSet, k_ScaleXBit + axisIndex);
+                SetFlag(isSet, k_ScaleXBit << axisIndex);
             }
 
             // Scale
@@ -225,10 +276,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool HasScaleX
             {
-                get => BitGet(k_ScaleXBit);
+                get => GetFlag(k_ScaleXBit);
                 internal set
                 {
-                    BitSet(value, k_ScaleXBit);
+                    SetFlag(value, k_ScaleXBit);
                 }
             }
 
@@ -237,10 +288,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool HasScaleY
             {
-                get => BitGet(k_ScaleYBit);
+                get => GetFlag(k_ScaleYBit);
                 internal set
                 {
-                    BitSet(value, k_ScaleYBit);
+                    SetFlag(value, k_ScaleYBit);
                 }
             }
 
@@ -249,10 +300,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool HasScaleZ
             {
-                get => BitGet(k_ScaleZBit);
+                get => GetFlag(k_ScaleZBit);
                 internal set
                 {
-                    BitSet(value, k_ScaleZBit);
+                    SetFlag(value, k_ScaleZBit);
                 }
             }
 
@@ -272,10 +323,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool IsTeleportingNextFrame
             {
-                get => BitGet(k_TeleportingBit);
+                get => GetFlag(k_TeleportingBit);
                 internal set
                 {
-                    BitSet(value, k_TeleportingBit);
+                    SetFlag(value, k_TeleportingBit);
                 }
             }
 
@@ -284,10 +335,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool UseInterpolation
             {
-                get => BitGet(k_Interpolate);
+                get => GetFlag(k_Interpolate);
                 internal set
                 {
-                    BitSet(value, k_Interpolate);
+                    SetFlag(value, k_Interpolate);
                 }
             }
 
@@ -296,10 +347,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool QuaternionSync
             {
-                get => BitGet(k_QuaternionSync);
+                get => GetFlag(k_QuaternionSync);
                 internal set
                 {
-                    BitSet(value, k_QuaternionSync);
+                    SetFlag(value, k_QuaternionSync);
                 }
             }
 
@@ -311,10 +362,10 @@ namespace Unity.Netcode.Components
             /// </remarks>
             public bool QuaternionCompression
             {
-                get => BitGet(k_QuaternionCompress);
+                get => GetFlag(k_QuaternionCompress);
                 internal set
                 {
-                    BitSet(value, k_QuaternionCompress);
+                    SetFlag(value, k_QuaternionCompress);
                 }
             }
 
@@ -323,10 +374,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool UseHalfFloatPrecision
             {
-                get => BitGet(k_UseHalfFloats);
+                get => GetFlag(k_UseHalfFloats);
                 internal set
                 {
-                    BitSet(value, k_UseHalfFloats);
+                    SetFlag(value, k_UseHalfFloats);
                 }
             }
 
@@ -336,10 +387,10 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool IsSynchronizing
             {
-                get => BitGet(k_Synchronization);
-                set
+                get => GetFlag(k_Synchronization);
+                internal set
                 {
-                    BitSet(value, k_Synchronization);
+                    SetFlag(value, k_Synchronization);
                 }
             }
 
@@ -348,47 +399,32 @@ namespace Unity.Netcode.Components
             /// </summary>
             public bool UsePositionSlerp
             {
-                get => BitGet(k_PositionSlerp);
+                get => GetFlag(k_PositionSlerp);
                 internal set
                 {
-                    BitSet(value, k_PositionSlerp);
+                    SetFlag(value, k_PositionSlerp);
                 }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private bool BitGet(int bitPosition)
+            private bool GetFlag(int flag)
             {
-                return (m_Bitset & (1 << bitPosition)) != 0;
+                return (m_Bitset & flag) != 0;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void BitSet(bool set, int bitPosition)
+            private void SetFlag(bool set, int flag)
             {
-                if (set) { m_Bitset = (m_Bitset | (uint)(1 << bitPosition)); }
-                else { m_Bitset = (uint)(m_Bitset & (uint)~(1 << bitPosition)); }
+                if (set) { m_Bitset = m_Bitset | (uint)flag; }
+                else { m_Bitset = m_Bitset & (uint)~flag; }
             }
 
-            internal float PositionX, PositionY, PositionZ;
-            internal float RotAngleX, RotAngleY, RotAngleZ;
-            internal float ScaleX, ScaleY, ScaleZ;
-            internal double SentTime;
-
-            // Used for half precision delta position updates
-            internal Vector3 CurrentPosition;
-            internal Vector3 DeltaPosition;
-            internal HalfVector3DeltaPosition HalfVectorPosition;
-
-            // Used for half precision scale
-            internal HalfVector3 HalfVectorScale;
-            internal Vector3 Scale;
-
-            // Used for half precision quaternion
-            internal HalfVector4 HalfVectorRotation;
-
-            // Used to store a compressed quaternion
-            internal uint QuaternionCompressed;
-
-            internal Quaternion Rotation;
+            internal void ClearBitSetForNextTick()
+            {
+                // Clear everything but flags that should persist between state updates until changed by authority
+                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp;
+                IsDirty = false;
+            }
 
             /// <summary>
             /// Returns the current rotation when quaternion synchronization is enabled.
@@ -400,18 +436,6 @@ namespace Unity.Netcode.Components
                 return Rotation;
             }
 
-            // Authoritative and non-authoritative sides use this to determine if a NetworkTransformState is
-            // dirty or not.
-            internal bool IsDirty { get; set; }
-
-            /// <summary>
-            /// The last calculated size of the <see cref="NetworkTransform"/> when serialized.
-            /// </summary>
-            public int LastSerializedSize { get; internal set; }
-
-            // Used for HalfVector3DeltaPosition delta position synchronization
-            internal int NetworkTick;
-
             /// <summary>
             /// The network tick that this state was sent
             /// </summary>
@@ -420,20 +444,6 @@ namespace Unity.Netcode.Components
             {
                 return NetworkTick;
             }
-
-            internal bool TrackByStateId;
-            internal int StateId;
-
-            internal void ClearBitSetForNextTick()
-            {
-                // Preserve the global flags
-                var preserveFlags = (uint)((1 << k_InLocalSpaceBit) | (1 << k_Interpolate) | (1 << k_UseHalfFloats) | (1 << k_QuaternionSync) | (1 << k_QuaternionCompress) | (1 << k_PositionSlerp));
-                m_Bitset &= preserveFlags;
-                IsDirty = false;
-            }
-
-            private FastBufferReader m_Reader;
-            private FastBufferWriter m_Writer;
 
             /// <summary>
             /// Serializes this <see cref="NetworkTransformState"/>
