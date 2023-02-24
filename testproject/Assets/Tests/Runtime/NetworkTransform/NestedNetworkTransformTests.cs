@@ -320,10 +320,11 @@ namespace TestProject.RuntimeTests
                     // should correct themselves over time. This is to allow enough passes to allow for this correction
                     // to occur for delta position (especially), half float quaternions, and quaternion compression.
                     // If we have 5 precision failures in a row and fail to correct, then fail this test
-                    if (precisionFailures >= k_MaximumPrecisionFailures)
+                    if (precisionFailures > k_MaximumPrecisionFailures)
                     {
+                        m_EnableVerboseDebug = true;
                         VerboseDebug($"[{i}][Precision Failure] Exceeded Precision Failure Count ({precisionFailures})");
-                        AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n", synchTimeOut);
+                        AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
                         Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
                     }
                     else
