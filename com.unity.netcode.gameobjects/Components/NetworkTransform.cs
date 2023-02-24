@@ -2063,6 +2063,50 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// Checks for changes in the axis to synchronize. If one or more did change it
+        /// then determines if the axis were enabled and if the delta between the last known
+        /// delta position and the current position for the axis exceeds the adjustment range
+        /// before it is collapsed into the base position.
+        /// If it does exceed the adjustment range, then we have to teleport the object so
+        /// a full position synchronization takes place and the HalfVector3DeltaPosition is
+        /// reset with the updated base position that it then will generating a new delta position from.
+        /// </summary>
+        /// <remarks>
+        /// This only happens if a user disables an axis, continues to update the disabled axis,
+        /// and then later enables the axis. (which will not be a recommended best practice)
+        /// </remarks>
+        private void AxisChangedDeltaPositionCheck()
+        {
+            if (UseHalfFloatPrecision && SynchronizePosition && m_HalfPositionState.AxisToSynchronize.SyncAxis != null)
+            {
+                var synAxis = m_HalfPositionState.AxisToSynchronize;
+                if (SyncPositionX != synAxis.X || SyncPositionY != synAxis.Y || SyncPositionZ != synAxis.Z)
+                {
+                    var positionState = m_HalfPositionState.GetFullPosition();
+                    var relativePosition = GetSpaceRelativePosition();
+                    bool needsToTeleport = false;
+                    // Only if the synchronization of an axis is turned on do we need to
+                    // check if a teleport is required due to the delta from the last known
+                    // to the currently known axis value exceeds MaxDeltaBeforeAdjustment.
+                    if (SyncPositionX && SyncPositionX != synAxis.X)
+                    {
+                        needsToTeleport = Mathf.Abs(relativePosition.x - positionState.x) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                    }
+                    if (SyncPositionY && SyncPositionY != synAxis.Y)
+                    {
+                        needsToTeleport = Mathf.Abs(relativePosition.y - positionState.y) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                    }
+                    if (SyncPositionZ && SyncPositionZ != synAxis.Z)
+                    {
+                        needsToTeleport = Mathf.Abs(relativePosition.z - positionState.z) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                    }
+                    // If needed, force a teleport as the delta is outside of the valid delta boundary
+                    m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = needsToTeleport;
+                }
+            }
+        }
+
+        /// <summary>
         /// Called by authority to check for deltas and update non-authoritative instances
         /// if any are found.
         /// </summary>
@@ -2074,6 +2118,9 @@ namespace Unity.Netcode.Components
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
             }
+
+            AxisChangedDeltaPositionCheck();
+
             TryCommitTransform(ref transformSource);
         }
 
