@@ -427,13 +427,82 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Returns the current rotation when quaternion synchronization is enabled.
-            /// <see cref="HasRotAngleChange"/>
+            /// Returns the current state's rotation. If there is no change in the rotation,
+            /// then it will return <see cref="Quaternion.identity"/>.
             /// </summary>
             /// <returns><see cref="Quaternion"/></returns>
             public Quaternion GetRotation()
             {
-                return Rotation;
+                if (HasRotAngleChange)
+                {
+                    if (QuaternionSync)
+                    {
+                        return Rotation;
+                    }
+                    else
+                    {
+                        return Quaternion.Euler(RotAngleX, RotAngleY, RotAngleZ);
+                    }
+                }
+                return Quaternion.identity;
+            }
+
+            /// <summary>
+            /// Returns the current state's position. If there is no change in position,
+            /// then it returns <see cref="Vector3.zero"/>.
+            /// </summary>
+            /// <returns><see cref="Vector3"/></returns>
+            public Vector3 GetPosition()
+            {
+                if (HasPositionChange)
+                {
+                    if (UseHalfFloatPrecision)
+                    {
+                        if (IsTeleportingNextFrame)
+                        {
+                            return CurrentPosition;
+                        }
+                        else
+                        {
+                            return HalfVectorPosition.GetFullPosition();
+                        }
+                    }
+                    else
+                    {
+                        return new Vector3(PositionX, PositionY, PositionZ);
+                    }
+                }
+                return Vector3.zero;
+            }
+
+            /// <summary>
+            /// Returns the current state's scale. If there is no change in scale,
+            /// then it returns <see cref="Vector3.zero"/>.
+            /// </summary>
+            /// <returns><see cref="Vector3"/></returns>
+            public Vector3 GetScale()
+            {
+                if (HasScaleChange)
+                {
+                    if (UseHalfFloatPrecision)
+                    {
+                        if (IsTeleportingNextFrame)
+                        {
+                            return Scale;
+                        }
+                        else
+                        {
+                            var scale = Vector3.zero;
+                            HalfVectorScale.ToVector3(ref scale);
+                            return scale;
+                        }
+                    }
+                    else
+                    {
+                        return new Vector3(ScaleX, ScaleY, ScaleZ);
+                    }
+                }
+                return Vector3.zero;
             }
 
             /// <summary>
@@ -513,7 +582,7 @@ namespace Unity.Netcode.Components
                             if (IsSynchronizing)
                             {
                                 serializer.SerializeValue(ref DeltaPosition);
-                                if (serializer.IsReader)
+                                if (!isWriting)
                                 {
                                     HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new HalfVector3AxisToSynchronize(HasPositionX, HasPositionY, HasPositionZ));
                                     HalfVectorPosition.NetworkSerialize(serializer);
@@ -526,7 +595,7 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
-                            if (serializer.IsReader)
+                            if (!isWriting)
                             {
                                 HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new HalfVector3AxisToSynchronize(HasPositionX, HasPositionY, HasPositionZ));
                                 HalfVectorPosition.NetworkSerialize(serializer);
@@ -562,12 +631,14 @@ namespace Unity.Netcode.Components
                 {
                     if (QuaternionSync)
                     {
+                        // Always use the full quaternion if teleporting
                         if (IsTeleportingNextFrame)
                         {
                             serializer.SerializeValue(ref Rotation);
                         }
                         else
                         {
+                            // Use the quaternion compressor if enabled
                             if (QuaternionCompression)
                             {
                                 if (isWriting)
@@ -636,6 +707,7 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
+                            // For scale, when half precision is enabled we can still only send the axis with deltas
                             HalfVectorScale = new HalfVector3(Scale, new HalfVector3AxisToSynchronize(HasScaleX, HasScaleY, HasScaleZ));
                             serializer.SerializeValue(ref HalfVectorScale);
                             if (!isWriting)
@@ -664,10 +736,9 @@ namespace Unity.Netcode.Components
                 }
 
                 // Only if we are receiving state
-                if (serializer.IsReader)
+                if (!isWriting)
                 {
-                    // Go ahead and mark the local state dirty or not dirty as well
-                    /// <see cref="TryCommitTransformToServer"/>
+                    // Go ahead and mark the local state dirty
                     IsDirty = HasPositionChange || HasRotAngleChange || HasScaleChange;
                     LastSerializedSize = m_Reader.Position - positionStart;
                 }
@@ -679,16 +750,27 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Whether or not x component of position will be replicated
+        /// When enabled (default), the x component of position will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncPositionX = true;
+
         /// <summary>
-        /// Whether or not y component of position will be replicated
+        /// When enabled (default), the y component of position will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncPositionY = true;
+
         /// <summary>
-        /// Whether or not z component of position will be replicated
+        /// When enabled (default), the z component of position will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncPositionZ = true;
 
         private bool SynchronizePosition
@@ -700,16 +782,30 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Whether or not x component of rotation will be replicated
+        /// When enabled (default), the x component of rotation will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// When <see cref="UseQuaternionSynchronization"/> is enabled this does not apply.
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncRotAngleX = true;
+
         /// <summary>
-        /// Whether or not y component of rotation will be replicated
+        /// When enabled (default), the y component of rotation will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// When <see cref="UseQuaternionSynchronization"/> is enabled this does not apply.
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncRotAngleY = true;
+
         /// <summary>
-        /// Whether or not z component of rotation will be replicated
+        /// When enabled (default), the z component of rotation will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// When <see cref="UseQuaternionSynchronization"/> is enabled this does not apply.
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncRotAngleZ = true;
 
         private bool SynchronizeRotation
@@ -721,16 +817,27 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Whether or not x component of scale will be replicated
+        /// When enabled (default), the x component of scale will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncScaleX = true;
+
         /// <summary>
-        /// Whether or not y component of scale will be replicated
+        /// When enabled (default), the y component of scale will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncScaleY = true;
+
         /// <summary>
-        /// Whether or not z component of scale will be replicated
+        /// When enabled (default), the z component of scale will be synchronized by authority.
         /// </summary>
+        /// <remarks>
+        /// Changes to this on non-authoritative instances has no effect.
+        /// </remarks>
         public bool SyncScaleZ = true;
 
         private bool SynchronizeScale
@@ -742,8 +849,39 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
+        /// The position threshold value that triggers a delta state update by the authoritative instance.
+        /// </summary>
+        /// <remarks>
+        /// Note: setting this to zero will update position every network tick whether it changed or not.
+        /// </remarks>
+        public float PositionThreshold = PositionThresholdDefault;
+
+        /// <summary>
+        /// The rotation threshold value that triggers a delta state update by the authoritative instance.
+        /// </summary>
+        /// <remarks>
+        /// Minimum Value: 0.00001
+        /// Maximum Value: 360.0
+        /// </remarks>
+        [Range(0.00001f, 360.0f)]
+        public float RotAngleThreshold = RotAngleThresholdDefault;
+
+        /// <summary>
+        /// The scale threshold value that triggers a delta state update by the authoritative instance.
+        /// </summary>
+        /// <remarks>
+        /// Note: setting this to zero will update position every network tick whether it changed or not.
+        /// </remarks>
+        public float ScaleThreshold = ScaleThresholdDefault;
+
+        /// <summary>
         /// Enable this on the authority side for quaternion synchronization
         /// </summary>
+        /// <remarks>
+        /// This is synchronized by authority. During runtime, this should only be changed by the
+        /// authoritative side. Non-authoritative instances will be overridden by the next
+        /// authoritative state update.
+        /// </remarks>
         [Tooltip("When enabled, this will synchronize the full Quaternion (i.e. all Euler rotation axis are updated if one axis has a delta)")]
         public bool UseQuaternionSynchronization = false;
 
@@ -751,63 +889,58 @@ namespace Unity.Netcode.Components
         /// Enabled this on the authority side for quaternion compression
         /// </summary>
         /// <remarks>
-        /// This has a lower precision than half float precision. Recommended
-        /// only for low precision scenarios.
-        /// <see cref="UseHalfFloatPrecision"/> provides better precision at
-        /// roughly half the cost of a fully quaternion update.
+        /// This has a lower precision than half float precision. Recommended only for low precision
+        /// scenarios. <see cref="UseHalfFloatPrecision"/> provides better precision at roughly half
+        /// the cost of a full quaternion update.
+        /// This is synchronized by authority. During runtime, this should only be changed by the
+        /// authoritative side. Non-authoritative instances will be overridden by the next
+        /// authoritative state update.
         /// </remarks>
         [Tooltip("When enabled, this uses a smallest three implementation that reduces full Quaternion updates down to the size of an unsigned integer (ignores half float precision settings).")]
         public bool UseQuaternionCompression = false;
 
         /// <summary>
         /// Enable this to use half float precision for position, rotation, and scale.
+        /// When enabled, delta position synchronization is used.
         /// </summary>
         /// <remarks>
-        /// When enabled, delta position synchronization is used.
+        /// This is synchronized by authority. During runtime, this should only be changed by the
+        /// authoritative side. Non-authoritative instances will be overridden by the next
+        /// authoritative state update.
         /// </remarks>
         [Tooltip("When enabled, this will use half float precision values for position (uses delta position updating), rotation (except when Quaternion compression is enabled), and scale.")]
         public bool UseHalfFloatPrecision = false;
 
         /// <summary>
-        /// The current position threshold value
-        /// Any changes to the position that exceeds the current threshold value will be replicated
-        /// </summary>
-        public float PositionThreshold = PositionThresholdDefault;
-
-        /// <summary>
-        /// The current rotation threshold value
-        /// Any changes to the rotation that exceeds the current threshold value will be replicated
-        /// Minimum Value: 0.00001
-        /// Maximum Value: 360.0
-        /// </summary>
-        [Range(0.00001f, 360.0f)]
-        public float RotAngleThreshold = RotAngleThresholdDefault;
-
-        /// <summary>
-        /// The current scale threshold value
-        /// Any changes to the scale that exceeds the current threshold value will be replicated
-        /// </summary>
-        public float ScaleThreshold = ScaleThresholdDefault;
-
-        /// <summary>
         /// Sets whether the transform should be treated as local (true) or world (false) space.
         /// </summary>
         /// <remarks>
-        /// This should only be changed by the authoritative side during runtime. Non-authoritative
-        /// changes will be overridden upon the next state update.
+        /// This is synchronized by authority. During runtime, this should only be changed by the
+        /// authoritative side. Non-authoritative instances will be overridden by the next
+        /// authoritative state update.
         /// </remarks>
         [Tooltip("Sets whether this transform should sync in local space or in world space")]
         public bool InLocalSpace = false;
 
         /// <summary>
-        /// When enabled (default) interpolation is applied and when disabled no interpolation is applied
+        /// When enabled (default) interpolation is applied.
+        /// When disabled interpolation is disabled.
         /// </summary>
+        /// <remarks>
+        /// This is synchronized by authority and changes to interpolation during runtime forces a
+        /// teleport/full update. During runtime, this should only be changed by the authoritative
+        /// side. Non-authoritative instances will be overridden by the next authoritative state update.
+        /// </remarks>
         public bool Interpolate = true;
 
         /// <summary>
-        /// When true and interpolation is enabled, this will Slerp
-        /// to the target position.
+        /// When true and interpolation is enabled, this will Slerp to the target position.
         /// </summary>
+        /// <remarks>
+        /// This is synchronized by authority and only applies to position interpolation.
+        /// During runtime, this should only be changed by the authoritative side. Non-authoritative
+        /// instances will be overridden by the next authoritative state update.
+        /// </remarks>
         [Tooltip("When enabled the position interpolator will Slerp towards its current target position.")]
         public bool SlerpPosition = false;
 
@@ -823,13 +956,13 @@ namespace Unity.Netcode.Components
         /// Internally used by <see cref="NetworkTransform"/> to keep track of whether this <see cref="NetworkBehaviour"/> derived class instance
         /// was instantiated on the server side or not.
         /// </summary>
-        protected bool m_CachedIsServer;
+        protected bool m_CachedIsServer; // Note: we no longer use this and are only keeping it until we decide to deprecate it
 
         /// <summary>
         /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
-        protected NetworkManager m_CachedNetworkManager;
+        protected NetworkManager m_CachedNetworkManager; // Note: we no longer use this and are only keeping it until we decide to deprecate it
 
         /// <summary>
         /// We have two internal NetworkVariables.
@@ -857,15 +990,24 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If InLocalSpace is <see cref="true"/> then it returns the transform.localPosition
         /// If InLocalSpace is <see cref="false"/> then it returns the transform.position
-        /// When getting the authority's state, it will return the most recent updated
-        /// value. If invoked on the authority side, it will return the relative position.
+        /// When invoked on the non-authority side:
+        /// If <see cref="getCurrentState"/> is true then it will return the most
+        /// current authority position from the most recent state update. This can be useful
+        /// if interpolation is enabled and you need to determine the final target position.
+        /// When invoked on the authority side:
+        /// It will always return the space relative position.
         /// </remarks>
-        /// <param name="getCurrentAuthorityState">returns the authority's position</param>
+        /// <param name="getCurrentState">
+        /// Authority always returns the space relative transform position (whether true or false).
+        /// Non-authority:
+        /// When false (default): returns the space relative transform position
+        /// When true: returns the authority position from the most recent state update.
+        /// </param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetSpaceRelativePosition(bool getCurrentAuthorityState = false)
+        public Vector3 GetSpaceRelativePosition(bool getCurrentState = false)
         {
-            if (!getCurrentAuthorityState || CanCommitToTransform)
+            if (!getCurrentState || CanCommitToTransform)
             {
                 return InLocalSpace ? transform.localPosition : transform.position;
             }
@@ -881,13 +1023,23 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// If InLocalSpace is <see cref="true"/> then it returns the transform.localRotation
         /// If InLocalSpace is <see cref="false"/> then it returns the transform.rotation
-        /// When getting the authority's state, it will return the most recent updated
-        /// value. If invoked on the authority side, it will return the transform rotation.
+        /// When invoked on the non-authority side:
+        /// If <see cref="getCurrentState"/> is true then it will return the most
+        /// current authority rotation from the most recent state update. This can be useful
+        /// if interpolation is enabled and you need to determine the final target rotation.
+        /// When invoked on the authority side:
+        /// It will always return the space relative rotation.
         /// </remarks>
-        /// <param name="getCurrentAuthorityState">returns the authority's rotation</param>
-        public Quaternion GetSpaceRelativeRotation(bool getCurrentAuthorityState = false)
+        /// <param name="getCurrentState">
+        /// Authority always returns the space relative transform rotation (whether true or false).
+        /// Non-authority:
+        /// When false (default): returns the space relative transform rotation
+        /// When true: returns the authority rotation from the most recent state update.
+        /// </param>
+        /// <returns><see cref="Quaternion"/></returns>
+        public Quaternion GetSpaceRelativeRotation(bool getCurrentState = false)
         {
-            if (!getCurrentAuthorityState || CanCommitToTransform)
+            if (!getCurrentState || CanCommitToTransform)
             {
                 return InLocalSpace ? transform.localRotation : transform.rotation;
             }
@@ -901,15 +1053,24 @@ namespace Unity.Netcode.Components
         /// Helper method that returns the scale of the transform.
         /// </summary>
         /// <remarks>
-        /// When getting the authority's state, it will return the most recent updated
-        /// value. If invoked on the authority side, it will return the transform scale.
+        /// When invoked on the non-authority side:
+        /// If <see cref="getCurrentState"/> is true then it will return the most
+        /// current authority scale from the most recent state update. This can be useful
+        /// if interpolation is enabled and you need to determine the final target scale.
+        /// When invoked on the authority side:
+        /// It will always return the space relative scale.
         /// </remarks>
-        /// <param name="getCurrentAuthorityState">returns the authority's scale</param>
+        /// <param name="getCurrentState">
+        /// Authority always returns the space relative transform scale (whether true or false).
+        /// Non-authority:
+        /// When false (default): returns the space relative transform scale
+        /// When true: returns the authority scale from the most recent state update.
+        /// </param>
         /// <returns><see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 GetScale(bool getCurrentAuthorityState = false)
+        public Vector3 GetScale(bool getCurrentState = false)
         {
-            if (!getCurrentAuthorityState || CanCommitToTransform)
+            if (!getCurrentState || CanCommitToTransform)
             {
                 return transform.localScale;
             }
@@ -1020,6 +1181,9 @@ namespace Unity.Netcode.Components
         /// Server Side: Serializes as if we were teleporting (everything is sent via NetworkTransformState)
         /// Client Side: Adds the interpolated state which applies the NetworkTransformState as well
         /// </summary>
+        /// <remarks>
+        /// If a derived class overrides this, then make sure to invoke this base method!
+        /// </remarks>
         /// <typeparam name="T"></typeparam>
         /// <param name="serializer"></param>
         /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
@@ -1104,8 +1268,13 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Invoked just prior to being pushed to non-authority instances
+        /// Invoked just prior to being pushed to non-authority instances.
         /// </summary>
+        /// <remarks>
+        /// This is useful to know the exact position, rotation, or scale values sent
+        /// to non-authoritative instances. This is only invoked on the authoritative
+        /// instance.
+        /// </remarks>
         /// <param name="networkTransformState">the state being pushed</param>
         protected virtual void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
         {
@@ -2218,7 +2387,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Invoked when first spawned as well as when ownership changes.
+        /// Invoked when first spawned and when ownership changes.
         /// </summary>
         /// <param name="replicatedState">the <see cref="NetworkVariable{T}"/> replicated <see cref="NetworkTransformState"/></param>
         protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
@@ -2379,7 +2548,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         /// <remarks>
         /// If you override this method, be sure that:
-        /// - Non-authority always invokes this base class method when using interpolation.
+        /// - Non-authority always invokes this base class method.
         /// </remarks>
         protected virtual void Update()
         {
@@ -2462,7 +2631,6 @@ namespace Unity.Netcode.Components
             return OnIsServerAuthoritative();
         }
     }
-
 
     internal interface INetworkTransformLogStateEntry
     {
