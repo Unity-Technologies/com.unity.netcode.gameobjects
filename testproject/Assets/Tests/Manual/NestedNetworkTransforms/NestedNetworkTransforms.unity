@@ -1004,6 +1004,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 1789729126
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 0
 --- !u!114 &1136626024
@@ -1425,13 +1426,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RunInBackground: 1
-  LogLevel: 1
+  LogLevel: 0
   NetworkConfig:
     ProtocolVersion: 0
     NetworkTransport: {fileID: 1909864231}
     PlayerPrefab: {fileID: 296612175404815451, guid: fda785b5a15c5a94f9f3e93e635827a7,
       type: 3}
-    NetworkPrefabs: []
+    Prefabs:
+      NetworkPrefabsLists: []
     TickRate: 30
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
@@ -1447,6 +1449,7 @@ MonoBehaviour:
     LoadSceneTimeOut: 120
     SpawnTimeout: 1
     EnableNetworkLogs: 1
+    OldPrefabList: []
 --- !u!4 &1909864230
 Transform:
   m_ObjectHideFlags: 0

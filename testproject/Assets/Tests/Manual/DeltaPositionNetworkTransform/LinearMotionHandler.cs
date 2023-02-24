@@ -25,12 +25,14 @@ namespace TestProject.ManualTests
         public bool SimulateClient = false;
         [Range(0f, 100.0f)]
         public float Speed = 5.0f;
-        public Directions StartingDirection;
         [Range(0.1f, 1000.0f)]
         public float DirectionDuration = 0.5f;
         public GameObject ClientPositionVisual;
         [Tooltip("When true, it will randomly pick a new direction after DirectionDuration period of time has elapsed.")]
         public bool RandomDirections;
+
+        public bool OnlyMoveBySynchedAxis;
+        public bool RandomAxisSync = true;
 
         public Vector3 PositionOffset;
 
@@ -45,20 +47,6 @@ namespace TestProject.ManualTests
 
         private bool m_StopMoving;
         private float m_TotalTimeMoving;
-
-        public enum Directions
-        {
-            Forward,
-            ForwardRight,
-            Right,
-            BackwardRight,
-            Backward,
-            BackwardLeft,
-            Left,
-            ForwardLeft,
-        }
-
-        private Directions m_CurrentDirection;
         private float m_DirectionTimeOffset;
 
         private Vector3 m_Direction;
@@ -99,7 +87,6 @@ namespace TestProject.ManualTests
                 ClientDelta.enabled = true;
                 TimeMoving.enabled = true;
                 DirectionText.enabled = true;
-                m_CurrentDirection = StartingDirection;
                 if (SimulateClient)
                 {
                     m_StopMoving = true;
@@ -203,73 +190,78 @@ namespace TestProject.ManualTests
             base.OnNetworkDespawn();
         }
 
+        private float GetRandomAxisDirection()
+        {
+            var randVal = Random.Range(-1.0f, 1.0f);
+            if (Mathf.Abs(randVal) >= 0.5f)
+            {
+                return Mathf.Sign(randVal);
+            }
+            return 0.0f;
+        }
 
         private void SetNextDirection(bool useCurrent = false)
         {
-            if (!useCurrent)
-            {
-                var directions = System.Enum.GetValues(typeof(Directions));
-                // If not using random directions, then move to the next
-                // or roll over.
-                if (!RandomDirections)
-                {
-                    int currentDirection = (int)m_CurrentDirection;
-                    currentDirection++;
+            m_Direction.x = GetRandomAxisDirection();
+            m_Direction.y = GetRandomAxisDirection();
+            m_Direction.z = GetRandomAxisDirection();
 
-                    currentDirection = currentDirection % (directions.Length - 1);
-                    m_CurrentDirection = (Directions)currentDirection;
-                }
-                else
+            var invalidSettings = true;
+            while (invalidSettings)
+            {
+                if (RandomAxisSync)
                 {
-                    m_CurrentDirection = (Directions)Random.Range(0, directions.Length - 1);
+                    if (Mathf.Abs(m_Direction.x) > 0.5f)
+                    {
+                        if (Random.Range(0f, 1.0f) >= 0.50f)
+                        {
+                            SyncPositionX = false;
+                        }
+                    }
+                    else
+                    {
+                        SyncPositionX = true;
+                    }
+
+                    if (Mathf.Abs(m_Direction.y) > 0.5f)
+                    {
+                        if (Random.Range(0f, 1.0f) >= 0.50f)
+                        {
+                            SyncPositionY = false;
+                        }
+                    }
+                    else
+                    {
+                        SyncPositionY = true;
+                    }
+
+                    if (Mathf.Abs(m_Direction.z) > 0.5f)
+                    {
+                        if (Random.Range(0f, 1.0f) >= 0.50f)
+                        {
+                            SyncPositionZ = false;
+                        }
+                    }
+                    else
+                    {
+                        SyncPositionZ = true;
+                    }
+                }
+
+                // Just make sure at least one axis is enabled and the direction vector on that axis is 1 or -1.
+                if ((SyncPositionX && Mathf.Abs(m_Direction.x) > 0.5f) || (SyncPositionY && Mathf.Abs(m_Direction.y) > 0.5f)
+                    || (Mathf.Abs(m_Direction.z) > 0.5f && SyncPositionZ))
+                {
+                    invalidSettings = false;
+                }
+                else // Try again
+                {
+                    m_Direction.x = GetRandomAxisDirection();
+                    m_Direction.y = GetRandomAxisDirection();
+                    m_Direction.z = GetRandomAxisDirection();
                 }
             }
-
-            DirectionText.text = $"Direction: {m_CurrentDirection}";
-
-            switch (m_CurrentDirection)
-            {
-                case Directions.Forward:
-                    {
-                        m_Direction = Vector3.forward;
-                        break;
-                    }
-                case Directions.ForwardRight:
-                    {
-                        m_Direction = Vector3.forward + Vector3.right;
-                        break;
-                    }
-                case Directions.Right:
-                    {
-                        m_Direction = Vector3.right;
-                        break;
-                    }
-                case Directions.BackwardRight:
-                    {
-                        m_Direction = Vector3.back + Vector3.right;
-                        break;
-                    }
-                case Directions.Backward:
-                    {
-                        m_Direction = Vector3.back;
-                        break;
-                    }
-                case Directions.BackwardLeft:
-                    {
-                        m_Direction = Vector3.back + Vector3.left;
-                        break;
-                    }
-                case Directions.Left:
-                    {
-                        m_Direction = Vector3.left;
-                        break;
-                    }
-                case Directions.ForwardLeft:
-                    {
-                        m_Direction = Vector3.forward + Vector3.left;
-                        break;
-                    }
-            }
+            DirectionText.text = $"Dir: {m_Direction} | Sync: ({SyncPositionX},{SyncPositionY},{SyncPositionZ})";
         }
 
         private bool ShouldRun()
@@ -289,7 +281,7 @@ namespace TestProject.ManualTests
             {
                 var position = transform.position;
                 var rotation = transform.rotation;
-                var yAxis = position.y;
+                //var yAxis = position.y;
                 if (!m_StopMoving)
                 {
                     position += (m_Direction * Speed);
@@ -303,10 +295,32 @@ namespace TestProject.ManualTests
                         m_DecayToStop = Vector3.zero;
                     }
                 }
-                position.y = yAxis;
+                //position.y = yAxis;
                 position = Vector3.Lerp(transform.position, position, Time.fixedDeltaTime);
                 rotation = Quaternion.LookRotation(m_Direction);
-                transform.position = position;
+                if (!OnlyMoveBySynchedAxis)
+                {
+                    transform.position = position;
+                }
+                else
+                {
+                    var currentPosition = transform.position;
+                    if (SyncPositionX)
+                    {
+                        currentPosition.x = position.x;
+                    }
+
+                    if (SyncPositionY)
+                    {
+                        currentPosition.y = position.y;
+                    }
+
+                    if (SyncPositionZ)
+                    {
+                        currentPosition.z = position.z;
+                    }
+                    transform.position = currentPosition;
+                }
                 transform.rotation = rotation;
             }
         }

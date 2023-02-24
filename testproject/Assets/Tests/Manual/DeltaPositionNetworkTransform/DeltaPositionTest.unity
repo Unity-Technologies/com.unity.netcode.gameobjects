@@ -581,7 +581,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 449, y: -97}
+  m_AnchoredPosition: {x: 708.3, y: -97}
   m_SizeDelta: {x: 300, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &371213646
@@ -839,8 +839,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 150, y: -97}
-  m_SizeDelta: {x: 240, y: 30}
+  m_AnchoredPosition: {x: 207.2, y: -97}
+  m_SizeDelta: {x: 400, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &615949096
 MonoBehaviour:
@@ -1799,7 +1799,6 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  SlerpPosition: 0
   UseQuaternionSynchronization: 1
   UseQuaternionCompression: 0
   UseHalfFloatPrecision: 1
@@ -1807,7 +1806,8 @@ MonoBehaviour:
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 0
-  Interpolate: 0
+  Interpolate: 1
+  SlerpPosition: 0
   IsServerAuthority: 1
   DebugTransform: 0
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
@@ -1819,10 +1819,11 @@ MonoBehaviour:
   m_StatesToLog: 80
   SimulateClient: 0
   Speed: 5.3343
-  StartingDirection: 1
-  DirectionDuration: 0.15
+  DirectionDuration: 90
   ClientPositionVisual: {fileID: 6442405536196151246}
   RandomDirections: 1
+  OnlyMoveBySynchedAxis: 0
+  RandomAxisSync: 1
   PositionOffset: {x: 64500, y: 0, z: 64500}
   ServerPosition: {fileID: 905101289}
   ServerDelta: {fileID: 328424939}
