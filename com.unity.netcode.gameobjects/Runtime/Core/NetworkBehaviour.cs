@@ -570,12 +570,9 @@ namespace Unity.Netcode
             if (list == null)
             {
                 list = new List<FieldInfo>();
-                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
             }
-            else
-            {
-                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-            }
+
+            list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
 
             if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
             {
