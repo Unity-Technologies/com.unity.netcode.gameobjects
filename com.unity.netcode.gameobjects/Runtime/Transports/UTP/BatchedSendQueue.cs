@@ -2,6 +2,7 @@ using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Networking.Transport;
+using UnityEngine;
 
 namespace Unity.Netcode.Transports.UTP
 {
@@ -101,6 +102,37 @@ namespace Unity.Netcode.Transports.UTP
 #endif
         }
 
+        private void Check(FixedString64Bytes source)
+        {
+            var reader = new DataStreamReader(m_Data.AsArray());
+
+            var readerOffset = 0;
+
+            while (readerOffset < TailIndex)
+            {
+                reader.SeekSet(readerOffset);
+                var messageLength = reader.ReadInt();
+                if (TailIndex - readerOffset < sizeof(int) + messageLength)
+                {
+                    Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been truncated. Source: {source}");
+                    return;
+                }
+
+                var magic = reader.ReadInt();
+                if (magic != BatchHeader.MagicValue)
+                {
+                    Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been corrupted. Source: {source}");
+                    return;
+                }
+                readerOffset += sizeof(int) + messageLength;
+            }
+            if (readerOffset != TailIndex)
+            {
+                Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been truncated. Source: {source}");
+                return;
+            }
+        }
+
         /// <summary>Append data at the tail of the queue. No safety checks.</summary>
         private void AppendDataAtTail(ArraySegment<byte> data)
         {
@@ -136,6 +168,7 @@ namespace Unity.Netcode.Transports.UTP
             if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
                 AppendDataAtTail(message);
+                Check("Normal append");
                 return true;
             }
 
@@ -150,6 +183,7 @@ namespace Unity.Netcode.Transports.UTP
 
                 TailIndex = Length;
                 HeadIndex = 0;
+                Check("MemMove");
             }
 
             // If there's enough space left at the end for the message, now is a good time to trim
@@ -158,11 +192,13 @@ namespace Unity.Netcode.Transports.UTP
             if (Capacity - TailIndex >= sizeof(int) + message.Count)
             {
                 AppendDataAtTail(message);
+                Check("Append after MemMove");
 
                 while (TailIndex < Capacity / 4 && Capacity > m_MinimumCapacity)
                 {
                     m_Data.ResizeUninitialized(Capacity / 2);
                 }
+                Check("Shrink");
 
                 return true;
             }
@@ -177,10 +213,12 @@ namespace Unity.Netcode.Transports.UTP
                 }
 
                 m_Data.ResizeUninitialized(Capacity * 2);
+                Check("Grow");
             }
 
             // If we get here we know there's now enough room for the message.
             AppendDataAtTail(message);
+            Check("Append after grow");
             return true;
         }
 
@@ -286,10 +324,12 @@ namespace Unity.Netcode.Transports.UTP
 
                 // This is a no-op if m_Data is already at minimum capacity.
                 m_Data.ResizeUninitialized(m_MinimumCapacity);
+                Check("Full Consume");
             }
             else
             {
                 HeadIndex += size;
+                Check("Partial Consume");
             }
         }
     }

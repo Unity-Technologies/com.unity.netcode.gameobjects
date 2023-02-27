@@ -1,5 +1,7 @@
 using System;
+using Unity.Collections;
 using Unity.Networking.Transport;
+using UnityEngine;
 #if UTP_TRANSPORT_2_0_ABOVE
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -11,11 +13,28 @@ namespace Unity.Netcode.Transports.UTP
     /// <remarks>This is meant as a companion to <see cref="BatchedSendQueue"/>.</remarks>
     internal class BatchedReceiveQueue
     {
+        /// <summary>
+        /// This is the data itself. This array may contain already-popped data.
+        /// The data read comes from a window into this array going from m_Offset to
+        /// m_Offset + m_Length
+        /// </summary>
         private byte[] m_Data;
-        private int m_Offset;
-        private int m_Length;
 
-        public bool IsEmpty => m_Length <= 0;
+        /// <summary>
+        /// The read head of the data array. Increments every time something is read.
+        /// Resets to zero when the data array runs out of space for new data and existing
+        /// unread data is moved to the beginning of the array.
+        /// </summary>
+        private int m_ReadHead;
+
+        /// <summary>
+        /// The amount of unread data in the array. Doesn't need to get adjusted when
+        /// m_Offset resets to zero because when data is moved in the array, the length
+        /// of unread data remains constant.
+        /// </summary>
+        private int m_UnpoppedDataLength;
+
+        public bool IsEmpty => m_UnpoppedDataLength <= 0;
 
         /// <summary>
         /// Construct a new receive queue from a <see cref="DataStreamReader"/> returned by
@@ -37,8 +56,36 @@ namespace Unity.Netcode.Transports.UTP
                 }
             }
 
-            m_Offset = 0;
-            m_Length = reader.Length;
+            m_ReadHead = 0;
+            m_UnpoppedDataLength = reader.Length;
+        }
+
+        private unsafe void Check(FixedString64Bytes source)
+        {
+            fixed (byte* dataPtr = m_Data)
+            {
+                var reader = new DataStreamReader(dataPtr, m_Data.Length);
+
+                var readerOffset = m_ReadHead;
+
+                while (readerOffset < m_ReadHead + m_UnpoppedDataLength)
+                {
+                    reader.SeekSet(readerOffset);
+                    var messageLength = reader.ReadInt();
+                    if (m_UnpoppedDataLength - readerOffset < sizeof(int) + messageLength)
+                    {
+                        return;
+                    }
+
+                    var magic = reader.ReadInt();
+                    if (magic != BatchHeader.MagicValue)
+                    {
+                        Debug.LogError($"Corruption found in BatchedReceiveQueue: Queue has been corrupted: {source}");
+                        return;
+                    }
+                    readerOffset += sizeof(int) + messageLength;
+                }
+            }
         }
 
         /// <summary>
@@ -50,19 +97,21 @@ namespace Unity.Netcode.Transports.UTP
         {
             // Resize the array and copy the existing data to the beginning if there's not enough
             // room to copy the reader's data at the end of the existing data.
-            var available = m_Data.Length - (m_Offset + m_Length);
+            var available = m_Data.Length - (m_ReadHead + m_UnpoppedDataLength);
             if (available < reader.Length)
             {
-                if (m_Length > 0)
+                if (m_UnpoppedDataLength > 0)
                 {
-                    Array.Copy(m_Data, m_Offset, m_Data, 0, m_Length);
+                    Array.Copy(m_Data, m_ReadHead, m_Data, 0, m_UnpoppedDataLength);
                 }
 
-                m_Offset = 0;
+                m_ReadHead = 0;
+                Check("Move");
 
-                while (m_Data.Length - m_Length < reader.Length)
+                while (m_Data.Length - m_UnpoppedDataLength < reader.Length)
                 {
                     Array.Resize(ref m_Data, m_Data.Length * 2);
+                    Check("Resize");
                 }
             }
 
@@ -71,36 +120,37 @@ namespace Unity.Netcode.Transports.UTP
                 fixed (byte* dataPtr = m_Data)
                 {
 #if UTP_TRANSPORT_2_0_ABOVE
-                    reader.ReadBytesUnsafe(dataPtr + m_Offset + m_Length, reader.Length);
+                    reader.ReadBytesUnsafe(dataPtr + m_ReadHead + m_UnpoppedDataLength, reader.Length);
 #else
-                    reader.ReadBytes(dataPtr + m_Offset + m_Length, reader.Length);
+                    reader.ReadBytes(dataPtr + m_ReadHead + m_UnpoppedDataLength, reader.Length);
 #endif
                 }
             }
 
-            m_Length += reader.Length;
+            m_UnpoppedDataLength += reader.Length;
+            Check("PushReader");
         }
 
         /// <summary>Pop the next full message in the queue.</summary>
         /// <returns>The message, or the default value if no more full messages.</returns>
         public ArraySegment<byte> PopMessage()
         {
-            if (m_Length < sizeof(int))
+            if (m_UnpoppedDataLength < sizeof(int))
             {
                 return default;
             }
 
-            var messageLength = BitConverter.ToInt32(m_Data, m_Offset);
+            var messageLength = BitConverter.ToInt32(m_Data, m_ReadHead);
 
-            if (m_Length - sizeof(int) < messageLength)
+            if (m_UnpoppedDataLength - sizeof(int) < messageLength)
             {
                 return default;
             }
 
-            var data = new ArraySegment<byte>(m_Data, m_Offset + sizeof(int), messageLength);
+            var data = new ArraySegment<byte>(m_Data, m_ReadHead + sizeof(int), messageLength);
 
-            m_Offset += sizeof(int) + messageLength;
-            m_Length -= sizeof(int) + messageLength;
+            m_ReadHead += sizeof(int) + messageLength;
+            m_UnpoppedDataLength -= sizeof(int) + messageLength;
 
             return data;
         }
