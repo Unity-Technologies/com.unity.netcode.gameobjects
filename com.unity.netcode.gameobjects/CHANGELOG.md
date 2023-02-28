@@ -36,6 +36,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
 - Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
 - Corrected an issue with the documentation for BufferSerializer (#2401)
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2394)
 
 ## [1.2.0] - 2022-11-21
 
