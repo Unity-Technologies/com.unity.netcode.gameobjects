@@ -393,7 +393,6 @@ namespace Unity.Netcode
         /// </summary>
         internal Dictionary<int, int> ServerSceneHandleToClientSceneHandle = new Dictionary<int, int>();
         internal Dictionary<int, int> ClientSceneHandleToServerSceneHandle = new Dictionary<int, int>();
-        internal Dictionary<int, Scene> HandleToScene = new Dictionary<int, Scene>();
 
         /// <summary>
         /// Add the client to server (and vice versa) scene handle lookup.
@@ -420,13 +419,10 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (!HandleToScene.ContainsKey(clientHandle))
+            // It is "Ok" if this already has an entry
+            if (!ScenesLoaded.ContainsKey(clientHandle))
             {
-                HandleToScene.Add(clientHandle, localScene);
-            }
-            else
-            {
-                return false;
+                ScenesLoaded.Add(clientHandle, localScene);
             }
 
             return true;
@@ -456,9 +452,9 @@ namespace Unity.Netcode
                 return false;
             }
 
-            if (HandleToScene.ContainsKey(clientHandle))
+            if (ScenesLoaded.ContainsKey(clientHandle))
             {
-                HandleToScene.Remove(clientHandle);
+                ScenesLoaded.Remove(clientHandle);
             }
             else
             {
@@ -703,7 +699,6 @@ namespace Unity.Netcode
 
             // Add to the server to client scene handle table
             UpdateServerClientSceneHandle(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
-            ScenesLoaded.Add(DontDestroyOnLoadScene.handle, DontDestroyOnLoadScene);
         }
 
         /// <summary>
@@ -1150,7 +1145,6 @@ namespace Unity.Netcode
             sceneEventProgress.OnSceneEventCompleted = OnSceneUnloaded;
             var sceneUnload = SceneManagerHandler.UnloadSceneAsync(scene, sceneEventProgress);
 
-            ScenesLoaded.Remove(sceneHandle);
             SceneManagerHandler.StopTrackingScene(sceneHandle, sceneName, m_NetworkManager);
 
             // Remove our server to scene handle lookup
@@ -1910,9 +1904,9 @@ namespace Unity.Netcode
                     // and move it to that scene.
                     if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
                     {
-                        if (HandleToScene.ContainsKey(networkObject.SceneOriginHandle))
+                        if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
                         {
-                            var scene = HandleToScene[networkObject.SceneOriginHandle];
+                            var scene = ScenesLoaded[networkObject.SceneOriginHandle];
                             SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
                         }
                         else if (m_NetworkManager.LogLevel <= LogLevel.Normal)
@@ -2380,9 +2374,9 @@ namespace Unity.Netcode
                     if (ServerSceneHandleToClientSceneHandle.ContainsKey(sceneEntry.Key))
                     {
                         var clientSceneHandle = ServerSceneHandleToClientSceneHandle[sceneEntry.Key];
-                        if (HandleToScene.ContainsKey(ServerSceneHandleToClientSceneHandle[sceneEntry.Key]))
+                        if (ScenesLoaded.ContainsKey(ServerSceneHandleToClientSceneHandle[sceneEntry.Key]))
                         {
-                            var scene = HandleToScene[clientSceneHandle];
+                            var scene = ScenesLoaded[clientSceneHandle];
                             foreach (var networkObject in sceneEntry.Value)
                             {
                                 SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
