@@ -13,6 +13,7 @@ using Unity.Multiplayer.Tools;
 using Unity.Profiling;
 using UnityEngine.SceneManagement;
 using System.Runtime.CompilerServices;
+using Unity.Netcode.Transports.UTP;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode
@@ -1475,6 +1476,21 @@ namespace Unity.Netcode
             if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
             {
                 SyncTime();
+            }
+
+            if (NetworkTickSystem.LocalTime.Tick % 60 == 0)
+            {
+                if (IsServer)
+                {
+                    foreach (var clientId in ConnectedClientsIds)
+                    {
+                        ((UnityTransport)NetworkConfig.NetworkTransport).PrintReliableStatistics(ClientIdToTransportId(clientId));
+                    }
+                }
+                else
+                {
+                    ((UnityTransport)NetworkConfig.NetworkTransport).PrintReliableStatistics(ClientIdToTransportId(ServerClientId));
+                }
             }
         }
 

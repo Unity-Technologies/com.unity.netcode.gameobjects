@@ -19,6 +19,9 @@ namespace Unity.Netcode.Transports.UTP
     /// </remarks>
     internal struct BatchedSendQueue : IDisposable
     {
+        public UnityTransport Transport;
+        public ulong ConnectionId;
+
         // Note that we're using NativeList basically like a growable NativeArray, where the length
         // of the list is the capacity of our array. (We can't use the capacity of the list as our
         // queue capacity because NativeList may elect to set it higher than what we'd set it to
@@ -44,6 +47,8 @@ namespace Unity.Netcode.Transports.UTP
             set { m_HeadTailIndices[k_HeadInternalIndex] = value; }
         }
 
+        private int NextMessageStart;
+
         /// <summary>Index one past the last byte of the most recent data in the queue.</summary>
         private int TailIndex
         {
@@ -56,10 +61,13 @@ namespace Unity.Netcode.Transports.UTP
         public bool IsEmpty => HeadIndex == TailIndex;
         public bool IsCreated => m_Data.IsCreated;
 
+
         /// <summary>Construct a new empty send queue.</summary>
         /// <param name="capacity">Maximum capacity of the send queue.</param>
-        public BatchedSendQueue(int capacity)
+        public BatchedSendQueue(int capacity, UnityTransport transport, ulong connectionId)
         {
+            Transport = transport;
+            ConnectionId = connectionId;
             // Make sure the maximum capacity will be even.
             m_MaximumCapacity = capacity + (capacity & 1);
 
@@ -78,6 +86,8 @@ namespace Unity.Netcode.Transports.UTP
             m_HeadTailIndices = new NativeArray<int>(2, Allocator.Persistent);
 
             m_Data.ResizeUninitialized(m_MinimumCapacity);
+
+            NextMessageStart = 0;
 
             HeadIndex = 0;
             TailIndex = 0;
@@ -106,7 +116,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             var reader = new DataStreamReader(m_Data.AsArray());
 
-            var readerOffset = 0;
+            var readerOffset = NextMessageStart;
 
             while (readerOffset < TailIndex)
             {
@@ -114,21 +124,24 @@ namespace Unity.Netcode.Transports.UTP
                 var messageLength = reader.ReadInt();
                 if (TailIndex - readerOffset < sizeof(int) + messageLength)
                 {
-                    Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been truncated. Source: {source}");
+                    Debug.LogError($"Corruption found in BatchedSendQueue {ConnectionId}: Queue has been truncated. Source: {source}");
+                    Transport.PrintReliableStatistics(ConnectionId);
                     return;
                 }
 
                 var magic = reader.ReadInt();
                 if (magic != BatchHeader.MagicValue)
                 {
-                    Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been corrupted. Source: {source}");
+                    Debug.LogError($"Corruption found in BatchedSendQueue {ConnectionId}: Queue has been corrupted. Source: {source}");
+                    Transport.PrintReliableStatistics(ConnectionId);
                     return;
                 }
                 readerOffset += sizeof(int) + messageLength;
             }
             if (readerOffset != TailIndex)
             {
-                Debug.LogError($"Corruption found in BatchedSendQueue: Queue has been truncated. Source: {source}");
+                Debug.LogError($"Corruption found in BatchedSendQueue for {ConnectionId}: Queue has been truncated. Source: {source}");
+                Transport.PrintReliableStatistics(ConnectionId);
                 return;
             }
         }
@@ -181,6 +194,7 @@ namespace Unity.Netcode.Transports.UTP
                     UnsafeUtility.MemMove(m_Data.GetUnsafePtr(), (byte*)m_Data.GetUnsafePtr() + HeadIndex, Length);
                 }
 
+                NextMessageStart -= HeadIndex;
                 TailIndex = Length;
                 HeadIndex = 0;
                 Check("MemMove");
@@ -320,6 +334,7 @@ namespace Unity.Netcode.Transports.UTP
             if (size >= Length)
             {
                 HeadIndex = 0;
+                NextMessageStart = 0;
                 TailIndex = 0;
 
                 // This is a no-op if m_Data is already at minimum capacity.
@@ -328,6 +343,19 @@ namespace Unity.Netcode.Transports.UTP
             }
             else
             {
+                var reader = new DataStreamReader(m_Data.AsArray());
+
+                var readerOffset = NextMessageStart;
+
+                while (readerOffset < HeadIndex + size)
+                {
+                    reader.SeekSet(readerOffset);
+                    var messageLength = reader.ReadInt();
+                    readerOffset += sizeof(int) + messageLength;
+                }
+
+                NextMessageStart = readerOffset;
+
                 HeadIndex += size;
                 Check("Partial Consume");
             }

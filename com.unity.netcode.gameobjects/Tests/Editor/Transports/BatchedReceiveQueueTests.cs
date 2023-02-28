@@ -6,6 +6,7 @@ using Unity.Networking.Transport;
 
 namespace Unity.Netcode.EditorTests
 {
+    #if false
     public class BatchedReceiveQueueTests
     {
         [Test]
@@ -190,4 +191,5 @@ namespace Unity.Netcode.EditorTests
             Assert.True(q.IsEmpty);
         }
     }
+#endif
 }

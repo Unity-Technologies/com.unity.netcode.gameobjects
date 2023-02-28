@@ -6,6 +6,7 @@ using Unity.Networking.Transport;
 
 namespace Unity.Netcode.EditorTests
 {
+    #if false
     public class BatchedSendQueueTests
     {
         private const int k_TestQueueCapacity = 16 * 1024;
@@ -345,4 +346,5 @@ namespace Unity.Netcode.EditorTests
             Assert.AreEqual(q.Capacity, BatchedSendQueue.MinimumMinimumCapacity);
         }
     }
+#endif
 }

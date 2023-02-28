@@ -13,6 +13,9 @@ namespace Unity.Netcode.Transports.UTP
     /// <remarks>This is meant as a companion to <see cref="BatchedSendQueue"/>.</remarks>
     internal class BatchedReceiveQueue
     {
+        public UnityTransport Transport;
+        public ulong ConnectionId;
+
         /// <summary>
         /// This is the data itself. This array may contain already-popped data.
         /// The data read comes from a window into this array going from m_Offset to
@@ -41,8 +44,10 @@ namespace Unity.Netcode.Transports.UTP
         /// <see cref="NetworkDriver"/> when popping a data event.
         /// </summary>
         /// <param name="reader">The <see cref="DataStreamReader"/> to construct from.</param>
-        public BatchedReceiveQueue(DataStreamReader reader)
+        public BatchedReceiveQueue(DataStreamReader reader, UnityTransport transport, ulong connectionId)
         {
+            Transport = transport;
+            ConnectionId = connectionId;
             m_Data = new byte[reader.Length];
             unsafe
             {
@@ -80,7 +85,8 @@ namespace Unity.Netcode.Transports.UTP
                     var magic = reader.ReadInt();
                     if (magic != BatchHeader.MagicValue)
                     {
-                        Debug.LogError($"Corruption found in BatchedReceiveQueue: Queue has been corrupted: {source}");
+                        Debug.LogError($"Corruption found in BatchedReceiveQueue for {ConnectionId}: Queue has been corrupted: {source}");
+                        Transport.PrintReliableStatistics(ConnectionId);
                         return;
                     }
                     readerOffset += sizeof(int) + messageLength;

@@ -705,7 +705,7 @@ namespace Unity.Netcode.Transports.UTP
         }
 
         [BurstCompile]
-        private struct SendBatchedMessagesJob : IJob
+        private struct SendBatchedMessagesJob
         {
             public NetworkDriver.Concurrent Driver;
             public SendTarget Target;
@@ -760,6 +760,26 @@ namespace Unity.Netcode.Transports.UTP
             }
         }
 
+        public void PrintReliableStatistics(ulong transportClientId)
+        {
+            var conn = ParseClientId(transportClientId);
+            if (m_Driver.GetConnectionState(conn) != NetworkConnection.State.Connected)
+            {
+                return;
+            }
+
+            m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
+            NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+            conn, out _, out _, out var sharedBuffer);
+
+            unsafe
+            {
+                var sharedContext = (ReliableUtility.SharedContext*)sharedBuffer.GetUnsafePtr();
+                Debug.Log($"{NetworkManager.LocalClientId}: Reliable pipeline statistics for connection {NetworkManager.TransportIdToClientId(transportClientId)}: {sharedContext->stats.PacketsSent} sent, {sharedContext->stats.PacketsReceived} received, {sharedContext->stats.PacketsDropped} dropped, {sharedContext->stats.PacketsDuplicated} duplicated, {sharedContext->stats.PacketsResent} resent, {sharedContext->stats.PacketsStale} stale, {sharedContext->stats.PacketsOutOfOrder} out-of-order");
+                // Log the contents of sharedContext->stats (definition can be found in UTP, ReliableUtility.Statistics).
+            }
+        }
+
         // Send as many batched messages from the queue as possible.
         private void SendBatchedMessages(SendTarget sendTarget, BatchedSendQueue queue)
         {
@@ -769,7 +789,7 @@ namespace Unity.Netcode.Transports.UTP
                 Target = sendTarget,
                 Queue = queue,
                 ReliablePipeline = m_ReliableSequencedPipeline
-            }.Run();
+            }.Execute();
         }
 
         private bool AcceptConnection()
@@ -801,13 +821,13 @@ namespace Unity.Netcode.Transports.UTP
                 }
                 else
                 {
-                    queue = new BatchedReceiveQueue(dataReader);
+                    queue = new BatchedReceiveQueue(dataReader, this, clientId);
                     m_ReliableReceiveQueues[clientId] = queue;
                 }
             }
             else
             {
-                queue = new BatchedReceiveQueue(dataReader);
+                queue = new BatchedReceiveQueue(dataReader, this, clientId);
             }
 
             while (!queue.IsEmpty)
@@ -1248,7 +1268,7 @@ namespace Unity.Netcode.Transports.UTP
                 // new messages if that fails.
                 var maxCapacity = m_MaxSendQueueSize > 0 ? m_MaxSendQueueSize : m_DisconnectTimeoutMS * k_MaxReliableThroughput;
 
-                queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize));
+                queue = new BatchedSendQueue(Math.Max(maxCapacity, m_MaxPayloadSize), this, clientId);
                 m_SendQueue.Add(sendTarget, queue);
             }
 
