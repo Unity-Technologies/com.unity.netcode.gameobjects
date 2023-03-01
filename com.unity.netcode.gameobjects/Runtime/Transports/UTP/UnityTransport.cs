@@ -769,8 +769,12 @@ namespace Unity.Netcode.Transports.UTP
             }
 
             m_Driver.GetPipelineBuffers(m_ReliableSequencedPipeline,
-            NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
-            conn, out _, out _, out var sharedBuffer);
+#if UTP_TRANSPORT_2_0_ABOVE
+                NetworkPipelineStageId.Get<ReliableSequencedPipelineStage>(),
+#else
+                NetworkPipelineStageCollection.GetStageId(typeof(ReliableSequencedPipelineStage)),
+#endif
+                conn, out _, out _, out var sharedBuffer);
 
             unsafe
             {
