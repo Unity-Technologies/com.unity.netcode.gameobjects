@@ -53,7 +53,7 @@ namespace Unity.Netcode.Editor.Configuration
                         if (s_PrefabsListPath.ContainsKey(assetPath))
                         {
                             // Is the imported asset different from the one we already have in the list?
-                            if(s_PrefabsListPath[assetPath].Prefab.GetHashCode() != go.GetHashCode())
+                            if (s_PrefabsListPath[assetPath].Prefab.GetHashCode() != go.GetHashCode())
                             {
                                 // If so remove the one in the list and continue on to add the imported one
                                 s_PrefabsList.List.Remove(s_PrefabsListPath[assetPath]);
@@ -123,7 +123,7 @@ namespace Unity.Netcode.Editor.Configuration
             s_PrefabsListPath.Clear();
 
             // Create our asst path to prefab table
-            foreach(var prefabEntry in s_PrefabsList.List)
+            foreach (var prefabEntry in s_PrefabsList.List)
             {
                 if (!s_PrefabsListPath.ContainsKey(AssetDatabase.GetAssetPath(prefabEntry.Prefab)))
                 {
