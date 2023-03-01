@@ -1,5 +1,6 @@
 using System;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Networking.Transport;
 using UnityEngine;
 #if UTP_TRANSPORT_2_0_ABOVE
@@ -69,7 +70,12 @@ namespace Unity.Netcode.Transports.UTP
         {
             fixed (byte* dataPtr = m_Data)
             {
-                var reader = new DataStreamReader(dataPtr, m_Data.Length);
+                var na = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<byte>(dataPtr, m_Data.Length, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
+                NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref na, AtomicSafetyHandle.GetTempMemoryHandle());
+#endif
+
+                var reader = new DataStreamReader(na);
 
                 var readerOffset = m_ReadHead;
 
