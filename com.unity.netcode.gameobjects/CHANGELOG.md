@@ -12,6 +12,17 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Changed
 
+### Fixed
+
+
+### Removed
+
+## [1.3.0]
+
+### Added
+
+### Changed
+
 - The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
 - `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
