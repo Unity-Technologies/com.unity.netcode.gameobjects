@@ -334,6 +334,7 @@ namespace TestProject.ManualTests
         }
 
         private Vector3 m_DecayToStop;
+        private bool m_WasInterpolating;
         private void LateUpdate()
         {
             if (!IsSpawned)
@@ -355,7 +356,32 @@ namespace TestProject.ManualTests
                 m_StopMoving = !m_StopMoving;
                 if (m_StopMoving)
                 {
+                    SyncPositionX = true;
+                    SyncPositionY = true;
+                    SyncPositionZ = true;
+                    m_WasInterpolating = Interpolate;
+                    Interpolate = false;
                     m_DecayToStop = (m_Direction * Speed);
+                }
+                else
+                {
+                    Interpolate = m_WasInterpolating;
+                    SetNextDirection();
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.Return))
+            {
+                RandomAxisSync = !RandomAxisSync;
+                if (!RandomAxisSync)
+                {
+                    SyncPositionX = true;
+                    SyncPositionY = true;
+                    SyncPositionZ = true;
+                }
+                else
+                {
+                    SetNextDirection();
                 }
             }
 
