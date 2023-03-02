@@ -847,6 +847,35 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Handles determining if a client should attempt to load a scene during synchronization.
+        /// </summary>
+        /// <param name="sceneName">name of the scene to be loaded</param>
+        /// <param name="isPrimaryScene">when in client synchronization mode single, this determines if the scene is the primary active scene</param>
+        /// <param name="clientSynchronizationMode">the current client synchronization mode</param>
+        /// <param name="networkManager"><see cref="NetworkManager"/>relative instance</param>
+        /// <returns></returns>
+        public bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager)
+        {
+            var shouldPassThrough = clientSynchronizationMode == LoadSceneMode.Single ? false : DoesSceneHaveUnassignedEntry(sceneName, networkManager);
+            var activeScene = SceneManager.GetActiveScene();
+
+            // If shouldPassThrough is not yet true and the scene to be loaded is the currently active scene
+            if (!shouldPassThrough && sceneName == activeScene.name)
+            {
+                // In additive client synchronization mode we always pass through.
+                // Unlike the default behavior(i.e. DefaultSceneManagerHandler), for integration testing we always return false
+                // if it is the active scene and the client synchronization mode is LoadSceneMode.Single because the client should
+                // load the active scene additively for this NetworkManager instance (i.e. can't have multiple active scenes).
+                if (clientSynchronizationMode == LoadSceneMode.Additive)
+                {
+                    // don't try to reload this scene and pass through to post load processing.
+                    shouldPassThrough = true;
+                }
+            }
+            return shouldPassThrough;
+        }
+
+        /// <summary>
         /// Constructor now must take NetworkManager
         /// </summary>
         public IntegrationTestSceneHandler(NetworkManager networkManager)

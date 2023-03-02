@@ -499,9 +499,12 @@ namespace TestProject.RuntimeTests
 
         public override void OnDestroy()
         {
-            if (NetworkManager.LocalClientId == NetworkManager.ServerClientId)
+            if (NetworkManager != null)
             {
-                NetworkObjectDestroyed?.Invoke(NetworkObject);
+                if (NetworkManager.LocalClientId == NetworkManager.ServerClientId)
+                {
+                    NetworkObjectDestroyed?.Invoke(NetworkObject);
+                }
             }
             base.OnDestroy();
         }

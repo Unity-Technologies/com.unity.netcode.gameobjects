@@ -154,7 +154,7 @@ public class ConnectionModeScript : MonoBehaviour
         NetworkManager.Singleton.StartServer();
         NetworkManager.Singleton.SceneManager.SetClientSynchronizationMode(m_ClientSynchronizationMode);
         OnNotifyConnectionEventServer?.Invoke();
-        m_ConnectionModeButtons.SetActive(false);
+        m_ConnectionModeButtons?.SetActive(false);
     }
 
 
@@ -240,7 +240,10 @@ public class ConnectionModeScript : MonoBehaviour
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();
         m_ConnectionModeButtons.SetActive(false);
-        m_DisconnectClientButton.SetActive(true);
+        if (m_DisconnectClientButton != null)
+        {
+            m_DisconnectClientButton.SetActive(true);
+        }
     }
 
     public void DisconnectClient()
