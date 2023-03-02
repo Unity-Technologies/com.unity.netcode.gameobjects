@@ -1200,7 +1200,19 @@ namespace Unity.Netcode
             if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
-                NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                // NSS: In the event this fails or throws and exception
+                // catch the exception but continue the shutdown process.
+                // Not doing so can cause an infinite shutdown loop where
+                // m_ShuttingDown is still true and UnregisterAllNetworkUpdates
+                // still is not invoked at this point in the shutdown process.
+                try
+                {
+                    NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
 
             IsConnectedClient = false;
