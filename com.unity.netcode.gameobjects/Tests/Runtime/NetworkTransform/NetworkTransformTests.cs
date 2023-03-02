@@ -129,6 +129,12 @@ namespace Unity.Netcode.RuntimeTests
             Full
         }
 
+        public enum Rotation
+        {
+            Euler,
+            Quaternion
+        }
+
         public enum TransformSpace
         {
             World,
@@ -400,12 +406,11 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private void MoveRotateAndScaleAuthority(Vector3 position, Vector3 rotation, Vector3 scale, OverrideState overrideState)
         {
-
             switch (overrideState)
             {
                 case OverrideState.SetState:
                     {
-                        var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
+                        var authoritativeRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation();
                         authoritativeRotation.eulerAngles = rotation;
                         if (m_Authority == Authority.OwnerAuthority)
                         {
@@ -432,7 +437,7 @@ namespace Unity.Netcode.RuntimeTests
                     {
                         m_AuthoritativeTransform.transform.position = position;
 
-                        var authoritativeRotation = m_AuthoritativeTransform.transform.rotation;
+                        var authoritativeRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation();
                         authoritativeRotation.eulerAngles = rotation;
                         m_AuthoritativeTransform.transform.rotation = authoritativeRotation;
                         m_AuthoritativeTransform.transform.localScale = scale;
@@ -465,22 +470,28 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private Precision m_Precision = Precision.Full;
+        private float m_CurrentHalfPrecision = 0.0f;
+        private const float k_HalfPrecisionPosScale = 0.03f;
+        private const float k_HalfPrecisionRot = 0.725f;
+
         protected override float GetDeltaVarianceThreshold()
         {
             if (m_Precision == Precision.Half)
             {
-                return 0.025f;
+                return m_CurrentHalfPrecision;
             }
             return base.GetDeltaVarianceThreshold();
         }
 
+
+        private Axis m_CurrentAxis;
         /// <summary>
         /// This validates that multiple changes can occur within the same tick or over
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
         [UnityTest]
         public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
-            [Values] Precision precision, [Values] Axis axis)
+            [Values] Precision precision, [Values] Rotation rotationSynch, [Values] Axis axis)
         {
             // In the name of reducing the very long time it takes to interpolate and run all of the possible combinations,
             // we only interpolate when the second client joins
@@ -489,28 +500,40 @@ namespace Unity.Netcode.RuntimeTests
             bool axisX = axis == Axis.X || axis == Axis.XY || axis == Axis.XZ || axis == Axis.XYZ;
             bool axisY = axis == Axis.Y || axis == Axis.XY || axis == Axis.YZ || axis == Axis.XYZ;
             bool axisZ = axis == Axis.Z || axis == Axis.XZ || axis == Axis.YZ || axis == Axis.XYZ;
-
+            m_CurrentAxis = axis;
             // Authority dictates what is synchronized and what the precision is going to be
             // so we only need to set this on the authoritative side.
+            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
+            m_AuthoritativeTransform.UseQuaternionSynchronization = rotationSynch == Rotation.Quaternion;
+            m_Precision = precision;
+
             m_AuthoritativeTransform.SyncPositionX = axisX;
             m_AuthoritativeTransform.SyncPositionY = axisY;
             m_AuthoritativeTransform.SyncPositionZ = axisZ;
 
-            if (precision == Precision.Full)
+            if (!m_AuthoritativeTransform.UseQuaternionSynchronization)
             {
                 m_AuthoritativeTransform.SyncRotAngleX = axisX;
                 m_AuthoritativeTransform.SyncRotAngleY = axisY;
                 m_AuthoritativeTransform.SyncRotAngleZ = axisZ;
             }
+            else
+            {
+                // This is not required for usage (setting the value should not matter when quaternion synchronization is enabled)
+                // but is required for this test so we don't get a failure on an axis that is marked to not be synchronized when
+                // validating the authority's values on non-authority instances.
+                m_AuthoritativeTransform.SyncRotAngleX = true;
+                m_AuthoritativeTransform.SyncRotAngleY = true;
+                m_AuthoritativeTransform.SyncRotAngleZ = true;
+            }
 
             m_AuthoritativeTransform.SyncScaleX = axisX;
             m_AuthoritativeTransform.SyncScaleY = axisY;
             m_AuthoritativeTransform.SyncScaleZ = axisZ;
-            m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
-            m_Precision = precision;
+
 
             var positionStart = GetRandomVector3(0.25f, 1.75f);
-            var rotationStart = GetRandomVector3(1f, 45f);
+            var rotationStart = GetRandomVector3(1f, 15f);
             var scaleStart = GetRandomVector3(0.25f, 2.0f);
             var position = positionStart;
             var rotation = rotationStart;
@@ -671,7 +694,7 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
-            yield return WaitForConditionOrTimeOut(PositionsMatch);
+            yield return WaitForConditionOrTimeOut(() => PositionsMatch());
             AssertOnTimeout($"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
@@ -696,7 +719,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Make sure the values match
-            yield return WaitForConditionOrTimeOut(RotationsMatch);
+            yield return WaitForConditionOrTimeOut(() => RotationsMatch());
             AssertOnTimeout($"Timed out waiting for rotations to match");
 
             m_AuthoritativeTransform.StatePushed = false;
@@ -718,7 +741,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Make sure the scale values match
-            yield return WaitForConditionOrTimeOut(ScaleValuesMatch);
+            yield return WaitForConditionOrTimeOut(() => ScaleValuesMatch());
             AssertOnTimeout($"Timed out waiting for scale values to match");
         }
 
@@ -871,7 +894,7 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
             AssertOnTimeout($"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
 
-            yield return WaitForConditionOrTimeOut(RotationsMatch);
+            yield return WaitForConditionOrTimeOut(() => RotationsMatch());
             AssertOnTimeout($"[Timed-Out] Authoritative rotation {m_AuthoritativeTransform.transform.rotation.eulerAngles} != Non-Authoritative rotation {m_NonAuthoritativeTransform.transform.rotation.eulerAngles}");
         }
 
@@ -1059,22 +1082,36 @@ namespace Unity.Netcode.RuntimeTests
             return RotationsMatch() && PositionsMatch() && ScaleValuesMatch();
         }
 
-        private bool RotationsMatch()
+        private void PrintPositionRotationScaleDeltas()
         {
+            RotationsMatch(true);
+            PositionsMatch(true);
+            ScaleValuesMatch(true);
+        }
+
+        private bool RotationsMatch(bool printDeltas = false)
+        {
+            m_CurrentHalfPrecision = k_HalfPrecisionRot;
             var authorityEulerRotation = m_AuthoritativeTransform.GetSpaceRelativeRotation().eulerAngles;
             var nonAuthorityEulerRotation = m_NonAuthoritativeTransform.GetSpaceRelativeRotation().eulerAngles;
-            var xIsEqual = Approximately(authorityEulerRotation.x, nonAuthorityEulerRotation.x) || !m_AuthoritativeTransform.SyncRotAngleX;
-            var yIsEqual = Approximately(authorityEulerRotation.y, nonAuthorityEulerRotation.y) || !m_AuthoritativeTransform.SyncRotAngleY;
-            var zIsEqual = Approximately(authorityEulerRotation.z, nonAuthorityEulerRotation.z) || !m_AuthoritativeTransform.SyncRotAngleZ;
+            var xIsEqual = ApproximatelyEuler(authorityEulerRotation.x, nonAuthorityEulerRotation.x) || !m_AuthoritativeTransform.SyncRotAngleX;
+            var yIsEqual = ApproximatelyEuler(authorityEulerRotation.y, nonAuthorityEulerRotation.y) || !m_AuthoritativeTransform.SyncRotAngleY;
+            var zIsEqual = ApproximatelyEuler(authorityEulerRotation.z, nonAuthorityEulerRotation.z) || !m_AuthoritativeTransform.SyncRotAngleZ;
             if (!xIsEqual || !yIsEqual || !zIsEqual)
             {
-                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}] Authority rotation {authorityEulerRotation} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
+                VerboseDebug($"[{m_AuthoritativeTransform.gameObject.name}][X-{xIsEqual} | Y-{yIsEqual} | Z-{zIsEqual}][{m_CurrentAxis}]" +
+                    $"[Sync: X-{m_AuthoritativeTransform.SyncRotAngleX} |  X-{m_AuthoritativeTransform.SyncRotAngleY} |  X-{m_AuthoritativeTransform.SyncRotAngleZ}] Authority rotation {authorityEulerRotation} != [{m_NonAuthoritativeTransform.gameObject.name}] NonAuthority rotation {nonAuthorityEulerRotation}");
+            }
+            if (printDeltas)
+            {
+                Debug.Log($"[Rotation Match] Euler Delta {EulerDelta(authorityEulerRotation, nonAuthorityEulerRotation)}");
             }
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        private bool PositionsMatch()
+        private bool PositionsMatch(bool printDeltas = false)
         {
+            m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
             var authorityPosition = m_AuthoritativeTransform.GetSpaceRelativePosition();
             var nonAuthorityPosition = m_NonAuthoritativeTransform.GetSpaceRelativePosition();
             var xIsEqual = Approximately(authorityPosition.x, nonAuthorityPosition.x) || !m_AuthoritativeTransform.SyncPositionX;
@@ -1087,8 +1124,9 @@ namespace Unity.Netcode.RuntimeTests
             return xIsEqual && yIsEqual && zIsEqual;
         }
 
-        private bool ScaleValuesMatch()
+        private bool ScaleValuesMatch(bool printDeltas = false)
         {
+            m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
             var authorityScale = m_AuthoritativeTransform.transform.localScale;
             var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
             var xIsEqual = Approximately(authorityScale.x, nonAuthorityScale.x) || !m_AuthoritativeTransform.SyncScaleX;

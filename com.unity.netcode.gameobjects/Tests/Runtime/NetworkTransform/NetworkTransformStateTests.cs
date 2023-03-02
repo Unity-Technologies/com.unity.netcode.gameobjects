@@ -5,10 +5,14 @@ using UnityEngine;
 namespace Unity.Netcode.RuntimeTests
 {
 
-    [TestFixture(TransformSpace.World, Precision.Full)]
-    [TestFixture(TransformSpace.World, Precision.Half)]
-    [TestFixture(TransformSpace.Local, Precision.Full)]
-    [TestFixture(TransformSpace.Local, Precision.Half)]
+    [TestFixture(TransformSpace.World, Precision.Full, Rotation.Euler)]
+    [TestFixture(TransformSpace.World, Precision.Half, Rotation.Euler)]
+    [TestFixture(TransformSpace.Local, Precision.Full, Rotation.Euler)]
+    [TestFixture(TransformSpace.Local, Precision.Half, Rotation.Euler)]
+    [TestFixture(TransformSpace.World, Precision.Full, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.World, Precision.Half, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.Local, Precision.Full, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.Local, Precision.Half, Rotation.Quaternion)]
     public class NetworkTransformStateTests
     {
         public enum SyncAxis
@@ -71,11 +75,11 @@ namespace Unity.Netcode.RuntimeTests
         private Precision m_Precision;
         private Rotation m_Rotation;
 
-        public NetworkTransformStateTests(TransformSpace transformSpace, Precision precision)
+        public NetworkTransformStateTests(TransformSpace transformSpace, Precision precision, Rotation rotation)
         {
             m_TransformSpace = transformSpace;
             m_Precision = precision;
-            m_Rotation = Rotation.Euler;
+            m_Rotation = rotation;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -102,9 +106,6 @@ namespace Unity.Netcode.RuntimeTests
             bool syncScaX = syncAxis == SyncAxis.SyncScaleX || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllX || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaY = syncAxis == SyncAxis.SyncScaleY || syncAxis == SyncAxis.SyncScaleXY || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllY || syncAxis == SyncAxis.SyncAllXY || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
             bool syncScaZ = syncAxis == SyncAxis.SyncScaleZ || syncAxis == SyncAxis.SyncScaleXZ || syncAxis == SyncAxis.SyncScaleYZ || syncAxis == SyncAxis.SyncScaleXYZ || syncAxis == SyncAxis.SyncAllZ || syncAxis == SyncAxis.SyncAllXZ || syncAxis == SyncAxis.SyncAllYZ || syncAxis == SyncAxis.SyncAllXYZ;
-
-
-            m_Rotation = m_Precision == Precision.Half ? Rotation.Quaternion : Rotation.Euler;
 
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
