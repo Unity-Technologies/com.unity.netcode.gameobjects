@@ -676,22 +676,53 @@ namespace Unity.Netcode.Components
                             }
                         }
                     }
-                    else // Legacy Rotation Synchronization
+                    else // Euler Rotation Synchronization
                     {
-                        // RotAngle Values
-                        if (HasRotAngleX)
+                        // Half float precision (full precision when teleporting)
+                        if (UseHalfFloatPrecision && !IsTeleportingNextFrame)
                         {
-                            serializer.SerializeValue(ref RotAngleX);
-                        }
+                            if (HasRotAngleChange)
+                            {
+                                var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, new HalfVector3AxisToSynchronize(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
+                                serializer.SerializeValue(ref halfPrecisionRotation);
+                                if (!isWriting)
+                                {
+                                    var eulerRotation = Vector3.zero;
+                                    halfPrecisionRotation.ToVector3(ref eulerRotation);
+                                    if (HasRotAngleX)
+                                    {
+                                        RotAngleX = eulerRotation.x;
+                                    }
 
-                        if (HasRotAngleY)
-                        {
-                            serializer.SerializeValue(ref RotAngleY);
-                        }
+                                    if (HasRotAngleY)
+                                    {
+                                        RotAngleY = eulerRotation.y;
+                                    }
 
-                        if (HasRotAngleZ)
+                                    if (HasRotAngleZ)
+                                    {
+                                        RotAngleZ = eulerRotation.z;
+                                    }
+                                }
+                            }
+                        }
+                        else // Full precision Euler
                         {
-                            serializer.SerializeValue(ref RotAngleZ);
+                            // RotAngle Values
+                            if (HasRotAngleX)
+                            {
+                                serializer.SerializeValue(ref RotAngleX);
+                            }
+
+                            if (HasRotAngleY)
+                            {
+                                serializer.SerializeValue(ref RotAngleY);
+                            }
+
+                            if (HasRotAngleZ)
+                            {
+                                serializer.SerializeValue(ref RotAngleZ);
+                            }
                         }
                     }
                 }
@@ -699,6 +730,7 @@ namespace Unity.Netcode.Components
                 // Synchronize Scale
                 if (HasScaleChange)
                 {
+                    // Half precision scale synchronization
                     if (UseHalfFloatPrecision)
                     {
                         if (IsTeleportingNextFrame)
@@ -713,10 +745,24 @@ namespace Unity.Netcode.Components
                             if (!isWriting)
                             {
                                 HalfVectorScale.ToVector3(ref Scale);
+                                if (HasScaleX)
+                                {
+                                    ScaleX = Scale.x;
+                                }
+
+                                if (HasScaleY)
+                                {
+                                    ScaleY = Scale.y;
+                                }
+
+                                if (HasScaleZ)
+                                {
+                                    ScaleZ = Scale.x;
+                                }
                             }
                         }
                     }
-                    else // Legacy Scale Synchronization
+                    else // Full precision scale synchronization
                     {
                         if (HasScaleX)
                         {
@@ -1089,7 +1135,7 @@ namespace Unity.Netcode.Components
 
         private BufferedLinearInterpolatorVector3 m_PositionInterpolator;
         private BufferedLinearInterpolatorVector3 m_ScaleInterpolator;
-        private BufferedLinearInterpolator<Quaternion> m_RotationInterpolator; // rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
+        private BufferedLinearInterpolatorQuaternion m_RotationInterpolator; // rotation is a single Quaternion since each Euler axis will affect the quaternion's final value
 
         // Non-Authoritative's current position, scale, and rotation that is used to assure the non-authoritative side cannot make adjustments to
         // the portions of the transform being synchronized.
@@ -2579,6 +2625,10 @@ namespace Unity.Netcode.Components
 
                 if (SynchronizeRotation)
                 {
+                    // When using half precision Lerp towards the target rotation.
+                    // When using full precision Slerp towards the target rotation.
+                    /// <see cref="BufferedLinearInterpolatorQuaternion.IsSlerp"/>
+                    m_RotationInterpolator.IsSlerp = !UseHalfFloatPrecision;
                     m_RotationInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
 
