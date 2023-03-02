@@ -38,6 +38,11 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        private void InvokeBeforeClientsStart()
+        {
+            m_ServerNetworkManager.SceneManager.ClientSynchronizationMode = LoadSceneMode.Additive;
+        }
+
         [UnitySetUp]
         public IEnumerator Setup()
         {
@@ -83,7 +88,7 @@ namespace TestProject.RuntimeTests
             }
 
             // Start server and client NetworkManager instances
-            Assert.That(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers));
+            Assert.That(NetcodeIntegrationTestHelpers.Start(true, m_ServerNetworkManager, m_ClientNetworkManagers, InvokeBeforeClientsStart));
 
             // Wait for connection on client side
             yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(m_ClientNetworkManagers);

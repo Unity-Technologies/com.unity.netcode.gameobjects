@@ -5,10 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
-
 ## [Unreleased]
 
 ### Added
+
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
+- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
+
+### Changed
+
+- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
+- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+
+### Fixed
+
+- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
+- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
+
+## [1.3.0]
 
 ### Changed
 
