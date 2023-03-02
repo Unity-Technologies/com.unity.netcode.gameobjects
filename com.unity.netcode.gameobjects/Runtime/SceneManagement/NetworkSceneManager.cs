@@ -1690,6 +1690,11 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                if (scene == DontDestroyOnLoadScene)
+                {
+                    continue;
+                }
+
                 var sceneHash = SceneHashFromNameOrPath(scene.path);
 
                 // This would depend upon whether we are additive or not
@@ -1774,17 +1779,14 @@ namespace Unity.Netcode
                 return;
             }
 
-            var shouldPassThrough = ClientSynchronizationMode == LoadSceneMode.Single ? false : SceneManagerHandler.DoesSceneHaveUnassignedEntry(sceneName, m_NetworkManager);
             var sceneLoad = (AsyncOperation)null;
 
-            // Check to see if the client already has loaded the scene to be loaded and the client synchronization
-            // mode is set to additive
-            if (sceneName == activeScene.name && ClientSynchronizationMode == LoadSceneMode.Additive)
-            {
-                // If the client is already in the same scene, then pass through and
-                // don't try to reload it.
-                shouldPassThrough = true;
-            }
+            // Determines if the client has the scene to be loaded already loaded, if so will return true and the client will skip loading this scene
+            // For ClientSynchronizationMode LoadSceneMode.Single, we pass in whether the scene being loaded is the first/primary active scene and if it is already loaded
+            // it should pass through to post load processing (ClientLoadedSynchronization).
+            // For ClientSynchronizationMode LoadSceneMode.Additive, if the scene is already loaded or the active scene is the scene to be loaded (does not require it to
+            // be the initial primary scene) then go ahead and pass through to post load processing (ClientLoadedSynchronization).
+            var shouldPassThrough = SceneManagerHandler.ClientShouldPassThrough(sceneName, sceneHash == sceneEventData.SceneHash, ClientSynchronizationMode, m_NetworkManager);
 
             if (!shouldPassThrough)
             {
@@ -1900,6 +1902,8 @@ namespace Unity.Netcode
                 {
                     networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
+
+
                     // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
                     // and move it to that scene.
                     if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
@@ -1907,6 +1911,11 @@ namespace Unity.Netcode
                         if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
                         {
                             var scene = ScenesLoaded[networkObject.SceneOriginHandle];
+                            if (scene == DontDestroyOnLoadScene)
+                            {
+                                Debug.Log($"{networkObject.gameObject.name} migrating into DDOL!");
+                            }
+
                             SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
                         }
                         else if (m_NetworkManager.LogLevel <= LogLevel.Normal)
@@ -2257,7 +2266,7 @@ namespace Unity.Netcode
             foreach (var networkObjectInstance in networkObjects)
             {
                 var globalObjectIdHash = networkObjectInstance.GlobalObjectIdHash;
-                var sceneHandle = networkObjectInstance.GetSceneOriginHandle();
+                var sceneHandle = networkObjectInstance.gameObject.scene.handle;
                 // We check to make sure the NetworkManager instance is the same one to be "NetcodeIntegrationTestHelpers" compatible and filter the list on a per scene basis (for additive scenes)
                 if (networkObjectInstance.IsSceneObject != false && (networkObjectInstance.NetworkManager == m_NetworkManager ||
                     networkObjectInstance.NetworkManagerOwner == null) && sceneHandle == sceneToFilterBy.handle)

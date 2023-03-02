@@ -30,5 +30,7 @@ namespace Unity.Netcode
         void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene);
 
         void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode);
+
+        bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager);
     }
 }

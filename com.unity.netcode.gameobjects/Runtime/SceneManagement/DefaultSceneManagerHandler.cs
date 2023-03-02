@@ -248,6 +248,33 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Handles determining if a client should attempt to load a scene during synchronization.
+        /// </summary>
+        /// <param name="sceneName">name of the scene to be loaded</param>
+        /// <param name="isPrimaryScene">when in client synchronization mode single, this determines if the scene is the primary active scene</param>
+        /// <param name="clientSynchronizationMode">the current client synchronization mode</param>
+        /// <param name="networkManager"><see cref="NetworkManager"/> instance</param>
+        /// <returns></returns>
+        public bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager)
+        {
+            var shouldPassThrough = clientSynchronizationMode == LoadSceneMode.Single ? false : DoesSceneHaveUnassignedEntry(sceneName, networkManager);
+            var activeScene = SceneManager.GetActiveScene();
+
+            // If shouldPassThrough is not yet true and the scene to be loaded is the currently active scene
+            if (!shouldPassThrough && sceneName == activeScene.name)
+            {
+                // In additive mode we always pass through, but in LoadSceneMode.Single we only pass through if the currently active scene
+                // is the primary scene to be loaded
+                if (clientSynchronizationMode == LoadSceneMode.Additive || (isPrimaryScene && clientSynchronizationMode == LoadSceneMode.Single))
+                {
+                    // don't try to reload this scene and pass through to post load processing.
+                    shouldPassThrough = true;
+                }
+            }
+            return shouldPassThrough;
+        }
+
+        /// <summary>
         /// Handles migrating dynamically spawned NetworkObjects to the DDOL when a scene is unloaded
         /// </summary>
         /// <param name="networkManager"><see cref="NetworkManager"/>relative instance</param>
