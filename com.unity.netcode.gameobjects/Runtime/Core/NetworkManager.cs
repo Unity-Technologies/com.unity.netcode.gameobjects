@@ -1278,6 +1278,8 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+            // This cleans up the internal prefabs list
+            NetworkConfig?.Prefabs.Shutdown();
         }
 
         /// <inheritdoc />
@@ -1395,6 +1397,10 @@ namespace Unity.Netcode
 
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
+                // This should be invoked just prior to the MessagingSystem
+                // processes its outbound queue.
+                SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
                 MessagingSystem.ProcessSendQueues();
                 NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
                 NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
@@ -1974,6 +1980,9 @@ namespace Unity.Netcode
                     var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
 
                     // Generate a SceneObject for the player object to spawn
+                    // Note: This is only to create the local NetworkObject,
+                    // many of the serialized properties of the player prefab
+                    // will be set when instantiated.
                     var sceneObject = new NetworkObject.SceneObject
                     {
                         OwnerClientId = ownerClientId,
