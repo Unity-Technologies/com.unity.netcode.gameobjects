@@ -1197,6 +1197,9 @@ namespace Unity.Netcode
                 }
             }
 
+            // Unregister network updates before trying to disconnect the client
+            this.UnregisterAllNetworkUpdates();
+
             if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
@@ -1229,8 +1232,6 @@ namespace Unity.Netcode
 
             IsServer = false;
             IsClient = false;
-
-            this.UnregisterAllNetworkUpdates();
 
             if (NetworkTickSystem != null)
             {
