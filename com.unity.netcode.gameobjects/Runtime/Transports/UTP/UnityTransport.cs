@@ -1085,12 +1085,21 @@ namespace Unity.Netcode.Transports.UTP
 
         private void FlushSendQueuesForClientId(ulong clientId)
         {
-            foreach (var kvp in m_SendQueue)
+            // In the event this throws and exception, log it
+            // and allow the invoking method to continue.
+            try
             {
-                if (kvp.Key.ClientId == clientId)
+                foreach (var kvp in m_SendQueue)
                 {
-                    SendBatchedMessages(kvp.Key, kvp.Value);
+                    if (kvp.Key.ClientId == clientId)
+                    {
+                        SendBatchedMessages(kvp.Key, kvp.Value);
+                    }
                 }
+            }
+            catch(Exception ex)
+            {
+                Debug.Log(ex);
             }
         }
 
@@ -1101,6 +1110,7 @@ namespace Unity.Netcode.Transports.UTP
         {
             if (m_State == State.Connected)
             {
+
                 FlushSendQueuesForClientId(m_ServerClientId);
 
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)
