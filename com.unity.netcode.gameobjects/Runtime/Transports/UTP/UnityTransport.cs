@@ -1089,8 +1089,6 @@ namespace Unity.Netcode.Transports.UTP
 
         private void FlushSendQueuesForClientId(ulong clientId)
         {
-            // In the event this throws and exception, log it
-            // and allow the invoking method to continue.
             foreach (var kvp in m_SendQueue)
             {
                 if (kvp.Key.ClientId == clientId)
