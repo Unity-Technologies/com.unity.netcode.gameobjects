@@ -20,26 +20,18 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
+- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
+- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
 - Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 
 ## [1.3.0]
 
-### Changed
-
-### Fixed
-
-- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
-- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
-- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
-- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
-
-### Removed
-
-## [1.3.0]
-
 ### Added
+
+- Added detection and graceful handling of corrupt packets for additional safety. (#2419)
 
 ### Changed
 
