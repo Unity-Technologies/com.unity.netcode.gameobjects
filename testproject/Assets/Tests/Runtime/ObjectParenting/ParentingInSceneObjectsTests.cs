@@ -329,7 +329,7 @@ namespace TestProject.RuntimeTests
             SceneManager.LoadScene(k_BaseSceneToLoad, LoadSceneMode.Additive);
             m_InitialClientsLoadedScene = false;
             m_ServerNetworkManager.SceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
-
+            m_ServerNetworkManager.SceneManager.ClientSynchronizationMode = LoadSceneMode.Additive;
             var sceneEventStartedStatus = m_ServerNetworkManager.SceneManager.LoadScene(k_TestSceneToLoad, LoadSceneMode.Additive);
             Assert.True(sceneEventStartedStatus == SceneEventProgressStatus.Started, $"Failed to load scene {k_TestSceneToLoad} with a return status of {sceneEventStartedStatus}.");
             yield return WaitForConditionOrTimeOut(() => m_InitialClientsLoadedScene);

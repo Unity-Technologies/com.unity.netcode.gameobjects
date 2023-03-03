@@ -692,6 +692,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            IntegrationTestSceneHandler.SceneNameToSceneHandles.Clear();
             VerboseDebug($"Entering {nameof(TearDown)}");
             yield return OnTearDown();
 

@@ -1037,6 +1037,8 @@ MonoBehaviour:
   GlobalObjectIdHash: 2807568818
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!1 &1332123091
@@ -2018,6 +2020,8 @@ MonoBehaviour:
   GlobalObjectIdHash: 3071296511
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!1 &2058276875
@@ -2186,6 +2190,8 @@ MonoBehaviour:
   GlobalObjectIdHash: 4086995543
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!1 &2126410740
