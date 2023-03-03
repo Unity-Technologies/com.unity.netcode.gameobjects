@@ -30,6 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
 - Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
