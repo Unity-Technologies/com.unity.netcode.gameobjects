@@ -1097,7 +1097,7 @@ namespace Unity.Netcode.Transports.UTP
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Debug.Log(ex);
             }
@@ -1110,7 +1110,6 @@ namespace Unity.Netcode.Transports.UTP
         {
             if (m_State == State.Connected)
             {
-
                 FlushSendQueuesForClientId(m_ServerClientId);
 
                 if (m_Driver.Disconnect(ParseClientId(m_ServerClientId)) == 0)

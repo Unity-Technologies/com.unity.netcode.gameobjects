@@ -1206,7 +1206,7 @@ namespace Unity.Netcode
                 {
                     NetworkConfig.NetworkTransport.DisconnectLocalClient();
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Debug.LogException(ex);
                 }
