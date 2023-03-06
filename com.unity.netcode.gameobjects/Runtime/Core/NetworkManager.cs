@@ -1197,14 +1197,14 @@ namespace Unity.Netcode
                 }
             }
 
+            // Unregister network updates before trying to disconnect the client
+            this.UnregisterAllNetworkUpdates();
+
             if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
-                // NSS: In the event this fails or throws and exception
-                // catch the exception but continue the shutdown process.
-                // Not doing so can cause an infinite shutdown loop where
-                // m_ShuttingDown is still true and UnregisterAllNetworkUpdates
-                // still is not invoked at this point in the shutdown process.
+                // If transport throws and exception, log the exception and
+                // continue the shutdown sequence (or forever be shutting down)
                 try
                 {
                     NetworkConfig.NetworkTransport.DisconnectLocalClient();
@@ -1232,8 +1232,6 @@ namespace Unity.Netcode
 
             IsServer = false;
             IsClient = false;
-
-            this.UnregisterAllNetworkUpdates();
 
             if (NetworkTickSystem != null)
             {
