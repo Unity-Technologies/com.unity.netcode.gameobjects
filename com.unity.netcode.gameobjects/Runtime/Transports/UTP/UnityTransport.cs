@@ -1089,21 +1089,12 @@ namespace Unity.Netcode.Transports.UTP
 
         private void FlushSendQueuesForClientId(ulong clientId)
         {
-            // NSS: In the off chance this fails, log an exception
-            // and continue disconnection process.
-            try
+            foreach (var kvp in m_SendQueue)
             {
-                foreach (var kvp in m_SendQueue)
+                if (kvp.Key.ClientId == clientId)
                 {
-                    if (kvp.Key.ClientId == clientId)
-                    {
-                        SendBatchedMessages(kvp.Key, kvp.Value);
-                    }
+                    SendBatchedMessages(kvp.Key, kvp.Value);
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
             }
         }
 
