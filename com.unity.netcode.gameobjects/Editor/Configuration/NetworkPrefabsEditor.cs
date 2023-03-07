@@ -90,6 +90,8 @@ namespace Unity.Netcode.Editor
             }
 
             m_NetworkPrefabsList.DoLayoutList();
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }

@@ -11,20 +11,45 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added support for native containers in FastBufferReader/Writer, BufferSerializer, NetworkVariable, and RPCs. (#2375)
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
+- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
 
 ### Changed
 
+- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
+- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+
+### Fixed
+
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
+- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
+- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
+- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
+- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
+
+## [1.3.0]
+
+### Added
+
+- Added detection and graceful handling of corrupt packets for additional safety. (#2419)
+
+### Changed
+
+- The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
 - `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
 - Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.
 - `NetworkHide()` of an object that was just `NetworkShow()`n produces a warning, as remote clients will _not_ get a spawn/despawn pair.
-- The default listen address of `UnityTransport` is now 0.0.0.0. (#2307)
 - Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `teleportDisabled` for better clarity of what that parameter does. (#2228)
 - Network prefabs are now stored in a ScriptableObject that can be shared between NetworkManagers, and have been exposed for public access. By default, a Default Prefabs List is created that contains all NetworkObject prefabs in the project, and new NetworkManagers will default to using that unless that option is turned off in the Netcode for GameObjects settings. Existing NetworkManagers will maintain their existing lists, which can be migrated to the new format via a button in their inspector. (#2322)
 
 ### Fixed
+
 - Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
 - Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
+- Fixed issue where a dynamically spawned `NetworkObject` parented under an in-scene placed `NetworkObject` would have its `InScenePlaced` value changed to `true`. This would result in a soft synchronization error for late joining clients. (#2396)
 - Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)
 - Fixed issue where `NetcodeSettingsProvider` would throw an exception in Unity 2020.3.x versions. (#2345)
 - Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
