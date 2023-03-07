@@ -15,7 +15,32 @@ namespace Unity.Netcode
     {
         [HideInInspector]
         [SerializeField]
-        internal uint GlobalObjectIdHash;
+        internal uint GlobalObjectIdHash;// { get; internal set; }
+
+        /// <summary>
+        /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
+        /// </summary>
+        [HideInInspector]
+        public uint PrefabHashId
+        {
+            get
+            {
+                foreach (var prefabList in NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists)
+                {
+                    if (prefabList.Contains(gameObject))
+                    {
+                        return GlobalObjectIdHash;
+                    }
+                }
+
+                if ( NetworkManager.PrefabHandler.ContainsHandler( GlobalObjectIdHash ) )
+                {
+                    return GlobalObjectIdHash;
+                }
+
+                return 0;
+            }
+        }
 
 #if UNITY_EDITOR
         private void OnValidate()
