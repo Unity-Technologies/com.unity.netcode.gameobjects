@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.TestHelpers.Runtime;
 using Random = UnityEngine.Random;
 using UnityEngine;
@@ -1225,6 +1226,7 @@ namespace Unity.Netcode.RuntimeTests
             // Just making sure these are null, just in case.
             UserNetworkVariableSerialization<string>.ReadValue = null;
             UserNetworkVariableSerialization<string>.WriteValue = null;
+            UserNetworkVariableSerialization<string>.DuplicateValue = null;
             Assert.Throws<ArgumentException>(() =>
             {
                 variable.WriteField(writer);
@@ -1247,6 +1249,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 writer.WriteValueSafe(value);
             };
+            UserNetworkVariableSerialization<string>.DuplicateValue = (in string a, ref string b) =>
+            {
+                b = String.Copy(a);
+            };
             try
             {
                 using var writer = new FastBufferWriter(1024, Allocator.Temp);
@@ -1262,6 +1268,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 UserNetworkVariableSerialization<string>.ReadValue = null;
                 UserNetworkVariableSerialization<string>.WriteValue = null;
+                UserNetworkVariableSerialization<string>.DuplicateValue = null;
             }
         }
 
@@ -1274,6 +1281,7 @@ namespace Unity.Netcode.RuntimeTests
             // Just making sure these are null, just in case.
             UserNetworkVariableSerialization<Guid>.ReadValue = null;
             UserNetworkVariableSerialization<Guid>.WriteValue = null;
+            UserNetworkVariableSerialization<Guid>.DuplicateValue = null;
             Assert.Throws<ArgumentException>(() =>
             {
                 variable.WriteField(writer);
@@ -1299,6 +1307,10 @@ namespace Unity.Netcode.RuntimeTests
                 var tmpValue = new ForceNetworkSerializeByMemcpy<Guid>(value);
                 writer.WriteValueSafe(tmpValue);
             };
+            UserNetworkVariableSerialization<Guid>.DuplicateValue = (in Guid a, ref Guid b) =>
+            {
+                b = a;
+            };
             try
             {
                 using var writer = new FastBufferWriter(1024, Allocator.Temp);
@@ -1315,6 +1327,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 UserNetworkVariableSerialization<Guid>.ReadValue = null;
                 UserNetworkVariableSerialization<Guid>.WriteValue = null;
+                UserNetworkVariableSerialization<Guid>.DuplicateValue = null;
             }
         }
 
@@ -1360,7 +1373,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
 
-            serverVariable.Value.Dispose();
+            serverVariable.Dispose();
             serverVariable.Value = changedValue;
             Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
 
@@ -1374,8 +1387,19 @@ namespace Unity.Netcode.RuntimeTests
             clientVariable.ReadDelta(reader2, false);
             Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
 
-            serverVariable.Value.Dispose();
-            clientVariable.Value.Dispose();
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            var cachedValue = changedValue[0];
+            changedValue[0] = testValue[0];
+            Assert.IsTrue(serverVariable.IsDirty());
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            changedValue[0] = cachedValue;
+            Assert.IsTrue(serverVariable.IsDirty());
+
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
         }
 
         private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
@@ -1397,7 +1421,7 @@ namespace Unity.Netcode.RuntimeTests
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
             Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
 
-            serverVariable.Value.Dispose();
+            serverVariable.Dispose();
             serverVariable.Value = changedValue;
             Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
@@ -1417,8 +1441,19 @@ namespace Unity.Netcode.RuntimeTests
             // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
             Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
 
-            serverVariable.Value.Dispose();
-            clientVariable.Value.Dispose();
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
         }
 
         [Test]

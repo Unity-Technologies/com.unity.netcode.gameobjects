@@ -143,6 +143,10 @@ namespace Unity.Netcode.RuntimeTests
                 value = new MyTypeOne();
                 reader.ReadValueSafe(out value.Value);
             };
+            UserNetworkVariableSerialization<MyTypeOne>.DuplicateValue = (in MyTypeOne value, ref MyTypeOne duplicatedValue) =>
+            {
+                duplicatedValue = value;
+            };
 
             var serverObject = SpawnObject(m_WorkingPrefab, m_ServerNetworkManager);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();
@@ -172,6 +176,10 @@ namespace Unity.Netcode.RuntimeTests
         {
             UserNetworkVariableSerialization<MyTypeTwo>.WriteValue = NetworkVariableUserSerializableTypesTestsExtensionMethods.WriteValueSafe;
             UserNetworkVariableSerialization<MyTypeTwo>.ReadValue = NetworkVariableUserSerializableTypesTestsExtensionMethods.ReadValueSafe;
+            UserNetworkVariableSerialization<MyTypeTwo>.DuplicateValue = (in MyTypeTwo value, ref MyTypeTwo duplicatedValue) =>
+            {
+                duplicatedValue = value;
+            };
 
             var serverObject = SpawnObject(m_ExtensionMethodPrefab, m_ServerNetworkManager);
             var serverNetworkObject = serverObject.GetComponent<NetworkObject>();

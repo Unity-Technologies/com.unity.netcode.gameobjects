@@ -33,6 +33,13 @@ namespace Unity.Netcode
             : base(readPerm, writePerm)
         {
             m_InternalValue = value;
+            // Since we start with IsDirty = true, this doesn't need to be duplicated
+            // right away. It won't get read until after ResetDirty() is called, and
+            // the duplicate will be made there. Avoiding calling
+            // NetworkVariableSerialization<T>.Duplicate() is important because calling
+            // it in the constructor might not give users enough time to set the
+            // DuplicateValue callback if they're using UserNetworkVariableSerialization
+            m_PreviousValue = default;
         }
 
         /// <summary>
@@ -40,6 +47,11 @@ namespace Unity.Netcode
         /// </summary>
         [SerializeField]
         private protected T m_InternalValue;
+
+        private protected T m_PreviousValue;
+
+        private bool m_HasPreviousValue;
+        private bool m_IsDisposed;
 
         /// <summary>
         /// The value of the NetworkVariable container
@@ -61,12 +73,81 @@ namespace Unity.Netcode
                 }
 
                 Set(value);
+                m_IsDisposed = false;
             }
         }
 
         internal ref T RefValue()
         {
             return ref m_InternalValue;
+        }
+
+        public override void Dispose()
+        {
+            if (m_IsDisposed)
+            {
+                return;
+            }
+
+            m_IsDisposed = true;
+            if (m_InternalValue is IDisposable internalValueDisposable)
+            {
+                internalValueDisposable.Dispose();
+            }
+
+            m_InternalValue = default;
+            if (m_HasPreviousValue && m_PreviousValue is IDisposable previousValueDisposable)
+            {
+                m_HasPreviousValue = false;
+                previousValueDisposable.Dispose();
+            }
+
+            m_PreviousValue = default;
+        }
+
+        ~NetworkVariable()
+        {
+            Dispose();
+        }
+
+        /// <summary>
+        /// Gets Whether or not the container is dirty
+        /// </summary>
+        /// <returns>Whether or not the container is dirty</returns>
+        public override bool IsDirty()
+        {
+            // For most cases we can use the dirty flag.
+            // This doesn't work for cases where we're wrapping more complex types
+            // like INetworkSerializable, NativeList, NativeArray, etc.
+            // Changes to the values in those types don't call the Value.set method,
+            // so we can't catch those changes and need to compare the current value
+            // against the previous one.
+            if (base.IsDirty())
+            {
+                return true;
+            }
+
+            // Cache the dirty value so we don't perform this again if we already know we're dirty
+            // Unfortunately we can't cache the NOT dirty state, because that might change
+            // in between to checks... but the DIRTY state won't change until ResetDirty()
+            // is called.
+            var dirty = !NetworkVariableSerialization<T>.AreEqual(ref m_PreviousValue, ref m_InternalValue);
+            SetDirty(dirty);
+            return dirty;
+        }
+
+        /// <summary>
+        /// Resets the dirty state and marks the variable as synced / clean
+        /// </summary>
+        public override void ResetDirty()
+        {
+            base.ResetDirty();
+            // Resetting the dirty value declares that the current value is not dirty
+            // Therefore, we set the m_PreviousValue field to a duplicate of the current
+            // field, so that our next dirty check is made against the current "not dirty"
+            // value.
+            m_HasPreviousValue = true;
+            NetworkVariableSerialization<T>.Serializer.Duplicate(m_InternalValue, ref m_PreviousValue);
         }
 
         /// <summary>

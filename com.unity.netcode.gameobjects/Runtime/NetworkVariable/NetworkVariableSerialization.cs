@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
@@ -20,6 +21,7 @@ namespace Unity.Netcode
         // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
         public void Read(FastBufferReader reader, ref T value);
+        public void Duplicate(in T value, ref T duplicatedValue);
     }
 
     /// <summary>
@@ -34,6 +36,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref short value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void Duplicate(in short value, ref short duplicatedValue)
+        {
+            duplicatedValue = value;
         }
     }
 
@@ -50,6 +57,11 @@ namespace Unity.Netcode
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
+
+        public void Duplicate(in ushort value, ref ushort duplicatedValue)
+        {
+            duplicatedValue = value;
+        }
     }
 
     /// <summary>
@@ -64,6 +76,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref int value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void Duplicate(in int value, ref int duplicatedValue)
+        {
+            duplicatedValue = value;
         }
     }
 
@@ -80,6 +97,11 @@ namespace Unity.Netcode
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
+
+        public void Duplicate(in uint value, ref uint duplicatedValue)
+        {
+            duplicatedValue = value;
+        }
     }
 
     /// <summary>
@@ -95,6 +117,11 @@ namespace Unity.Netcode
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
+
+        public void Duplicate(in long value, ref long duplicatedValue)
+        {
+            duplicatedValue = value;
+        }
     }
 
     /// <summary>
@@ -109,6 +136,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref ulong value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        public void Duplicate(in ulong value, ref ulong duplicatedValue)
+        {
+            duplicatedValue = value;
         }
     }
 
@@ -130,6 +162,11 @@ namespace Unity.Netcode
         {
             reader.ReadUnmanagedSafe(out value);
         }
+
+        public void Duplicate(in T value, ref T duplicatedValue)
+        {
+            duplicatedValue = value;
+        }
     }
 
     internal class UnmanagedArraySerializer<T> : INetworkVariableSerializer<NativeArray<T>> where T : unmanaged
@@ -143,6 +180,21 @@ namespace Unity.Netcode
             value.Dispose();
             reader.ReadUnmanagedSafe(out value, Allocator.Persistent);
         }
+
+        public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated || duplicatedValue.Length != value.Length)
+            {
+                if (duplicatedValue.IsCreated)
+                {
+                    duplicatedValue.Dispose();
+                }
+
+                duplicatedValue = new NativeArray<T>(value.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
+
+            duplicatedValue.CopyFrom(value);
+        }
     }
 
     internal class UnmanagedListSerializer<T> : INetworkVariableSerializer<NativeList<T>> where T : unmanaged
@@ -154,6 +206,20 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadUnmanagedSafeInPlace(ref value);
+        }
+
+        public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated)
+            {
+                duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
+            }
+            else if(value.Length != duplicatedValue.Length)
+            {
+                duplicatedValue.ResizeUninitialized(value.Length);
+            }
+
+            duplicatedValue.CopyFrom(value);
         }
     }
 
@@ -170,6 +236,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref T value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void Duplicate(in T value, ref T duplicatedValue)
+        {
+            duplicatedValue = value;
         }
     }
 
@@ -188,6 +259,21 @@ namespace Unity.Netcode
             value.Dispose();
             reader.ReadValueSafe(out value, Allocator.Persistent);
         }
+
+        public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated || duplicatedValue.Length != value.Length)
+            {
+                if (duplicatedValue.IsCreated)
+                {
+                    duplicatedValue.Dispose();
+                }
+
+                duplicatedValue = new NativeArray<T>(value.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
+
+            duplicatedValue.CopyFrom(value);
+        }
     }
 
     /// <summary>
@@ -203,6 +289,20 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated)
+            {
+                duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
+            }
+            else if(value.Length != duplicatedValue.Length)
+            {
+                duplicatedValue.ResizeUninitialized(value.Length);
+            }
+
+            duplicatedValue.CopyFrom(value);
         }
     }
 
@@ -221,7 +321,11 @@ namespace Unity.Netcode
         {
             var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
             value.NetworkSerialize(bufferSerializer);
+        }
 
+        public void Duplicate(in T value, ref T duplicatedValue)
+        {
+            duplicatedValue = value;
         }
     }
 
@@ -240,6 +344,21 @@ namespace Unity.Netcode
             value.Dispose();
             reader.ReadValueSafe(out value, Allocator.Persistent);
         }
+
+        public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated || duplicatedValue.Length != value.Length)
+            {
+                if (duplicatedValue.IsCreated)
+                {
+                    duplicatedValue.Dispose();
+                }
+
+                duplicatedValue = new NativeArray<T>(value.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            }
+
+            duplicatedValue.CopyFrom(value);
+        }
     }
 
     /// <summary>
@@ -255,6 +374,20 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
+        {
+            if (!duplicatedValue.IsCreated)
+            {
+                duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
+            }
+            else if(value.Length != duplicatedValue.Length)
+            {
+                duplicatedValue.ResizeUninitialized(value.Length);
+            }
+
+            duplicatedValue.CopyFrom(value);
         }
     }
 
@@ -292,6 +425,16 @@ namespace Unity.Netcode
                 value.NetworkSerialize(bufferSerializer);
             }
         }
+
+        public void Duplicate(in T value, ref T duplicatedValue)
+        {
+            using var writer = new FastBufferWriter(256, Allocator.Temp);
+            var refValue = value;
+            Write(writer, ref refValue);
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            Read(reader, ref duplicatedValue);
+        }
     }
 
     /// <summary>
@@ -318,14 +461,26 @@ namespace Unity.Netcode
         public delegate void ReadValueDelegate(FastBufferReader reader, out T value);
 
         /// <summary>
-        /// The <see cref="WriteValueDelegate"/> delegate handler declaration
+        /// The read value delegate handler definition
+        /// </summary>
+        /// <param name="reader">The <see cref="FastBufferReader"/> to read the value of type `T`</param>
+        /// <param name="value">The value of type `T` to be read</param>
+        public delegate void DuplicateValueDelegate(in T value, ref T duplicatedValue);
+
+        /// <summary>
+        /// Callback to write a value
         /// </summary>
         public static WriteValueDelegate WriteValue;
 
         /// <summary>
-        /// The <see cref="ReadValueDelegate"/> delegate handler declaration
+        /// Callback to read a value
         /// </summary>
         public static ReadValueDelegate ReadValue;
+
+        /// <summary>
+        /// Callback to create a duplicate of a value, used to check for dirty status.
+        /// </summary>
+        public static DuplicateValueDelegate DuplicateValue;
     }
 
     /// <summary>
@@ -341,19 +496,27 @@ namespace Unity.Netcode
     {
         public void Write(FastBufferWriter writer, ref T value)
         {
-            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null)
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)} and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
             UserNetworkVariableSerialization<T>.WriteValue(writer, value);
         }
         public void Read(FastBufferReader reader, ref T value)
         {
-            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null)
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)} and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
             UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
+        }
+        public void Duplicate(in T value, ref T duplicatedValue)
+        {
+            if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
+            {
+                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+            }
+            UserNetworkVariableSerialization<T>.DuplicateValue(value, ref duplicatedValue);
         }
     }
 
@@ -597,6 +760,16 @@ namespace Unity.Netcode
         // Size is fixed
         internal static unsafe bool ValueEqualsList<TValueType>(ref NativeList<TValueType> a, ref NativeList<TValueType> b) where TValueType : unmanaged
         {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
             if (a.Length != b.Length)
             {
                 return false;
@@ -612,6 +785,16 @@ namespace Unity.Netcode
         // Size is fixed
         internal static unsafe bool ValueEqualsArray<TValueType>(ref NativeArray<TValueType> a, ref NativeArray<TValueType> b) where TValueType : unmanaged
         {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
             if (a.Length != b.Length)
             {
                 return false;
@@ -647,6 +830,16 @@ namespace Unity.Netcode
         // Size is fixed
         internal static unsafe bool EqualityEqualsList<TValueType>(ref NativeList<TValueType> a, ref NativeList<TValueType> b) where TValueType : unmanaged, IEquatable<TValueType>
         {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
             if (a.Length != b.Length)
             {
                 return false;
@@ -670,6 +863,16 @@ namespace Unity.Netcode
         // Size is fixed
         internal static unsafe bool EqualityEqualsArray<TValueType>(ref NativeArray<TValueType> a, ref NativeArray<TValueType> b) where TValueType : unmanaged, IEquatable<TValueType>
         {
+            if (a.IsCreated != b.IsCreated)
+            {
+                return false;
+            }
+
+            if (!a.IsCreated)
+            {
+                return true;
+            }
+
             if (a.Length != b.Length)
             {
                 return false;
