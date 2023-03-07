@@ -15,7 +15,7 @@ namespace Unity.Netcode
     {
         [HideInInspector]
         [SerializeField]
-        internal uint GlobalObjectIdHash;// { get; internal set; }
+        internal uint GlobalObjectIdHash;
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
