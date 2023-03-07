@@ -9,6 +9,30 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 
 ### Added
+- Added a way to access the GlobalObjectIdHash via PrefabHashId for use in the Connection Approval Callback. (#1338)
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
+- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
+
+### Changed
+
+- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
+- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+
+### Fixed
+
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
+- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
+- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
+- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
+- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
+
+## [1.3.0]
+
+### Added
+
+- Added detection and graceful handling of corrupt packets for additional safety. (#2419)
 
 ### Changed
 
@@ -21,7 +45,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Network prefabs are now stored in a ScriptableObject that can be shared between NetworkManagers, and have been exposed for public access. By default, a Default Prefabs List is created that contains all NetworkObject prefabs in the project, and new NetworkManagers will default to using that unless that option is turned off in the Netcode for GameObjects settings. Existing NetworkManagers will maintain their existing lists, which can be migrated to the new format via a button in their inspector. (#2322)
 
 ### Fixed
-- Added a way to access the GlobalObjectIdHash via PrefabHashId for use in the Connection Approval Callback. (#1338)
+
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
 - Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
@@ -36,7 +60,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
 - Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
 - Corrected an issue with the documentation for BufferSerializer (#2401)
-- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2394)
 
 ## [1.2.0] - 2022-11-21
 
