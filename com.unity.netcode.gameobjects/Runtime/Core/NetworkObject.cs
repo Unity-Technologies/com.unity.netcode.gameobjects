@@ -21,7 +21,7 @@ namespace Unity.Netcode
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
         /// </summary>
         [HideInInspector]
-        public uint PrefabHashId
+        public uint PrefabIdHash
         {
             get
             {
