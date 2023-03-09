@@ -90,13 +90,13 @@ namespace Unity.Netcode
         /// <returns></returns>
         public bool AddHandler(uint globalObjectIdHash, INetworkPrefabInstanceHandler instanceHandler)
         {
-            if (!m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
+            if (m_PrefabAssetToPrefabHandler.ContainsKey(globalObjectIdHash))
             {
-                m_PrefabAssetToPrefabHandler.Add(globalObjectIdHash, instanceHandler);
-                return true;
+                return false;
             }
 
-            return false;
+            m_PrefabAssetToPrefabHandler.Add(globalObjectIdHash, instanceHandler);
+            return true;
         }
 
         /// <summary>
@@ -108,47 +108,38 @@ namespace Unity.Netcode
         /// <param name="networkPrefabOverrides">one or more NetworkPrefabs could be used to override the source NetworkPrefab</param>
         public void RegisterHostGlobalObjectIdHashValues(GameObject sourceNetworkPrefab, List<GameObject> networkPrefabOverrides)
         {
-            if (NetworkManager.Singleton.IsListening)
-            {
-                if (NetworkManager.Singleton.IsHost)
-                {
-                    var sourceNetworkObject = sourceNetworkPrefab.GetComponent<NetworkObject>();
-                    if (sourceNetworkPrefab != null)
-                    {
-                        var sourceGlobalObjectIdHash = sourceNetworkObject.GlobalObjectIdHash;
-                        // Now we register all
-                        foreach (var gameObject in networkPrefabOverrides)
-                        {
-                            if (gameObject.TryGetComponent<NetworkObject>(out var targetNetworkObject))
-                            {
-                                if (!m_PrefabInstanceToPrefabAsset.ContainsKey(targetNetworkObject.GlobalObjectIdHash))
-                                {
-                                    m_PrefabInstanceToPrefabAsset.Add(targetNetworkObject.GlobalObjectIdHash, sourceGlobalObjectIdHash);
-                                }
-                                else
-                                {
-                                    Debug.LogWarning($"{targetNetworkObject.name} appears to be a duplicate entry!");
-                                }
-                            }
-                            else
-                            {
-                                throw new System.Exception($"{targetNetworkObject.name} does not have a {nameof(NetworkObject)} component!");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        throw new System.Exception($"{sourceNetworkPrefab.name} does not have a {nameof(NetworkObject)} component!");
-                    }
-                }
-                else
-                {
-                    throw new System.Exception($"You should only call {nameof(RegisterHostGlobalObjectIdHashValues)} as a Host!");
-                }
-            }
-            else
+            if (!NetworkManager.Singleton.IsListening)
             {
                 throw new System.Exception($"You can only call {nameof(RegisterHostGlobalObjectIdHashValues)} once NetworkManager is listening!");
+            }
+
+            if (!NetworkManager.Singleton.IsHost)
+            {
+                throw new System.Exception($"You should only call {nameof(RegisterHostGlobalObjectIdHashValues)} as a Host!");
+            }
+
+            var sourceNetworkObject = sourceNetworkPrefab.GetComponent<NetworkObject>();
+
+            if (sourceNetworkPrefab == null)
+            {
+                throw new System.Exception($"{sourceNetworkPrefab.name} does not have a {nameof(NetworkObject)} component!");
+            }
+
+            var sourceGlobalObjectIdHash = sourceNetworkObject.GlobalObjectIdHash;
+            // Now we register all
+            foreach (var gameObject in networkPrefabOverrides)
+            {
+                if (!gameObject.TryGetComponent<NetworkObject>(out var targetNetworkObject))
+                {
+                    throw new System.Exception($"{targetNetworkObject.name} does not have a {nameof(NetworkObject)} component!");
+                }
+
+                if (m_PrefabInstanceToPrefabAsset.ContainsKey(targetNetworkObject.GlobalObjectIdHash))
+                {
+                    Debug.LogWarning($"{targetNetworkObject.name} appears to be a duplicate entry!");
+                }
+
+                m_PrefabInstanceToPrefabAsset.Add(targetNetworkObject.GlobalObjectIdHash, sourceGlobalObjectIdHash);
             }
         }
 
@@ -179,21 +170,21 @@ namespace Unity.Netcode
         /// <returns>true (success) or false (failure)</returns>
         public bool RemoveHandler(uint globalObjectIdHash)
         {
-            if (m_PrefabInstanceToPrefabAsset.ContainsValue(globalObjectIdHash))
+            if (!m_PrefabInstanceToPrefabAsset.ContainsValue(globalObjectIdHash))
             {
-                uint networkPrefabHashKey = 0;
-                foreach (var kvp in m_PrefabInstanceToPrefabAsset)
-                {
-                    if (kvp.Value == globalObjectIdHash)
-                    {
-                        networkPrefabHashKey = kvp.Key;
-                        break;
-                    }
-                }
-                m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
+                return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
             }
 
-            return m_PrefabAssetToPrefabHandler.Remove(globalObjectIdHash);
+            uint networkPrefabHashKey = 0;
+            foreach (var kvp in m_PrefabInstanceToPrefabAsset)
+            {
+                if (kvp.Value == globalObjectIdHash)
+                {
+                    networkPrefabHashKey = kvp.Key;
+                    break;
+                }
+            }
+            m_PrefabInstanceToPrefabAsset.Remove(networkPrefabHashKey);
         }
 
         /// <summary>
@@ -256,21 +247,21 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal NetworkObject HandleNetworkPrefabSpawn(uint networkPrefabAssetHash, ulong ownerClientId, Vector3 position, Quaternion rotation)
         {
-            if (m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
+            if (!m_PrefabAssetToPrefabHandler.ContainsKey(networkPrefabAssetHash))
             {
-                var networkObjectInstance = m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Instantiate(ownerClientId, position, rotation);
-
-                //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
-                //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
-                if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
-                {
-                    m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
-                }
-
-                return networkObjectInstance;
+                return null;
             }
 
-            return null;
+            var networkObjectInstance = m_PrefabAssetToPrefabHandler[networkPrefabAssetHash].Instantiate(ownerClientId, position, rotation);
+
+            //Now we must make sure this alternate PrefabAsset spawned in place of the prefab asset with the networkPrefabAssetHash (GlobalObjectIdHash)
+            //is registered and linked to the networkPrefabAssetHash so during the HandleNetworkPrefabDestroy process we can identify the alternate prefab asset.
+            if (networkObjectInstance != null && !m_PrefabInstanceToPrefabAsset.ContainsKey(networkObjectInstance.GlobalObjectIdHash))
+            {
+                m_PrefabInstanceToPrefabAsset.Add(networkObjectInstance.GlobalObjectIdHash, networkPrefabAssetHash);
+            }
+
+            return networkObjectInstance;
         }
 
         /// <summary>
