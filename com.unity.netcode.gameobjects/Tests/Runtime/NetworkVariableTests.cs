@@ -5,7 +5,6 @@ using System.Linq;
 using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Netcode.TestHelpers.Runtime;
 using Random = UnityEngine.Random;
 using UnityEngine;
@@ -227,7 +226,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    // Please do not reference TestClass2 anywhere other than here!
+    // Please do not reference TestClass_ReferencedOnlyByTemplateNetworkBehavourType anywhere other than here!
     public class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
     {
 
@@ -1252,7 +1251,7 @@ namespace Unity.Netcode.RuntimeTests
             };
             UserNetworkVariableSerialization<string>.DuplicateValue = (in string a, ref string b) =>
             {
-                b = String.Copy(a);
+                b = string.Copy(a);
             };
             try
             {

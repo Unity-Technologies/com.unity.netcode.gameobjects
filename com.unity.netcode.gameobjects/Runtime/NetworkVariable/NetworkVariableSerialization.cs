@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
@@ -214,7 +213,7 @@ namespace Unity.Netcode
             {
                 duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
             }
-            else if(value.Length != duplicatedValue.Length)
+            else if (value.Length != duplicatedValue.Length)
             {
                 duplicatedValue.ResizeUninitialized(value.Length);
             }
@@ -297,7 +296,7 @@ namespace Unity.Netcode
             {
                 duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
             }
-            else if(value.Length != duplicatedValue.Length)
+            else if (value.Length != duplicatedValue.Length)
             {
                 duplicatedValue.ResizeUninitialized(value.Length);
             }
@@ -382,7 +381,7 @@ namespace Unity.Netcode
             {
                 duplicatedValue = new NativeList<T>(value.Length, Allocator.Persistent);
             }
-            else if(value.Length != duplicatedValue.Length)
+            else if (value.Length != duplicatedValue.Length)
             {
                 duplicatedValue.ResizeUninitialized(value.Length);
             }
