@@ -405,6 +405,9 @@ namespace Unity.Netcode
 
             if (networkObject != null)
             {
+                networkObject.DestroyWithScene = sceneObject.DestroyWithScene;
+                networkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
+
                 // SPECIAL CASE FOR IN-SCENE PLACED:  (only when the parent has a NetworkObject)
                 // This is a special case scenario where a late joining client has joined and loaded one or
                 // more scenes that contain nested in-scene placed NetworkObject children yet the server's
@@ -603,7 +606,18 @@ namespace Unity.Netcode
             var children = networkObject.GetComponentsInChildren<NetworkObject>();
             foreach (var childObject in children)
             {
+                // Do not propagate the in-scene object setting if a child was dynamically spawned.
+                if (childObject.IsSceneObject.HasValue && !childObject.IsSceneObject.Value)
+                {
+                    continue;
+                }
                 childObject.IsSceneObject = sceneObject;
+            }
+
+            // Only dynamically spawned NetworkObjects are allowed
+            if (!sceneObject)
+            {
+                networkObject.SubscribeToActiveSceneForSynch();
             }
         }
 

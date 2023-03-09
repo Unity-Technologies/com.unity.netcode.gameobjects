@@ -56,9 +56,12 @@ namespace TestProject.ManualTests
                 if (s_Instance != null && s_Instance != this)
                 {
                     var instancePool = s_Instance.GetComponent<NetworkPrefabPool>();
-                    instancePool.MoveBackToCurrentlyActiveScene();
-                    m_ObjectPool = new List<GameObject>(instancePool.m_ObjectPool);
-                    instancePool.m_ObjectPool.Clear();
+                    if (instancePool.m_ObjectPool != null)
+                    {
+                        instancePool.MoveBackToCurrentlyActiveScene();
+                        instancePool.m_ObjectPool.Clear();
+                        m_ObjectPool = new List<GameObject>(instancePool.m_ObjectPool);
+                    }
                     Destroy(s_Instance);
                     s_Instance = null;
                 }
