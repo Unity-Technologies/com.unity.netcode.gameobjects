@@ -1695,6 +1695,10 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                // ignore dynamically created scenes used for physics simulations
+                if (string.IsNullOrEmpty(scene.path))
+                    continue;
+
                 var sceneHash = SceneHashFromNameOrPath(scene.path);
 
                 // This would depend upon whether we are additive or not
