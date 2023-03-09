@@ -18,6 +18,22 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<Vector3> OwnerReadWrite_Position = new NetworkVariable<Vector3>(Vector3.one, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
     }
 
+    public class NetworkVariableMiddleclass<TMiddleclassName> : NetworkVariable<TMiddleclassName>
+    {
+
+    }
+
+    public class NetworkVariableSubclass<TSubclassName> : NetworkVariableMiddleclass<TSubclassName>
+    {
+
+    }
+
+    public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
+        where T : unmanaged
+    {
+        public T Value;
+    }
+
     // The ILPP code for NetworkVariables to determine how to serialize them relies on them existing as fields of a NetworkBehaviour to find them.
     // Some of the tests below create NetworkVariables on the stack, so this class is here just to make sure the relevant types are all accounted for.
     public class NetVarILPPClassForTests : NetworkBehaviour
@@ -26,6 +42,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<ManagedNetworkSerializableType> ManagedNetworkSerializableTypeVar;
         public NetworkVariable<string> StringVar;
         public NetworkVariable<Guid> GuidVar;
+        public NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
     }
 
     public class TemplateNetworkBehaviourType<T> : NetworkBehaviour
@@ -1095,6 +1112,21 @@ namespace Unity.Netcode.RuntimeTests
             {
                 variable.ReadField(reader);
             });
+        }
+
+        [Test]
+        public void TestTypesReferencedInSubclassSerializeSuccessfully()
+        {
+            var variable = new NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>>();
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            var value = new TemplatedValueOnlyReferencedByNetworkVariableSubclass<int> { Value = 12345 };
+            variable.Value = value;
+            variable.WriteField(writer);
+            variable.Value = new TemplatedValueOnlyReferencedByNetworkVariableSubclass<int> { Value = 54321 };
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            variable.ReadField(reader);
+            Assert.AreEqual(value.Value, variable.Value.Value);
         }
 
         [Test]
