@@ -1197,10 +1197,22 @@ namespace Unity.Netcode
                 }
             }
 
+            // Unregister network updates before trying to disconnect the client
+            this.UnregisterAllNetworkUpdates();
+
             if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
-                NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                // If transport throws and exception, log the exception and
+                // continue the shutdown sequence (or forever be shutting down)
+                try
+                {
+                    NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
 
             IsConnectedClient = false;
@@ -1220,8 +1232,6 @@ namespace Unity.Netcode
 
             IsServer = false;
             IsClient = false;
-
-            this.UnregisterAllNetworkUpdates();
 
             if (NetworkTickSystem != null)
             {
