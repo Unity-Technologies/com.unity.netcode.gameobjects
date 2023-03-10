@@ -1,28 +1,34 @@
 
+using UnityEngine;
+
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Structure that defines which axis of a <see cref="HalfVector3"/>
-    /// and <see cref="HalfVector3DeltaPosition"/> will be serialized.
+    /// Structure that defines which axis of a <see cref="Vector3"/> will be serialized.
     /// </summary>
-    public struct HalfVector3AxisToSynchronize
+    public struct Vector3AxisToSynchronize
     {
+
+        public static Vector3AxisToSynchronize AllAxis = new Vector3AxisToSynchronize();
         /// <summary>
         /// When enabled, serialize the X axis
         /// </summary>
-        public bool X => SyncAxis[0];
+        public bool X => SyncAxis.X;
 
         /// <summary>
         /// When enabled, serialize the Y axis
         /// </summary>
-        public bool Y => SyncAxis[1];
+        public bool Y => SyncAxis.Y;
 
         /// <summary>
         /// When enabled, serialize the Z axis
         /// </summary>
-        public bool Z => SyncAxis[2];
+        public bool Z => SyncAxis.Z;
 
-        public bool[] SyncAxis;
+        /// <summary>
+        /// Used to store the axis flag value as a <see cref="bool"/>
+        /// </summary>
+        public Vector3T<bool> SyncAxis;
 
         /// <summary>
         /// Constructor to preinitialize the x, y, and z values
@@ -30,9 +36,9 @@ namespace Unity.Netcode.Components
         /// <param name="x">when <see cref="true"/> the x-axis will be serialized</param>
         /// <param name="y">when <see cref="true"/> the y-axis will be serialized</param>
         /// <param name="z">when <see cref="true"/> the z-axis will be serialized</param>
-        public HalfVector3AxisToSynchronize(bool x = true, bool y = true, bool z = true)
+        public Vector3AxisToSynchronize(bool x = true, bool y = true, bool z = true)
         {
-            SyncAxis = new bool[3];
+            SyncAxis = default;
             SyncAxis[0] = x;
             SyncAxis[1] = y;
             SyncAxis[2] = z;

@@ -138,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 InLocalSpace = inLocalSpace,
                 IsTeleportingNextFrame = isTeleporting,
-                HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new HalfVector3AxisToSynchronize(true))
+                HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0)
             };
 
             // Step 1: change properties, expect state to be dirty

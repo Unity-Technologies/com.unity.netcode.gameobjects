@@ -4,37 +4,38 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Half float precision <see cref="Vector3"/>
+    /// Half float precision <see cref="Vector3"/>.
     /// </summary>
     public struct HalfVector3 : INetworkSerializable
     {
         /// <summary>
-        /// The half float precision value of the x-axis as a <see cref="ushort"/>
+        /// The half float precision value of the x-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort X => Axis[0];
+        public ushort X => Axis.X;
         /// <summary>
-        /// The half float precision value of the y-axis as a <see cref="ushort"/>
+        /// The half float precision value of the y-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort Y => Axis[1];
+        public ushort Y => Axis.Y;
         /// <summary>
-        /// The half float precision value of the z-axis as a <see cref="ushort"/>
+        /// The half float precision value of the z-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort Z => Axis[2];
-
-        public ushort[] Axis;
-
-        private HalfVector3AxisToSynchronize m_HalfVector3AxisToSynchronize;
+        public ushort Z => Axis.Z;
 
         /// <summary>
-        /// The serialization implementation of <see cref="INetworkSerializable"/>
+        /// Used to store the half float precision value as a <see cref="ushort"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serializer"></param>
+        public Vector3T<ushort> Axis;
+
+        internal Vector3AxisToSynchronize AxisToSynchronize;
+
+        /// <summary>
+        /// The serialization implementation of <see cref="INetworkSerializable"/>.
+        /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
-                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                if (AxisToSynchronize.SyncAxis[i])
                 {
                     var axisValue = Axis[i];
                     serializer.SerializeValue(ref axisValue);
@@ -47,31 +48,33 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Converts the <see cref="HalfVector3"/> to a full precision <see cref="Vector3"/>
+        /// Gets the full precision value as a <see cref="Vector3"/>.
         /// </summary>
-        /// <param name="vector3">the <see cref="Vector3"/> to store the full precision values in</param>
+        /// <returns>a <see cref="Vector3"/> as the full precision value.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ToVector3(ref Vector3 vector3)
+        public Vector3 ToVector3()
         {
-            for (int i = 0; i < 3; i++)
+            Vector3 fullPrecision = Vector3.zero;
+            for (int i = 0; i < Axis.Length; i++)
             {
-                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                if (AxisToSynchronize.SyncAxis[i])
                 {
-                    vector3[i] = Mathf.HalfToFloat(Axis[i]);
+                    fullPrecision[i] = Mathf.HalfToFloat(Axis[i]);
                 }
             }
+            return fullPrecision;
         }
 
         /// <summary>
-        /// Converts a <see cref="Vector3"/> full precision to a <see cref="HalfVector3"/>
+        /// Converts a <see cref="Vector3"/> to a half precision <see cref="HalfVector3"/>.
         /// </summary>
-        /// <param name="vector3">the <see cref="Vector3"/> to convert to a half precision <see cref="Vector3"/></param>
+        /// <param name="vector3">the <see cref="Vector3"/> to convert.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FromVector3(ref Vector3 vector3)
+        public void UpdateFrom(ref Vector3 vector3)
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
-                if (m_HalfVector3AxisToSynchronize.SyncAxis[i])
+                if (AxisToSynchronize.SyncAxis[i])
                 {
                     Axis[i] = Mathf.FloatToHalf(vector3[i]);
                 }
@@ -79,35 +82,43 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Constructor that initializes the HalfVector3 along with its precision adjustment
+        /// Constructor that initializes the HalfVector3 along with its precision adjustment.
         /// </summary>
-        /// <remarks>
-        /// Note about decimal precision:
-        /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
-        /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
-        /// valid values range from 0 to 4 decimal places to adjust up and back down (1000 to 1 : 1 to 0.001).
-        /// </remarks>
-        /// <param name="vector3">the vector3 to initialize the HalfVector3 with</param>
-        public HalfVector3(Vector3 vector3, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
+        /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
+        /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
+        public HalfVector3(Vector3 vector3, Vector3AxisToSynchronize vector3AxisToSynchronize)
         {
-            Axis = new ushort[3];
-            m_HalfVector3AxisToSynchronize = halfVector3AxisToSynchronize;
-            FromVector3(ref vector3);
+            Axis = default;
+            AxisToSynchronize = vector3AxisToSynchronize;
+            UpdateFrom(ref vector3);
         }
 
         /// <summary>
-        /// Constructor that initializes the HalfVector3 along with its precision adjustment
+        /// Constructor that defaults to all axis being synchronized.
         /// </summary>
-        /// <remarks>
-        /// Note about decimal precision:
-        /// If you know that all components (x, y, and z) of a Vector3 will not exceed a specific threshold, then you
-        /// can increase the decimal precision of a Vector3 by increasing the decimalPrecision value. The decimal precision
-        /// valid values range from 0 to 4 decimal places to adjust up and back down (1000 to 1 : 1 to 0.001).
-        /// </remarks>
-        /// <param name="x">x component to initialize the HalfVector3 with</param>
-        /// <param name="y">y component of initialize the HalfVector3 with</param>
-        /// <param name="z">z component of initialize the HalfVector3 with</param>
-        public HalfVector3(float x, float y, float z, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize) : this(new Vector3(x, y, z), halfVector3AxisToSynchronize)
+        /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
+        public HalfVector3(Vector3 vector3) : this(vector3, Vector3AxisToSynchronize.AllAxis)
+        {
+
+        }
+
+        /// <summary>
+        /// Constructor that initializes the HalfVector3 along with its precision adjustment.
+        /// </summary>
+        /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
+        /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
+        /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        public HalfVector3(float x, float y, float z, Vector3AxisToSynchronize vector3AxisToSynchronize) : this(new Vector3(x, y, z), vector3AxisToSynchronize)
+        {
+        }
+
+        /// <summary>
+        /// Constructor that defaults to all axis being synchronized.
+        /// </summary>
+        /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
+        /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
+        /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        public HalfVector3(float x, float y, float z) : this(new Vector3(x, y, z), Vector3AxisToSynchronize.AllAxis)
         {
         }
     }

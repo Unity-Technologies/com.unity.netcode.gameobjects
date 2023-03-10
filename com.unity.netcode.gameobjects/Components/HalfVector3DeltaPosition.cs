@@ -4,25 +4,27 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Half float precision <see cref="Vector3"/> that is used for delta position
-    /// synchronization.
+    /// Half float precision <see cref="Vector3"/> used to synchromnize delta position.
     /// </summary>
     public struct HalfVector3DeltaPosition : INetworkSerializable
     {
         /// <summary>
-        /// The <see cref="ushort"/> half float delta position X value
+        /// The half float precision value of the x-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort X => Axis[0];
+        public ushort X => Axis.X;
         /// <summary>
-        /// The <see cref="ushort"/> half float delta position Y value
+        /// The half float precision value of the y-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort Y => Axis[1];
+        public ushort Y => Axis.Y;
         /// <summary>
-        /// The <see cref="ushort"/> half float delta position Z value
+        /// The half float precision value of the z-axis as a <see cref="ushort"/>.
         /// </summary>
-        public ushort Z => Axis[2];
+        public ushort Z => Axis.Z;
 
-        public ushort[] Axis;
+        /// <summary>
+        /// Used to store the half float precision value as a <see cref="ushort"/>.
+        /// </summary>
+        public Vector3T<ushort> Axis;
 
         internal Vector3 CurrentBasePosition;
         internal Vector3 PrecisionLossDelta;
@@ -33,16 +35,14 @@ namespace Unity.Netcode.Components
 
         internal const float MaxDeltaBeforeAdjustment = 64f;
 
-        internal HalfVector3AxisToSynchronize AxisToSynchronize;
+        internal Vector3AxisToSynchronize AxisToSynchronize;
 
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="serializer"></param>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
                 if (AxisToSynchronize.SyncAxis[i])
                 {
@@ -57,23 +57,23 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Gets the full Vector3 position.
+        /// Gets the full precision value of Vector3 position while also potentially updating the current base position.
         /// </summary>
-        /// <param name="tick">the network tick state applied to this HalfVector3DeltaPosition</param>
-        /// <returns>the <see cref="Vector3"/> full position value</returns>
+        /// <param name="networkTick">Use the current network tick value.</param>
+        /// <returns>The full position as a <see cref="Vector3"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Vector3 ToVector3(int tick)
+        public Vector3 ToVector3(int networkTick)
         {
             // When synchronizing, it is possible to have a state update arrive
             // for the same synchronization network tick.  Under this scenario,
             // we only want to return the existing CurrentBasePosition + DeltaPosition
             // values and not process the X, Y, or Z values.
             // (See the constructors below)
-            if (tick == NetworkTick)
+            if (networkTick == NetworkTick)
             {
                 return CurrentBasePosition + DeltaPosition;
             }
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
                 if (AxisToSynchronize.SyncAxis[i])
                 {
@@ -92,15 +92,19 @@ namespace Unity.Netcode.Components
             return CurrentBasePosition + DeltaPosition;
         }
 
-        public void UpdateAxisToSynchronize(HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
+        /// <summary>
+        /// Updates the axis to be synchronized.
+        /// </summary>
+        /// <param name="vector3AxisToSynchronize">Updated <see cref="Vector3AxisToSynchronize"/> values.</param>
+        public void UpdateAxisToSynchronize(Vector3AxisToSynchronize vector3AxisToSynchronize)
         {
-            AxisToSynchronize = halfVector3AxisToSynchronize;
+            AxisToSynchronize = vector3AxisToSynchronize;
         }
 
         /// <summary>
-        /// Returns the base position without the delta
+        /// Returns the current base position (excluding the delta position offset).
         /// </summary>
-        /// <returns><see cref="Vector3"/></returns>
+        /// <returns>The current base position as a <see cref="Vector3"/></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetCurrentBasePosition()
         {
@@ -108,9 +112,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Returns the full position with the delta
+        /// Returns the full position which includes the delta offset position.
         /// </summary>
-        /// <returns><see cref="Vector3"/></returns>
+        /// <returns>The full position as a <see cref="Vector3"/>.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetFullPosition()
         {
@@ -119,9 +123,10 @@ namespace Unity.Netcode.Components
 
         /// <summary>
         /// The half float vector3 version of the current delta position.
-        /// Only applies to the authoritative side for <see cref="NetworkTransform"/>
-        /// instances.
         /// </summary>
+        /// <remarks>
+        /// Only applies to the authoritative side for <see cref="NetworkTransform"/> instances.
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetConvertedDelta()
         {
@@ -144,17 +149,17 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Sets the new position delta based off of the initial position.
+        /// Updates the position delta based off of the current base position.
         /// </summary>
-        /// <param name="vector3">the full <see cref="Vector3"/> to generate a delta from</param>
-        /// <param name="tick">the network tick when this Vector3 value is applied</param>
+        /// <param name="vector3">The full precision <see cref="Vector3"/> value to (converted to half floats) used to determine the delta offset positon.</param>
+        /// <param name="networkTick">Set the current network tick value when updating.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FromVector3(ref Vector3 vector3, int tick)
+        public void UpdateFrom(ref Vector3 vector3, int networkTick)
         {
-            NetworkTick = tick;
+            NetworkTick = networkTick;
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
                 if (AxisToSynchronize.SyncAxis[i])
                 {
@@ -170,7 +175,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < Axis.Length; i++)
             {
                 if (AxisToSynchronize.SyncAxis[i])
                 {
@@ -180,34 +185,56 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// One of two constructors that should be called to set the initial position.
-        /// This uses a <see cref="Vector3"/> for initialization.
+        /// Constructor
         /// </summary>
-        /// <param name="vector3">the <see cref="Vector3"/> to initialize this instance with</param>
-        /// <param name="networkTick">use the network tick when creating</param>
-        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize)
+        /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
+        /// <param name="networkTick">Set the network tick value to the current network tick when instantiating.</param>
+        /// <param name="vector3AxisToSynchronize">The axis to be synchronized.</param>
+        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick, Vector3AxisToSynchronize vector3AxisToSynchronize)
         {
-            AxisToSynchronize = halfVector3AxisToSynchronize;
-            Axis = new ushort[3];
+            AxisToSynchronize = vector3AxisToSynchronize;
+            Axis = default;
             NetworkTick = networkTick;
             CurrentBasePosition = vector3;
             PreviousPosition = vector3;
             PrecisionLossDelta = Vector3.zero;
             DeltaPosition = Vector3.zero;
             HalfDeltaConvertedBack = Vector3.zero;
-            FromVector3(ref vector3, networkTick);
+            UpdateFrom(ref vector3, networkTick);
         }
 
         /// <summary>
-        /// One of two constructors that should be called to set the initial position.
-        /// This uses individual x, y, and z floats for initialization.
+        /// Constructor that defaults to all axis being synchronized.
         /// </summary>
-        /// <param name="x">x-axis value to set</param>
-        /// <param name="y">y-axis value to set</param>
-        /// <param name="z">z-axis value to set</param>
-        /// <param name="networkTick">use the network tick when creating</param>
-        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick, HalfVector3AxisToSynchronize halfVector3AxisToSynchronize) :
-            this(new Vector3(x, y, z), networkTick, halfVector3AxisToSynchronize)
+        /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
+        /// <param name="networkTick">Set the network tick value to the current network tick when instantiating.</param>
+        public HalfVector3DeltaPosition(Vector3 vector3, int networkTick) : this(vector3, networkTick, Vector3AxisToSynchronize.AllAxis)
+        {
+
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
+        /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
+        /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        /// <param name="networkTick">Set the network tick value to the current network tick when instantiating.</param>
+        /// <param name="vector3AxisToSynchronize">The axis to be synchronized.</param>
+        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick, Vector3AxisToSynchronize vector3AxisToSynchronize) :
+            this(new Vector3(x, y, z), networkTick, vector3AxisToSynchronize)
+        {
+        }
+
+        /// <summary>
+        /// Constructor that defaults to all axis being synchronized
+        /// </summary>
+        /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
+        /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
+        /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        /// <param name="networkTick">Set the network tick value to the current network tick when instantiating.</param>
+        public HalfVector3DeltaPosition(float x, float y, float z, int networkTick) :
+            this(new Vector3(x, y, z), networkTick, Vector3AxisToSynchronize.AllAxis)
         {
         }
     }

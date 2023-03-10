@@ -1,68 +1,132 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
 {
-    internal struct HalfVector4 : INetworkSerializable
+    /// <summary>
+    /// Half Precision <see cref="Vector4"/> 
+    /// </summary>
+    /// <remarks>
+    /// This can also be used to convert a <see cref="Quaternion"/> to half precision.
+    /// </remarks>
+    public struct HalfVector4 : INetworkSerializable
     {
-        public ushort X;
-        public ushort Y;
-        public ushort Z;
-        public ushort W;
+        /// <summary>
+        /// The half float precision value of the x-axis as a <see cref="ushort"/>.
+        /// </summary>
+        public ushort X => Axis.X;
 
+        /// <summary>
+        /// The half float precision value of the y-axis as a <see cref="ushort"/>.
+        /// </summary>
+        public ushort Y => Axis.Y;
+
+        /// <summary>
+        /// The half float precision value of the z-axis as a <see cref="ushort"/>.
+        /// </summary>
+        public ushort Z => Axis.Z;
+
+        /// <summary>
+        /// The half float precision value of the w-axis as a <see cref="ushort"/>.
+        /// </summary>
+        public ushort W => Axis.W;
+
+        /// <summary>
+        /// Used to store the half float precision value as a <see cref="ushort"/>
+        /// </summary>
+        public Vector4T<ushort> Axis;
+
+        /// <summary>
+        /// The serialization implementation of <see cref="INetworkSerializable"/>
+        /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref X);
-            serializer.SerializeValue(ref Y);
-            serializer.SerializeValue(ref Z);
-            serializer.SerializeValue(ref W);
+            for (int i = 0; i < Axis.Length; i++)
+            {
+                var axisValue = Axis[i];
+                serializer.SerializeValue(ref axisValue);
+                if (serializer.IsReader)
+                {
+                    Axis[i] = axisValue;
+                }
+            }
         }
 
-        public void ToVector4(ref Vector4 halfVector4)
+        /// <summary>
+        /// Converts this instance to a full precision <see cref="Vector4"/>.
+        /// </summary>
+        /// <returns>A <see cref="Vector4"/> as the full precision value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector4 ToVector4()
         {
-            halfVector4.x = Mathf.HalfToFloat(X);
-            halfVector4.y = Mathf.HalfToFloat(Y);
-            halfVector4.z = Mathf.HalfToFloat(Z);
-            halfVector4.w = Mathf.HalfToFloat(W);
+            Vector4 fullPrecision = Vector4.zero;
+            for (int i = 0; i < Axis.Length; i++)
+            {
+                fullPrecision[i] = Mathf.HalfToFloat(Axis[i]);
+            }
+            return fullPrecision;
         }
 
-        public void ToQuaternion(ref Quaternion quaternion)
+        /// <summary>
+        /// Converts this instance to a full precision <see cref="Quaternion"/>.
+        /// </summary>
+        /// <returns>A <see cref="Quaternion"/> as the full precision value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Quaternion ToQuaternion()
         {
-            quaternion.x = Mathf.HalfToFloat(X);
-            quaternion.y = Mathf.HalfToFloat(Y);
-            quaternion.z = Mathf.HalfToFloat(Z);
-            quaternion.w = Mathf.HalfToFloat(W);
+            var quaternion = Quaternion.identity;
+            for (int i = 0; i < Axis.Length; i++)
+            {
+                quaternion[i] = Mathf.HalfToFloat(Axis[i]);
+            }
+            return quaternion;
         }
 
-        public void FromVector4(ref Vector4 vector4)
+        /// <summary>
+        /// Converts the instance to a full precision <see cref="Vector4"/>.
+        /// </summary>
+        /// <param name="vector4">The <see cref="Vector4"/> to convert and update this instance with.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UpdateFrom(ref Vector4 vector4)
         {
-            X = Mathf.FloatToHalf(vector4.x);
-            Y = Mathf.FloatToHalf(vector4.y);
-            Z = Mathf.FloatToHalf(vector4.z);
-            W = Mathf.FloatToHalf(vector4.w);
+            for (int i = 0; i < Axis.Length; i++)
+            {
+                Axis[i] = Mathf.FloatToHalf(vector4[i]);
+            }
         }
 
-        public void FromQuaternion(ref Quaternion quaternion)
+        /// <summary>
+        /// Converts a full precision <see cref="Vector4"/> to half precision and updates the current instance.
+        /// </summary>
+        /// <param name="quaternion">The <see cref="Quaternion"/> to convert and update this instance with.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UpdateFrom(ref Quaternion quaternion)
         {
-            X = Mathf.FloatToHalf(quaternion.x);
-            Y = Mathf.FloatToHalf(quaternion.y);
-            Z = Mathf.FloatToHalf(quaternion.z);
-            W = Mathf.FloatToHalf(quaternion.w);
+            for (int i = 0; i < Axis.Length; i++)
+            {
+                Axis[i] = Mathf.FloatToHalf(quaternion[i]);
+            }
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="vector4">The initial axial values (converted to half floats) when instantiated.</param>
         public HalfVector4(Vector4 vector4)
         {
-            X = Mathf.FloatToHalf(vector4.x);
-            Y = Mathf.FloatToHalf(vector4.y);
-            Z = Mathf.FloatToHalf(vector4.z);
-            W = Mathf.FloatToHalf(vector4.w);
+            Axis = default;
+            UpdateFrom(ref vector4);
         }
 
-        public HalfVector4(float x, float y, float z, float w)
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
+        /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
+        /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        /// <param name="w">The initial w axis (converted to half float) value when instantiated.</param>
+        public HalfVector4(float x, float y, float z, float w) : this(new Vector4(x, y, z, w))
         {
-            X = Mathf.FloatToHalf(x);
-            Y = Mathf.FloatToHalf(y);
-            Z = Mathf.FloatToHalf(z);
-            W = Mathf.FloatToHalf(w);
         }
     }
 }

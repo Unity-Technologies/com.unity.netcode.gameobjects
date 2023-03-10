@@ -62,8 +62,8 @@ namespace TestProject.ManualTests
             Camera.main.transform.parent = transform;
             transform.position += PositionOffset;
             m_ClientPosition = transform.position;
-            m_HalfVector3SimulatedClient = new HalfVector3DeltaPosition(m_ClientPosition, 0, new HalfVector3AxisToSynchronize(true));
-            m_HalfVector3Server = new HalfVector3DeltaPosition(m_ClientPosition, 0, new HalfVector3AxisToSynchronize(true));
+            m_HalfVector3SimulatedClient = new HalfVector3DeltaPosition(m_ClientPosition, 0);
+            m_HalfVector3Server = new HalfVector3DeltaPosition(m_ClientPosition, 0);
             m_ServerPosition = transform.position;
             m_LastInterpolateState = Interpolate;
             ServerPosition.enabled = false;
@@ -125,8 +125,8 @@ namespace TestProject.ManualTests
 
                 if (isPositionDirty)
                 {
-                    m_HalfVector3SimulatedClient = new HalfVector3DeltaPosition(position, NetworkManager.ServerTime.Tick, new HalfVector3AxisToSynchronize(true));
-                    m_HalfVector3Server = new HalfVector3DeltaPosition(position, NetworkManager.ServerTime.Tick, new HalfVector3AxisToSynchronize(true));
+                    m_HalfVector3SimulatedClient = new HalfVector3DeltaPosition(position, NetworkManager.ServerTime.Tick);
+                    m_HalfVector3Server = new HalfVector3DeltaPosition(position, NetworkManager.ServerTime.Tick);
                     m_ClientPosition = position;
                     OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
                     m_LastInterpolateState = Interpolate;
@@ -145,7 +145,7 @@ namespace TestProject.ManualTests
                 }
                 if (isPositionDirty)
                 {
-                    m_HalfVector3Server.FromVector3(ref position, NetworkManager.ServerTime.Tick);
+                    m_HalfVector3Server.UpdateFrom(ref position, NetworkManager.ServerTime.Tick);
                     m_HalfVector3SimulatedClient.Axis = m_HalfVector3Server.Axis;
                     m_ClientPosition = m_HalfVector3SimulatedClient.ToVector3(NetworkManager.ServerTime.Tick);
                     OnNonAuthorityUpdatePositionServerRpc(m_ClientPosition);
