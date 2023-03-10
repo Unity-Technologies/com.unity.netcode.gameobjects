@@ -65,10 +65,17 @@ namespace Unity.Netcode.Components
                         }
                         m_ProcessParameterUpdates.Clear();
 
-                        // Only owners check for Animator changes
-                        if (m_NetworkAnimator.IsOwner && !m_NetworkAnimator.IsServerAuthoritative() || m_NetworkAnimator.IsServerAuthoritative() && m_NetworkAnimator.NetworkManager.IsServer)
+                        // Only authority checks for Animator changes
+                        if (m_NetworkAnimator.HasAuthority())
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
+                        }
+
+                        // If using root motion, then make sure the authoritative side is enabled and the non-authoritative side is disabled
+                        if (m_NetworkAnimator.ApplyRootMotion)
+                        {
+                            // Non-authority makes sure that apply root motion is not set
+                            m_NetworkAnimator.CheckForApplyRootMotion();
                         }
                         break;
                     }
@@ -159,6 +166,17 @@ namespace Unity.Netcode.Components
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
 
     {
+        /// <summary>
+        /// When enabled, this will automatically make sure that the authoritative instance has the <see cref="Animator.applyRootMotion"/> set to true 
+        /// and the non-authoritative instance(s) set to false.
+        /// </summary>
+        /// <remarks>
+        /// This should only be used when also using <see cref="NetworkTransform"/> to synchronize the position. If you are handling position synchronization
+        /// yourself and want root motion applied on all instances then do not enabled this property.
+        /// </remarks>
+        [Tooltip("If you plan on using root motion and synchronize postion with NetworkTransform, then enable this property. If not, then make sure this property is disabled.")]
+        public bool ApplyRootMotion;
+
         [Serializable]
         internal class TransitionStateinfo
         {
@@ -628,6 +646,39 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CachedAnimatorParameters[i] = cacheParam;
+            }
+        }
+
+        internal bool HasAuthority()
+        {
+            return (IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && NetworkManager.IsServer);
+        }
+
+        /// <summary>
+        /// This prevents non-authoritative instances from having Animator.applyRootMotion set to true.
+        /// </summary>
+        /// <remarks>
+        /// Should only be invoked from within NetworkAnimatorStateChangeHandler.NetworkUpdate as it already has determined
+        /// that the instance does not have authority.
+        /// </remarks>
+        internal void CheckForApplyRootMotion()
+        {
+            // If we are not spawned exit early
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+            // Check to see if we have apply root motion enabled and if so disable it
+            if (NetworkManager != null && m_Animator != null && m_Animator.applyRootMotion != HasAuthority())
+            {
+                var networkTransform = GetComponentInParent<NetworkTransform>();
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[{gameObject.name}] Detected that a non-authoritative instance of {nameof(NetworkAnimator)} had " +
+                        $"{nameof(Animator)}.{nameof(Animator.applyRootMotion)} enabled. Non-authoritative instances should not have this enabled.");
+                }
+                m_Animator.applyRootMotion = HasAuthority();
             }
         }
 
