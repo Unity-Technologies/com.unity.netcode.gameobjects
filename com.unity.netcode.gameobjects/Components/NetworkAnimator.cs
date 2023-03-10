@@ -657,19 +657,15 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// This prevents non-authoritative instances from having Animator.applyRootMotion set to true.
         /// </summary>
-        /// <remarks>
-        /// Should only be invoked from within NetworkAnimatorStateChangeHandler.NetworkUpdate as it already has determined
-        /// that the instance does not have authority.
-        /// </remarks>
         internal void CheckForApplyRootMotion()
         {
-            // If we are not spawned exit early
-            if (!IsSpawned)
+            // If we are not spawned or ApplyRootMotion is not enabled, then exit early.
+            if (!IsSpawned || !ApplyRootMotion)
             {
                 return;
             }
 
-            // Check to see if we have apply root motion enabled and if so disable it
+            // Check to see if root motion matches the authority of this instance.
             if (NetworkManager != null && m_Animator != null && m_Animator.applyRootMotion != HasAuthority())
             {
                 var networkTransform = GetComponentInParent<NetworkTransform>();
@@ -678,6 +674,7 @@ namespace Unity.Netcode.Components
                     NetworkLog.LogWarning($"[{gameObject.name}] Detected that a non-authoritative instance of {nameof(NetworkAnimator)} had " +
                         $"{nameof(Animator)}.{nameof(Animator.applyRootMotion)} enabled. Non-authoritative instances should not have this enabled.");
                 }
+                // Set the root motion to be the same as the authority of this instance
                 m_Animator.applyRootMotion = HasAuthority();
             }
         }
