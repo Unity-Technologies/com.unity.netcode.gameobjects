@@ -649,9 +649,13 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal bool HasAuthority()
+        /// <summary>
+        /// Returns whether the instance in question has authority.
+        /// </summary>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool HasAuthority()
         {
-            return (IsOwner && !IsServerAuthoritative() || IsServerAuthoritative() && NetworkManager.IsServer);
+            return (IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && NetworkManager.IsServer);
         }
 
         /// <summary>
