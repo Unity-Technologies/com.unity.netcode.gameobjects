@@ -66,9 +66,9 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Converts a <see cref="Vector3"/> to a half precision <see cref="HalfVector3"/>.
+        /// Converts a full precision <see cref="Vector3"/> to half precision and updates the current instance.
         /// </summary>
-        /// <param name="vector3">the <see cref="Vector3"/> to convert.</param>
+        /// <param name="vector3">The <see cref="Vector3"/> to convert.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateFrom(ref Vector3 vector3)
         {
@@ -82,7 +82,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Constructor that initializes the HalfVector3 along with its precision adjustment.
+        /// Constructor
         /// </summary>
         /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
         /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
@@ -103,11 +103,12 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Constructor that initializes the HalfVector3 along with its precision adjustment.
+        /// Constructor
         /// </summary>
         /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
         /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
         /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
+        /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
         public HalfVector3(float x, float y, float z, Vector3AxisToSynchronize vector3AxisToSynchronize) : this(new Vector3(x, y, z), vector3AxisToSynchronize)
         {
         }

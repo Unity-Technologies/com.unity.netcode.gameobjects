@@ -83,7 +83,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Converts the instance to a full precision <see cref="Vector4"/>.
+        /// Converts a full precision <see cref="Vector4"/> to half precision and updates the current instance.
         /// </summary>
         /// <param name="vector4">The <see cref="Vector4"/> to convert and update this instance with.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

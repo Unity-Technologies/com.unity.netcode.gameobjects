@@ -53,7 +53,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         public struct NetworkTransformState : INetworkSerializable
         {
-            private const int k_InLocalSpaceBit = 0x00000001; // Persistent
+            private const int k_InLocalSpaceBit = 0x00000001; // Persists between state updates (authority dictates if this is set)
             private const int k_PositionXBit = 0x00000002;
             private const int k_PositionYBit = 0x00000004;
             private const int k_PositionZBit = 0x00000008;
@@ -64,12 +64,12 @@ namespace Unity.Netcode.Components
             private const int k_ScaleYBit = 0x00000100;
             private const int k_ScaleZBit = 0x00000200;
             private const int k_TeleportingBit = 0x00000400;
-            private const int k_Interpolate = 0x00000800; // Persistent
-            private const int k_QuaternionSync = 0x00001000; // Persistent
-            private const int k_QuaternionCompress = 0x00002000; // Persistent
-            private const int k_UseHalfFloats = 0x00004000; // Persistent
+            private const int k_Interpolate = 0x00000800; // Persists between state updates (authority dictates if this is set)
+            private const int k_QuaternionSync = 0x00001000; // Persists between state updates (authority dictates if this is set)
+            private const int k_QuaternionCompress = 0x00002000; // Persists between state updates (authority dictates if this is set)
+            private const int k_UseHalfFloats = 0x00004000; // Persists between state updates (authority dictates if this is set)
             private const int k_Synchronization = 0x00008000;
-            private const int k_PositionSlerp = 0x00010000; // Persistent
+            private const int k_PositionSlerp = 0x00010000; // Persists between state updates (authority dictates if this is set)
 
             // Stores persistent and state relative flags
             private uint m_Bitset;
@@ -109,7 +109,7 @@ namespace Unity.Netcode.Components
             internal bool IsDirty { get; set; }
 
             /// <summary>
-            /// The last calculated size of the <see cref="NetworkTransform"/> when serialized.
+            /// The last byte size of the <see cref="NetworkTransformState"/> updated.
             /// </summary>
             public int LastSerializedSize { get; internal set; }
 
@@ -125,7 +125,7 @@ namespace Unity.Netcode.Components
             private FastBufferWriter m_Writer;
 
             /// <summary>
-            /// When set, the <see cref="NetworkTransform"/> is operating in local space
+            /// When set, the <see cref="NetworkTransform"/> is operates in local space
             /// </summary>
             public bool InLocalSpace
             {
@@ -138,11 +138,8 @@ namespace Unity.Netcode.Components
 
             // Position
             /// <summary>
-            /// When set, the position X-Axis value has been updated
+            /// When set, the X-Axis position value has changed
             /// </summary>
-            /// When half float precision is enabled:
-            /// - Position will always update all axis
-            /// </remarks>
             public bool HasPositionX
             {
                 get => GetFlag(k_PositionXBit);
@@ -153,11 +150,8 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the position Y-Axis value has been updated
+            /// When set, the Y-Axis position value has changed
             /// </summary>
-            /// When half float precision is enabled:
-            /// - Position will always update all axis
-            /// </remarks>
             public bool HasPositionY
             {
                 get => GetFlag(k_PositionYBit);
@@ -168,11 +162,8 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the position X-Axis value has been updated
+            /// When set, the Z-Axis position value has changed
             /// </summary>
-            /// When half float precision is enabled:
-            /// - Position will always update all axis
-            /// </remarks>
             public bool HasPositionZ
             {
                 get => GetFlag(k_PositionZBit);
@@ -183,12 +174,8 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, position values have been updated.
+            /// When set, at least one of the position axis values has changed.
             /// </summary>
-            /// <remarks>
-            /// When half float precision is enabled:
-            /// - Position will always update all axis
-            /// </remarks>
             public bool HasPositionChange
             {
                 get
@@ -199,10 +186,10 @@ namespace Unity.Netcode.Components
 
             // RotAngles
             /// <summary>
-            /// When set, the rotation (Euler) X-Axis value has been updated
+            /// When set, the Euler rotation X-Axis value has changed.
             /// </summary>
             /// <remarks>
-            /// When quaternion synchronization is enabled all axis are updated
+            /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
             public bool HasRotAngleX
             {
@@ -214,10 +201,10 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the rotation (Euler) Y-Axis value has been updated
+            /// When set, the Euler rotation Y-Axis value has changed.
             /// </summary>
             /// <remarks>
-            /// When quaternion synchronization is enabled all axis are updated
+            /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
             public bool HasRotAngleY
             {
@@ -229,10 +216,10 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the rotation (Euler) Z-Axis value has been updated
+            /// When set, the Euler rotation Z-Axis value has changed.
             /// </summary>
             /// <remarks>
-            /// When quaternion synchronization is enabled all axis are updated
+            /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
             public bool HasRotAngleZ
             {
@@ -244,11 +231,10 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, rotation values have been updated.
+            /// When set, at least one of the rotation axis values has changed.
             /// </summary>
             /// <remarks>
-            /// When half float precision is enabled:
-            /// - Rotation will always update all axis
+            /// When quaternion synchronization is enabled all axis are always updated.
             /// </remarks>
             public bool HasRotAngleChange
             {
@@ -272,7 +258,7 @@ namespace Unity.Netcode.Components
 
             // Scale
             /// <summary>
-            /// When set, the scale Z-Axis value has been updated
+            /// When set, the X-Axis scale value has changed.
             /// </summary>
             public bool HasScaleX
             {
@@ -284,7 +270,7 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the scale Y-Axis value has been updated
+            /// When set, the Y-Axis scale value has changed.
             /// </summary>
             public bool HasScaleY
             {
@@ -296,7 +282,7 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, the scale Z-Axis value has been updated
+            /// When set, the Z-Axis scale value has changed.
             /// </summary>
             public bool HasScaleZ
             {
@@ -308,7 +294,7 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, scale values have been updated.
+            /// When set, at least one of the scale axis values has changed.
             /// </summary>
             public bool HasScaleChange
             {
@@ -319,8 +305,14 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, this state is considered a "teleport" command
+            /// When set, the current state will be treated as a teleport.
             /// </summary>
+            /// <remarks>
+            /// When teleporting:
+            /// - Interpolation is reset.
+            /// - If using half precision, full precision values are used.
+            /// - All axis marked to be synchronized will be updated.
+            /// </remarks>
             public bool IsTeleportingNextFrame
             {
                 get => GetFlag(k_TeleportingBit);
@@ -331,8 +323,12 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Synchronized by authority, when set the <see cref="NetworkTransform"/> is using interpolation
+            /// When set the <see cref="NetworkTransform"/> is uses interpolation.
             /// </summary>
+            /// <remarks>
+            /// Authority does not apply interpolation via <see cref="NetworkTransform"/>.
+            /// Authority should handle its own motion/rotation/scale smoothing locally.
+            /// </remarks>
             public bool UseInterpolation
             {
                 get => GetFlag(k_Interpolate);
@@ -343,8 +339,13 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set this state is using <see cref="Quaternion"/> synchronization
+            /// When enabled, this <see cref="NetworkTransform"/> instance uses <see cref="Quaternion"/> synchronization.
             /// </summary>
+            /// <remarks>
+            /// Use quaternion synchronization if you are nesting <see cref="NetworkTransform"/>s and rotation can occur on both the parent and child.
+            /// When quaternion synchronization is enabled, the entire quaternion is updated when there are any changes to any axial values.
+            /// You can use half float precision or quaternion compression to reduce the bandwidth cost.
+            /// </remarks>
             public bool QuaternionSync
             {
                 get => GetFlag(k_QuaternionSync);
@@ -355,10 +356,13 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set this state is using <see cref="Quaternion"/> compression
+            /// When set <see cref="Quaternion"/>s will be compressed down to 4 bytes using a smallest three implementation.
             /// </summary>
             /// <remarks>
-            /// Only when <see cref="QuaternionSync"/> is set
+            /// This only will be applied when <see cref="QuaternionSync"/> is enabled.
+            /// Half float precision provides a higher precision than quaternion compression but at the cost of 4 additional bytes per update.
+            /// - Quaternion Compression: 4 bytes per delta update
+            /// - Half float precision: 8 bytes per delta update
             /// </remarks>
             public bool QuaternionCompression
             {
@@ -370,8 +374,12 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, this state is using half float precision
+            /// When set, the <see cref="NetworkTransform"/> will use half float precision for position, rotation, and scale.
             /// </summary>
+            /// <remarks>
+            /// Postion is synchronized through delta position updates in order to reduce precision loss/drift and to extend to positions beyond the limitation of half float maximum values.
+            /// Rotation and scale both use half float precision (<see cref="HalfVector4"/> and <see cref="HalfVector3"/>)
+            /// </remarks>
             public bool UseHalfFloatPrecision
             {
                 get => GetFlag(k_UseHalfFloats);
@@ -382,8 +390,8 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// When set, this is the first state being synchronized.
-            /// Typically when the associate <see cref="NetworkObject"/> is spawned.
+            /// When set, this indicates it is the first state being synchronized.
+            /// Typically when the associate <see cref="NetworkObject"/> is spawned or a client is being synchronized after connecting to a network session in progress.
             /// </summary>
             public bool IsSynchronizing
             {
@@ -395,7 +403,8 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// Determines if position interpolation will Slerp to its target
+            /// Determines if position interpolation will Slerp towards its target position.
+            /// This is only really useful if you are moving around a point in a circular pattern.
             /// </summary>
             public bool UsePositionSlerp
             {
@@ -430,6 +439,10 @@ namespace Unity.Netcode.Components
             /// Returns the current state's rotation. If there is no change in the rotation,
             /// then it will return <see cref="Quaternion.identity"/>.
             /// </summary>
+            /// <remarks>
+            /// When there is no change in an updated state's rotation then there are no values to return.
+            /// Checking for <see cref="HasRotAngleChange"/> is one way to detect this.
+            /// </remarks>
             /// <returns><see cref="Quaternion"/></returns>
             public Quaternion GetRotation()
             {
@@ -451,6 +464,10 @@ namespace Unity.Netcode.Components
             /// Returns the current state's position. If there is no change in position,
             /// then it returns <see cref="Vector3.zero"/>.
             /// </summary>
+            /// <remarks>
+            /// When there is no change in an updated state's position then there are no values to return.
+            /// Checking for <see cref="HasPositionChange"/> is one way to detect this.
+            /// </remarks>
             /// <returns><see cref="Vector3"/></returns>
             public Vector3 GetPosition()
             {
@@ -479,6 +496,10 @@ namespace Unity.Netcode.Components
             /// Returns the current state's scale. If there is no change in scale,
             /// then it returns <see cref="Vector3.zero"/>.
             /// </summary>
+            /// <remarks>
+            /// When there is no change in an updated state's scale then there are no values to return.
+            /// Checking for <see cref="HasScaleChange"/> is one way to detect this.
+            /// </remarks>
             /// <returns><see cref="Vector3"/></returns>
             public Vector3 GetScale()
             {
@@ -504,7 +525,7 @@ namespace Unity.Netcode.Components
             }
 
             /// <summary>
-            /// The network tick that this state was sent
+            /// The network tick that this state was sent by the authoritative instance.
             /// </summary>
             /// <returns><see cref="int"/></returns>
             public int GetNetworkTick()
