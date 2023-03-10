@@ -6,6 +6,11 @@ namespace Unity.Netcode.Components
     /// <summary>
     /// Half float precision <see cref="Vector3"/> used to synchromnize delta position.
     /// </summary>
+    /// <remarks>
+    /// The Vector3T<ushort> values are half float values returned by <see cref="Mathf.FloatToHalf(float)"/> for each
+    /// individual axis and the 16 bits of the half float are stored as <see cref="ushort"/> values since C# does not have
+    /// a half float type.
+    /// </remarks>
     public struct HalfVector3DeltaPosition : INetworkSerializable
     {
         /// <summary>

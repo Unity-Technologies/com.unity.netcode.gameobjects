@@ -4,10 +4,12 @@ using UnityEngine;
 namespace Unity.Netcode.Components
 {
     /// <summary>
-    /// Half Precision <see cref="Vector4"/> 
+    /// Half Precision <see cref="Vector4"/> that can also be used to convert a <see cref="Quaternion"/> to half precision.
     /// </summary>
     /// <remarks>
-    /// This can also be used to convert a <see cref="Quaternion"/> to half precision.
+    /// The Vector4T<ushort> values are half float values returned by <see cref="Mathf.FloatToHalf(float)"/> for each
+    /// individual axis and the 16 bits of the half float are stored as <see cref="ushort"/> values since C# does not have
+    /// a half float type.
     /// </remarks>
     public struct HalfVector4 : INetworkSerializable
     {
