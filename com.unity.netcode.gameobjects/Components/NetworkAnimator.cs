@@ -73,8 +73,7 @@ namespace Unity.Netcode.Components
 
                         // If using root motion, then make sure the authoritative side is enabled and the non-authoritative side is disabled
                         if (m_NetworkAnimator.ApplyRootMotion)
-                        {
-                            // Non-authority makes sure that apply root motion is not set
+                        {                            
                             m_NetworkAnimator.CheckForApplyRootMotion();
                         }
                         break;
