@@ -164,7 +164,7 @@ namespace Unity.Netcode.RuntimeTests
 
             Assert.True(callbackInvoked, "OnClientStarted wasn't invoked");
         }
-        
+
         [UnityTest]
         public IEnumerator OnClientAndServerStartedCalledWhenHostStarts()
         {

@@ -1318,7 +1318,7 @@ namespace Unity.Netcode
             {
                 OnServerStopped?.Invoke(wasClient);
             }
-            
+
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs.Shutdown();
         }
