@@ -10,7 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added public `OnServerStopped` event that will trigger only on the server (or host player) to notify that the server is no longer active.
+- Added `OnServerStarted` and `OnServerStopped` events that will trigger only on the server (or host player) to notify that the server just started or is no longer active
+- Added `OnClientStarted` and `OnClientStopped` events that will trigger only on the client (or host player) to notify that the client just started or is no longer active
 
 ### Changed
 
