@@ -312,20 +312,79 @@ namespace Unity.Netcode
     /// </remarks>
     public class BufferedLinearInterpolatorQuaternion : BufferedLinearInterpolator<Quaternion>
     {
+        /// <summary>
+        /// Use <see cref="Quaternion.Slerp"/> when <see cref="true"/>.
+        /// Use <see cref="Quaternion.Lerp"/> when <see cref="false"/>
+        /// </summary>
+        /// <remarks>
+        /// When using half precision (due to the imprecision) using <see cref="Quaternion.Lerp"/> is
+        /// less processor intensive (i.e. precision is already "imprecise").
+        /// When using full precision (to maintain precision) using <see cref="Quaternion.Slerp"/> is
+        /// more processor intensive yet yields more precise results.
+        /// </remarks>
+        public bool IsSlerp;
+
         /// <inheritdoc />
         protected override Quaternion InterpolateUnclamped(Quaternion start, Quaternion end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            if (IsSlerp)
+            {
+                return Quaternion.Slerp(start, end, time);
+            }
+            else
+            {
+                return Quaternion.Lerp(start, end, time);
+            }
         }
 
         /// <inheritdoc />
         protected override Quaternion Interpolate(Quaternion start, Quaternion end, float time)
         {
-            // Disabling Extrapolation:
-            // TODO: Add Jira Ticket
-            return Quaternion.Slerp(start, end, time);
+            if (IsSlerp)
+            {
+                return Quaternion.Slerp(start, end, time);
+            }
+            else
+            {
+                return Quaternion.Lerp(start, end, time);
+            }
+        }
+    }
+
+    /// <summary>
+    /// A <see cref="BufferedLinearInterpolator<T>"/> <see cref="Vector3"/> implementation.
+    /// </summary>
+    public class BufferedLinearInterpolatorVector3 : BufferedLinearInterpolator<Vector3>
+    {
+        /// <summary>
+        /// Use <see cref="Vector3.Slerp"/> when <see cref="true"/>.
+        /// Use <see cref="Vector3.Lerp"/> when <see cref="false"/>
+        /// </summary>
+        public bool IsSlerp;
+        /// <inheritdoc />
+        protected override Vector3 InterpolateUnclamped(Vector3 start, Vector3 end, float time)
+        {
+            if (IsSlerp)
+            {
+                return Vector3.Slerp(start, end, time);
+            }
+            else
+            {
+                return Vector3.Lerp(start, end, time);
+            }
+        }
+
+        /// <inheritdoc />
+        protected override Vector3 Interpolate(Vector3 start, Vector3 end, float time)
+        {
+            if (IsSlerp)
+            {
+                return Vector3.Slerp(start, end, time);
+            }
+            else
+            {
+                return Vector3.Lerp(start, end, time);
+            }
         }
     }
 }

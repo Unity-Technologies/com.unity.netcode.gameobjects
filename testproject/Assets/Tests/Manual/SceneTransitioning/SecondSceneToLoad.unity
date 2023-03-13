@@ -993,6 +993,11 @@ MonoBehaviour:
   PoolSize: 128
   ObjectSpeed: 8
   DontDestroy: 0
+  LabelEnabled: 1
+  MaximumSpawnCount: 1000
+  HalfFloat: {fileID: 0}
+  QuatSynch: {fileID: 0}
+  QuatComp: {fileID: 0}
   EnableHandler: 1
   RegisterUsingNetworkObject: 0
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
@@ -1031,6 +1036,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2807568818
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!1 &1332123091
@@ -1465,6 +1473,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f231c4fb786f3946a6b90b886c48677, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_SendPointerHoverToParent: 1
   m_HorizontalAxis: Horizontal
   m_VerticalAxis: Vertical
   m_SubmitButton: Submit
@@ -1950,6 +1959,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2051885573}
   - component: {fileID: 2051885574}
+  - component: {fileID: 2051885575}
   m_Layer: 5
   m_Name: SwitchSceneParent
   m_TagString: Untagged
@@ -1995,6 +2005,25 @@ MonoBehaviour:
   m_EnableAutoSwitch: 1
   m_AutoSwitchTimeOut: 300
   DisconnectClientUponLoadScene: 0
+--- !u!114 &2051885575
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2051885572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 3071296511
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
 --- !u!1 &2058276875
 GameObject:
   m_ObjectHideFlags: 0
@@ -2146,7 +2175,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_ClientServerToggle: {fileID: 2126410740}
   m_TrackSceneEvents: 1
-  m_LogSceneEventsToConsole: 0
 --- !u!114 &2107482023
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2161,6 +2189,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 4086995543
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!1 &2126410740
