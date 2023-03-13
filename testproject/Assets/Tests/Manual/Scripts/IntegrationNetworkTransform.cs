@@ -42,7 +42,7 @@ namespace TestProject.ManualTests
         protected override void Awake()
         {
             base.Awake();
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
             if (DebugTransform)
             {
                 m_AddLogEntry = InternalAddLogEntry;
@@ -97,8 +97,9 @@ namespace TestProject.ManualTests
             UpdateTransformHistory(networkTransformStateUpdate.PositionUpdate, networkTransformStateUpdate.RotationUpdate, networkTransformStateUpdate.ScaleUpdate);
         }
 
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
-
+#endif
         protected struct NetworkTransformStateUpdate
         {
             public bool PositionUpdate;
@@ -158,7 +159,7 @@ namespace TestProject.ManualTests
             {
                 return;
             }
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
             var halfPositionState = GetHalfPositionState();
             var state = new HalfPosDebugStates();
             state.IsPreUpdate = preUpdate;
@@ -276,6 +277,7 @@ namespace TestProject.ManualTests
             }
         }
 
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         private void DebugTransformStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
         {
             m_NetworkTransformStateUpdate.PositionUpdate = newState.HasPositionChange;
@@ -288,7 +290,7 @@ namespace TestProject.ManualTests
 
             OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
         }
-
+#endif
 
         private NetworkVariable<NetworkTransformState> m_CurrentReplicatedState = new NetworkVariable<NetworkTransformState>();
 
@@ -327,7 +329,6 @@ namespace TestProject.ManualTests
         /// </summary>
         private void OnStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
         {
-
             if (DebugTransform)
             {
                 if (IsOwner && !IsServerAuthoritative() && !m_StopLoggingStates)
@@ -340,12 +341,13 @@ namespace TestProject.ManualTests
                 }
             }
         }
-
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
         /// Non-Authoritative State Update
         /// </summary>
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
+
             DebugTransformStateUpdate(oldState, newState);
             if (DebugTransform)
             {
@@ -354,6 +356,8 @@ namespace TestProject.ManualTests
                     InternalAddLogEntry(ref newState, OwnerClientId);
                 }
             }
+
         }
+#endif
     }
 }
