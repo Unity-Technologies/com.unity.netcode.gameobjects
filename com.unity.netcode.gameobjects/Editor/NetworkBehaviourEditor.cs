@@ -161,6 +161,10 @@ namespace Unity.Netcode.Editor
                 {
                     val = (ulong)EditorGUILayout.LongField(variableName, (long)((ulong)val));
                 }
+                else if (type == typeof(float))
+                {
+                    val = (float)EditorGUILayout.FloatField(variableName, (float)((float)val));
+                }
                 else if (type == typeof(bool))
                 {
                     val = EditorGUILayout.Toggle(variableName, (bool)val);

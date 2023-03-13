@@ -193,6 +193,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 3270232563
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
@@ -986,6 +987,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2831848344
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
@@ -1246,6 +1248,11 @@ MonoBehaviour:
   PoolSize: 10
   ObjectSpeed: 8
   DontDestroy: 0
+  LabelEnabled: 1
+  MaximumSpawnCount: 1000
+  HalfFloat: {fileID: 0}
+  QuatSynch: {fileID: 0}
+  QuatComp: {fileID: 0}
   EnableHandler: 1
   RegisterUsingNetworkObject: 0
   ServerObjectToPool: {fileID: 771575417923360811, guid: c0a45bdb516f341498d933b7a7ed4fc1,
@@ -1283,6 +1290,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2782806529
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
@@ -2702,6 +2710,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 2267100048
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
   SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
