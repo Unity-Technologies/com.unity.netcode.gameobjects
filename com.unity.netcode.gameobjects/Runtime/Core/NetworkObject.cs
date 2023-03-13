@@ -25,22 +25,19 @@ namespace Unity.Netcode
         {
             get
             {
-                foreach (var prefabList in NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists)
+                foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
                 {
-                    if (prefabList.Contains(gameObject))
+                    if (prefab.Prefab == gameObject)
                     {
                         return GlobalObjectIdHash;
                     }
                 }
 
-                if ( NetworkManager.PrefabHandler.ContainsHandler( GlobalObjectIdHash ) )
-                {
-                    return GlobalObjectIdHash;
-                }
-
                 return 0;
             }
         }
+
+        private bool m_IsPrefab;
 
 #if UNITY_EDITOR
         private void OnValidate()
