@@ -44,7 +44,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkObject = gameObject.AddComponent<NetworkObject>();
 
             yield return null;
-            Assert.AreEqual(kInvalidPrefabHashId, networkObject.PrefabHashId);
+            Assert.AreEqual(kInvalidPrefabHashId, networkObject.PrefabIdHash);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Unity.Netcode.RuntimeTests
             var networkObject = m_TestPrefab.Prefab.GetComponent<NetworkObject>();
 
             yield return null;
-            Assert.AreEqual(networkObject.GlobalObjectIdHash, networkObject.PrefabHashId);
+            Assert.AreEqual(networkObject.GlobalObjectIdHash, networkObject.PrefabIdHash);
         }
     }
 }
