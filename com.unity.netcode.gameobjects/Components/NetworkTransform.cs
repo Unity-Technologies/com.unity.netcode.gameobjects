@@ -1178,7 +1178,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
         /// For debugging delta position and half vector3
         /// </summary>
