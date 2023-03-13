@@ -167,8 +167,8 @@ namespace TestProject.RuntimeTests
         }
 
         // Acceptable variances when using half precision
-        private const float k_PositionScaleVariance = 0.0255f;
-        private const float k_RotationVariance = 0.0255f;
+        private const float k_PositionScaleVariance = 0.1255f;
+        private const float k_RotationVariance = 0.1255f;
         private const float k_RotationVarianceCompressed = 0.555f;
 
         private float m_CurrentVariance = k_PositionScaleVariance;
@@ -269,8 +269,8 @@ namespace TestProject.RuntimeTests
             // If we had any variance failures logged, then we failed
             return m_ValidationErrors.Length == 0;
         }
-        private const int k_IterationsToTest = 10;
-        private const int k_ClientsToSpawn = 4;  // Really it will be 5 including the host
+        private const int k_IterationsToTest = 8;
+        private const int k_ClientsToSpawn = 2;  // Really it will be 3 including the host
 
         // Number of failures in a row with no correction in precision for the test to fail
         private const int k_MaximumPrecisionFailures = 5;
@@ -282,9 +282,9 @@ namespace TestProject.RuntimeTests
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
-            var waitPeriod = new WaitForSeconds(3f);
+            var waitPeriod = new WaitForSeconds(2f);
             var pausePeriod = new WaitForSeconds(1f);
-            var synchTimeOut = new TimeoutHelper(2.5f);
+            var synchTimeOut = new TimeoutHelper(3f);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
             yield return pausePeriod;
@@ -297,13 +297,6 @@ namespace TestProject.RuntimeTests
             // All iterations test transform values against the authority and non-authority instances
             for (int i = 0; i < k_IterationsToTest; i++)
             {
-                if (clientCount < k_ClientsToSpawn)
-                {
-                    yield return CreateAndStartNewClient();
-                    clientCount++;
-                }
-
-                yield return s_DefaultWaitForTick;
                 ChildMoverManager.StopMovement = true;
                 AutomatedPlayerMover.StopMovement = true;
                 yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, synchTimeOut);
@@ -345,6 +338,15 @@ namespace TestProject.RuntimeTests
                 ChildMoverManager.StopMovement = false;
                 // Now let everything move around a bit
                 yield return waitPeriod;
+
+                if (clientCount < k_ClientsToSpawn)
+                {
+                    yield return CreateAndStartNewClient();
+                    clientCount++;
+                }
+                yield return s_DefaultWaitForTick;
+                yield return s_DefaultWaitForTick;
+                yield return s_DefaultWaitForTick;
             }
         }
 

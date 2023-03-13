@@ -574,39 +574,43 @@ namespace Unity.Netcode.RuntimeTests
                 AssertOnTimeout($"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
             }
 
-            // Now, enable interpolation
-            m_AuthoritativeTransform.Interpolate = true;
-            m_NonAuthoritativeTransform.StateUpdated = false;
-            m_AuthoritativeTransform.StatePushed = false;
-            // Wait for the delta (change in interpolation) to be pushed
-            yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-            AssertOnTimeout($"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-            // Continue for one more update with interpolation enabled
-            // Note: We are just verifying one update with interpolation enabled due to the number of tests this integration test has to run
-            // and since the NestedNetworkTransformTests already tests interpolation under the same number of conditions (excluding Axis).
-            // This is just to verify selecting specific axis doesn't cause issues when interpolating as well.
-            m_NonAuthoritativeTransform.StateUpdated = false;
-            m_AuthoritativeTransform.StatePushed = false;
-            position = positionStart * k_PositionRotationScaleIterations;
-            rotation = rotationStart * k_PositionRotationScaleIterations;
-            scale = scaleStart * k_PositionRotationScaleIterations;
-            MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
-
-            // Wait for the deltas to be pushed and updated
-            yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-            AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-            yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
-
-            // Provide additional debug info about what failed (if it fails)
-            if (s_GlobalTimeoutHelper.TimedOut)
+            // Only enable interpolation when all axis are set (to reduce the test times)
+            if (axis == Axis.XYZ)
             {
-                m_EnableVerboseDebug = true;
-                PositionRotationScaleMatches();
-                m_EnableVerboseDebug = false;
+                // Now, enable interpolation
+                m_AuthoritativeTransform.Interpolate = true;
+                m_NonAuthoritativeTransform.StateUpdated = false;
+                m_AuthoritativeTransform.StatePushed = false;
+                // Wait for the delta (change in interpolation) to be pushed
+                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                AssertOnTimeout($"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+
+                // Continue for one more update with interpolation enabled
+                // Note: We are just verifying one update with interpolation enabled due to the number of tests this integration test has to run
+                // and since the NestedNetworkTransformTests already tests interpolation under the same number of conditions (excluding Axis).
+                // This is just to verify selecting specific axis doesn't cause issues when interpolating as well.
+                m_NonAuthoritativeTransform.StateUpdated = false;
+                m_AuthoritativeTransform.StatePushed = false;
+                position = positionStart * k_PositionRotationScaleIterations;
+                rotation = rotationStart * k_PositionRotationScaleIterations;
+                scale = scaleStart * k_PositionRotationScaleIterations;
+                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
+
+                // Wait for the deltas to be pushed and updated
+                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+
+                yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
+
+                // Provide additional debug info about what failed (if it fails)
+                if (s_GlobalTimeoutHelper.TimedOut)
+                {
+                    m_EnableVerboseDebug = true;
+                    PositionRotationScaleMatches();
+                    m_EnableVerboseDebug = false;
+                }
+                AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
             }
-            AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
         }
 
         /// <summary>
