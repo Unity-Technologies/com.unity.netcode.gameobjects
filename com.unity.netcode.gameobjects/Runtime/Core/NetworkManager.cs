@@ -409,14 +409,26 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the server is ready
+        /// The callback to invoke once the local server is ready
         /// </summary>
         public event Action OnServerStarted = null;
 
         /// <summary>
+        /// The callback to invoke once the local client is ready
+        /// </summary>
+        public event Action OnClientStarted = null;
+
+        /// <summary>
         /// The callback to invoke once the local server stops
         /// </summary>
-        public event Action OnServerStopped = null;
+        /// <remarks>The parameter states whether the server was running in host mode</remarks>
+        public event Action<bool> OnServerStopped = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client stops
+        /// </summary>
+        /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        public event Action<bool> OnClientStopped = null;
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -873,6 +885,7 @@ namespace Unity.Netcode
             IsClient = true;
             IsListening = true;
 
+            OnClientStarted?.Invoke();
             return true;
         }
 
@@ -960,6 +973,7 @@ namespace Unity.Netcode
             InvokeOnClientConnectedCallback(LocalClientId);
 
             OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
 
             return true;
         }
@@ -1161,6 +1175,7 @@ namespace Unity.Netcode
             }
 
             bool wasServer = IsServer;
+            bool wasClient = IsClient;
             if (wasServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
@@ -1285,9 +1300,13 @@ namespace Unity.Netcode
 
             ClearClients();
 
+            if (wasClient)
+            {
+                OnClientStopped?.Invoke(wasServer);
+            }
             if (wasServer)
             {
-                OnServerStopped?.Invoke();
+                OnServerStopped?.Invoke(wasClient);
             }
         }
 
