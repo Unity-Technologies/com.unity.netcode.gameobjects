@@ -98,6 +98,18 @@ namespace Unity.Netcode
         public bool IsPlayerObject { get; internal set; }
 
         /// <summary>
+        /// Determines if the associated NetworkObject's transform will get
+        /// synchronized when spawned.
+        /// </summary>
+        /// <remarks>
+        /// For things like in-scene placed NetworkObjects that have no visual
+        /// components can help reduce the instance's initial synchronization
+        /// bandwidth cost. This can also be useful for UI elements that have
+        /// a predetermined fixed position.
+        /// </remarks>
+        public bool SynchronizeTransform = true;
+
+        /// <summary>
         /// Gets if the object is the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
@@ -653,6 +665,22 @@ namespace Unity.Netcode
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
+
+        /// <summary>
+        /// Returns the last known cached WorldPositionStays value for this NetworkObject
+        /// </summary>
+        /// <remarks>
+        /// When parenting NetworkObjects, the optional WorldPositionStays value is cached and synchronized with clients.
+        /// This method provides access to the instance relative cached value.
+        /// <see cref="TrySetParent(GameObject, bool)"/>
+        /// <see cref="TrySetParent(NetworkObject, bool)"/>
+        /// <see cref="TrySetParent(Transform, bool)"/>
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool WorldPositionStays()
+        {
+            return m_CachedWorldPositionStays;
+        }
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -1343,7 +1371,7 @@ namespace Unity.Netcode
                 var synchronizationCount = (byte)0;
                 foreach (var childBehaviour in ChildNetworkBehaviours)
                 {
-                    if (childBehaviour.Synchronize(ref serializer))
+                    if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
                         synchronizationCount++;
                     }
@@ -1382,7 +1410,7 @@ namespace Unity.Netcode
                 {
                     serializer.SerializeValue(ref networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer);
+                    networkBehaviour.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
@@ -1431,7 +1459,7 @@ namespace Unity.Netcode
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.HasTransform = true;
+                obj.HasTransform = SynchronizeTransform;
 
                 // We start with the default AutoObjectParentSync values to determine which transform space we will
                 // be synchronizing clients with.

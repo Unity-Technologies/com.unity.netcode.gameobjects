@@ -11,7 +11,12 @@ namespace Unity.Netcode.RuntimeTests
     public class TransformInterpolationObject : NetworkBehaviour
     {
         // Set the minimum threshold which we will use as our margin of error
+#if UNITY_EDITOR
         public const float MinThreshold = 0.005f;
+#else
+        // Add additional room for error on console tests
+        public const float MinThreshold = 0.009999f;
+#endif
 
         public bool CheckPosition;
         public bool IsMoving;
