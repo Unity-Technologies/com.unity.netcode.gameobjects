@@ -331,7 +331,7 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
             // Since the com.unity.netcode.components does not allow test project to access its internals
             // during runtime, this is only used when running test runner from within the editor
-#if UNITY_EDITOR
+
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);
             bool rotateToggle = true;
@@ -344,7 +344,7 @@ namespace TestProject.RuntimeTests
                 yield return waitForSeconds;
                 rotateToggle = !rotateToggle;
             }
-#endif
+
             CheckStateEnterCount.ResetTest();
             if (m_EnableVerboseDebug)
             {
@@ -697,6 +697,16 @@ namespace TestProject.RuntimeTests
             // Now shutdown the server-side to verify this fix.
             // The server-side spawned NetworkObject should get despawned
             // and invoke the Server_OnCheckIsServerIsClient action.
+            var playerPrefabIndex = 0;
+            for (int i = 0; i < m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs.Count; i++)
+            {
+                if (m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[i].Prefab.name.Contains("Player"))
+                {
+                    playerPrefabIndex = i;
+                    break;
+                }
+            }
+
             m_ServerNetworkManager.Shutdown();
 
             yield return s_DefaultWaitForTick;
@@ -712,17 +722,20 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            OnCreatePlayerPrefab();
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
-            m_ClientNetworkManagers[0].StartClient();
 
-            // Wait for the server and client to start and connect
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+                clientNetworkManager.StartClient();
+            }
+
+            // Wait for the server and clients to start and connect
             yield return WaitForClientsConnectedOrTimeOut();
-
+            AssertOnTimeout($"Client Failed to Connect!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }
 
