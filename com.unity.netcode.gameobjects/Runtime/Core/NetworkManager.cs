@@ -409,7 +409,7 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the local server is ready
+        /// This callback is invoked when the local server is started and listening for incoming connections.
         /// </summary>
         public event Action OnServerStarted = null;
 
@@ -419,7 +419,7 @@ namespace Unity.Netcode
         public event Action OnClientStarted = null;
 
         /// <summary>
-        /// The callback to invoke once the local server stops
+        /// This callback is invoked once the local server is stopped.
         /// </summary>
         /// <remarks>The parameter states whether the server was running in host mode</remarks>
         public event Action<bool> OnServerStopped = null;
