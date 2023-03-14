@@ -421,13 +421,14 @@ namespace Unity.Netcode
         /// <summary>
         /// This callback is invoked once the local server is stopped.
         /// </summary>
-        /// <remarks>The parameter states whether the server was running in host mode</remarks>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
         public event Action<bool> OnServerStopped = null;
 
         /// <summary>
         /// The callback to invoke once the local client stops
         /// </summary>
         /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
         public event Action<bool> OnClientStopped = null;
 
         /// <summary>
@@ -967,13 +968,13 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
             // set prior to invoking OnClientConnected.
             InvokeOnClientConnectedCallback(LocalClientId);
-
-            OnServerStarted?.Invoke();
-            OnClientStarted?.Invoke();
 
             return true;
         }
