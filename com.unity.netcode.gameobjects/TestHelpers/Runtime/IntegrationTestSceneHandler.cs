@@ -702,7 +702,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSpawned);
+#else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
+#endif
             foreach (var networkObject in networkObjects)
             {
                 if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
