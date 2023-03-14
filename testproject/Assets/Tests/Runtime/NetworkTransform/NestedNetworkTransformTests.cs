@@ -1,11 +1,13 @@
 using System.Text;
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
 using Unity.Netcode.TestHelpers.Runtime;
+using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
@@ -192,11 +194,12 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors.Clear();
             foreach (var connectedClient in m_ServerNetworkManager.ConnectedClientsIds)
             {
-                var playerToValidate = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][connectedClient];
+                var authorityId = m_Authority == AuthoritativeModel.Server ? m_ServerNetworkManager.LocalClientId : connectedClient;
+                var playerToValidate = m_PlayerNetworkObjects[authorityId][connectedClient];
                 var playerNetworkTransforms = playerToValidate.GetComponentsInChildren<IntegrationNetworkTransform>();
                 foreach (var playerRelative in m_PlayerNetworkObjects)
                 {
-                    if (playerRelative.Key == connectedClient)
+                    if (playerRelative.Key == authorityId)
                     {
                         continue;
                     }
@@ -205,8 +208,11 @@ namespace TestProject.RuntimeTests
                     m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
                     for (int i = 0; i < playerNetworkTransforms.Length; i++)
                     {
-                        var playerCurrentPosition = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localPosition : playerNetworkTransforms[i].transform.position;
-                        var clonePosition = relativeClonedTransforms[i].InLocalSpace ? relativeClonedTransforms[i].transform.localPosition : relativeClonedTransforms[i].transform.position;
+                        var playerCurrentPosition = playerNetworkTransforms[i].PushedPosition;
+                        var clonePosition = relativeClonedTransforms[i].GetSpaceRelativePosition();
+                        //var playerCurrentPosition = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localPosition : playerNetworkTransforms[i].transform.position;
+                        //var clonePosition = relativeClonedTransforms[i].InLocalSpace ? relativeClonedTransforms[i].transform.localPosition : relativeClonedTransforms[i].transform.position;
+
                         var playerGameObjectName = playerNetworkTransforms[i].gameObject.name;
                         var cloneGameObjectName = relativeClonedTransforms[i].gameObject.name;
                         if (!Approximately(playerCurrentPosition, clonePosition))
@@ -225,7 +231,7 @@ namespace TestProject.RuntimeTests
                             }
                         }
 
-                        if (!Approximately(playerNetworkTransforms[i].transform.localScale, relativeClonedTransforms[i].transform.localScale))
+                        if (!Approximately(playerNetworkTransforms[i].PushedScale, relativeClonedTransforms[i].transform.localScale))
                         {
                             m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]\n");
                         }
@@ -236,12 +242,12 @@ namespace TestProject.RuntimeTests
                             m_CurrentVariance = k_RotationVarianceCompressed;
                         }
                         m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : 0.0f;
-                        var playerCurrentRotation = playerNetworkTransforms[i].GetSpaceRelativeRotation();
+                        var playerCurrentRotation = playerNetworkTransforms[i].PushedRotation;
                         var cloneRotation = relativeClonedTransforms[i].GetSpaceRelativeRotation();
-                        if (!Approximately(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
+                        if (!ApproximatelyEuler(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
                         {
                             // Double check Euler as quaternions can have inverted Vector4 values from one another but be the same when comparing Euler
-                            if (!Approximately(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
+                            if (!ApproximatelyEuler(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
                             {
                                 var deltaEuler = playerCurrentRotation.eulerAngles - cloneRotation.eulerAngles;
                                 var eulerPlayer = playerCurrentRotation.eulerAngles;
@@ -334,19 +340,24 @@ namespace TestProject.RuntimeTests
                     }
                 }
 
-                AutomatedPlayerMover.StopMovement = false;
-                ChildMoverManager.StopMovement = false;
-                // Now let everything move around a bit
-                yield return waitPeriod;
-
                 if (clientCount < k_ClientsToSpawn)
                 {
                     yield return CreateAndStartNewClient();
                     clientCount++;
                 }
-                yield return s_DefaultWaitForTick;
-                yield return s_DefaultWaitForTick;
-                yield return s_DefaultWaitForTick;
+
+                AutomatedPlayerMover.StopMovement = false;
+                ChildMoverManager.StopMovement = false;
+                // Now let everything move around a bit
+                yield return waitPeriod;
+
+                // If we are just about to end this test but there are running precision
+                // failures, we need to keep running until it corrects itself or fails
+                if (precisionFailures > 0 && i == (k_IterationsToTest - 1))
+                {
+                    Debug.Log($"Extending test iterations with {precisionFailures} precision failures still pending correction.");
+                    i--;
+                }
             }
         }
 

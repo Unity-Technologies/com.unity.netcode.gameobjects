@@ -28,6 +28,10 @@ namespace TestProject.ManualTests
         public Vector3 LastUpdatedScale;
         public Quaternion LastUpdatedRotation;
 
+        public Vector3 PushedPosition;
+        public Vector3 PushedScale;
+        public Quaternion PushedRotation;
+
         public Vector3 PreviousUpdatedPosition;
         public Vector3 PreviousUpdatedScale;
         public Quaternion PreviousUpdatedRotation;
@@ -55,6 +59,28 @@ namespace TestProject.ManualTests
             return IsServerAuthority;
         }
 
+        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+        {
+            base.OnAuthorityPushTransformState(ref networkTransformState);
+
+            // Store off the exact position, scale, and rotation for each push to non-authority instances.
+            if (networkTransformState.HasPositionChange)
+            {
+                PushedPosition = GetSpaceRelativePosition();
+            }
+
+            if (networkTransformState.HasScaleChange)
+            {
+                PushedScale = GetScale();
+            }
+
+            if (networkTransformState.HasRotAngleChange)
+            {
+                PushedRotation = GetSpaceRelativeRotation();
+            }
+        }
+
+
         private void UpdateTransformHistory(bool updatePosition, bool updateRotation, bool updateScale)
         {
             if (updatePosition)
@@ -63,7 +89,7 @@ namespace TestProject.ManualTests
                 {
                     PreviousUpdatedPosition = LastUpdatedPosition;
                 }
-                LastUpdatedPosition = InLocalSpace ? transform.localPosition : transform.position;
+                LastUpdatedPosition = GetSpaceRelativePosition();
             }
 
             if (updateRotation)
@@ -73,7 +99,7 @@ namespace TestProject.ManualTests
                     PreviousUpdatedRotation = LastUpdatedRotation;
                 }
 
-                LastUpdatedRotation = InLocalSpace ? transform.localRotation : transform.rotation;
+                LastUpdatedRotation = GetSpaceRelativeRotation();
             }
 
             if (updateScale)
@@ -82,7 +108,7 @@ namespace TestProject.ManualTests
                 {
                     PreviousUpdatedScale = LastUpdatedScale;
                 }
-                LastUpdatedScale = transform.localScale;
+                LastUpdatedScale = GetScale();
             }
         }
 
@@ -252,7 +278,7 @@ namespace TestProject.ManualTests
                 var isTeleporing = stateEntry.IsTeleporting ? "[Teleporting]" : "";
                 var isApppliedLocal = stateEntry.ClientTarget == clientId ? "[Applied Local]" : $"[Targeting Client-{stateEntry.ClientTarget}]";
                 m_LogEntry.Append($"{isPreUpdate}{isApppliedLocal} State Entry ({stateEntry.StateId}) on Tick ({stateEntry.Tick}). {isSynchronization}{isTeleporing}\n");
-                m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{ stateEntry.HalfBackDelta}\n");
+                m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{stateEntry.HalfBackDelta}\n");
                 m_LogEntry.Append($"[FullPos]{stateEntry.FullPosition} [TransPos] {stateEntry.TransformPosition}\n");
                 m_LogEntry.Append($"[Rotation]{stateEntry.Rotation.eulerAngles}\n");
                 if (lineCounter >= 75)
@@ -315,15 +341,6 @@ namespace TestProject.ManualTests
             base.OnNetworkDespawn();
         }
 
-        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
-        {
-            if (networkTransformState.HasPositionChange)
-            {
-
-            }
-            base.OnAuthorityPushTransformState(ref networkTransformState);
-        }
-
         /// <summary>
         /// Authoritative State Update
         /// </summary>
@@ -341,13 +358,13 @@ namespace TestProject.ManualTests
                 }
             }
         }
+
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
         /// Non-Authoritative State Update
         /// </summary>
         protected override void OnNetworkTransformStateUpdated(ref NetworkTransformState oldState, ref NetworkTransformState newState)
         {
-
             DebugTransformStateUpdate(oldState, newState);
             if (DebugTransform)
             {
