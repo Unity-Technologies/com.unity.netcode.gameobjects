@@ -273,7 +273,7 @@ namespace TestProject.RuntimeTests
         private const int k_ClientsToSpawn = 2;  // Really it will be 3 including the host
 
         // Number of failures in a row with no correction in precision for the test to fail
-        private const int k_MaximumPrecisionFailures = 5;
+        private const int k_MaximumPrecisionFailures = 4;
 
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
@@ -284,7 +284,7 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors = new StringBuilder();
             var waitPeriod = new WaitForSeconds(2f);
             var pausePeriod = new WaitForSeconds(1f);
-            var synchTimeOut = new TimeoutHelper(3f);
+            var synchTimeOut = new TimeoutHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
             yield return pausePeriod;

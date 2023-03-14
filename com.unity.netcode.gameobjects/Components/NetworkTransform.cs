@@ -1366,6 +1366,8 @@ namespace Unity.Netcode.Components
 
                 // "push"/commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
         }
 
@@ -1424,10 +1426,11 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
+            var isTeleportingAndNotSynchronizing = networkState.IsTeleportingNextFrame && !isSynchronization;
             var isDirty = false;
-            var isPositionDirty = false;
-            var isRotationDirty = false;
-            var isScaleDirty = false;
+            var isPositionDirty = isTeleportingAndNotSynchronizing ? networkState.HasPositionChange : false;
+            var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
+            var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
 
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
@@ -2346,7 +2349,7 @@ namespace Unity.Netcode.Components
         internal void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
-            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
+            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
@@ -2399,8 +2402,8 @@ namespace Unity.Netcode.Components
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
 
                 // Force the state update to be sent
-                var transformToCommit = transform;
-                TryCommitTransform(ref transformToCommit);
+                //var transformToCommit = transform;
+                //TryCommitTransform(ref transformToCommit);
             }
         }
 
