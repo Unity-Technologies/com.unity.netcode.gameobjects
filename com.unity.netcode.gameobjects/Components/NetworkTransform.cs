@@ -2400,10 +2400,6 @@ namespace Unity.Netcode.Components
                 var currentRotation = GetSpaceRelativeRotation();
                 // Teleport to current position
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
-
-                // Force the state update to be sent
-                //var transformToCommit = transform;
-                //TryCommitTransform(ref transformToCommit);
             }
         }
 
