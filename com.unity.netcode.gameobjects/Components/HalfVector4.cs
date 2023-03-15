@@ -63,7 +63,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ToVector4()
         {
-            return math.float4(Axis); 
+            return math.float4(Axis);
         }
 
         /// <summary>
