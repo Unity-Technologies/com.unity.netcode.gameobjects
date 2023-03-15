@@ -130,6 +130,7 @@ namespace TestProject.RuntimeTests
         private void ConfigureNetworkTransform(IntegrationNetworkTransform networkTransform)
         {
             networkTransform.Interpolate = m_Interpolation == Interpolation.Interpolation;
+            networkTransform.UseQuaternionSynchronization = true;
             networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half || m_Precision == Precision.Compressed;
             networkTransform.UseQuaternionCompression = m_Precision == Precision.Compressed;
             networkTransform.IsServerAuthority = m_Authority == AuthoritativeModel.Server;
@@ -213,17 +214,6 @@ namespace TestProject.RuntimeTests
                         if (!Approximately(playerCurrentPosition, clonePosition))
                         {
                             m_ValidationErrors.Append($"[Position][Client-{connectedClient}-{playerGameObjectName} {GetVector3Values(ref playerCurrentPosition)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} {GetVector3Values(ref clonePosition)}]\n");
-                            if (m_EnableVerboseDebug)
-                            {
-                                if (!Approximately(playerNetworkTransforms[i].LastUpdatedPosition, clonePosition))
-                                {
-                                    m_ValidationErrors.Append($"[Last-Position][Client-{connectedClient}-{playerGameObjectName}  {playerNetworkTransforms[i].LastUpdatedPosition}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName}{relativeClonedTransforms[i].LastUpdatedPosition}]\n");
-                                    if (!Approximately(playerNetworkTransforms[i].PreviousUpdatedPosition, relativeClonedTransforms[i].LastUpdatedPosition))
-                                    {
-                                        m_ValidationErrors.Append($"[Prev-Position][Client-{connectedClient}-{playerGameObjectName}  {playerNetworkTransforms[i].PreviousUpdatedPosition}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName}{relativeClonedTransforms[i].LastUpdatedPosition}]\n");
-                                    }
-                                }
-                            }
                         }
 
                         if (!Approximately(playerNetworkTransforms[i].PushedScale, relativeClonedTransforms[i].transform.localScale))
@@ -250,17 +240,6 @@ namespace TestProject.RuntimeTests
 
                                 m_ValidationErrors.Append($"[Rotation][Client-{connectedClient} ({eulerPlayer.x}, {eulerPlayer.y}, {eulerPlayer.z})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} ({eulerClone.x}, {eulerClone.y}, {eulerClone.z})]\n");
                                 m_ValidationErrors.Append($"[Rotation Delta] ({deltaEuler.x}, {deltaEuler.y}, {deltaEuler.z})\n");
-                                if (m_EnableVerboseDebug)
-                                {
-                                    if (!Approximately(playerNetworkTransforms[i].LastUpdatedRotation, relativeClonedTransforms[i].LastUpdatedRotation))
-                                    {
-                                        var playerEulerAngles = playerNetworkTransforms[i].LastUpdatedRotation.eulerAngles;
-                                        var relativeEulerAngles = relativeClonedTransforms[i].LastUpdatedRotation.eulerAngles;
-                                        deltaEuler = playerEulerAngles - relativeEulerAngles;
-                                        m_ValidationErrors.Append($"[Last-Rotation][Client-{connectedClient} ({playerEulerAngles.x}, {playerEulerAngles.y}, {playerEulerAngles.z})][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} ({relativeEulerAngles.x}, {relativeEulerAngles.y}, {relativeEulerAngles.z})]\n");
-                                        m_ValidationErrors.Append($"[Last-Rotation Delta] ({deltaEuler.x}, {deltaEuler.y}, {deltaEuler.z})\n");
-                                    }
-                                }
                             }
                         }
                     }
