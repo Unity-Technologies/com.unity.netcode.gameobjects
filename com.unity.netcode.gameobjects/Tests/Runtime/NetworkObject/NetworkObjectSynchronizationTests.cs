@@ -78,13 +78,13 @@ namespace Unity.Netcode.RuntimeTests
         {
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety = m_VariableLengthSafety == VariableLengthSafety.EnabledNetVarSafety;
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.NetworkPrefabs)
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
             {
                 // To simulate a failure, we exclude the m_InValidNetworkPrefab from the connecting
                 // client's side.
                 if (networkPrefab.Prefab.name != m_InValidNetworkPrefab.name)
                 {
-                    networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
                 }
             }
             // Disable forcing the same prefabs to avoid failed connections
@@ -575,7 +575,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNetworkSpawn();
         }
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
         {
             // Assign the failure type first
             m_MyCustomData.FailureType = m_FailureType.Value;
@@ -615,7 +615,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNetworkSpawn();
         }
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
         {
             serializer.SerializeNetworkSerializable(ref CustomSerializationData);
             base.OnSynchronize(ref serializer);

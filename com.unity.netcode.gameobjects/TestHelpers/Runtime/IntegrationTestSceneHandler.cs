@@ -15,6 +15,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
     /// </summary>
     internal class IntegrationTestSceneHandler : ISceneManagerHandler, IDisposable
     {
+        private Scene m_InvalidScene = new Scene();
+
+        internal struct SceneEntry
+        {
+            public bool IsAssigned;
+            public Scene Scene;
+        }
+
+        internal static Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>> SceneNameToSceneHandles = new Dictionary<NetworkManager, Dictionary<string, Dictionary<int, SceneEntry>>>();
+
         // All IntegrationTestSceneHandler instances register their associated NetworkManager
         internal static List<NetworkManager> NetworkManagers = new List<NetworkManager>();
 
@@ -267,8 +277,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             if (m_ServerSceneBeingLoaded == scene.name)
             {
-                ProcessInSceneObjects(scene, NetworkManager);
                 SceneManager.sceneLoaded -= Sever_SceneLoaded;
+                ProcessInSceneObjects(scene, NetworkManager);
             }
         }
 
@@ -330,6 +340,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         {
                             continue;
                         }
+
                         if (networkManager.SceneManager.ScenesLoaded.ContainsKey(sceneLoaded.handle))
                         {
                             if (NetworkManager.LogLevel == LogLevel.Developer)
@@ -347,7 +358,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         {
                             NetworkLog.LogInfo($"{NetworkManager.name} adding {sceneLoaded.name} with a handle of {sceneLoaded.handle} to its ScenesLoaded.");
                         }
+                        if (DoesANetworkManagerHoldThisScene(sceneLoaded))
+                        {
+                            continue;
+                        }
                         NetworkManager.SceneManager.ScenesLoaded.Add(sceneLoaded.handle, sceneLoaded);
+                        StartTrackingScene(sceneLoaded, true, NetworkManager);
                         return sceneLoaded;
                     }
                 }
@@ -363,6 +379,504 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 return false;
             }
             return true;
+        }
+
+        public void ClearSceneTracking(NetworkManager networkManager)
+        {
+            SceneNameToSceneHandles.Clear();
+        }
+
+        public void StopTrackingScene(int handle, string name, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return;
+            }
+
+            if (SceneNameToSceneHandles[networkManager].ContainsKey(name))
+            {
+                if (SceneNameToSceneHandles[networkManager][name].ContainsKey(handle))
+                {
+                    SceneNameToSceneHandles[networkManager][name].Remove(handle);
+                    if (SceneNameToSceneHandles[networkManager][name].Count == 0)
+                    {
+                        SceneNameToSceneHandles[networkManager].Remove(name);
+                    }
+                }
+            }
+        }
+
+        public void StartTrackingScene(Scene scene, bool assigned, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                SceneNameToSceneHandles.Add(networkManager, new Dictionary<string, Dictionary<int, SceneEntry>>());
+            }
+
+            if (!SceneNameToSceneHandles[networkManager].ContainsKey(scene.name))
+            {
+                SceneNameToSceneHandles[networkManager].Add(scene.name, new Dictionary<int, SceneEntry>());
+            }
+
+            if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
+            {
+                var sceneEntry = new SceneEntry()
+                {
+                    IsAssigned = true,
+                    Scene = scene
+                };
+                SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
+            }
+        }
+
+        private bool DoesANetworkManagerHoldThisScene(Scene scene)
+        {
+            foreach (var netManEntry in SceneNameToSceneHandles)
+            {
+                if (!netManEntry.Value.ContainsKey(scene.name))
+                {
+                    continue;
+                }
+                // The other NetworkManager only has to have an entry to
+                // disqualify this scene instance
+                if (netManEntry.Value[scene.name].ContainsKey(scene.handle))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool DoesSceneHaveUnassignedEntry(string sceneName, NetworkManager networkManager)
+        {
+            var scenesWithSceneName = new List<Scene>();
+            var scenesAssigned = new List<Scene>();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (scene.name == sceneName)
+                {
+                    scenesWithSceneName.Add(scene);
+                }
+            }
+
+            // Check for other NetworkManager instances already having been assigned this scene
+            foreach (var netManEntry in SceneNameToSceneHandles)
+            {
+                // Ignore this NetworkManager instance at this stage
+                if (netManEntry.Key == networkManager)
+                {
+                    continue;
+                }
+
+                foreach (var scene in scenesWithSceneName)
+                {
+                    if (!netManEntry.Value.ContainsKey(scene.name))
+                    {
+                        continue;
+                    }
+                    // The other NetworkManager only has to have an entry to
+                    // disqualify this scene instance
+                    if (netManEntry.Value[scene.name].ContainsKey(scene.handle))
+                    {
+                        scenesAssigned.Add(scene);
+                    }
+                }
+            }
+
+            // Remove all of the assigned scenes from the list of scenes with the
+            // passed in scene name.
+            foreach (var assignedScene in scenesAssigned)
+            {
+                if (scenesWithSceneName.Contains(assignedScene))
+                {
+                    scenesWithSceneName.Remove(assignedScene);
+                }
+            }
+
+            // If all currently loaded scenes with the scene name are taken
+            // then we return false
+            if (scenesWithSceneName.Count == 0)
+            {
+                return false;
+            }
+
+            // If we made it here, then no other NetworkManager is tracking this scene
+            // and if we don't have an entry for this NetworkManager then we can use any
+            // of the remaining scenes loaded with that name.
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return true;
+            }
+
+            // If we don't yet have a scene name in this NetworkManager's lookup table,
+            // then we can use any of the remaining availabel scenes with that scene name
+            if (!SceneNameToSceneHandles[networkManager].ContainsKey(sceneName))
+            {
+                return true;
+            }
+
+            foreach (var scene in scenesWithSceneName)
+            {
+                // If we don't have an entry for this scene handle (with the scene name) then we
+                // can use that scene
+                if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
+                {
+                    return true;
+                }
+
+                // This entry is not assigned, then we can use the associated scene
+                if (!SceneNameToSceneHandles[networkManager][scene.name][scene.handle].IsAssigned)
+                {
+                    return true;
+                }
+            }
+
+            // None of the scenes with the same scene name can be used
+            return false;
+        }
+
+        public Scene GetSceneFromLoadedScenes(string sceneName, NetworkManager networkManager)
+        {
+
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                return m_InvalidScene;
+            }
+            if (SceneNameToSceneHandles[networkManager].ContainsKey(sceneName))
+            {
+                foreach (var sceneHandleEntry in SceneNameToSceneHandles[networkManager][sceneName])
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        var sceneEntry = sceneHandleEntry.Value;
+                        sceneEntry.IsAssigned = true;
+                        SceneNameToSceneHandles[networkManager][sceneName][sceneHandleEntry.Key] = sceneEntry;
+                        return sceneEntry.Scene;
+                    }
+                }
+            }
+            // This is tricky since NetworkManager instances share the same scene hierarchy during integration tests.
+            // TODO 2023: Determine if there is a better way to associate the active scene for client NetworkManager instances.
+            var activeScene = SceneManager.GetActiveScene();
+
+            if (sceneName == activeScene.name && networkManager.SceneManager.ClientSynchronizationMode == LoadSceneMode.Additive)
+            {
+                // For now, just return the current active scene
+                // Note: Clients will not be able to synchronize in-scene placed NetworkObjects in an integration test for
+                // scenes loaded that have in-scene placed NetworkObjects prior to the clients joining (i.e. there will only
+                // ever be one instance of the active scene). To test in-scene placed NetworkObjects and make an integration
+                // test loaded scene be the active scene, don't set scene as an active scene on the server side until all
+                // clients have connected and loaded the scene.
+                return activeScene;
+            }
+            // If we found nothing return an invalid scene
+            return m_InvalidScene;
+        }
+
+        public void PopulateLoadedScenes(ref Dictionary<int, Scene> scenesLoaded, NetworkManager networkManager)
+        {
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+            {
+                SceneNameToSceneHandles.Add(networkManager, new Dictionary<string, Dictionary<int, SceneEntry>>());
+            }
+
+            var sceneCount = SceneManager.sceneCount;
+            for (int i = 0; i < sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                // Ignore scenes that belong to other NetworkManager instances
+
+                if (DoesANetworkManagerHoldThisScene(scene))
+                {
+                    continue;
+                }
+
+                if (!DoesSceneHaveUnassignedEntry(scene.name, networkManager))
+                {
+                    continue;
+                }
+
+                if (!SceneNameToSceneHandles[networkManager].ContainsKey(scene.name))
+                {
+                    SceneNameToSceneHandles[networkManager].Add(scene.name, new Dictionary<int, SceneEntry>());
+                }
+
+                if (!SceneNameToSceneHandles[networkManager][scene.name].ContainsKey(scene.handle))
+                {
+                    var sceneEntry = new SceneEntry()
+                    {
+                        IsAssigned = false,
+                        Scene = scene
+                    };
+                    SceneNameToSceneHandles[networkManager][scene.name].Add(scene.handle, sceneEntry);
+                    if (!scenesLoaded.ContainsKey(scene.handle))
+                    {
+                        scenesLoaded.Add(scene.handle, scene);
+                    }
+                }
+                else
+                {
+                    throw new Exception($"[{networkManager.LocalClient.PlayerObject.name}][Duplicate Handle] Scene {scene.name} already has scene handle {scene.handle} registered!");
+                }
+            }
+        }
+
+        private Dictionary<Scene, NetworkManager> m_ScenesToUnload = new Dictionary<Scene, NetworkManager>();
+
+        // When true, any remaining scenes loaded will be unloaded
+        // TODO: There needs to be a way to validate if a scene should be unloaded
+        // or not (i.e. local client-side UI loaded additively)
+        public bool AllowUnassignedScenesToBeUnloaded = false;
+
+        /// <summary>
+        /// Handles unloading any scenes that might remain on a client that
+        /// need to be unloaded.
+        /// </summary>
+        /// <param name="networkManager"></param>
+        public void UnloadUnassignedScenes(NetworkManager networkManager = null)
+        {
+            // Only if we are specifically testing this functionality
+            if (!AllowUnassignedScenesToBeUnloaded)
+            {
+                return;
+            }
+
+            SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
+            var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
+
+            foreach (var sceneEntry in relativeSceneNameToSceneHandles)
+            {
+                var scenHandleEntries = relativeSceneNameToSceneHandles[sceneEntry.Key];
+                foreach (var sceneHandleEntry in scenHandleEntries)
+                {
+                    if (!sceneHandleEntry.Value.IsAssigned)
+                    {
+                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene, networkManager);
+                    }
+                }
+            }
+            foreach (var sceneToUnload in m_ScenesToUnload)
+            {
+                SceneManager.UnloadSceneAsync(sceneToUnload.Key);
+            }
+        }
+
+        /// <summary>
+        /// Removes the scene entry from the scene name to scene handle table
+        /// </summary>
+        private void SceneManager_SceneUnloaded(Scene scene)
+        {
+            if (m_ScenesToUnload.ContainsKey(scene))
+            {
+                var networkManager = m_ScenesToUnload[scene];
+                var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
+                if (relativeSceneNameToSceneHandles.ContainsKey(scene.name))
+                {
+                    var scenHandleEntries = relativeSceneNameToSceneHandles[scene.name];
+                    if (scenHandleEntries.ContainsKey(scene.handle))
+                    {
+                        scenHandleEntries.Remove(scene.handle);
+                        if (scenHandleEntries.Count == 0)
+                        {
+                            relativeSceneNameToSceneHandles.Remove(scene.name);
+                        }
+                        m_ScenesToUnload.Remove(scene);
+                        if (m_ScenesToUnload.Count == 0)
+                        {
+                            SceneManager.sceneUnloaded -= SceneManager_SceneUnloaded;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Integration test version that handles migrating dynamically spawned NetworkObjects to
+        /// the DDOL when a scene is unloaded
+        /// </summary>
+        /// <param name="networkManager"><see cref="NetworkManager"/> relative instance</param>
+        /// <param name="scene">scene being unloaded</param>
+        public void MoveObjectsFromSceneToDontDestroyOnLoad(ref NetworkManager networkManager, Scene scene)
+        {
+            // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
+            // are despawned.
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSpawned);
+#else
+            var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
+#endif
+            foreach (var networkObject in networkObjects)
+            {
+                if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
+                {
+                    if (networkObject != null)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Ignoring {networkObject.gameObject.name} because it isn't in scene {networkObject.gameObject.scene.name} ");
+                    }
+                    continue;
+                }
+
+                bool skipPrefab = false;
+
+                foreach (var networkPrefab in networkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    if (networkPrefab.Prefab == null)
+                    {
+                        continue;
+                    }
+                    if (networkObject == networkPrefab.Prefab.GetComponent<NetworkObject>())
+                    {
+                        skipPrefab = true;
+                        break;
+                    }
+                }
+                if (skipPrefab)
+                {
+                    continue;
+                }
+
+                // Only NetworkObjects marked to not be destroyed with the scene and are not already in the DDOL are preserved
+                if (!networkObject.DestroyWithScene && networkObject.gameObject.scene != networkManager.SceneManager.DontDestroyOnLoadScene)
+                {
+                    // Only move dynamically spawned NetworkObjects with no parent as the children will follow
+                    if (networkObject.gameObject.transform.parent == null && networkObject.IsSceneObject != null && !networkObject.IsSceneObject.Value)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Moving {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
+                        Object.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+                }
+                else if (networkManager.IsServer)
+                {
+                    if (networkObject.NetworkManager == networkManager)
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Destroying {networkObject.gameObject.name} because it is in scene {networkObject.gameObject.scene.name} with DWS = {networkObject.DestroyWithScene}.");
+                        networkObject.Despawn();
+                    }
+                    else //For integration testing purposes, migrate remaining into DDOL
+                    {
+                        VerboseDebug($"[MoveObjects from {scene.name} | {scene.handle}] Temporarily migrating {networkObject.gameObject.name} into DDOL to await server destroy message.");
+                        Object.DontDestroyOnLoad(networkObject.gameObject);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sets the client synchronization mode which impacts whether both the server or client take into consideration scenes loaded before
+        /// starting the <see cref="NetworkManager"/>.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="LoadSceneMode.Single"/>: Does not take preloaded scenes into consideration
+        /// <see cref="LoadSceneMode.Single"/>: Does take preloaded scenes into consideration
+        /// </remarks>
+        /// <param name="networkManager">relative <see cref="NetworkManager"/> instance</param>
+        /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
+        public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
+        {
+            var sceneManager = networkManager.SceneManager;
+
+
+            // For additive client synchronization, we take into consideration scenes
+            // already loaded.
+            if (mode == LoadSceneMode.Additive)
+            {
+                if (networkManager.IsServer)
+                {
+                    sceneManager.OnSceneEvent -= SceneManager_OnSceneEvent;
+                    sceneManager.OnSceneEvent += SceneManager_OnSceneEvent;
+                }
+
+                if (!SceneNameToSceneHandles.ContainsKey(networkManager))
+                {
+                    SceneNameToSceneHandles.Add(networkManager, new Dictionary<string, Dictionary<int, SceneEntry>>());
+                }
+
+                var networkManagerScenes = SceneNameToSceneHandles[networkManager];
+
+                for (int i = 0; i < SceneManager.sceneCount; i++)
+                {
+                    var scene = SceneManager.GetSceneAt(i);
+
+                    // Ignore scenes that belong to other NetworkManager instances
+                    if (!DoesSceneHaveUnassignedEntry(scene.name, networkManager))
+                    {
+                        continue;
+                    }
+
+                    // If using scene verification
+                    if (sceneManager.VerifySceneBeforeLoading != null)
+                    {
+                        // Determine if we should take this scene into consideration
+                        if (!sceneManager.VerifySceneBeforeLoading.Invoke(scene.buildIndex, scene.name, LoadSceneMode.Additive))
+                        {
+                            continue;
+                        }
+                    }
+
+                    // If the scene is not already in the ScenesLoaded list, then add it
+                    if (!sceneManager.ScenesLoaded.ContainsKey(scene.handle))
+                    {
+                        StartTrackingScene(scene, true, networkManager);
+                        sceneManager.ScenesLoaded.Add(scene.handle, scene);
+                    }
+                }
+            }
+            // Set the client synchronization mode
+            sceneManager.ClientSynchronizationMode = mode;
+        }
+
+        /// <summary>
+        /// During integration testing, if the server loads a scene then
+        /// we want to start tracking it.
+        /// </summary>
+        /// <param name="sceneEvent"></param>
+        private void SceneManager_OnSceneEvent(SceneEvent sceneEvent)
+        {
+            // Filter for server only scene events
+            if (!NetworkManager.IsServer || sceneEvent.ClientId != NetworkManager.ServerClientId)
+            {
+                return;
+            }
+
+            switch (sceneEvent.SceneEventType)
+            {
+                case SceneEventType.LoadComplete:
+                    {
+                        StartTrackingScene(sceneEvent.Scene, true, NetworkManager);
+                        break;
+                    }
+            }
+        }
+
+        /// <summary>
+        /// Handles determining if a client should attempt to load a scene during synchronization.
+        /// </summary>
+        /// <param name="sceneName">name of the scene to be loaded</param>
+        /// <param name="isPrimaryScene">when in client synchronization mode single, this determines if the scene is the primary active scene</param>
+        /// <param name="clientSynchronizationMode">the current client synchronization mode</param>
+        /// <param name="networkManager"><see cref="NetworkManager"/>relative instance</param>
+        /// <returns></returns>
+        public bool ClientShouldPassThrough(string sceneName, bool isPrimaryScene, LoadSceneMode clientSynchronizationMode, NetworkManager networkManager)
+        {
+            var shouldPassThrough = clientSynchronizationMode == LoadSceneMode.Single ? false : DoesSceneHaveUnassignedEntry(sceneName, networkManager);
+            var activeScene = SceneManager.GetActiveScene();
+
+            // If shouldPassThrough is not yet true and the scene to be loaded is the currently active scene
+            if (!shouldPassThrough && sceneName == activeScene.name)
+            {
+                // In additive client synchronization mode we always pass through.
+                // Unlike the default behavior(i.e. DefaultSceneManagerHandler), for integration testing we always return false
+                // if it is the active scene and the client synchronization mode is LoadSceneMode.Single because the client should
+                // load the active scene additively for this NetworkManager instance (i.e. can't have multiple active scenes).
+                if (clientSynchronizationMode == LoadSceneMode.Additive)
+                {
+                    // don't try to reload this scene and pass through to post load processing.
+                    shouldPassThrough = true;
+                }
+            }
+            return shouldPassThrough;
         }
 
         /// <summary>

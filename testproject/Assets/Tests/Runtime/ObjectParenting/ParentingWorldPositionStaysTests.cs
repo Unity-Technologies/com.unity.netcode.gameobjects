@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
@@ -215,9 +216,9 @@ namespace TestProject.RuntimeTests
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
-            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.NetworkPrefabs)
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
             {
-                networkManager.NetworkConfig.NetworkPrefabs.Add(networkPrefab);
+                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             }
         }
 

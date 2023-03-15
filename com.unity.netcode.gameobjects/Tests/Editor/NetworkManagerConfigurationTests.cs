@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using Unity.Netcode.Editor;
+using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -105,12 +107,171 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.NetworkPrefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);
             Object.DestroyImmediate(parent);
 
+        }
+
+        [Test]
+        public void WhenNetworkConfigContainsOldPrefabList_TheyMigrateProperlyToTheNewList()
+        {
+            var networkConfig = new NetworkConfig();
+
+            var regularPrefab = new GameObject("Regular Prefab").AddComponent<NetworkObject>();
+            var overriddenPrefab = new GameObject("Overridden Prefab").AddComponent<NetworkObject>();
+            var overridingTargetPrefab = new GameObject("Overriding Target Prefab").AddComponent<NetworkObject>();
+            var sourcePrefabToOverride = new GameObject("Overriding Source Prefab").AddComponent<NetworkObject>();
+
+            networkConfig.OldPrefabList = new List<NetworkPrefab>();
+            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = regularPrefab.gameObject });
+            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 });
+
+            networkConfig.InitializePrefabs();
+
+            Assert.IsNull(networkConfig.OldPrefabList);
+            Assert.IsNotNull(networkConfig.Prefabs);
+            Assert.IsNotNull(networkConfig.Prefabs.Prefabs);
+            Assert.AreEqual(2, networkConfig.Prefabs.Prefabs.Count);
+
+            Assert.AreSame(regularPrefab.gameObject, networkConfig.Prefabs.Prefabs[0].Prefab);
+            Assert.AreEqual(NetworkPrefabOverride.None, networkConfig.Prefabs.Prefabs[0].Override);
+            Assert.IsNull(networkConfig.Prefabs.Prefabs[0].SourcePrefabToOverride);
+            Assert.IsNull(networkConfig.Prefabs.Prefabs[0].OverridingTargetPrefab);
+
+            Assert.AreSame(overriddenPrefab.gameObject, networkConfig.Prefabs.Prefabs[1].Prefab);
+            Assert.AreEqual(NetworkPrefabOverride.Prefab, networkConfig.Prefabs.Prefabs[1].Override);
+            Assert.AreEqual(123456, networkConfig.Prefabs.Prefabs[1].SourceHashToOverride);
+            Assert.AreSame(sourcePrefabToOverride.gameObject, networkConfig.Prefabs.Prefabs[1].SourcePrefabToOverride);
+            Assert.AreSame(overridingTargetPrefab.gameObject, networkConfig.Prefabs.Prefabs[1].OverridingTargetPrefab);
+        }
+
+        [Test]
+        public void WhenModifyingPrefabListUsingNetworkManagerAPI_ModificationIsLocal()
+        {
+            // Setup
+            var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
+            networkManager2.NetworkConfig = new NetworkConfig();
+            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+
+            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+
+            networkManager.Initialize(true);
+            networkManager2.Initialize(false);
+
+            networkManager.AddNetworkPrefab(object2.gameObject);
+            networkManager2.AddNetworkPrefab(object3.gameObject);
+
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+
+            Assert.IsTrue(sharedList.Contains(object1.gameObject));
+            Assert.IsFalse(sharedList.Contains(object2.gameObject));
+            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+        }
+
+        [Test]
+        public void WhenModifyingPrefabListUsingPrefabsAPI_ModificationIsLocal()
+        {
+            // Setup
+            var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
+            networkManager2.NetworkConfig = new NetworkConfig();
+            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+
+            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+
+            networkManager.Initialize(true);
+            networkManager2.Initialize(false);
+
+            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
+            networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
+
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+
+            Assert.IsTrue(sharedList.Contains(object1.gameObject));
+            Assert.IsFalse(sharedList.Contains(object2.gameObject));
+            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+        }
+
+        [Test]
+        public void WhenModifyingPrefabListUsingPrefabsListAPI_ModificationIsShared()
+        {
+            // Setup
+            var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager = networkManagerObject.AddComponent<NetworkManager>();
+            networkManager.NetworkConfig = new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
+            var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
+            networkManager2.NetworkConfig = new NetworkConfig();
+            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+
+            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+
+            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+
+            networkManager.Initialize(true);
+            networkManager2.Initialize(false);
+
+            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object2.gameObject });
+            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object3.gameObject });
+
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+
+            Assert.IsTrue(sharedList.Contains(object1.gameObject));
+            Assert.IsTrue(sharedList.Contains(object2.gameObject));
+            Assert.IsTrue(sharedList.Contains(object3.gameObject));
         }
     }
 }

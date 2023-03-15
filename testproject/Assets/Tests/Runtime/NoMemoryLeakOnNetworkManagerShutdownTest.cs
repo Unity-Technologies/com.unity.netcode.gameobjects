@@ -47,10 +47,10 @@ namespace TestProject.RuntimeTests
 
             var validNetworkPrefab = new NetworkPrefab();
             validNetworkPrefab.Prefab = m_Prefab;
-            server.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+            server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             foreach (var client in clients)
             {
-                client.NetworkConfig.NetworkPrefabs.Add(validNetworkPrefab);
+                client.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             }
 
             // Start the instances
