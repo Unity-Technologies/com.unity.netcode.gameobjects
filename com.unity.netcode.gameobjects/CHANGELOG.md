@@ -6,80 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
-### Added
-
-- Added `NetworkTransform.UseHalfFloatPrecision` property that, when enabled, will use half float values for position, rotation, and scale. This yields a 50% bandwidth savings a the cost of precision. (#2388)
-- Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
-- Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
-- Added `NetworkTransform.SlerpPosition` property that, when enabled along with interpolation being enabled, will interpolate using `Vector3.Slerp`. (#2388)
-- Added `BufferedLinearInterpolatorVector3` that replaces the float version, is now used by `NetworkTransform`, and provides the ability to enable or disable `Slerp`. (#2388)
-- Added `HalfVector3` used for scale when half float precision is enabled. (#2388)
-- Added `HalfVector4` used for rotation when half float precision and quaternion synchronization is enabled. (#2388)
-- Added `HalfVector3DeltaPosition` used for position when half float precision is enabled. This handles loss in position precision by updating only the delta position as opposed to the full position. (#2388)
-- Added `NetworkTransform.GetSpaceRelativePosition` and `NetworkTransform.GetSpaceRelativeRotation` helper methods to return the proper values depending upon whether local or world space. (#2388)
-- Added `NetworkTransform.OnAuthorityPushTransformState` virtual method that is invoked just prior to sending the `NetworkTransformState` to non-authoritative instances. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
-- Added `NetworkTransform.OnNetworkTransformStateUpdated` virtual method that is invoked just after the authoritative `NetworkTransformState` is applied. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
-- Added `NetworkTransform.OnInitialize`virtual method that is invoked after the `NetworkTransform` has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when `NetworkTransform` is initialized (i.e. resetting client prediction etc) (#2388)
-- Added `NetworkObject.SynchronizeTransform` property (default is true) that provides users with another way to help with bandwidth optimizations where, when set to false, the `NetworkObject`'s associated transform will not be included when spawning and/or synchronizing late joining players. (#2388)
-- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
-- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
-- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
-- Added `OnServerStarted` and `OnServerStopped` events that will trigger only on the server (or host player) to notify that the server just started or is no longer active (#2420)
-- Added `OnClientStarted` and `OnClientStopped` events that will trigger only on the client (or host player) to notify that the client just started or is no longer active (#2420)
-
-### Changed
-
-- Changed `NetworkTransform` authority handles delta checks on each new network tick and no longer consumes processing cycles checking for deltas for all frames in-between ticks. (#2388)
-- Changed the `NetworkTransformState` structure is now public and now has public methods that provide access to key properties of the `NetworkTransformState` structure. (#2388)
-- Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
-- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
-- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
-
-### Fixed
-
-- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
-- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
-- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
-- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
-- Fixed issue with a child's rotation rolling over when interpolation is enabled on a `NetworkTransform`. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
-- Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
-- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
-- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
-- Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
-
-## [1.3.0]
-
-### Added
-
-- Added detection and graceful handling of corrupt packets for additional safety. (#2419)
-
-### Changed
-
-- The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
-- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
-- `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
-- Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.
-- `NetworkHide()` of an object that was just `NetworkShow()`n produces a warning, as remote clients will _not_ get a spawn/despawn pair.
-- Renamed the NetworkTransform.SetState parameter `shouldGhostsInterpolate` to `teleportDisabled` for better clarity of what that parameter does. (#2228)
-- Network prefabs are now stored in a ScriptableObject that can be shared between NetworkManagers, and have been exposed for public access. By default, a Default Prefabs List is created that contains all NetworkObject prefabs in the project, and new NetworkManagers will default to using that unless that option is turned off in the Netcode for GameObjects settings. Existing NetworkManagers will maintain their existing lists, which can be migrated to the new format via a button in their inspector. (#2322)
-
-### Fixed
-
-- Fixed issue where changes to a layer's weight would not synchronize unless a state transition was occurring.(#2399)
-- Fixed issue where `NetworkManager.LocalClientId` was returning the `NetworkTransport.ServerClientId` as opposed to the `NetworkManager.m_LocalClientId`. (#2398)
-- Fixed issue where a dynamically spawned `NetworkObject` parented under an in-scene placed `NetworkObject` would have its `InScenePlaced` value changed to `true`. This would result in a soft synchronization error for late joining clients. (#2396)
-- Fixed a UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2347)
-- Fixed issue where `NetcodeSettingsProvider` would throw an exception in Unity 2020.3.x versions. (#2345)
-- Fixed server side issue where, depending upon component ordering, some NetworkBehaviour components might not have their OnNetworkDespawn method invoked if the client side disconnected. (#2323)
-- Fixed a case where data corruption could occur when using UnityTransport when reaching a certain level of send throughput. (#2332)
-- Fixed an issue in `UnityTransport` where an exception would be thrown if starting a Relay host/server on WebGL. This exception should only be thrown if using direct connections (where WebGL can't act as a host/server). (#2321)
-- Fixed `NetworkAnimator` issue where it was not checking for `AnimatorStateTtansition.destinationStateMachine` and any possible sub-states defined within it. (#2309)
-- Fixed `NetworkAnimator` issue where the host client was receiving the ClientRpc animation updates when the host was the owner.(#2309)
-- Fixed `NetworkAnimator` issue with using pooled objects and when specific properties are cleaned during despawn and destroy.(#2309)
-- Fixed issue where `NetworkAnimator` was checking for animation changes when the associated `NetworkObject` was not spawned.(#2309)
-- Corrected an issue with the documentation for BufferSerializer (#2401)
-
 ## [1.2.0] - 2022-11-21
 
 ### Added
@@ -96,7 +22,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Optimized bandwidth usage by encoding most integer fields using variable-length encoding. (#2276)
 
 ### Fixed
-- Fixed `IsSpawnedObjectsPendingInDontDestroyOnLoad` is only set to true when loading a scene using `LoadSceneMode.Singleonly`. (#2330)
+
 - Fixed issue where `NetworkTransform` components nested under a parent with a `NetworkObject` component  (i.e. network prefab) would not have their associated `GameObject`'s transform synchronized. (#2298)
 - Fixed issue where `NetworkObject`s that failed to instantiate could cause the entire synchronization pipeline to be disrupted/halted for a connecting client. (#2298)
 - Fixed issue where in-scene placed `NetworkObject`s nested under a `GameObject` would be added to the orphaned children list causing continual console warning log messages. (#2298)
