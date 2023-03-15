@@ -12,7 +12,8 @@
         "Unity.Multiplayer.Tools.NetworkSolutionInterface",
         "Unity.Networking.Transport",
         "Unity.Collections",
-        "Unity.Burst"
+        "Unity.Burst",
+        "Unity.Mathematics"
     ],
     "allowUnsafeCode": true,
     "versionDefines": [
