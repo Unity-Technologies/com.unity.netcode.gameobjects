@@ -8,7 +8,7 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class TransformInterpolationObject : NetworkBehaviour
+    public class TransformInterpolationObject : NetworkTransform
     {
         // Set the minimum threshold which we will use as our margin of error
 #if UNITY_EDITOR
@@ -22,8 +22,21 @@ namespace Unity.Netcode.RuntimeTests
         public bool IsMoving;
         public bool IsFixed;
 
-        private void Update()
+        protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
+            PositionThreshold = MinThreshold;
+            base.OnInitialize(ref replicatedState);
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!IsSpawned)
+            {
+                return;
+            }
+
             // Check the position of the nested object on the client
             if (CheckPosition)
             {
@@ -36,6 +49,8 @@ namespace Unity.Netcode.RuntimeTests
             // Move the nested object on the server
             if (IsMoving)
             {
+                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
+
                 var y = Time.realtimeSinceStartup % 10.0f;
 
                 // change the space between local and global every second
@@ -47,8 +62,10 @@ namespace Unity.Netcode.RuntimeTests
             // On the server, make sure to keep the parent object at a fixed position
             if (IsFixed)
             {
+                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
                 transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
             }
+
         }
     }
 
@@ -68,9 +85,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("InterpTestObject");
-            var networkTransform = m_PrefabToSpawn.AddComponent<NetworkTransform>();
-            networkTransform.PositionThreshold = TransformInterpolationObject.MinThreshold;
-            m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
+            var networkTransform = m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
         }
 
         private IEnumerator RefreshNetworkObjects()

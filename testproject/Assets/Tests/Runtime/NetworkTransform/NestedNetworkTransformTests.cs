@@ -203,8 +203,14 @@ namespace TestProject.RuntimeTests
                         continue;
                     }
                     var relativeClonedTransforms = playerRelative.Value[connectedClient].GetComponentsInChildren<IntegrationNetworkTransform>();
+                    // TODO: Determine why MAC OS X on 2020.3 has precision issues when interpolating using full precision but no other platform does nor does MAC OS X on later versions of Unity.
+#if UNITY_2021_3_OR_NEWER
                     m_CurrentVariance = m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_PositionScaleVariance;
                     m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
+#else
+                    m_CurrentVariance = SystemInfo.operatingSystem.Contains("Mac OS X") ? k_PositionScaleVariance : m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_PositionScaleVariance;
+                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;                    
+#endif
                     for (int i = 0; i < playerNetworkTransforms.Length; i++)
                     {
                         var playerCurrentPosition = playerNetworkTransforms[i].PushedPosition;
