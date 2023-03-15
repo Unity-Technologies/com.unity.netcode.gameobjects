@@ -25,6 +25,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
             PositionThreshold = MinThreshold;
+            SetMaxInterpolationBound(1.0f);
             base.OnInitialize(ref replicatedState);
         }
 
@@ -132,7 +133,6 @@ namespace Unity.Netcode.RuntimeTests
 
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
             spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
-            spawnedObject.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
 
             const float maxPlacementError = 0.01f;
 
@@ -145,7 +145,6 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.01f);
             }
 
-            m_SpawnedObjectOnClient.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
             m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 
             // Test that interpolation works correctly for 10 seconds

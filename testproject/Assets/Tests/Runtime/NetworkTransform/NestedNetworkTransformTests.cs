@@ -209,7 +209,7 @@ namespace TestProject.RuntimeTests
                     m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
 #else
                     m_CurrentVariance = SystemInfo.operatingSystem.Contains("Mac OS X") ? k_PositionScaleVariance : m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_PositionScaleVariance;
-                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;                    
+                    m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10f : m_Interpolation == Interpolation.Interpolation ? 0.10f : 0.0f;
 #endif
                     for (int i = 0; i < playerNetworkTransforms.Length; i++)
                     {
