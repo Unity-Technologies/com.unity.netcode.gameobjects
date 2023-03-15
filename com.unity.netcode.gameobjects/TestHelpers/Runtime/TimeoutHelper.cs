@@ -87,7 +87,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             base.OnStart();
         }
 
-        public TimeoutWithTicksHelper(float timeOutPeriod = k_DefaultTimeOutWaitPeriod, uint tickRate = k_DefaultTickRate) : base(timeOutPeriod)
+        public TimeoutFrameCountHelper(float timeOutPeriod = k_DefaultTimeOutWaitPeriod, uint tickRate = k_DefaultTickRate) : base(timeOutPeriod)
         {
             // Calculate the expected number of frame updates that should occur during the tick count wait period
             var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
