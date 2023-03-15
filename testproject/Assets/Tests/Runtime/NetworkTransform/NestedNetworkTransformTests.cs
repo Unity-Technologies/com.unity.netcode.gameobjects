@@ -264,14 +264,13 @@ namespace TestProject.RuntimeTests
             m_ValidationErrors = new StringBuilder();
             var waitPeriod = new WaitForSeconds(3f);
             var pausePeriod = new WaitForSeconds(1f);
-            var synchTimeOut = new TimeoutHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f);
+            var synchTimeOut = new TimeoutFrameCountHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f, m_ServerNetworkManager.NetworkConfig.TickRate);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
             yield return pausePeriod;
 
             var precisionFailures = 0;
             var clientCount = 0;
-
 
             // 5 of the iterations are spent spawning
             // All iterations test transform values against the authority and non-authority instances
@@ -296,9 +295,8 @@ namespace TestProject.RuntimeTests
                     if (precisionFailures > k_MaximumPrecisionFailures)
                     {
                         m_EnableVerboseDebug = true;
-                        VerboseDebug($"[{m_Interpolation}][{m_Precision}][{m_Authority}]");
-                        VerboseDebug($"[{i}][Precision Failure] Exceeded Precision Failure Count ({precisionFailures})");
-                        AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
+                        AssertOnTimeout($"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
+                            $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
                         Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
                     }
                     else
@@ -330,7 +328,7 @@ namespace TestProject.RuntimeTests
                 // failures, we need to keep running until it corrects itself or fails
                 if (precisionFailures > 0 && i == (k_IterationsToTest - 1))
                 {
-                    Debug.Log($"Extending test iterations with {precisionFailures} precision failures still pending correction.");
+                    VerboseDebug($"Extending test iterations with {precisionFailures} precision failures still pending correction.");
                     i--;
                 }
             }
