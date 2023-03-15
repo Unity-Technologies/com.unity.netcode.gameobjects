@@ -1,6 +1,0 @@
-{
-    "name": "ScriptsForAutomatedTesting",
-    "references": [
-        "Unity.Netcode.Runtime"
-    ]
-}

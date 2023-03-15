@@ -1,8 +1,0 @@
-{
-    "dependencies": {
-        "com.unity.netcode.gameobjects": "file:../../com.unity.netcode.gameobjects"
-    },
-    "testables": [
-        "com.unity.netcode.gameobjects"
-    ]
-}
