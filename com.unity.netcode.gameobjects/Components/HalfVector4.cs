@@ -14,7 +14,7 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public struct HalfVector4 : INetworkSerializable
     {
-        private const int k_Size = 3;
+        private const int k_Size = 4;
         /// <summary>
         /// The half float precision value of the x-axis as a <see cref="half"/>.
         /// </summary>
