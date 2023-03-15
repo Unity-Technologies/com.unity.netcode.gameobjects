@@ -161,8 +161,10 @@ namespace TestProject.RuntimeTests
             m_ScenesLoaded.Clear();
             foreach (var manager in m_ClientNetworkManagers)
             {
+
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
                 manager.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
+                manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             }
         }
 
@@ -253,20 +255,11 @@ namespace TestProject.RuntimeTests
 
         private bool ServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
-            if (m_ExpectedSceneIndex != 0 && m_ExpectedSceneName != null)
-            {
-                // Ignore the test runner test scene.
-                if (sceneIndex != m_ExpectedSceneIndex && sceneName.Contains("InitTestScene"))
-                {
-                    return false;
-                }
+            Assert.IsTrue(m_ExpectedSceneIndex == sceneIndex);
+            Assert.IsTrue(m_ExpectedSceneName == sceneName);
+            Assert.IsTrue(m_ExpectedLoadMode == loadSceneMode);
 
-                Assert.IsTrue(m_ExpectedSceneIndex == sceneIndex);
-                Assert.IsTrue(m_ExpectedSceneName == sceneName);
-                Assert.IsTrue(m_ExpectedLoadMode == loadSceneMode);
-                return m_ServerVerifyScene;
-            }
-            return false;
+            return m_ServerVerifyScene;
         }
 
         private bool ClientVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)

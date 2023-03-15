@@ -183,11 +183,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private IEnumerator StartClientsAndServer(bool useHost, int numberOfClients, GameObject prefabObject)
         {
-            void AddNetworkPrefab(NetworkConfig config, NetworkPrefab prefab)
-            {
-                config.Prefabs.Add(prefab);
-            }
-
             // Sanity check to make sure we are not trying to create more clients than we have available to use
             Assert.True(numberOfClients <= m_ClientNetworkManagers.Length);
             m_ActiveClientsForCurrentTest = new List<NetworkManager>();
@@ -199,13 +194,12 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Add the prefab to be used for this particular test iteration
-            var np = new NetworkPrefab { Prefab = prefabObject };
-            AddNetworkPrefab(m_ServerNetworkManager.NetworkConfig, np);
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabObject });
             m_ServerNetworkManager.NetworkConfig.TickRate = 30;
             foreach (var clientManager in m_ActiveClientsForCurrentTest)
             {
                 m_ServerNetworkManager.NetworkConfig.TickRate = 30;
-                AddNetworkPrefab(clientManager.NetworkConfig, np);
+                clientManager.NetworkConfig.NetworkPrefabs.Add(new NetworkPrefab() { Prefab = prefabObject });
             }
 
             // Now spin everything up normally

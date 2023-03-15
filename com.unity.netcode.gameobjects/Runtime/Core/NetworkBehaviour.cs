@@ -314,18 +314,18 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        public bool IsServer { get; private set; }
+        protected bool IsServer { get; private set; }
 
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        public bool IsClient { get; private set; }
+        protected bool IsClient { get; private set; }
 
 
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        public bool IsHost { get; private set; }
+        protected bool IsHost { get; private set; }
 
         /// <summary>
         /// Gets Whether or not the object has a owner
@@ -570,9 +570,12 @@ namespace Unity.Netcode
             if (list == null)
             {
                 list = new List<FieldInfo>();
+                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
             }
-
-            list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+            else
+            {
+                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
+            }
 
             if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
             {
@@ -896,8 +899,7 @@ namespace Unity.Netcode
         /// Either BufferSerializerReader or BufferSerializerWriter, depending whether the serializer
         /// is in read mode or write mode.
         /// </typeparam>
-        /// <param name="targetClientId">the relative client identifier being synchronized</param>
-        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
+        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 
         }
@@ -911,7 +913,7 @@ namespace Unity.Netcode
         /// synchronize any remaining NetworkBehaviours.
         /// </remarks>
         /// <returns>true if it wrote synchronization data and false if it did not</returns>
-        internal bool Synchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
+        internal bool Synchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
             if (serializer.IsWriter)
             {
@@ -931,7 +933,7 @@ namespace Unity.Netcode
                 var threwException = false;
                 try
                 {
-                    OnSynchronize(ref serializer, targetClientId);
+                    OnSynchronize(ref serializer);
                 }
                 catch (Exception ex)
                 {

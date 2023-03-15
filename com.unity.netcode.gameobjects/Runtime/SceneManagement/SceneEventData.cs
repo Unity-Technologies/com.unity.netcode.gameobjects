@@ -80,16 +80,6 @@ namespace Unity.Netcode
         /// <b>Event Notification:</b> Both server and client receive a local notification.
         /// </summary>
         SynchronizeComplete,
-        /// <summary>
-        /// Synchronizes clients when the active scene has changed
-        /// See: <see cref="NetworkObject.ActiveSceneSynchronization"/>
-        /// </summary>
-        ActiveSceneChanged,
-        /// <summary>
-        /// Synchronizes clients when one or more NetworkObjects are migrated into a new scene
-        /// See: <see cref="NetworkObject.SceneMigrationSynchronization"/>
-        /// </summary>
-        ObjectSceneChanged,
     }
 
     /// <summary>
@@ -104,7 +94,7 @@ namespace Unity.Netcode
         internal ForceNetworkSerializeByMemcpy<Guid> SceneEventProgressId;
         internal uint SceneEventId;
 
-        internal uint ActiveSceneHash;
+
         internal uint SceneHash;
         internal int SceneHandle;
 
@@ -148,8 +138,6 @@ namespace Unity.Netcode
 
         internal Queue<uint> ScenesToSynchronize;
         internal Queue<uint> SceneHandlesToSynchronize;
-
-        internal LoadSceneMode ClientSynchronizationMode;
 
 
         /// <summary>
@@ -327,8 +315,6 @@ namespace Unity.Netcode
                 case SceneEventType.ReSynchronize:
                 case SceneEventType.LoadEventCompleted:
                 case SceneEventType.UnloadEventCompleted:
-                case SceneEventType.ActiveSceneChanged:
-                case SceneEventType.ObjectSceneChanged:
                     {
                         return true;
                     }
@@ -398,18 +384,6 @@ namespace Unity.Netcode
             // Write the scene event type
             writer.WriteValueSafe(SceneEventType);
 
-            if (SceneEventType == SceneEventType.ActiveSceneChanged)
-            {
-                writer.WriteValueSafe(ActiveSceneHash);
-                return;
-            }
-
-            if (SceneEventType == SceneEventType.ObjectSceneChanged)
-            {
-                SerializeObjectsMovedIntoNewScene(writer);
-                return;
-            }
-
             // Write the scene loading mode
             writer.WriteValueSafe((byte)LoadSceneMode);
 
@@ -417,10 +391,6 @@ namespace Unity.Netcode
             if (SceneEventType != SceneEventType.Synchronize)
             {
                 writer.WriteValueSafe(SceneEventProgressId);
-            }
-            else
-            {
-                writer.WriteValueSafe(ClientSynchronizationMode);
             }
 
             // Write the scene index and handle
@@ -431,7 +401,6 @@ namespace Unity.Netcode
             {
                 case SceneEventType.Synchronize:
                     {
-                        writer.WriteValueSafe(ActiveSceneHash);
                         WriteSceneSynchronizationData(writer);
                         break;
                     }
@@ -567,28 +536,12 @@ namespace Unity.Netcode
         internal void Deserialize(FastBufferReader reader)
         {
             reader.ReadValueSafe(out SceneEventType);
-            if (SceneEventType == SceneEventType.ActiveSceneChanged)
-            {
-                reader.ReadValueSafe(out ActiveSceneHash);
-                return;
-            }
-
-            if (SceneEventType == SceneEventType.ObjectSceneChanged)
-            {
-                DeserializeObjectsMovedIntoNewScene(reader);
-                return;
-            }
-
             reader.ReadValueSafe(out byte loadSceneMode);
             LoadSceneMode = (LoadSceneMode)loadSceneMode;
 
             if (SceneEventType != SceneEventType.Synchronize)
             {
                 reader.ReadValueSafe(out SceneEventProgressId);
-            }
-            else
-            {
-                reader.ReadValueSafe(out ClientSynchronizationMode);
             }
 
             reader.ReadValueSafe(out SceneHash);
@@ -598,7 +551,6 @@ namespace Unity.Netcode
             {
                 case SceneEventType.Synchronize:
                     {
-                        reader.ReadValueSafe(out ActiveSceneHash);
                         CopySceneSynchronizationData(reader);
                         break;
                     }
@@ -986,63 +938,6 @@ namespace Unity.Netcode
                 ClientsTimedOut.Add(clientId);
             }
         }
-
-        /// <summary>
-        /// Serialize scene handles and associated NetworkObjects that were migrated
-        /// into a new scene.
-        /// </summary>
-        private void SerializeObjectsMovedIntoNewScene(FastBufferWriter writer)
-        {
-            var sceneManager = m_NetworkManager.SceneManager;
-            // Write the number of scene handles
-            writer.WriteValueSafe(sceneManager.ObjectsMigratedIntoNewScene.Count);
-            foreach (var sceneHandleObjects in sceneManager.ObjectsMigratedIntoNewScene)
-            {
-                // Write the scene handle
-                writer.WriteValueSafe(sceneHandleObjects.Key);
-                // Write the number of NetworkObjectIds to expect
-                writer.WriteValueSafe(sceneHandleObjects.Value.Count);
-                foreach (var networkObject in sceneHandleObjects.Value)
-                {
-                    writer.WriteValueSafe(networkObject.NetworkObjectId);
-                }
-            }
-            // Once we are done, clear the table
-            sceneManager.ObjectsMigratedIntoNewScene.Clear();
-        }
-
-        /// <summary>
-        /// Deserialize scene handles and associated NetworkObjects that need to
-        /// be migrated into a new scene.
-        /// </summary>
-        private void DeserializeObjectsMovedIntoNewScene(FastBufferReader reader)
-        {
-            var sceneManager = m_NetworkManager.SceneManager;
-            var spawnManager = m_NetworkManager.SpawnManager;
-            // Just always assure this has no entries
-            sceneManager.ObjectsMigratedIntoNewScene.Clear();
-            var numberOfScenes = 0;
-            var sceneHandle = 0;
-            var objectCount = 0;
-            var networkObjectId = (ulong)0;
-            reader.ReadValueSafe(out numberOfScenes);
-            for (int i = 0; i < numberOfScenes; i++)
-            {
-                reader.ReadValueSafe(out sceneHandle);
-                sceneManager.ObjectsMigratedIntoNewScene.Add(sceneHandle, new List<NetworkObject>());
-                reader.ReadValueSafe(out objectCount);
-                for (int j = 0; j < objectCount; j++)
-                {
-                    reader.ReadValueSafe(out networkObjectId);
-                    if (!spawnManager.SpawnedObjects.ContainsKey(networkObjectId))
-                    {
-                        throw new Exception($"[Object Scene Migration] Trying to synchronize NetworkObjectId ({networkObjectId}) but it no longer exists!");
-                    }
-                    sceneManager.ObjectsMigratedIntoNewScene[sceneHandle].Add(spawnManager.SpawnedObjects[networkObjectId]);
-                }
-            }
-        }
-
 
         /// <summary>
         /// Used to release the pooled network buffer

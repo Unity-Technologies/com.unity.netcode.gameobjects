@@ -1,10 +1,9 @@
 using UnityEditor;
-using UnityEngine;
 
 
 namespace Unity.Netcode.Editor.Configuration
 {
-    internal class NetcodeForGameObjectsEditorSettings
+    internal class NetcodeForGameObjectsSettings
     {
         internal const string AutoAddNetworkObjectIfNoneExists = "AutoAdd-NetworkObject-When-None-Exist";
         internal const string InstallMultiplayerToolsTipDismissedPlayerPrefKey = "Netcode_Tip_InstallMPTools_Dismissed";
@@ -15,7 +14,6 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 return EditorPrefs.GetInt(InstallMultiplayerToolsTipDismissedPlayerPrefKey);
             }
-
             return 0;
         }
 
@@ -30,24 +28,12 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 return EditorPrefs.GetBool(AutoAddNetworkObjectIfNoneExists);
             }
-
             return false;
         }
 
         internal static void SetAutoAddNetworkObjectSetting(bool autoAddSetting)
         {
             EditorPrefs.SetBool(AutoAddNetworkObjectIfNoneExists, autoAddSetting);
-        }
-    }
-
-    [FilePath("ProjectSettings/NetcodeForGameObjects.settings", FilePathAttribute.Location.ProjectFolder)]
-    internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
-    {
-        [SerializeField] public bool GenerateDefaultNetworkPrefabs = true;
-
-        internal void SaveSettings()
-        {
-            Save(true);
         }
     }
 }

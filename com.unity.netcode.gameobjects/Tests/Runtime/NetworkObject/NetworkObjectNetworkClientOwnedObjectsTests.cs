@@ -15,18 +15,32 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 1;
-        private GameObject m_NetworkObject;
-
+        private NetworkPrefab m_NetworkPrefab;
         protected override void OnServerAndClientsCreated()
         {
-            m_NetworkObject = CreateNetworkObjectPrefab("ClientOwnedObject");
-            m_NetworkObject.gameObject.AddComponent<DummyNetworkBehaviour>();
+            // create prefab
+            var gameObject = new GameObject("ClientOwnedObject");
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+            gameObject.AddComponent<DummyNetworkBehaviour>();
+            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
+
+            m_NetworkPrefab = (new NetworkPrefab()
+            {
+                Prefab = gameObject
+            });
+
+            m_ServerNetworkManager.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
+
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                client.NetworkConfig.NetworkPrefabs.Add(m_NetworkPrefab);
+            }
         }
 
         [UnityTest]
         public IEnumerator ChangeOwnershipOwnedObjectsAddTest()
         {
-            NetworkObject serverObject = m_NetworkObject.GetComponent<NetworkObject>();
+            NetworkObject serverObject = Object.Instantiate(m_NetworkPrefab.Prefab).GetComponent<NetworkObject>();
             serverObject.NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.Spawn();
 
@@ -50,7 +64,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator WhenOwnershipIsChanged_OwnershipValuesUpdateCorrectly()
         {
-            NetworkObject serverObject = m_NetworkObject.GetComponent<NetworkObject>();
+            NetworkObject serverObject = Object.Instantiate(m_NetworkPrefab.Prefab).GetComponent<NetworkObject>();
             serverObject.NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.Spawn();
 

@@ -226,7 +226,7 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         writer.WriteInt(messageLength);
 
-                        var messageOffset = reader.GetBytesRead();
+                        var messageOffset = HeadIndex + reader.GetBytesRead();
                         WriteBytes(ref writer, (byte*)m_Data.GetUnsafePtr() + messageOffset, messageLength);
 
                         writerAvailable -= sizeof(int) + messageLength;

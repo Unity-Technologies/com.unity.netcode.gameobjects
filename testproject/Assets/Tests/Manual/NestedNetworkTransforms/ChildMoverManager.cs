@@ -6,8 +6,6 @@ namespace TestProject.ManualTests
 {
     public class ChildMoverManager : NetworkBehaviour
     {
-        static public bool StopMovement;
-
         public List<ChildMover> ChildMovers;
 
         [Range(0.001f, 5.0f)]
@@ -45,21 +43,11 @@ namespace TestProject.ManualTests
             base.OnNetworkSpawn();
         }
 
-        private bool ChildMoversHaveAuthority()
-        {
-            foreach (var childMover in ChildMovers)
-            {
-                if (!childMover.IsAuthority())
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
+        private float m_LastRotDirection = 1.0f;
+        private float m_LastMovementDirection = 1.0f;
         private void Update()
         {
-            if (IsSpawned && !StopMovement && ChildMoversHaveAuthority())
+            if (IsOwner && IsSpawned)
             {
                 var deltaPosition = (transform.position - m_LastPosition);
                 if (deltaPosition.sqrMagnitude >= (TriggerDistanceToMove * TriggerDistanceToMove))
@@ -93,21 +81,12 @@ namespace TestProject.ManualTests
 
                     m_LastPosition = transform.position;
                     m_LastForward = transform.forward;
-
                     foreach (var childMover in ChildMovers)
                     {
                         childMover.PlayerIsMoving(Mathf.Sign(movementDirection));
                     }
                 }
-            }
-        }
 
-        private float m_LastRotDirection = 1.0f;
-        private float m_LastMovementDirection = 1.0f;
-        private void LateUpdate()
-        {
-            if (IsOwner && IsSpawned && !StopMovement)
-            {
                 if (Input.GetKeyDown(KeyCode.C) && PlayerCamera != null && m_MainCamera != null)
                 {
                     if (m_MainCamera.isActiveAndEnabled)

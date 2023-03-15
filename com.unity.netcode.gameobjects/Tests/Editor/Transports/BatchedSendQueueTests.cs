@@ -229,12 +229,6 @@ namespace Unity.Netcode.EditorTests
             var writer = new DataStreamWriter(data);
             Assert.AreEqual(messageLength, q.FillWriterWithMessages(ref writer));
             AssertIsTestMessage(data);
-
-            q.Consume(messageLength);
-
-            writer = new DataStreamWriter(data);
-            Assert.AreEqual(messageLength, q.FillWriterWithMessages(ref writer));
-            AssertIsTestMessage(data);
         }
 
         [Test]
