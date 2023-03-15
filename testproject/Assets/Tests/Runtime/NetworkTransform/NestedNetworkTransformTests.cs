@@ -255,11 +255,11 @@ namespace TestProject.RuntimeTests
             // If we had any variance failures logged, then we failed
             return m_ValidationErrors.Length == 0;
         }
-        private const int k_IterationsToTest = 8;
+        private const int k_IterationsToTest = 10;
         private const int k_ClientsToSpawn = 2;  // Really it will be 3 including the host
 
         // Number of failures in a row with no correction in precision for the test to fail
-        private const int k_MaximumPrecisionFailures = 6;
+        private const int k_MaximumPrecisionFailures = 5;
 
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
