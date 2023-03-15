@@ -1,13 +1,11 @@
 using System.Text;
 using System.Collections;
-using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using TestProject.ManualTests;
 using Unity.Netcode.TestHelpers.Runtime;
-using Unity.Netcode;
 
 namespace TestProject.RuntimeTests
 {
@@ -210,9 +208,6 @@ namespace TestProject.RuntimeTests
                     {
                         var playerCurrentPosition = playerNetworkTransforms[i].PushedPosition;
                         var clonePosition = relativeClonedTransforms[i].GetSpaceRelativePosition();
-                        //var playerCurrentPosition = playerNetworkTransforms[i].InLocalSpace ? playerNetworkTransforms[i].transform.localPosition : playerNetworkTransforms[i].transform.position;
-                        //var clonePosition = relativeClonedTransforms[i].InLocalSpace ? relativeClonedTransforms[i].transform.localPosition : relativeClonedTransforms[i].transform.position;
-
                         var playerGameObjectName = playerNetworkTransforms[i].gameObject.name;
                         var cloneGameObjectName = relativeClonedTransforms[i].gameObject.name;
                         if (!Approximately(playerCurrentPosition, clonePosition))
