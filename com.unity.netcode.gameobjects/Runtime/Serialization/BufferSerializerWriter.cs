@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -60,6 +61,11 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray2D value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Ray2D[] value) => m_Writer.WriteValueSafe(value);
 
+        public void SerializeValue(ref half value) => m_Writer.WriteValueSafe(value);
+        public void SerializeValue(ref half2 value) => m_Writer.WriteValueSafe(value);
+        public void SerializeValue(ref half3 value) => m_Writer.WriteValueSafe(value);
+        public void SerializeValue(ref half4 value) => m_Writer.WriteValueSafe(value);
+
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
             m_Writer.WriteNetworkSerializable(value);
@@ -102,5 +108,10 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref Ray[] value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked(ref half value) => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked(ref half2 value) => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked(ref half3 value) => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked(ref half4 value) => m_Writer.WriteValue(value);
+
     }
 }

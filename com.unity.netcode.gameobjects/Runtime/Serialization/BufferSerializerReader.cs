@@ -1,6 +1,7 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -60,6 +61,10 @@ namespace Unity.Netcode
         public void SerializeValue(ref Ray[] value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Ray2D value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Ray2D[] value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref half value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref half2 value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref half3 value) => m_Reader.ReadValueSafe(out value);
+        public void SerializeValue(ref half4 value) => m_Reader.ReadValueSafe(out value);
 
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new() => m_Reader.ReadNetworkSerializable(out value);
 

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -1076,6 +1077,34 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
 
+        /// <summary>
+        /// Read a half 
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out half value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a half2 
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out half2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a half3
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out half3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a half4
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out half4 value) => ReadUnmanaged(out value);
+
 
         /// <summary>
         /// Read a Vector2
@@ -1276,6 +1305,34 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a half
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out half value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a half2
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out half2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a half3
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out half3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a half4
+        /// </summary>
+        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out half4 value) => ReadUnmanagedSafe(out value);
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
