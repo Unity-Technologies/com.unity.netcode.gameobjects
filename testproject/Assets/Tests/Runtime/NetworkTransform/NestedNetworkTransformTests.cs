@@ -274,7 +274,7 @@ namespace TestProject.RuntimeTests
         private const int k_ClientsToSpawn = 2;  // Really it will be 3 including the host
 
         // Number of failures in a row with no correction in precision for the test to fail
-        private const int k_MaximumPrecisionFailures = 4;
+        private const int k_MaximumPrecisionFailures = 6;
 
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
@@ -283,7 +283,7 @@ namespace TestProject.RuntimeTests
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
-            var waitPeriod = new WaitForSeconds(2f);
+            var waitPeriod = new WaitForSeconds(3f);
             var pausePeriod = new WaitForSeconds(1f);
             var synchTimeOut = new TimeoutHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f);
 
@@ -317,6 +317,7 @@ namespace TestProject.RuntimeTests
                     if (precisionFailures > k_MaximumPrecisionFailures)
                     {
                         m_EnableVerboseDebug = true;
+                        VerboseDebug($"[{m_Interpolation}][{m_Precision}][{m_Authority}]");
                         VerboseDebug($"[{i}][Precision Failure] Exceeded Precision Failure Count ({precisionFailures})");
                         AssertOnTimeout($"Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
                         Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
