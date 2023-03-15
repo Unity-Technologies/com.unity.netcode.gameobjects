@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -1185,6 +1186,34 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
 
+        /// <summary>
+        /// Write a half
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(half value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a half2
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(half2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a half3
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(half3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a half4
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(half4 value) => WriteUnmanaged(value);
+
 
         /// <summary>
         /// Write a Vector2
@@ -1385,6 +1414,34 @@ namespace Unity.Netcode
         /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a half
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(half value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a half2
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(half2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a half3
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(half3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a half4
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(half4 value) => WriteUnmanagedSafe(value);
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

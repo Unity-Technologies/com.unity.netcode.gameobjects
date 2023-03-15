@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -13,37 +14,38 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public struct HalfVector4 : INetworkSerializable
     {
+        private const int k_Size = 3;
         /// <summary>
-        /// The half float precision value of the x-axis as a <see cref="ushort"/>.
+        /// The half float precision value of the x-axis as a <see cref="half"/>.
         /// </summary>
-        public ushort X => Axis.X;
+        public half X => Axis.x;
 
         /// <summary>
-        /// The half float precision value of the y-axis as a <see cref="ushort"/>.
+        /// The half float precision value of the y-axis as a <see cref="half"/>.
         /// </summary>
-        public ushort Y => Axis.Y;
+        public half Y => Axis.y;
 
         /// <summary>
-        /// The half float precision value of the z-axis as a <see cref="ushort"/>.
+        /// The half float precision value of the z-axis as a <see cref="half"/>.
         /// </summary>
-        public ushort Z => Axis.Z;
+        public half Z => Axis.z;
 
         /// <summary>
-        /// The half float precision value of the w-axis as a <see cref="ushort"/>.
+        /// The half float precision value of the w-axis as a <see cref="half"/>.
         /// </summary>
-        public ushort W => Axis.W;
+        public half W => Axis.w;
 
         /// <summary>
-        /// Used to store the half float precision value as a <see cref="ushort"/>
+        /// Used to store the half float precision values as a <see cref="half4"/>
         /// </summary>
-        public Vector4T<ushort> Axis;
+        public half4 Axis;
 
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            for (int i = 0; i < Axis.Length; i++)
+            for (int i = 0; i < k_Size; i++)
             {
                 var axisValue = Axis[i];
                 serializer.SerializeValue(ref axisValue);
@@ -61,12 +63,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector4 ToVector4()
         {
-            Vector4 fullPrecision = Vector4.zero;
-            for (int i = 0; i < Axis.Length; i++)
-            {
-                fullPrecision[i] = Mathf.HalfToFloat(Axis[i]);
-            }
-            return fullPrecision;
+            return math.float4(Axis); 
         }
 
         /// <summary>
@@ -76,12 +73,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Quaternion ToQuaternion()
         {
-            var quaternion = Quaternion.identity;
-            for (int i = 0; i < Axis.Length; i++)
-            {
-                quaternion[i] = Mathf.HalfToFloat(Axis[i]);
-            }
-            return quaternion;
+            return math.quaternion(Axis);
         }
 
         /// <summary>
@@ -91,10 +83,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateFrom(ref Vector4 vector4)
         {
-            for (int i = 0; i < Axis.Length; i++)
-            {
-                Axis[i] = Mathf.FloatToHalf(vector4[i]);
-            }
+            Axis = math.half4(vector4);
         }
 
         /// <summary>
@@ -104,10 +93,7 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateFrom(ref Quaternion quaternion)
         {
-            for (int i = 0; i < Axis.Length; i++)
-            {
-                Axis[i] = Mathf.FloatToHalf(quaternion[i]);
-            }
+            Axis = math.half4(math.half(quaternion.x), math.half(quaternion.y), math.half(quaternion.z), math.half(quaternion.w));
         }
 
         /// <summary>
