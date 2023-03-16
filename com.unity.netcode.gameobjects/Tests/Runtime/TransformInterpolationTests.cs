@@ -10,6 +10,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class TransformInterpolationObject : NetworkTransform
     {
+        public static bool TestComplete = false;
         // Set the minimum threshold which we will use as our margin of error
 #if UNITY_EDITOR
         public const float MinThreshold = 0.005f;
@@ -32,7 +33,8 @@ namespace Unity.Netcode.RuntimeTests
 
         public bool ReachedTargetLocalSpaceTransitionCount()
         {
-            return m_LocalSpaceToggles >= k_TargetLocalSpaceToggles;
+            TestComplete = m_LocalSpaceToggles >= k_TargetLocalSpaceToggles;
+            return TestComplete;
         }
 
         protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
@@ -44,11 +46,24 @@ namespace Unity.Netcode.RuntimeTests
             base.OnInitialize(ref replicatedState);
         }
 
+        private int m_StartFrameCount;
+
+        public void StartMoving()
+        {
+            m_StartFrameCount = Time.frameCount;
+            IsMoving = true;
+        }
+
+        public void StopMoving()
+        {
+            IsMoving = false;
+        }
+
         protected override void Update()
         {
             base.Update();
 
-            if (!IsSpawned)
+            if (!IsSpawned || TestComplete)
             {
                 return;
             }
@@ -84,7 +99,7 @@ namespace Unity.Netcode.RuntimeTests
                 //GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
 
                 // Reduce the total frame count down to the frame rate
-                var y = Time.frameCount % Application.targetFrameRate;
+                var y = (Time.frameCount - m_StartFrameCount) % Application.targetFrameRate;
 
                 // change the space between local and global every time we hit the expected number of frames
                 // (or every second if running at the target frame rate)
@@ -149,6 +164,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TransformInterpolationTest()
         {
+            TransformInterpolationObject.TestComplete = false;
             // create an object
             var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
             var baseObject = Object.Instantiate(m_PrefabToSpawn);
@@ -161,7 +177,6 @@ namespace Unity.Netcode.RuntimeTests
             m_BaseAsNetworkObject = baseObject.GetComponent<NetworkObject>();
             m_BaseAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
 
-
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);
 
             m_SpawnedAsNetworkObject.Spawn();
@@ -171,7 +186,7 @@ namespace Unity.Netcode.RuntimeTests
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);
             var spawnedObjectNetworkTransform = spawnedObject.GetComponent<TransformInterpolationObject>();
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
-            spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
+            spawnedObject.GetComponent<TransformInterpolationObject>().StartMoving();
 
             const float maxPlacementError = 0.01f;
 

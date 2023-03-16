@@ -282,16 +282,21 @@ namespace TestProject.RuntimeTests
         [UnityTest]
         public IEnumerator NestedNetworkTransformSynchronization()
         {
+            var timeStarted = Time.realtimeSinceStartup;
+            var startFrameCount = Time.frameCount;
             m_EnableVerboseDebug = true;
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
-            var waitPeriod = new WaitForSeconds(3f);
-            var pausePeriod = new WaitForSeconds(1f);
+            var waitPeriod = new TimeoutFrameCountHelper(3f);
+            var pausePeriod = new TimeoutFrameCountHelper(1f);
             var synchTimeOut = new TimeoutFrameCountHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f, m_ServerNetworkManager.NetworkConfig.TickRate);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
-            yield return pausePeriod;
+
+            // We want it to timeout and it is "ok", just assuring that (n) frames have passed
+            yield return WaitForConditionOrTimeOut(() => false, pausePeriod);
+            // ** Do NOT AssertOnTimeout here **
 
             var precisionFailures = 0;
             var clientCount = 0;
@@ -319,6 +324,7 @@ namespace TestProject.RuntimeTests
                     if (precisionFailures > k_MaximumPrecisionFailures)
                     {
                         m_EnableVerboseDebug = true;
+                        DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
                         AssertOnTimeout($"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
                             $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
                         Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
@@ -341,12 +347,22 @@ namespace TestProject.RuntimeTests
                 {
                     yield return CreateAndStartNewClient();
                     clientCount++;
+
+                    yield return WaitForConditionOrTimeOut(NewClientInstanceIsOnAllClients, synchTimeOut);
+                    if (synchTimeOut.TimedOut)
+                    {
+                        DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
+                    }
+                    AssertOnTimeout($"Timed out waiting for all players to have spawned instances of all other players!", synchTimeOut);
                 }
+
 
                 AutomatedPlayerMover.StopMovement = false;
                 ChildMoverManager.StopMovement = false;
                 // Now let everything move around a bit
-                yield return waitPeriod;
+                // We want it to timeout and it is "ok", just assuring that (n) frames have passed
+                yield return WaitForConditionOrTimeOut(() => false, waitPeriod);
+                // ** Do NOT AssertOnTimeout here **
 
                 // If we are just about to end this test but there are running precision
                 // failures, we need to keep running until it corrects itself or fails
@@ -356,6 +372,40 @@ namespace TestProject.RuntimeTests
                     i--;
                 }
             }
+
+            DisplayFrameAndTimeInfo(timeStarted, startFrameCount);
+        }
+
+        private void DisplayFrameAndTimeInfo(float startTime, int startFrameCount, bool completed = true)
+        {
+            var completedOrFailed = completed ? "Completed" : "Failed";
+            var duration = Time.realtimeSinceStartup - startTime;
+            var frameCount = Time.frameCount - startFrameCount;
+            var avgFPS = frameCount / duration;
+            Debug.Log($"[NestedNetworkTransformSynchronization][{completedOrFailed}] Duration: ({duration}) | Frame Count: ({frameCount}) | Average FPS: ({avgFPS}) | Expected FPS ({Application.targetFrameRate})");
+        }
+
+        /// <summary>
+        /// Make sure all clients have spawned the existing and new players
+        /// </summary>
+        private bool NewClientInstanceIsOnAllClients()
+        {
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                var clientId = clientNetworkManager.LocalClientId;
+                foreach (var playerObjects in m_PlayerNetworkObjects)
+                {
+                    if (!playerObjects.Value.ContainsKey(clientId))
+                    {
+                        return false;
+                    }
+                    if (!playerObjects.Value[clientId].IsSpawned)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
     }
