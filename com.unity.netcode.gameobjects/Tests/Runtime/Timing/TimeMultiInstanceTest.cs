@@ -91,11 +91,11 @@ namespace Unity.Netcode.RuntimeTests
                 UpdateTimeStates(networkManagers);
 
                 // compares whether client times have the correct offset to server
-                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
-                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
+                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
+                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
 
                 // compares the two client times, only difference should be based on buffering.
-                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
+                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
             }
         }
 
