@@ -17,12 +17,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_IsStarted { get; private set; }
         public bool TimedOut { get; internal set; }
 
+        private float m_TimeStarted;
+        private float m_TimeStopped;
+
+        public float GetTimeElapsed()
+        {
+            if (m_IsStarted)
+            {
+                return Time.realtimeSinceStartup - m_TimeStarted;
+            }
+            else
+            {
+                return m_TimeStopped - m_TimeStarted;
+            }
+        }
+
         protected virtual void OnStart()
         {
         }
 
         public void Start()
         {
+            m_TimeStopped = 0.0f;
+            m_TimeStarted = Time.realtimeSinceStartup;
             m_MaximumTimeBeforeTimeOut = Time.realtimeSinceStartup + m_TimeOutPeriod;
             m_IsStarted = true;
             TimedOut = false;
@@ -35,6 +52,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public void Stop()
         {
+            if (m_TimeStopped == 0.0f)
+            {
+                m_TimeStopped = Time.realtimeSinceStartup;
+            }
             TimedOut = HasTimedOut();
             m_IsStarted = false;
             OnStop();
@@ -66,8 +87,30 @@ namespace Unity.Netcode.TestHelpers.Runtime
         private const uint k_DefaultTickRate = 30;
 
         private float m_TotalFramesToWait;
-        private float m_StartFrameCount;
+        private int m_StartFrameCount;
+        private int m_EndFrameCount;
         private bool m_ReachedFrameCount;
+
+        public int GetFrameCount()
+        {
+            if (m_IsStarted)
+            {
+                return Time.frameCount - m_StartFrameCount;
+            }
+            else
+            {
+                return m_EndFrameCount - m_StartFrameCount;
+            }
+        }
+
+        protected override void OnStop()
+        {
+            if (m_EndFrameCount == 0)
+            {
+                m_EndFrameCount = Time.frameCount;
+            }
+            base.OnStop();
+        }
 
         protected override bool OnHasTimedOut()
         {
@@ -83,6 +126,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         protected override void OnStart()
         {
+            m_EndFrameCount = 0;
             m_StartFrameCount = Time.frameCount;
             base.OnStart();
         }

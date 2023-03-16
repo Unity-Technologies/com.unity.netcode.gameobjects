@@ -28,6 +28,7 @@ namespace Unity.Netcode.RuntimeTests
         private bool m_CurrentLocalSpace;
 
         private int m_LocalSpaceToggles;
+        private int m_LastFrameCount;
 
         public bool ReachedTargetLocalSpaceTransitionCount()
         {
@@ -65,6 +66,14 @@ namespace Unity.Netcode.RuntimeTests
             if (IsMoving)
             {
                 Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
+
+                if (m_LastFrameCount == Time.frameCount)
+                {
+                    Debug.Log($"Detected duplicate frame update count {Time.frameCount}. Ignoring this update.");
+                    return;
+                }
+
+                m_LastFrameCount = Time.frameCount;
 
                 // Leaving this here for reference.
                 // If a system is running at a slower frame rate than expected, then the below code could toggle
@@ -182,6 +191,7 @@ namespace Unity.Netcode.RuntimeTests
             // and how they move
             var timeOutHelper = new TimeoutFrameCountHelper(10);
             yield return WaitForConditionOrTimeOut(spawnedObjectNetworkTransform.ReachedTargetLocalSpaceTransitionCount, timeOutHelper);
+            Debug.Log($"[TransformInterpolationTest] Wait condition reached or timed out. Frame Count ({timeOutHelper.GetFrameCount()}) | Time Elapsed ({timeOutHelper.GetTimeElapsed()})");
             AssertOnTimeout($"Failed to reach desired local to world space transitions in the given time!", timeOutHelper);
         }
     }
