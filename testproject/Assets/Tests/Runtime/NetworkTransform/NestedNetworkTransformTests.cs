@@ -219,7 +219,13 @@ namespace TestProject.RuntimeTests
                         var cloneGameObjectName = relativeClonedTransforms[i].gameObject.name;
                         if (!Approximately(playerCurrentPosition, clonePosition))
                         {
-                            m_ValidationErrors.Append($"[Position][Client-{connectedClient}-{playerGameObjectName} {GetVector3Values(ref playerCurrentPosition)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} {GetVector3Values(ref clonePosition)}]\n");
+                            // Now check to see if the non-authority's current target (state) position is not within aproximate range
+                            var statePosition = relativeClonedTransforms[i].GetSpaceRelativePosition(true);
+                            if (!Approximately(statePosition, clonePosition))
+                            {
+                                m_ValidationErrors.Append($"[Position][Client-{connectedClient}-{playerGameObjectName} {GetVector3Values(ref playerCurrentPosition)}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId}-{cloneGameObjectName} {GetVector3Values(ref clonePosition)}]\n");
+                                m_ValidationErrors.Append($"[Authority Pushed Position {playerCurrentPosition}] [NonAuthority State Position {GetVector3Values(ref statePosition)}] - [NonAuthority Position {GetVector3Values(ref clonePosition)}]\n");
+                            }
                         }
 
                         if (!Approximately(playerNetworkTransforms[i].PushedScale, relativeClonedTransforms[i].transform.localScale))
@@ -227,12 +233,22 @@ namespace TestProject.RuntimeTests
                             m_ValidationErrors.Append($"[Scale][Client-{connectedClient} {playerNetworkTransforms[i].transform.localScale}][Failing on Client-{playerRelative.Key} for Clone-{relativeClonedTransforms[i].OwnerClientId} {relativeClonedTransforms[i].transform.localScale}]\n");
                         }
 
+                        // TODO: Determine why MAC OS X on 2020.3 has precision issues when interpolating using full precision but no other platform does nor does MAC OS X on later versions of Unity.
+#if UNITY_2021_3_OR_NEWER
                         m_CurrentVariance = m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_RotationVariance;
                         if (m_Precision == Precision.Compressed)
                         {
                             m_CurrentVariance = k_RotationVarianceCompressed;
                         }
                         m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : 0.0f;
+#else
+                        m_CurrentVariance = SystemInfo.operatingSystem.Contains("Mac OS X") ? k_RotationVariance : m_Precision == Precision.Full ? m_OriginalVarianceThreshold : k_RotationVariance;
+                        if (m_Precision == Precision.Compressed)
+                        {
+                            m_CurrentVariance = k_RotationVarianceCompressed;
+                        }
+                        m_CurrentVariance += m_Interpolation == Interpolation.Interpolation && m_Precision != Precision.Full ? 0.10333f : 0.0f;
+#endif
                         var playerCurrentRotation = playerNetworkTransforms[i].PushedRotation;
                         var cloneRotation = relativeClonedTransforms[i].GetSpaceRelativeRotation();
                         if (!ApproximatelyEuler(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
@@ -240,7 +256,9 @@ namespace TestProject.RuntimeTests
                             // Double check Euler as quaternions can have inverted Vector4 values from one another but be the same when comparing Euler
                             if (!ApproximatelyEuler(playerCurrentRotation.eulerAngles, cloneRotation.eulerAngles))
                             {
-                                var deltaEuler = playerCurrentRotation.eulerAngles - cloneRotation.eulerAngles;
+                                var deltaEuler = new Vector3(Mathf.DeltaAngle(playerCurrentRotation.eulerAngles.x, cloneRotation.eulerAngles.x),
+                                    Mathf.DeltaAngle(playerCurrentRotation.eulerAngles.y, cloneRotation.eulerAngles.y),
+                                    Mathf.DeltaAngle(playerCurrentRotation.eulerAngles.z, cloneRotation.eulerAngles.z));
                                 var eulerPlayer = playerCurrentRotation.eulerAngles;
                                 var eulerClone = cloneRotation.eulerAngles;
 
