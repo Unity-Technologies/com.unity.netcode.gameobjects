@@ -80,7 +80,7 @@ namespace Unity.Netcode
                 int index = 0;
                 foreach (var kvp2 in kvp.Value)
                 {
-                    if (kvp2.Value.Expiry < Time.realtimeSinceStartup && kvp2.Value.FramesExpiry <Time.frameCount)
+                    if (kvp2.Value.Expiry < Time.realtimeSinceStartup && kvp2.Value.FramesExpiry < Time.frameCount)
                     {
                         staleKeys[index++] = kvp2.Key;
                         PurgeTrigger(kvp.Key, kvp2.Key, kvp2.Value);
