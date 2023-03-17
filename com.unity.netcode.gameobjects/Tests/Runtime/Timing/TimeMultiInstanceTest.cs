@@ -50,6 +50,14 @@ namespace Unity.Netcode.RuntimeTests
         {
             yield return StartSomeClientsAndServerWithPlayersCustom(true, NumberOfClients, targetFrameRate, tickRate);
 
+            var additionalTimeTolerance = k_AdditionalTimeTolerance;
+            // Mac can dip down below 10fps when set at a 10fps range (i.e. known to hit as low as 8.85 fps)
+            // With the really low frame rate, add some additional time tolerance
+            if (targetFrameRate == 10)
+            {
+                additionalTimeTolerance += 0.0333333333333f;
+            }
+
             double frameInterval = 1d / targetFrameRate;
             double tickInterval = 1d / tickRate;
 
@@ -79,15 +87,15 @@ namespace Unity.Netcode.RuntimeTests
             for (int i = 0; i < framesToRun; i++)
             {
                 yield return null;
-
+                var capturedFrameRate = Time.captureFramerate;
                 UpdateTimeStates(networkManagers);
 
                 // compares whether client times have the correct offset to server
-                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
-                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
+                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
+                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
 
                 // compares the two client times, only difference should be based on buffering.
-                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + k_AdditionalTimeTolerance);
+                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
             }
         }
 

@@ -1322,6 +1322,10 @@ namespace Unity.Netcode
 
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs.Shutdown();
+
+            // Reset the configuration hash for next session in the event
+            // that the prefab list changes
+            NetworkConfig?.ClearConfigHash();
         }
 
         /// <inheritdoc />
