@@ -132,7 +132,7 @@ namespace Unity.Netcode
         /// The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped.
         /// </summary>
         [Tooltip("The amount of time a message should be buffered if the asset or object needed to process it doesn't exist yet. If the asset is not added/object is not spawned within this time, it will be dropped")]
-        public float SpawnTimeout = 1f;
+        public float SpawnTimeout = 4f;
 
         /// <summary>
         /// Whether or not to enable network logs.
