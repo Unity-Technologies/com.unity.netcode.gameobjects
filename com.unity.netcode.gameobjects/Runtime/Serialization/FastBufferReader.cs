@@ -1077,34 +1077,135 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
 
-        /// <summary>
-        /// Read a half 
-        /// </summary>
-        /// <param name="value">the values to read</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool2 value) => ReadUnmanaged(out value);
+        public void ReadValue(out bool2x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool2x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool2x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool3x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool3x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool3x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool4x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool4x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out bool4x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double2x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double2x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double2x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double3x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double3x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double3x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double4x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double4x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out double4x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float2x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float2x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float2x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float3x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float3x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float3x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float4x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float4x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out float4x4 value) => ReadUnmanaged(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a half2 
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half2 value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a half3
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half3 value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a half4
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half4 value) => ReadUnmanaged(out value);
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int2x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int2x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int2x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int3x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int3x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int3x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int4x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int4x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out int4x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out quaternion value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint2x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint2x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint2x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint3x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint3x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint3x4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint4 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint4x2 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint4x3 value) => ReadUnmanaged(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue(out uint4x4 value) => ReadUnmanaged(out value);
 
         /// <summary>
         /// Read a Vector2
@@ -1306,33 +1407,137 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
 
-        /// <summary>
-        /// Read a half
-        /// </summary>
-        /// <param name="value">the values to read</param>
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool2x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool2x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool2x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool3x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool3x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool3x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool4x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool4x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out bool4x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double2x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double2x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double2x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double3x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double3x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double3x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double4x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double4x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out double4x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float2x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float2x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float2x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float3x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float3x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float3x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float4x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float4x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out float4x4 value) => ReadUnmanagedSafe(out value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a half2
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half2 value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a half3
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half3 value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a half4
-        /// </summary>
-        /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int2x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int2x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int2x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int3x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int3x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int3x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int4x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int4x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out int4x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out quaternion value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint2x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint2x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint2x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint3x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint3x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint3x4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint4 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint4x2 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint4x3 value) => ReadUnmanagedSafe(out value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe(out uint4x4 value) => ReadUnmanagedSafe(out value);
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

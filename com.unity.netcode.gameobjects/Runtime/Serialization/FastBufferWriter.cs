@@ -1214,6 +1214,137 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(half4 value) => WriteUnmanaged(value);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool2x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool2x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool2x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool3x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool3x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool3x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool4x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool4x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in bool4x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double2x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double2x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double2x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double3x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double3x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double3x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double4x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double4x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in double4x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float2x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float2x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float2x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float3x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float3x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float3x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float4x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float4x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in float4x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in half value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in half2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in half3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in half4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int2x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int2x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int2x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int3x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int3x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int3x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int4x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int4x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in int4x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in quaternion value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint2x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint2x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint2x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint3x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint3x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint3x4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint4 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint4x2 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint4x3 value) => WriteUnmanaged(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in uint4x4 value) => WriteUnmanaged(value);
+
 
         /// <summary>
         /// Write a Vector2
@@ -1415,33 +1546,136 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
 
-        /// <summary>
-        /// Write a half
-        /// </summary>
-        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool2x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool2x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool2x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool3x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool3x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool3x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool4x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool4x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(bool4x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double2x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double2x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double2x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double3x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double3x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double3x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double4x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double4x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(double4x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float2x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float2x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float2x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float3x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float3x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float3x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float4x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float4x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(float4x4 value) => WriteUnmanagedSafe(value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half value) => WriteUnmanagedSafe(value);
-
-        /// <summary>
-        /// Write a half2
-        /// </summary>
-        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half2 value) => WriteUnmanagedSafe(value);
-
-        /// <summary>
-        /// Write a half3
-        /// </summary>
-        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half3 value) => WriteUnmanagedSafe(value);
-
-        /// <summary>
-        /// Write a half4
-        /// </summary>
-        /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int2x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int2x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int2x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int3x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int3x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int3x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int4x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int4x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(int4x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(quaternion value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint2x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint2x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint2x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint3x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint3x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint3x4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint4 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint4x2 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint4x3 value) => WriteUnmanagedSafe(value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(uint4x4 value) => WriteUnmanagedSafe(value);
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
