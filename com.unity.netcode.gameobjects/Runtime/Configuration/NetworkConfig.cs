@@ -209,6 +209,14 @@ namespace Unity.Netcode
         private ulong? m_ConfigHash = null;
 
         /// <summary>
+        /// Clears out the configuration hash value generated for a specific network session
+        /// </summary>
+        internal void ClearConfigHash()
+        {
+            m_ConfigHash = null;
+        }
+
+        /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
         /// <param name="cache"></param>
