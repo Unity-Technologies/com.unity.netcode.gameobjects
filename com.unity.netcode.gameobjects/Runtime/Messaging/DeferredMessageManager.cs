@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using UnityEngine;
 using Time = UnityEngine.Time;
 
 namespace Unity.Netcode
@@ -92,9 +91,15 @@ namespace Unity.Netcode
             }
         }
 
+        internal delegate void OnPurgeTriggerHandler(ulong localClientId, IDeferredMessageManager.TriggerType triggerType, ulong key);
+
+        internal OnPurgeTriggerHandler OnPurgeTrigger;
+
         protected virtual void PurgeTrigger(IDeferredMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo)
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+            OnPurgeTrigger?.Invoke(m_NetworkManager.LocalClientId, triggerType, key);
+
+            if (NetworkLog.CurrentLogLevel < LogLevel.Normal)
             {
                 NetworkLog.LogWarning($"Deferred messages were received for a trigger of type {triggerType} with key {key}, but that trigger was not received within within {m_NetworkManager.NetworkConfig.SpawnTimeout} second(s).");
             }

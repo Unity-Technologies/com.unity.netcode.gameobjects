@@ -196,6 +196,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnSetup()
         {
+            m_PurgedTriggerTypes.Clear();
             DeferredMessageTestRpcAndNetworkVariableComponent.ClientInstances.Clear();
             DeferredMessageTestRpcComponent.ClientInstances.Clear();
             DeferredMessageTestNetworkVariableComponent.ClientInstances.Clear();
@@ -865,10 +866,14 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.SpawnTimeout = timeout;
+                var deferredMessageManager = client.DeferredMessageManager as DeferredMessageManager;
+                Assert.IsNotNull(deferredMessageManager, $"Client IDeferredMessageManager is not an instance of DeferredMessageManager!");
+                deferredMessageManager.OnPurgeTrigger = OnPurgeTriggerDelegateHandler;
             }
             var serverObject = Object.Instantiate(m_RpcPrefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
+            var serverNetworkObjectId = serverObject.GetComponent<NetworkObject>().NetworkObjectId;
             yield return WaitForClientsToCatchSpawns();
 
             var start = 0f;
@@ -890,10 +895,10 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForAllClientsToReceive<ChangeOwnershipMessage>();
 
-            foreach (var unused in m_ClientNetworkManagers)
-            {
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-            }
+            //foreach (var unused in m_ClientNetworkManagers)
+            //{
+            //    LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
+            //}
 
             int purgeCount = 0;
             foreach (var client in m_ClientNetworkManagers)
@@ -929,6 +934,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(HaveAllClientsPurged);
             AssertOnTimeout("Timed out waiting for all clients to purge their deferred messages!");
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObjectId}!");
         }
 
         [UnityTest]
@@ -941,10 +948,14 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.SpawnTimeout = timeout;
+                var deferredMessageManager = client.DeferredMessageManager as DeferredMessageManager;
+                Assert.IsNotNull(deferredMessageManager, $"Client IDeferredMessageManager is not an instance of DeferredMessageManager!");
+                deferredMessageManager.OnPurgeTrigger = OnPurgeTriggerDelegateHandler;
             }
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
+            var serverNetworkObjectId = serverObject.GetComponent<NetworkObject>().NetworkObjectId;
             yield return WaitForClientsToCatchSpawns();
 
             var start = 0f;
@@ -970,10 +981,10 @@ namespace Unity.Netcode.RuntimeTests
                 new List<Type> {typeof(ClientRpcMessage), typeof(NetworkVariableDeltaMessage), typeof(ChangeOwnershipMessage),
                 }, m_ClientNetworkManagers.ToList(), ReceiptType.Received);
 
-            foreach (var unused in m_ClientNetworkManagers)
-            {
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-            }
+            //foreach (var unused in m_ClientNetworkManagers)
+            //{
+            //    LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
+            //}
 
             int purgeCount = 0;
             foreach (var client in m_ClientNetworkManagers)
@@ -1007,6 +1018,8 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(HaveAllClientsPurged);
             AssertOnTimeout("Timed out waiting for all clients to purge their deferred messages!");
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObjectId}!");
         }
 
         [UnityTest]
@@ -1019,14 +1032,18 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.SpawnTimeout = timeout;
+                var deferredMessageManager = client.DeferredMessageManager as DeferredMessageManager;
+                Assert.IsNotNull(deferredMessageManager, $"Client IDeferredMessageManager is not an instance of DeferredMessageManager!");
+                deferredMessageManager.OnPurgeTrigger = OnPurgeTriggerDelegateHandler;
             }
             var serverObject = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
-
+            var serverNetworkObjectId = serverObject.GetComponent<NetworkObject>().NetworkObjectId;
             var serverObject2 = Object.Instantiate(m_RpcAndNetworkVariablePrefab);
             serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
+            var serverNetworkObject2Id = serverObject2.GetComponent<NetworkObject>().NetworkObjectId;
 
             yield return WaitForClientsToCatchSpawns(2);
 
@@ -1057,12 +1074,11 @@ namespace Unity.Netcode.RuntimeTests
             new List<Type> {typeof(ClientRpcMessage), typeof(NetworkVariableDeltaMessage), typeof(ChangeOwnershipMessage),typeof(ClientRpcMessage), typeof(NetworkVariableDeltaMessage), typeof(ChangeOwnershipMessage),
             }, m_ClientNetworkManagers.ToList(), ReceiptType.Received);
 
-            foreach (var unused in m_ClientNetworkManagers)
-            {
-
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject2.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-            }
+            //foreach (var unused in m_ClientNetworkManagers)
+            //{
+            //    LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
+            //    LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject2.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
+            //}
 
             int purgeCount = 0;
             foreach (var client in m_ClientNetworkManagers)
@@ -1093,6 +1109,10 @@ namespace Unity.Netcode.RuntimeTests
                 var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
                 Assert.AreEqual(0, manager.DeferredMessageCountTotal());
             }
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObjectId}!");
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObject2Id));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObject2Id}!");
         }
 
         [UnityTest]
@@ -1104,10 +1124,14 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.SpawnTimeout = timeout;
+                var deferredMessageManager = client.DeferredMessageManager as DeferredMessageManager;
+                Assert.IsNotNull(deferredMessageManager, $"Client IDeferredMessageManager is not an instance of DeferredMessageManager!");
+                deferredMessageManager.OnPurgeTrigger = OnPurgeTriggerDelegateHandler;
             }
             var serverObject = Object.Instantiate(m_RpcPrefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
+            var serverNetworkObjectId = serverObject.GetComponent<NetworkObject>().NetworkObjectId;
             yield return WaitForClientsToCatchSpawns();
 
             var start = 0f;
@@ -1150,10 +1174,10 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(2, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject.GetComponent<NetworkObject>().NetworkObjectId));
             }
 
-            foreach (var unused in m_ClientNetworkManagers)
-            {
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-            }
+            //foreach (var unused in m_ClientNetworkManagers)
+            //{
+            //    LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
+            //}
 
             int purgeCount = 0;
             foreach (var client in m_ClientNetworkManagers)
@@ -1185,6 +1209,51 @@ namespace Unity.Netcode.RuntimeTests
                 var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
                 Assert.AreEqual(0, manager.DeferredMessageCountTotal());
             }
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObjectId}!");
+        }
+
+        private Dictionary<ulong, Dictionary<ulong, List<IDeferredMessageManager.TriggerType>>> m_PurgedTriggerTypes = new Dictionary<ulong, Dictionary<ulong, List<IDeferredMessageManager.TriggerType>>>();
+
+        private void OnPurgeTriggerDelegateHandler(ulong localClientId, IDeferredMessageManager.TriggerType triggerType, ulong key)
+        {
+            if (!m_PurgedTriggerTypes.ContainsKey(localClientId))
+            {
+                m_PurgedTriggerTypes.Add(localClientId, new Dictionary<ulong, List<IDeferredMessageManager.TriggerType>>());
+            }
+            if (!m_PurgedTriggerTypes[localClientId].ContainsKey(key))
+            {
+                m_PurgedTriggerTypes[localClientId].Add(key, new List<IDeferredMessageManager.TriggerType>());
+            }
+            if (!m_PurgedTriggerTypes[localClientId][key].Contains(triggerType))
+            {
+                m_PurgedTriggerTypes[localClientId][key].Add(triggerType);
+            }
+            else
+            {
+                Debug.LogError($"[DeferredMessageTests] Client-{localClientId} entry for NetworkObjectId ({key}) already contains a trigger type of ({triggerType})!");
+            }
+        }
+
+        private bool WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType triggerType, ulong networkObjectId)
+        {
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                var localClientId = client.LocalClientId;
+                if (!m_PurgedTriggerTypes.ContainsKey(localClientId))
+                {
+                    return false;
+                }
+                if (!m_PurgedTriggerTypes[localClientId].ContainsKey(networkObjectId))
+                {
+                    return false;
+                }
+                if (!m_PurgedTriggerTypes[localClientId][networkObjectId].Contains(triggerType))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         [UnityTest]
@@ -1196,10 +1265,15 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.NetworkConfig.SpawnTimeout = timeout;
+                var deferredMessageManager = client.DeferredMessageManager as DeferredMessageManager;
+                Assert.IsNotNull(deferredMessageManager, $"Client IDeferredMessageManager is not an instance of DeferredMessageManager!");
+                deferredMessageManager.OnPurgeTrigger = OnPurgeTriggerDelegateHandler;
             }
+
             var serverObject = Object.Instantiate(m_RpcPrefab);
             serverObject.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject.GetComponent<NetworkObject>().Spawn();
+            var serverNetworkObjectId = serverObject.GetComponent<NetworkObject>().NetworkObjectId;
             var serverObject2 = Object.Instantiate(m_RpcPrefab);
             serverObject2.GetComponent<NetworkObject>().NetworkManagerOwner = m_ServerNetworkManager;
             serverObject2.GetComponent<NetworkObject>().Spawn();
@@ -1247,10 +1321,10 @@ namespace Unity.Netcode.RuntimeTests
                 Assert.AreEqual(1, manager.DeferredMessageCountForKey(IDeferredMessageManager.TriggerType.OnSpawn, serverObject2.GetComponent<NetworkObject>().NetworkObjectId));
             }
 
-            foreach (var unused in m_ClientNetworkManagers)
-            {
-                LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within within {timeout} second(s).");
-            }
+            //foreach (var unused in m_ClientNetworkManagers)
+            //{
+            //   LogAssert.Expect(LogType.Warning, $"[Netcode] Deferred messages were received for a trigger of type {IDeferredMessageManager.TriggerType.OnSpawn} with key {serverObject.GetComponent<NetworkObject>().NetworkObjectId}, but that trigger was not received within {timeout} second(s).");
+            //}
 
             int purgeCount = 0;
             foreach (var client in m_ClientNetworkManagers)
@@ -1293,6 +1367,8 @@ namespace Unity.Netcode.RuntimeTests
                 var manager = (TestDeferredMessageManager)client.DeferredMessageManager;
                 manager.OnBeforePurge = null;
             }
+            yield return WaitForConditionOrTimeOut(() => WaitforAllClientsToHaveTriggerType(IDeferredMessageManager.TriggerType.OnSpawn, serverNetworkObjectId));
+            AssertOnTimeout($"Timed out waiting for all clients to purge trigger type {IDeferredMessageManager.TriggerType.OnSpawn} for NetworkObjectId {serverNetworkObjectId}!");
         }
     }
 }
