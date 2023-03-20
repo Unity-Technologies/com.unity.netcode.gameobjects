@@ -333,6 +333,10 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
             AssertOnTimeout($"[Late Joined Client #1] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
+            }
             // Now, unload the scene containing the NetworkObjects that don't synchronize with active scene changes
             DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed += OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
             m_ClientsUnloadedScene = false;
@@ -366,6 +370,7 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(() => DestroyWithSceneInstancesTestHelper.ObjectRelativeInstances.Count == 0);
             DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed -= OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
             AssertOnTimeout($"Timed out waiting for all client instances marked to destroy when the scene unloaded to be despawned and destroyed.");
+
 
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
@@ -404,6 +409,12 @@ namespace TestProject.RuntimeTests
             {
                 Assert.True(m_ServerSpawnedPrefabInstances[i].gameObject.name.Contains(m_TestPrefab.gameObject.name), $"Expected {m_ServerSpawnedPrefabInstances[i].gameObject.name} to contain {m_TestPrefab.gameObject.name}!");
             }
+        }
+
+        // Allows clients to unload only the scene being currently unloaded
+        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
+        {
+            return m_CurrentSceneUnloading == scene.name;
         }
 
         /// <summary>

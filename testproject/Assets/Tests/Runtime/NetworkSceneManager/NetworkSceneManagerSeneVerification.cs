@@ -311,6 +311,12 @@ namespace TestProject.RuntimeTests
 
             // Unload the scene
             ResetWait();
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
+            }
+
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
 
             yield return WaitForConditionOrTimeOut(ConditionPassed);
@@ -359,6 +365,11 @@ namespace TestProject.RuntimeTests
             // Now wait for scenes to unload
             yield return WaitForConditionOrTimeOut(ConditionPassed);
             AssertOnTimeout($"Timed out waiting for all clients to unload {m_CurrentSceneName}!\n{PrintFailedCondition()}");
+        }
+
+        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
+        {
+            return m_CurrentSceneName == scene.name;
         }
     }
 }

@@ -351,12 +351,22 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.OnUnloadComplete += SceneManager_OnUnloadComplete;
             }
 
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
+            }
+
             yield return UnloadAllScenes(true);
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.SceneManager.OnUnloadComplete -= SceneManager_OnUnloadComplete;
             }
             m_ServerNetworkManager.SceneManager.OnSceneEvent -= ServerSceneManager_OnSceneEvent;
+        }
+
+        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
+        {
+            return true;
         }
 
         private string m_SceneBeingUnloaded;

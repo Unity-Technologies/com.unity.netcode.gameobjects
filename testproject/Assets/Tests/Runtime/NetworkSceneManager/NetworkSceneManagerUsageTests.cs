@@ -97,12 +97,21 @@ namespace TestProject.RuntimeTests
             }
             Assert.IsTrue(threwException);
 
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
+            }
             // Loading additive only because we don't want to unload the
             // Test Runner's scene using LoadSceneMode.Single
             retStatus = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.AreEqual(retStatus, SceneEventProgressStatus.Started);
             yield return WaitForConditionOrTimeOut(() => !m_ClientLoadedScene);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {m_CurrentSceneName} {nameof(SceneEventType.UnloadComplete)} event from client!");
+        }
+
+        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
+        {
+            return m_CurrentSceneName == scene.name;
         }
 
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
