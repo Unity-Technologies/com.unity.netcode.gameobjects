@@ -773,6 +773,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
         public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
         {
+
+            var sceneManager = networkManager.SceneManager;
+
             // Don't let client's set this value
             if (!networkManager.IsServer)
             {
@@ -782,8 +785,15 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
                 return;
             }
+            else if (networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                }
+            }
 
-            var sceneManager = networkManager.SceneManager;
+
 
             // For additive client synchronization, we take into consideration scenes
             // already loaded.

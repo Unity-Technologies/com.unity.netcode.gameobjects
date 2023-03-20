@@ -48,6 +48,31 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
+        /// Validate warning message generation for setting client synchronization mode on the client side.
+        /// </summary>
+        [Test]
+        public void ClientSetClientSynchronizationMode()
+        {
+            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Clients should not set this value as it is automatically synchronized with the server's setting!");
+            m_ClientNetworkManagers[0].SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        }
+
+        /// <summary>
+        /// Validate warning message generation for setting client synchronization mode on the server side.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ServerSetClientSynchronizationModeAfterClientsConnected()
+        {
+            // Verify that changing this setting when additional clients are connect will generate the warning
+            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+            // Verify that changing this setting when no additional clients are connected will not generate a warning
+            yield return StopOneClient(m_ClientNetworkManagers[0]);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+            LogAssert.NoUnexpectedReceived();
+        }
+
+        /// <summary>
         /// Checks that a client cannot call LoadScene
         /// </summary>
         [UnityTest]
