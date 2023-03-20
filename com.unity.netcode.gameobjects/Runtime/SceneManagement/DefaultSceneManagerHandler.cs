@@ -203,12 +203,11 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Unloads any scenes that have not been assigned.
-        /// TODO: There needs to be a way to validate if a scene should be unloaded
-        /// or not (i.e. local client-side UI loaded additively)
         /// </summary>
         /// <param name="networkManager"></param>
         public void UnloadUnassignedScenes(NetworkManager networkManager = null)
         {
+            var sceneManager = networkManager.SceneManager;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
             foreach (var sceneEntry in SceneNameToSceneHandles)
             {
@@ -217,7 +216,10 @@ namespace Unity.Netcode
                 {
                     if (!sceneHandleEntry.Value.IsAssigned)
                     {
-                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                        if (sceneManager.VerifySceneBeforeUnloading == null || sceneManager.VerifySceneBeforeUnloading.Invoke(sceneHandleEntry.Value.Scene))
+                        {
+                            m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                        }
                     }
                 }
             }
@@ -324,6 +326,15 @@ namespace Unity.Netcode
         /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
         public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
         {
+            // Don't let client's set this value
+            if (!networkManager.IsServer)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Clients should not set this value as it is automatically synchronized with the server's setting!");
+                }
+                return;
+            }
             var sceneManager = networkManager.SceneManager;
 
             // For additive client synchronization, we take into consideration scenes
