@@ -326,6 +326,7 @@ namespace Unity.Netcode
         /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
         public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
         {
+            var sceneManager = networkManager.SceneManager;
             // Don't let client's set this value
             if (!networkManager.IsServer)
             {
@@ -335,7 +336,14 @@ namespace Unity.Netcode
                 }
                 return;
             }
-            var sceneManager = networkManager.SceneManager;
+            else // Warn users if they are changing this after there are clients already connected and synchronized
+            if (networkManager.ConnectedClientsIds.Count > (networkManager.IsServer ? 0 : 1) && sceneManager.ClientSynchronizationMode != mode)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                }
+            }
 
             // For additive client synchronization, we take into consideration scenes
             // already loaded.
