@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Unity.Collections;
 using UnityEngine;
 using Random = System.Random;
+using Unity.Mathematics;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -255,11 +256,21 @@ namespace Unity.Netcode.EditorTests
         [Test, Description("Tests ")]
         public void WhenWritingUnmanagedType_ValueIsWrittenCorrectly(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+            typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+            typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+            typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+            typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(bool2), typeof(bool2x2), typeof(bool2x3),
+            typeof(bool2x4), typeof(bool3), typeof(bool3x2), typeof(bool3x3), typeof(bool3x4), typeof(bool4),
+            typeof(bool4x2), typeof(bool4x3), typeof(bool4x4), typeof(double2), typeof(double2x2), typeof(double2x3),
+            typeof(double2x4),typeof(double3), typeof(double3x2), typeof(double3x3), typeof(double3x4), typeof(double4),
+            typeof(double4x2), typeof(double4x3), typeof(double4x4), typeof(float2), typeof(float2x2), typeof(float2x3),
+            typeof(float2x4), typeof(float3), typeof(float3x2), typeof(float3x3), typeof(float3x4), typeof(float4),
+            typeof(float4x2), typeof(float4x3), typeof(float4x4), typeof(half), typeof(half2), typeof(half3), typeof(half4),
+            typeof(int2), typeof(int2x2), typeof(int2x3), typeof(int2x4), typeof(int3), typeof(int3x2), typeof(int3x3),
+            typeof(int3x4), typeof(int4), typeof(int4x2), typeof(int4x3), typeof(int4x4), typeof(quaternion),typeof(uint2),
+            typeof(uint2x2), typeof(uint2x3), typeof(uint2x4), typeof(uint3), typeof(uint3x2), typeof(uint3x3), typeof(uint3x4),
+            typeof(uint4), typeof(uint4x2), typeof(uint4x3), typeof(uint4x4), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {
@@ -269,11 +280,21 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenWritingArrayOfUnmanagedElementType_ArrayIsWrittenCorrectly(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
-                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
-                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
-                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
-                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
+            typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+            typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+            typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+            typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+            typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(bool2), typeof(bool2x2), typeof(bool2x3),
+            typeof(bool2x4), typeof(bool3), typeof(bool3x2), typeof(bool3x3), typeof(bool3x4), typeof(bool4),
+            typeof(bool4x2), typeof(bool4x3), typeof(bool4x4), typeof(double2), typeof(double2x2), typeof(double2x3),
+            typeof(double2x4),typeof(double3), typeof(double3x2), typeof(double3x3), typeof(double3x4), typeof(double4),
+            typeof(double4x2), typeof(double4x3), typeof(double4x4), typeof(float2), typeof(float2x2), typeof(float2x3),
+            typeof(float2x4), typeof(float3), typeof(float3x2), typeof(float3x3), typeof(float3x4), typeof(float4),
+            typeof(float4x2), typeof(float4x3), typeof(float4x4), typeof(half), typeof(half2), typeof(half3), typeof(half4),
+            typeof(int2), typeof(int2x2), typeof(int2x3), typeof(int2x4), typeof(int3), typeof(int3x2), typeof(int3x3),
+            typeof(int3x4), typeof(int4), typeof(int4x2), typeof(int4x3), typeof(int4x4), typeof(quaternion),typeof(uint2),
+            typeof(uint2x2), typeof(uint2x3), typeof(uint2x4), typeof(uint3), typeof(uint3x2), typeof(uint3x3), typeof(uint3x4),
+            typeof(uint4), typeof(uint4x2), typeof(uint4x3), typeof(uint4x4), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
         {

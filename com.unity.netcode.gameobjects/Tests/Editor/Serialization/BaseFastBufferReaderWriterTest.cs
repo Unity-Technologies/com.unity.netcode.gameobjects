@@ -2,6 +2,7 @@ using System;
 using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
+using Unity.Mathematics;
 
 namespace Unity.Netcode.EditorTests
 {
@@ -255,6 +256,266 @@ namespace Unity.Netcode.EditorTests
                 RunTestWithWriteType(new Ray2D(
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble()),
                     new Vector2((float)random.NextDouble(), (float)random.NextDouble())), writeType);
+            }
+            else if (testType == typeof(bool2))
+            {
+                RunTestWithWriteType(math.bool2(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool2x2))
+            {
+                RunTestWithWriteType(math.bool2x2(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool2x3))
+            {
+                RunTestWithWriteType(math.bool2x3(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool2x4))
+            {
+                RunTestWithWriteType(math.bool2x4(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool3))
+            {
+                RunTestWithWriteType(math.bool3(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool3x2))
+            {
+                RunTestWithWriteType(math.bool3x2(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool3x3))
+            {
+                RunTestWithWriteType(math.bool3x3(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool3x4))
+            {
+                RunTestWithWriteType(math.bool3x4(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool4))
+            {
+                RunTestWithWriteType(math.bool4(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool4x2))
+            {
+                RunTestWithWriteType(math.bool4x2(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool4x3))
+            {
+                RunTestWithWriteType(math.bool4x3(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(bool4x4))
+            {
+                RunTestWithWriteType(math.bool4x4(Time.realtimeSinceStartup % 2 == 1), writeType);
+            }
+            else if (testType == typeof(double2))
+            {
+                RunTestWithWriteType(math.double2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double2x2))
+            {
+                RunTestWithWriteType(math.double2x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double2x3))
+            {
+                RunTestWithWriteType(math.double2x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double2x4))
+            {
+                RunTestWithWriteType(math.double2x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double3))
+            {
+                RunTestWithWriteType(math.double3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double3x2))
+            {
+                RunTestWithWriteType(math.double3x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double3x3))
+            {
+                RunTestWithWriteType(math.double3x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double3x4))
+            {
+                RunTestWithWriteType(math.double3x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double4))
+            {
+                RunTestWithWriteType(math.double4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double4x2))
+            {
+                RunTestWithWriteType(math.double4x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double4x3))
+            {
+                RunTestWithWriteType(math.double4x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(double4x4))
+            {
+                RunTestWithWriteType(math.double4x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float2))
+            {
+                RunTestWithWriteType(math.float2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float2x2))
+            {
+                RunTestWithWriteType(math.float2x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float2x3))
+            {
+                RunTestWithWriteType(math.float2x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float2x4))
+            {
+                RunTestWithWriteType(math.float2x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float3))
+            {
+                RunTestWithWriteType(math.float3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float3x2))
+            {
+                RunTestWithWriteType(math.float3x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float3x3))
+            {
+                RunTestWithWriteType(math.float3x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float3x4))
+            {
+                RunTestWithWriteType(math.float3x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float4))
+            {
+                RunTestWithWriteType(math.float4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float4x2))
+            {
+                RunTestWithWriteType(math.float4x2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float4x3))
+            {
+                RunTestWithWriteType(math.float4x3((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(float4x4))
+            {
+                RunTestWithWriteType(math.float4x4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(half))
+            {
+                RunTestWithWriteType(math.half((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(half2))
+            {
+                RunTestWithWriteType(math.half2((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(half3))
+            {
+                RunTestWithWriteType(math.half4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(half4))
+            {
+                RunTestWithWriteType(math.half4((float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(int2))
+            {
+                RunTestWithWriteType(math.int2(random.Next()), writeType);
+            }
+            else if (testType == typeof(int2x2))
+            {
+                RunTestWithWriteType(math.int2x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(int2x3))
+            {
+                RunTestWithWriteType(math.int2x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(int2x4))
+            {
+                RunTestWithWriteType(math.int2x4(random.Next()), writeType);
+            }
+            else if (testType == typeof(int3))
+            {
+                RunTestWithWriteType(math.int3(random.Next()), writeType);
+            }
+            else if (testType == typeof(int3x2))
+            {
+                RunTestWithWriteType(math.int3x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(int3x3))
+            {
+                RunTestWithWriteType(math.int3x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(int3x4))
+            {
+                RunTestWithWriteType(math.int3x4(random.Next()), writeType);
+            }
+            else if (testType == typeof(int4))
+            {
+                RunTestWithWriteType(math.int4(random.Next()), writeType);
+            }
+            else if (testType == typeof(int4x2))
+            {
+                RunTestWithWriteType(math.int4x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(int4x3))
+            {
+                RunTestWithWriteType(math.int4x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(int4x4))
+            {
+                RunTestWithWriteType(math.uint2x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(quaternion))
+            {
+                RunTestWithWriteType(math.quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()), writeType);
+            }
+            else if (testType == typeof(uint2))
+            {
+                RunTestWithWriteType(math.uint2x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint2x2))
+            {
+                RunTestWithWriteType(math.uint2x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint2x3))
+            {
+                RunTestWithWriteType(math.uint2x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint2x4))
+            {
+                RunTestWithWriteType(math.uint2x4(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint3))
+            {
+                RunTestWithWriteType(math.uint3(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint3x2))
+            {
+                RunTestWithWriteType(math.uint3x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint3x3))
+            {
+                RunTestWithWriteType(math.uint3x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint3x4))
+            {
+                RunTestWithWriteType(math.uint3x4(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint4))
+            {
+                RunTestWithWriteType(math.uint4(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint4x2))
+            {
+                RunTestWithWriteType(math.uint4x2(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint4x3))
+            {
+                RunTestWithWriteType(math.uint4x3(random.Next()), writeType);
+            }
+            else if (testType == typeof(uint4x4))
+            {
+                RunTestWithWriteType(math.uint4x4(random.Next()), writeType);
             }
             else if (testType == typeof(TestStruct))
             {
@@ -593,6 +854,266 @@ namespace Unity.Netcode.EditorTests
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
                         new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
                 }, writeType);
+            }
+            else if (testType == typeof(bool2))
+            {
+                RunTypeTestLocal(new[] { math.bool2(Time.realtimeSinceStartup % 2 == 1), math.bool2(Time.realtimeSinceStartup % 2 == 1), math.bool2(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool2x2))
+            {
+                RunTypeTestLocal(new[] { math.bool2x2(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool2x3))
+            {
+                RunTypeTestLocal(new[] { math.bool2x3(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool2x4))
+            {
+                RunTypeTestLocal(new[] { math.bool2x4(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool3))
+            {
+                RunTypeTestLocal(new[] { math.bool3(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool3x2))
+            {
+                RunTypeTestLocal(new[] { math.bool3x2(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool3x3))
+            {
+                RunTypeTestLocal(new[] { math.bool3x3(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool3x4))
+            {
+                RunTypeTestLocal(new[] { math.bool3x4(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool4))
+            {
+                RunTypeTestLocal(new[] { math.bool4(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool4x2))
+            {
+                RunTypeTestLocal(new[] { math.bool4x2(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool4x3))
+            {
+                RunTypeTestLocal(new[] { math.bool4x3(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(bool4x4))
+            {
+                RunTypeTestLocal(new[] { math.bool4x4(Time.realtimeSinceStartup % 2 == 1) }, writeType);
+            }
+            else if (testType == typeof(double2))
+            {
+                RunTypeTestLocal(new[] { math.double2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double2x2))
+            {
+                RunTypeTestLocal(new[] { math.double2x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double2x3))
+            {
+                RunTypeTestLocal(new[] { math.double2x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double2x4))
+            {
+                RunTypeTestLocal(new[] { math.double2x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double3))
+            {
+                RunTypeTestLocal(new[] { math.double3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double3x2))
+            {
+                RunTypeTestLocal(new[] { math.double3x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double3x3))
+            {
+                RunTypeTestLocal(new[] { math.double3x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double3x4))
+            {
+                RunTypeTestLocal(new[] { math.double3x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double4))
+            {
+                RunTypeTestLocal(new[] { math.double4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double4x2))
+            {
+                RunTypeTestLocal(new[] { math.double4x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double4x3))
+            {
+                RunTypeTestLocal(new[] { math.double4x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(double4x4))
+            {
+                RunTypeTestLocal(new[] { math.double4x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float2))
+            {
+                RunTypeTestLocal(new[] { math.float2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float2x2))
+            {
+                RunTypeTestLocal(new[] { math.float2x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float2x3))
+            {
+                RunTypeTestLocal(new[] { math.float2x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float2x4))
+            {
+                RunTypeTestLocal(new[] { math.float2x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float3))
+            {
+                RunTypeTestLocal(new[] { math.float3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float3x2))
+            {
+                RunTypeTestLocal(new[] { math.float3x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float3x3))
+            {
+                RunTypeTestLocal(new[] { math.float3x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float3x4))
+            {
+                RunTypeTestLocal(new[] { math.float3x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float4))
+            {
+                RunTypeTestLocal(new[] { math.float4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float4x2))
+            {
+                RunTypeTestLocal(new[] { math.float4x2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float4x3))
+            {
+                RunTypeTestLocal(new[] { math.float4x3((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(float4x4))
+            {
+                RunTypeTestLocal(new[] { math.float4x4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(half))
+            {
+                RunTypeTestLocal(new[] { math.half((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(half2))
+            {
+                RunTypeTestLocal(new[] { math.half2((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(half3))
+            {
+                RunTypeTestLocal(new[] { math.half4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(half4))
+            {
+                RunTypeTestLocal(new[] { math.half4((float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(int2))
+            {
+                RunTypeTestLocal(new[] { math.int2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int2x2))
+            {
+                RunTypeTestLocal(new[] { math.int2x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int2x3))
+            {
+                RunTypeTestLocal(new[] { math.int2x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int2x4))
+            {
+                RunTypeTestLocal(new[] { math.int2x4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int3))
+            {
+                RunTypeTestLocal(new[] { math.int3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int3x2))
+            {
+                RunTypeTestLocal(new[] { math.int3x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int3x3))
+            {
+                RunTypeTestLocal(new[] { math.int3x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int3x4))
+            {
+                RunTypeTestLocal(new[] { math.int3x4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int4))
+            {
+                RunTypeTestLocal(new[] { math.int4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int4x2))
+            {
+                RunTypeTestLocal(new[] { math.int4x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int4x3))
+            {
+                RunTypeTestLocal(new[] { math.int4x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(int4x4))
+            {
+                RunTypeTestLocal(new[] { math.uint2x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(quaternion))
+            {
+                RunTypeTestLocal(new[] { math.quaternion((float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble(), (float)random.NextDouble()) }, writeType);
+            }
+            else if (testType == typeof(uint2))
+            {
+                RunTypeTestLocal(new[] { math.uint2x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint2x2))
+            {
+                RunTypeTestLocal(new[] { math.uint2x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint2x3))
+            {
+                RunTypeTestLocal(new[] { math.uint2x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint2x4))
+            {
+                RunTypeTestLocal(new[] { math.uint2x4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint3))
+            {
+                RunTypeTestLocal(new[] { math.uint3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint3x2))
+            {
+                RunTypeTestLocal(new[] { math.uint3x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint3x3))
+            {
+                RunTypeTestLocal(new[] { math.uint3x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint3x4))
+            {
+                RunTypeTestLocal(new[] { math.uint3x4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint4))
+            {
+                RunTypeTestLocal(new[] { math.uint4(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint4x2))
+            {
+                RunTypeTestLocal(new[] { math.uint4x2(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint4x3))
+            {
+                RunTypeTestLocal(new[] { math.uint4x3(random.Next()) }, writeType);
+            }
+            else if (testType == typeof(uint4x4))
+            {
+                RunTypeTestLocal(new[] { math.uint4x4(random.Next()) }, writeType);
             }
             else if (testType == typeof(TestStruct))
             {
