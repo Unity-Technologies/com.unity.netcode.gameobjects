@@ -56,15 +56,12 @@ namespace TestProject.RuntimeTests
             return base.OnSetup();
         }
 
-
-
         protected override IEnumerator OnStartedServerAndClients()
         {
             m_ClientVerificationAction = DataPoolVerifySceneClient;
             m_ServerVerificationAction = DataPoolVerifySceneServer;
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
             m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
-
             m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(m_LoadSceneMode);
             foreach (var client in m_ClientNetworkManagers)
             {
