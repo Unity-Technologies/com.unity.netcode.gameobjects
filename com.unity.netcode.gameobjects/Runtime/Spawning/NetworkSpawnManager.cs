@@ -154,7 +154,7 @@ namespace Unity.Netcode
 
         internal ulong GetNetworkObjectId()
         {
-            if (ReleasedNetworkObjectIds.Count > 0 && NetworkManager.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - ReleasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkManager.NetworkConfig.NetworkIdRecycleDelay)
+            if (ReleasedNetworkObjectIds.Count > 0 && NetworkManager.NetworkConfig.RecycleNetworkIds && (NetworkManager.RealTimeProvider.UnscaledTime - ReleasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkManager.NetworkConfig.NetworkIdRecycleDelay)
             {
                 return ReleasedNetworkObjectIds.Dequeue().NetworkId;
             }
@@ -857,7 +857,7 @@ namespace Unity.Netcode
                     ReleasedNetworkObjectIds.Enqueue(new ReleasedNetworkId()
                     {
                         NetworkId = networkObject.NetworkObjectId,
-                        ReleaseTime = Time.unscaledTime
+                        ReleaseTime = NetworkManager.RealTimeProvider.UnscaledTime
                     });
                 }
 

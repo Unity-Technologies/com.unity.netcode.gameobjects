@@ -258,6 +258,8 @@ namespace Unity.Netcode
 
         internal IDeferredMessageManager DeferredMessageManager { get; private set; }
 
+        internal IRealTimeProvider RealTimeProvider { get; private set; }
+
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
         /// </summary>
@@ -712,6 +714,8 @@ namespace Unity.Netcode
             SpawnManager = new NetworkSpawnManager(this);
 
             DeferredMessageManager = ComponentFactory.Create<IDeferredMessageManager>(this);
+
+            RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
@@ -1425,7 +1429,7 @@ namespace Unity.Netcode
             }
 
             // Only update RTT here, server time is updated by time sync messages
-            var reset = NetworkTimeSystem.Advance(Time.unscaledDeltaTime);
+            var reset = NetworkTimeSystem.Advance(RealTimeProvider.UnscaledDeltaTime);
             if (reset)
             {
                 NetworkTickSystem.Reset(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
@@ -1434,7 +1438,7 @@ namespace Unity.Netcode
 
             if (IsServer == false)
             {
-                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.unscaledDeltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
+                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + RealTimeProvider.UnscaledDeltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
             }
         }
 
@@ -1521,7 +1525,7 @@ namespace Unity.Netcode
 
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            var timeStarted = IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timeStarted = IsServer ? LocalTime.TimeAsFloat : RealTimeProvider.RealTimeSinceStartup;
             var timedOut = false;
             var connectionApproved = false;
             var connectionNotApproved = false;
@@ -1531,7 +1535,7 @@ namespace Unity.Netcode
             {
                 yield return null;
                 // Check if we timed out
-                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
+                timedOut = timeoutMarker < (IsServer ? LocalTime.TimeAsFloat : RealTimeProvider.RealTimeSinceStartup);
 
                 if (IsServer)
                 {

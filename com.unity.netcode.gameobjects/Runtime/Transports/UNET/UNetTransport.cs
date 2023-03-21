@@ -149,7 +149,7 @@ namespace Unity.Netcode.Transports.UNET
             var eventType = UnityEngine.Networking.NetworkTransport.Receive(out int hostId, out int connectionId, out _, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
-            receiveTime = Time.realtimeSinceStartup;
+            receiveTime = NetworkManager.RealTimeProvider.RealTimeSinceStartup;
 
             var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)
