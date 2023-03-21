@@ -367,7 +367,6 @@ namespace TestProject.RuntimeTests
             DestroyWithSceneInstancesTestHelper.NetworkObjectDestroyed -= OnNonActiveSynchDestroyWithSceneNetworkObjectDestroyed;
             AssertOnTimeout($"Timed out waiting for all client instances marked to destroy when the scene unloaded to be despawned and destroyed.");
 
-
             // Now unload the active scene to verify all remaining NetworkObjects are migrated into the SceneManager
             // assigned active scene
             m_ClientsUnloadedScene = false;
