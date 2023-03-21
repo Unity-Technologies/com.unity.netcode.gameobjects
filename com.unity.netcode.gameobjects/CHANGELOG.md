@@ -35,6 +35,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
 - Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
 - Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+- Made sure the `CheckObjectVisibility` delegate is checked and applied, upon `NetworkShow` attempt. Found while supporting (#2454), although this is not a fix for this (already fixed) issue.
 
 ### Fixed
 
