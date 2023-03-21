@@ -284,11 +284,6 @@ namespace TestProject.RuntimeTests
                 AssertOnTimeout($"{nameof(m_ScenesLoaded)} still contains some of the scenes that were expected to be unloaded!\n {additionalInfo}");
             }
 
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
-            }
-
             // Test unloading additive scenes and the associated event messaging and notification pipelines
             ResetWait();
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene), SceneEventProgressStatus.Started);
@@ -303,11 +298,6 @@ namespace TestProject.RuntimeTests
             // Check error status for trying to load an invalid scene name
             LogAssert.Expect(LogType.Error, $"Scene '{k_InvalidSceneName}' couldn't be loaded because it has not been added to the build settings scenes in build list.");
             Assert.AreEqual(m_ServerNetworkManager.SceneManager.LoadScene(k_InvalidSceneName, LoadSceneMode.Additive), SceneEventProgressStatus.InvalidSceneName);
-        }
-
-        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
-        {
-            return m_CurrentSceneName == scene.name;
         }
 
         /// <summary>

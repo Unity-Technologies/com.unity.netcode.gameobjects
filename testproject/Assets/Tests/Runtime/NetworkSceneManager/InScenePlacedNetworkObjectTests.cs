@@ -335,11 +335,6 @@ namespace TestProject.RuntimeTests
             m_AllClientsLoadedScene = false;
             m_AllClientsUnloadedScene = false;
 
-            foreach (var clientNetworkManager in m_ClientNetworkManagers)
-            {
-                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
-            }
-
             NetworkObjectTestComponent.ServerNetworkObjectInstance = null;
             NetworkObjectTestComponent.DisableOnSpawn = true;
             m_ServerNetworkManager.SceneManager.OnUnloadEventCompleted += SceneManager_OnUnloadEventCompleted;
@@ -378,12 +373,6 @@ namespace TestProject.RuntimeTests
             yield return StopOneClient(newlyJoinedClient, true);
 
             // Tests complete!
-        }
-
-        // Allows clients to unload only the scene being currently unloaded
-        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
-        {
-            return k_SceneToLoad == scene.name;
         }
 
         private void SceneManager_OnUnloadEventCompleted(string sceneName, LoadSceneMode loadSceneMode, List<ulong> clientsCompleted, List<ulong> clientsTimedOut)
