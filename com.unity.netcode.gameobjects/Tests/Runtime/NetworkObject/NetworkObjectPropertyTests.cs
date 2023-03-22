@@ -2,62 +2,45 @@ using NUnit.Framework;
 using System.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
     /// <summary>
-    /// Tests properties of NetworkObject for proper functinality.
+    /// Tests properties of NetworkObject for proper functionality.
     /// </summary>
     public class NetworkObjectPropertyTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
 
-        private NetworkPrefab m_TestPrefab;
+        private NetworkObject m_TestPrefabNetworkObject;
 
         protected override void OnServerAndClientsCreated()
         {
-            // create prefab
-            var gameObject = new GameObject("TestObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            m_TestPrefab = new NetworkPrefab() { Prefab = gameObject };
-
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Add(m_TestPrefab);
-            foreach (var client in m_ClientNetworkManagers)
-            {
-                client.NetworkConfig.Prefabs.Add(m_TestPrefab);
-            }
+            // create prefab and get the NetworkObject component attached to it
+            m_TestPrefabNetworkObject = CreateNetworkObjectPrefab("TestObject").GetComponent<NetworkObject>();
         }
 
         /// <summary>
-        /// Tests PrefabHashId returns corectly when the NetworkObject is not a prefab.
+        /// Tests PrefabHashId returns correctly when the NetworkObject is not a prefab.
         /// </summary>
-        /// <returns></returns>
-        [UnityTest]
-        public IEnumerator TestPrefabHashIdPropertyNotAPrefab()
+        [Test]
+        public void TestPrefabHashIdPropertyNotAPrefab()
         {
             const uint kInvalidPrefabHashId = 0;
 
             var gameObject = new GameObject("TestObject");
             var networkObject = gameObject.AddComponent<NetworkObject>();
-
-            yield return null;
             Assert.AreEqual(kInvalidPrefabHashId, networkObject.PrefabIdHash);
         }
 
         /// <summary>
-        /// Tests PrefabHashId returns corectly when the NetworkObject is a prefab.
+        /// Tests PrefabHashId returns correctly when the NetworkObject is a prefab.
         /// </summary>
         /// <returns></returns>
-        [UnityTest]
-        public IEnumerator TestPrefabHashIdPropertyIsAPrefab()
+        [Test]
+        public void TestPrefabHashIdPropertyIsAPrefab()
         {
-            var networkObject = m_TestPrefab.Prefab.GetComponent<NetworkObject>();
-
-            yield return null;
-            Assert.AreEqual(networkObject.GlobalObjectIdHash, networkObject.PrefabIdHash);
+            Assert.AreEqual(m_TestPrefabNetworkObject.GlobalObjectIdHash, m_TestPrefabNetworkObject.PrefabIdHash);
         }
     }
 }
