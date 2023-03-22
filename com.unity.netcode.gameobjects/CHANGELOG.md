@@ -39,6 +39,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with approval time out where upon a client not being approved the server-side time out coroutine, when it ended, could throw an exception on third party transports.(#2466)
+- Fixed issue where the approval time out coroutine was not being stopped once a client was approved or not approved. (#2466)
 - Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
