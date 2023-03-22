@@ -353,6 +353,15 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
+            if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {gameObject.name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
+                }
+                return;
+            }
+
             NetworkManager.MarkObjectForShowingTo(this, clientId);
             Observers.Add(clientId);
         }

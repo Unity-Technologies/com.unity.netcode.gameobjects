@@ -409,9 +409,27 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the server is ready
+        /// This callback is invoked when the local server is started and listening for incoming connections.
         /// </summary>
         public event Action OnServerStarted = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client is ready
+        /// </summary>
+        public event Action OnClientStarted = null;
+
+        /// <summary>
+        /// This callback is invoked once the local server is stopped.
+        /// </summary>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
+        public event Action<bool> OnServerStopped = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client stops
+        /// </summary>
+        /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
+        public event Action<bool> OnClientStopped = null;
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -868,6 +886,7 @@ namespace Unity.Netcode
             IsClient = true;
             IsListening = true;
 
+            OnClientStarted?.Invoke();
             return true;
         }
 
@@ -949,12 +968,13 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
             // set prior to invoking OnClientConnected.
             InvokeOnClientConnectedCallback(LocalClientId);
-
-            OnServerStarted?.Invoke();
 
             return true;
         }
@@ -1155,7 +1175,9 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
-            if (IsServer)
+            bool wasServer = IsServer;
+            bool wasClient = IsClient;
+            if (wasServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
                 if (MessagingSystem != null)
@@ -1288,8 +1310,22 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+
+            if (wasClient)
+            {
+                OnClientStopped?.Invoke(wasServer);
+            }
+            if (wasServer)
+            {
+                OnServerStopped?.Invoke(wasClient);
+            }
+
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs.Shutdown();
+
+            // Reset the configuration hash for next session in the event
+            // that the prefab list changes
+            NetworkConfig?.ClearConfigHash();
         }
 
         /// <inheritdoc />

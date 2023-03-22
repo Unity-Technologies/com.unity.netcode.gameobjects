@@ -45,6 +45,7 @@ projects:
       - 2020.3
       - 2021.3
       - 2022.2
+      - 2023.1
       - trunk
   - name: minimalproject
     path: minimalproject
