@@ -9,6 +9,7 @@ namespace Unity.Netcode.RuntimeTests
 {
     [TestFixture(ApprovalTimedOutTypes.ServerDoesNotRespond)]
     [TestFixture(ApprovalTimedOutTypes.ClientDoesNotRequest)]
+    [TestFixture(ApprovalTimedOutTypes.ClientIsNotApproved)]
     public class ConnectionApprovalTimeoutTests : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 1;
@@ -16,7 +17,8 @@ namespace Unity.Netcode.RuntimeTests
         public enum ApprovalTimedOutTypes
         {
             ClientDoesNotRequest,
-            ServerDoesNotRespond
+            ServerDoesNotRespond,
+            ClientIsNotApproved,
         }
 
         private ApprovalTimedOutTypes m_ApprovalFailureType;
@@ -48,11 +50,33 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
-            m_ServerNetworkManager.NetworkConfig.ClientConnectionBufferTimeout = k_TestTimeoutPeriod;
             m_ServerNetworkManager.LogLevel = LogLevel.Developer;
-            m_ClientNetworkManagers[0].NetworkConfig.ClientConnectionBufferTimeout = k_TestTimeoutPeriod;
+            m_ServerNetworkManager.NetworkConfig.ConnectionApproval = m_ApprovalFailureType == ApprovalTimedOutTypes.ClientIsNotApproved;
+            if (m_ApprovalFailureType == ApprovalTimedOutTypes.ClientIsNotApproved)
+            {
+                m_ServerNetworkManager.ConnectionApprovalCallback = NetworkManagerObject_ConnectionApprovalCallback;
+            }
+            else
+            {
+                m_ServerNetworkManager.NetworkConfig.ClientConnectionBufferTimeout = k_TestTimeoutPeriod;
+                m_ClientNetworkManagers[0].NetworkConfig.ClientConnectionBufferTimeout = k_TestTimeoutPeriod;
+            }
+            m_ClientNetworkManagers[0].NetworkConfig.ConnectionApproval = m_ApprovalFailureType == ApprovalTimedOutTypes.ClientIsNotApproved;
             m_ClientNetworkManagers[0].LogLevel = LogLevel.Developer;
             base.OnServerAndClientsCreated();
+        }
+
+        private bool m_ClientWasNotApproved;
+        private void NetworkManagerObject_ConnectionApprovalCallback(NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            response.Approved = request.ClientNetworkId == NetworkManager.ServerClientId;
+            m_ClientWasNotApproved = !response.Approved;
+            if (!response.Approved)
+            {
+                Assert.IsTrue(m_ServerNetworkManager.ApprovalTimeouts.Count > 0, $"There are ({m_ServerNetworkManager.ApprovalTimeouts.Count}) approval timeout coroutines when there should at least be 1!");
+            }
+            response.Reason = "Testing approval failure and TimedOut coroutine.";
+            VerboseDebug($"Client {request.ClientNetworkId} was approved {response.Approved}");
         }
 
         protected override IEnumerator OnStartedServerAndClients()
@@ -64,7 +88,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ExpectedLogMessage = new Regex("Timed out waiting for the server to approve the connection request.");
                 m_LogType = LogType.Log;
             }
-            else
+            else if (m_ApprovalFailureType == ApprovalTimedOutTypes.ClientDoesNotRequest)
             {
                 // We catch (don't process) the incoming connection request message to simulate a transport connection but the client never
                 // sends (or takes too long to send) the connection request.
@@ -74,23 +98,37 @@ namespace Unity.Netcode.RuntimeTests
                 m_ExpectedLogMessage = new Regex("Server detected a transport connection from Client-1, but timed out waiting for the connection request message.");
                 m_LogType = LogType.Warning;
             }
+            // Otherwise the not approved test doesn't intercept any messages
             yield return null;
         }
 
         [UnityTest]
         public IEnumerator ValidateApprovalTimeout()
         {
-            // Delay for half of the wait period
-            yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.5f);
+            if (m_ApprovalFailureType != ApprovalTimedOutTypes.ClientIsNotApproved)
+            {
+                // Delay for half of the wait period
+                yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.5f);
 
-            // Verify we haven't received the time out message yet
-            NetcodeLogAssert.LogWasNotReceived(LogType.Log, m_ExpectedLogMessage);
+                // Verify we haven't received the time out message yet
+                NetcodeLogAssert.LogWasNotReceived(LogType.Log, m_ExpectedLogMessage);
 
-            // Wait for 3/4s of the time out period to pass (totaling 1.25x the wait period)
-            yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.75f);
+                // Wait for 3/4s of the time out period to pass (totaling 1.25x the wait period)
+                yield return new WaitForSeconds(k_TestTimeoutPeriod * 0.75f);
 
-            // We should have the test relative log message by this time.
-            NetcodeLogAssert.LogWasReceived(m_LogType, m_ExpectedLogMessage);
+                // We should have the test relative log message by this time.
+                NetcodeLogAssert.LogWasReceived(m_LogType, m_ExpectedLogMessage);
+            }
+            else
+            {
+                // Make sure a client was not approved
+                yield return WaitForConditionOrTimeOut(() => m_ClientWasNotApproved);
+                AssertOnTimeout($"Did not detect that the client was not approved while waiting!");
+
+                // Make sure that there are no timed out coroutines left running on the server after a client is not approved
+                yield return WaitForConditionOrTimeOut(() => m_ServerNetworkManager.ApprovalTimeouts.Count == 0);
+                AssertOnTimeout($"Waited for {nameof(NetworkManager.ApprovalTimeouts)} to reach a count of 0 but is still at {m_ServerNetworkManager.ApprovalTimeouts.Count}!");
+            }
 
             // It should only have the host client connected
             Assert.AreEqual(1, m_ServerNetworkManager.ConnectedClients.Count, $"Expected only one client when there were {m_ServerNetworkManager.ConnectedClients.Count} clients connected!");
