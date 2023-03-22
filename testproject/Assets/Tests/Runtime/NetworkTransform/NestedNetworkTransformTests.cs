@@ -3,7 +3,6 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 using TestProject.ManualTests;
 using Unity.Netcode.TestHelpers.Runtime;
 
@@ -308,7 +307,7 @@ namespace TestProject.RuntimeTests
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
 
             // We want it to timeout and it is "ok", just assuring that (n) frames have passed
-            TimeTravel(1f/k_DefaultTickRate, pauseFrames);
+            TimeTravel(1f / k_DefaultTickRate, pauseFrames);
             // ** Do NOT AssertOnTimeout here **
 
             var precisionFailures = 0;
@@ -374,7 +373,7 @@ namespace TestProject.RuntimeTests
                 ChildMoverManager.StopMovement = false;
                 // Now let everything move around a bit
                 // We want it to timeout and it is "ok", just assuring that (n) frames have passed
-                TimeTravel(1f/k_DefaultTickRate, pauseFrames);
+                TimeTravel(1f / k_DefaultTickRate, pauseFrames);
                 // ** Do NOT AssertOnTimeout here **
 
                 // If we are just about to end this test but there are running precision

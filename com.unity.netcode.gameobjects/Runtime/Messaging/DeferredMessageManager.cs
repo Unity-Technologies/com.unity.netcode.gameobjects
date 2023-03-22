@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using Time = UnityEngine.Time;
 
 namespace Unity.Netcode
 {

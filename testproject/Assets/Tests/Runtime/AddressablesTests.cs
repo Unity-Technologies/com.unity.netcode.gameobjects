@@ -83,7 +83,7 @@ namespace TestProject.RuntimeTests
 
             var startTime = MockTimeProvider.StaticRealTimeSinceStartup;
 
-            WaitForMessageReceivedWithTimeTravel<CreateObjectMessage>(new List<NetworkManager>{m_ClientNetworkManagers[0]}, ReceiptType.Received);
+            WaitForMessageReceivedWithTimeTravel<CreateObjectMessage>(new List<NetworkManager> { m_ClientNetworkManagers[0] }, ReceiptType.Received);
 
             if (waitAndAddOnClient)
             {

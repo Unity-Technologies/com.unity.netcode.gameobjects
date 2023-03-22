@@ -1,4 +1,4 @@
-﻿namespace Unity.Netcode.TestHelpers.Runtime
+namespace Unity.Netcode.TestHelpers.Runtime
 {
     public class MockTimeProvider : IRealTimeProvider
     {

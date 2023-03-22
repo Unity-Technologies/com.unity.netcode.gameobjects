@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Unity.Netcode.TestHelpers.Runtime
 {
@@ -26,7 +25,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             var copy = new byte[payload.Array.Length];
             Array.Copy(payload.Array, copy, payload.Array.Length);
-            s_MessageQueue[clientId].Enqueue(new MessageData{FromClientId = TransportId, Payload = new ArraySegment<byte>(copy, payload.Offset, payload.Count), Event = NetworkEvent.Data});
+            s_MessageQueue[clientId].Enqueue(new MessageData { FromClientId = TransportId, Payload = new ArraySegment<byte>(copy, payload.Offset, payload.Count), Event = NetworkEvent.Data });
         }
 
         public override NetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
@@ -39,7 +38,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 receiveTime = NetworkManager.RealTimeProvider.RealTimeSinceStartup;
                 if (NetworkManager.IsServer && data.Event == NetworkEvent.Connect)
                 {
-                    s_MessageQueue[data.FromClientId].Enqueue(new MessageData{Event = NetworkEvent.Connect, FromClientId = ServerClientId, Payload = new ArraySegment<byte>()});
+                    s_MessageQueue[data.FromClientId].Enqueue(new MessageData { Event = NetworkEvent.Connect, FromClientId = ServerClientId, Payload = new ArraySegment<byte>() });
                 }
                 return data.Event;
             }
@@ -53,7 +52,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             TransportId = ++HighTransportId;
             s_MessageQueue[TransportId] = new Queue<MessageData>();
-            s_MessageQueue[ServerClientId].Enqueue(new MessageData{Event = NetworkEvent.Connect, FromClientId = TransportId, Payload = new ArraySegment<byte>()});
+            s_MessageQueue[ServerClientId].Enqueue(new MessageData { Event = NetworkEvent.Connect, FromClientId = TransportId, Payload = new ArraySegment<byte>() });
             return true;
         }
 
@@ -65,12 +64,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            s_MessageQueue[clientId].Enqueue(new MessageData{Event = NetworkEvent.Disconnect, FromClientId = TransportId, Payload = new ArraySegment<byte>()});
+            s_MessageQueue[clientId].Enqueue(new MessageData { Event = NetworkEvent.Disconnect, FromClientId = TransportId, Payload = new ArraySegment<byte>() });
         }
 
         public override void DisconnectLocalClient()
         {
-            s_MessageQueue[ServerClientId].Enqueue(new MessageData{Event = NetworkEvent.Disconnect, FromClientId = TransportId, Payload = new ArraySegment<byte>()});
+            s_MessageQueue[ServerClientId].Enqueue(new MessageData { Event = NetworkEvent.Disconnect, FromClientId = TransportId, Payload = new ArraySegment<byte>() });
         }
 
         public override ulong GetCurrentRtt(ulong clientId)

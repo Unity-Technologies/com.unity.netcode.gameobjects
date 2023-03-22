@@ -9,7 +9,6 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using System.Runtime.CompilerServices;
 using Unity.Netcode.RuntimeTests;
-using UnityEngine.PlayerLoop;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -1044,7 +1043,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             var updateInterval = 1f / frameRate;
-            for(var i = 0; i < maxTries; ++i)
+            for (var i = 0; i < maxTries; ++i)
             {
                 // Simulate a frame passing on all network managers
                 TimeTravel(updateInterval, 1);
@@ -1454,7 +1453,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 NetworkUpdateLoop.RunNetworkUpdateStage(stage);
                 var methodName = "";
-                switch(stage)
+                switch (stage)
                 {
                     case NetworkUpdateStage.FixedUpdate:
                         methodName = "FixedUpdate";
