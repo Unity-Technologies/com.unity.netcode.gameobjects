@@ -120,6 +120,10 @@ namespace Unity.Netcode
             networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
             networkManager.IsApproved = true;
 
+            // Upon receiving the approved message, stop the time out coroutine.
+            // (Client's associate their time out coroutine with the server identifier.)
+            networkManager.StopClientTimeout(NetworkManager.ServerClientId);
+
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
             {

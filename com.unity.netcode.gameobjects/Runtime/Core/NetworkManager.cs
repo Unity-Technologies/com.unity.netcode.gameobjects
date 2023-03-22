@@ -1582,7 +1582,12 @@ namespace Unity.Netcode
 
                 if (IsServer)
                 {
-                    DisconnectClient(clientId);
+                    // Only disconnect when the connection times out.
+                    // If the connection is not approved it will automatically disconnect the client
+                    if (timedOut)
+                    {
+                        DisconnectClient(clientId);
+                    }
                 }
                 else
                 {
@@ -1599,6 +1604,52 @@ namespace Unity.Netcode
         internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == ServerClientId ? m_ServerTransportId : m_ClientIdToTransportIdMap[clientId];
+        }
+
+        internal Dictionary<ulong, Coroutine> ApprovalTimeouts = new Dictionary<ulong, Coroutine>();
+
+        /// <summary>
+        /// Starts a timeout coroutine during the initial connection sequence.
+        /// </summary>
+        /// <remarks>
+        /// The clientId is relative to the local instance.
+        /// Server: Uses the client identifier to associate started coroutines.
+        /// Client: Uses the server identifier to associate the started coroutine.
+        /// </remarks>
+        /// <param name="clientId"></param>
+        private void StartClientTimeout(ulong clientId)
+        {
+            // Don't need to start a timeout coroutine locally for the host
+            if (IsServer && clientId == ServerClientId)
+            {
+                return;
+            }
+            if (!ApprovalTimeouts.ContainsKey(clientId))
+            {
+                ApprovalTimeouts.Add(clientId, StartCoroutine(ApprovalTimeout(clientId)));
+            }
+            else
+            {
+                // Theoretically this should never happen, but in case it does log a warning
+                if (LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"Attempting to start a client approval timeout while one already exists!");
+                }
+                ApprovalTimeouts[clientId] = StartCoroutine(ApprovalTimeout(clientId));
+            }
+        }
+
+        /// <summary>
+        /// Stops the time out coroutine
+        /// </summary>
+        internal void StopClientTimeout(ulong clientId)
+        {
+            if (!ApprovalTimeouts.ContainsKey(clientId))
+            {
+                return;
+            }
+            StopCoroutine(ApprovalTimeouts[clientId]);
+            ApprovalTimeouts.Remove(clientId);
         }
 
         private void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
@@ -1642,7 +1693,7 @@ namespace Unity.Netcode
                             ConnectionState = PendingClient.State.PendingConnection
                         });
 
-                        StartCoroutine(ApprovalTimeout(clientId));
+                        StartClientTimeout(clientId);
                     }
                     else
                     {
@@ -1652,7 +1703,8 @@ namespace Unity.Netcode
                         }
 
                         SendConnectionRequest();
-                        StartCoroutine(ApprovalTimeout(clientId));
+
+                        StartClientTimeout(clientId);
                     }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -2011,6 +2063,8 @@ namespace Unity.Netcode
         /// <param name="response">The response to allow the player in or not, with its parameters</param>
         internal void HandleConnectionApproval(ulong ownerClientId, ConnectionApprovalResponse response)
         {
+            // Stop the server-side coroutine whether approved or not
+            StopClientTimeout(ownerClientId);
             if (response.Approved)
             {
                 // Inform new client it got approved
@@ -2127,7 +2181,6 @@ namespace Unity.Netcode
 
                     MessagingSystem.ProcessSendQueues();
                 }
-
                 PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
             }
