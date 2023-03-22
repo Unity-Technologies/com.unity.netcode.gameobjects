@@ -7,5 +7,6 @@ namespace Unity.Netcode
         public float RealTimeSinceStartup => Time.realtimeSinceStartup;
         public float UnscaledTime => Time.unscaledTime;
         public float UnscaledDeltaTime => Time.unscaledDeltaTime;
+        public float DeltaTime => Time.deltaTime;
     }
 }

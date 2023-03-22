@@ -171,6 +171,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         protected override int NumberOfClients => 1;
+        protected override bool m_EnableTimeTravel => true;
 
         private const int k_TickRate = 60;
         private int m_OriginalTargetFrameRate;
@@ -187,18 +188,16 @@ namespace Unity.Netcode.RuntimeTests
             base.OnOneTimeTearDown();
         }
 
-        protected override IEnumerator OnSetup()
+        protected override void OnTimeTravelSetup()
         {
             m_Precision = Precision.Full;
             ChildObjectComponent.Reset();
-            return base.OnSetup();
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override void OnTimeTravelTearDown()
         {
             m_EnableVerboseDebug = false;
             Object.DestroyImmediate(m_PlayerPrefab);
-            yield return base.OnTearDown();
         }
 
         protected override void OnCreatePlayerPrefab()
@@ -237,7 +236,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        protected override IEnumerator OnServerAndClientsConnected()
+        protected override void OnTimeTravelServerAndClientsConnected()
         {
             // Get the client player representation on both the server and the client side
             var serverSideClientPlayer = m_ServerNetworkManager.ConnectedClients[m_ClientNetworkManagers[0].LocalClientId].PlayerObject;
@@ -253,14 +252,13 @@ namespace Unity.Netcode.RuntimeTests
             m_OwnerTransform = m_AuthoritativeTransform.IsOwner ? m_AuthoritativeTransform : m_NonAuthoritativeTransform;
 
             // Wait for the client-side to notify it is finished initializing and spawning.
-            yield return WaitForConditionOrTimeOut(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate == true);
-            AssertOnTimeout("Timed out waiting for client-side to notify it is ready!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_NonAuthoritativeTransform.ReadyToReceivePositionUpdate == true);
+            Assert.True(success, "Timed out waiting for client-side to notify it is ready!");
 
             Assert.True(m_AuthoritativeTransform.CanCommitToTransform);
             Assert.False(m_NonAuthoritativeTransform.CanCommitToTransform);
             // Just wait for at least one tick for NetworkTransforms to finish synchronization
-            yield return s_DefaultWaitForTick;
-            yield return base.OnServerAndClientsConnected();
+            WaitForNextTick();
         }
 
         /// <summary>
@@ -335,9 +333,9 @@ namespace Unity.Netcode.RuntimeTests
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private IEnumerator WaitForAllChildrenLocalTransformValuesToMatch()
+        private void WaitForAllChildrenLocalTransformValuesToMatch()
         {
-            yield return WaitForConditionOrTimeOut(AllInstancesKeptLocalTransformValues);
+            var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
             var infoMessage = string.Empty;
             if (s_GlobalTimeoutHelper.TimedOut)
             {
@@ -360,25 +358,24 @@ namespace Unity.Netcode.RuntimeTests
                         infoMessage += $"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Original Local Rotation ({m_ChildObjectLocalScale})\n";
                     }
                 }
-                AssertOnTimeout($"Timed out waiting for all children to have the correct local space values:\n {infoMessage}");
+                Assert.True(success, $"Timed out waiting for all children to have the correct local space values:\n {infoMessage}");
             }
-            yield return null;
         }
 
         /// <summary>
         /// Validates that local space transform values remain the same when a NetworkTransform is
         /// parented under another NetworkTransform
         /// </summary>
-        [UnityTest]
-        public IEnumerator NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation)
+        [Test]
+        public void NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             var authoritativeChildObject = SpawnObject(m_ChildObjectToBeParented.gameObject, m_AuthoritativeTransform.NetworkManager);
 
             // Assure all of the child object instances are spawned
-            yield return WaitForConditionOrTimeOut(AllChildObjectInstancesAreSpawned);
-            AssertOnTimeout("Timed out waiting for all child instances to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
+            Assert.True(success, "Timed out waiting for all child instances to be spawned!");
             // Just a sanity check as it should have timed out before this check
             Assert.IsNotNull(ChildObjectComponent.ServerInstance, $"The server-side {nameof(ChildObjectComponent)} instance is null!");
 
@@ -393,11 +390,11 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // This waits for all child instances to be parented
-            yield return WaitForConditionOrTimeOut(AllChildObjectInstancesHaveChild);
-            AssertOnTimeout("Timed out waiting for all instances to have parented a child!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
+            Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            yield return WaitForAllChildrenLocalTransformValuesToMatch();
+            WaitForAllChildrenLocalTransformValuesToMatch();
         }
 
         /// <summary>
@@ -449,12 +446,18 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Waits until the next tick
         /// </summary>
-        private IEnumerator WaitForNextTick()
+        private void WaitForNextTick()
         {
             var currentTick = m_AuthoritativeTransform.NetworkManager.LocalTime.Tick;
             while (m_AuthoritativeTransform.NetworkManager.LocalTime.Tick == currentTick)
             {
-                yield return null;
+                var frameRate = Application.targetFrameRate;
+                if (frameRate <= 0)
+                {
+                    frameRate = 60;
+                }
+                var frameDuration = 1f / frameRate;
+                TimeTravel(frameDuration, 1);
             }
         }
 
@@ -489,8 +492,8 @@ namespace Unity.Netcode.RuntimeTests
         /// This validates that multiple changes can occur within the same tick or over
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
-        [UnityTest]
-        public IEnumerator NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
+        [Test]
+        public void NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
             [Values] Precision precision, [Values] Rotation rotationSynch, [Values] Axis axis)
         {
             // In the name of reducing the very long time it takes to interpolate and run all of the possible combinations,
@@ -540,10 +543,10 @@ namespace Unity.Netcode.RuntimeTests
             var scale = scaleStart;
             m_AuthoritativeTransform.StatePushed = false;
             // Wait for the deltas to be pushed
-            yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
+            WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
             // Allow the precision settings to propagate first as changing precision
             // causes a teleport event to occur
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             // Move and rotate within the same tick, validate the non-authoritative instance updates
             // to each set of changes.  Repeat several times.
@@ -559,19 +562,18 @@ namespace Unity.Netcode.RuntimeTests
                 MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
 
                 // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                AssertOnTimeout($"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+                Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated), $"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
                 // Wait for deltas to synchronize on non-authoritative side
-                yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
+                var success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
                 // Provide additional debug info about what failed (if it fails)
-                if (s_GlobalTimeoutHelper.TimedOut)
+                if (!success)
                 {
                     m_EnableVerboseDebug = true;
                     PositionRotationScaleMatches();
                     m_EnableVerboseDebug = false;
                 }
-                AssertOnTimeout($"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
+                Assert.True(success, $"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
             }
 
             // Only enable interpolation when all axis are set (to reduce the test times)
@@ -582,8 +584,8 @@ namespace Unity.Netcode.RuntimeTests
                 m_NonAuthoritativeTransform.StateUpdated = false;
                 m_AuthoritativeTransform.StatePushed = false;
                 // Wait for the delta (change in interpolation) to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                AssertOnTimeout($"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+                var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                Assert.True(success, $"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
                 // Continue for one more update with interpolation enabled
                 // Note: We are just verifying one update with interpolation enabled due to the number of tests this integration test has to run
@@ -597,27 +599,27 @@ namespace Unity.Netcode.RuntimeTests
                 MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
 
                 // Wait for the deltas to be pushed and updated
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-                yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
+                success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches, 120);
 
                 // Provide additional debug info about what failed (if it fails)
-                if (s_GlobalTimeoutHelper.TimedOut)
+                if (!success)
                 {
                     m_EnableVerboseDebug = true;
                     PositionRotationScaleMatches();
                     m_EnableVerboseDebug = false;
                 }
-                AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
+                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
             }
         }
 
         /// <summary>
         /// Checks scale of a late joining client for all instances of the late joining client's player
         /// </summary>
-        [UnityTest]
-        public IEnumerator LateJoiningPlayerInitialScaleValues([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
+        [Test]
+        public void LateJoiningPlayerInitialScaleValues([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
             var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
@@ -634,13 +636,13 @@ namespace Unity.Netcode.RuntimeTests
             MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
 
             // Wait for the deltas to be pushed and updated
-            yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-            AssertOnTimeout($"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+            Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-            yield return WaitForConditionOrTimeOut(PositionRotationScaleMatches);
+            WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
 
             // Validate the use of the prefab's transform values as opposed to the replicated state (which now is only the last deltas)
-            yield return CreateAndStartNewClient();
+            CreateAndStartNewClientWithTimeTravel();
             var newClientNetworkManager = m_ClientNetworkManagers[NumberOfClients];
             foreach (var playerRelativeEntry in m_PlayerNetworkObjects)
             {
@@ -664,8 +666,8 @@ namespace Unity.Netcode.RuntimeTests
         /// - Using the TryCommitTransformToServer "override" that can be used
         /// from a child derived or external class.
         /// </summary>
-        [UnityTest]
-        public IEnumerator TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
+        [Test]
+        public void TestAuthoritativeTransformChangeOneAtATime([Values] TransformSpace testLocalTransform, [Values] Interpolation interpolation, [Values] OverrideState overideState)
         {
             var overrideUpdate = overideState == OverrideState.CommitToTransform;
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
@@ -691,15 +693,16 @@ namespace Unity.Netcode.RuntimeTests
                 m_OwnerTransform.SetState(nextPosition, null, null, m_AuthoritativeTransform.Interpolate);
             }
 
+            bool success;
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                Assert.True(success, $"[Position] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
-            yield return WaitForConditionOrTimeOut(() => PositionsMatch());
-            AssertOnTimeout($"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatch());
+            Assert.True(success, $"Timed out waiting for positions to match {m_AuthoritativeTransform.transform.position} | {m_NonAuthoritativeTransform.transform.position}");
 
             // test rotation
             Assert.AreEqual(Quaternion.identity, m_NonAuthoritativeTransform.transform.rotation, "wrong initial value for rotation"); // sanity check
@@ -718,13 +721,13 @@ namespace Unity.Netcode.RuntimeTests
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the values match
-            yield return WaitForConditionOrTimeOut(() => RotationsMatch());
-            AssertOnTimeout($"Timed out waiting for rotations to match");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch());
+            Assert.True(success, $"Timed out waiting for rotations to match");
 
             m_AuthoritativeTransform.StatePushed = false;
             var nextScale = GetRandomVector3(1, 6);
@@ -740,20 +743,20 @@ namespace Unity.Netcode.RuntimeTests
             if (overideState != OverrideState.Update)
             {
                 // Wait for the deltas to be pushed
-                yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed);
-                AssertOnTimeout($"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
+                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
+                Assert.True(success, $"[Rotation] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed})!");
             }
 
             // Make sure the scale values match
-            yield return WaitForConditionOrTimeOut(() => ScaleValuesMatch());
-            AssertOnTimeout($"Timed out waiting for scale values to match");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleValuesMatch());
+            Assert.True(success, $"Timed out waiting for scale values to match");
         }
 
         /// <summary>
         /// Test to verify nonAuthority cannot change the transform directly
         /// </summary>
-        [UnityTest]
-        public IEnumerator VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation, [Values] Precision precision)
+        [Test]
+        public void VerifyNonAuthorityCantChangeTransform([Values] Interpolation interpolation, [Values] Precision precision)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
@@ -767,8 +770,8 @@ namespace Unity.Netcode.RuntimeTests
 
             m_NonAuthoritativeTransform.transform.position = new Vector3(4, 5, 6);
 
-            yield return s_DefaultWaitForTick;
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
+            WaitForNextTick();
 
             Assert.AreEqual(Vector3.zero, m_NonAuthoritativeTransform.transform.position, "[Position] NonAuthority was able to change the position!");
 
@@ -779,14 +782,14 @@ namespace Unity.Netcode.RuntimeTests
             nonAuthorityEulerRotation.y += 20.0f;
             nonAuthorityRotation.eulerAngles = nonAuthorityEulerRotation;
             m_NonAuthoritativeTransform.transform.rotation = nonAuthorityRotation;
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
             var nonAuthorityCurrentEuler = m_NonAuthoritativeTransform.transform.rotation.eulerAngles;
             Assert.True(originalNonAuthorityEulerRotation.Equals(nonAuthorityCurrentEuler), "[Rotation] NonAuthority was able to change the rotation!");
 
             var nonAuthorityScale = m_NonAuthoritativeTransform.transform.localScale;
             m_NonAuthoritativeTransform.transform.localScale = nonAuthorityScale * 100;
 
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             Assert.True(nonAuthorityScale.Equals(m_NonAuthoritativeTransform.transform.localScale), "[Scale] NonAuthority was able to change the scale!");
         }
@@ -795,8 +798,8 @@ namespace Unity.Netcode.RuntimeTests
         /// Validates that rotation checks don't produce false positive
         /// results when rolling over between 0 and 360 degrees
         /// </summary>
-        [UnityTest]
-        public IEnumerator TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
+        [Test]
+        public void TestRotationThresholdDeltaCheck([Values] Interpolation interpolation, [Values] Precision precision)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
@@ -819,7 +822,7 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
             Assert.IsFalse(results.isRotationDirty, $"Rotation is dirty when rotation threshold is {m_AuthoritativeTransform.RotAngleThreshold} degrees and only adjusted by {halfThreshold} degrees!");
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             // Verify rotation is marked dirty when rotated by another half threshold value
             authorityEulerRotation.y += halfThreshold;
@@ -827,12 +830,12 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
             results = m_AuthoritativeTransform.ApplyState();
             Assert.IsTrue(results.isRotationDirty, $"Rotation was not dirty when rotated by the threshold value: {m_AuthoritativeTransform.RotAngleThreshold} degrees!");
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             //Reset rotation back to zero on all axis
             authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             // Rotate by 360 minus halfThreshold (which is really just negative halfThreshold) and verify rotation is not marked dirty
             authorityEulerRotation.y = 360 - halfThreshold;
@@ -853,7 +856,7 @@ namespace Unity.Netcode.RuntimeTests
             //Reset rotation back to zero on all axis
             authorityRotation.eulerAngles = authorityEulerRotation = Vector3.zero;
             m_AuthoritativeTransform.transform.rotation = authorityRotation;
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             authorityEulerRotation.y -= halfThreshold;
             authorityRotation.eulerAngles = authorityEulerRotation;
@@ -884,22 +887,22 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// Test to make sure that the bitset value is updated properly
         /// </summary>
-        [UnityTest]
-        public IEnumerator TestBitsetValue([Values] Interpolation interpolation)
+        [Test]
+        public void TestBitsetValue([Values] Interpolation interpolation)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.RotAngleThreshold = m_AuthoritativeTransform.RotAngleThreshold = 0.1f;
-            yield return s_DefaultWaitForTick;
+            WaitForNextTick();
 
             m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
             var serverLastSentState = m_AuthoritativeTransform.AuthorityLastSentState;
             var clientReplicatedState = m_NonAuthoritativeTransform.ReplicatedNetworkState.Value;
-            yield return WaitForConditionOrTimeOut(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
-            AssertOnTimeout($"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
+            Assert.True(success, $"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
 
-            yield return WaitForConditionOrTimeOut(() => RotationsMatch());
-            AssertOnTimeout($"[Timed-Out] Authoritative rotation {m_AuthoritativeTransform.transform.rotation.eulerAngles} != Non-Authoritative rotation {m_NonAuthoritativeTransform.transform.rotation.eulerAngles}");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationsMatch());
+            Assert.True(success, $"[Timed-Out] Authoritative rotation {m_AuthoritativeTransform.transform.rotation.eulerAngles} != Non-Authoritative rotation {m_NonAuthoritativeTransform.transform.rotation.eulerAngles}");
         }
 
         private float m_DetectedPotentialInterpolatedTeleport;
@@ -907,8 +910,8 @@ namespace Unity.Netcode.RuntimeTests
         /// <summary>
         /// The tests teleporting with and without interpolation
         /// </summary>
-        [UnityTest]
-        public IEnumerator TeleportTest([Values] Interpolation interpolation, [Values] Precision precision)
+        [Test]
+        public void TeleportTest([Values] Interpolation interpolation, [Values] Precision precision)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
@@ -924,11 +927,11 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform.Teleport(teleportDestination, authTransform.rotation, authTransform.localScale);
 
             // Wait for the deltas to be pushed and updated
-            yield return WaitForConditionOrTimeOut(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-            AssertOnTimeout($"[Teleport] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
+            Assert.True(success, $"[Teleport] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-            yield return WaitForConditionOrTimeOut(() => TeleportPositionMatches(nonAuthPosition));
-            AssertOnTimeout($"[Timed-Out][Teleport] Timed out waiting for NonAuthoritative position ({m_NonAuthoritativeTransform.GetSpaceRelativePosition()}) to teleport to position {teleportDestination}!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => TeleportPositionMatches(nonAuthPosition));
+            Assert.True(success, $"[Timed-Out][Teleport] Timed out waiting for NonAuthoritative position ({m_NonAuthoritativeTransform.GetSpaceRelativePosition()}) to teleport to position {teleportDestination}!");
             var targetDistance = 0.0f;
             if (!Approximately(m_DetectedPotentialInterpolatedTeleport, 0.0f))
             {
@@ -947,8 +950,8 @@ namespace Unity.Netcode.RuntimeTests
         /// <remarks>
         /// This also tests that the original server authoritative model with client-owner driven NetworkTransforms is preserved.
         /// </remarks>
-        [UnityTest]
-        public IEnumerator NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
+        [Test]
+        public void NonAuthorityOwnerSettingStateTest([Values] Interpolation interpolation)
         {
             var interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthoritativeTransform.Interpolate = interpolate;
@@ -960,20 +963,20 @@ namespace Unity.Netcode.RuntimeTests
             var newRotation = Quaternion.Euler(1, 2, 3);
             var newScale = new Vector3(2.0f, 2.0f, 2.0f);
             m_NonAuthoritativeTransform.SetState(newPosition, null, null, interpolate);
-            yield return WaitForConditionOrTimeOut(() => PositionsMatchesValue(newPosition));
-            AssertOnTimeout($"Timed out waiting for non-authoritative position state request to be applied!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionsMatchesValue(newPosition));
+            Assert.True(success, $"Timed out waiting for non-authoritative position state request to be applied!");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
 
             m_NonAuthoritativeTransform.SetState(null, newRotation, null, interpolate);
-            yield return WaitForConditionOrTimeOut(() => RotationMatchesValue(newRotation.eulerAngles));
-            AssertOnTimeout($"Timed out waiting for non-authoritative rotation state request to be applied!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => RotationMatchesValue(newRotation.eulerAngles));
+            Assert.True(success, $"Timed out waiting for non-authoritative rotation state request to be applied!");
             Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");
             Assert.True(Approximately(newRotation.eulerAngles, m_NonAuthoritativeTransform.transform.rotation.eulerAngles), "Non-Authoritative rotation does not match!");
 
             m_NonAuthoritativeTransform.SetState(null, null, newScale, interpolate);
-            yield return WaitForConditionOrTimeOut(() => ScaleMatchesValue(newScale));
-            AssertOnTimeout($"Timed out waiting for non-authoritative scale state request to be applied!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ScaleMatchesValue(newScale));
+            Assert.True(success, $"Timed out waiting for non-authoritative scale state request to be applied!");
             Assert.True(Approximately(newScale, m_AuthoritativeTransform.transform.localScale), "Authoritative scale does not match!");
             Assert.True(Approximately(newScale, m_NonAuthoritativeTransform.transform.localScale), "Non-Authoritative scale does not match!");
 
@@ -983,8 +986,8 @@ namespace Unity.Netcode.RuntimeTests
             newScale = new Vector3(0.5f, 0.5f, 0.5f);
 
             m_NonAuthoritativeTransform.SetState(newPosition, newRotation, newScale, interpolate);
-            yield return WaitForConditionOrTimeOut(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale));
-            AssertOnTimeout($"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => PositionRotationScaleMatches(newPosition, newRotation.eulerAngles, newScale));
+            Assert.True(success, $"Timed out waiting for non-authoritative position, rotation, and scale state request to be applied!");
             Assert.True(Approximately(newPosition, m_AuthoritativeTransform.transform.position), "Authoritative position does not match!");
             Assert.True(Approximately(newPosition, m_NonAuthoritativeTransform.transform.position), "Non-Authoritative position does not match!");
             Assert.True(Approximately(newRotation.eulerAngles, m_AuthoritativeTransform.transform.rotation.eulerAngles), "Authoritative rotation does not match!");

@@ -22,15 +22,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public NetworkManager NetworkManager;
 
-        public MockTransport()
-        {
-            Debug.Log("Mock transport created");
-        }
-
         public override void Send(ulong clientId, ArraySegment<byte> payload, NetworkDelivery networkDelivery)
         {
-            Debug.Log($"{TransportId}: Sending data to {clientId}");
-
             var copy = new byte[payload.Array.Length];
             Array.Copy(payload.Array, copy, payload.Array.Length);
             s_MessageQueue[clientId].Enqueue(new MessageData{FromClientId = TransportId, Payload = new ArraySegment<byte>(copy, payload.Offset, payload.Count), Event = NetworkEvent.Data});
@@ -41,7 +34,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (s_MessageQueue[TransportId].Count > 0)
             {
                 var data = s_MessageQueue[TransportId].Dequeue();
-                Debug.Log($"{TransportId}: Got {data.Event} from {data.FromClientId}");
                 clientId = data.FromClientId;
                 payload = data.Payload;
                 receiveTime = NetworkManager.RealTimeProvider.RealTimeSinceStartup;
@@ -60,7 +52,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
         public override bool StartClient()
         {
             TransportId = ++HighTransportId;
-            Debug.Log($"Starting {TransportId}");
             s_MessageQueue[TransportId] = new Queue<MessageData>();
             s_MessageQueue[ServerClientId].Enqueue(new MessageData{Event = NetworkEvent.Connect, FromClientId = TransportId, Payload = new ArraySegment<byte>()});
             return true;
@@ -68,7 +59,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override bool StartServer()
         {
-            Debug.Log($"Starting {ServerClientId}");
             s_MessageQueue[ServerClientId] = new Queue<MessageData>();
             return true;
         }
@@ -94,7 +84,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         public override void Initialize(NetworkManager networkManager = null)
         {
-            Debug.Log("Mock transport initialized");
             NetworkManager = networkManager;
         }
     }

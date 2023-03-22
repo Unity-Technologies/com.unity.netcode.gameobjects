@@ -2,12 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using System.Runtime.CompilerServices;
 using Unity.Netcode.RuntimeTests;
+using UnityEngine.PlayerLoop;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -217,6 +219,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             yield return null;
         }
+        /// <summary>
+        /// Called before creating and starting the server and clients
+        /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests.
+        /// For those two modes, if you want to have access to the server or client
+        /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
+        /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
+        /// </summary>
+        protected virtual void OnTimeTravelSetup()
+        {
+        }
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -224,7 +237,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Entering {nameof(SetUp)}");
 
             NetcodeLogAssert = new NetcodeLogAssert();
-            yield return OnSetup();
+            if (m_EnableTimeTravel)
+            {
+                OnTimeTravelSetup();
+            }
+            else
+            {
+                yield return OnSetup();
+            }
 
             if (m_EnableTimeTravel)
             {
@@ -237,7 +257,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 CreateServerAndClients();
 
-                yield return StartServerAndClients();
+                if (m_EnableTimeTravel)
+                {
+                    StartServerAndClientsWithTimeTravel();
+                }
+                else
+                {
+                    yield return StartServerAndClients();
+                }
             }
             VerboseDebug($"Exiting {nameof(SetUp)}");
         }
@@ -365,7 +392,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 AddRemoveNetworkManager(networkManager, false);
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
             ClientNetworkManagerPostStart(networkManager);
@@ -403,7 +430,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (!connected)
             {
                 AddRemoveNetworkManager(networkManager, false);
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
             Assert.IsTrue(connected, $"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
             ClientNetworkManagerPostStart(networkManager);
@@ -484,12 +511,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Invoked after the server and clients have started.
+        /// Note: No connection verification has been done at this point
+        /// </summary>
+        protected virtual void OnTimeTravelStartedServerAndClients()
+        {
+        }
+
+        /// <summary>
         /// Invoked after the server and clients have started and verified
         /// their connections with each other.
         /// </summary>
         protected virtual IEnumerator OnServerAndClientsConnected()
         {
             yield return null;
+        }
+
+        /// <summary>
+        /// Invoked after the server and clients have started and verified
+        /// their connections with each other.
+        /// </summary>
+        protected virtual void OnTimeTravelServerAndClientsConnected()
+        {
         }
 
         private void ClientNetworkManagerPostStart(NetworkManager networkManager)
@@ -638,6 +681,72 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
+        /// returns true.
+        /// </summary>
+        protected void StartServerAndClientsWithTimeTravel()
+        {
+            if (CanStartServerAndClients())
+            {
+                VerboseDebug($"Entering {nameof(StartServerAndClientsWithTimeTravel)}");
+
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                if (LogAllMessages)
+                {
+                    EnableMessageLogging();
+                }
+
+                RegisterSceneManagerHandler();
+
+                // Notification that the server and clients have been started
+                OnTimeTravelStartedServerAndClients();
+
+                // When true, we skip everything else (most likely a connection oriented test)
+                if (!m_BypassConnectionTimeout)
+                {
+                    // Wait for all clients to connect
+                    WaitForClientsConnectedOrTimeOutWithTimeTravel();
+
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+
+                    if (m_UseHost || m_ServerNetworkManager.IsHost)
+                    {
+#if UNITY_2023_1_OR_NEWER
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#else
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#endif
+                        foreach (var playerNetworkObject in serverPlayerClones)
+                        {
+                            if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                            {
+                                m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            }
+                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                        }
+                    }
+
+                    ClientNetworkManagerPostStartInit();
+
+                    // Notification that at this time the server and client(s) are instantiated,
+                    // started, and connected on both sides.
+                    OnTimeTravelServerAndClientsConnected();
+
+                    VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Override this method to control when clients
         /// can fake-load a scene.
         /// </summary>
@@ -717,7 +826,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (m_PlayerPrefab != null)
                 {
-                    Object.Destroy(m_PlayerPrefab);
+                    Object.DestroyImmediate(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
             }
@@ -741,12 +850,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return null;
         }
 
+        protected virtual void OnTimeTravelTearDown()
+        {
+        }
+
         [UnityTearDown]
         public IEnumerator TearDown()
         {
             IntegrationTestSceneHandler.SceneNameToSceneHandles.Clear();
             VerboseDebug($"Entering {nameof(TearDown)}");
-            yield return OnTearDown();
+            if (m_EnableTimeTravel)
+            {
+                OnTimeTravelTearDown();
+            }
+            else
+            {
+                yield return OnTearDown();
+            }
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
@@ -1308,6 +1428,37 @@ namespace Unity.Netcode.TestHelpers.Runtime
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {
                 NetworkUpdateLoop.RunNetworkUpdateStage(stage);
+                var methodName = "";
+                switch(stage)
+                {
+                    case NetworkUpdateStage.FixedUpdate:
+                        methodName = "FixedUpdate";
+                        break;
+                    case NetworkUpdateStage.Update:
+                        methodName = "Update";
+                        break;
+                    case NetworkUpdateStage.PreLateUpdate:
+                        methodName = "LateUpdate";
+                        break;
+
+                }
+
+
+                if (methodName != "")
+                {
+                    foreach (var behaviour in Object.FindObjectsOfType<NetworkBehaviour>())
+                    {
+                        var method = behaviour.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (method == null)
+                        {
+                            method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                        }
+                        if (method != null)
+                        {
+                            method.Invoke(behaviour, new object[] { });
+                        }
+                    }
+                }
             }
         }
     }

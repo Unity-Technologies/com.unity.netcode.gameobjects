@@ -5,5 +5,6 @@
         public float RealTimeSinceStartup { get; }
         public float UnscaledTime { get; }
         public float UnscaledDeltaTime { get; }
+        public float DeltaTime { get; }
     }
 }

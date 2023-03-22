@@ -337,7 +337,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (networkManager.gameObject != null)
                 {
-                    Object.Destroy(networkManager.gameObject);
+                    Object.DestroyImmediate(networkManager.gameObject);
                 }
             }
 
