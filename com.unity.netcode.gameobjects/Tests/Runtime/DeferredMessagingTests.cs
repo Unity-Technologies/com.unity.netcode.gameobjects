@@ -645,8 +645,6 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        protected override bool LogAllMessages => true;
-
         [Test]
         public void WhenMultipleSpawnTriggeredMessagesAreDeferred_TheyAreAllProcessedOnSpawn()
         {
