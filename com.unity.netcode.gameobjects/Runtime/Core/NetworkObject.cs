@@ -333,7 +333,7 @@ namespace Unity.Netcode
 
             if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
             {
-                if (NetworkManager.LogLevel == LogLevel.Developer)
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
                 {
                     NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {gameObject.name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
                 }
