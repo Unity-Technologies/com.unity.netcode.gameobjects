@@ -17,6 +17,28 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        /// <summary>
+        /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
+        /// </summary>
+        [HideInInspector]
+        public uint PrefabIdHash
+        {
+            get
+            {
+                foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    if (prefab.Prefab == gameObject)
+                    {
+                        return GlobalObjectIdHash;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        private bool m_IsPrefab;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
