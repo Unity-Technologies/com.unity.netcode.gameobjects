@@ -333,37 +333,35 @@ namespace Unity.Netcode
 
         public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
         {
-            if (header.MessageType >= m_HighMessageType)
-            {
-                Debug.LogWarning($"Received a message with invalid message type value {header.MessageType}");
-                reader.Dispose();
-                return;
-            }
-            var context = new NetworkContext
-            {
-                SystemOwner = m_Owner,
-                SenderId = senderId,
-                Timestamp = timestamp,
-                Header = header,
-                SerializedHeaderSize = serializedHeaderSize,
-                MessageSize = header.MessageSize,
-            };
-
-            var type = m_ReverseTypeMap[header.MessageType];
-            if (!CanReceive(senderId, type, reader, ref context))
-            {
-                reader.Dispose();
-                return;
-            }
-
-            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-            {
-                m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
-            }
-
-            var handler = m_MessageHandlers[header.MessageType];
             using (reader)
             {
+                if (header.MessageType >= m_HighMessageType)
+                {
+                    Debug.LogWarning($"Received a message with invalid message type value {header.MessageType}");
+                    return;
+                }
+                var context = new NetworkContext
+                {
+                    SystemOwner = m_Owner,
+                    SenderId = senderId,
+                    Timestamp = timestamp,
+                    Header = header,
+                    SerializedHeaderSize = serializedHeaderSize,
+                    MessageSize = header.MessageSize,
+                };
+
+                var type = m_ReverseTypeMap[header.MessageType];
+                if (!CanReceive(senderId, type, reader, ref context))
+                {
+                    return;
+                }
+
+                var handler = m_MessageHandlers[header.MessageType];
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                }
+
                 // This will also log an exception is if the server knows about a message type the client doesn't know
                 // about. In this case the handler will be null. It is still an issue the user must deal with: If the
                 // two connecting builds know about different messages, the server should not send a message to a client
@@ -388,10 +386,10 @@ namespace Unity.Netcode
                         Debug.LogException(e);
                     }
                 }
-            }
-            for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
-            {
-                m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
+                {
+                    m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                }
             }
         }
 
