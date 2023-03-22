@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
 ## [Unreleased]
+
 ### Added
 
+- Added a way to access the GlobalObjectIdHash via PrefabIdHash for use in the Connection Approval Callback. (#2437)
 - Added `NetworkTransform.UseHalfFloatPrecision` property that, when enabled, will use half float values for position, rotation, and scale. This yields a 50% bandwidth savings a the cost of precision. (#2388)
 - Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
 - Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
