@@ -172,6 +172,8 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 1;
         protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
 
         private const int k_TickRate = 60;
         private int m_OriginalTargetFrameRate;
@@ -188,13 +190,13 @@ namespace Unity.Netcode.RuntimeTests
             base.OnOneTimeTearDown();
         }
 
-        protected override void OnTimeTravelSetup()
+        protected override void OnInlineSetup()
         {
             m_Precision = Precision.Full;
             ChildObjectComponent.Reset();
         }
 
-        protected override void OnTimeTravelTearDown()
+        protected override void OnInlineTearDown()
         {
             m_EnableVerboseDebug = false;
             Object.DestroyImmediate(m_PlayerPrefab);

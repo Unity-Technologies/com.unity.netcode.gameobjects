@@ -146,6 +146,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_BypassConnectionTimeout { get; set; }
 
         protected virtual bool m_EnableTimeTravel { get; set; } = false;
+        protected virtual bool m_SetupIsACoroutine => true;
+        protected virtual bool m_TearDownIsACoroutine => true;
 
         /// <summary>
         /// Used to display the various integration test
@@ -227,7 +229,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
         /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
         /// </summary>
-        protected virtual void OnTimeTravelSetup()
+        protected virtual void OnInlineSetup()
         {
         }
 
@@ -237,13 +239,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Entering {nameof(SetUp)}");
 
             NetcodeLogAssert = new NetcodeLogAssert();
-            if (m_EnableTimeTravel)
+            if (m_SetupIsACoroutine)
             {
-                OnTimeTravelSetup();
+                yield return OnSetup();
             }
             else
             {
-                yield return OnSetup();
+                OnInlineSetup();
             }
 
             if (m_EnableTimeTravel)
@@ -445,6 +447,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
             AddRemoveNetworkManager(networkManager, false);
             yield return WaitForConditionOrTimeOut(() => !networkManager.IsConnectedClient);
+        }
+
+        /// <summary>
+        /// This will stop a client while in the middle of an integration test
+        /// </summary>
+        protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
+        {
+            NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
+            AddRemoveNetworkManager(networkManager, false);
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => !networkManager.IsConnectedClient));
         }
 
         /// <summary>
@@ -850,7 +862,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return null;
         }
 
-        protected virtual void OnTimeTravelTearDown()
+        protected virtual void OnInlineTearDown()
         {
         }
 
@@ -859,13 +871,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             IntegrationTestSceneHandler.SceneNameToSceneHandles.Clear();
             VerboseDebug($"Entering {nameof(TearDown)}");
-            if (m_EnableTimeTravel)
+            if (m_TearDownIsACoroutine)
             {
-                OnTimeTravelTearDown();
+                yield return OnTearDown();
             }
             else
             {
-                yield return OnTearDown();
+                OnInlineTearDown();
             }
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
@@ -1423,7 +1435,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
-        protected static void SimulateOneFrame()
+        public static void TimeTravelToNextTick()
+        {
+            var timePassed = 1.0f / k_DefaultTickRate;
+            var frameRate = Application.targetFrameRate;
+            if (frameRate <= 0)
+            {
+                frameRate = 60;
+            }
+
+            var frames = Math.Max((int)(timePassed / frameRate), 1);
+            TimeTravel(timePassed, frames);
+        }
+
+        public static void SimulateOneFrame()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
             {

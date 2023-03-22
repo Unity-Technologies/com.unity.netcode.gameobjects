@@ -739,6 +739,40 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Gets a NetworkObject instance as it's represented by a certain peer.
+        /// </summary>
+        /// <param name="predicate">The predicate used to filter for your target NetworkObject</param>
+        /// <param name="representation">The representation to get the object from</param>
+        /// <param name="result">The result</param>
+        /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static void GetNetworkObjectByRepresentationWithTimeTravel(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxTries = 60)
+        {
+            if (result == null)
+            {
+                throw new ArgumentNullException("Result cannot be null");
+            }
+
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("Predicate cannot be null");
+            }
+
+            var tries = 0;
+            while (++tries < maxTries && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
+            {
+                NetcodeIntegrationTest.SimulateOneFrame();
+            }
+
+            result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;
+
+            if (failIfNull && result.Result == null)
+            {
+                Assert.Fail("NetworkObject could not be found");
+            }
+        }
+
+        /// <summary>
         /// Waits for a predicate condition to be met
         /// </summary>
         /// <param name="predicate">The predicate to wait for</param>

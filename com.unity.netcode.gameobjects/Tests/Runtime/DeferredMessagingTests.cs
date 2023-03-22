@@ -195,8 +195,10 @@ namespace Unity.Netcode.RuntimeTests
         private int m_NumberOfClientsToLateJoin = 2;
 
         protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
 
-        protected override IEnumerator OnSetup()
+        protected override void OnInlineSetup()
         {
             DeferredMessageTestRpcAndNetworkVariableComponent.ClientInstances.Clear();
             DeferredMessageTestRpcComponent.ClientInstances.Clear();
@@ -207,15 +209,13 @@ namespace Unity.Netcode.RuntimeTests
 
             // Replace the IDeferredMessageManager component with our test one in the component factory
             ComponentFactory.Register<IDeferredMessageManager>(networkManager => new TestDeferredMessageManager(networkManager));
-            yield return null;
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override void OnInlineTearDown()
         {
             // Revert the IDeferredMessageManager component to its default (DeferredMessageManager)
             ComponentFactory.Deregister<IDeferredMessageManager>();
             m_ClientSpawnCatchers.Clear();
-            yield return null;
         }
 
         protected override void OnServerAndClientsCreated()
@@ -310,11 +310,10 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientSpawnCatchers.Clear();
         }
 
-        protected override IEnumerator OnServerAndClientsConnected()
+        protected override void OnTimeTravelServerAndClientsConnected()
         {
             // Clear out these values from whatever might have set them during the initial startup.
             ClearTestDeferredMessageManagerCallFlags();
-            yield return null;
         }
 
         private void WaitForClientsToCatchSpawns(int count = 1)
