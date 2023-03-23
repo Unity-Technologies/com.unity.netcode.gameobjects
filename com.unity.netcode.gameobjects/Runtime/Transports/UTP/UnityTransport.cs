@@ -763,6 +763,10 @@ namespace Unity.Netcode.Transports.UTP
         // Send as many batched messages from the queue as possible.
         private void SendBatchedMessages(SendTarget sendTarget, BatchedSendQueue queue)
         {
+            if (!m_Driver.IsCreated)
+            {
+                return;
+            }
             new SendBatchedMessagesJob
             {
                 Driver = m_Driver.ToConcurrent(),

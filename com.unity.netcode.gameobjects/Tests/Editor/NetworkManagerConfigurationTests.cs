@@ -168,6 +168,7 @@ namespace Unity.Netcode.EditorTests
             networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 

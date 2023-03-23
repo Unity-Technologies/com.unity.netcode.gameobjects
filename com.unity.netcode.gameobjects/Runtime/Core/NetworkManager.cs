@@ -449,9 +449,27 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the server is ready
+        /// This callback is invoked when the local server is started and listening for incoming connections.
         /// </summary>
         public event Action OnServerStarted = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client is ready
+        /// </summary>
+        public event Action OnClientStarted = null;
+
+        /// <summary>
+        /// This callback is invoked once the local server is stopped.
+        /// </summary>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
+        public event Action<bool> OnServerStopped = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client stops
+        /// </summary>
+        /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
+        public event Action<bool> OnClientStopped = null;
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -908,6 +926,7 @@ namespace Unity.Netcode
             IsClient = true;
             IsListening = true;
 
+            OnClientStarted?.Invoke();
             return true;
         }
 
@@ -989,12 +1008,13 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
             // set prior to invoking OnClientConnected.
             InvokeOnClientConnectedCallback(LocalClientId);
-
-            OnServerStarted?.Invoke();
 
             return true;
         }
@@ -1195,7 +1215,9 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
-            if (IsServer)
+            bool wasServer = IsServer;
+            bool wasClient = IsClient;
+            if (wasServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
                 if (MessagingSystem != null)
@@ -1237,10 +1259,22 @@ namespace Unity.Netcode
                 }
             }
 
+            // Unregister network updates before trying to disconnect the client
+            this.UnregisterAllNetworkUpdates();
+
             if (IsClient && IsListening)
             {
                 // Client only, send disconnect to server
-                NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                // If transport throws and exception, log the exception and
+                // continue the shutdown sequence (or forever be shutting down)
+                try
+                {
+                    NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
             }
 
             IsConnectedClient = false;
@@ -1260,8 +1294,6 @@ namespace Unity.Netcode
 
             IsServer = false;
             IsClient = false;
-
-            this.UnregisterAllNetworkUpdates();
 
             if (NetworkTickSystem != null)
             {
@@ -1318,6 +1350,22 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+
+            if (wasClient)
+            {
+                OnClientStopped?.Invoke(wasServer);
+            }
+            if (wasServer)
+            {
+                OnServerStopped?.Invoke(wasClient);
+            }
+
+            // This cleans up the internal prefabs list
+            NetworkConfig?.Prefabs.Shutdown();
+
+            // Reset the configuration hash for next session in the event
+            // that the prefab list changes
+            NetworkConfig?.ClearConfigHash();
         }
 
         /// <inheritdoc />
@@ -1435,6 +1483,10 @@ namespace Unity.Netcode
 
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
+                // This should be invoked just prior to the MessagingSystem
+                // processes its outbound queue.
+                SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
                 MessagingSystem.ProcessSendQueues();
                 NetworkMetrics.UpdateNetworkObjectsCount(SpawnManager.SpawnedObjects.Count);
                 NetworkMetrics.UpdateConnectionsCount((IsServer) ? ConnectedClients.Count : 1);
@@ -2011,15 +2063,19 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var playerPrefabHash = response.PlayerPrefabHash ?? NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                    var prefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                    var playerPrefabHash = response.PlayerPrefabHash ?? prefabNetworkObject.GlobalObjectIdHash;
 
                     // Generate a SceneObject for the player object to spawn
+                    // Note: This is only to create the local NetworkObject,
+                    // many of the serialized properties of the player prefab
+                    // will be set when instantiated.
                     var sceneObject = new NetworkObject.SceneObject
                     {
                         OwnerClientId = ownerClientId,
                         IsPlayerObject = true,
                         IsSceneObject = false,
-                        HasTransform = true,
+                        HasTransform = prefabNetworkObject.SynchronizeTransform,
                         Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Transform = new NetworkObject.SceneObject.TransformData

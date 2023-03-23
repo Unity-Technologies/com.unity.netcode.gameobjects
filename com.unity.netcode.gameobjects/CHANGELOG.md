@@ -6,6 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+
+### Added
+
+- Added a way to access the GlobalObjectIdHash via PrefabIdHash for use in the Connection Approval Callback. (#2437)
+- Added `NetworkTransform.UseHalfFloatPrecision` property that, when enabled, will use half float values for position, rotation, and scale. This yields a 50% bandwidth savings a the cost of precision. (#2388)
+- Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
+- Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
+- Added `NetworkTransform.SlerpPosition` property that, when enabled along with interpolation being enabled, will interpolate using `Vector3.Slerp`. (#2388)
+- Added `BufferedLinearInterpolatorVector3` that replaces the float version, is now used by `NetworkTransform`, and provides the ability to enable or disable `Slerp`. (#2388)
+- Added `HalfVector3` used for scale when half float precision is enabled. (#2388)
+- Added `HalfVector3DeltaPosition` used for position when half float precision is enabled. This handles loss in position precision by updating only the delta position as opposed to the full position. (#2388)
+- Added `NetworkTransform.GetSpaceRelativePosition` and `NetworkTransform.GetSpaceRelativeRotation` helper methods to return the proper values depending upon whether local or world space. (#2388)
+- Added `NetworkTransform.OnAuthorityPushTransformState` virtual method that is invoked just prior to sending the `NetworkTransformState` to non-authoritative instances. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
+- Added `NetworkTransform.OnNetworkTransformStateUpdated` virtual method that is invoked just after the authoritative `NetworkTransformState` is applied. This provides users with the ability to obtain more precise delta values for prediction related calculations. (#2388)
+- Added `NetworkTransform.OnInitialize`virtual method that is invoked after the `NetworkTransform` has been initialized or re-initialized when ownership changes. This provides for a way to make adjustments when `NetworkTransform` is initialized (i.e. resetting client prediction etc) (#2388)
+- Added `NetworkObject.SynchronizeTransform` property (default is true) that provides users with another way to help with bandwidth optimizations where, when set to false, the `NetworkObject`'s associated transform will not be included when spawning and/or synchronizing late joining players. (#2388)
+- Added `NetworkSceneManager.ActiveSceneSynchronizationEnabled` property, disabled by default, that enables client synchronization of server-side active scene changes. (#2383)
+- Added `NetworkObject.ActiveSceneSynchronization`, disabled by default, that will automatically migrate a `NetworkObject` to a newly assigned active scene. (#2383)
+- Added `NetworkObject.SceneMigrationSynchronization`, enabled by default, that will synchronize client(s) when a `NetworkObject` is migrated into a new scene on the server side via `SceneManager.MoveGameObjectToScene`. (#2383)
+- Added `OnServerStarted` and `OnServerStopped` events that will trigger only on the server (or host player) to notify that the server just started or is no longer active (#2420)
+- Added `OnClientStarted` and `OnClientStopped` events that will trigger only on the client (or host player) to notify that the client just started or is no longer active (#2420)
+
+### Changed
+
+- Changed `NetworkTransform` authority handles delta checks on each new network tick and no longer consumes processing cycles checking for deltas for all frames in-between ticks. (#2388)
+- Changed the `NetworkTransformState` structure is now public and now has public methods that provide access to key properties of the `NetworkTransformState` structure. (#2388)
+- Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
+- Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
+- Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+- Made sure the `CheckObjectVisibility` delegate is checked and applied, upon `NetworkShow` attempt. Found while supporting (#2454), although this is not a fix for this (already fixed) issue. (#2463)
+
+### Fixed
+
+- Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
+- Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
+- Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
+- Fixed issue where `NetworkAnimator` would not check if its associated `Animator` was valid during serialization and would spam exceptions in the editor console. (#2416)
+- Fixed issue with a child's rotation rolling over when interpolation is enabled on a `NetworkTransform`. Now using half precision or full quaternion synchronization will always update all axis. (#2388)
+- Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
+- Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
+- Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
+- Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
+
 ## [1.3.0] - 2023-03-20
 
 ### Added
