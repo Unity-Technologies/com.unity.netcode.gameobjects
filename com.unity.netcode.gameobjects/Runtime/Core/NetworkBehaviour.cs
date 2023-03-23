@@ -897,10 +897,21 @@ namespace Unity.Netcode
         /// is in read mode or write mode.
         /// </typeparam>
         /// <param name="targetClientId">the relative client identifier being synchronized</param>
-        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
+        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 
         }
+
+        /// <summary>
+        /// The relative client identifier targeted for the serialization of this <see cref="NetworkBehaviour"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// This value will be set prior to <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/> being invoked.
+        /// For writing (server-side), this is useful to know which client will receive the serialized data.
+        /// For reading (client-side), this will be the <see cref="NetworkManager.LocalClientId"/>.
+        /// When synchronization of this instance is complete, this value will be reset to 0
+        /// </remarks>
+        protected ulong m_TargetIdBeingSynchronized { get; private set; }
 
         /// <summary>
         /// Internal method that determines if a NetworkBehaviour has additional synchronization data to
@@ -913,6 +924,7 @@ namespace Unity.Netcode
         /// <returns>true if it wrote synchronization data and false if it did not</returns>
         internal bool Synchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
         {
+            m_TargetIdBeingSynchronized = targetClientId;
             if (serializer.IsWriter)
             {
                 // Get the writer to handle seeking and determining how many bytes were written
@@ -931,7 +943,7 @@ namespace Unity.Netcode
                 var threwException = false;
                 try
                 {
-                    OnSynchronize(ref serializer, targetClientId);
+                    OnSynchronize(ref serializer);
                 }
                 catch (Exception ex)
                 {
@@ -947,6 +959,8 @@ namespace Unity.Netcode
                 }
                 var finalPosition = writer.Position;
 
+                // Reset before exiting
+                m_TargetIdBeingSynchronized = default;
                 // If we wrote nothing then skip writing anything for this NetworkBehaviour
                 if (finalPosition == positionBeforeSynchronize || threwException)
                 {
@@ -999,6 +1013,9 @@ namespace Unity.Netcode
                     }
                     synchronizationError = true;
                 }
+
+                // Reset before exiting
+                m_TargetIdBeingSynchronized = default;
 
                 // Skip over the entry if deserialization fails
                 if (synchronizationError)
