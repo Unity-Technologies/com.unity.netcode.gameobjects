@@ -51,7 +51,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 - Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 
-## [1.3.0]
+## [1.3.0] - 2023-03-20
 
 ### Added
 
@@ -60,7 +60,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
-- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.3. (#2450)
 - `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
 - Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.
 - `NetworkHide()` of an object that was just `NetworkShow()`n produces a warning, as remote clients will _not_ get a spawn/despawn pair.
