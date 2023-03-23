@@ -339,6 +339,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        private static bool VerifySceneIsValidForClientsToUnload(Scene scene)
+        {
+            // Unless specifically set, we always return false
+            return false;
+        }
+
         /// <summary>
         /// This registers scene validation callback for the server to prevent it from telling connecting
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
@@ -351,9 +357,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
             {
                 networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+
                 // If a unit/integration test does not handle this on their own, then Ignore the validation warning
                 networkManager.SceneManager.DisableValidationWarnings(true);
             }
+
+            // For testing purposes, all clients always set the VerifySceneBeforeUnloading callback and enabled
+            // PostSynchronizationSceneUnloading. Where tests that expect clients to unload scenes should override
+            // the callback and return true for the scenes the client(s) is/are allowed to unload.
+            if (!networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeUnloading == null)
+            {
+                networkManager.SceneManager.VerifySceneBeforeUnloading = VerifySceneIsValidForClientsToUnload;
+                networkManager.SceneManager.PostSynchronizationSceneUnloading = true;
+            }
+
 
             // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
             // warning about using the currently active scene
