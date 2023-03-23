@@ -908,7 +908,7 @@ namespace Unity.Netcode
         /// <remarks>
         /// This value will be set prior to <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/> being invoked.
         /// For writing (server-side), this is useful to know which client will receive the serialized data.
-        /// For reading (client-side, this will be the <see cref="NetworkManager.LocalClientId"/>.
+        /// For reading (client-side), this will be the <see cref="NetworkManager.LocalClientId"/>.
         /// When synchronization of this instance is complete, this value will be reset to 0
         /// </remarks>
         protected ulong m_TargetIdBeingSynchronized { get; private set; }
