@@ -364,9 +364,41 @@ namespace Unity.Netcode.EditorTests
 
             private bool m_IsWriting;
 
-            private void VerifyTypeSize()
+            private int m_LastPosition;
+
+            private void VerifyTypeSize(Type valueType)
             {
-                //WIP
+                var typeSize = UnsafeUtility.SizeOf(valueType);
+                var bytesSerialized = GetBytesSerialized();
+                if (typeSize != bytesSerialized)
+                {
+                    Debug.Log($"Type {valueType.Name} serialized {bytesSerialized} bytes but is calculated to be {typeSize} size");
+                }
+            }
+
+            private int GetBytesSerialized()
+            {
+                var bytesSerialized = 0;
+                if (m_IsWriting)
+                {
+                    bytesSerialized = m_Writer.Position - m_LastPosition;
+                }
+                else
+                {
+                    bytesSerialized = m_Reader.Position - m_LastPosition;
+                }
+                return bytesSerialized;
+            }
+            private void SetLastPosition()
+            {
+                if (m_IsWriting)
+                {
+                    m_LastPosition = m_Writer.Position;
+                }
+                else
+                {
+                    m_LastPosition = m_Reader.Position;
+                }
             }
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -396,9 +428,10 @@ namespace Unity.Netcode.EditorTests
                     m_Reader = serializer.GetFastBufferReader();
                     positionStart = m_Reader.Position;
                 }
-
+                m_LastPosition = positionStart;
                 foreach (var testType in typesToSerialize)
                 {
+                    SetLastPosition();
                     if (testType == typeof(bool2))
                     {
                         var valueType = math.bool2(Time.realtimeSinceStartup % 2 == 1);
@@ -724,15 +757,18 @@ namespace Unity.Netcode.EditorTests
                         var valueType = math.uint4x4(random.Next());
                         serializer.SerializeValue(ref valueType);
                     }
+
+                    VerifyTypeSize(testType);
                 }
                 if (!m_IsWriting)
                 {
                     SerializedReadSize = m_Reader.Position - positionStart;
                     serializer.SerializeValue(ref SerializedWriteSize);
 
-                    foreach(var testType in typesToSerialize)
+                    foreach (var testType in typesToSerialize)
                     {
-                        CalculatedSize += UnsafeUtility.SizeOf(testType);
+                        var typeSize = UnsafeUtility.SizeOf(testType);
+                        CalculatedSize += typeSize;
                     }
                 }
                 else
