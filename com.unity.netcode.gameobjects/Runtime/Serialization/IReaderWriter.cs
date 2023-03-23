@@ -242,151 +242,786 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         void SerializeValue(ref Ray2D[] value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool2x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool2x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool2x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool3x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool3x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool3x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool4x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool4x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="bool4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref bool4x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double2x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double2x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double2x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double3x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double3x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double3x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double4x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double4x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="double4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref double4x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float2x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float2x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float2x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float3x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float3x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float3x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float4x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float4x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="float4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref float4x4 value);
 
         /// <summary>
-        /// Read or write a half value
+        /// Read or write a <see cref="half"/>
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref half value);
 
         /// <summary>
-        /// Read or write a half2 value
+        /// Read or write a <see cref="half2"/>
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref half2 value);
 
         /// <summary>
-        /// Read or write a half3 value
+        /// Read or write a <see cref="half3"/>
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref half3 value);
 
         /// <summary>
-        /// Read or write a half4 value
+        /// Read or write a <see cref="half4"/>
         /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref half4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int2x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int2x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int2x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int3x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int3x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int3x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int4x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int4x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="int4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref int4x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="quaternion"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref quaternion value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint2x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint2x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint2x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint3x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint3x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint3x4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint4 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint4x2 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint4x3 value);
 
+        /// <summary>
+        /// Read or write a <see cref="uint4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read/write</param>
         void SerializeValue(ref uint4x4 value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool2x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool2x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool2x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool2x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool2x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool3x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool3x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool3x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool3x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool3x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool3x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool4x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool4x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool4x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool4x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="bool4x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref bool4x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double2x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double2x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double2x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double2x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double2x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double3x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double3x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double3x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double3x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double3x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double3x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double4x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double4x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double4x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double4x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="double4x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref double4x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float2x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float2x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float2x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float2x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float2x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float3x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float3x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float3x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float3x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float3x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float3x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float4x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float4x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float4x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float4x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="float4x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref float4x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="half"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref half[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="half2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref half2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="half3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref half3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="half4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref half4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int2x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int2x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int2x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int2x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int3x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int3x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int3x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int3x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int3x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int3x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int4x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int4x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int4x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int4x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="int4x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref int4x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="quaternion"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref quaternion[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint2x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint2x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint2x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint2x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint2x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint2x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint3x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint3x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint3x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint3x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint3x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint3x4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint4[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint4x2"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint4x2[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint4x3"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint4x3[] value);
+
+        /// <summary>
+        /// Read or write a <see cref="uint4x4"/> array
+        /// </summary>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValue(ref uint4x4[] value);
+
 
         /// <summary>
         /// Read or write a NetworkSerializable value.
@@ -684,588 +1319,1433 @@ namespace Unity.Netcode
         void SerializeValuePreChecked(ref Ray2D[] value);
 
         /// <summary>
-        /// Serialize a <see cref="bool2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool2 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool2x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool2x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool2x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool2x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool2x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool2x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool2x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool2x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool2x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool3 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool3x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool3x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool3x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool3x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool3x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool3x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool3x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool3x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool3x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool4 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool4x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool4x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool4x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool4x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool4x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool4x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="bool4x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="bool4x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref bool4x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="double2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double2 value);
 
         /// <summary>
-        /// Serialize a <see cref="double2x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double2x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double2x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="double2x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double2x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double2x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="double2x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double2x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double2x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="double3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double3 value);
 
         /// <summary>
-        /// Serialize a <see cref="double3x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double3x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double3x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="double3x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double3x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double3x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="double3x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double3x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double3x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="double4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double4 value);
 
         /// <summary>
-        /// Serialize a <see cref="double4x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double4x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double4x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="double4x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double4x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double4x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="double4x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="double4x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref double4x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="float2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float2 value);
 
         /// <summary>
-        /// Serialize a <see cref="float2x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float2x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float2x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="float2x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float2x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float2x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="float2x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float2x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float2x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="float3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float3 value);
 
         /// <summary>
-        /// Serialize a <see cref="float3x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float3x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float3x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="float3x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float3x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float3x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="float3x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float3x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float3x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="float4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float4 value);
 
         /// <summary>
-        /// Serialize a <see cref="float4x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float4x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float4x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="float4x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float4x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float4x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="float4x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="float4x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref float4x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="half"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="half"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref half value);
 
         /// <summary>
-        /// Serialize a <see cref="half2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="half2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref half2 value);
 
         /// <summary>
-        /// Serialize a <see cref="half3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="half3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref half3 value);
 
         /// <summary>
-        /// Serialize a <see cref="half4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="half4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref half4 value);
 
         /// <summary>
-        /// Serialize a <see cref="int2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int2 value);
 
         /// <summary>
-        /// Serialize a <see cref="int2x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int2x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int2x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="int2x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int2x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int2x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="int2x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int2x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int2x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="int3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int3 value);
 
         /// <summary>
-        /// Serialize a <see cref="int3x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int3x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int3x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="int3x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int3x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int3x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="int3x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int3x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int3x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="int4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int4 value);
 
         /// <summary>
-        /// Serialize a <see cref="int4x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int4x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int4x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="int4x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int4x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int4x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="int4x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="int4x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref int4x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="quaternion"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="quaternion"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref quaternion value);
 
         /// <summary>
-        /// Serialize a <see cref="uint2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint2 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint2x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint2x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint2x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint2x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint2x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint2x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint2x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint2x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint2x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint3 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint3x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint3x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint3x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint3x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint3x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint3x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint3x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint3x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint3x4 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint4 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint4x2"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint4x2"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint4x2 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint4x3"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint4x3"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint4x3 value);
 
         /// <summary>
-        /// Serialize a <see cref="uint4x4"/>, "pre-checked", which skips buffer checks.
+        /// Serialize a <see cref="uint4x4"/>
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
         /// calling this. In release builds, calling this without calling "PreCheck" may read or write
         /// past the end of the buffer, which will cause memory corruption and undefined behavior.
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the value to read/write</param>
         void SerializeValuePreChecked(ref uint4x4 value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool2x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool2x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool2x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool2x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool2x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool3x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool3x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool3x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool3x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool3x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool3x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool4x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool4x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool4x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool4x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="bool4x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref bool4x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double2x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double2x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double2x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double2x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double2x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double3x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double3x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double3x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double3x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double3x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double3x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double4x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double4x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double4x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double4x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="double4x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref double4x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float2x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float2x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float2x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float2x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float2x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float3x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float3x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float3x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float3x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float3x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float3x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float4x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float4x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float4x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float4x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="float4x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref float4x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="half"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref half[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="half2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref half2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="half3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref half3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="half4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref half4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int2x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int2x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int2x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int2x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int3x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int3x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int3x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int3x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int3x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int3x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int4x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int4x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int4x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int4x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="int4x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref int4x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="quaternion"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref quaternion[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint2x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint2x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint2x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint2x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint2x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint2x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint3x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint3x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint3x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint3x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint3x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint3x4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint4[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint4x2"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint4x2[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint4x3"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint4x3[] value);
+
+        /// <summary>
+        /// Serialize a <see cref="uint4x4"/> array
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// <remarks>
+        /// This method does no buffer checks and assumes you have called <see cref="PreCheck"/> before invoking.
+        /// </remarks>
+        /// <param name="value">the values to read/write</param>
+        void SerializeValuePreChecked(ref uint4x4[] value);
     }
 }

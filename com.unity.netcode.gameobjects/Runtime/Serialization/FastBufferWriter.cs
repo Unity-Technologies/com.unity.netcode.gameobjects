@@ -1186,272 +1186,915 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(Ray2D[] value) => WriteUnmanaged(value);
 
-        #region UnityMathematics As Value
+        /// <summary>
+        /// Write a <see cref="bool2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool2x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool2x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool2x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool3x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool3x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool3x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool4x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool4x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in bool4x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double2x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double2x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double2x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double3x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double3x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double3x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double4x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double4x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in double4x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float2x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float2x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float2x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float3x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float3x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float3x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float4x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float4x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in float4x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in half value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in half2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in half3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in half4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int2x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int2x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int2x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int3x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int3x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int3x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int4x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int4x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in int4x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="quaternion"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in quaternion value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint2x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint2x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint2x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint3x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint3x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint3x4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint4 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x2"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint4x2 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x3"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint4x3 value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x4"/>
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(in uint4x4 value) => WriteUnmanaged(value);
-        #endregion
 
-
-        #region UnityMathematics As Array
+        /// <summary>
+        /// Write a <see cref="bool2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool2x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool2x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool2x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool3x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool3x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool3x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool4x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool4x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(bool4x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double2x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double2x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double2x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double3x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double3x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double3x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double4x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double4x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(double4x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float2x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float2x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float2x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float3x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float3x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float3x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float4x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float4x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(float4x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(half[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(half2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(half3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="half4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(half4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int2x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int2x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int2x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int3x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int3x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int3x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int4x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int4x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(int4x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="quaternion"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(quaternion[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint2x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint2x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint2x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint3x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint3x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint3x4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint4[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint4x2[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint4x3[] value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValue(uint4x4[] value) => WriteUnmanaged(value);
-        #endregion
 
         /// <summary>
         /// Write a Vector2
@@ -1653,271 +2296,1175 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Ray2D[] value) => WriteUnmanagedSafe(value);
 
-        #region UnityMathematics As Value Safe
+        /// <summary>
+        /// Write a <see cref="bool2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool2x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool2x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool2x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool3x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool3x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool3x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool4x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool4x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in bool4x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double2x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double2x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double2x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double3x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double3x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double3x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double4x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double4x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in double4x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float2x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float2x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float2x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float3x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float3x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float3x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float4x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float4x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in float4x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in half value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in half2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in half3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in half4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int2x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int2x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int2x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int3x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int3x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int3x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int4x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int4x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in int4x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="quaternion"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in quaternion value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint2x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint2x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint2x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint3x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint3x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint3x4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint4 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint4x2 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint4x3 value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(in uint4x4 value) => WriteUnmanagedSafe(value);
-        #endregion
 
-        #region UnityMathematics As Array Safe
+        /// <summary>
+        /// Write a <see cref="bool2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool2x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool2x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool2x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool3x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool3x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool3x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool4x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool4x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="bool4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(bool4x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double2x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double2x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double2x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double3x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double3x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double3x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double4x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double4x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="double4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(double4x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float2x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float2x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float2x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float3x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float3x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float3x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float4x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float4x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="float4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(float4x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="half4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(half4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int2x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int2x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int2x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int3x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int3x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int3x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int4x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int4x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="int4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(int4x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="quaternion"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(quaternion[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint2x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint2x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint2x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint3x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint3x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint3x4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint4[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint4x2[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint4x3[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a <see cref="uint4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(uint4x4[] value) => WriteUnmanagedSafe(value);
-        #endregion
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property

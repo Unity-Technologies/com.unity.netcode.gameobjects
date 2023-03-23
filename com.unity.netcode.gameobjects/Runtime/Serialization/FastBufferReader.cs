@@ -1077,271 +1077,916 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
 
-        #region UnityMathematics As Value
+        /// <summary>
+        /// Read a <see cref="bool2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="quaternion"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out quaternion value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x2"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x2 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x3"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x3 value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x4"/>
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x4 value) => ReadUnmanaged(out value);
-        #endregion
 
-        #region UnityMathematics As Array
+        /// <summary>
+        /// Read a <see cref="bool2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool2x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool3x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out bool4x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double2x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double3x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out double4x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float2x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float3x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out float4x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="half4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out half4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int2x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int3x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out int4x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="quaternion"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out quaternion[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint2x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint3x4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x2"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x2[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x3"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x3[] value) => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x4"/> array
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out uint4x4[] value) => ReadUnmanaged(out value);
-        #endregion
+
 
         /// <summary>
         /// Read a Vector2
@@ -1543,271 +2188,1175 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
 
-        #region UnityMathematics As Value Safe
+        /// <summary>
+        /// Read a <see cref="bool2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="quaternion"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out quaternion value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x2"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x2 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x3"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x3 value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x4"/>
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x4 value) => ReadUnmanagedSafe(out value);
-        #endregion
 
-        #region UnityMathematics As Array Safe
+        /// <summary>
+        /// Read a <see cref="bool2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool2x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool3x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="bool4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out bool4x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double2x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double3x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="double4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out double4x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float2x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float3x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="float4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out float4x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="half4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out half4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int2x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int3x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="int4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out int4x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="quaternion"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out quaternion[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint2x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint2x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint3x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint3x4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x2"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x2[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x3"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x3[] value) => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a <see cref="uint4x4"/> array
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out uint4x4[] value) => ReadUnmanagedSafe(out value);
-        #endregion
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
