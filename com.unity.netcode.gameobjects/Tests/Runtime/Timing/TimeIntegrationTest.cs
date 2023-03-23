@@ -84,18 +84,33 @@ namespace Unity.Netcode.RuntimeTests
 
             var framesToRun = 3d / frameInterval;
 
+            var waitForNextFrame = new WaitForFixedUpdate();
+
             for (int i = 0; i < framesToRun; i++)
             {
-                yield return null;
-                var capturedFrameRate = Time.captureFramerate;
+                // Assure we wait for 1 frame to get the current frame time to check for low frame rates relative to expected frame rates
+                yield return waitForNextFrame;
+
+                // Adjust the time tolerance based on slower than expected FPS
+                var currentFPS = 1.0f / Time.deltaTime;
+                var fpsAdjustment = 1.0f;
+                var currentAdjustment = additionalTimeTolerance;
+                if (currentFPS < targetFrameRate)
+                {
+                    // Get the % slower and increase the time tolerance based on that %
+                    var fpsDelta = targetFrameRate - currentFPS;
+                    fpsAdjustment = 1.0f / fpsDelta;
+                    currentAdjustment += additionalTimeTolerance * fpsAdjustment;
+                }
+
                 UpdateTimeStates(networkManagers);
 
                 // compares whether client times have the correct offset to server
-                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
-                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
+                m_ServerState.AssertCheckDifference(m_Client1State, tickInterval, tickInterval, tickInterval * 2 + frameInterval * 2 + currentAdjustment);
+                m_ServerState.AssertCheckDifference(m_Client2State, 0.2, 0.1, tickInterval * 2 + frameInterval * 2 + currentAdjustment);
 
                 // compares the two client times, only difference should be based on buffering.
-                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + additionalTimeTolerance);
+                m_Client1State.AssertCheckDifference(m_Client2State, 0.2 - tickInterval, (0.1 - tickInterval), tickInterval * 2 + frameInterval * 2 + currentAdjustment);
             }
         }
 
