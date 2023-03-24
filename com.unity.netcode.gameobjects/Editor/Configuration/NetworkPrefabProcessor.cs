@@ -24,6 +24,7 @@ namespace Unity.Netcode.Editor.Configuration
             }
         }
         private static NetworkPrefabsList s_PrefabsList;
+        private static Dictionary<string, NetworkPrefab> s_PrefabsListPath = new Dictionary<string, NetworkPrefab>();
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
@@ -48,6 +49,21 @@ namespace Unity.Netcode.Editor.Configuration
                     var go = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
                     if (go.TryGetComponent<NetworkObject>(out _))
                     {
+                        // Make sure we are not duplicating an already existing entry
+                        if (s_PrefabsListPath.ContainsKey(assetPath))
+                        {
+                            // Is the imported asset different from the one we already have in the list?
+                            if (s_PrefabsListPath[assetPath].Prefab.GetHashCode() != go.GetHashCode())
+                            {
+                                // If so remove the one in the list and continue on to add the imported one
+                                s_PrefabsList.List.Remove(s_PrefabsListPath[assetPath]);
+                            }
+                            else // If they are identical, then just ignore the import
+                            {
+                                continue;
+                            }
+                        }
+
                         s_PrefabsList.List.Add(new NetworkPrefab { Prefab = go });
                         dirty = true;
                     }
@@ -103,7 +119,19 @@ namespace Unity.Netcode.Editor.Configuration
                     return;
                 }
             }
+            // Clear our asset path to prefab table each time
+            s_PrefabsListPath.Clear();
 
+            // Create our asst path to prefab table
+            foreach (var prefabEntry in s_PrefabsList.List)
+            {
+                if (!s_PrefabsListPath.ContainsKey(AssetDatabase.GetAssetPath(prefabEntry.Prefab)))
+                {
+                    s_PrefabsListPath.Add(AssetDatabase.GetAssetPath(prefabEntry.Prefab), prefabEntry);
+                }
+            }
+
+            // Process the imported and deleted assets
             var markDirty = ProcessImportedAssets(importedAssets);
             markDirty &= ProcessDeletedAssets(deletedAssets);
 

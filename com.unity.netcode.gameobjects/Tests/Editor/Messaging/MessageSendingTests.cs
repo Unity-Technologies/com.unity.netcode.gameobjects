@@ -155,7 +155,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < 1300 / size; ++i)
+            for (var i = 0; i < (1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size; ++i)
             {
                 m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -169,7 +169,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (1300 / size) + 1; ++i)
+            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size) + 1; ++i)
             {
                 m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -183,7 +183,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (1300 / size) + 1; ++i)
+            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size) + 1; ++i)
             {
                 m_MessagingSystem.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
@@ -229,7 +229,7 @@ namespace Unity.Netcode.EditorTests
             using (reader)
             {
                 reader.ReadValueSafe(out BatchHeader header);
-                Assert.AreEqual(2, header.BatchSize);
+                Assert.AreEqual(2, header.BatchCount);
 
                 MessageHeader messageHeader;
 
