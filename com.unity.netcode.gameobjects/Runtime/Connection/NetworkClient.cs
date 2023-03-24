@@ -27,7 +27,7 @@ namespace Unity.Netcode
             if (!IsServer && !isClient)
             {
                 PlayerObject = null;
-                ClientId = ulong.MaxValue;
+                ClientId = 0;
             }
             NetworkManager = networkManager;
         }

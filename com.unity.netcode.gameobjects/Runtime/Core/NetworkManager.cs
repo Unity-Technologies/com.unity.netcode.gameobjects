@@ -1177,6 +1177,8 @@ namespace Unity.Netcode
             bool wasClient = ConnectionManager.LocalClient.IsClient;
             ConnectionManager.LocalClient.SetRole(false, false);
 
+            this.UnregisterAllNetworkUpdates();
+
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
