@@ -361,8 +361,7 @@ namespace Unity.Netcode
                 }
                 return;
             }
-
-            NetworkManager.MarkObjectForShowingTo(this, clientId);
+            NetworkManager.SpawnManager.MarkObjectForShowingTo(this, clientId);
             Observers.Add(clientId);
         }
 
@@ -452,7 +451,7 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-            if (!NetworkManager.RemoveObjectFromShowingTo(this, clientId))
+            if (!NetworkManager.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
             {
                 if (!Observers.Contains(clientId))
                 {

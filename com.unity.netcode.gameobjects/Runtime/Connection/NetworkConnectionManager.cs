@@ -18,6 +18,28 @@ namespace Unity.Netcode
 {
     public class NetworkConnectionManager
     {
+
+        /// <summary>
+        /// The current host name we are connected to, used to validate certificate
+        /// </summary>
+        public string ConnectedHostname { get; private set; }
+
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
+        public string DisconnectReason { get; internal set; }
+
+        /// <summary>
+        /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
+        /// </summary>
+        /// <remarks>
+        /// A failure of the transport is always followed by the <see cref="NetworkManager"/> shutting down. Recovering
+        /// from a transport failure would normally entail reconfiguring the transport (e.g. re-authenticating, or
+        /// recreating a new service allocation depending on the transport) and restarting the client/server/host.
+        /// </remarks>
+        public event Action OnTransportFailure;
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
@@ -43,6 +65,11 @@ namespace Unity.Netcode
         internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == NetworkManager.ServerClientId ? GetServerTransporId() : ClientIdToTransportIdMap[clientId];
+        }
+
+        internal void TransportFailure()
+        {
+            OnTransportFailure?.Invoke();
         }
 
         /// <summary>
@@ -776,10 +803,13 @@ namespace Unity.Netcode
             ClientIdToTransportIdMap.Clear();
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
+            NetworkObject.OrphanChildren.Clear();
         }
 
         public void Initialize(NetworkManager networkManager)
         {
+            ClearClients();
+            DisconnectReason = string.Empty;
             NetworkManager = networkManager;
         }
     }

@@ -10,6 +10,9 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkSpawnManager
     {
+        // Stores the objects that need to be shown at end-of-frame
+        internal Dictionary<ulong, List<NetworkObject>> ObjectsToShowToClient = new Dictionary<ulong, List<NetworkObject>>();
+
         /// <summary>
         /// The currently spawned objects
         /// </summary>
@@ -36,6 +39,38 @@ namespace Unity.Netcode
         /// the NetworkObject
         /// </summary>
         private Dictionary<ulong, ulong> m_ObjectToOwnershipTable = new Dictionary<ulong, ulong>();
+
+        internal void MarkObjectForShowingTo(NetworkObject networkObject, ulong clientId)
+        {
+            if (!ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                ObjectsToShowToClient.Add(clientId, new List<NetworkObject>());
+            }
+            ObjectsToShowToClient[clientId].Add(networkObject);
+        }
+
+        // returns whether any matching objects would have become visible and were returned to hidden state
+        internal bool RemoveObjectFromShowingTo(NetworkObject networkObject, ulong clientId)
+        {
+            var ret = false;
+            if (!ObjectsToShowToClient.ContainsKey(clientId))
+            {
+                return false;
+            }
+
+            // probably overkill, but deals with multiple entries
+            while (ObjectsToShowToClient[clientId].Contains(networkObject))
+            {
+                Debug.LogWarning(
+                    "Object was shown and hidden from the same client in the same Network frame. As a result, the client will _not_ receive a NetworkSpawn");
+                ObjectsToShowToClient[clientId].Remove(networkObject);
+                ret = true;
+            }
+
+            networkObject.Observers.Remove(clientId);
+
+            return ret;
+        }
 
         /// <summary>
         /// Used to update a NetworkObject's ownership
@@ -140,11 +175,6 @@ namespace Unity.Netcode
         /// Gets the NetworkManager associated with this SpawnManager.
         /// </summary>
         public NetworkManager NetworkManager { get; }
-
-        internal NetworkSpawnManager(NetworkManager networkManager)
-        {
-            NetworkManager = networkManager;
-        }
 
         internal readonly Queue<ReleasedNetworkId> ReleasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private ulong m_NetworkObjectIdCounter;
@@ -943,6 +973,29 @@ namespace Unity.Netcode
                     }
                 }
             }
+        }
+
+        private void NetworkTickSystem_Tick()
+        {
+            // Do NetworkVariable updates
+            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(NetworkManager);
+
+            // Handle NetworkObjects to show
+            foreach (var client in ObjectsToShowToClient)
+            {
+                ulong clientId = client.Key;
+                foreach (var networkObject in client.Value)
+                {
+                    SendSpawnCallForObject(clientId, networkObject);
+                }
+            }
+            ObjectsToShowToClient.Clear();
+        }
+
+        internal NetworkSpawnManager(NetworkManager networkManager)
+        {
+            NetworkManager = networkManager;
+            NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
         }
     }
 }
