@@ -411,7 +411,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(half3))
             {
-                RunTestWithWriteType(math.half4((float)random.NextDouble()), writeType);
+                RunTestWithWriteType(math.half3((float)random.NextDouble()), writeType);
             }
             else if (testType == typeof(half4))
             {
@@ -463,7 +463,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(int4x4))
             {
-                RunTestWithWriteType(math.uint2x2(random.Next()), writeType);
+                RunTestWithWriteType(math.int4x4(random.Next()), writeType);
             }
             else if (testType == typeof(quaternion))
             {
@@ -471,7 +471,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(uint2))
             {
-                RunTestWithWriteType(math.uint2x2(random.Next()), writeType);
+                RunTestWithWriteType(math.uint2(random.Next()), writeType);
             }
             else if (testType == typeof(uint2x2))
             {
@@ -1009,7 +1009,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(half3))
             {
-                RunTypeTestLocal(new[] { math.half4((float)random.NextDouble()) }, writeType);
+                RunTypeTestLocal(new[] { math.half3((float)random.NextDouble()) }, writeType);
             }
             else if (testType == typeof(half4))
             {
@@ -1061,7 +1061,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(int4x4))
             {
-                RunTypeTestLocal(new[] { math.uint2x2(random.Next()) }, writeType);
+                RunTypeTestLocal(new[] { math.int4x4(random.Next()) }, writeType);
             }
             else if (testType == typeof(quaternion))
             {
@@ -1069,7 +1069,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(uint2))
             {
-                RunTypeTestLocal(new[] { math.uint2x2(random.Next()) }, writeType);
+                RunTypeTestLocal(new[] { math.uint2(random.Next()) }, writeType);
             }
             else if (testType == typeof(uint2x2))
             {

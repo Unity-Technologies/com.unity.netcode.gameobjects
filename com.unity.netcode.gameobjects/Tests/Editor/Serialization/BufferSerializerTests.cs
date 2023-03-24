@@ -370,10 +370,7 @@ namespace Unity.Netcode.EditorTests
             {
                 var typeSize = UnsafeUtility.SizeOf(valueType);
                 var bytesSerialized = GetBytesSerialized();
-                if (typeSize != bytesSerialized)
-                {
-                    Debug.Log($"Type {valueType.Name} serialized {bytesSerialized} bytes but is calculated to be {typeSize} size");
-                }
+                Assert.AreEqual(typeSize, bytesSerialized, $"Type {valueType.Name} serialized {bytesSerialized} bytes but is calculated to be {typeSize} size!");
             }
 
             private int GetBytesSerialized()
@@ -624,7 +621,7 @@ namespace Unity.Netcode.EditorTests
                     }
                     else if (testType == typeof(half3))
                     {
-                        var valueType = math.half4((float)random.NextDouble());
+                        var valueType = math.half3((float)random.NextDouble());
                         serializer.SerializeValue(ref valueType);
                     }
                     else if (testType == typeof(half4))
@@ -689,7 +686,7 @@ namespace Unity.Netcode.EditorTests
                     }
                     else if (testType == typeof(int4x4))
                     {
-                        var valueType = math.uint2x2(random.Next());
+                        var valueType = math.int4x4(random.Next());
                         serializer.SerializeValue(ref valueType);
                     }
                     else if (testType == typeof(quaternion))
@@ -699,7 +696,7 @@ namespace Unity.Netcode.EditorTests
                     }
                     else if (testType == typeof(uint2))
                     {
-                        var valueType = math.uint2x2(random.Next());
+                        var valueType = math.uint2(random.Next());
                         serializer.SerializeValue(ref valueType);
                     }
                     else if (testType == typeof(uint2x2))
@@ -803,9 +800,7 @@ namespace Unity.Netcode.EditorTests
                 deserializer.SerializeNetworkSerializable(ref mathematicsStructRead);
             }
             Assert.AreEqual(mathematicsStructRead.SerializedReadSize, mathematicsStructRead.SerializedWriteSize);
-
-            Debug.Log($"Calculated Size {mathematicsStructRead.CalculatedSize} | Serialized Size {mathematicsStructRead.SerializedReadSize}");
-            //Assert.AreEqual(mathematicsStructRead.CalculatedSize, mathematicsStructRead.SerializedReadSize);
+            Assert.AreEqual(mathematicsStructRead.CalculatedSize, mathematicsStructRead.SerializedReadSize,$"Calculated size ({mathematicsStructRead.CalculatedSize}) does not equal the serialized size ({mathematicsStructRead.SerializedReadSize})!");
         }
     }
 }
