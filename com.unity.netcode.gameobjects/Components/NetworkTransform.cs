@@ -1251,7 +1251,6 @@ namespace Unity.Netcode.Components
         /// </remarks>
         /// <typeparam name="T"></typeparam>
         /// <param name="serializer"></param>
-        /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
