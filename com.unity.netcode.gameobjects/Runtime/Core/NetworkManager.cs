@@ -19,6 +19,60 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
+        #region NESTED CLASSES AND STRUCTS (Migrating these will break the API)
+        /// <summary>
+        /// Connection Approval Response
+        /// </summary>
+        public class ConnectionApprovalResponse
+        {
+            /// <summary>
+            /// Whether or not the client was approved
+            /// </summary>
+            public bool Approved;
+            /// <summary>
+            /// If true, a player object will be created. Otherwise the client will have no object.
+            /// </summary>
+            public bool CreatePlayerObject;
+            /// <summary>
+            /// The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.
+            /// </summary>
+            public uint? PlayerPrefabHash;
+            /// <summary>
+            /// The position to spawn the client at. If null, the prefab position is used.
+            /// </summary>
+            public Vector3? Position;
+            /// <summary>
+            /// The rotation to spawn the client with. If null, the prefab position is used.
+            /// </summary>
+            public Quaternion? Rotation;
+            /// <summary>
+            /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
+            /// </summary>
+            public bool Pending;
+
+            /// <summary>
+            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
+            /// were not approved.
+            /// </summary>
+            public string Reason;
+        }
+
+        /// <summary>
+        /// Connection Approval Request
+        /// </summary>
+        public struct ConnectionApprovalRequest
+        {
+            /// <summary>
+            /// The connection data payload
+            /// </summary>
+            public byte[] Payload;
+            /// <summary>
+            /// The Network Id of the client we are about to handle
+            /// </summary>
+            public ulong ClientNetworkId;
+        }
+        #endregion
+
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -55,6 +109,12 @@ namespace Unity.Netcode
             BehaviourUpdater.AddForUpdate(networkObject);
         }
 
+        /// <summary>
+        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
+        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
+        /// </summary>
+        public string DisconnectReason { get; internal set; }
+
         internal MessagingSystem MessagingSystem { get; private set; }
 
         private NetworkPrefabHandler m_PrefabHandler;
@@ -75,126 +135,6 @@ namespace Unity.Netcode
                 }
 
                 return m_PrefabHandler;
-            }
-        }
-
-        private bool m_ShuttingDown;
-        private bool m_StopProcessingMessages;
-
-        /// <summary>
-        /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
-        /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
-        /// </summary>
-        public string DisconnectReason { get; internal set; }
-
-        private class NetworkManagerHooks : INetworkHooks
-        {
-            private NetworkManager m_NetworkManager;
-
-            internal NetworkManagerHooks(NetworkManager manager)
-            {
-                m_NetworkManager = manager;
-            }
-
-            public void OnBeforeSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery) where T : INetworkMessage
-            {
-            }
-
-            public void OnAfterSendMessage<T>(ulong clientId, ref T message, NetworkDelivery delivery, int messageSizeBytes) where T : INetworkMessage
-            {
-            }
-
-            public void OnBeforeReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
-            {
-            }
-
-            public void OnAfterReceiveMessage(ulong senderId, Type messageType, int messageSizeBytes)
-            {
-            }
-
-            public void OnBeforeSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
-            {
-            }
-
-            public void OnAfterSendBatch(ulong clientId, int messageCount, int batchSizeInBytes, NetworkDelivery delivery)
-            {
-            }
-
-            public void OnBeforeReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
-            {
-            }
-
-            public void OnAfterReceiveBatch(ulong senderId, int messageCount, int batchSizeInBytes)
-            {
-            }
-
-            public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
-            {
-                return !m_NetworkManager.m_StopProcessingMessages;
-            }
-
-            public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
-            {
-                if (m_NetworkManager.IsServer)
-                {
-                    if (messageType == typeof(ConnectionApprovedMessage))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
-                        }
-                        return false;
-                    }
-                    if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
-                                     (client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != typeof(ConnectionRequestMessage))))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted");
-                        }
-
-                        return false;
-                    }
-
-                    if (m_NetworkManager.ConnectedClients.TryGetValue(senderId, out NetworkClient connectedClient) && messageType == typeof(ConnectionRequestMessage))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
-                        }
-
-                        return false;
-                    }
-                }
-                else
-                {
-                    if (messageType == typeof(ConnectionRequestMessage))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
-                        }
-                        return false;
-                    }
-                    if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage))
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                        {
-                            NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
-                        }
-                        return false;
-                    }
-                }
-
-                return !m_NetworkManager.m_StopProcessingMessages;
-            }
-
-            public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-            {
-            }
-
-            public void OnAfterHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage
-            {
             }
         }
 
@@ -227,6 +167,9 @@ namespace Unity.Netcode
             }
             return gameObject;
         }
+
+        private bool m_ShuttingDown;
+        internal bool StopProcessingMessages;
 
         /// <summary>
         /// Accessor for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
@@ -454,58 +397,6 @@ namespace Unity.Netcode
         /// recreating a new service allocation depending on the transport) and restarting the client/server/host.
         /// </remarks>
         public event Action OnTransportFailure = null;
-
-        /// <summary>
-        /// Connection Approval Response
-        /// </summary>
-        public class ConnectionApprovalResponse
-        {
-            /// <summary>
-            /// Whether or not the client was approved
-            /// </summary>
-            public bool Approved;
-            /// <summary>
-            /// If true, a player object will be created. Otherwise the client will have no object.
-            /// </summary>
-            public bool CreatePlayerObject;
-            /// <summary>
-            /// The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.
-            /// </summary>
-            public uint? PlayerPrefabHash;
-            /// <summary>
-            /// The position to spawn the client at. If null, the prefab position is used.
-            /// </summary>
-            public Vector3? Position;
-            /// <summary>
-            /// The rotation to spawn the client with. If null, the prefab position is used.
-            /// </summary>
-            public Quaternion? Rotation;
-            /// <summary>
-            /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
-            /// </summary>
-            public bool Pending;
-
-            /// <summary>
-            /// Optional reason. If Approved is false, this reason will be sent to the client so they know why they
-            /// were not approved.
-            /// </summary>
-            public string Reason;
-        }
-
-        /// <summary>
-        /// Connection Approval Request
-        /// </summary>
-        public struct ConnectionApprovalRequest
-        {
-            /// <summary>
-            /// The connection data payload
-            /// </summary>
-            public byte[] Payload;
-            /// <summary>
-            /// The Network Id of the client we are about to handle
-            /// </summary>
-            public ulong ClientNetworkId;
-        }
 
         /// <summary>
         /// The callback to invoke during connection approval. Allows client code to decide whether or not to allow incoming client connection
@@ -1143,7 +1034,7 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                m_StopProcessingMessages = discardMessageQueue;
+                StopProcessingMessages = discardMessageQueue;
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
@@ -1228,7 +1119,7 @@ namespace Unity.Netcode
 
             IsListening = false;
             m_ShuttingDown = false;
-            m_StopProcessingMessages = false;
+            StopProcessingMessages = false;
 
             ClearClients();
 
@@ -1292,7 +1183,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (m_ShuttingDown && m_StopProcessingMessages)
+            if (m_ShuttingDown && StopProcessingMessages)
             {
                 return;
             }
@@ -1313,8 +1204,7 @@ namespace Unity.Netcode
 
         private void OnNetworkPostLateUpdate()
         {
-
-            if (!m_ShuttingDown || !m_StopProcessingMessages)
+            if (!m_ShuttingDown || !StopProcessingMessages)
             {
                 // This should be invoked just prior to the MessagingSystem
                 // processes its outbound queue.
