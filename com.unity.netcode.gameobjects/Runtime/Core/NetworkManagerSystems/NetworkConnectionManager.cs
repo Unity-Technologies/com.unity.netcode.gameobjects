@@ -336,7 +336,7 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var prefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                    var prefabNetworkObject = NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
                     var playerPrefabHash = response.PlayerPrefabHash ?? prefabNetworkObject.GlobalObjectIdHash;
 
                     // Generate a SceneObject for the player object to spawn
@@ -626,21 +626,18 @@ namespace Unity.Netcode
                 }
 
             }
-            else if (NetworkManager != null && NetworkManager.IsListening)
+            else if (NetworkManager != null && NetworkManager.IsListening && LocalClient.IsClient)
             {
-                if (IsClient && IsListening)
+                // Client only, send disconnect to server
+                // If transport throws and exception, log the exception and
+                // continue the shutdown sequence (or forever be shutting down)
+                try
                 {
-                    // Client only, send disconnect to server
-                    // If transport throws and exception, log the exception and
-                    // continue the shutdown sequence (or forever be shutting down)
-                    try
-                    {
-                        NetworkManager.NetworkConfig..NetworkTransport.DisconnectLocalClient();
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogException(ex);
-                    }
+                    NetworkManager.NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
                 }
             }
         }

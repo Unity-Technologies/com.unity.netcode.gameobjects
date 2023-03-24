@@ -1173,6 +1173,8 @@ namespace Unity.Netcode
                 SpawnManager = null;
             }
 
+            bool wasServer = ConnectionManager.LocalClient.IsServer;
+            bool wasClient = ConnectionManager.LocalClient.IsClient;
             ConnectionManager.LocalClient.SetRole(false, false);
 
             if (NetworkTickSystem != null)
@@ -1230,10 +1232,14 @@ namespace Unity.Netcode
 
             if (wasClient)
             {
+                // If we were a client, we want to know if we were a host
+                // client or not. (why we pass in "wasServer")
                 OnClientStopped?.Invoke(wasServer);
             }
             if (wasServer)
             {
+                // If we were a server, we want to know if we were a host
+                // or not. (why we pass in "wasClient")
                 OnServerStopped?.Invoke(wasClient);
             }
 
