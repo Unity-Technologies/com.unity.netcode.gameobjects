@@ -1,7 +1,6 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
-using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -241,30 +240,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The values to read/write</param>
         void SerializeValue(ref Ray2D[] value);
-
-        /// <summary>
-        /// Read or write a half value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref half value);
-
-        /// <summary>
-        /// Read or write a half2 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref half2 value);
-
-        /// <summary>
-        /// Read or write a half3 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref half3 value);
-
-        /// <summary>
-        /// Read or write a half4 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        void SerializeValue(ref half4 value);
 
         /// <summary>
         /// Read or write a NetworkSerializable value.

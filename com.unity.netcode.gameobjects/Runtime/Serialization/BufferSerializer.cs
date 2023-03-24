@@ -1,7 +1,6 @@
 using System;
 using Unity.Collections;
 using UnityEngine;
-using Unity.Mathematics;
 
 namespace Unity.Netcode
 {
@@ -260,31 +259,6 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The values to read/write</param>
         public void SerializeValue(ref Ray2D[] value) => m_Implementation.SerializeValue(ref value);
-
-        /// <summary>
-        /// Read or write a half value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValue(ref half value) => m_Implementation.SerializeValue(ref value);
-
-        /// <summary>
-        /// Read or write a half2 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValue(ref half2 value) => m_Implementation.SerializeValue(ref value);
-
-        /// <summary>
-        /// Read or write a half3 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValue(ref half3 value) => m_Implementation.SerializeValue(ref value);
-
-        /// <summary>
-        /// Read or write a half4 value
-        /// </summary>
-        /// <param name="value">The value to read/write</param>
-        public void SerializeValue(ref half4 value) => m_Implementation.SerializeValue(ref value);
-
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
