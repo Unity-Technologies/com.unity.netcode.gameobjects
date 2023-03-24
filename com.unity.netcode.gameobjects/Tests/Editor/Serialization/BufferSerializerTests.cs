@@ -800,7 +800,7 @@ namespace Unity.Netcode.EditorTests
                 deserializer.SerializeNetworkSerializable(ref mathematicsStructRead);
             }
             Assert.AreEqual(mathematicsStructRead.SerializedReadSize, mathematicsStructRead.SerializedWriteSize);
-            Assert.AreEqual(mathematicsStructRead.CalculatedSize, mathematicsStructRead.SerializedReadSize,$"Calculated size ({mathematicsStructRead.CalculatedSize}) does not equal the serialized size ({mathematicsStructRead.SerializedReadSize})!");
+            Assert.AreEqual(mathematicsStructRead.CalculatedSize, mathematicsStructRead.SerializedReadSize, $"Calculated size ({mathematicsStructRead.CalculatedSize}) does not equal the serialized size ({mathematicsStructRead.SerializedReadSize})!");
         }
     }
 }
