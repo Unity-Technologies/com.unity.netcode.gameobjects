@@ -39,22 +39,42 @@ namespace Unity.Netcode.Components
         /// </summary>
         public bool3 AxisToSynchronize;
 
-        /// <summary>
-        /// The serialization implementation of <see cref="INetworkSerializable"/>.
-        /// </summary>
-        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        private void SerializeWrite(FastBufferWriter writer)
+        {
+            for (int i = 0; i < Size; i++)
+            {
+                if (AxisToSynchronize[i])
+                {
+                    writer.WriteUnmanagedSafe(Axis[i]);
+                }
+            }
+        }
+
+        private void SerializeRead(FastBufferReader reader)
         {
             for (int i = 0; i < Size; i++)
             {
                 if (AxisToSynchronize[i])
                 {
                     var axisValue = Axis[i];
-                    serializer.SerializeValue(ref axisValue);
-                    if (serializer.IsReader)
-                    {
-                        Axis[i] = axisValue;
-                    }
+                    reader.ReadUnmanagedSafe(out axisValue);
+                    Axis[i] = axisValue;
                 }
+            }
+        }
+
+        /// <summary>
+        /// The serialization implementation of <see cref="INetworkSerializable"/>.
+        /// </summary>
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            if (serializer.IsReader)
+            {
+                SerializeRead(serializer.GetFastBufferReader());
+            }
+            else
+            {
+                SerializeWrite(serializer.GetFastBufferWriter());
             }
         }
 
