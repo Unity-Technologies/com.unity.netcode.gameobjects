@@ -14,7 +14,7 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public struct HalfVector3 : INetworkSerializable
     {
-        public const int Size = 3;
+        internal const int Length = 3;
 
         /// <summary>
         /// The half float precision value of the x-axis as a <see cref="half"/>.
@@ -41,7 +41,7 @@ namespace Unity.Netcode.Components
 
         private void SerializeWrite(FastBufferWriter writer)
         {
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 if (AxisToSynchronize[i])
                 {
@@ -52,7 +52,7 @@ namespace Unity.Netcode.Components
 
         private void SerializeRead(FastBufferReader reader)
         {
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 if (AxisToSynchronize[i])
                 {
@@ -87,7 +87,7 @@ namespace Unity.Netcode.Components
         {
             Vector3 fullPrecision = Vector3.zero;
             Vector3 fullConversion = math.float3(Axis);
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 if (AxisToSynchronize[i])
                 {
@@ -105,7 +105,7 @@ namespace Unity.Netcode.Components
         public void UpdateFrom(ref Vector3 vector3)
         {
             var half3Full = math.half3(vector3);
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 if (AxisToSynchronize[i])
                 {

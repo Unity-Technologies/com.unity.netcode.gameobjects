@@ -9,7 +9,6 @@ namespace Unity.Netcode.Components
     /// </summary>
     public struct NetworkDeltaPosition : INetworkSerializable
     {
-        private const int k_Size = 3;
         internal const float MaxDeltaBeforeAdjustment = 64f;
 
         /// <summary>
@@ -49,7 +48,7 @@ namespace Unity.Netcode.Components
             {
                 return CurrentBasePosition + DeltaPosition;
             }
-            for (int i = 0; i < k_Size; i++)
+            for (int i = 0; i < HalfVector3.Length; i++)
             {
                 if (HalfVector3.AxisToSynchronize[i])
                 {
@@ -125,7 +124,7 @@ namespace Unity.Netcode.Components
         {
             NetworkTick = networkTick;
             DeltaPosition = (vector3 + PrecisionLossDelta) - CurrentBasePosition;
-            for (int i = 0; i < HalfVector3.Size; i++)
+            for (int i = 0; i < HalfVector3.Length; i++)
             {
                 if (HalfVector3.AxisToSynchronize[i])
                 {
@@ -141,7 +140,7 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            for (int i = 0; i < k_Size; i++)
+            for (int i = 0; i < HalfVector3.Length; i++)
             {
                 if (HalfVector3.AxisToSynchronize[i])
                 {
@@ -192,7 +191,7 @@ namespace Unity.Netcode.Components
         }
 
         /// <summary>
-        /// Constructor 
+        /// Constructor
         /// </summary>
         /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
         /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>

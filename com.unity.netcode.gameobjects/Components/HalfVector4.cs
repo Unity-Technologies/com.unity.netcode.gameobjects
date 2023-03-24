@@ -14,7 +14,7 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public struct HalfVector4 : INetworkSerializable
     {
-        public const int Size = 4;
+        internal const int Length = 4;
         /// <summary>
         /// The half float precision value of the x-axis as a <see cref="half"/>.
         /// </summary>
@@ -42,7 +42,7 @@ namespace Unity.Netcode.Components
 
         private void SerializeWrite(FastBufferWriter writer)
         {
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 writer.WriteUnmanagedSafe(Axis[i]);
             }
@@ -50,7 +50,7 @@ namespace Unity.Netcode.Components
 
         private void SerializeRead(FastBufferReader reader)
         {
-            for (int i = 0; i < Size; i++)
+            for (int i = 0; i < Length; i++)
             {
                 var axisValue = Axis[i];
                 reader.ReadUnmanagedSafe(out axisValue);
