@@ -22,6 +22,7 @@ namespace Unity.Netcode
         private const double k_TimeSyncFrequency = 1.0d; // sync every second
         private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
+        #region RPC RELATED CODE
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -36,6 +37,7 @@ namespace Unity.Netcode
 #endif
 
 #pragma warning restore IDE1006 // restore naming rule violation check
+        #endregion
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
@@ -43,8 +45,101 @@ namespace Unity.Netcode
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
+        #region CONNECTION MANAGEMENT RELATED CODE
+        /// <summary>
+        /// The client id used to represent the server
+        /// </summary>
+        public const ulong ServerClientId = 0;
 
-        #region Connection Management Related
+        /// <summary>
+        /// Gets the networkId of the server
+        /// </summary>
+        private ulong m_ServerTransportId => ConnectionManager.ServerTransportId;
+
+        /// <summary>
+        /// Returns ServerClientId if IsServer or LocalClientId if not
+        /// </summary>
+        public ulong LocalClientId
+        {
+            get
+            {
+                return ConnectionManager.LocalClient.ClientId;
+            }
+            internal set
+            {
+                ConnectionManager.LocalClient.ClientId = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
+        /// </summary>
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
+                }
+                return ConnectionManager.ConnectedClients;
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of connected clients. This is only accessible on the server.
+        /// </summary>
+        public IReadOnlyList<NetworkClient> ConnectedClientsList
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
+                }
+                return ConnectionManager.ConnectedClientsList;
+            }
+        }
+
+        /// <summary>
+        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
+        /// </summary>
+        public IReadOnlyList<ulong> ConnectedClientsIds
+        {
+            get
+            {
+                if (IsServer == false)
+                {
+                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
+                }
+                return ConnectionManager.ConnectedClientIds;
+            }
+        }
+
+        /// <summary>
+        /// Gets the local <see cref="NetworkClient"/> for this client.
+        /// </summary>
+        public NetworkClient LocalClient => ConnectionManager.LocalClient;
+
+        /// <summary>
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
+        /// </summary>
+        public IReadOnlyDictionary<ulong, PendingClient> PendingClients => ConnectionManager.PendingClients;
+
+        /// <summary>
+        /// Gets Whether or not a server is running
+        /// </summary>
+        public bool IsServer => ConnectionManager.LocalClient.IsServer;
+
+        /// <summary>
+        /// Gets Whether or not a client is running
+        /// </summary>
+        public bool IsClient => ConnectionManager.LocalClient.IsClient;
+
+        /// <summary>
+        /// Gets if we are running as host
+        /// </summary>
+        public bool IsHost => ConnectionManager.LocalClient.IsHost;
 
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
@@ -64,6 +159,17 @@ namespace Unity.Netcode
         /// the server.
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        /// <summary>
+        /// Is true when the client has been approved.
+        /// </summary>
+        /// <remarks>
+        /// This only reflects the client's approved status and does not mean the client
+        /// has finished the connection and synchronization process. The server-host will
+        /// always be approved upon being starting the <see cref="NetworkManager"/>
+        /// <see cref="IsConnectedClient"/>
+        /// </remarks>
+        public bool IsApproved { get; internal set; }
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -312,101 +418,6 @@ namespace Unity.Netcode
         /// </summary>
         public static NetworkManager Singleton { get; private set; }
 
-        /// <summary>
-        /// The client id used to represent the server
-        /// </summary>
-        public const ulong ServerClientId = 0;
-
-        /// <summary>
-        /// Gets the networkId of the server
-        /// </summary>
-        private ulong m_ServerTransportId => ConnectionManager.ServerTransportId;
-
-        /// <summary>
-        /// Returns ServerClientId if IsServer or LocalClientId if not
-        /// </summary>
-        public ulong LocalClientId
-        {
-            get
-            {
-                return ConnectionManager.LocalClient.ClientId;
-            }
-            internal set
-            {
-                ConnectionManager.LocalClient.ClientId = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
-        /// </summary>
-        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClients;
-            }
-        }
-
-        /// <summary>
-        /// Gets a list of connected clients. This is only accessible on the server.
-        /// </summary>
-        public IReadOnlyList<NetworkClient> ConnectedClientsList
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClientsList;
-            }
-        }
-
-        /// <summary>
-        /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
-        /// </summary>
-        public IReadOnlyList<ulong> ConnectedClientsIds
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClientIds;
-            }
-        }
-
-        /// <summary>
-        /// Gets the local <see cref="NetworkClient"/> for this client.
-        /// </summary>
-        public NetworkClient LocalClient => ConnectionManager.LocalClient;
-
-        /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
-        /// </summary>
-        public IReadOnlyDictionary<ulong, PendingClient> PendingClients => ConnectionManager.PendingClients;
-
-        /// <summary>
-        /// Gets Whether or not a server is running
-        /// </summary>
-        public bool IsServer => ConnectionManager.LocalClient.IsServer;
-
-        /// <summary>
-        /// Gets Whether or not a client is running
-        /// </summary>
-        public bool IsClient => ConnectionManager.LocalClient.IsClient;
-
-        /// <summary>
-        /// Gets if we are running as host
-        /// </summary>
-        public bool IsHost => ConnectionManager.LocalClient.IsHost;
-
         #region NGO SYSTEMS
         private NetworkPrefabHandler m_PrefabHandler;
 
@@ -464,17 +475,6 @@ namespace Unity.Netcode
 
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
         #endregion
-
-        /// <summary>
-        /// Is true when the client has been approved.
-        /// </summary>
-        /// <remarks>
-        /// This only reflects the client's approved status and does not mean the client
-        /// has finished the connection and synchronization process. The server-host will
-        /// always be approved upon being starting the <see cref="NetworkManager"/>
-        /// <see cref="IsConnectedClient"/>
-        /// </remarks>
-        public bool IsApproved { get; internal set; }
 
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
@@ -632,6 +632,7 @@ namespace Unity.Netcode
 #endif
         #endregion
 
+        #region START-UP AND SHUTDOWN CODE
         internal void Initialize(bool server)
         {
             ConnectionManager.Initialize(this);
@@ -991,32 +992,10 @@ namespace Unity.Netcode
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
-        private void OnSceneUnloaded(Scene scene)
-        {
-            if (scene == gameObject.scene)
-            {
-                OnDestroy();
-            }
-        }
-
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
             OnDestroy();
-        }
-
-        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
-        private void OnDestroy()
-        {
-            ShutdownInternal();
-
-            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
-
-            if (Singleton == this)
-            {
-                Singleton = null;
-            }
         }
 
         /// <summary>
@@ -1148,7 +1127,9 @@ namespace Unity.Netcode
             // that the prefab list changes
             NetworkConfig?.ClearConfigHash();
         }
+        #endregion
 
+        #region UPDATE RELATED CODE
         /// <inheritdoc />
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
@@ -1226,6 +1207,8 @@ namespace Unity.Netcode
                 ShutdownInternal();
             }
         }
+
+        #endregion
 
         #region TODO: Migrate into ConnectionManager
         /// <summary>
@@ -1335,5 +1318,27 @@ namespace Unity.Netcode
 #endif
         }
         #endregion
+
+        // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
+        private void OnDestroy()
+        {
+            ShutdownInternal();
+
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
+            if (Singleton == this)
+            {
+                Singleton = null;
+            }
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene == gameObject.scene)
+            {
+                OnDestroy();
+            }
+        }
     }
 }
