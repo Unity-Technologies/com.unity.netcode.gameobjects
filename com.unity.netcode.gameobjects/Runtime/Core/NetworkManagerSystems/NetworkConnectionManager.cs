@@ -336,15 +336,19 @@ namespace Unity.Netcode
 
                 if (response.CreatePlayerObject)
                 {
-                    var playerPrefabHash = response.PlayerPrefabHash ?? NetworkManager.NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
+                    var prefabNetworkObject = NetworkConfig.PlayerPrefab.GetComponent<NetworkObject>();
+                    var playerPrefabHash = response.PlayerPrefabHash ?? prefabNetworkObject.GlobalObjectIdHash;
 
                     // Generate a SceneObject for the player object to spawn
+                    // Note: This is only to create the local NetworkObject,
+                    // many of the serialized properties of the player prefab
+                    // will be set when instantiated.
                     var sceneObject = new NetworkObject.SceneObject
                     {
                         OwnerClientId = ownerClientId,
                         IsPlayerObject = true,
                         IsSceneObject = false,
-                        HasTransform = true,
+                        HasTransform = prefabNetworkObject.SynchronizeTransform,
                         Hash = playerPrefabHash,
                         TargetClientId = ownerClientId,
                         Transform = new NetworkObject.SceneObject.TransformData
@@ -624,8 +628,20 @@ namespace Unity.Netcode
             }
             else if (NetworkManager != null && NetworkManager.IsListening)
             {
-                // Client only, send disconnect to server
-                NetworkManager.NetworkConfig.NetworkTransport.DisconnectLocalClient();
+                if (IsClient && IsListening)
+                {
+                    // Client only, send disconnect to server
+                    // If transport throws and exception, log the exception and
+                    // continue the shutdown sequence (or forever be shutting down)
+                    try
+                    {
+                        NetworkManager.NetworkConfig..NetworkTransport.DisconnectLocalClient();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
+                }
             }
         }
 
