@@ -203,12 +203,11 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Unloads any scenes that have not been assigned.
-        /// TODO: There needs to be a way to validate if a scene should be unloaded
-        /// or not (i.e. local client-side UI loaded additively)
         /// </summary>
         /// <param name="networkManager"></param>
         public void UnloadUnassignedScenes(NetworkManager networkManager = null)
         {
+            var sceneManager = networkManager.SceneManager;
             SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
             foreach (var sceneEntry in SceneNameToSceneHandles)
             {
@@ -217,7 +216,10 @@ namespace Unity.Netcode
                 {
                     if (!sceneHandleEntry.Value.IsAssigned)
                     {
-                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                        if (sceneManager.VerifySceneBeforeUnloading == null || sceneManager.VerifySceneBeforeUnloading.Invoke(sceneHandleEntry.Value.Scene))
+                        {
+                            m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene);
+                        }
                     }
                 }
             }
@@ -325,6 +327,23 @@ namespace Unity.Netcode
         public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
         {
             var sceneManager = networkManager.SceneManager;
+            // Don't let client's set this value
+            if (!networkManager.IsServer)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Clients should not set this value as it is automatically synchronized with the server's setting!");
+                }
+                return;
+            }
+            else // Warn users if they are changing this after there are clients already connected and synchronized
+            if (networkManager.ConnectedClientsIds.Count > (networkManager.IsServer ? 0 : 1) && sceneManager.ClientSynchronizationMode != mode)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                }
+            }
 
             // For additive client synchronization, we take into consideration scenes
             // already loaded.

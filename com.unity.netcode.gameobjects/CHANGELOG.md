@@ -7,8 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
 ## [Unreleased]
+
 ### Added
 
+- Added a way to access the GlobalObjectIdHash via PrefabIdHash for use in the Connection Approval Callback. (#2437)
 - Added `NetworkTransform.UseHalfFloatPrecision` property that, when enabled, will use half float values for position, rotation, and scale. This yields a 50% bandwidth savings a the cost of precision. (#2388)
 - Added `NetworkTransform.UseQuaternionSynchronization` property that, when enabled, will synchronize the entire quaternion. (#2388)
 - Added `NetworkTransform.UseQuaternionCompression` property that, when enabled, will use a smallest three implementation reducing a full quaternion synchronization update to the size of an unsigned integer. (#2388)
@@ -35,6 +37,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Changed `NetworkTransform` interpolation adjusts its interpolation "ticks ago" to be 2 ticks latent if it is owner authoritative and the instance is not the server or 1 tick latent if the instance is the server and/or is server authoritative. (#2388)
 - Updated `NetworkSceneManager` to migrate dynamically spawned `NetworkObject`s with `DestroyWithScene` set to false into the active scene if their current scene is unloaded. (#2383)
 - Updated the server to synchronize its local `NetworkSceneManager.ClientSynchronizationMode` during the initial client synchronization. (#2383)
+- Made sure the `CheckObjectVisibility` delegate is checked and applied, upon `NetworkShow` attempt. Found while supporting (#2454), although this is not a fix for this (already fixed) issue. (#2463)
 
 ### Fixed
 
@@ -48,7 +51,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 - Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 
-## [1.3.0]
+## [1.3.0] - 2023-03-20
 
 ### Added
 
@@ -57,7 +60,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 - The UTP component UI has been updated to be more user-friendly for new users by adding a simple toggle to switch between local-only (127.0.0.1) and remote (0.0.0.0) binding modes, using the toggle "Allow Remote Connections" (#2408)
-- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.1.
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.3. (#2450)
 - `NetworkShow()` of `NetworkObject`s are delayed until the end of the frame to ensure consistency of delta-driven variables like `NetworkList`.
 - Dirty `NetworkObject` are reset at end-of-frame and not at serialization time.
 - `NetworkHide()` of an object that was just `NetworkShow()`n produces a warning, as remote clients will _not_ get a spawn/despawn pair.
