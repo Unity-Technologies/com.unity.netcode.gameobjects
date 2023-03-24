@@ -9,6 +9,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using System.Runtime.CompilerServices;
 using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -144,8 +145,73 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </remarks>
         protected bool m_BypassConnectionTimeout { get; set; }
 
-        protected virtual bool m_EnableTimeTravel { get; set; } = false;
+        /// <summary>
+        /// Enables "Time Travel" within the test, which swaps the time provider for the SDK from Unity's
+        /// <see cref="Time"/> class to <see cref="MockTimeProvider"/>, and also swaps the transport implementation
+        /// from <see cref="UnityTransport"/> to <see cref="MockTransport"/>.
+        ///
+        /// This enables five important things that help with both performance and determinism of tests that involve a
+        /// lot of time and waiting:
+        /// 1) It allows time to move in a completely deterministic way (testing that something happens after n seconds,
+        /// the test will always move exactly n seconds with no chance of any variability in the timing),
+        /// 2) It allows skipping periods of time without actually waiting that amount of time, while still simulating
+        /// SDK frames as if that time were passing,
+        /// 3) It dissociates the SDK's update loop from Unity's update loop, allowing us to simulate SDK frame updates
+        /// without waiting for Unity to process things like physics, animation, and rendering that aren't relevant to
+        /// the test,
+        /// 4) It dissociates the SDK's messaging system from the networking hardware, meaning there's no delay between
+        /// a message being sent and it being received, allowing us to deterministically rely on the message being
+        /// received within specific time frames for the test, and
+        /// 5) It allows tests to be written without the use of coroutines, which not only improves the test's runtime,
+        /// but also results in easier-to-read callstacks and removes the possibility for an assertion to result in the
+        /// test hanging.
+        ///
+        /// When time travel is enabled, the following methods become available:
+        ///
+        /// <see cref="TimeTravel"/>: Simulates a specific number of frames passing over a specific time period
+        /// <see cref="TimeTravelToNextTick"/>: Skips forward to the next tick, siumlating at the current application frame rate
+        /// <see cref="WaitForConditionOrTimeOutWithTimeTravel(System.Func{bool},int)"/>: Simulates frames at the application frame rate until the given condition is true
+        /// <see cref="WaitForMessageReceivedWithTimeTravel{T}"/>: Simulates frames at the application frame rate until the required message is received
+        /// <see cref="WaitForMessagesReceivedWithTimeTravel"/>: Simulates frames at the application frame rate until the required messages are received
+        /// <see cref="StartServerAndClientsWithTimeTravel"/>: Starts a server and client and allows them to connect via simulated frames
+        /// <see cref="CreateAndStartNewClientWithTimeTravel"/>: Creates a client and waits for it to connect via simulated frames
+        /// <see cref="WaitForClientsConnectedOrTimeOutWithTimeTravel(Unity.Netcode.NetworkManager[])"/> Simulates frames at the application frame rate until the given clients are connected
+        /// <see cref="StopOneClientWithTimeTravel"/>: Stops a client and simulates frames until it's fully disconnected.
+        ///
+        /// When time travel is enabled, <see cref="NetcodeIntegrationTest"/> will automatically use these in its methods
+        /// when doing things like automatically connecting clients during SetUp.
+        ///
+        /// Additionally, the following methods replace their non-time-travel equivalents with variants that are not coroutines:
+        /// <see cref="OnTimeTravelStartedServerAndClients"/> - called when server and clients are started
+        /// <see cref="OnTimeTravelServerAndClientsConnected"/> - called when server and clients are connected
+        ///
+        /// Note that all of the non-time travel functions can still be used even when time travel is enabled - this is
+        /// sometimes needed for, e.g., testing NetworkAnimator, where the unity update loop needs to run to process animations.
+        /// However, it's VERY important to note here that, because the SDK will not be operating based on real-world time
+        /// but based on the frozen time that's locked in from MockTimeProvider, actions that pass 10 seconds apart by
+        /// real-world clock time will be perceived by the SDK as having happened simultaneously if you don't call
+        /// <see cref="MockTimeProvider.TimeTravel"/> to cover the equivalent time span in the mock time provider.
+        /// (Calling <see cref="MockTimeProvider.TimeTravel"/> instead of <see cref="NetcodeIntegrationTest.TimeTravel"/>
+        /// will move time forward without simulating any frames, which, in the case where real-world time has passed,
+        /// is likely more desirable). In most cases, this desynch won't affect anything, but it is worth noting that
+        /// it happens just in case a tested system depends on both the unity update loop happening *and* time moving forward.
+        /// </summary>
+        protected virtual bool m_EnableTimeTravel => false;
+
+        /// <summary>
+        /// If this is false, SetUp will call OnInlineSetUp instead of OnSetUp.
+        /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
+        /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
+        /// method that called it for a full frame after it returns.
+        /// </summary>
         protected virtual bool m_SetupIsACoroutine => true;
+
+        /// <summary>
+        /// If this is false, TearDown will call OnInlineTearDown instead of OnTearDown.
+        /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
+        /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
+        /// method that called it for a full frame after it returns.
+        /// </summary>
         protected virtual bool m_TearDownIsACoroutine => true;
 
         /// <summary>
@@ -1024,6 +1090,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             timeOutHelper.Stop();
         }
 
+
+        /// <summary>
+        /// Waits for the function condition to return true or it will time out. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
+        /// </summary>
         public bool WaitForConditionOrTimeOutWithTimeTravel(Func<bool> checkForCondition, int maxTries = 60)
         {
             if (checkForCondition == null)
@@ -1080,7 +1151,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// This version accepts an IConditionalPredicate implementation to provide
-        /// more flexibility for checking complex conditional cases.
+        /// more flexibility for checking complex conditional cases. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
         public bool WaitForConditionOrTimeOutWithTimeTravel(IConditionalPredicate conditionalPredicate, int maxTries = 60)
         {
@@ -1118,7 +1190,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
-        /// have connected or it will time out.
+        /// have connected or it will time out. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
         /// <param name="clientsToCheck">An array of clients to be checked</param>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
@@ -1141,7 +1214,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         /// <summary>
         /// Overloaded method that just passes in all clients to
-        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/>
+        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/> Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
         /// </summary>
         protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel()
         {
@@ -1419,8 +1493,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <summary>
         /// Simulate a number of frames passing over a specific amount of time.
         /// The delta time simulated for each frame will be evenly divided as time/numFrames
-        /// This will only simulate the netcode update loop, and will not simulate
-        /// any Unity update processes (physics, etc)
+        /// This will only simulate the netcode update loop, as well as update events on
+        /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
         /// </summary>
         /// <param name="amountOfTimeInSeconds"></param>
         /// <param name="numFramesToSimulate"></param>
@@ -1434,6 +1508,9 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
         }
 
+        /// <summary>
+        /// Helper function to time travel exactly one tick's worth of time at the current frame and tick rates.
+        /// </summary>
         public static void TimeTravelToNextTick()
         {
             var timePassed = 1.0f / k_DefaultTickRate;
@@ -1447,6 +1524,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             TimeTravel(timePassed, frames);
         }
 
+        /// <summary>
+        /// Simulates one SDK frame. This can be used even without TimeTravel, though it's of somewhat less use
+        /// without TimeTravel, as, without the mock transport, it will likely not provide enough time for any
+        /// sent messages to be received even if called dozens of times.
+        /// </summary>
         public static void SimulateOneFrame()
         {
             foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
