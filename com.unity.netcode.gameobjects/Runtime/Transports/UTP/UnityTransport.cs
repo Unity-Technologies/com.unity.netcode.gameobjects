@@ -637,7 +637,7 @@ namespace Unity.Netcode.Transports.UTP
             {
                 Address = ipv4Address,
                 Port = port,
-                ServerListenAddress = listenAddress ?? string.Empty
+                ServerListenAddress = listenAddress ?? ipv4Address
             };
 
             SetProtocol(ProtocolType.UnityTransport);

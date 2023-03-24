@@ -114,11 +114,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenHandlingIncomingData_ReceiveIsNotCalledBeforeProcessingIncomingMessageQueue()
+        public unsafe void WhenHandlingIncomingData_ReceiveIsNotCalledBeforeProcessingIncomingMessageQueue()
         {
             var batchHeader = new BatchHeader
             {
-                BatchSize = 1
+                BatchCount = 1
             };
             var messageHeader = new MessageHeader
             {
@@ -137,6 +137,17 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
 
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new BatchHeader
+                {
+                    Magic = BatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchCount = 1
+                };
+                writer.WriteValue(batchHeader);
+
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
@@ -149,11 +160,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenReceivingAMessageAndProcessingMessageQueue_ReceiveMethodIsCalled()
+        public unsafe void WhenReceivingAMessageAndProcessingMessageQueue_ReceiveMethodIsCalled()
         {
             var batchHeader = new BatchHeader
             {
-                BatchSize = 1
+                BatchCount = 1
             };
             var messageHeader = new MessageHeader
             {
@@ -170,6 +181,17 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
 
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new BatchHeader
+                {
+                    Magic = BatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchCount = 1
+                };
+                writer.WriteValue(batchHeader);
+
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
@@ -184,11 +206,11 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenReceivingMultipleMessagesAndProcessingMessageQueue_ReceiveMethodIsCalledMultipleTimes()
+        public unsafe void WhenReceivingMultipleMessagesAndProcessingMessageQueue_ReceiveMethodIsCalledMultipleTimes()
         {
             var batchHeader = new BatchHeader
             {
-                BatchSize = 2
+                BatchCount = 2
             };
             var messageHeader = new MessageHeader
             {
@@ -208,6 +230,17 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message2);
+
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new BatchHeader
+                {
+                    Magic = BatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchCount = 2
+                };
+                writer.WriteValue(batchHeader);
 
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
