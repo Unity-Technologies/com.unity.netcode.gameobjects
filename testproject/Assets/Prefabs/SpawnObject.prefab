@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 771575417923360831}
   - component: {fileID: -143509807225093868}
   - component: {fileID: 4600632750638426092}
+  - component: {fileID: 4195172959287703832}
   m_Layer: 9
   m_Name: SpawnObject
   m_TagString: GenericObject
@@ -163,6 +164,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 0
 --- !u!33 &771575417923360817
@@ -258,7 +260,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   IsRegisteredPoolObject: 0
   IsRemovedFromPool: 0
-  m_MoveRandomly: 0
+  m_MoveRandomly: 1
   m_Rotate: 1
   m_RotationAmount: {x: 0, y: 3, z: 0}
   m_TestClientSideNotifcation: 0
@@ -284,8 +286,24 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
+  SlerpPosition: 0
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.01
   ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 1
+--- !u!114 &4195172959287703832
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771575417923360811}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f6c0be61502bb534f922ebb746851216, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

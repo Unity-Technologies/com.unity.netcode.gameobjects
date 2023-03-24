@@ -331,7 +331,7 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"Timed out waiting for all states entered to match!");
             // Since the com.unity.netcode.components does not allow test project to access its internals
             // during runtime, this is only used when running test runner from within the editor
-#if UNITY_EDITOR
+
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);
             bool rotateToggle = true;
@@ -344,7 +344,7 @@ namespace TestProject.RuntimeTests
                 yield return waitForSeconds;
                 rotateToggle = !rotateToggle;
             }
-#endif
+
             CheckStateEnterCount.ResetTest();
             if (m_EnableVerboseDebug)
             {
@@ -666,7 +666,7 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
             var networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
             var serverAnimatorTestHelper = objectInstance.GetComponent<AnimatorTestHelper>();
-            m_ServerNetworkManager.OnClientDisconnectCallback += ServerNetworkManager_OnClientDisconnectCallback;
+
             // Wait for it to spawn server-side
             yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
             AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
@@ -677,26 +677,38 @@ namespace TestProject.RuntimeTests
 
             var clientAnimatorTestHelper = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].Values.Where((c) => c.GetComponent<AnimatorTestHelper>() != null).First().GetComponent<AnimatorTestHelper>();
             Assert.IsNotNull(clientAnimatorTestHelper, $"Could not find the client side {nameof(AnimatorTestHelper)}!");
-            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Client and Server ++++++++++++++++++ ");
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Clients and Server ++++++++++++++++++ ");
             clientAnimatorTestHelper.OnCheckIsServerIsClient += Client_OnCheckIsServerIsClient;
 
-            // Now shutdown the client-side to verify this fix.
+            // Now shutdown the clients to verify this fix.
             // The client-side spawned NetworkObject should get despawned
             // and invoke the Client_OnCheckIsServerIsClient action.
-            m_ClientNetworkManagers[0].Shutdown(true);
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.Shutdown(true);
+            }
 
-            // Wait for the server to receive the client disconnection notification
-            yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
+            // Wait for all clients to be disconnected
+            yield return WaitForConditionOrTimeOut(AllClientsDisconnected);
             AssertOnTimeout($"Timed out waiting for the client to disconnect!");
 
             Assert.IsTrue(m_ClientTestHelperDespawned, $"Client-Side {nameof(AnimatorTestHelper)} did not have a valid IsClient setting!");
 
             serverAnimatorTestHelper.OnCheckIsServerIsClient += Server_OnCheckIsServerIsClient;
-            m_ServerNetworkManager.OnClientDisconnectCallback -= ServerNetworkManager_OnClientDisconnectCallback;
 
             // Now shutdown the server-side to verify this fix.
             // The server-side spawned NetworkObject should get despawned
             // and invoke the Server_OnCheckIsServerIsClient action.
+            var playerPrefabIndex = 0;
+            for (int i = 0; i < m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs.Count; i++)
+            {
+                if (m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[i].Prefab.name.Contains("Player"))
+                {
+                    playerPrefabIndex = i;
+                    break;
+                }
+            }
+
             m_ServerNetworkManager.Shutdown();
 
             yield return s_DefaultWaitForTick;
@@ -712,17 +724,20 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            OnCreatePlayerPrefab();
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
-            m_ClientNetworkManagers[0].StartClient();
 
-            // Wait for the server and client to start and connect
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+                clientNetworkManager.StartClient();
+            }
+
+            // Wait for the server and clients to start and connect
             yield return WaitForClientsConnectedOrTimeOut();
-
+            AssertOnTimeout($"Client Failed to Connect!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }
 
@@ -751,11 +766,18 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Verifies the client has disconnected
+        /// Wait condition to determine if all clients are disconnected and no longer listening.
         /// </summary>
-        private void ServerNetworkManager_OnClientDisconnectCallback(ulong obj)
+        private bool AllClientsDisconnected()
         {
-            m_ClientDisconnected = true;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (client.IsConnectedClient || client.IsListening || client.ShutdownInProgress)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

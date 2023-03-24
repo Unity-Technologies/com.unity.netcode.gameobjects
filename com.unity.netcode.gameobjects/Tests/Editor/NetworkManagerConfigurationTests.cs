@@ -125,6 +125,11 @@ namespace Unity.Netcode.EditorTests
             var overridingTargetPrefab = new GameObject("Overriding Target Prefab").AddComponent<NetworkObject>();
             var sourcePrefabToOverride = new GameObject("Overriding Source Prefab").AddComponent<NetworkObject>();
 
+            regularPrefab.GlobalObjectIdHash = 1;
+            overriddenPrefab.GlobalObjectIdHash = 2;
+            overridingTargetPrefab.GlobalObjectIdHash = 3;
+            sourcePrefabToOverride.GlobalObjectIdHash = 4;
+
             networkConfig.OldPrefabList = new List<NetworkPrefab>();
             networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = regularPrefab.gameObject });
             networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 });
@@ -163,8 +168,13 @@ namespace Unity.Netcode.EditorTests
             networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
 
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
@@ -208,6 +218,10 @@ namespace Unity.Netcode.EditorTests
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
+
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
@@ -249,6 +263,10 @@ namespace Unity.Netcode.EditorTests
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
 
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });

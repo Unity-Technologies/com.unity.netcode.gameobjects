@@ -17,6 +17,28 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        /// <summary>
+        /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
+        /// </summary>
+        [HideInInspector]
+        public uint PrefabIdHash
+        {
+            get
+            {
+                foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    if (prefab.Prefab == gameObject)
+                    {
+                        return GlobalObjectIdHash;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        private bool m_IsPrefab;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -76,6 +98,18 @@ namespace Unity.Netcode
         public bool IsPlayerObject { get; internal set; }
 
         /// <summary>
+        /// Determines if the associated NetworkObject's transform will get
+        /// synchronized when spawned.
+        /// </summary>
+        /// <remarks>
+        /// For things like in-scene placed NetworkObjects that have no visual
+        /// components can help reduce the instance's initial synchronization
+        /// bandwidth cost. This can also be useful for UI elements that have
+        /// a predetermined fixed position.
+        /// </remarks>
+        public bool SynchronizeTransform = true;
+
+        /// <summary>
         /// Gets if the object is the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkManager != null && IsPlayerObject && OwnerClientId == NetworkManager.LocalClientId;
@@ -104,6 +138,55 @@ namespace Unity.Netcode
         /// Gets whether or not the object should be automatically removed when the scene is unloaded.
         /// </summary>
         public bool DestroyWithScene { get; set; }
+
+        /// <summary>
+        /// When set to true and the active scene is changed, this will automatically migrate the <see cref="NetworkObject"/>
+        /// into the new active scene on both the server and client instances.
+        /// </summary>
+        /// <remarks>
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        ///
+        /// If there are more than one scenes loaded and the currently active scene is unloaded, then typically
+        /// the <see cref="SceneManager"/> will automatically assign a new active scene. Similar to <see cref="DestroyWithScene"/>
+        /// being set to <see cref="false"/>, this prevents any <see cref="NetworkObject"/> from being destroyed
+        /// with the unloaded active scene by migrating it into the automatically assigned active scene.
+        /// Additionally, this is can be useful in some seamless scene streaming implementations.
+        /// Note:
+        /// Only having <see cref="ActiveSceneSynchronization"/> set to true will *not* synchronize clients when
+        /// changing a <see cref="NetworkObject"/>'s scene via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/>.
+        /// To synchronize clients of a <see cref="NetworkObject"/>'s scene being changed via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/>,
+        /// make sure <see cref="SceneMigrationSynchronization"/> is enabled (it is by default).
+        /// </remarks>
+        public bool ActiveSceneSynchronization;
+
+        /// <summary>
+        /// When enabled (the default), if a <see cref="NetworkObject"/> is migrated to a different scene (active or not)
+        /// via <see cref="SceneManager.MoveGameObjectToScene(GameObject, Scene)"/> on the server side all client
+        /// instances will be synchronized  and the <see cref="NetworkObject"/> migrated into the newly assigned scene.
+        /// The updated scene migration will get synchronized with late joining clients as well.
+        /// </summary>
+        /// <remarks>
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        /// Note:
+        /// You can have both <see cref="ActiveSceneSynchronization"/> and <see cref="SceneMigrationSynchronization"/> enabled.
+        /// The primary difference between the two is that <see cref="SceneMigrationSynchronization"/> only synchronizes clients
+        /// when the server migrates a <see cref="NetworkObject"/> to a new scene. If the scene is unloaded and <see cref="DestroyWithScene"/>
+        /// is <see cref="true"/> and <see cref="ActiveSceneSynchronization"/> is <see cref="false"/> and the scene is not the currently
+        /// active scene, then the <see cref="NetworkObject"/> will be destroyed.
+        /// </remarks>
+        public bool SceneMigrationSynchronization = true;
+
+        /// <summary>
+        /// Notifies when the NetworkObject is migrated into a new scene
+        /// </summary>
+        /// <remarks>
+        /// - <see cref="ActiveSceneSynchronization"/> or <see cref="SceneMigrationSynchronization"/> (or both) need to be enabled
+        /// - This only applies to dynamically spawned <see cref="NetworkObject"/>s.
+        /// - This only works when using integrated scene management (<see cref="NetworkSceneManager"/>).
+        /// </remarks>
+        public Action OnMigratedToNewScene;
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -188,6 +271,11 @@ namespace Unity.Netcode
         /// </summary>
         internal int SceneOriginHandle = 0;
 
+        /// <summary>
+        /// The server-side scene origin handle
+        /// </summary>
+        internal int NetworkSceneHandle = 0;
+
         private Scene m_SceneOrigin;
         /// <summary>
         /// The scene where the NetworkObject was first instantiated
@@ -263,6 +351,15 @@ namespace Unity.Netcode
             if (Observers.Contains(clientId))
             {
                 throw new VisibilityChangeException("The object is already visible");
+            }
+
+            if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {gameObject.name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
+                }
+                return;
             }
 
             NetworkManager.MarkObjectForShowingTo(this, clientId);
@@ -577,6 +674,22 @@ namespace Unity.Netcode
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
+
+        /// <summary>
+        /// Returns the last known cached WorldPositionStays value for this NetworkObject
+        /// </summary>
+        /// <remarks>
+        /// When parenting NetworkObjects, the optional WorldPositionStays value is cached and synchronized with clients.
+        /// This method provides access to the instance relative cached value.
+        /// <see cref="TrySetParent(GameObject, bool)"/>
+        /// <see cref="TrySetParent(NetworkObject, bool)"/>
+        /// <see cref="TrySetParent(Transform, bool)"/>
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool WorldPositionStays()
+        {
+            return m_CachedWorldPositionStays;
+        }
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -1118,6 +1231,18 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 5, value);
             }
 
+            /// <summary>
+            /// Even though the server sends notifications for NetworkObjects that get
+            /// destroyed when a scene is unloaded, we want to synchronize this so
+            /// the client side can use it as part of a filter for automatically migrating
+            /// to the current active scene when its scene is unloaded. (only for dynamically spawned)
+            /// </summary>
+            public bool DestroyWithScene
+            {
+                get => ByteUtility.GetBit(m_BitField, 6);
+                set => ByteUtility.SetBit(ref m_BitField, 6, value);
+            }
+
             //If(Metadata.HasParent)
             public ulong ParentObjectId;
 
@@ -1160,7 +1285,7 @@ namespace Unity.Netcode
 
                 var writeSize = 0;
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                writeSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                writeSize += FastBufferWriter.GetWriteSize<int>();
 
                 if (!writer.TryBeginWrite(writeSize))
                 {
@@ -1172,14 +1297,9 @@ namespace Unity.Netcode
                     writer.WriteValue(Transform);
                 }
 
-                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
-                // this to locate their local instance of the in-scene placed NetworkObject instance.
-                // Only written for in-scene placed NetworkObjects.
-                if (IsSceneObject)
-                {
-                    writer.WriteValue(OwnerObject.GetSceneOriginHandle());
-                }
+                // The NetworkSceneHandle is the server-side relative
+                // scene handle that the NetworkObject resides in.
+                writer.WriteValue(OwnerObject.GetSceneOriginHandle());
 
                 // Synchronize NetworkVariables and NetworkBehaviours
                 var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
@@ -1205,7 +1325,7 @@ namespace Unity.Netcode
 
                 var readSize = 0;
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0;
-                readSize += IsSceneObject ? FastBufferWriter.GetWriteSize<int>() : 0;
+                readSize += FastBufferWriter.GetWriteSize<int>();
 
                 // Try to begin reading the remaining bytes
                 if (!reader.TryBeginRead(readSize))
@@ -1218,14 +1338,9 @@ namespace Unity.Netcode
                     reader.ReadValue(out Transform);
                 }
 
-                // In-Scene NetworkObjects are uniquely identified NetworkPrefabs defined by their
-                // NetworkSceneHandle and GlobalObjectIdHash. Client-side NetworkSceneManagers use
-                // this to locate their local instance of the in-scene placed NetworkObject instance.
-                // Only read for in-scene placed NetworkObjects
-                if (IsSceneObject)
-                {
-                    reader.ReadValue(out NetworkSceneHandle);
-                }
+                // The NetworkSceneHandle is the server-side relative
+                // scene handle that the NetworkObject resides in.
+                reader.ReadValue(out NetworkSceneHandle);
             }
         }
 
@@ -1265,7 +1380,7 @@ namespace Unity.Netcode
                 var synchronizationCount = (byte)0;
                 foreach (var childBehaviour in ChildNetworkBehaviours)
                 {
-                    if (childBehaviour.Synchronize(ref serializer))
+                    if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
                         synchronizationCount++;
                     }
@@ -1304,7 +1419,7 @@ namespace Unity.Netcode
                 {
                     serializer.SerializeValue(ref networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer);
+                    networkBehaviour.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
@@ -1317,6 +1432,7 @@ namespace Unity.Netcode
                 OwnerClientId = OwnerClientId,
                 IsPlayerObject = IsPlayerObject,
                 IsSceneObject = IsSceneObject ?? true,
+                DestroyWithScene = DestroyWithScene,
                 Hash = HostCheckForGlobalObjectIdHashOverride(),
                 OwnerObject = this,
                 TargetClientId = targetClientId
@@ -1352,7 +1468,7 @@ namespace Unity.Netcode
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.HasTransform = true;
+                obj.HasTransform = SynchronizeTransform;
 
                 // We start with the default AutoObjectParentSync values to determine which transform space we will
                 // be synchronizing clients with.
@@ -1435,9 +1551,124 @@ namespace Unity.Netcode
             networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
             // Spawn the NetworkObject
-            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, false);
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
 
             return networkObject;
+        }
+
+        /// <summary>
+        /// Subscribes to changes in the currently active scene
+        /// </summary>
+        /// <remarks>
+        /// Only for dynamically spawned NetworkObjects
+        /// </remarks>
+        internal void SubscribeToActiveSceneForSynch()
+        {
+            if (ActiveSceneSynchronization)
+            {
+                if (IsSceneObject.HasValue && !IsSceneObject.Value)
+                {
+                    // Just in case it is a recycled NetworkObject, unsubscribe first
+                    SceneManager.activeSceneChanged -= CurrentlyActiveSceneChanged;
+                    SceneManager.activeSceneChanged += CurrentlyActiveSceneChanged;
+                }
+            }
+        }
+
+        /// <summary>
+        /// If AutoSynchActiveScene is enabled, then this is the callback that handles updating
+        /// a NetworkObject's scene information.
+        /// </summary>
+        private void CurrentlyActiveSceneChanged(Scene current, Scene next)
+        {
+            // Early exit if there is no NetworkManager assigned, the NetworkManager is shutting down, the NetworkObject
+            // is not spawned, or an in-scene placed NetworkObject
+            if (NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned || IsSceneObject != false)
+            {
+                return;
+            }
+            // This check is here in the event a user wants to disable this for some reason but also wants
+            // the NetworkObject to synchronize to changes in the currently active scene at some later time.
+            if (ActiveSceneSynchronization)
+            {
+                // Only dynamically spawned NetworkObjects that are not already in the newly assigned active scene will migrate
+                // and update their scene handles
+                if (IsSceneObject.HasValue && !IsSceneObject.Value && gameObject.scene != next && gameObject.transform.parent == null)
+                {
+                    SceneManager.MoveGameObjectToScene(gameObject, next);
+                    SceneChangedUpdate(next);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Handles updating the NetworkObject's tracked scene handles
+        /// </summary>
+        internal void SceneChangedUpdate(Scene scene, bool notify = false)
+        {
+            // Avoiding edge case scenarios, if no NetworkSceneManager exit early
+            if (NetworkManager.SceneManager == null)
+            {
+                return;
+            }
+
+            SceneOriginHandle = scene.handle;
+            // Clients need to update the NetworkSceneHandle
+            if (!NetworkManager.IsServer && NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle.ContainsKey(SceneOriginHandle))
+            {
+                NetworkSceneHandle = NetworkManager.SceneManager.ClientSceneHandleToServerSceneHandle[SceneOriginHandle];
+            }
+            else if (NetworkManager.IsServer)
+            {
+                // Since the server is the source of truth for the NetworkSceneHandle,
+                // the NetworkSceneHandle is the same as the SceneOriginHandle.
+                NetworkSceneHandle = SceneOriginHandle;
+            }
+            else // Otherwise, the client did not find the client to server scene handle
+            if (NetworkManager.LogLevel == LogLevel.Developer)
+            {
+                // There could be a scenario where a user has some client-local scene loaded that they migrate the NetworkObject
+                // into, but that scenario seemed very edge case and under most instances a user should be notified that this
+                // server - client scene handle mismatch has occurred. It also seemed pertinent to make the message replicate to
+                // the server-side too.
+                NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{gameObject.name}] Server - " +
+                    $"client scene mismatch detected! Client-side scene handle ({SceneOriginHandle}) for scene ({gameObject.scene.name})" +
+                    $"has no associated server side (network) scene handle!");
+            }
+            OnMigratedToNewScene?.Invoke();
+
+            // Only the server side will notify clients of non-parented NetworkObject scene changes
+            if (NetworkManager.IsServer && notify && transform.parent == null)
+            {
+                NetworkManager.SceneManager.NotifyNetworkObjectSceneChanged(this);
+            }
+        }
+
+        /// <summary>
+        /// Update
+        /// Detects if a NetworkObject's scene has changed for both server and client instances
+        /// </summary>
+        /// <remarks>
+        /// About In-Scene Placed NetworkObjects:
+        /// Since the same scene can be loaded more than once and in-scene placed NetworkObjects GlobalObjectIdHash
+        /// values are only unique to the scene asset itself (and not per scene instance loaded), we will not be able
+        /// to add this same functionality to in-scene placed NetworkObjects until we have a way to generate
+        /// per-NetworkObject-instance unique GlobalObjectIdHash values for in-scene placed NetworkObjects.
+        /// </remarks>
+        private void Update()
+        {
+            // Early exit if SceneMigrationSynchronization is disabled, there is no NetworkManager assigned,
+            // the NetworkManager is shutting down, the NetworkObject is not spawned, it is an in-scene placed
+            // NetworkObject, or the GameObject's current scene handle is the same as the SceneOriginHandle
+            if (!SceneMigrationSynchronization || NetworkManager == null || NetworkManager.ShutdownInProgress || !IsSpawned
+                || IsSceneObject != false || gameObject.scene.handle == SceneOriginHandle)
+            {
+                return;
+            }
+
+            // Otherwise, this has to be a dynamically spawned NetworkObject that has been
+            // migrated to a new scene.
+            SceneChangedUpdate(gameObject.scene, true);
         }
 
         /// <summary>

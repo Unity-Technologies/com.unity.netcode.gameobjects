@@ -42,8 +42,7 @@ namespace TestProject.RuntimeTests
 
         protected override IEnumerator OnStartedServerAndClients()
         {
-            m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
-            m_ServerNetworkManager.SceneManager.ClientSynchronizationMode = LoadSceneMode.Additive;
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             return base.OnStartedServerAndClients();
         }
 

@@ -10,12 +10,18 @@ using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
-    [TestFixture(HostOrServer.Host)]
-    [TestFixture(HostOrServer.Server)]
+    [TestFixture(HostOrServer.Host, LoadSceneMode.Single)]
+    [TestFixture(HostOrServer.Host, LoadSceneMode.Additive)]
+    [TestFixture(HostOrServer.Server, LoadSceneMode.Single)]
+    [TestFixture(HostOrServer.Server, LoadSceneMode.Additive)]
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
-        public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer) : base(hostOrServer) { }
+
+        public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer, LoadSceneMode loadSceneMode) : base(hostOrServer)
+        {
+            m_LoadSceneMode = loadSceneMode;
+        }
 
         private const string k_BaseUnitTestSceneName = "UnitTestBaseScene";
         private const string k_MultiInstanceTestScenename = "AdditiveSceneMultiInstance";
@@ -56,6 +62,7 @@ namespace TestProject.RuntimeTests
             m_ServerVerificationAction = DataPoolVerifySceneServer;
             m_ServerNetworkManager.SceneManager.OnSceneEvent += ServerSceneManager_OnSceneEvent;
             m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(m_LoadSceneMode);
             foreach (var client in m_ClientNetworkManagers)
             {
                 client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
@@ -142,17 +149,15 @@ namespace TestProject.RuntimeTests
         /// <summary>
         /// Initializes the m_ShouldWaitList
         /// </summary>
-        private void InitializeSceneTestInfo(LoadSceneMode clientSynchronizationMode, bool enableSceneVerification = false)
+        private void InitializeSceneTestInfo(bool enableSceneVerification = false)
         {
             m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = NetworkManager.ServerClientId, ShouldWait = false });
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = m_ServerVerificationAction;
-            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             m_ScenesLoaded.Clear();
             foreach (var manager in m_ClientNetworkManagers)
             {
                 m_ShouldWaitList.Add(new SceneTestInfo() { ClientId = manager.LocalClientId, ShouldWait = false });
                 manager.SceneManager.VerifySceneBeforeLoading = m_ClientVerificationAction;
-                manager.SceneManager.SetClientSynchronizationMode(clientSynchronizationMode);
             }
         }
 
@@ -307,15 +312,14 @@ namespace TestProject.RuntimeTests
         /// Will load from 1 to 32 scenes in both single and additive ClientSynchronizationMode
         /// </summary>
         [UnityTest]
-        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(LoadSceneMode.Single, LoadSceneMode.Additive)] LoadSceneMode clientSynchronizationMode, [Values(1, 2, 4, 6)] int numberOfScenesToLoad)
+        public IEnumerator SceneEventDataPoolSceneLoadingTest([Values(1, 2, 4, 6)] int numberOfScenesToLoad)
         {
-            m_LoadSceneMode = clientSynchronizationMode;
             m_CanStartServerOrClients = true;
 
             yield return StartServerAndClients();
 
             // Now prepare for the loading and unloading additive scene testing
-            InitializeSceneTestInfo(clientSynchronizationMode, true);
+            InitializeSceneTestInfo(true);
 
             yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");

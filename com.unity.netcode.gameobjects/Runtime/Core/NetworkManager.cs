@@ -135,15 +135,55 @@ namespace Unity.Netcode
 
             public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
             {
-                if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
-                    (client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != typeof(ConnectionRequestMessage))))
+                if (m_NetworkManager.IsServer)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (messageType == typeof(ConnectionApprovedMessage))
                     {
-                        NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        }
+                        return false;
+                    }
+                    if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
+                                     (client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != typeof(ConnectionRequestMessage))))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogWarning($"Message received from {nameof(senderId)}={senderId} before it has been accepted");
+                        }
+
+                        return false;
                     }
 
-                    return false;
+                    if (m_NetworkManager.ConnectedClients.TryGetValue(senderId, out NetworkClient connectedClient) && messageType == typeof(ConnectionRequestMessage))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        }
+
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (messageType == typeof(ConnectionRequestMessage))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogError($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        }
+                        return false;
+                    }
+                    if (m_NetworkManager.IsConnectedClient && messageType == typeof(ConnectionApprovedMessage))
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        {
+                            NetworkLog.LogError($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established. This should not happen. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Message Size: {messageContent.Length}. Message Content: {MessagingSystem.ByteArrayToString(messageContent.ToArray(), 0, messageContent.Length)}");
+                        }
+                        return false;
+                    }
                 }
 
                 return !m_NetworkManager.m_StopProcessingMessages;
@@ -383,9 +423,27 @@ namespace Unity.Netcode
         public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
-        /// The callback to invoke once the server is ready
+        /// This callback is invoked when the local server is started and listening for incoming connections.
         /// </summary>
         public event Action OnServerStarted = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client is ready
+        /// </summary>
+        public event Action OnClientStarted = null;
+
+        /// <summary>
+        /// This callback is invoked once the local server is stopped.
+        /// </summary>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping a host instance and <see cref="false"/> when stopping a server instance.</param>
+        public event Action<bool> OnServerStopped = null;
+
+        /// <summary>
+        /// The callback to invoke once the local client stops
+        /// </summary>
+        /// <remarks>The parameter states whether the client was running in host mode</remarks>
+        /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
+        public event Action<bool> OnClientStopped = null;
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -819,6 +877,7 @@ namespace Unity.Netcode
 
             IsListening = true;
 
+            OnClientStarted?.Invoke();
             return true;
         }
 
@@ -897,12 +956,13 @@ namespace Unity.Netcode
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
             // set prior to invoking OnClientConnected.
             InvokeOnClientConnectedCallback(LocalClientId);
-
-            OnServerStarted?.Invoke();
 
             return true;
         }
@@ -1115,8 +1175,6 @@ namespace Unity.Netcode
 
             ConnectionManager.LocalClient.SetRole(false, false);
 
-            this.UnregisterAllNetworkUpdates();
-
             if (NetworkTickSystem != null)
             {
                 NetworkTickSystem.Tick -= OnNetworkManagerTick;
@@ -1169,6 +1227,22 @@ namespace Unity.Netcode
             m_StopProcessingMessages = false;
 
             ClearClients();
+
+            if (wasClient)
+            {
+                OnClientStopped?.Invoke(wasServer);
+            }
+            if (wasServer)
+            {
+                OnServerStopped?.Invoke(wasClient);
+            }
+
+            // This cleans up the internal prefabs list
+            NetworkConfig?.Prefabs.Shutdown();
+
+            // Reset the configuration hash for next session in the event
+            // that the prefab list changes
+            NetworkConfig?.ClearConfigHash();
         }
 
         /// <inheritdoc />
@@ -1234,6 +1308,10 @@ namespace Unity.Netcode
 
             if (!m_ShuttingDown || !m_StopProcessingMessages)
             {
+                // This should be invoked just prior to the MessagingSystem
+                // processes its outbound queue.
+                SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
                 MessagingSystem.ProcessSendQueues();
                 NetworkMetricsManager.OnPostLateUpdate();
                 NetworkObject.VerifyParentingStatus();
