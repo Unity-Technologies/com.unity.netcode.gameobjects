@@ -32,10 +32,6 @@ namespace Unity.Netcode
         /// <summary>
         /// Default adjustment ratio
         /// </summary>
-        /// <remarks>
-        /// TODO 2023-Q2: This most likely will go away, but note that it was adjusted during preparation
-        /// to default to 0.2 as opposed to 0.1
-        /// </remarks>
         private const double k_DefaultAdjustmentRatio = 0.1d;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -84,6 +80,11 @@ namespace Unity.Netcode
         internal double LastSyncedServerTimeSec { get; private set; }
         internal double LastSyncedRttSec { get; private set; }
 
+        private NetworkConnectionManager m_ConnectionManager;
+        private NetworkTransport m_NetworkTransport;
+        private NetworkTickSystem m_NetworkTickSystem;
+        private int m_TimeSyncFrequencyTicks;
+
         /// <summary>
         /// The constructor class for <see cref="NetworkTickSystem"/>
         /// </summary>
@@ -99,12 +100,6 @@ namespace Unity.Netcode
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
         }
-
-        private NetworkConnectionManager m_ConnectionManager;
-        private NetworkTransport m_NetworkTransport;
-        private NetworkTickSystem m_NetworkTickSystem;
-
-        private int m_TimeSyncFrequencyTicks;
 
         /// <summary>
         /// The primary time system is initialized when a server-host or client is started
@@ -179,6 +174,9 @@ namespace Unity.Netcode
 #endif
         }
 
+        /// <summary>
+        /// Invoke when shutting down the NetworkManager
+        /// </summary>
         internal void Shutdown()
         {
             if (m_ConnectionManager.LocalClient.IsServer)
