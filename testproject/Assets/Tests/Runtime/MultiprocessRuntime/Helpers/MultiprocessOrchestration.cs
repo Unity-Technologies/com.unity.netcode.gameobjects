@@ -1,9 +1,9 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Unity.Netcode.MultiprocessRuntimeTests;
 using UnityEngine;
@@ -17,7 +17,7 @@ public class MultiprocessOrchestration
     public static DirectoryInfo MultiprocessDirInfo
     {
         private set => s_MultiprocessDirInfo = value;
-        get => s_MultiprocessDirInfo != null ? s_MultiprocessDirInfo : initMultiprocessDirinfo();
+        get => s_MultiprocessDirInfo ?? initMultiprocessDirinfo();
     }
     private static List<Process> s_Processes = new List<Process>();
     private static int s_TotalProcessCounter = 0;

@@ -1,6 +1,6 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 public class EnableDisableSceneNetworkObjectComponent : NetworkBehaviour
 {

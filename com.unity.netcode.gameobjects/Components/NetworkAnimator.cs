@@ -570,8 +570,10 @@ namespace Unity.Netcode.Components
 
             // We initialize the m_AnimationMessage for all instances in the event that
             // ownership or authority changes during runtime.
-            m_AnimationMessage = new AnimationMessage();
-            m_AnimationMessage.AnimationStates = new List<AnimationState>();
+            m_AnimationMessage = new AnimationMessage
+            {
+                AnimationStates = new List<AnimationState>()
+            };
 
             // Store off our current layer weights and create our animation
             // state entries per layer.
@@ -653,9 +655,13 @@ namespace Unity.Netcode.Components
             if (IsServer)
             {
                 m_ClientSendList = new List<ulong>(128);
-                m_ClientRpcParams = new ClientRpcParams();
-                m_ClientRpcParams.Send = new ClientRpcSendParams();
-                m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
+                m_ClientRpcParams = new ClientRpcParams
+                {
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = m_ClientSendList
+                    }
+                };
             }
 
             // Create a handler for state changes
@@ -698,10 +704,7 @@ namespace Unity.Netcode.Components
                 for (int layer = 0; layer < m_Animator.layerCount; layer++)
                 {
                     var synchronizationStateInfo = m_Animator.GetCurrentAnimatorStateInfo(layer);
-                    if (SynchronizationStateInfo != null)
-                    {
-                        SynchronizationStateInfo.Add(synchronizationStateInfo);
-                    }
+                    SynchronizationStateInfo?.Add(synchronizationStateInfo);
                     var stateHash = synchronizationStateInfo.fullPathHash;
                     var normalizedTime = synchronizationStateInfo.normalizedTime;
                     var isInTransition = m_Animator.IsInTransition(layer);
@@ -892,7 +895,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Helper function to get the cached value
         /// </summary>
-        unsafe private T GetValue<T>(ref AnimatorParamCache animatorParamCache)
+        private unsafe T GetValue<T>(ref AnimatorParamCache animatorParamCache)
         {
             T currentValue;
             fixed (void* value = animatorParamCache.Value)
@@ -907,7 +910,7 @@ namespace Unity.Netcode.Components
         /// If so, it fills out m_ParametersToUpdate with the indices of the parameters
         /// that have changed.  Returns true if any parameters changed.
         /// </summary>
-        unsafe private bool CheckParametersChanged()
+        private unsafe bool CheckParametersChanged()
         {
             m_ParametersToUpdate.Clear();
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)

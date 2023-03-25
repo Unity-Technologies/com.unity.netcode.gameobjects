@@ -2,12 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
-using Random = UnityEngine.Random;
 using UnityEngine;
+using UnityEngine.TestTools;
+using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -1165,12 +1165,14 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestManagedINetworkSerializableNetworkVariablesDeserializeInPlace()
         {
-            var variable = new NetworkVariable<ManagedNetworkSerializableType>();
-            variable.Value = new ManagedNetworkSerializableType
+            var variable = new NetworkVariable<ManagedNetworkSerializableType>
             {
-                InMemoryValue = 1,
-                Ints = new[] { 2, 3, 4 },
-                Str = "five"
+                Value = new ManagedNetworkSerializableType
+                {
+                    InMemoryValue = 1,
+                    Ints = new[] { 2, 3, 4 },
+                    Str = "five"
+                }
             };
 
             using var writer = new FastBufferWriter(1024, Allocator.Temp);
@@ -1195,12 +1197,14 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void TestUnmnagedINetworkSerializableNetworkVariablesDeserializeInPlace()
         {
-            var variable = new NetworkVariable<UnmanagedNetworkSerializableType>();
-            variable.Value = new UnmanagedNetworkSerializableType
+            var variable = new NetworkVariable<UnmanagedNetworkSerializableType>
             {
-                InMemoryValue = 1,
-                Int = 2,
-                Str = "three"
+                Value = new UnmanagedNetworkSerializableType
+                {
+                    InMemoryValue = 1,
+                    Int = 2,
+                    Str = "three"
+                }
             };
             using var writer = new FastBufferWriter(1024, Allocator.Temp);
             variable.WriteField(writer);

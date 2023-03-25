@@ -1,7 +1,7 @@
 using NUnit.Framework;
-using UnityEngine;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Netcode.EditorTests
 {

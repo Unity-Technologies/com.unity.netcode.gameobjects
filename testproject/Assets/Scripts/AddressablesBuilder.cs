@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class AddressablesBuilder
 {
-    static public void PreExport()
+    public static void PreExport()
     {
         if (AddressableAssetSettingsDefaultObject.Settings != null)
         {

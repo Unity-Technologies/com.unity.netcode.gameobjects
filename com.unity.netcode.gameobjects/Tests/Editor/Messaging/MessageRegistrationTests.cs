@@ -222,10 +222,11 @@ namespace Unity.Netcode.EditorTests
             {
                 var listMessages = new List<MessagingSystem.MessageWithHandler>();
 
-                var messageWithHandler = new MessagingSystem.MessageWithHandler();
-
-                messageWithHandler.MessageType = typeof(zzzLateLexicographicNetworkMessage);
-                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<zzzLateLexicographicNetworkMessage>;
+                var messageWithHandler = new MessagingSystem.MessageWithHandler
+                {
+                    MessageType = typeof(zzzLateLexicographicNetworkMessage),
+                    GetVersion = MessagingSystem.CreateMessageAndGetVersion<zzzLateLexicographicNetworkMessage>
+                };
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(ConnectionRequestMessage);

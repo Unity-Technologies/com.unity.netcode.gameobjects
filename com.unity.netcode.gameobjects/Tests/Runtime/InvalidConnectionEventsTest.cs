@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
+using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode.RuntimeTests

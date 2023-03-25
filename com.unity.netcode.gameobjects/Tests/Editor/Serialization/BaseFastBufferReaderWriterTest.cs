@@ -94,7 +94,7 @@ namespace Unity.Netcode.EditorTests
                 A = (byte)random.Next(),
                 B = (short)random.Next(),
                 C = (ushort)random.Next(),
-                D = (int)random.Next(),
+                D = random.Next(),
                 E = (uint)random.Next(),
                 F = ((long)random.Next() << 32) + random.Next(),
                 G = ((ulong)random.Next() << 32) + (ulong)random.Next(),
@@ -142,7 +142,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(int))
             {
-                RunTestWithWriteType((int)random.Next(), writeType);
+                RunTestWithWriteType(random.Next(), writeType);
             }
             else if (testType == typeof(uint))
             {
@@ -347,10 +347,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(long))
             {
                 RunTypeTestLocal(new[]{
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
                 }, writeType);
             }
             else if (testType == typeof(ulong))

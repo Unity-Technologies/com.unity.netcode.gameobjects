@@ -1,7 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

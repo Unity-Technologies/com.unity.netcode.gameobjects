@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Netcode.Components;
 using NUnit.Framework;
+using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -63,9 +63,9 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class ChildObjectComponent : NetworkBehaviour
     {
-        public readonly static List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
+        public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
         public static ChildObjectComponent ServerInstance { get; internal set; }
-        public readonly static Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
+        public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
 
         public static void Reset()
         {

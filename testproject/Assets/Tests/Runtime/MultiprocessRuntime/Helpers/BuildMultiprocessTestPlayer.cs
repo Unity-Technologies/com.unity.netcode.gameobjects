@@ -90,10 +90,12 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             var buildPathToUse = BuildPath;
             buildPathToUse += buildPathExtension;
 
-            var buildPlayerOptions = new BuildPlayerOptions();
-            buildPlayerOptions.scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" };
-            buildPlayerOptions.locationPathName = buildPathToUse;
-            buildPlayerOptions.target = buildTarget;
+            var buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = new[] { "Assets/Scenes/MultiprocessTestScene.unity" },
+                locationPathName = buildPathToUse,
+                target = buildTarget
+            };
             var buildOptions = BuildOptions.None;
             if (buildDebug || buildTarget == BuildTarget.Android)
             {

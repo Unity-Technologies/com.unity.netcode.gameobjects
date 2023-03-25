@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
-using Unity.Netcode.Editor.Configuration;
 
 namespace Unity.Netcode.Editor
 {
@@ -231,13 +231,7 @@ namespace Unity.Netcode.Editor
                     {
                         ReloadTransports();
 
-                        var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]);
-
-                        if (transportComponent == null)
-                        {
-                            transportComponent = m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
-                        }
-
+                        var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
                         m_NetworkTransportProperty.objectReferenceValue = transportComponent;
 
                         Repaint();
@@ -355,15 +349,19 @@ namespace Unity.Netcode.Editor
 
             if (s_CenteredWordWrappedLabelStyle == null)
             {
-                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label);
-                s_CenteredWordWrappedLabelStyle.wordWrap = true;
-                s_CenteredWordWrappedLabelStyle.alignment = TextAnchor.MiddleLeft;
+                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    wordWrap = true,
+                    alignment = TextAnchor.MiddleLeft
+                };
             }
 
             if (s_HelpBoxStyle == null)
             {
-                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
-                s_HelpBoxStyle.padding = new RectOffset(10, 10, 10, 10);
+                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox)
+                {
+                    padding = new RectOffset(10, 10, 10, 10)
+                };
             }
 
             var openDocsButtonStyle = GUI.skin.button;
