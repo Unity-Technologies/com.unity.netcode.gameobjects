@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NUnit.Framework;
+using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using System.Runtime.CompilerServices;
-using Unity.Netcode.RuntimeTests;
-using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.TestHelpers.Runtime
@@ -170,7 +170,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         ///
         /// <see cref="TimeTravel"/>: Simulates a specific number of frames passing over a specific time period
         /// <see cref="TimeTravelToNextTick"/>: Skips forward to the next tick, siumlating at the current application frame rate
-        /// <see cref="WaitForConditionOrTimeOutWithTimeTravel(System.Func{bool},int)"/>: Simulates frames at the application frame rate until the given condition is true
+        /// <see cref="WaitForConditionOrTimeOutWithTimeTravel(Func{bool},int)"/>: Simulates frames at the application frame rate until the given condition is true
         /// <see cref="WaitForMessageReceivedWithTimeTravel{T}"/>: Simulates frames at the application frame rate until the required message is received
         /// <see cref="WaitForMessagesReceivedWithTimeTravel"/>: Simulates frames at the application frame rate until the required messages are received
         /// <see cref="StartServerAndClientsWithTimeTravel"/>: Starts a server and client and allows them to connect via simulated frames
@@ -191,7 +191,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// but based on the frozen time that's locked in from MockTimeProvider, actions that pass 10 seconds apart by
         /// real-world clock time will be perceived by the SDK as having happened simultaneously if you don't call
         /// <see cref="MockTimeProvider.TimeTravel"/> to cover the equivalent time span in the mock time provider.
-        /// (Calling <see cref="MockTimeProvider.TimeTravel"/> instead of <see cref="NetcodeIntegrationTest.TimeTravel"/>
+        /// (Calling <see cref="MockTimeProvider.TimeTravel"/> instead of <see cref="TimeTravel"/>
         /// will move time forward without simulating any frames, which, in the case where real-world time has passed,
         /// is likely more desirable). In most cases, this desynch won't affect anything, but it is worth noting that
         /// it happens just in case a tested system depends on both the unity update loop happening *and* time moving forward.
@@ -1413,7 +1413,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
-            var timeoutHelper = assignedTimeoutHelper != null ? assignedTimeoutHelper : s_GlobalTimeoutHelper;
+            var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
             Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
         }
 
@@ -1559,10 +1559,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                         {
                             method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
                         }
-                        if (method != null)
-                        {
-                            method.Invoke(behaviour, new object[] { });
-                        }
+                        method?.Invoke(behaviour, new object[] { });
                     }
                 }
             }

@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

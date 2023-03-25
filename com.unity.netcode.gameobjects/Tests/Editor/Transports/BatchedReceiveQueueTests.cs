@@ -28,7 +28,7 @@ namespace Unity.Netcode.EditorTests
 
             var writer = new DataStreamWriter(data);
             writer.WriteInt(1);
-            writer.WriteByte((byte)42);
+            writer.WriteByte(42);
 
             var reader = new DataStreamReader(data);
             var q = new BatchedReceiveQueue(reader);
@@ -52,9 +52,9 @@ namespace Unity.Netcode.EditorTests
 
             var writer = new DataStreamWriter(data);
             writer.WriteInt(1);
-            writer.WriteByte((byte)42);
+            writer.WriteByte(42);
             writer.WriteInt(1);
-            writer.WriteByte((byte)142);
+            writer.WriteByte(142);
 
             var reader = new DataStreamReader(data);
             var q = new BatchedReceiveQueue(reader);
@@ -132,7 +132,7 @@ namespace Unity.Netcode.EditorTests
 
             var writer = new DataStreamWriter(data);
             writer.WriteInt(1);
-            writer.WriteByte((byte)42);
+            writer.WriteByte(42);
 
             var reader = new DataStreamReader(data);
             var q = new BatchedReceiveQueue(reader);
@@ -168,7 +168,7 @@ namespace Unity.Netcode.EditorTests
 
             var writer = new DataStreamWriter(data);
             writer.WriteInt(1);
-            writer.WriteByte((byte)42);
+            writer.WriteByte(42);
 
             var reader = new DataStreamReader(data);
             var q = new BatchedReceiveQueue(reader);

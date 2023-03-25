@@ -3,7 +3,8 @@
     "rootNamespace": "Unity.Netcode.Components",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Mathematics"
     ],
     "allowUnsafeCode": true,
     "versionDefines": [

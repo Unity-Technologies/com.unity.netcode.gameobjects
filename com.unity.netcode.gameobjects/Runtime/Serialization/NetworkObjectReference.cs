@@ -54,13 +54,7 @@ namespace Unity.Netcode
                 throw new ArgumentNullException(nameof(gameObject));
             }
 
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-
-            if (networkObject == null)
-            {
-                throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
-            }
-
+            var networkObject = gameObject.GetComponent<NetworkObject>() ?? throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
             if (networkObject.IsSpawned == false)
             {
                 throw new ArgumentException($"{nameof(NetworkObjectReference)} can only be created from spawned {nameof(NetworkObject)}s.");
@@ -90,7 +84,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject Resolve(NetworkObjectReference networkObjectRef, NetworkManager networkManager = null)
         {
-            networkManager = networkManager != null ? networkManager : NetworkManager.Singleton;
+            networkManager = networkManager ?? NetworkManager.Singleton;
             networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectRef.m_NetworkObjectId, out NetworkObject networkObject);
 
             return networkObject;

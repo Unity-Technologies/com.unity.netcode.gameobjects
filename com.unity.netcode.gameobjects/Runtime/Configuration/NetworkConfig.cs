@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Unity.Netcode
@@ -281,8 +281,6 @@ namespace Unity.Netcode
             Prefabs.Initialize();
         }
 
-        #region Legacy Network Prefab List
-
         [NonSerialized]
         private bool m_DidWarnOldPrefabList = false;
 
@@ -342,7 +340,5 @@ namespace Unity.Netcode
         [FormerlySerializedAs("NetworkPrefabs")]
         [SerializeField]
         internal List<NetworkPrefab> OldPrefabList;
-
-        #endregion
     }
 }

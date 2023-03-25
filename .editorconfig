@@ -12,21 +12,46 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-# formatting rules
+# Code style defaults
 dotnet_diagnostic.IDE0001.severity = error # Simplify name
 dotnet_diagnostic.IDE0002.severity = error # Simplify member access
+dotnet_diagnostic.IDE0004.severity = error # Remove unnecessary cast
 dotnet_diagnostic.IDE0005.severity = error # Remove unnecessary import
+dotnet_diagnostic.IDE0035.severity = error # Remove unreachable code
+dotnet_diagnostic.IDE0043.severity = error # Format string contains invalid placeholder
 dotnet_diagnostic.IDE0063.severity = error # Use simple 'using' statement
+csharp_style_var_when_type_is_apparent = true:error
+dotnet_style_require_accessibility_modifiers = always:error
+
+# Sort using directives with System.* appearing first
+dotnet_sort_system_directives_first = true:error
+dotnet_separate_import_directive_groups = false:error
+csharp_using_directive_placement = outside_namespace:error
+
+# Order modifiers
+dotnet_diagnostic.IDE0036.severity = error
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:error
+
+# Add braces
+dotnet_diagnostic.IDE0011.severity = error
+csharp_prefer_braces = true:error
+
+# Avoid "this." if not necessary
 dotnet_style_qualification_for_field = false:error
 dotnet_style_qualification_for_property = false:error
 dotnet_style_qualification_for_method = false:error
 dotnet_style_qualification_for_event = false:error
+
+# Use language keywords instead of framework type names for type references
 dotnet_style_predefined_type_for_locals_parameters_members = true:error
 dotnet_style_predefined_type_for_member_access = true:error
-dotnet_style_require_accessibility_modifiers = always:error
-csharp_style_var_when_type_is_apparent = true:error
-csharp_prefer_braces = true:error
-csharp_using_directive_placement = outside_namespace:error
+
+# Enforce more modern language features when available
+dotnet_style_object_initializer = true:error
+dotnet_style_collection_initializer = true:error
+dotnet_style_coalesce_expression = true:error
+dotnet_style_null_propagation = true:error
+dotnet_style_explicit_tuple_names = true:error
 
 # naming rules
 # namespace Unity.Netcode { ... }

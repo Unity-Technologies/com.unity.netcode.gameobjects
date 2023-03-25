@@ -187,21 +187,23 @@ namespace TestProject.ManualTests
             }
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
             var halfPositionState = GetHalfPositionState();
-            var state = new HalfPosDebugStates();
-            state.IsPreUpdate = preUpdate;
-            state.IsTeleporting = networkTransformState.IsTeleportingNextFrame;
-            state.IsSynchronizing = networkTransformState.IsSynchronizing;
+            var state = new HalfPosDebugStates
+            {
+                IsPreUpdate = preUpdate,
+                IsTeleporting = networkTransformState.IsTeleportingNextFrame,
+                IsSynchronizing = networkTransformState.IsSynchronizing,
 
-            state.StateId = GetStateId(ref networkTransformState);
+                StateId = GetStateId(ref networkTransformState),
 
-            state.Tick = networkTransformState.GetNetworkTick();
-            state.ClientTarget = targetClient;
-            state.BasePosition = halfPositionState.GetCurrentBasePosition();
-            state.HalfBackDelta = halfPositionState.GetConvertedDelta();
-            state.DeltaPosition = halfPositionState.GetDeltaPosition();
-            state.FullPosition = halfPositionState.GetFullPosition();
-            state.Rotation = networkTransformState.GetRotation();
-            state.TransformPosition = InLocalSpace ? transform.localPosition : transform.position;
+                Tick = networkTransformState.GetNetworkTick(),
+                ClientTarget = targetClient,
+                BasePosition = halfPositionState.GetCurrentBasePosition(),
+                HalfBackDelta = halfPositionState.GetConvertedDelta(),
+                DeltaPosition = halfPositionState.GetDeltaPosition(),
+                FullPosition = halfPositionState.GetFullPosition(),
+                Rotation = networkTransformState.GetRotation(),
+                TransformPosition = InLocalSpace ? transform.localPosition : transform.position
+            };
             var localClientId = NetworkManager.LocalClientId;
             var ownerId = NetworkObject.OwnerClientId;
             if (!m_FirstInitialStateUpdates.ContainsKey(ownerId))

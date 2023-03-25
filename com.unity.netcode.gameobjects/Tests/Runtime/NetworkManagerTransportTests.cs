@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using NUnit.Framework;
 
 namespace Unity.Netcode.RuntimeTests
 {

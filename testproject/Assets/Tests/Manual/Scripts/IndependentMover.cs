@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace TestProject.ManualTests
 {
@@ -48,10 +48,7 @@ namespace TestProject.ManualTests
             {
                 m_Rigidbody = GetComponent<Rigidbody>();
             }
-            if (m_Rigidbody != null)
-            {
-                m_Rigidbody.MovePosition(transform.position + m_Direction * (speed * Time.fixedDeltaTime));
-            }
+            m_Rigidbody?.MovePosition(transform.position + m_Direction * (speed * Time.fixedDeltaTime));
         }
 
         private void OnCollisionStay(Collision collision)

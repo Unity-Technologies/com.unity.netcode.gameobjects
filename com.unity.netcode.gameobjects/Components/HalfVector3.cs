@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -13,42 +14,67 @@ namespace Unity.Netcode.Components
     /// </remarks>
     public struct HalfVector3 : INetworkSerializable
     {
-        /// <summary>
-        /// The half float precision value of the x-axis as a <see cref="ushort"/>.
-        /// </summary>
-        public ushort X => Axis.X;
-        /// <summary>
-        /// The half float precision value of the y-axis as a <see cref="ushort"/>.
-        /// </summary>
-        public ushort Y => Axis.Y;
-        /// <summary>
-        /// The half float precision value of the z-axis as a <see cref="ushort"/>.
-        /// </summary>
-        public ushort Z => Axis.Z;
+        internal const int Length = 3;
 
         /// <summary>
-        /// Used to store the half float precision value as a <see cref="ushort"/>.
+        /// The half float precision value of the x-axis as a <see cref="half"/>.
         /// </summary>
-        public Vector3T<ushort> Axis;
+        public half X => Axis.x;
+        /// <summary>
+        /// The half float precision value of the y-axis as a <see cref="half"/>.
+        /// </summary>
+        public half Y => Axis.y;
+        /// <summary>
+        /// The half float precision value of the z-axis as a <see cref="half"/>.
+        /// </summary>
+        public half Z => Axis.x;
 
-        internal Vector3AxisToSynchronize AxisToSynchronize;
+        /// <summary>
+        /// Used to store the half float precision values as a <see cref="half3"/>
+        /// </summary>
+        public half3 Axis;
+
+        /// <summary>
+        /// Determine which axis will be synchronized during serialization
+        /// </summary>
+        public bool3 AxisToSynchronize;
+
+        private void SerializeWrite(FastBufferWriter writer)
+        {
+            for (int i = 0; i < Length; i++)
+            {
+                if (AxisToSynchronize[i])
+                {
+                    writer.WriteUnmanagedSafe(Axis[i]);
+                }
+            }
+        }
+
+        private void SerializeRead(FastBufferReader reader)
+        {
+            for (int i = 0; i < Length; i++)
+            {
+                if (AxisToSynchronize[i])
+                {
+                    var axisValue = Axis[i];
+                    reader.ReadUnmanagedSafe(out axisValue);
+                    Axis[i] = axisValue;
+                }
+            }
+        }
 
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>.
         /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            for (int i = 0; i < Axis.Length; i++)
+            if (serializer.IsReader)
             {
-                if (AxisToSynchronize.SyncAxis[i])
-                {
-                    var axisValue = Axis[i];
-                    serializer.SerializeValue(ref axisValue);
-                    if (serializer.IsReader)
-                    {
-                        Axis[i] = axisValue;
-                    }
-                }
+                SerializeRead(serializer.GetFastBufferReader());
+            }
+            else
+            {
+                SerializeWrite(serializer.GetFastBufferWriter());
             }
         }
 
@@ -60,11 +86,12 @@ namespace Unity.Netcode.Components
         public Vector3 ToVector3()
         {
             Vector3 fullPrecision = Vector3.zero;
-            for (int i = 0; i < Axis.Length; i++)
+            Vector3 fullConversion = math.float3(Axis);
+            for (int i = 0; i < Length; i++)
             {
-                if (AxisToSynchronize.SyncAxis[i])
+                if (AxisToSynchronize[i])
                 {
-                    fullPrecision[i] = Mathf.HalfToFloat(Axis[i]);
+                    fullPrecision[i] = fullConversion[i];
                 }
             }
             return fullPrecision;
@@ -77,11 +104,12 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void UpdateFrom(ref Vector3 vector3)
         {
-            for (int i = 0; i < Axis.Length; i++)
+            var half3Full = math.half3(vector3);
+            for (int i = 0; i < Length; i++)
             {
-                if (AxisToSynchronize.SyncAxis[i])
+                if (AxisToSynchronize[i])
                 {
-                    Axis[i] = Mathf.FloatToHalf(vector3[i]);
+                    Axis[i] = half3Full[i];
                 }
             }
         }
@@ -91,10 +119,10 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
         /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
-        public HalfVector3(Vector3 vector3, Vector3AxisToSynchronize vector3AxisToSynchronize)
+        public HalfVector3(Vector3 vector3, bool3 axisToSynchronize)
         {
-            Axis = default;
-            AxisToSynchronize = vector3AxisToSynchronize;
+            Axis = half3.zero;
+            AxisToSynchronize = axisToSynchronize;
             UpdateFrom(ref vector3);
         }
 
@@ -102,7 +130,7 @@ namespace Unity.Netcode.Components
         /// Constructor that defaults to all axis being synchronized.
         /// </summary>
         /// <param name="vector3">The initial axial values (converted to half floats) when instantiated.</param>
-        public HalfVector3(Vector3 vector3) : this(vector3, Vector3AxisToSynchronize.AllAxis)
+        public HalfVector3(Vector3 vector3) : this(vector3, math.bool3(true))
         {
 
         }
@@ -113,8 +141,8 @@ namespace Unity.Netcode.Components
         /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
         /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
         /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
-        /// <param name="vector3AxisToSynchronize">The axis to synchronize.</param>
-        public HalfVector3(float x, float y, float z, Vector3AxisToSynchronize vector3AxisToSynchronize) : this(new Vector3(x, y, z), vector3AxisToSynchronize)
+        /// <param name="axisToSynchronize">The axis to synchronize.</param>
+        public HalfVector3(float x, float y, float z, bool3 axisToSynchronize) : this(new Vector3(x, y, z), axisToSynchronize)
         {
         }
 
@@ -124,7 +152,7 @@ namespace Unity.Netcode.Components
         /// <param name="x">The initial x axis (converted to half float) value when instantiated.</param>
         /// <param name="y">The initial y axis (converted to half float) value when instantiated.</param>
         /// <param name="z">The initial z axis (converted to half float) value when instantiated.</param>
-        public HalfVector3(float x, float y, float z) : this(new Vector3(x, y, z), Vector3AxisToSynchronize.AllAxis)
+        public HalfVector3(float x, float y, float z) : this(new Vector3(x, y, z), math.bool3(true))
         {
         }
     }

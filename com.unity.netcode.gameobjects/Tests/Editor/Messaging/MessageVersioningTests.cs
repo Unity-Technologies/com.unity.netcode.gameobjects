@@ -149,7 +149,7 @@ namespace Unity.Netcode.EditorTests
                     var v1 = new VersionedTestMessage_v1();
                     v1.Deserialize(reader, ref context, receivedMessageVersion);
                     A = v1.A;
-                    D = (float)v1.D;
+                    D = v1.D;
                     E = k_DefaultE;
                     Upgraded = true;
                     return true;

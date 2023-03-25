@@ -1,5 +1,5 @@
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 /// <summary>
 /// This can be added to the same GameObject the NetworkManager component is assigned to in order to prevent

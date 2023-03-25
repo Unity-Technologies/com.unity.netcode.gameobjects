@@ -453,18 +453,8 @@ public class TestCoordinator : NetworkBehaviour
             var split = methodInfoString.Split(k_MethodFullNameSplitChar);
             var (classToExecute, staticMethodToExecute) = (split[0], split[1]);
 
-            var foundType = Type.GetType(classToExecute);
-            if (foundType == null)
-            {
-                throw new Exception($"couldn't find {classToExecute}");
-            }
-
-            var foundMethod = foundType.GetMethod(staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
-            if (foundMethod == null)
-            {
-                throw new MissingMethodException($"couldn't find method {staticMethodToExecute}");
-            }
-
+            var foundType = Type.GetType(classToExecute) ?? throw new Exception($"couldn't find {classToExecute}");
+            var foundMethod = foundType.GetMethod(staticMethodToExecute, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static) ?? throw new MissingMethodException($"couldn't find method {staticMethodToExecute}");
             foundMethod.Invoke(null, args != null ? new object[] { args } : null);
         }
         catch (Exception e)

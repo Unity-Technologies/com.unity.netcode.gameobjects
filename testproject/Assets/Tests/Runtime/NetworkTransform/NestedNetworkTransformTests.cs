@@ -1,10 +1,10 @@
-using System.Text;
 using System.Collections;
+using System.Text;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using TestProject.ManualTests;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {
@@ -174,7 +174,7 @@ namespace TestProject.RuntimeTests
         private const float k_RotationVarianceCompressed = 0.555f;
 
         private float m_CurrentVariance = k_PositionScaleVariance;
-        override protected float GetDeltaVarianceThreshold()
+        protected override float GetDeltaVarianceThreshold()
         {
             return m_CurrentVariance;
         }

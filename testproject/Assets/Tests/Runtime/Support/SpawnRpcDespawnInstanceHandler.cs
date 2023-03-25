@@ -1,5 +1,5 @@
-using Unity.Netcode;
 using NUnit.Framework;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace TestProject.RuntimeTests.Support

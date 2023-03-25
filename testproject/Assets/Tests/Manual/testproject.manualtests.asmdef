@@ -5,6 +5,7 @@
         "TestProject",
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Mathematics"
     ]
 }

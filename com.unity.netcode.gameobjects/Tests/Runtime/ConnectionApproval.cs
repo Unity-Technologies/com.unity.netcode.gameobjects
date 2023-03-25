@@ -1,10 +1,10 @@
 using System;
-using System.Text;
 using System.Collections;
-using UnityEngine;
-using UnityEngine.TestTools;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -66,9 +66,11 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void VerifyUniqueNetworkConfigPerRequest()
         {
-            var networkConfig = new NetworkConfig();
-            networkConfig.EnableSceneManagement = true;
-            networkConfig.TickRate = 30;
+            var networkConfig = new NetworkConfig
+            {
+                EnableSceneManagement = true,
+                TickRate = 30
+            };
             var currentHash = networkConfig.GetConfig();
             networkConfig.EnableSceneManagement = false;
             networkConfig.TickRate = 60;

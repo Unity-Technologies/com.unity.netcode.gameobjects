@@ -2,10 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
@@ -122,10 +122,11 @@ namespace TestProject.RuntimeTests
             userSerializableClass.MyintValue = 1;
             userSerializableClass.MyulongValue = 100;
 
-            var userSerializableStruct = new UserSerializableStruct();
-
-            userSerializableStruct.MyintValue = 1;
-            userSerializableStruct.MyulongValue = 100;
+            var userSerializableStruct = new UserSerializableStruct
+            {
+                MyintValue = 1,
+                MyulongValue = 100
+            };
 
             var t1val = new TemplatedType<int> { Value = 1 };
             var t2val = new TemplatedType<int>.NestedTemplatedType<int> { Value1 = 1, Value2 = 2 };
@@ -645,14 +646,18 @@ namespace TestProject.RuntimeTests
                 // Create an array of userSerializableClass instances
                 for (int i = 0; i < arraySize; i++)
                 {
-                    var userSerializableClass = new UserSerializableClass();
-                    //Used for testing order of the array
-                    userSerializableClass.MyintValue = i;
+                    var userSerializableClass = new UserSerializableClass
+                    {
+                        //Used for testing order of the array
+                        MyintValue = i
+                    };
                     m_UserSerializableClassArray.Add(userSerializableClass);
 
-                    var userSerializableStruct = new UserSerializableStruct();
-                    //Used for testing order of the array
-                    userSerializableStruct.MyintValue = i;
+                    var userSerializableStruct = new UserSerializableStruct
+                    {
+                        //Used for testing order of the array
+                        MyintValue = i
+                    };
                     m_UserSerializableStructArray.Add(userSerializableStruct);
                 }
 
@@ -862,10 +867,7 @@ namespace TestProject.RuntimeTests
         [ClientRpc]
         private void SendClientSerializedDataClassClientRpc(UserSerializableClass userSerializableClass)
         {
-            if (OnSerializableClassUpdated != null)
-            {
-                OnSerializableClassUpdated.Invoke(userSerializableClass);
-            }
+            OnSerializableClassUpdated?.Invoke(userSerializableClass);
         }
 
         public void ClientStartTest(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
@@ -889,10 +891,7 @@ namespace TestProject.RuntimeTests
         private void SendTemplateStructClientRpc(TemplatedType<int> t1val, TemplatedType<int>.NestedTemplatedType<int> t2val, TemplatedType<int>.Enum enumVal)
         {
             Debug.Log($"Received client RPC values {t1val.Value} {t2val.Value1} {t2val.Value2}");
-            if (OnTemplateStructUpdated != null)
-            {
-                OnTemplateStructUpdated.Invoke(t1val, t2val, enumVal);
-            }
+            OnTemplateStructUpdated?.Invoke(t1val, t2val, enumVal);
         }
 
         public void ClientStartTest(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
@@ -915,10 +914,7 @@ namespace TestProject.RuntimeTests
         private void SendNetworkSerializableTemplateStructClientRpc(NetworkSerializableTemplatedType<int> t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int> t2val)
         {
             Debug.Log($"Received NetworkSerializable client RPC values {t1val.Value} {t2val.Value1} {t2val.Value2}");
-            if (OnNetworkSerializableTemplateStructUpdated != null)
-            {
-                OnNetworkSerializableTemplateStructUpdated.Invoke(t1val, t2val);
-            }
+            OnNetworkSerializableTemplateStructUpdated?.Invoke(t1val, t2val);
         }
 
 
@@ -943,10 +939,7 @@ namespace TestProject.RuntimeTests
         private void SendTemplateStructClientRpc(TemplatedType<int>[] t1val, TemplatedType<int>.NestedTemplatedType<int>[] t2val, TemplatedType<int>.Enum[] enumVal)
         {
             Debug.Log($"Received client RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2}");
-            if (OnTemplateStructsUpdated != null)
-            {
-                OnTemplateStructsUpdated.Invoke(t1val, t2val, enumVal);
-            }
+            OnTemplateStructsUpdated?.Invoke(t1val, t2val, enumVal);
         }
 
         public void ClientStartTest(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
@@ -969,10 +962,7 @@ namespace TestProject.RuntimeTests
         private void SendNetworkSerializableTemplateStructClientRpc(NetworkSerializableTemplatedType<int>[] t1val, NetworkSerializableTemplatedType<int>.NestedTemplatedType<int>[] t2val)
         {
             Debug.Log($"Received NetworkSerializable client RPC values {t1val[0].Value} {t2val[0].Value1} {t2val[0].Value2}");
-            if (OnNetworkSerializableTemplateStructsUpdated != null)
-            {
-                OnNetworkSerializableTemplateStructsUpdated.Invoke(t1val, t2val);
-            }
+            OnNetworkSerializableTemplateStructsUpdated?.Invoke(t1val, t2val);
         }
 
         /// <summary>
@@ -1004,101 +994,68 @@ namespace TestProject.RuntimeTests
         [ClientRpc]
         private void SendClientSerializedDataStructClientRpc(UserSerializableStruct userSerializableStruct)
         {
-            if (OnSerializableStructUpdated != null)
-            {
-                OnSerializableStructUpdated.Invoke(userSerializableStruct);
-            }
+            OnSerializableStructUpdated?.Invoke(userSerializableStruct);
         }
 
         [ClientRpc]
         public void SendMyObjectClientRpc(MyObject obj)
         {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(obj);
-            }
+            OnMyObjectUpdated?.Invoke(obj);
         }
         [ClientRpc]
         public void SendIntListClientRpc(List<int> lst)
         {
-            if (OnIntListUpdated != null)
-            {
-                OnIntListUpdated.Invoke(lst);
-            }
+            OnIntListUpdated?.Invoke(lst);
         }
         [ClientRpc]
         public void SendStringListClientRpc(List<string> lst)
         {
-            if (OnStringListUpdated != null)
-            {
-                OnStringListUpdated.Invoke(lst);
-            }
+            OnStringListUpdated?.Invoke(lst);
         }
         [ClientRpc]
         public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef obj)
         {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
-            }
+            OnMyObjectPassedWithThisRefUpdated?.Invoke(obj);
         }
 
         [ClientRpc]
         public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById obj)
         {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
-            }
+            OnMySharedObjectReferencedByIdUpdated?.Invoke(obj);
         }
 
         [ServerRpc]
         public void SendMyObjectServerRpc(MyObject obj)
         {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(obj);
-            }
+            OnMyObjectUpdated?.Invoke(obj);
             SendMyObjectClientRpc(obj);
         }
 
         [ServerRpc]
         public void SendIntListServerRpc(List<int> lst)
         {
-            if (OnIntListUpdated != null)
-            {
-                OnIntListUpdated.Invoke(lst);
-            }
+            OnIntListUpdated?.Invoke(lst);
             SendIntListClientRpc(lst);
         }
 
         [ServerRpc]
         public void SendStringListServerRpc(List<string> lst)
         {
-            if (OnStringListUpdated != null)
-            {
-                OnStringListUpdated.Invoke(lst);
-            }
+            OnStringListUpdated?.Invoke(lst);
             SendStringListClientRpc(lst);
         }
 
         [ServerRpc]
         public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef obj)
         {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(obj);
-            }
+            OnMyObjectPassedWithThisRefUpdated?.Invoke(obj);
             SendMyObjectPassedWithThisRefClientRpc(obj);
         }
 
         [ServerRpc]
         public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById obj)
         {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(obj);
-            }
+            OnMySharedObjectReferencedByIdUpdated?.Invoke(obj);
             SendMySharedObjectReferencedByIdClientRpc(obj);
         }
     }
@@ -1149,10 +1106,7 @@ namespace TestProject.RuntimeTests
         [ServerRpc(RequireOwnership = false)]
         private void SendServerSerializedDataClassArryServerRpc(UserSerializableClass[] userSerializableClasses)
         {
-            if (OnSerializableClassesUpdatedServerRpc != null)
-            {
-                OnSerializableClassesUpdatedServerRpc.Invoke(userSerializableClasses);
-            }
+            OnSerializableClassesUpdatedServerRpc?.Invoke(userSerializableClasses);
             SendClientSerializedDataClassArrayClientRpc(userSerializableClasses);
         }
 
@@ -1164,10 +1118,7 @@ namespace TestProject.RuntimeTests
         [ClientRpc]
         private void SendClientSerializedDataClassArrayClientRpc(UserSerializableClass[] userSerializableClasses)
         {
-            if (OnSerializableClassesUpdatedClientRpc != null)
-            {
-                OnSerializableClassesUpdatedClientRpc.Invoke(userSerializableClasses);
-            }
+            OnSerializableClassesUpdatedClientRpc?.Invoke(userSerializableClasses);
         }
 
         /// <summary>
@@ -1188,10 +1139,7 @@ namespace TestProject.RuntimeTests
         [ServerRpc(RequireOwnership = false)]
         private void SendServerSerializedDataStructArrayServerRpc(UserSerializableStruct[] userSerializableStructs)
         {
-            if (OnSerializableStructsUpdatedServerRpc != null)
-            {
-                OnSerializableStructsUpdatedServerRpc.Invoke(userSerializableStructs);
-            }
+            OnSerializableStructsUpdatedServerRpc?.Invoke(userSerializableStructs);
             SendClientSerializedDataStructArrayClientRpc(userSerializableStructs);
         }
 
@@ -1203,94 +1151,64 @@ namespace TestProject.RuntimeTests
         [ClientRpc]
         private void SendClientSerializedDataStructArrayClientRpc(UserSerializableStruct[] userSerializableStructs)
         {
-            if (OnSerializableStructsUpdatedClientRpc != null)
-            {
-                OnSerializableStructsUpdatedClientRpc.Invoke(userSerializableStructs);
-            }
+            OnSerializableStructsUpdatedClientRpc?.Invoke(userSerializableStructs);
         }
 
         [ClientRpc]
         public void SendMyObjectClientRpc(MyObject[] objs)
         {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(objs);
-            }
+            OnMyObjectUpdated?.Invoke(objs);
         }
 
         [ClientRpc]
         public void SendIntListClientRpc(List<int>[] lists)
         {
-            if (OnIntListUpdated != null)
-            {
-                OnIntListUpdated.Invoke(lists);
-            }
+            OnIntListUpdated?.Invoke(lists);
         }
 
         [ClientRpc]
         public void SendStringListClientRpc(List<string>[] lists)
         {
-            if (OnStringListUpdated != null)
-            {
-                OnStringListUpdated.Invoke(lists);
-            }
+            OnStringListUpdated?.Invoke(lists);
         }
 
         [ClientRpc]
         public void SendMyObjectPassedWithThisRefClientRpc(MyObjectPassedWithThisRef[] objs)
         {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(objs);
-            }
+            OnMyObjectPassedWithThisRefUpdated?.Invoke(objs);
         }
 
         [ClientRpc]
         public void SendMySharedObjectReferencedByIdClientRpc(MySharedObjectReferencedById[] objs)
         {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(objs);
-            }
+            OnMySharedObjectReferencedByIdUpdated?.Invoke(objs);
         }
 
         [ServerRpc]
         public void SendMyObjectServerRpc(MyObject[] objs)
         {
-            if (OnMyObjectUpdated != null)
-            {
-                OnMyObjectUpdated.Invoke(objs);
-            }
+            OnMyObjectUpdated?.Invoke(objs);
             SendMyObjectClientRpc(objs);
         }
 
         [ServerRpc]
         public void SendIntListServerRpc(List<int>[] lists)
         {
-            if (OnIntListUpdated != null)
-            {
-                OnIntListUpdated.Invoke(lists);
-            }
+            OnIntListUpdated?.Invoke(lists);
             SendIntListClientRpc(lists);
         }
 
         [ServerRpc]
         public void SendStringListServerRpc(List<string>[] lists)
         {
-            if (OnStringListUpdated != null)
-            {
-                OnStringListUpdated.Invoke(lists);
-            }
+            OnStringListUpdated?.Invoke(lists);
             SendStringListClientRpc(lists);
         }
 
         [ServerRpc]
         public void SendMyObjectPassedWithThisRefServerRpc(MyObjectPassedWithThisRef[] objs)
         {
-            if (OnMyObjectPassedWithThisRefUpdated != null)
-            {
-                OnMyObjectPassedWithThisRefUpdated.Invoke(objs);
-            }
+            OnMyObjectPassedWithThisRefUpdated?.Invoke(objs);
             SendMyObjectPassedWithThisRefClientRpc(objs);
         }
 
@@ -1298,10 +1216,7 @@ namespace TestProject.RuntimeTests
         [ServerRpc]
         public void SendMySharedObjectReferencedByIdServerRpc(MySharedObjectReferencedById[] objs)
         {
-            if (OnMySharedObjectReferencedByIdUpdated != null)
-            {
-                OnMySharedObjectReferencedByIdUpdated.Invoke(objs);
-            }
+            OnMySharedObjectReferencedByIdUpdated?.Invoke(objs);
             SendMySharedObjectReferencedByIdClientRpc(objs);
         }
     }

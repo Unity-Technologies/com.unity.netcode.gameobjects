@@ -1,6 +1,6 @@
-using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using UnityEngine;
 
 namespace TestProject.ManualTests
 {

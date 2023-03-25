@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using TestProject.ManualTests;
 using Unity.Netcode;
 using Unity.Netcode.Components;
-using TestProject.ManualTests;
+using UnityEngine;
 using Random = UnityEngine.Random;
 
 namespace TestProject.RuntimeTests
