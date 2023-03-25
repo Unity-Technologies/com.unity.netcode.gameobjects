@@ -214,7 +214,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            UnityEngine.Networking.NetworkTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect(hostId, connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
@@ -226,7 +226,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
+            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT(hostId, connectionId, out byte error);
         }
 
         public override void Shutdown()

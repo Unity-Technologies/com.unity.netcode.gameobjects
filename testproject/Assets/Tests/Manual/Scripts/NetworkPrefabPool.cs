@@ -573,7 +573,7 @@ namespace TestProject.ManualTests
                     {
                         entitySpawnUpdateRate = 1.0f / Mathf.Min(SpawnsPerSecond, 60.0f);
                         //While not 100% accurate, this basically allows for higher entities per second generation
-                        m_EntitiesPerFrame = (float)SpawnsPerSecond * entitySpawnUpdateRate;
+                        m_EntitiesPerFrame = SpawnsPerSecond * entitySpawnUpdateRate;
                         int entitityCountPerFrame = Mathf.RoundToInt(m_EntitiesPerFrame);
                         //Spawn (n) entities then wait for 1/60th of a second and repeat
                         for (int i = 0; i < entitityCountPerFrame; i++)

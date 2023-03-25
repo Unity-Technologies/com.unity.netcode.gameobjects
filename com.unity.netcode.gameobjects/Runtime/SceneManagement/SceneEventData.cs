@@ -476,7 +476,7 @@ namespace Unity.Netcode
             // Size Place Holder -- Start
             // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
             // for stream offset purposes this MUST not be a packed value!
-            writer.WriteValueSafe((int)0);
+            writer.WriteValueSafe(0);
             int totalBytes = 0;
 
             // Write the number of NetworkObjects we are serializing
@@ -489,7 +489,7 @@ namespace Unity.Netcode
                 var sceneObject = m_NetworkObjectsSync[i].GetMessageSceneObject(TargetClientId);
                 sceneObject.Serialize(writer);
                 var noStop = writer.Position;
-                totalBytes += (int)(noStop - noStart);
+                totalBytes += noStop - noStart;
             }
 
             // Write the number of despawned in-scene placed NetworkObjects
@@ -501,7 +501,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
                 var noStop = writer.Position;
-                totalBytes += (int)(noStop - noStart);
+                totalBytes += noStop - noStart;
             }
 
             // Size Place Holder -- End

@@ -105,7 +105,7 @@ public class NetworkPrefabHandlerObjectPool : NetworkBehaviour, INetworkPrefabIn
         var entitySpawnUpdateRate = 1.0f;
         while (m_IsSpawningObjects)
         {
-            entitySpawnUpdateRate = 1.0f / (float)m_SpawnsPerSecond;
+            entitySpawnUpdateRate = 1.0f / m_SpawnsPerSecond;
 
             GameObject go = GetNextSpawnObject();
             if (go != null)

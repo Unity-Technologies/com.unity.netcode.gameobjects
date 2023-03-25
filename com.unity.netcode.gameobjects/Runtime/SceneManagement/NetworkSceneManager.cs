@@ -791,7 +791,7 @@ namespace Unity.Netcode
             var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
             if (VerifySceneBeforeLoading != null)
             {
-                validated = VerifySceneBeforeLoading.Invoke((int)sceneIndex, sceneName, loadSceneMode);
+                validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
             }
             if (!validated && !m_DisableValidationWarningMessages)
             {

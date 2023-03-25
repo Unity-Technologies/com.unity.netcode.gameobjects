@@ -21,7 +21,7 @@ namespace Unity.Netcode.RuntimeTests
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    bitWriter.WriteBits((byte)1, 1);
+                    bitWriter.WriteBits(1, 1);
                 }
                 writer.WriteValue(k_DummyValue);
 
@@ -33,7 +33,7 @@ namespace Unity.Netcode.RuntimeTests
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(k_DummyValue) + 1);
                 using (var bitWriter = writer.EnterBitwiseContext())
                 {
-                    bitWriter.WriteBits((byte)1, 1);
+                    bitWriter.WriteBits(1, 1);
                 }
                 writer.WriteValue(k_DummyValue);
 
