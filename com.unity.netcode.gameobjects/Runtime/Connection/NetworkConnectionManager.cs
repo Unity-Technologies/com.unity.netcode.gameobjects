@@ -6,7 +6,6 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using UnityEngine;
 
-
 #if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools;
 #endif
@@ -18,7 +17,12 @@ namespace Unity.Netcode
 {
     public class NetworkConnectionManager : INetworkUpdateSystem
     {
-        internal MessagingSystem MessagingSystem;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
+        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
+        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(MessagingSystem.HandleIncomingData)}");
+        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
+#endif
 
         /// <summary>
         /// The current host name we are connected to, used to validate certificate
@@ -40,7 +44,6 @@ namespace Unity.Netcode
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
-
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
         /// <summary>
@@ -60,13 +63,16 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsListening { get; internal set; }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
-        private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(MessagingSystem.HandleIncomingData)}");
-        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
-#endif
-        private ulong m_NextClientId = 1;
+        /// <summary>
+        /// When set ConnectionManager and MessagingSystem will stop processing messages
+        /// </summary>
+        internal bool StopProcessingMessages;
+
+        /// <summary>
+        /// The <see cref="Netcode.MessagingSystem"/> is updated in <see cref="NetworkUpdate"/>
+        /// </summary>
+        internal MessagingSystem MessagingSystem;
+
         internal NetworkManager NetworkManager;
         internal NetworkClient LocalClient = new NetworkClient();
         internal Dictionary<ulong, NetworkManager.ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
@@ -74,25 +80,40 @@ namespace Unity.Netcode
         internal Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
         internal Dictionary<ulong, ulong> ClientIdToTransportIdMap = new Dictionary<ulong, ulong>();
         internal Dictionary<ulong, ulong> TransportIdToClientIdMap = new Dictionary<ulong, ulong>();
-
         internal List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
         internal List<ulong> ConnectedClientIds = new List<ulong>();
         internal Action<NetworkManager.ConnectionApprovalRequest, NetworkManager.ConnectionApprovalResponse> ConnectionApprovalCallback;
 
-        internal bool StopProcessingMessages;
+        /// <summary>
+        /// Used to generate client identifiers
+        /// </summary>
+        private ulong m_NextClientId = 1;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdToClientId(ulong transportId)
         {
             return transportId == GetServerTransporId() ? NetworkManager.ServerClientId : TransportIdToClientIdMap[transportId];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong ClientIdToTransportId(ulong clientId)
         {
             return clientId == NetworkManager.ServerClientId ? GetServerTransporId() : ClientIdToTransportIdMap[clientId];
         }
 
-        internal void TransportFailure()
+        /// <summary>
+        /// Gets the networkId of the server
+        /// </summary>
+        internal ulong ServerTransportId => GetServerTransporId();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private ulong GetServerTransporId()
         {
-            OnTransportFailure?.Invoke();
+            if (NetworkManager != null)
+            {
+                return NetworkManager.NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
+            }
+            throw new Exception($"There is no {nameof(NetworkManager)} assigned to this instance!");
         }
 
         /// <summary>
@@ -100,35 +121,37 @@ namespace Unity.Netcode
         /// receiving a disconnect event from transport
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal ulong TransportIdCleanUp(ulong clientId, ulong transportId)
+        internal ulong TransportIdCleanUp(ulong transportId)
         {
-            PendingClients.Remove(clientId);
+            PendingClients.Remove(transportId);
             // This check is for clients that attempted to connect but failed.
             // When this happens, the client will not have an entry within the
             // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
             // tables so we exit early and just return 0 to be used for the
             // disconnect event.
-            if (!LocalClient.IsServer && !TransportIdToClientIdMap.ContainsKey(clientId))
+            if (!LocalClient.IsServer && !TransportIdToClientIdMap.ContainsKey(transportId))
             {
                 return 0;
             }
 
-            clientId = TransportIdToClientId(clientId);
-
+            var clientId = TransportIdToClientId(transportId);
             TransportIdToClientIdMap.Remove(transportId);
             ClientIdToTransportIdMap.Remove(clientId);
 
             return clientId;
         }
 
+        /// <summary>
+        /// ConnectionManager Internal Updates
+        /// </summary>
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            switch(updateStage)
+            switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
-                        // TODO: Determine if this is still needed
-                        if (!NetworkManager.IsListening)
+                        // Exit early if we haven't started or are no longer processing messages.
+                        if (!StopProcessingMessages)
                         {
                             return;
                         }
@@ -150,9 +173,11 @@ namespace Unity.Netcode
                             NetworkObject.VerifyParentingStatus();
                         }
 
-                        // TODO 2023-Q2: Migrate completely into NetworkConnectionManager
+                        // This is "ok" to invoke when not processing messages since it is just cleaning
+                        // up messages that never got handled within their timeout period.
                         NetworkManager.DeferredMessageManager.CleanupStaleTriggers();
 
+                        // TODO 2023-Q2: Determine a better way to handle this
                         if (NetworkManager.ShutdownInProgress)
                         {
                             NetworkManager.ShutdownInternal();
@@ -164,8 +189,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// TODO 2023: Assign attribute to register for the equivalent update stage
+        /// ConnectionManager specific logic during the EarlyUpdate
         /// </summary>
+        /// <remarks>
+        /// Also handles NetworkTransport implementations that are polled
+        /// as opposed to event driven.
+        /// </remarks>
         internal void OnEarlyUpdate()
         {
             ProcessPendingApprovals();
@@ -178,8 +207,8 @@ namespace Unity.Netcode
                 NetworkEvent networkEvent;
                 do
                 {
-                    networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime);
-                    HandleNetworkEvent(networkEvent, clientId, payload, receiveTime);
+                    networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong transportClientId, out ArraySegment<byte> payload, out float receiveTime);
+                    HandleNetworkEvent(networkEvent, transportClientId, payload, receiveTime);
                     // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                 } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
 
@@ -190,91 +219,31 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Gets the networkId of the server
+        /// Event driven NetwokrTransports (like UnityTransport) NetworkEvent handling
         /// </summary>
-        internal ulong ServerTransportId => GetServerTransporId();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ulong GetServerTransporId()
+        internal void HandleNetworkEvent(NetworkEvent networkEvent, ulong transportClientId, ArraySegment<byte> payload, float receiveTime)
         {
-            if (NetworkManager != null)
-            {
-                return NetworkManager.NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
-            }
-            throw new Exception($"There is no {nameof(NetworkManager)} assigned to this instance!");
-        }
-
-        internal void HandleNetworkEvent(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
-        {
-            var transportId = clientId;
             switch (networkEvent)
             {
                 case NetworkEvent.Connect:
-                    ConnectedEvent(clientId);
+                    ConnectEventHandler(transportClientId);
                     break;
                 case NetworkEvent.Data:
-                    {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        s_HandleIncomingData.Begin();
-#endif
-                        clientId = TransportIdToClientId(clientId);
-                        MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        s_HandleIncomingData.End();
-#endif
-                        break;
-                    }
-                case NetworkEvent.Disconnect:
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.Begin();
-#endif
-                    clientId = TransportIdCleanUp(clientId, transportId);
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Disconnect Event From {clientId}");
-                    }
-
-                    // Process the incoming message queue so that we get everything from the server disconnecting us
-                    // or, if we are the server, so we got everything from that client.
-                    MessagingSystem.ProcessIncomingMessageQueue();
-
-                    try
-                    {
-                        OnClientDisconnectCallback?.Invoke(clientId);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception);
-                    }
-
-                    if (LocalClient.IsServer)
-                    {
-                        OnClientDisconnectFromServer(clientId);
-                    }
-                    else
-                    {
-                        // We must pass true here and not process any sends messages
-                        // as we are no longer connected and thus there is no one to
-                        // send any messages to and this will cause an exception within
-                        // UnityTransport as the client ID is no longer valid.
-                        NetworkManager.Shutdown(true);
-                    }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.End();
-#endif
+                    DataEventHandler(transportClientId, ref payload, receiveTime);
                     break;
-
+                case NetworkEvent.Disconnect:
+                    DisconnectEventHandler(transportClientId);
+                    break;
                 case NetworkEvent.TransportFailure:
-                    Debug.LogError($"Shutting down due to network transport failure of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
-                    TransportFailure();
-                    NetworkManager.Shutdown(true);
+                    TransportFailureEventHandler();
                     break;
             }
         }
 
-        internal void ConnectedEvent(ulong transportClientId)
+        /// <summary>
+        /// Handles a <see cref="NetworkEvent.Connect"/> event.
+        /// </summary>
+        internal void ConnectEventHandler(ulong transportClientId)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportConnect.Begin();
@@ -329,58 +298,81 @@ namespace Unity.Netcode
 #endif
         }
 
-        internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
+        /// <summary>
+        /// Handles a <see cref="NetworkEvent.Data"/> event.
+        /// </summary>
+        internal void DataEventHandler(ulong transportClientId, ref ArraySegment<byte> payload, float receiveTime)
         {
-            // Note: Delegate creation allocates.
-            // Note: ToArray() also allocates. :(
-            var response = new NetworkManager.ConnectionApprovalResponse();
-            ClientsToApprove[context.SenderId] = response;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleIncomingData.Begin();
+#endif
+            var clientId = TransportIdToClientId(transportClientId);
+            MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
 
-            ConnectionApprovalCallback(
-                new NetworkManager.ConnectionApprovalRequest
-                {
-                    Payload = connectionRequestMessage.ConnectionData,
-                    ClientNetworkId = context.SenderId
-                }, response);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleIncomingData.End();
+#endif
         }
 
-        private void ProcessPendingApprovals()
+        /// <summary>
+        /// Handles a <see cref="NetworkEvent.Disconnect"/> event.
+        /// </summary>
+        internal void DisconnectEventHandler(ulong transportClientId)
         {
-            List<ulong> senders = null;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportDisconnect.Begin();
+#endif
+            var clientId = TransportIdCleanUp(transportClientId);
 
-            foreach (var responsePair in ClientsToApprove)
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                var response = responsePair.Value;
-                var senderId = responsePair.Key;
-
-                if (!response.Pending)
-                {
-                    try
-                    {
-                        HandleConnectionApproval(senderId, response);
-
-                        if (senders == null)
-                        {
-                            senders = new List<ulong>();
-                        }
-                        senders.Add(senderId);
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogException(e);
-                    }
-                }
+                NetworkLog.LogInfo($"Disconnect Event From {clientId}");
             }
 
-            if (senders != null)
+            // Process the incoming message queue so that we get everything from the server disconnecting us
+            // or, if we are the server, so we got everything from that client.
+            MessagingSystem.ProcessIncomingMessageQueue();
+
+            try
             {
-                foreach (var sender in senders)
-                {
-                    ClientsToApprove.Remove(sender);
-                }
+                OnClientDisconnectCallback?.Invoke(clientId);
             }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+
+            if (LocalClient.IsServer)
+            {
+                OnClientDisconnectFromServer(clientId);
+            }
+            else
+            {
+                // We must pass true here and not process any sends messages
+                // as we are no longer connected and thus there is no one to
+                // send any messages to and this will cause an exception within
+                // UnityTransport as the client ID is no longer valid.
+                NetworkManager.Shutdown(true);
+            }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_TransportDisconnect.End();
+#endif
         }
 
+        /// <summary>
+        /// Handles a <see cref="NetworkEvent.TransportFailure"/> event.
+        /// </summary>
+        internal void TransportFailureEventHandler()
+        {
+            NetworkLog.LogError($"Shutting down due to network transport failure of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
+            OnTransportFailure?.Invoke();
+            NetworkManager.Shutdown(true);
+        }
+
+        /// <summary>
+        /// Client-Side:
+        /// Upon transport connecting, the client will send a connection request
+        /// </summary>
         private void SendConnectionRequest()
         {
             var message = new ConnectionRequestMessage
@@ -410,6 +402,9 @@ namespace Unity.Netcode
             message.MessageVersions.Dispose();
         }
 
+        /// <summary>
+        /// Approval time out coroutine
+        /// </summary>
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
             var timeStarted = LocalClient.IsServer ? NetworkManager.LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
@@ -483,10 +478,68 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Server-Side:
+        /// Handles processing a client connection request
+        /// </summary>
+        internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
+        {
+            // Note: Delegate creation allocates.
+            // Note: ToArray() also allocates. :(
+            var response = new NetworkManager.ConnectionApprovalResponse();
+            ClientsToApprove[context.SenderId] = response;
+
+            ConnectionApprovalCallback(
+                new NetworkManager.ConnectionApprovalRequest
+                {
+                    Payload = connectionRequestMessage.ConnectionData,
+                    ClientNetworkId = context.SenderId
+                }, response);
+        }
+
+        /// <summary>
+        /// Server-Side:
+        /// Processes pending approvals
+        /// </summary>
+        private void ProcessPendingApprovals()
+        {
+            List<ulong> senders = null;
+
+            foreach (var responsePair in ClientsToApprove)
+            {
+                var response = responsePair.Value;
+                var senderId = responsePair.Key;
+
+                if (!response.Pending)
+                {
+                    try
+                    {
+                        HandleConnectionApproval(senderId, response);
+
+                        if (senders == null)
+                        {
+                            senders = new List<ulong>();
+                        }
+                        senders.Add(senderId);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogException(e);
+                    }
+                }
+            }
+
+            if (senders != null)
+            {
+                foreach (var sender in senders)
+                {
+                    ClientsToApprove.Remove(sender);
+                }
+            }
+        }
+
+        /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
-        /// <param name="ownerClientId">The Network Id of the client being approved</param>
-        /// <param name="response">The response to allow the player in or not, with its parameters</param>
         internal void HandleConnectionApproval(ulong ownerClientId, NetworkManager.ConnectionApprovalResponse response)
         {
             LocalClient.IsApproved = response.Approved;
@@ -641,6 +694,11 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Server-Side:
+        /// Creates a new <see cref="NetworkClient"/> and handles updating the associated
+        /// connected clients lists.
+        /// </summary>
         internal NetworkClient AddClient(ulong clientId)
         {
             var networkClient = LocalClient;
@@ -654,96 +712,10 @@ namespace Unity.Netcode
             return networkClient;
         }
 
-        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
-            where TMessageType : INetworkMessage
-            where TClientIdListType : IReadOnlyList<ulong>
-        {
-            // Prevent server sending to itself
-            if (LocalClient.IsServer)
-            {
-                ulong* nonServerIds = stackalloc ulong[clientIds.Count];
-                int newIdx = 0;
-                for (int idx = 0; idx < clientIds.Count; ++idx)
-                {
-                    if (clientIds[idx] == NetworkManager.ServerClientId)
-                    {
-                        continue;
-                    }
-
-                    nonServerIds[newIdx++] = clientIds[idx];
-                }
-
-                if (newIdx == 0)
-                {
-                    return 0;
-                }
-                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
-            }
-            // else
-            if (clientIds.Count != 1 || clientIds[0] != NetworkManager.ServerClientId)
-            {
-                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
-            }
-
-            return MessagingSystem.SendMessage(ref message, delivery, clientIds);
-        }
-
-        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery,
-            ulong* clientIds, int numClientIds)
-            where T : INetworkMessage
-        {
-            // Prevent server sending to itself
-            if (LocalClient.IsServer)
-            {
-                ulong* nonServerIds = stackalloc ulong[numClientIds];
-                int newIdx = 0;
-                for (int idx = 0; idx < numClientIds; ++idx)
-                {
-                    if (clientIds[idx] == NetworkManager.ServerClientId)
-                    {
-                        continue;
-                    }
-
-                    nonServerIds[newIdx++] = clientIds[idx];
-                }
-
-                if (newIdx == 0)
-                {
-                    return 0;
-                }
-                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
-            }
-            // else
-            if (numClientIds != 1 || clientIds[0] != NetworkManager.ServerClientId)
-            {
-                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
-            }
-
-            return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
-        }
-
-        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
-            where T : INetworkMessage
-        {
-            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
-        }
-
-        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
-            where T : INetworkMessage
-        {
-            // Prevent server sending to itself
-            if (LocalClient.IsServer && clientId == NetworkManager.ServerClientId)
-            {
-                return 0;
-            }
-
-            if (!LocalClient.IsServer && clientId != NetworkManager.ServerClientId)
-            {
-                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
-            }
-            return MessagingSystem.SendMessage(ref message, delivery, clientId);
-        }
-
+        /// <summary>
+        /// Server-Side:
+        /// Invoked when a client is disconnected from a server-host
+        /// </summary>
         internal void OnClientDisconnectFromServer(ulong clientId)
         {
             if (!LocalClient.IsServer)
@@ -847,12 +819,21 @@ namespace Unity.Netcode
             PendingClients.Remove(clientId);
         }
 
+        /// <summary>
+        /// Server-Side:
+        /// Invoked when disconnecting a remote client
+        /// </summary>
         internal void DisconnectRemoteClient(ulong clientId)
         {
             MessagingSystem.ProcessSendQueues();
             OnClientDisconnectFromServer(clientId);
         }
 
+        /// <summary>
+        /// Server-Side:
+        /// Invoked when disconnecting a remote client with the option to provide
+        /// a reason for disconnecting.
+        /// </summary>
         internal void DisconnectClient(ulong clientId, string reason = null)
         {
             if (!LocalClient.IsServer)
@@ -871,8 +852,14 @@ namespace Unity.Netcode
             DisconnectRemoteClient(clientId);
         }
 
-        internal void ClearClients()
+        /// <summary>
+        /// Should be invoked when starting a server-host or client
+        /// </summary>
+        /// <param name="networkManager"></param>
+        internal void Initialize(NetworkManager networkManager)
         {
+            // Prepare for a new session
+            LocalClient.IsApproved = false;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -881,8 +868,31 @@ namespace Unity.Netcode
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
             NetworkObject.OrphanChildren.Clear();
+
+            DisconnectReason = string.Empty;
+            NetworkManager = networkManager;
+
+            // TODO 2023-Q2: We might limit this to the two updates, for now leaving all
+            this.RegisterAllNetworkUpdates();
+
+            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(networkManager), networkManager);
+
+            MessagingSystem.Hook(new NetworkManagerHooks(networkManager));
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            MessagingSystem.Hook(new ProfilingHooks());
+#endif
+
+#if MULTIPLAYER_TOOLS
+            MessagingSystem.Hook(new MetricHooks(this));
+#endif
+
+            MessagingSystem.ClientConnected(NetworkManager.ServerClientId);
         }
 
+        /// <summary>
+        /// Should be called when shutting down a server-host or client
+        /// </summary>
         internal void Shutdown()
         {
             StopProcessingMessages = false;
@@ -946,28 +956,109 @@ namespace Unity.Netcode
             MessagingSystem?.Dispose();
         }
 
-        public void Initialize(NetworkManager networkManager)
+        /// <summary>
+        /// TODO 2023-Q2:
+        /// Should we replace this with direct calls to the MessagingSystem?
+        /// </summary>
+        internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
+            where TMessageType : INetworkMessage
+            where TClientIdListType : IReadOnlyList<ulong>
         {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer)
+            {
+                ulong* nonServerIds = stackalloc ulong[clientIds.Count];
+                int newIdx = 0;
+                for (int idx = 0; idx < clientIds.Count; ++idx)
+                {
+                    if (clientIds[idx] == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
 
-            LocalClient.IsApproved = false;
-            ClearClients();
-            DisconnectReason = string.Empty;
-            NetworkManager = networkManager;
-            this.RegisterAllNetworkUpdates();
+                    nonServerIds[newIdx++] = clientIds[idx];
+                }
 
-            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(networkManager), networkManager);
+                if (newIdx == 0)
+                {
+                    return 0;
+                }
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+            }
+            // else
+            if (clientIds.Count != 1 || clientIds[0] != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
 
-            MessagingSystem.Hook(new NetworkManagerHooks(networkManager));
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds);
+        }
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            MessagingSystem.Hook(new ProfilingHooks());
-#endif
+        /// <summary>
+        /// TODO 2023-Q2:
+        /// Should we replace this with direct calls to the MessagingSystem?
+        /// </summary>
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong* clientIds, int numClientIds)
+            where T : INetworkMessage
+        {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer)
+            {
+                ulong* nonServerIds = stackalloc ulong[numClientIds];
+                int newIdx = 0;
+                for (int idx = 0; idx < numClientIds; ++idx)
+                {
+                    if (clientIds[idx] == NetworkManager.ServerClientId)
+                    {
+                        continue;
+                    }
 
-#if MULTIPLAYER_TOOLS
-            MessagingSystem.Hook(new MetricHooks(this));
-#endif
+                    nonServerIds[newIdx++] = clientIds[idx];
+                }
 
-            MessagingSystem.ClientConnected(NetworkManager.ServerClientId);
+                if (newIdx == 0)
+                {
+                    return 0;
+                }
+                return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
+            }
+            // else
+            if (numClientIds != 1 || clientIds[0] != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
+
+            return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
+        }
+
+        /// <summary>
+        /// TODO 2023-Q2:
+        /// Should we replace this with direct calls to the MessagingSystem?
+        /// </summary>
+        internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
+            where T : INetworkMessage
+        {
+            return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
+        }
+
+        /// <summary>
+        /// TODO 2023-Q2:
+        /// Should we replace this with direct calls to the MessagingSystem?
+        /// </summary>
+        internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
+            where T : INetworkMessage
+        {
+            // Prevent server sending to itself
+            if (LocalClient.IsServer && clientId == NetworkManager.ServerClientId)
+            {
+                return 0;
+            }
+
+            if (!LocalClient.IsServer && clientId != NetworkManager.ServerClientId)
+            {
+                throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
+            }
+            return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
     }
 }

@@ -809,7 +809,7 @@ namespace Unity.Netcode
                     IsListening = false;
 
                     Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                    ConnectionManager.TransportFailure();
+                    ConnectionManager.TransportFailureEventHandler();
                     Shutdown();
                 }
             }
@@ -846,7 +846,7 @@ namespace Unity.Netcode
             if (!NetworkConfig.NetworkTransport.StartClient())
             {
                 Debug.LogError($"Client is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                ConnectionManager.TransportFailure();
+                ConnectionManager.TransportFailureEventHandler();
                 Shutdown();
                 return false;
             }
@@ -884,7 +884,7 @@ namespace Unity.Netcode
                 if (!NetworkConfig.NetworkTransport.StartServer())
                 {
                     Debug.LogError($"Server is shutting down due to network transport start failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                    ConnectionManager.TransportFailure();
+                    ConnectionManager.TransportFailureEventHandler();
                     Shutdown();
 
                     ConnectionManager.LocalClient.SetRole(false, false);
