@@ -213,7 +213,7 @@ namespace Unity.Netcode
             ProcessIncomingMessageQueue();
             CleanupDisconnectedClients();
         }
-        
+
         internal static string ByteArrayToString(byte[] ba, int offset, int count)
         {
             var hex = new StringBuilder(ba.Length * 2);
