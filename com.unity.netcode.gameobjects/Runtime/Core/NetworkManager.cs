@@ -1128,13 +1128,13 @@ namespace Unity.Netcode
             return isParented;
         }
 
-        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
         {
             return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
         }
 
 #if UNITY_EDITOR
-        static internal INetworkManagerHelper NetworkManagerHelper;
+        internal static INetworkManagerHelper NetworkManagerHelper;
         /// <summary>
         /// Interface for NetworkManagerHelper
         /// </summary>

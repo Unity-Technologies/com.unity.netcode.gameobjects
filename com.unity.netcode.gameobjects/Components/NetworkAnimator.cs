@@ -895,7 +895,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Helper function to get the cached value
         /// </summary>
-        unsafe private T GetValue<T>(ref AnimatorParamCache animatorParamCache)
+        private unsafe T GetValue<T>(ref AnimatorParamCache animatorParamCache)
         {
             T currentValue;
             fixed (void* value = animatorParamCache.Value)
@@ -910,7 +910,7 @@ namespace Unity.Netcode.Components
         /// If so, it fills out m_ParametersToUpdate with the indices of the parameters
         /// that have changed.  Returns true if any parameters changed.
         /// </summary>
-        unsafe private bool CheckParametersChanged()
+        private unsafe bool CheckParametersChanged()
         {
             m_ParametersToUpdate.Clear();
             for (int i = 0; i < m_CachedAnimatorParameters.Length; i++)

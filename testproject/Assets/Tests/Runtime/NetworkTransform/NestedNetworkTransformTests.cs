@@ -173,7 +173,7 @@ namespace TestProject.RuntimeTests
         private const float k_RotationVarianceCompressed = 0.555f;
 
         private float m_CurrentVariance = k_PositionScaleVariance;
-        override protected float GetDeltaVarianceThreshold()
+        protected override float GetDeltaVarianceThreshold()
         {
             return m_CurrentVariance;
         }

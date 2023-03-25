@@ -6,7 +6,7 @@ namespace TestProject.ManualTests
 {
     public class ChildMoverManager : NetworkBehaviour
     {
-        static public bool StopMovement;
+        public static bool StopMovement;
 
         public List<ChildMover> ChildMovers;
 

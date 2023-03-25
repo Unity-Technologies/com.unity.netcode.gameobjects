@@ -28,6 +28,10 @@ dotnet_sort_system_directives_first = true:error
 dotnet_separate_import_directive_groups = false:error
 csharp_using_directive_placement = outside_namespace:error
 
+# Order modifiers
+dotnet_diagnostic.IDE0036.severity = error
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:error
+
 # Avoid "this." if not necessary
 dotnet_style_qualification_for_field = false:error
 dotnet_style_qualification_for_property = false:error

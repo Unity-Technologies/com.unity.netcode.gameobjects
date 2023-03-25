@@ -71,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkList<int> MyListSetOnSpawn;
         public NetworkVariable<int> MyOwnerReadNetworkVariable;
         public NetworkList<int> MyList;
-        static public NetworkManager NetworkManagerOfInterest;
+        public static NetworkManager NetworkManagerOfInterest;
 
         internal static int GainOwnershipCount = 0;
 

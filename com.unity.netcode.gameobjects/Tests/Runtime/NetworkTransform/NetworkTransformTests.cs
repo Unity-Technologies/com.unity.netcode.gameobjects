@@ -63,9 +63,9 @@ namespace Unity.Netcode.RuntimeTests
     /// </summary>
     public class ChildObjectComponent : NetworkBehaviour
     {
-        public readonly static List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
+        public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
         public static ChildObjectComponent ServerInstance { get; internal set; }
-        public readonly static Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
+        public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
 
         public static void Reset()
         {

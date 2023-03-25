@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public NetworkList<int> MyNetworkList;
 
-        static internal int Updates = 0;
+        internal static int Updates = 0;
 
         private void Awake()
         {
