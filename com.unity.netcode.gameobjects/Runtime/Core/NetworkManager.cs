@@ -19,8 +19,6 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour
     {
-        private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
-
         #region RPC RELATED CODE
 #pragma warning disable IDE1006 // disable naming rule violation check
 
@@ -712,7 +710,7 @@ namespace Unity.Netcode
             }
             else
             {
-                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, k_DefaultBufferSizeSec, 0.2);
+                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             }
 
             NetworkTimeSystem.InitializeForUpdates(this);

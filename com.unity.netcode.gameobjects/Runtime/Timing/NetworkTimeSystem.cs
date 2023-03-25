@@ -10,10 +10,38 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkTimeSystem : INetworkUpdateSystem
     {
+        /// <summary>
+        /// TODO 2023-Q2: Not sure if this just needs to go away, but there is nothing that ever replaces this
+        /// </summary>
+        /// <remarks>
+        /// This was the original comment when it lived in NetworkManager:
+        /// todo talk with UX/Product, find good default value for this
+        /// </remarks>
+        private const float k_DefaultBufferSizeSec = 0.05f;
+
+        /// <summary>
+        /// Time synchronization frequency defaults to 1 second
+        /// </summary>
+        private const double k_TimeSyncFrequency = 1.0d;
+
+        /// <summary>
+        /// The threshold, in seconds, used to force a hard catchup of network time
+        /// </summary>
+        private const double k_HardResetThresholdSeconds = 0.2d;
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
 #endif
-        private const double k_TimeSyncFrequency = 1.0d; // sync every second
+
+        /// <summary>
+        /// Default adjustment ratio
+        /// </summary>
+        /// <remarks>
+        /// TODO 2023-Q2: This most likely will go away, but note that it was adjusted during preparation
+        /// to default to 0.2 as opposed to 0.1
+        /// </remarks>
+        private const double k_DefaultAdjustmentRatio = 0.1d;
+
         private double m_TimeSec;
         private double m_CurrentLocalTimeOffset;
         private double m_DesiredLocalTimeOffset;
@@ -63,7 +91,8 @@ namespace Unity.Netcode
         /// <param name="serverBufferSec">The amount of the time in seconds the client should buffer incoming messages from the server.</param>
         /// <param name="hardResetThresholdSec">The threshold, in seconds, used to force a hard catchup of network time.</param>
         /// <param name="adjustmentRatio">The ratio at which the NetworkTimeSystem speeds up or slows down time.</param>
-        public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
+        public NetworkTimeSystem(double localBufferSec, double serverBufferSec = k_DefaultBufferSizeSec,
+            double hardResetThresholdSec = k_HardResetThresholdSeconds, double adjustmentRatio = k_DefaultAdjustmentRatio)
         {
             LocalBufferSec = localBufferSec;
             ServerBufferSec = serverBufferSec;
