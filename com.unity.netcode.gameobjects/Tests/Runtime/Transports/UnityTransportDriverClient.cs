@@ -1,12 +1,11 @@
-using NUnit.Framework;
 using System.Collections;
+using NUnit.Framework;
+using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 using Unity.Networking.Transport.Utilities;
-using Unity.Netcode.Transports.UTP;
 using UnityEngine;
-
-using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 using static Unity.Netcode.RuntimeTests.UnityTransportTestHelpers;
+using UTPNetworkEvent = Unity.Networking.Transport.NetworkEvent;
 
 namespace Unity.Netcode.RuntimeTests
 {

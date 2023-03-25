@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
-using UnityEngine;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace Unity.Netcode.Components
 {

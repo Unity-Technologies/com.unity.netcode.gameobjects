@@ -1,5 +1,5 @@
-using Unity.Netcode;
 using System;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace TestProject.ManualTests

@@ -1,7 +1,7 @@
-using UnityEngine;
 using NUnit.Framework;
-using UnityEngine.TestTools;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests

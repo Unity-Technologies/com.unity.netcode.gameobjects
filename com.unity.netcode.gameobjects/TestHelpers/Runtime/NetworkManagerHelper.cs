@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine;
 
 namespace Unity.Netcode.TestHelpers.Runtime
 {

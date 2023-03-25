@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {

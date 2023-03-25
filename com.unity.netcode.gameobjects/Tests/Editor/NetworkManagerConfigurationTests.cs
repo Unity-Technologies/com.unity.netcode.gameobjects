@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
 using Unity.Netcode.Editor;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 

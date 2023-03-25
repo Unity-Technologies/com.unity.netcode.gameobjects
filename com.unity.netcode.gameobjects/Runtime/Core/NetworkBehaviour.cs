@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 using System.Reflection;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {

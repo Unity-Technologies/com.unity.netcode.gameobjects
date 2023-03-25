@@ -2,12 +2,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
-using Random = UnityEngine.Random;
 using UnityEngine;
+using UnityEngine.TestTools;
+using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
 {

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {

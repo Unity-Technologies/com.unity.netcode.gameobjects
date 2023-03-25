@@ -1,8 +1,8 @@
+using System;
 using System.Threading.Tasks;
-using UnityEngine;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
-using System;
+using UnityEngine;
 
 public class RelayUtility
 {

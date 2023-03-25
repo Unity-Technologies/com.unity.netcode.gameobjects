@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Netcode.Editor.Configuration;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEditor;
 
 namespace Unity.Netcode.Editor
 {

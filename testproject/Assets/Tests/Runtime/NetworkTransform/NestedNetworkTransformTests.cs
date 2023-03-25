@@ -1,11 +1,11 @@
-using System.Text;
 using System.Collections;
+using System.Text;
 using NUnit.Framework;
+using TestProject.ManualTests;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using TestProject.ManualTests;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
