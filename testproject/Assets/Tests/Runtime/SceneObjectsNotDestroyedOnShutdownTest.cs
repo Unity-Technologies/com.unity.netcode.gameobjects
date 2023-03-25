@@ -26,8 +26,10 @@ namespace TestProject.RuntimeTests
         {
             m_NetworkManagerGameObject = new GameObject();
             m_ClientNetworkManager = m_NetworkManagerGameObject.AddComponent<NetworkManager>();
-            m_ClientNetworkManager.NetworkConfig = new NetworkConfig();
-            m_ClientNetworkManager.NetworkConfig.NetworkTransport = m_NetworkManagerGameObject.AddComponent<BlankTestingTransport>();
+            m_ClientNetworkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = m_NetworkManagerGameObject.AddComponent<BlankTestingTransport>()
+            };
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
             SceneManager.LoadSceneAsync(k_TestScene, LoadSceneMode.Additive);
         }

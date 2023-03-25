@@ -38,10 +38,7 @@ namespace TestProject.RuntimeTests
         private void NetworkManager_OnClientConnectedCallback(ulong obj)
         {
             m_NumberOfTimesInvoked++;
-            if (m_ActionClientConnected != null)
-            {
-                m_ActionClientConnected.Invoke(NetworkObject, m_NumberOfTimesInvoked, IsHost, IsClient, IsServer);
-            }
+            m_ActionClientConnected?.Invoke(NetworkObject, m_NumberOfTimesInvoked, IsHost, IsClient, IsServer);
         }
 
         // When disabling on spawning we only want this to happen on the initial spawn.

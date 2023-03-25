@@ -66,9 +66,11 @@ namespace Unity.Netcode.RuntimeTests
         [Test]
         public void VerifyUniqueNetworkConfigPerRequest()
         {
-            var networkConfig = new NetworkConfig();
-            networkConfig.EnableSceneManagement = true;
-            networkConfig.TickRate = 30;
+            var networkConfig = new NetworkConfig
+            {
+                EnableSceneManagement = true,
+                TickRate = 30
+            };
             var currentHash = networkConfig.GetConfig();
             networkConfig.EnableSceneManagement = false;
             networkConfig.TickRate = 60;

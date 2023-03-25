@@ -511,8 +511,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(server, prefabCreateAssertError);
             Assert.IsFalse(server.IsListening, prefabCreateAssertError);
 
-            var gameObject = new GameObject();
-            gameObject.name = baseName;
+            var gameObject = new GameObject
+            {
+                name = baseName
+            };
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = server;
             MakeNetworkObjectTestPrefab(networkObject);

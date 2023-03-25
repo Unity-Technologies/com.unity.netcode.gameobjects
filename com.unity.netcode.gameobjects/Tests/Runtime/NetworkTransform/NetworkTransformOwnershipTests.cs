@@ -84,8 +84,10 @@ namespace Unity.Netcode.RuntimeTests
             var valueSetByOwner = Vector3.one * 2;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
-            var rotation = new Quaternion();
-            rotation.eulerAngles = valueSetByOwner;
+            var rotation = new Quaternion
+            {
+                eulerAngles = valueSetByOwner
+            };
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
             yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
@@ -161,8 +163,10 @@ namespace Unity.Netcode.RuntimeTests
             var valueSetByOwner = Vector3.one * 2;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
-            var rotation = new Quaternion();
-            rotation.eulerAngles = valueSetByOwner;
+            var rotation = new Quaternion
+            {
+                eulerAngles = valueSetByOwner
+            };
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
             yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);

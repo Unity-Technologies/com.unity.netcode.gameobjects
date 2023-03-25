@@ -54,10 +54,7 @@ namespace TestProject.ManualTests
             }
             else
             {
-                if (m_ClientServerToggle != null)
-                {
-                    m_ClientServerToggle.SetActive(true);
-                }
+                m_ClientServerToggle?.SetActive(true);
                 UpdateButton();
             }
 
@@ -78,10 +75,7 @@ namespace TestProject.ManualTests
             if (!IsServer)
             {
                 var networkObject = GetComponent<NetworkObject>();
-                if (networkObject != null)
-                {
-                    networkObject.SpawnWithOwnership(clientId, true);
-                }
+                networkObject?.SpawnWithOwnership(clientId, true);
             }
         }
 
@@ -195,8 +189,10 @@ namespace TestProject.ManualTests
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {
-                        var statsInfoContainer = new StatsInfoContainer();
-                        statsInfoContainer.StatValues = new List<float>();
+                        var statsInfoContainer = new StatsInfoContainer
+                        {
+                            StatValues = new List<float>()
+                        };
                         statsInfoContainer.StatValues.Add(Time.deltaTime);
                         ReceiveStatsClientRpc(statsInfoContainer);
                     }

@@ -30,10 +30,7 @@ namespace TestProject.ManualTests
                 if (gameObject != null)
                 {
                     var serverHost = gameObject.GetComponent<ServerHostClientText>();
-                    if (serverHost != null)
-                    {
-                        serverHost.SetColor(color);
-                    }
+                    serverHost?.SetColor(color);
                 }
             }
             base.OnNetworkSpawn();

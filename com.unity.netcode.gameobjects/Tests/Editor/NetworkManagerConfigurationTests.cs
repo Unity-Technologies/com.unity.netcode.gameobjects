@@ -130,9 +130,11 @@ namespace Unity.Netcode.EditorTests
             overridingTargetPrefab.GlobalObjectIdHash = 3;
             sourcePrefabToOverride.GlobalObjectIdHash = 4;
 
-            networkConfig.OldPrefabList = new List<NetworkPrefab>();
-            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = regularPrefab.gameObject });
-            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 });
+            networkConfig.OldPrefabList = new List<NetworkPrefab>
+            {
+                new NetworkPrefab { Prefab = regularPrefab.gameObject },
+                new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 }
+            };
 
             networkConfig.InitializePrefabs();
 
@@ -159,13 +161,17 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
 
@@ -206,13 +212,17 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
@@ -252,13 +262,17 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();

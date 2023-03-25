@@ -81,10 +81,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (SpawnSlider != null)
-            {
-                SpawnSlider.gameObject.SetActive(false);
-            }
+            SpawnSlider?.gameObject.SetActive(false);
         }
 
         private bool m_IsExitingScene;
@@ -305,9 +302,9 @@ namespace TestProject.ManualTests
 
         private void SetGlobalTransformPropertiesUI(bool isVisible)
         {
-            if (HalfFloat != null) { HalfFloat.gameObject.SetActive(isVisible); }
-            if (QuatComp != null) { QuatComp.gameObject.SetActive(isVisible); }
-            if (QuatSynch != null) { QuatSynch.gameObject.SetActive(isVisible); }
+            HalfFloat?.gameObject.SetActive(isVisible);
+            QuatComp?.gameObject.SetActive(isVisible);
+            QuatSynch?.gameObject.SetActive(isVisible);
         }
 
         private void Awake()
@@ -461,10 +458,7 @@ namespace TestProject.ManualTests
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             genericNetworkObjectBehaviour.IsRegisteredPoolObject = true;
             var networkObjectLabel = obj.GetComponentInChildren<NetworkObjectLabel>();
-            if (networkObjectLabel != null)
-            {
-                networkObjectLabel.SetLabelVisibility(LabelEnabled);
-            }
+            networkObjectLabel?.SetLabelVisibility(LabelEnabled);
             ApplyPrecisionAdjustments(obj);
             m_ObjectPool.Add(obj);
             return m_ObjectPool[m_ObjectPool.Count - 1];

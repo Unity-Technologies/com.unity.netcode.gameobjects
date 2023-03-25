@@ -90,7 +90,7 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static NetworkObject Resolve(NetworkObjectReference networkObjectRef, NetworkManager networkManager = null)
         {
-            networkManager = networkManager != null ? networkManager : NetworkManager.Singleton;
+            networkManager = networkManager ?? NetworkManager.Singleton;
             networkManager.SpawnManager.SpawnedObjects.TryGetValue(networkObjectRef.m_NetworkObjectId, out NetworkObject networkObject);
 
             return networkObject;

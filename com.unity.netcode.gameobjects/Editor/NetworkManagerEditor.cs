@@ -355,15 +355,19 @@ namespace Unity.Netcode.Editor
 
             if (s_CenteredWordWrappedLabelStyle == null)
             {
-                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label);
-                s_CenteredWordWrappedLabelStyle.wordWrap = true;
-                s_CenteredWordWrappedLabelStyle.alignment = TextAnchor.MiddleLeft;
+                s_CenteredWordWrappedLabelStyle = new GUIStyle(GUI.skin.label)
+                {
+                    wordWrap = true,
+                    alignment = TextAnchor.MiddleLeft
+                };
             }
 
             if (s_HelpBoxStyle == null)
             {
-                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
-                s_HelpBoxStyle.padding = new RectOffset(10, 10, 10, 10);
+                s_HelpBoxStyle = new GUIStyle(EditorStyles.helpBox)
+                {
+                    padding = new RectOffset(10, 10, 10, 10)
+                };
             }
 
             var openDocsButtonStyle = GUI.skin.button;

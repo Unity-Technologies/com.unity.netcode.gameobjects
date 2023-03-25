@@ -1220,10 +1220,7 @@ namespace Unity.Netcode
             if (wasServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
-                if (MessagingSystem != null)
-                {
-                    MessagingSystem.ProcessSendQueues();
-                }
+                MessagingSystem?.ProcessSendQueues();
 
                 var disconnectedIds = new HashSet<ulong>();
 
@@ -1312,10 +1309,7 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             }
 
-            if (DeferredMessageManager != null)
-            {
-                DeferredMessageManager.CleanupAllTriggers();
-            }
+            DeferredMessageManager?.CleanupAllTriggers();
 
             if (SceneManager != null)
             {
@@ -1538,10 +1532,9 @@ namespace Unity.Netcode
                 // we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkConfig.ConnectionApproval,
-                ConnectionData = NetworkConfig.ConnectionData
+                ConnectionData = NetworkConfig.ConnectionData,
+                MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp)
             };
-
-            message.MessageVersions = new NativeArray<MessageVersionData>(MessagingSystem.MessageHandlers.Length, Allocator.Temp);
             for (int index = 0; index < MessagingSystem.MessageHandlers.Length; index++)
             {
                 if (MessagingSystem.MessageTypes[index] != null)
@@ -1913,8 +1906,10 @@ namespace Unity.Netcode
 
             if (!string.IsNullOrEmpty(reason))
             {
-                var disconnectReason = new DisconnectReasonMessage();
-                disconnectReason.Reason = reason;
+                var disconnectReason = new DisconnectReasonMessage
+                {
+                    Reason = reason
+                };
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
             MessagingSystem.ProcessSendQueues();
@@ -2161,8 +2156,10 @@ namespace Unity.Netcode
             {
                 if (!string.IsNullOrEmpty(response.Reason))
                 {
-                    var disconnectReason = new DisconnectReasonMessage();
-                    disconnectReason.Reason = response.Reason;
+                    var disconnectReason = new DisconnectReasonMessage
+                    {
+                        Reason = response.Reason
+                    };
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
 
                     MessagingSystem.ProcessSendQueues();

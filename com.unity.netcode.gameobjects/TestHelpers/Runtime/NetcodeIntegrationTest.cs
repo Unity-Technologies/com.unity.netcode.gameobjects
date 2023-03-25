@@ -1039,7 +1039,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void AssertOnTimeout(string timeOutErrorMessage, TimeoutHelper assignedTimeoutHelper = null)
         {
-            var timeoutHelper = assignedTimeoutHelper != null ? assignedTimeoutHelper : s_GlobalTimeoutHelper;
+            var timeoutHelper = assignedTimeoutHelper ?? s_GlobalTimeoutHelper;
             Assert.False(timeoutHelper.TimedOut, timeOutErrorMessage);
         }
 

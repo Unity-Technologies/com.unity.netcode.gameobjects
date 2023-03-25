@@ -56,8 +56,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartServerAndClients();
 
             var parentObject = new GameObject();
-            var childObject = new GameObject();
-            childObject.name = "ChildObject";
+            var childObject = new GameObject
+            {
+                name = "ChildObject"
+            };
             childObject.transform.parent = parentObject.transform;
             var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
             var childBehaviour = childObject.AddComponent<NetworkTransform>();
