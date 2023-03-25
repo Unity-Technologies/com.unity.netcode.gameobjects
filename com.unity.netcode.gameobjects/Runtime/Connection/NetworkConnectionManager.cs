@@ -254,10 +254,10 @@ namespace Unity.Netcode
                 // we should always force the rebuilding of the NetworkConfig hash value
                 ConfigHash = NetworkManager.NetworkConfig.GetConfig(false),
                 ShouldSendConnectionData = NetworkManager.NetworkConfig.ConnectionApproval,
-                ConnectionData = NetworkManager.NetworkConfig.ConnectionData
+                ConnectionData = NetworkManager.NetworkConfig.ConnectionData,
+                MessageVersions = new NativeArray<MessageVersionData>(NetworkManager.MessagingSystem.MessageHandlers.Length, Allocator.Temp)
             };
 
-            message.MessageVersions = new NativeArray<MessageVersionData>(NetworkManager.MessagingSystem.MessageHandlers.Length, Allocator.Temp);
             for (int index = 0; index < NetworkManager.MessagingSystem.MessageHandlers.Length; index++)
             {
                 if (NetworkManager.MessagingSystem.MessageTypes[index] != null)
@@ -461,10 +461,11 @@ namespace Unity.Netcode
             {
                 if (!string.IsNullOrEmpty(response.Reason))
                 {
-                    var disconnectReason = new DisconnectReasonMessage();
-                    disconnectReason.Reason = response.Reason;
+                    var disconnectReason = new DisconnectReasonMessage
+                    {
+                        Reason = response.Reason
+                    };
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
-
                     NetworkManager.MessagingSystem.ProcessSendQueues();
                 }
 
@@ -612,10 +613,7 @@ namespace Unity.Netcode
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
-                if (NetworkManager.MessagingSystem != null)
-                {
-                    NetworkManager.MessagingSystem.ProcessSendQueues();
-                }
+                NetworkManager.MessagingSystem?.ProcessSendQueues();
 
                 // Build a list of all client ids to be disconnected
                 var disconnectedIds = new HashSet<ulong>();
@@ -655,9 +653,8 @@ namespace Unity.Netcode
             }
             else if (NetworkManager != null && NetworkManager.IsListening && LocalClient.IsClient)
             {
-                // Client only, send disconnect to server
-                // If transport throws and exception, log the exception and
-                // continue the shutdown sequence (or forever be shutting down)
+                // Client only, send disconnect and if transport throws and exception,
+                // log the exception and continue the shutdown sequence (or forever be shutting down)
                 try
                 {
                     NetworkManager.NetworkConfig.NetworkTransport.DisconnectLocalClient();
@@ -787,8 +784,10 @@ namespace Unity.Netcode
 
             if (!string.IsNullOrEmpty(reason))
             {
-                var disconnectReason = new DisconnectReasonMessage();
-                disconnectReason.Reason = reason;
+                var disconnectReason = new DisconnectReasonMessage
+                {
+                    Reason = reason
+                };
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
             DisconnectRemoteClient(clientId);

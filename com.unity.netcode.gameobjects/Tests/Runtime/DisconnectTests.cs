@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -10,7 +9,6 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class DisconnectTests
     {
-
         private bool m_ClientDisconnected;
         [UnityTest]
         public IEnumerator RemoteDisconnectPlayerObjectCleanup()

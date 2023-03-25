@@ -553,14 +553,14 @@ namespace Unity.Netcode
             return isParented;
         }
 
-        static internal string GenerateNestedNetworkManagerMessage(Transform transform)
+        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
         {
             return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
         }
 
         #region EDITOR SPECIFIC CODE
 #if UNITY_EDITOR
-        static internal INetworkManagerHelper NetworkManagerHelper;
+        internal static INetworkManagerHelper NetworkManagerHelper;
         /// <summary>
         /// Interface for NetworkManagerHelper
         /// </summary>
@@ -1084,10 +1084,7 @@ namespace Unity.Netcode
                 NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             }
 
-            if (DeferredMessageManager != null)
-            {
-                DeferredMessageManager.CleanupAllTriggers();
-            }
+            DeferredMessageManager?.CleanupAllTriggers();
 
             if (SceneManager != null)
             {
