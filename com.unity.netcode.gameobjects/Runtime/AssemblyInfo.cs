@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-
+[assembly: InternalsVisibleTo("Unity.Netcode.Components")]
 #if UNITY_EDITOR
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor")]
 [assembly: InternalsVisibleTo("Unity.Netcode.Editor.CodeGen")]
