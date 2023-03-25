@@ -22,7 +22,6 @@ dotnet_diagnostic.IDE0043.severity = error # Format string contains invalid plac
 dotnet_diagnostic.IDE0063.severity = error # Use simple 'using' statement
 csharp_style_var_when_type_is_apparent = true:error
 dotnet_style_require_accessibility_modifiers = always:error
-csharp_prefer_braces = true:error
 
 # Sort using directives with System.* appearing first
 dotnet_sort_system_directives_first = true:error
@@ -32,6 +31,10 @@ csharp_using_directive_placement = outside_namespace:error
 # Order modifiers
 dotnet_diagnostic.IDE0036.severity = error
 csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:error
+
+# Add braces
+dotnet_diagnostic.IDE0011.severity = error
+csharp_prefer_braces = true:error
 
 # Avoid "this." if not necessary
 dotnet_style_qualification_for_field = false:error
