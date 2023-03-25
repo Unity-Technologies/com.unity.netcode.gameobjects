@@ -15,6 +15,14 @@ using Object = UnityEngine.Object;
 
 namespace Unity.Netcode
 {
+    /// <summary>
+    /// The NGO connection manager handles:
+    /// - Client Connections
+    /// - Client Approval
+    /// - Processing <see cref="NetworkEvent"/>s.
+    /// - Client Disconnection
+    /// - MessagingSystem updates
+    /// </summary>
     public class NetworkConnectionManager : INetworkUpdateSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -219,8 +227,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Event driven NetwokrTransports (like UnityTransport) NetworkEvent handling
+        /// Event driven NetworkTransports (like UnityTransport) NetworkEvent handling
         /// </summary>
+        /// <remarks>
+        /// Polling NetworkTransports invoke this directly
+        /// </remarks>
         internal void HandleNetworkEvent(NetworkEvent networkEvent, ulong transportClientId, ArraySegment<byte> payload, float receiveTime)
         {
             switch (networkEvent)
@@ -479,7 +490,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Handles processing a client connection request
+        /// Handles approval while processing a client connection request
         /// </summary>
         internal void ApproveConnection(ref ConnectionRequestMessage connectionRequestMessage, ref NetworkContext context)
         {
@@ -498,7 +509,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Processes pending approvals
+        /// Processes pending approvals and removes any stale pending clients
         /// </summary>
         private void ProcessPendingApprovals()
         {
@@ -540,6 +551,9 @@ namespace Unity.Netcode
         /// <summary>
         /// Server Side: Handles the approval of a client
         /// </summary>
+        /// <remarks>
+        /// This will spawn the player prefab as well as start client synchronization if <see cref="NetworkConfig.EnableSceneManagement"/> is enabled
+        /// </remarks>
         internal void HandleConnectionApproval(ulong ownerClientId, NetworkManager.ConnectionApprovalResponse response)
         {
             LocalClient.IsApproved = response.Approved;
@@ -832,7 +846,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Server-Side:
         /// Invoked when disconnecting a remote client with the option to provide
-        /// a reason for disconnecting.
+        /// a reason.
         /// </summary>
         internal void DisconnectClient(ulong clientId, string reason = null)
         {
@@ -891,7 +905,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Should be called when shutting down a server-host or client
+        /// Should be called when shutting down the NetworkManager
         /// </summary>
         internal void Shutdown()
         {
