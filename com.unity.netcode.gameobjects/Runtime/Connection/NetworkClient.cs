@@ -20,6 +20,10 @@ namespace Unity.Netcode
 
         public bool IsHost => IsClient && IsServer;
 
+        public bool IsConnected { get; internal set; }
+
+        public bool IsApproved { get; internal set; }
+
         internal void SetRole(bool isServer, bool isClient, NetworkManager networkManager = null)
         {
             IsServer = isServer;

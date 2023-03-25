@@ -293,7 +293,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 var catcher = new MessageCatcher<CreateObjectMessage>(client);
                 m_ClientSpawnCatchers.Add(catcher);
-                client.MessagingSystem.Hook(catcher);
+                client.ConnectionManager.MessagingSystem.Hook(catcher);
             }
         }
 
@@ -302,7 +302,7 @@ namespace Unity.Netcode.RuntimeTests
             for (var i = 0; i < m_ClientNetworkManagers.Length; ++i)
             {
                 // Unhook first so the spawn catcher stops catching spawns
-                m_ClientNetworkManagers[i].MessagingSystem.Unhook(m_ClientSpawnCatchers[i]);
+                m_ClientNetworkManagers[i].ConnectionManager.MessagingSystem.Unhook(m_ClientSpawnCatchers[i]);
                 m_ClientSpawnCatchers[i].ReleaseMessages();
             }
             m_ClientSpawnCatchers.Clear();

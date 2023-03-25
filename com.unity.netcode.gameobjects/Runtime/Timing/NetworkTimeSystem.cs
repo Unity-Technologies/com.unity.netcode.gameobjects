@@ -1,4 +1,6 @@
 using System;
+using UnityEngine;
+using Unity.Profiling;
 
 namespace Unity.Netcode
 {
@@ -6,8 +8,12 @@ namespace Unity.Netcode
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
     /// The network time system maintains both a local and a server time. The local time is based on
     /// </summary>
-    public class NetworkTimeSystem
+    public class NetworkTimeSystem : INetworkUpdateSystem
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+#endif
+        private const double k_TimeSyncFrequency = 1.0d; // sync every second
         private double m_TimeSec;
         private double m_CurrentLocalTimeOffset;
         private double m_DesiredLocalTimeOffset;
@@ -63,6 +69,94 @@ namespace Unity.Netcode
             ServerBufferSec = serverBufferSec;
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
+        }
+
+        private NetworkConnectionManager m_ConnectionManager;
+        private NetworkTransport m_NetworkTransport;
+        private NetworkTickSystem m_NetworkTickSystem;
+
+        private int m_TimeSyncFrequencyTicks;
+
+        /// <summary>
+        /// The primary time system is initialized when a server-host or client is started
+        /// </summary>
+        internal void InitializeForUpdates(NetworkManager networkManager)
+        {
+            m_ConnectionManager = networkManager.ConnectionManager;
+            m_NetworkTransport = networkManager.NetworkConfig.NetworkTransport;
+            m_NetworkTickSystem = networkManager.NetworkTickSystem;
+            m_TimeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * networkManager.NetworkConfig.TickRate);
+
+            // Only the server side needs to register for tick based time synchronization
+            if (m_ConnectionManager.LocalClient.IsServer)
+            {
+                m_NetworkTickSystem.Tick += OnTickSyncTime;
+            }
+
+            // Both server and client instances update their primary time system
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+        }
+
+        /// <summary>
+        /// The primary time system
+        /// </summary>
+        /// <param name="updateStage"></param>
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        {
+            if (updateStage == NetworkUpdateStage.PreUpdate)
+            {
+                // As a client wait to run the time system until we are connected.
+                // As a client or server don't worry about the time system if we are no longer processing messages
+                if ((!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected) || m_ConnectionManager.StopProcessingMessages)
+                {
+                    return;
+                }
+                // Only update RTT here, server time is updated by time sync messages
+                var reset = Advance(Time.unscaledDeltaTime);
+                if (reset)
+                {
+                    m_NetworkTickSystem.Reset(LocalTime, ServerTime);
+                }
+                m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
+
+                if (m_ConnectionManager.LocalClient.IsServer == false)
+                {
+                    Sync(LastSyncedServerTimeSec + Time.unscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Server-Side:
+        /// Synchronize time with clients once per tick
+        /// </summary>
+        private void OnTickSyncTime()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.Begin();
+#endif
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo("Syncing Time To Clients");
+            }
+
+            var message = new TimeSyncMessage
+            {
+                Tick = m_NetworkTickSystem.ServerTime.Tick
+            };
+            m_ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, m_ConnectionManager.ConnectedClientIds);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.End();
+#endif
+        }
+
+        internal void Shutdown()
+        {
+            if (m_ConnectionManager.LocalClient.IsServer)
+            {
+                m_NetworkTickSystem.Tick -= OnTickSyncTime;
+            }
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
         }
 
         /// <summary>

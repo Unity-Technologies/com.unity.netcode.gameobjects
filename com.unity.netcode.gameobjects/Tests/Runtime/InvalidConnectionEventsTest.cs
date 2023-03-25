@@ -91,7 +91,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
             }
 
-            m_ClientNetworkManagers[0].MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
+            m_ClientNetworkManagers[0].ConnectionManager.MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
 
             LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from the server when the connection has already been established\\. This should not happen\\."));
 
@@ -113,7 +113,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ServerNetworkManager.CustomMessagingManager.SendUnnamedMessage(m_ClientNetworkManagers[0].LocalClientId, writer);
             }
 
-            m_ClientNetworkManagers[0].MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
+            m_ClientNetworkManagers[0].ConnectionManager.MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
 
             LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from the server on the client side\\. This should not happen\\."));
 
@@ -135,7 +135,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
             }
 
-            m_ServerNetworkManager.MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
+            m_ServerNetworkManager.ConnectionManager.MessagingSystem.Hook(new Hooks<ConnectionRequestMessage>());
 
             LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionRequestMessage)} was received from a client when the connection has already been established\\. This should not happen\\."));
 
@@ -157,7 +157,7 @@ namespace Unity.Netcode.RuntimeTests
                 m_ClientNetworkManagers[0].CustomMessagingManager.SendUnnamedMessage(m_ServerNetworkManager.LocalClientId, writer);
             }
 
-            m_ServerNetworkManager.MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
+            m_ServerNetworkManager.ConnectionManager.MessagingSystem.Hook(new Hooks<ConnectionApprovedMessage>());
 
             LogAssert.Expect(LogType.Error, new Regex($"A {nameof(ConnectionApprovedMessage)} was received from a client on the server side\\. This should not happen\\."));
 

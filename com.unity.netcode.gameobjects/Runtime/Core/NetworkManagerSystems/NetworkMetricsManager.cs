@@ -4,17 +4,20 @@ using Unity.Multiplayer.Tools;
 
 namespace Unity.Netcode
 {
-    public class NetworkMetricsManager
+    public class NetworkMetricsManager : INetworkUpdateSystem
     {
         internal INetworkMetrics NetworkMetrics { get; private set; }
 
         private NetworkManager m_NetworkManager;
 
-        internal void OnPostLateUpdate()
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            NetworkMetrics.UpdateNetworkObjectsCount(m_NetworkManager.SpawnManager.SpawnedObjects.Count);
-            NetworkMetrics.UpdateConnectionsCount((m_NetworkManager.IsServer) ? m_NetworkManager.ConnectionManager.ConnectedClients.Count : 1);
-            NetworkMetrics.DispatchFrame();
+            if (updateStage == NetworkUpdateStage.PostLateUpdate)
+            {
+                NetworkMetrics.UpdateNetworkObjectsCount(m_NetworkManager.SpawnManager.SpawnedObjects.Count);
+                NetworkMetrics.UpdateConnectionsCount((m_NetworkManager.IsServer) ? m_NetworkManager.ConnectionManager.ConnectedClients.Count : 1);
+                NetworkMetrics.DispatchFrame();
+            }
         }
 
         public void Initialize(NetworkManager networkManager)
@@ -27,6 +30,7 @@ namespace Unity.Netcode
 #else
                 NetworkMetrics = new NullNetworkMetrics();
 #endif
+                this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
             }
 
 #if MULTIPLAYER_TOOLS
@@ -35,6 +39,11 @@ namespace Unity.Netcode
                 NetworkObjectProvider = new NetworkObjectProvider(networkManager),
             });
 #endif
+        }
+
+        public void Shutdown()
+        {
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
         }
     }
 }

@@ -117,7 +117,7 @@ namespace Unity.Netcode
                     foreach (var deferredMessage in triggerInfo.TriggerData)
                     {
                         // Reader will be disposed within HandleMessage
-                        m_NetworkManager.MessagingSystem.HandleMessage(deferredMessage.Header, deferredMessage.Reader, deferredMessage.SenderId, deferredMessage.Timestamp, deferredMessage.SerializedHeaderSize);
+                        m_NetworkManager.ConnectionManager.MessagingSystem.HandleMessage(deferredMessage.Header, deferredMessage.Reader, deferredMessage.SenderId, deferredMessage.Timestamp, deferredMessage.SerializedHeaderSize);
                     }
 
                     triggerInfo.TriggerData.Dispose();

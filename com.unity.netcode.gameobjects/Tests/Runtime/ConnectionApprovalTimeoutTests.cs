@@ -60,7 +60,7 @@ namespace Unity.Netcode.RuntimeTests
             if (m_ApprovalFailureType == ApprovalTimedOutTypes.ServerDoesNotRespond)
             {
                 // We catch (don't process) the incoming approval message to simulate the server not sending the approved message in time
-                m_ClientNetworkManagers[0].MessagingSystem.Hook(new MessageCatcher<ConnectionApprovedMessage>(m_ClientNetworkManagers[0]));
+                m_ClientNetworkManagers[0].ConnectionManager.MessagingSystem.Hook(new MessageCatcher<ConnectionApprovedMessage>(m_ClientNetworkManagers[0]));
                 m_ExpectedLogMessage = new Regex("Timed out waiting for the server to approve the connection request.");
                 m_LogType = LogType.Log;
             }
@@ -68,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 // We catch (don't process) the incoming connection request message to simulate a transport connection but the client never
                 // sends (or takes too long to send) the connection request.
-                m_ServerNetworkManager.MessagingSystem.Hook(new MessageCatcher<ConnectionRequestMessage>(m_ServerNetworkManager));
+                m_ServerNetworkManager.ConnectionManager.MessagingSystem.Hook(new MessageCatcher<ConnectionRequestMessage>(m_ServerNetworkManager));
 
                 // For this test, we know the timed out client will be Client-1
                 m_ExpectedLogMessage = new Regex("Server detected a transport connection from Client-1, but timed out waiting for the connection request message.");
@@ -97,7 +97,7 @@ namespace Unity.Netcode.RuntimeTests
 
 
             Assert.AreEqual(0, m_ServerNetworkManager.ConnectionManager.PendingClients.Count, $"Expected no pending clients when there were {m_ServerNetworkManager.ConnectionManager.PendingClients.Count} pending clients!");
-            Assert.True(!m_ClientNetworkManagers[0].IsApproved, $"Expected the client to not have been approved, but it was!");
+            Assert.True(!m_ClientNetworkManagers[0].LocalClient.IsApproved, $"Expected the client to not have been approved, but it was!");
         }
     }
 }

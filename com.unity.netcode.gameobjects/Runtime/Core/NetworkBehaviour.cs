@@ -208,7 +208,7 @@ namespace Unity.Netcode
                         shouldSendToHost = true;
                         continue;
                     }
-                    rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
+                    rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
                 }
             }
 

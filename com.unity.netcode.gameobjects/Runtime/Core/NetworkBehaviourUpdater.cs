@@ -8,6 +8,8 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkBehaviourUpdater
     {
+        private NetworkManager m_NetworkManager;
+        private NetworkConnectionManager m_ConnectionManager;
         private HashSet<NetworkObject> m_DirtyNetworkObjects = new HashSet<NetworkObject>();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -19,7 +21,7 @@ namespace Unity.Netcode
             m_DirtyNetworkObjects.Add(networkObject);
         }
 
-        internal void NetworkBehaviourUpdate(NetworkManager networkManager)
+        internal void NetworkBehaviourUpdate()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             m_NetworkBehaviourUpdate.Begin();
@@ -30,7 +32,7 @@ namespace Unity.Netcode
                 // trying to process them, even if they were previously marked as dirty.
                 m_DirtyNetworkObjects.RemoveWhere((sobj) => sobj == null);
 
-                if (networkManager.IsServer)
+                if (m_ConnectionManager.LocalClient.IsServer)
                 {
                     foreach (var dirtyObj in m_DirtyNetworkObjects)
                     {
@@ -39,9 +41,9 @@ namespace Unity.Netcode
                             dirtyObj.ChildNetworkBehaviours[k].PreVariableUpdate();
                         }
 
-                        for (int i = 0; i < networkManager.ConnectedClientsList.Count; i++)
+                        for (int i = 0; i < m_ConnectionManager.ConnectedClientsList.Count; i++)
                         {
-                            var client = networkManager.ConnectedClientsList[i];
+                            var client = m_ConnectionManager.ConnectedClientsList[i];
 
                             if (dirtyObj.IsNetworkVisibleTo(client.ClientId))
                             {
@@ -104,5 +106,39 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="networkManager">the relative NetworkManager instance</param>
+        public NetworkBehaviourUpdater(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+            m_ConnectionManager = networkManager.ConnectionManager;
+            m_NetworkManager.NetworkTickSystem.Tick += NetworkBehaviourUpdater_Tick;
+        }
+
+        /// <summary>
+        /// For mock testing when there is no need for updates
+        /// TODO 2023-Q2: We might think about improving upon <see cref="NetworkVariableBase.SetDirty"/> so it will
+        /// allow a value to be set if no <see cref="NetworkBehaviourUpdater"/> is assigned yet.
+        /// </summary>
+        internal NetworkBehaviourUpdater()
+        {
+        }
+
+        internal void Shutdown()
+        {
+            m_NetworkManager.NetworkTickSystem.Tick -= NetworkBehaviourUpdater_Tick;
+        }
+
+        // TODO 2023-Q2: Order of operations requires NetworkVariable updates first then showing NetworkObjects
+        private void NetworkBehaviourUpdater_Tick()
+        {
+            // First update NetworkVariables
+            NetworkBehaviourUpdate();
+
+            // Then show any NetworkObjects queued to be made visible/shown
+            m_NetworkManager.SpawnManager.HandleNetworkObjectShow();
+        }
     }
 }

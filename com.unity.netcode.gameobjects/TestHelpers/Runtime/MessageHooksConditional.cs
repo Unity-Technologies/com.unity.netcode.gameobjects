@@ -95,8 +95,8 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Assert.IsNotNull(m_MessageReceiptCheck, $"{nameof(m_MessageReceiptCheck)} is null, did you forget to initialize?");
                 MessageHooks.ReceiptCheck = m_MessageReceiptCheck;
             }
-            Assert.IsNotNull(m_NetworkManager.MessagingSystem, $"{nameof(NetworkManager.MessagingSystem)} is null! Did you forget to start first?");
-            m_NetworkManager.MessagingSystem.Hook(MessageHooks);
+            Assert.IsNotNull(m_NetworkManager.ConnectionManager.MessagingSystem, $"{nameof(MessagingSystem)} is null! Did you forget to start first?");
+            m_NetworkManager.ConnectionManager.MessagingSystem.Hook(MessageHooks);
         }
 
         internal void AssignMessageType<T>() where T : INetworkMessage
@@ -115,7 +115,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         internal void RemoveHook()
         {
-            m_NetworkManager.MessagingSystem.Unhook(MessageHooks);
+            m_NetworkManager.ConnectionManager.MessagingSystem.Unhook(MessageHooks);
         }
 
         internal void AssignMessageType(Type type)

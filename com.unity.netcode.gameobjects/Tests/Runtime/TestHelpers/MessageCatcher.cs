@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var caughtSpawn in m_CaughtMessages)
             {
                 // Reader will be disposed within HandleMessage
-                m_OwnerNetworkManager.MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
+                m_OwnerNetworkManager.ConnectionManager.MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
             }
         }
 

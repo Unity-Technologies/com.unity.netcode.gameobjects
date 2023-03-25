@@ -45,7 +45,7 @@ namespace Unity.Netcode
 
         public bool OnVerifyCanSend(ulong destinationId, Type messageType, NetworkDelivery delivery)
         {
-            return !m_NetworkManager.StopProcessingMessages;
+            return !m_NetworkManager.ConnectionManager.StopProcessingMessages;
         }
 
         public bool OnVerifyCanReceive(ulong senderId, Type messageType, FastBufferReader messageContent, ref NetworkContext context)
@@ -101,7 +101,7 @@ namespace Unity.Netcode
                 }
             }
 
-            return !m_NetworkManager.StopProcessingMessages;
+            return !m_NetworkManager.ConnectionManager.StopProcessingMessages;
         }
 
         public void OnBeforeHandleMessage<T>(ref T message, ref NetworkContext context) where T : INetworkMessage

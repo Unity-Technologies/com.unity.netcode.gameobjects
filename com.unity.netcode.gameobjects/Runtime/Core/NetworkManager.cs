@@ -7,7 +7,7 @@ using UnityEditor;
 #if MULTIPLAYER_TOOLS
 using Unity.Multiplayer.Tools;
 #endif
-using Unity.Profiling;
+
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
@@ -17,9 +17,8 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/Network Manager", -100)]
-    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
+    public class NetworkManager : MonoBehaviour
     {
-        private const double k_TimeSyncFrequency = 1.0d; // sync every second
         private const float k_DefaultBufferSizeSec = 0.05f; // todo talk with UX/Product, find good default value for this
 
         #region RPC RELATED CODE
@@ -38,12 +37,6 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
         #endregion
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(MessagingSystem.HandleIncomingData)}");
-        private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
-#endif
 
         #region CONNECTION MANAGEMENT RELATED CODE
         /// <summary>
@@ -152,18 +145,40 @@ namespace Unity.Netcode
         /// </summary>
         public string DisconnectReason => ConnectionManager.DisconnectReason;
 
-        internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
-
         /// <summary>
-        /// Gets Whether or not we are listening for connections
+        /// Is true when a server or host is listening for connections.
+        /// Is true when a client is connecting or connected to a network session.
+        /// Is false when not listening, connecting, or connected.
         /// </summary>
-        public bool IsListening { get; internal set; }
+        public bool IsListening
+        {
+            get
+            {
+                return ConnectionManager.IsListening;
+            }
+            internal set
+            {
+                ConnectionManager.IsListening = value;
+            }
+        }
 
         /// <summary>
         /// When true, the client is connected, approved, and synchronized with
         /// the server.
+        /// <see cref="NetworkClient.IsConnected"/> <br />
+        /// <see cref="NetworkClient.IsApproved"/> <br />
         /// </summary>
-        public bool IsConnectedClient { get; internal set; }
+        public bool IsConnectedClient
+        {
+            get
+            {
+                return ConnectionManager.LocalClient.IsConnected;
+            }
+            internal set
+            {
+                ConnectionManager.LocalClient.IsConnected = value;
+            }
+        }
 
         /// <summary>
         /// Is true when the client has been approved.
@@ -172,9 +187,19 @@ namespace Unity.Netcode
         /// This only reflects the client's approved status and does not mean the client
         /// has finished the connection and synchronization process. The server-host will
         /// always be approved upon being starting the <see cref="NetworkManager"/>
-        /// <see cref="IsConnectedClient"/>
+        /// <see cref="NetworkClient.IsConnectedClient"/>
         /// </remarks>
-        public bool IsApproved { get; internal set; }
+        public bool IsApproved
+        {
+            get
+            {
+                return ConnectionManager.LocalClient.IsApproved;
+            }
+            internal set
+            {
+                ConnectionManager.LocalClient.IsApproved = value;
+            }
+        }
 
         /// <summary>
         /// The callback to invoke if the <see cref="NetworkTransport"/> fails.
@@ -213,6 +238,38 @@ namespace Unity.Netcode
                 {
                     ConnectionManager.ConnectionApprovalCallback = value;
                 }
+            }
+        }
+
+        /// <summary>
+        /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
+        /// </summary>
+        public event Action<ulong> OnClientConnectedCallback
+        {
+            add
+            {
+                ConnectionManager.OnClientConnectedCallback += value;
+            }
+
+            remove
+            {
+                ConnectionManager.OnClientConnectedCallback -= value;
+            }
+        }
+
+        /// <summary>
+        /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
+        /// </summary>
+        public event Action<ulong> OnClientDisconnectCallback
+        {
+            add
+            {
+                ConnectionManager.OnClientDisconnectCallback += value;
+            }
+
+            remove
+            {
+                ConnectionManager.OnClientDisconnectCallback -= value;
             }
         }
 
@@ -393,11 +450,14 @@ namespace Unity.Netcode
         }
         #endregion
 
+        /// <summary>
+        /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
+        /// </summary>
+        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
         private bool m_ShuttingDown;
-        internal bool StopProcessingMessages;
 
         /// <summary>
-        /// The current NetworkConfig
+        /// The current netcode project configuration
         /// </summary>
         [HideInInspector]
         public NetworkConfig NetworkConfig;
@@ -468,8 +528,6 @@ namespace Unity.Netcode
 
         internal NetworkBehaviourUpdater BehaviourUpdater { get; set; }
 
-        internal MessagingSystem MessagingSystem { get; private set; }
-
         /// <summary>
         /// Accessor property for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
         /// Prefer the use of the LocalTime and ServerTime properties
@@ -483,24 +541,8 @@ namespace Unity.Netcode
 
         internal INetworkMetrics NetworkMetrics => NetworkMetricsManager.NetworkMetrics;
         internal NetworkMetricsManager NetworkMetricsManager = new NetworkMetricsManager();
-
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
         #endregion
-
-        /// <summary>
-        /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
-        /// </summary>
-        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
-
-        /// <summary>
-        /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
-        /// </summary>
-        public event Action<ulong> OnClientConnectedCallback = null;
-
-        /// <summary>
-        /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
-        /// </summary>
-        public event Action<ulong> OnClientDisconnectCallback = null;
 
         /// <summary>
         /// This callback is invoked when the local server is started and listening for incoming connections.
@@ -654,8 +696,6 @@ namespace Unity.Netcode
                 return;
             }
 
-            IsApproved = false;
-
             ComponentFactory.SetDefaults();
 
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
@@ -663,21 +703,9 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Initialize));
             }
 
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
-
-            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(this), this);
-
-            MessagingSystem.Hook(new NetworkManagerHooks(this));
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            MessagingSystem.Hook(new ProfilingHooks());
-#endif
-
-#if MULTIPLAYER_TOOLS
-            MessagingSystem.Hook(new MetricHooks(this));
-#endif
             LocalClientId = ulong.MaxValue;
 
+            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
             if (server)
             {
                 NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
@@ -687,8 +715,7 @@ namespace Unity.Netcode
                 NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate, k_DefaultBufferSizeSec, 0.2);
             }
 
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
-            NetworkTickSystem.Tick += OnNetworkManagerTick;
+            NetworkTimeSystem.InitializeForUpdates(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -699,7 +726,7 @@ namespace Unity.Netcode
 
             SceneManager = new NetworkSceneManager(this);
 
-            BehaviourUpdater = new NetworkBehaviourUpdater();
+            BehaviourUpdater = new NetworkBehaviourUpdater(this);
 
             NetworkMetricsManager.Initialize(this);
 
@@ -714,10 +741,6 @@ namespace Unity.Netcode
             }
 
             NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
-
-
-
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
             NetworkConfig.InitializePrefabs();
 
@@ -743,7 +766,7 @@ namespace Unity.Netcode
 
             if (!NetworkConfig.NetworkTransport.UseTransportPolling())
             {
-                NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
+                NetworkConfig.NetworkTransport.OnTransportEvent += ConnectionManager.HandleNetworkEvent;
             }
 
             NetworkConfig.NetworkTransport.Initialize(this);
@@ -777,7 +800,7 @@ namespace Unity.Netcode
                     SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
                     OnServerStarted?.Invoke();
-                    IsApproved = true;
+                    ConnectionManager.LocalClient.IsApproved = true;
                     return true;
                 }
                 else
@@ -818,7 +841,7 @@ namespace Unity.Netcode
             ConnectionManager.LocalClient.SetRole(false, true, this);
 
             Initialize(false);
-            MessagingSystem.ClientConnected(ServerClientId);
+
 
             if (!NetworkConfig.NetworkTransport.StartClient())
             {
@@ -877,7 +900,6 @@ namespace Unity.Netcode
                 throw;
             }
 
-            MessagingSystem.ClientConnected(ServerClientId);
             LocalClientId = ServerClientId;
             NetworkMetrics.SetConnectionId(LocalClientId);
 
@@ -894,7 +916,7 @@ namespace Unity.Netcode
                 }
 
                 response.Approved = true;
-                IsApproved = true;
+
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response);
             }
             else
@@ -915,7 +937,7 @@ namespace Unity.Netcode
             // This assures that any in-scene placed NetworkObject is spawned and
             // any associated NetworkBehaviours' netcode related properties are
             // set prior to invoking OnClientConnected.
-            InvokeOnClientConnectedCallback(LocalClientId);
+            ConnectionManager.InvokeOnClientConnectedCallback(LocalClientId);
 
             return true;
         }
@@ -1031,10 +1053,10 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                StopProcessingMessages = discardMessageQueue;
+                ConnectionManager.StopProcessingMessages = discardMessageQueue;
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+            NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
         }
 
         internal void ShutdownInternal()
@@ -1046,62 +1068,41 @@ namespace Unity.Netcode
 
             ConnectionManager.Shutdown();
 
-            IsConnectedClient = false;
-            IsApproved = false;
-
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two
             // property values for NetworkObjects that are still spawned when
             // the shutdown cycle begins.
-            if (SpawnManager != null)
-            {
-                SpawnManager.DespawnAndDestroyNetworkObjects();
-                SpawnManager.ServerResetShudownStateForSceneObjects();
-
-                SpawnManager = null;
-            }
+            SpawnManager?.DespawnAndDestroyNetworkObjects();
+            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            SpawnManager = null;
 
             bool wasServer = ConnectionManager.LocalClient.IsServer;
             bool wasClient = ConnectionManager.LocalClient.IsClient;
             ConnectionManager.LocalClient.SetRole(false, false);
 
-            this.UnregisterAllNetworkUpdates();
-
-            if (NetworkTickSystem != null)
-            {
-                NetworkTickSystem.Tick -= OnNetworkManagerTick;
-                NetworkTickSystem = null;
-            }
-
-            if (MessagingSystem != null)
-            {
-                MessagingSystem.Dispose();
-                MessagingSystem = null;
-            }
 
             if (NetworkConfig?.NetworkTransport != null)
             {
-                NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
+                NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
             }
 
             DeferredMessageManager?.CleanupAllTriggers();
 
-            if (SceneManager != null)
-            {
-                // Let the NetworkSceneManager clean up its two SceneEvenData instances
-                SceneManager.Dispose();
-                SceneManager = null;
-            }
+            // Let the NetworkSceneManager clean up its two SceneEvenData instances
+            SceneManager?.Dispose();
+            SceneManager = null;
 
-            if (CustomMessagingManager != null)
-            {
-                CustomMessagingManager = null;
-            }
+            CustomMessagingManager = null;
 
-            if (BehaviourUpdater != null)
-            {
-                BehaviourUpdater = null;
-            }
+            BehaviourUpdater?.Shutdown();
+            BehaviourUpdater = null;
+
+            // Time & tick systems should be the last system shutdown so other systems
+            // can unsubscribe from tick updates and such.
+            NetworkTimeSystem?.Shutdown();
+            NetworkTickSystem = null;
+
+            NetworkMetricsManager?.Shutdown();
 
             // This is required for handling the potential scenario where multiple NetworkManager instances are created.
             // See MTT-860 for more information
@@ -1113,7 +1114,6 @@ namespace Unity.Netcode
 
             IsListening = false;
             m_ShuttingDown = false;
-            StopProcessingMessages = false;
 
             if (wasClient)
             {
@@ -1129,201 +1129,11 @@ namespace Unity.Netcode
             }
 
             // This cleans up the internal prefabs list
-            NetworkConfig?.Prefabs.Shutdown();
+            NetworkConfig?.Prefabs?.Shutdown();
 
             // Reset the configuration hash for next session in the event
             // that the prefab list changes
             NetworkConfig?.ClearConfigHash();
-        }
-        #endregion
-
-        #region UPDATE RELATED CODE
-        /// <inheritdoc />
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-            switch (updateStage)
-            {
-                case NetworkUpdateStage.EarlyUpdate:
-                    OnNetworkEarlyUpdate();
-                    break;
-                case NetworkUpdateStage.PreUpdate:
-                    OnNetworkPreUpdate();
-                    break;
-                case NetworkUpdateStage.PostLateUpdate:
-                    OnNetworkPostLateUpdate();
-                    break;
-            }
-        }
-
-        /// <summary>
-        /// TODO 2023: Should be converted to update stage
-        /// </summary>
-        private void OnNetworkEarlyUpdate()
-        {
-            if (!IsListening)
-            {
-                return;
-            }
-            ConnectionManager.OnEarlyUpdate();
-            MessagingSystem.OnEarlyUpdate();
-        }
-
-        // TODO Once we have a way to subscribe to NetworkUpdateLoop with order we can move this out of NetworkManager but for now this needs to be here because we need strict ordering.
-        private void OnNetworkPreUpdate()
-        {
-            if (IsServer == false && IsConnectedClient == false)
-            {
-                // As a client wait to run the time system until we are connected.
-                return;
-            }
-
-            if (m_ShuttingDown && StopProcessingMessages)
-            {
-                return;
-            }
-
-            // Only update RTT here, server time is updated by time sync messages
-            var reset = NetworkTimeSystem.Advance(Time.unscaledDeltaTime);
-            if (reset)
-            {
-                NetworkTickSystem.Reset(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
-            }
-            NetworkTickSystem.UpdateTick(NetworkTimeSystem.LocalTime, NetworkTimeSystem.ServerTime);
-
-            if (IsServer == false)
-            {
-                NetworkTimeSystem.Sync(NetworkTimeSystem.LastSyncedServerTimeSec + Time.unscaledDeltaTime, NetworkConfig.NetworkTransport.GetCurrentRtt(ServerClientId) / 1000d);
-            }
-        }
-
-        private void OnNetworkPostLateUpdate()
-        {
-            if (!m_ShuttingDown || !StopProcessingMessages)
-            {
-                // This should be invoked just prior to the MessagingSystem
-                // processes its outbound queue.
-                SceneManager.CheckForAndSendNetworkObjectSceneChanged();
-
-                MessagingSystem.ProcessSendQueues();
-                NetworkMetricsManager.OnPostLateUpdate();
-                NetworkObject.VerifyParentingStatus();
-            }
-            DeferredMessageManager.CleanupStaleTriggers();
-
-            if (m_ShuttingDown)
-            {
-                ShutdownInternal();
-            }
-        }
-
-        #endregion
-
-        #region TODO: Migrate into ConnectionManager
-        /// <summary>
-        /// This function runs once whenever the local tick is incremented and is responsible for the following (in order):
-        /// - collect commands/inputs and send them to the server (TBD)
-        /// - call NetworkFixedUpdate on all NetworkBehaviours in prediction/client authority mode
-        /// </summary>
-        private void OnNetworkManagerTick()
-        {
-            int timeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * NetworkConfig.TickRate);
-            if (IsServer && NetworkTickSystem.ServerTime.Tick % timeSyncFrequencyTicks == 0)
-            {
-                SyncTime();
-            }
-        }
-
-        /// <summary>
-        /// TODO 2023: Should be a dispatched event in NetworkEventManager
-        /// </summary>
-        internal void HandleRawTransportPoll(NetworkEvent networkEvent, ulong clientId, ArraySegment<byte> payload, float receiveTime)
-        {
-            var transportId = clientId;
-            switch (networkEvent)
-            {
-                case NetworkEvent.Connect:
-                    ConnectionManager.ConnectedEvent(clientId);
-                    break;
-                case NetworkEvent.Data:
-                    {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        s_HandleIncomingData.Begin();
-#endif
-                        clientId = ConnectionManager.TransportIdToClientId(clientId);
-                        MessagingSystem.HandleIncomingData(clientId, payload, receiveTime);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                        s_HandleIncomingData.End();
-#endif
-                        break;
-                    }
-                case NetworkEvent.Disconnect:
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.Begin();
-#endif
-                    clientId = ConnectionManager.TransportIdCleanUp(clientId, transportId);
-
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-                    {
-                        NetworkLog.LogInfo($"Disconnect Event From {clientId}");
-                    }
-
-                    // Process the incoming message queue so that we get everything from the server disconnecting us
-                    // or, if we are the server, so we got everything from that client.
-                    MessagingSystem.ProcessIncomingMessageQueue();
-
-                    try
-                    {
-                        OnClientDisconnectCallback?.Invoke(clientId);
-                    }
-                    catch (Exception exception)
-                    {
-                        Debug.LogException(exception);
-                    }
-
-                    if (IsServer)
-                    {
-                        ConnectionManager.OnClientDisconnectFromServer(clientId);
-                    }
-                    else
-                    {
-                        // We must pass true here and not process any sends messages
-                        // as we are no longer connected and thus there is no one to
-                        // send any messages to and this will cause an exception within
-                        // UnityTransport as the client ID is no longer valid.
-                        Shutdown(true);
-                    }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                    s_TransportDisconnect.End();
-#endif
-                    break;
-
-                case NetworkEvent.TransportFailure:
-                    Debug.LogError($"Shutting down due to network transport failure of {NetworkConfig.NetworkTransport.GetType().Name}!");
-                    ConnectionManager.TransportFailure();
-                    Shutdown(true);
-                    break;
-            }
-        }
-
-        private void SyncTime()
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SyncTime.Begin();
-#endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo("Syncing Time To Clients");
-            }
-
-            var message = new TimeSyncMessage
-            {
-                Tick = NetworkTickSystem.ServerTime.Tick
-            };
-            ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, ConnectedClientsIds);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SyncTime.End();
-#endif
         }
         #endregion
 

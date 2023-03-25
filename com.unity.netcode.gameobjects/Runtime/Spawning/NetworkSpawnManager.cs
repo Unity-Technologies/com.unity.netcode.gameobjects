@@ -975,11 +975,11 @@ namespace Unity.Netcode
             }
         }
 
-        private void NetworkTickSystem_Tick()
+        /// <summary>
+        /// See <see cref="NetworkBehaviourUpdater.NetworkBehaviourUpdater_Tick"/>
+        /// </summary>
+        internal void HandleNetworkObjectShow()
         {
-            // Do NetworkVariable updates
-            NetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(NetworkManager);
-
             // Handle NetworkObjects to show
             foreach (var client in ObjectsToShowToClient)
             {
@@ -995,7 +995,6 @@ namespace Unity.Netcode
         internal NetworkSpawnManager(NetworkManager networkManager)
         {
             NetworkManager = networkManager;
-            NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
         }
     }
 }
