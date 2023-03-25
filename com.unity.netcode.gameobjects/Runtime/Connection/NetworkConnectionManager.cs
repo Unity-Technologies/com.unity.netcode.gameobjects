@@ -884,7 +884,7 @@ namespace Unity.Netcode
 #endif
 
 #if MULTIPLAYER_TOOLS
-            MessagingSystem.Hook(new MetricHooks(this));
+            MessagingSystem.Hook(new MetricHooks(networkManager));
 #endif
 
             MessagingSystem.ClientConnected(NetworkManager.ServerClientId);
