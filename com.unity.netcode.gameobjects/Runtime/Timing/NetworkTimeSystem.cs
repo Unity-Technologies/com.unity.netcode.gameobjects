@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using Unity.Profiling;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -29,10 +29,6 @@ namespace Unity.Netcode
         /// </summary>
         private const double k_HardResetThresholdSeconds = 0.2d;
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
-#endif
-
         /// <summary>
         /// Default adjustment ratio
         /// </summary>
@@ -41,6 +37,10 @@ namespace Unity.Netcode
         /// to default to 0.2 as opposed to 0.1
         /// </remarks>
         private const double k_DefaultAdjustmentRatio = 0.1d;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+#endif
 
         private double m_TimeSec;
         private double m_CurrentLocalTimeOffset;
