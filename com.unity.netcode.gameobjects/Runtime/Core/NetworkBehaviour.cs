@@ -597,13 +597,7 @@ namespace Unity.Netcode
                 var fieldType = sortedFields[i].FieldType;
                 if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
                 {
-                    var instance = (NetworkVariableBase)sortedFields[i].GetValue(this);
-
-                    if (instance == null)
-                    {
-                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
-                    }
-
+                    var instance = (NetworkVariableBase)sortedFields[i].GetValue(this) ?? throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     instance.Initialize(this);
 
                     var instanceNameProperty = fieldType.GetProperty(nameof(NetworkVariableBase.Name));

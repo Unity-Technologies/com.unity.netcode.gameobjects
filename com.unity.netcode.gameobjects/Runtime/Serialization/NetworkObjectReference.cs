@@ -54,13 +54,7 @@ namespace Unity.Netcode
                 throw new ArgumentNullException(nameof(gameObject));
             }
 
-            var networkObject = gameObject.GetComponent<NetworkObject>();
-
-            if (networkObject == null)
-            {
-                throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
-            }
-
+            var networkObject = gameObject.GetComponent<NetworkObject>() ?? throw new ArgumentException($"Cannot create {nameof(NetworkObjectReference)} from {nameof(GameObject)} without a {nameof(NetworkObject)} component.");
             if (networkObject.IsSpawned == false)
             {
                 throw new ArgumentException($"{nameof(NetworkObjectReference)} can only be created from spawned {nameof(NetworkObject)}s.");

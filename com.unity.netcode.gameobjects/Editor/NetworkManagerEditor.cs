@@ -231,13 +231,7 @@ namespace Unity.Netcode.Editor
                     {
                         ReloadTransports();
 
-                        var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]);
-
-                        if (transportComponent == null)
-                        {
-                            transportComponent = m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
-                        }
-
+                        var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
                         m_NetworkTransportProperty.objectReferenceValue = transportComponent;
 
                         Repaint();
