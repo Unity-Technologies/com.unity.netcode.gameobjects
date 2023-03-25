@@ -886,7 +886,7 @@ namespace Unity.Netcode
 #if MULTIPLAYER_TOOLS
             MessagingSystem.Hook(new MetricHooks(networkManager));
 #endif
-
+            // Assures there is a server message queue available
             MessagingSystem.ClientConnected(NetworkManager.ServerClientId);
         }
 
