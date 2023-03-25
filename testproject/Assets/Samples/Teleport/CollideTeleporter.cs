@@ -1,6 +1,6 @@
-using UnityEngine;
-using Unity.Netcode.Components;
 using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEngine;
 
 public class CollideTeleporter : MonoBehaviour
 {

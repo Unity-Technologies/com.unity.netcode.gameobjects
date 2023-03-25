@@ -2,9 +2,9 @@ using System;
 using System.Collections;
 using NUnit.Framework;
 using Unity.Collections;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests

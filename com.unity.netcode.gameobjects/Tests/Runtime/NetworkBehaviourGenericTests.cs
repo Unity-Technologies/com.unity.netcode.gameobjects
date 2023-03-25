@@ -1,9 +1,9 @@
 using System.Collections;
-using UnityEngine;
 using NUnit.Framework;
-using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -56,8 +56,10 @@ namespace Unity.Netcode.RuntimeTests
             yield return StartServerAndClients();
 
             var parentObject = new GameObject();
-            var childObject = new GameObject();
-            childObject.name = "ChildObject";
+            var childObject = new GameObject
+            {
+                name = "ChildObject"
+            };
             childObject.transform.parent = parentObject.transform;
             var parentNetworkObject = parentObject.AddComponent<NetworkObject>();
             var childBehaviour = childObject.AddComponent<NetworkTransform>();

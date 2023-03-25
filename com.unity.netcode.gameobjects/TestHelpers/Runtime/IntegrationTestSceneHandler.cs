@@ -106,7 +106,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes scene loading jobs
         /// </summary>
         /// <param name="queuedSceneJob">job to process</param>
-        static internal IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
+        internal static IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
             while (!itegrationTestSceneHandler.OnCanClientsLoad())
@@ -180,7 +180,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes scene unloading jobs
         /// </summary>
         /// <param name="queuedSceneJob">job to process</param>
-        static internal IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
+        internal static IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
             while (!itegrationTestSceneHandler.OnCanClientsUnload())
@@ -223,7 +223,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes all jobs within the queue.
         /// When all jobs are finished, the coroutine stops.
         /// </summary>
-        static internal IEnumerator JobQueueProcessor()
+        internal static IEnumerator JobQueueProcessor()
         {
             while (QueuedSceneJobs.Count != 0)
             {

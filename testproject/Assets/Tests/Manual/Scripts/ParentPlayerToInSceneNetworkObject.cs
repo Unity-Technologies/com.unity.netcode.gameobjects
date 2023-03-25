@@ -1,5 +1,5 @@
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 namespace TestProject.ManualTests
 {

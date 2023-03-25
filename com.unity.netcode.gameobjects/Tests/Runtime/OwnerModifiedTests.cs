@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
     {
         public NetworkList<int> MyNetworkList;
 
-        static internal int Updates = 0;
+        internal static int Updates = 0;
 
         private void Awake()
         {

@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Runtime.CompilerServices;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -51,7 +51,7 @@ namespace Unity.Netcode
         /// <param name="quaternion">the <see cref="Quaternion"/> to be compressed</param>
         /// <returns>the <see cref="Quaternion"/> compressed as an unsigned integer</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public uint CompressQuaternion(ref Quaternion quaternion)
+        public static uint CompressQuaternion(ref Quaternion quaternion)
         {
             // Store off the absolute value for each Quaternion element
             s_QuatAbsValues[0] = Mathf.Abs(quaternion[0]);
@@ -97,7 +97,7 @@ namespace Unity.Netcode
         /// <param name="quaternion">quaternion to store the decompressed values within</param>
         /// <param name="compressed">the compressed quaternion</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static public void DecompressQuaternion(ref Quaternion quaternion, uint compressed)
+        public static void DecompressQuaternion(ref Quaternion quaternion, uint compressed)
         {
             // Get the last two bits for the index to skip (0-3)
             var indexToSkip = (int)(compressed >> 30);

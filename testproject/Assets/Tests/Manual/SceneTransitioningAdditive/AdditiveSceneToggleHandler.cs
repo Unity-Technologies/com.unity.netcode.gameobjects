@@ -204,7 +204,7 @@ namespace TestProject.ManualTests
 
         private static Queue<AdditiveSceneToggleHandler> s_QueueUpForLoadUnload = new Queue<AdditiveSceneToggleHandler>();
         public static AdditiveSceneToggleHandler CurrentQueueItem;
-        static private IEnumerator GlobalQueueToggleRoutine()
+        private static IEnumerator GlobalQueueToggleRoutine()
         {
             while (s_QueueUpForLoadUnload.Count > 0)
             {

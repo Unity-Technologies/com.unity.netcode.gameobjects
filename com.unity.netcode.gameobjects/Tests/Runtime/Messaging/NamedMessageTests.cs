@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {

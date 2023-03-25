@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -71,7 +71,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkList<int> MyListSetOnSpawn;
         public NetworkVariable<int> MyOwnerReadNetworkVariable;
         public NetworkList<int> MyList;
-        static public NetworkManager NetworkManagerOfInterest;
+        public static NetworkManager NetworkManagerOfInterest;
 
         internal static int GainOwnershipCount = 0;
 
@@ -114,10 +114,7 @@ namespace Unity.Netcode.RuntimeTests
         public void SomeRandomClientRPC()
         {
             Debug.Log($"RPC called {NetworkManager.LocalClientId}");
-            if (ClientIdsRpcCalledOn != null)
-            {
-                ClientIdsRpcCalledOn.Add(NetworkManager.LocalClientId);
-            }
+            ClientIdsRpcCalledOn?.Add(NetworkManager.LocalClientId);
         }
 
         public void TriggerRpc()
@@ -208,10 +205,12 @@ namespace Unity.Netcode.RuntimeTests
             }
             else
             {
-                var list = new List<NetworkObject>();
-                list.Add(m_NetSpawnedObject1);
-                list.Add(m_NetSpawnedObject2);
-                list.Add(m_NetSpawnedObject3);
+                var list = new List<NetworkObject>
+                {
+                    m_NetSpawnedObject1,
+                    m_NetSpawnedObject2,
+                    m_NetSpawnedObject3
+                };
 
                 if (!visibility)
                 {

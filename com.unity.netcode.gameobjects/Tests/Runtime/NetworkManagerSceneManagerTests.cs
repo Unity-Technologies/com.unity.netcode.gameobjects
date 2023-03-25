@@ -11,9 +11,11 @@ namespace Unity.Netcode.RuntimeTests
             var gameObject = new GameObject(nameof(SceneManagerAssigned));
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            // Set dummy transport that does nothing
-            networkManager.NetworkConfig.NetworkTransport = transport;
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                // Set dummy transport that does nothing
+                NetworkTransport = transport
+            };
 
             NetworkSceneManager preManager = networkManager.SceneManager;
 

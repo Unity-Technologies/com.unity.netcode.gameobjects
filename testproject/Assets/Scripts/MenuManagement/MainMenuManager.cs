@@ -68,8 +68,10 @@ public class MenuManager<T> : MonoBehaviour where T : ISceneReference
             {
                 m_SceneMenuReferencesByDisplayName.Add(menuReference.GetDisplayName(), menuReference);
 
-                var optionData = new Dropdown.OptionData();
-                optionData.text = menuReference.GetDisplayName();
+                var optionData = new Dropdown.OptionData
+                {
+                    text = menuReference.GetDisplayName()
+                };
 
                 m_OptionsList.options.Add(optionData);
             }

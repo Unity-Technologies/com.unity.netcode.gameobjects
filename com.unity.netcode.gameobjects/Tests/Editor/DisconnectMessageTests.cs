@@ -10,8 +10,10 @@ namespace Unity.Netcode.EditorTests
         {
             var networkContext = new NetworkContext();
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            var msg = new DisconnectReasonMessage();
-            msg.Reason = string.Empty;
+            var msg = new DisconnectReasonMessage
+            {
+                Reason = string.Empty
+            };
             msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);
@@ -26,8 +28,10 @@ namespace Unity.Netcode.EditorTests
         {
             var networkContext = new NetworkContext();
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            var msg = new DisconnectReasonMessage();
-            msg.Reason = "Foo";
+            var msg = new DisconnectReasonMessage
+            {
+                Reason = "Foo"
+            };
             msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);
@@ -42,8 +46,10 @@ namespace Unity.Netcode.EditorTests
         {
             var networkContext = new NetworkContext();
             var writer = new FastBufferWriter(20, Allocator.Temp, 20);
-            var msg = new DisconnectReasonMessage();
-            msg.Reason = "ThisStringIsWayLongerThanTwentyBytes";
+            var msg = new DisconnectReasonMessage
+            {
+                Reason = "ThisStringIsWayLongerThanTwentyBytes"
+            };
             msg.Serialize(writer, msg.Version);
 
             var fbr = new FastBufferReader(writer, Allocator.Temp);

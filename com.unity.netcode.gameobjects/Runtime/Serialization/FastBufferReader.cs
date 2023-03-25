@@ -1299,8 +1299,10 @@ namespace Unity.Netcode
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             ReadUnmanaged(out int length);
-            value = new T();
-            value.Length = length;
+            value = new T
+            {
+                Length = length
+            };
             ReadBytes(value.GetUnsafePtr(), length);
         }
 
@@ -1319,8 +1321,10 @@ namespace Unity.Netcode
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             ReadUnmanagedSafe(out int length);
-            value = new T();
-            value.Length = length;
+            value = new T
+            {
+                Length = length
+            };
             ReadBytesSafe(value.GetUnsafePtr(), length);
         }
 

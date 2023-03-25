@@ -7,8 +7,6 @@ namespace Unity.Netcode.EditorTests
 {
     public abstract class BaseFastBufferReaderWriterTest
     {
-
-        #region Test Types
         protected enum ByteEnum : byte
         {
             A,
@@ -78,7 +76,6 @@ namespace Unity.Netcode.EditorTests
             WriteDirect,
             WriteSafe
         }
-        #endregion
 
         protected abstract void RunTypeTest<T>(T valueToTest) where T : unmanaged;
 
@@ -88,7 +85,6 @@ namespace Unity.Netcode.EditorTests
 
         protected abstract void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged;
 
-        #region Helpers
         protected TestStruct GetTestStruct()
         {
             var random = new Random();
@@ -98,7 +94,7 @@ namespace Unity.Netcode.EditorTests
                 A = (byte)random.Next(),
                 B = (short)random.Next(),
                 C = (ushort)random.Next(),
-                D = (int)random.Next(),
+                D = random.Next(),
                 E = (uint)random.Next(),
                 F = ((long)random.Next() << 32) + random.Next(),
                 G = ((ulong)random.Next() << 32) + (ulong)random.Next(),
@@ -110,9 +106,6 @@ namespace Unity.Netcode.EditorTests
 
             return testStruct;
         }
-
-        #endregion
-
 
         private void RunTestWithWriteType<T>(T val, WriteType wt, FastBufferWriter.ForPrimitives _ = default) where T : unmanaged
         {
@@ -149,7 +142,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(int))
             {
-                RunTestWithWriteType((int)random.Next(), writeType);
+                RunTestWithWriteType(random.Next(), writeType);
             }
             else if (testType == typeof(uint))
             {
@@ -354,10 +347,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(long))
             {
                 RunTypeTestLocal(new[]{
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
                 }, writeType);
             }
             else if (testType == typeof(ulong))

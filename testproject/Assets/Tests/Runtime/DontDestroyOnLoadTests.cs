@@ -1,10 +1,10 @@
 using System.Collections;
-using UnityEngine;
 using NUnit.Framework;
-using UnityEngine.TestTools;
+using TestProject.ManualTests;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
-using TestProject.ManualTests;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {

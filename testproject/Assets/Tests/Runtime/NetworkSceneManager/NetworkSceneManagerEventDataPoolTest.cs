@@ -3,10 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {

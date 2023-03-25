@@ -8,11 +8,7 @@ namespace Unity.Netcode
 
         public void Serialize(FastBufferWriter writer, int targetVersion)
         {
-            string reasonSent = Reason;
-            if (reasonSent == null)
-            {
-                reasonSent = string.Empty;
-            }
+            string reasonSent = Reason ?? string.Empty;
 
             // Since we don't send a ConnectionApprovedMessage, the version for this message is encded with the message
             // itself. However, note that we HAVE received a ConnectionRequestMessage, so we DO have a valid targetVersion

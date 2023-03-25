@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
+using UnityEngine;
 
 namespace TestProject.RuntimeTests
 {
@@ -10,7 +10,7 @@ namespace TestProject.RuntimeTests
     {
         public static AnimatorTestHelper ServerSideInstance { get; private set; }
 
-        public readonly static Dictionary<ulong, AnimatorTestHelper> ClientSideInstances = new Dictionary<ulong, AnimatorTestHelper>();
+        public static readonly Dictionary<ulong, AnimatorTestHelper> ClientSideInstances = new Dictionary<ulong, AnimatorTestHelper>();
 
         public static bool IsTriggerTest;
 

@@ -56,7 +56,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
                 return;
             }
 
-            var transport = NetworkManager.Singleton != null ? NetworkManager.Singleton.NetworkConfig.NetworkTransport : null;
+            var transport = NetworkManager.Singleton?.NetworkConfig.NetworkTransport;
             var transportString = "";
             if (transport == null)
             {
