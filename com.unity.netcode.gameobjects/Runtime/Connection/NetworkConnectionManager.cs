@@ -159,7 +159,7 @@ namespace Unity.Netcode
                 case NetworkUpdateStage.EarlyUpdate:
                     {
                         // Exit early if we haven't started or are no longer processing messages.
-                        if (!StopProcessingMessages)
+                        if (StopProcessingMessages)
                         {
                             return;
                         }

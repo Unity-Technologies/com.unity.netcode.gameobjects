@@ -32,7 +32,7 @@ namespace Unity.Netcode
         /// <summary>
         /// Default adjustment ratio
         /// </summary>
-        private const double k_DefaultAdjustmentRatio = 0.1d;
+        private const double k_DefaultAdjustmentRatio = 0.01d;
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
