@@ -18,6 +18,7 @@ dotnet_diagnostic.IDE0002.severity = error # Simplify member access
 dotnet_diagnostic.IDE0004.severity = error # Remove unnecessary cast
 dotnet_diagnostic.IDE0005.severity = error # Remove unnecessary import
 dotnet_diagnostic.IDE0035.severity = error # Remove unreachable code
+dotnet_diagnostic.IDE0043.severity = error # Format string contains invalid placeholder
 dotnet_diagnostic.IDE0063.severity = error # Use simple 'using' statement
 csharp_style_var_when_type_is_apparent = true:error
 dotnet_style_require_accessibility_modifiers = always:error
