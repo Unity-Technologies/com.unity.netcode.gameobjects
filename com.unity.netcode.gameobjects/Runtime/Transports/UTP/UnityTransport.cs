@@ -946,7 +946,7 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         continue;
                     }
-                    var transportClientId = NetworkManager.ClientIdToTransportId(ngoConnectionId);
+                    var transportClientId = NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
                     ExtractNetworkMetricsForClient(transportClientId);
                 }
             }
