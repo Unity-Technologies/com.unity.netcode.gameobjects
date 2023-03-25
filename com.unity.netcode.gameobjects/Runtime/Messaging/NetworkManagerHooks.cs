@@ -60,7 +60,7 @@ namespace Unity.Netcode
                     }
                     return false;
                 }
-                if (m_NetworkManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
+                if (m_NetworkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client) &&
                                  (client.ConnectionState == PendingClient.State.PendingApproval || (client.ConnectionState == PendingClient.State.PendingConnection && messageType != typeof(ConnectionRequestMessage))))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)

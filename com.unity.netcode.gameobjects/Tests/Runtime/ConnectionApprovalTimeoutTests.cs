@@ -96,7 +96,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(1, m_ServerNetworkManager.ConnectedClients.Count, $"Expected only one client when there were {m_ServerNetworkManager.ConnectedClients.Count} clients connected!");
 
 
-            Assert.AreEqual(0, m_ServerNetworkManager.PendingClients.Count, $"Expected no pending clients when there were {m_ServerNetworkManager.PendingClients.Count} pending clients!");
+            Assert.AreEqual(0, m_ServerNetworkManager.ConnectionManager.PendingClients.Count, $"Expected no pending clients when there were {m_ServerNetworkManager.ConnectionManager.PendingClients.Count} pending clients!");
             Assert.True(!m_ClientNetworkManagers[0].IsApproved, $"Expected the client to not have been approved, but it was!");
         }
     }

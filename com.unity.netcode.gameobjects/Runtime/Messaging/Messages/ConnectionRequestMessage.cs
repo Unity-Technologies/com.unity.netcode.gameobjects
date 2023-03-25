@@ -135,7 +135,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
 
-            if (networkManager.PendingClients.TryGetValue(senderId, out PendingClient client))
+            if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
                 client.ConnectionState = PendingClient.State.PendingApproval;
