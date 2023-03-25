@@ -10,8 +10,6 @@ namespace Unity.Netcode.EditorTests
 {
     public class BytePackerTests
     {
-        #region Test Types
-
         private enum ByteEnum : byte
         {
             A,
@@ -73,8 +71,6 @@ namespace Unity.Netcode.EditorTests
             WriteDirect,
             WriteAsObject
         }
-
-        #endregion
 
         private unsafe void VerifyBytewiseEquality<T>(T value, T otherValue) where T : unmanaged
         {

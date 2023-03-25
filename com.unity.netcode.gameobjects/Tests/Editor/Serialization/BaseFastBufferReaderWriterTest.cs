@@ -7,8 +7,6 @@ namespace Unity.Netcode.EditorTests
 {
     public abstract class BaseFastBufferReaderWriterTest
     {
-
-        #region Test Types
         protected enum ByteEnum : byte
         {
             A,
@@ -78,7 +76,6 @@ namespace Unity.Netcode.EditorTests
             WriteDirect,
             WriteSafe
         }
-        #endregion
 
         protected abstract void RunTypeTest<T>(T valueToTest) where T : unmanaged;
 
@@ -88,7 +85,6 @@ namespace Unity.Netcode.EditorTests
 
         protected abstract void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged;
 
-        #region Helpers
         protected TestStruct GetTestStruct()
         {
             var random = new Random();
@@ -110,9 +106,6 @@ namespace Unity.Netcode.EditorTests
 
             return testStruct;
         }
-
-        #endregion
-
 
         private void RunTestWithWriteType<T>(T val, WriteType wt, FastBufferWriter.ForPrimitives _ = default) where T : unmanaged
         {

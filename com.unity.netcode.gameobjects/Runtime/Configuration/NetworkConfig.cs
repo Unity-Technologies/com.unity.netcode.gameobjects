@@ -281,8 +281,6 @@ namespace Unity.Netcode
             Prefabs.Initialize();
         }
 
-        #region Legacy Network Prefab List
-
         [NonSerialized]
         private bool m_DidWarnOldPrefabList = false;
 
@@ -342,7 +340,5 @@ namespace Unity.Netcode
         [FormerlySerializedAs("NetworkPrefabs")]
         [SerializeField]
         internal List<NetworkPrefab> OldPrefabList;
-
-        #endregion
     }
 }

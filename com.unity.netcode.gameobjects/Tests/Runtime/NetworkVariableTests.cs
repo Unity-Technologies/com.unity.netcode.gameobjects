@@ -1010,7 +1010,6 @@ namespace Unity.Netcode.RuntimeTests
             yield return WaitForConditionOrTimeOut(VerifyCallback);
         }
 
-        #region COULD_BE_REMOVED
         [UnityTest]
         [Ignore("This is used several times already in the NetworkListPredicate")]
         // TODO: If we end up using the new suggested pattern, then delete this
@@ -1221,7 +1220,6 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(2, variable.Value.Int, "Int was not correctly deserialized");
             Assert.AreEqual("three", variable.Value.Str, "Str was not correctly deserialized");
         }
-        #endregion
 
         private float m_OriginalTimeScale = 1.0f;
 
