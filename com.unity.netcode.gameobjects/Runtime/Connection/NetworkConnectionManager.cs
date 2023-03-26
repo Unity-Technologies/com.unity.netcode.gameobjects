@@ -379,7 +379,20 @@ namespace Unity.Netcode
             var whenFailed = duringStart ? "start failure" : "failure";
             NetworkLog.LogError($"{clientSeverOrHost} is shutting down due to network transport {whenFailed} of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
             OnTransportFailure?.Invoke();
-            NetworkManager.Shutdown(true);
+
+            // If we had a transport failure when trying to start,
+            // reset the local client roles and directly invoke the
+            // internal shutdown.
+            if (duringStart)
+            {
+                LocalClient.SetRole(false, false);
+                NetworkManager.ShutdownInternal();
+            }
+            else
+            {
+                // Otherwise, stop processing messages and shutdown the normal way
+                NetworkManager.Shutdown(true);
+            }
         }
 
         /// <summary>

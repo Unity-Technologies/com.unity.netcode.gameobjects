@@ -778,171 +778,6 @@ namespace Unity.Netcode
             NetworkConfig.NetworkTransport.Initialize(this);
         }
 
-        /// <summary>
-        /// Starts a server
-        /// </summary>
-        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in server mode successfully.</returns>
-        public bool StartServer()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartServer));
-            }
-
-            if (!CanStart(StartType.Server))
-            {
-                return false;
-            }
-            ConnectionManager.LocalClient.SetRole(true, false, this);
-            Initialize(true);
-            IsListening = true;
-            LocalClientId = ServerClientId;
-
-            try
-            {
-                // If we failed to start then shutdown and notify user that the transport failed to start
-                if (NetworkConfig.NetworkTransport.StartServer())
-                {
-                    SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
-
-                    OnServerStarted?.Invoke();
-                    ConnectionManager.LocalClient.IsApproved = true;
-                    return true;
-                }
-                else
-                {
-                    ConnectionManager.TransportFailureEventHandler(true);
-                    ConnectionManager.LocalClient.SetRole(false, false);
-                    IsListening = false;
-                    Shutdown();
-                }
-            }
-            catch (Exception)
-            {
-                ConnectionManager.LocalClient.SetRole(false, false);
-                IsListening = false;
-                throw;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Starts a client
-        /// </summary>
-        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
-        public bool StartClient()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartClient));
-            }
-
-            if (!CanStart(StartType.Client))
-            {
-                return false;
-            }
-            ConnectionManager.LocalClient.SetRole(false, true, this);
-
-            Initialize(false);
-
-
-            if (!NetworkConfig.NetworkTransport.StartClient())
-            {
-                ConnectionManager.TransportFailureEventHandler(true);
-                IsListening = false;
-                Shutdown();
-                return false;
-            }
-
-            IsListening = true;
-
-            OnClientStarted?.Invoke();
-            return true;
-        }
-
-        /// <summary>
-        /// Starts a Host
-        /// </summary>
-        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
-        public bool StartHost()
-        {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo(nameof(StartHost));
-            }
-
-            if (!CanStart(StartType.Host))
-            {
-                return false;
-            }
-            ConnectionManager.LocalClient.SetRole(true, true, this);
-
-            Initialize(true);
-
-            IsListening = true;
-
-            try
-            {
-                // If we failed to start then shutdown and notify user that the transport failed to start
-                if (!NetworkConfig.NetworkTransport.StartServer())
-                {
-                    ConnectionManager.TransportFailureEventHandler(true);
-                    ConnectionManager.LocalClient.SetRole(false, false);
-                    IsListening = false;
-                    Shutdown();
-                    return false;
-                }
-            }
-            catch (Exception)
-            {
-                ConnectionManager.LocalClient.SetRole(false, false);
-                IsListening = false;
-                throw;
-            }
-
-            LocalClientId = ServerClientId;
-            NetworkMetrics.SetConnectionId(LocalClientId);
-
-            if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
-            {
-                var response = new ConnectionApprovalResponse();
-                ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
-                if (!response.Approved)
-                {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                    {
-                        NetworkLog.LogWarning("You cannot decline the host connection. The connection was automatically approved.");
-                    }
-                }
-
-                response.Approved = true;
-
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
-            }
-            else
-            {
-                var response = new ConnectionApprovalResponse
-                {
-                    Approved = true,
-                    CreatePlayerObject = NetworkConfig.PlayerPrefab != null
-                };
-                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
-            }
-
-            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
-
-            OnServerStarted?.Invoke();
-            OnClientStarted?.Invoke();
-
-            // This assures that any in-scene placed NetworkObject is spawned and
-            // any associated NetworkBehaviours' netcode related properties are
-            // set prior to invoking OnClientConnected.
-            ConnectionManager.InvokeOnClientConnectedCallback(LocalClientId);
-
-            return true;
-        }
-
         private enum StartType
         {
             Server,
@@ -950,6 +785,10 @@ namespace Unity.Netcode
             Client
         }
 
+        /// <summary>
+        /// Determines if NetworkManager can start based on the current
+        /// NetworkManager instance state(s)
+        /// </summary>
         private bool CanStart(StartType type)
         {
             if (IsListening)
@@ -989,6 +828,172 @@ namespace Unity.Netcode
             }
 
             return true;
+        }
+
+        /// <summary>
+        /// Starts a server
+        /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in server mode successfully.</returns>
+        public bool StartServer()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StartServer));
+            }
+
+            if (!CanStart(StartType.Server))
+            {
+                return false;
+            }
+            ConnectionManager.LocalClient.SetRole(true, false, this);
+            Initialize(true);
+
+            LocalClientId = ServerClientId;
+
+            try
+            {
+                IsListening = NetworkConfig.NetworkTransport.StartServer();
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (IsListening)
+                {
+                    SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+                    OnServerStarted?.Invoke();
+                    ConnectionManager.LocalClient.IsApproved = true;
+                    return true;
+                }
+                else
+                {
+                    ConnectionManager.TransportFailureEventHandler(true);
+                }
+            }
+            catch (Exception)
+            {
+                ConnectionManager.LocalClient.SetRole(false, false);
+                IsListening = false;
+                throw;
+            }
+
+            return IsListening;
+        }
+
+        /// <summary>
+        /// Starts a client
+        /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in client mode successfully.</returns>
+        public bool StartClient()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StartClient));
+            }
+
+            if (!CanStart(StartType.Client))
+            {
+                return false;
+            }
+
+            ConnectionManager.LocalClient.SetRole(false, true, this);
+
+            Initialize(false);
+
+            IsListening = NetworkConfig.NetworkTransport.StartClient();
+
+            if (!IsListening)
+            {
+                ConnectionManager.TransportFailureEventHandler(true);
+            }
+            else
+            {
+                OnClientStarted?.Invoke();
+            }
+
+            return IsListening;
+        }
+
+        /// <summary>
+        /// Starts a Host
+        /// </summary>
+        /// <returns>(<see cref="true"/>/<see cref="false"/>) returns true if <see cref="NetworkManager"/> started in host mode successfully.</returns>
+        public bool StartHost()
+        {
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo(nameof(StartHost));
+            }
+
+            if (!CanStart(StartType.Host))
+            {
+                return false;
+            }
+            ConnectionManager.LocalClient.SetRole(true, true, this);
+
+            Initialize(true);
+
+            try
+            {
+                IsListening = NetworkConfig.NetworkTransport.StartServer();
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (!IsListening)
+                {
+                    ConnectionManager.TransportFailureEventHandler(true);
+                }
+                else
+                {
+                    // Finalize host-client and server creation logic
+                    HostServerInitialize();
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+                ConnectionManager.LocalClient.SetRole(false, false);
+                IsListening = false;
+            }
+            return IsListening;
+        }
+
+        /// <summary>
+        /// Handles the host client creation logic along with
+        /// additional server creation logic
+        /// </summary>
+        private void HostServerInitialize()
+        {
+            LocalClientId = ServerClientId;
+            NetworkMetrics.SetConnectionId(LocalClientId);
+
+            if (NetworkConfig.ConnectionApproval && ConnectionApprovalCallback != null)
+            {
+                var response = new ConnectionApprovalResponse();
+                ConnectionApprovalCallback(new ConnectionApprovalRequest { Payload = NetworkConfig.ConnectionData, ClientNetworkId = ServerClientId }, response);
+                if (!response.Approved)
+                {
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogWarning("You cannot decline the host connection. The connection was automatically approved.");
+                    }
+                }
+                response.Approved = true;
+                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+            }
+            else
+            {
+                var response = new ConnectionApprovalResponse
+                {
+                    Approved = true,
+                    CreatePlayerObject = NetworkConfig.PlayerPrefab != null
+                };
+                ConnectionManager.HandleConnectionApproval(ServerClientId, response);
+            }
+            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
+
+            OnServerStarted?.Invoke();
+            OnClientStarted?.Invoke();
+
+            // This assures that any in-scene placed NetworkObject is spawned and
+            // any associated NetworkBehaviours' netcode related properties are
+            // set prior to invoking OnClientConnected.
+            ConnectionManager.InvokeOnClientConnectedCallback(LocalClientId);
         }
 
         /// <summary>
