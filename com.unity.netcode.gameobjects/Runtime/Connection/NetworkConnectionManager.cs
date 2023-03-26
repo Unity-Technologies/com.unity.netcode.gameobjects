@@ -373,9 +373,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Handles a <see cref="NetworkEvent.TransportFailure"/> event.
         /// </summary>
-        internal void TransportFailureEventHandler()
+        internal void TransportFailureEventHandler(bool duringStart = false)
         {
-            NetworkLog.LogError($"Shutting down due to network transport failure of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
+            var clientSeverOrHost = LocalClient.IsServer ? LocalClient.IsHost ? "Host" : "Server" : "Client";
+            var whenFailed = duringStart ? "start failure" : "failure";
+            NetworkLog.LogError($"{clientSeverOrHost} is shutting down due to network transport {whenFailed} of {NetworkManager.NetworkConfig.NetworkTransport.GetType().Name}!");
             OnTransportFailure?.Invoke();
             NetworkManager.Shutdown(true);
         }
