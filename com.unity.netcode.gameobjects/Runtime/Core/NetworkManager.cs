@@ -731,7 +731,8 @@ namespace Unity.Netcode
 
             SceneManager = new NetworkSceneManager(this);
 
-            BehaviourUpdater = new NetworkBehaviourUpdater(this);
+            BehaviourUpdater = new NetworkBehaviourUpdater();
+            BehaviourUpdater.Initialize(this);
 
             NetworkMetricsManager.Initialize(this);
 
