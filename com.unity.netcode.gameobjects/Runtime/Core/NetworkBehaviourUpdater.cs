@@ -112,18 +112,14 @@ namespace Unity.Netcode
         /// <param name="networkManager">the relative NetworkManager instance</param>
         public NetworkBehaviourUpdater(NetworkManager networkManager)
         {
+            // For testing purposes
+            if (networkManager == null)
+            {
+                return;
+            }
             m_NetworkManager = networkManager;
             m_ConnectionManager = networkManager.ConnectionManager;
             m_NetworkManager.NetworkTickSystem.Tick += NetworkBehaviourUpdater_Tick;
-        }
-
-        /// <summary>
-        /// For mock testing when there is no need for updates
-        /// TODO 2023-Q2: We might think about improving upon <see cref="NetworkVariableBase.SetDirty"/> so it will
-        /// allow a value to be set if no <see cref="NetworkBehaviourUpdater"/> is assigned yet.
-        /// </summary>
-        internal NetworkBehaviourUpdater()
-        {
         }
 
         internal void Shutdown()

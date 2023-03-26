@@ -105,12 +105,12 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 1
-  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   InLocalSpace: 1
   Interpolate: 1
   SlerpPosition: 1
@@ -119,6 +119,9 @@ MonoBehaviour:
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PushedPosition: {x: 0, y: 0, z: 0}
+  PushedScale: {x: 0, y: 0, z: 0}
+  PushedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
@@ -230,6 +233,8 @@ MonoBehaviour:
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!114 &3387617782067200397
@@ -283,12 +288,12 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 1
-  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   InLocalSpace: 0
   Interpolate: 1
   SlerpPosition: 0
@@ -297,6 +302,9 @@ MonoBehaviour:
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PushedPosition: {x: 0, y: 0, z: 0}
+  PushedScale: {x: 0, y: 0, z: 0}
+  PushedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
@@ -418,12 +426,12 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  UseQuaternionSynchronization: 1
-  UseQuaternionCompression: 1
-  UseHalfFloatPrecision: 1
   PositionThreshold: 0.001
   RotAngleThreshold: 0.001
   ScaleThreshold: 0.001
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
   InLocalSpace: 1
   Interpolate: 1
   SlerpPosition: 1
@@ -432,6 +440,9 @@ MonoBehaviour:
   LastUpdatedPosition: {x: 0, y: 0, z: 0}
   LastUpdatedScale: {x: 0, y: 0, z: 0}
   LastUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
+  PushedPosition: {x: 0, y: 0, z: 0}
+  PushedScale: {x: 0, y: 0, z: 0}
+  PushedRotation: {x: 0, y: 0, z: 0, w: 0}
   PreviousUpdatedPosition: {x: 0, y: 0, z: 0}
   PreviousUpdatedScale: {x: 0, y: 0, z: 0}
   PreviousUpdatedRotation: {x: 0, y: 0, z: 0, w: 0}
