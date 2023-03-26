@@ -19,13 +19,6 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour
     {
-        // TODO 2023-Q2: Removing this is a "breaking change"
-        // (the issue with interfaces...implementations have to be public!)
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-
-        }
-
         #region RPC RELATED CODE
 #pragma warning disable IDE1006 // disable naming rule violation check
 
