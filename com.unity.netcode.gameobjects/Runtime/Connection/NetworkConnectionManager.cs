@@ -435,7 +435,7 @@ namespace Unity.Netcode
         /// </summary>
         private IEnumerator ApprovalTimeout(ulong clientId)
         {
-            var timeStarted = LocalClient.IsServer ? NetworkManager.LocalTime.TimeAsFloat : Time.realtimeSinceStartup;
+            var timeStarted = LocalClient.IsServer ? NetworkManager.LocalTime.TimeAsFloat : NetworkManager.RealTimeProvider.RealTimeSinceStartup;
             var timedOut = false;
             var connectionApproved = false;
             var connectionNotApproved = false;
@@ -445,7 +445,7 @@ namespace Unity.Netcode
             {
                 yield return null;
                 // Check if we timed out
-                timedOut = timeoutMarker < (LocalClient.IsServer ? NetworkManager.LocalTime.TimeAsFloat : Time.realtimeSinceStartup);
+                timedOut = timeoutMarker < (LocalClient.IsServer ? NetworkManager.LocalTime.TimeAsFloat : NetworkManager.RealTimeProvider.RealTimeSinceStartup);
 
                 if (LocalClient.IsServer)
                 {
@@ -771,7 +771,7 @@ namespace Unity.Netcode
                         {
                             NetworkManager.PrefabHandler.HandleNetworkPrefabDestroy(ConnectedClients[clientId].PlayerObject);
                         }
-                        else
+                        else if (playerObject.IsSpawned)
                         {
                             // Call despawn to assure NetworkBehaviour.OnNetworkDespawn is invoked
                             // on the server-side (when the client side disconnected).

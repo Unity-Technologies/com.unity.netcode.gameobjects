@@ -540,6 +540,11 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkTickSystem NetworkTickSystem { get; private set; }
 
+        /// <summary>
+        /// Used for time mocking in tests
+        /// </summary>
+        internal IRealTimeProvider RealTimeProvider { get; private set; }
+
         internal INetworkMetrics NetworkMetrics => NetworkMetricsManager.NetworkMetrics;
         internal NetworkMetricsManager NetworkMetricsManager = new NetworkMetricsManager();
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();

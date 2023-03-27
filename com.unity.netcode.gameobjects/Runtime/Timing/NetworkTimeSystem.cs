@@ -83,6 +83,7 @@ namespace Unity.Netcode
         private NetworkConnectionManager m_ConnectionManager;
         private NetworkTransport m_NetworkTransport;
         private NetworkTickSystem m_NetworkTickSystem;
+        private NetworkManager m_NetworkManager;
 
         /// <summary>
         /// <see cref="k_TimeSyncFrequency"/>
@@ -110,6 +111,7 @@ namespace Unity.Netcode
         /// </summary>
         internal NetworkTickSystem InitializeForUpdates(NetworkManager networkManager)
         {
+            m_NetworkManager = networkManager;
             m_ConnectionManager = networkManager.ConnectionManager;
             m_NetworkTransport = networkManager.NetworkConfig.NetworkTransport;
             m_TimeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * networkManager.NetworkConfig.TickRate);
@@ -139,8 +141,9 @@ namespace Unity.Netcode
                 {
                     return;
                 }
+
                 // Only update RTT here, server time is updated by time sync messages
-                var reset = Advance(Time.unscaledDeltaTime);
+                var reset = Advance(m_NetworkManager.RealTimeProvider.UnscaledDeltaTime);
                 if (reset)
                 {
                     m_NetworkTickSystem.Reset(LocalTime, ServerTime);
@@ -149,7 +152,7 @@ namespace Unity.Netcode
 
                 if (!m_ConnectionManager.LocalClient.IsServer)
                 {
-                    Sync(LastSyncedServerTimeSec + Time.unscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
+                    Sync(LastSyncedServerTimeSec + m_NetworkManager.RealTimeProvider.UnscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
                 }
             }
         }

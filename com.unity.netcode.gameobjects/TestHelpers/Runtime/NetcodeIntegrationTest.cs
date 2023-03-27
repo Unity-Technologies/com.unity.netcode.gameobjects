@@ -483,7 +483,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (LogAllMessages)
             {
-                networkManager.MessagingSystem.Hook(new DebugNetworkHooks());
+                networkManager.ConnectionManager.MessagingSystem.Hook(new DebugNetworkHooks());
             }
 
             AddRemoveNetworkManager(networkManager, true);
