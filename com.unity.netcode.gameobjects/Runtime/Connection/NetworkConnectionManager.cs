@@ -906,7 +906,7 @@ namespace Unity.Netcode
             // TODO 2023-Q2: We might limit this to the two updates, for now leaving all
             this.RegisterAllNetworkUpdates();
 
-            MessagingSystem = new MessagingSystem(new NetworkManagerMessageSender(networkManager), networkManager);
+            MessagingSystem = new MessagingSystem(new DefaultMessageSender(networkManager), networkManager);
 
             MessagingSystem.Hook(new NetworkManagerHooks(networkManager));
 
