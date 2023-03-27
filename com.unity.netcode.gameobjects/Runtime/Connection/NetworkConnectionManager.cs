@@ -5,11 +5,6 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Profiling;
 using UnityEngine;
-
-#if MULTIPLAYER_TOOLS
-using Unity.Multiplayer.Tools;
-#endif
-
 using System.Runtime.CompilerServices;
 using Object = UnityEngine.Object;
 
@@ -23,6 +18,7 @@ namespace Unity.Netcode
     /// - Client Disconnection
     /// - MessagingSystem updates
     /// </summary>
+    // TODO 2023-Q2: Discuss what kind of public API exposure we want for this
     public class NetworkConnectionManager : INetworkUpdateSystem
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -175,7 +171,13 @@ namespace Unity.Netcode
                             // This should be invoked just prior to the MessagingSystem
                             // processes its outbound queue.
                             NetworkManager.SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
+                            // Process outbound messages
                             MessagingSystem.ProcessSendQueues();
+
+                            // Metrics update needs to be driven by NetworkConnectionManager's
+                            // update to assure metrics are dispatched after the send queue is processed.
+                            NetworkManager.NetworkMetricsManager.UpdateMetrics();
 
                             // TODO 2023-Q2: Determine a better way to handle this
                             NetworkObject.VerifyParentingStatus();

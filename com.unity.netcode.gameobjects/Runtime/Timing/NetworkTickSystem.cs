@@ -50,7 +50,7 @@ namespace Unity.Netcode
         {
             if (tickRate == 0)
             {
-                throw new ArgumentException("Tickrate must be a positive value.", nameof(tickRate));
+                throw new ArgumentException("Tick rate must be a positive value.", nameof(tickRate));
             }
 
             TickRate = tickRate;

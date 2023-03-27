@@ -20,7 +20,7 @@ namespace Unity.Netcode
         private const float k_DefaultBufferSizeSec = 0.05f;
 
         /// <summary>
-        /// Time synchronization frequency defaults to 1 second
+        /// Time synchronization frequency defaults to 1 synchronization message per second
         /// </summary>
         private const double k_TimeSyncFrequency = 1.0d;
 
@@ -83,6 +83,10 @@ namespace Unity.Netcode
         private NetworkConnectionManager m_ConnectionManager;
         private NetworkTransport m_NetworkTransport;
         private NetworkTickSystem m_NetworkTickSystem;
+
+        /// <summary>
+        /// <see cref="k_TimeSyncFrequency"/>
+        /// </summary>
         private int m_TimeSyncFrequencyTicks;
 
         /// <summary>
@@ -104,13 +108,12 @@ namespace Unity.Netcode
         /// <summary>
         /// The primary time system is initialized when a server-host or client is started
         /// </summary>
-        internal void InitializeForUpdates(NetworkManager networkManager)
+        internal NetworkTickSystem InitializeForUpdates(NetworkManager networkManager)
         {
             m_ConnectionManager = networkManager.ConnectionManager;
             m_NetworkTransport = networkManager.NetworkConfig.NetworkTransport;
-            m_NetworkTickSystem = networkManager.NetworkTickSystem;
             m_TimeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * networkManager.NetworkConfig.TickRate);
-
+            m_NetworkTickSystem = new NetworkTickSystem(networkManager.NetworkConfig.TickRate, 0, 0);
             // Only the server side needs to register for tick based time synchronization
             if (m_ConnectionManager.LocalClient.IsServer)
             {
@@ -119,6 +122,7 @@ namespace Unity.Netcode
 
             // Both server and client instances update their primary time system
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            return m_NetworkTickSystem;
         }
 
         /// <summary>
@@ -143,7 +147,7 @@ namespace Unity.Netcode
                 }
                 m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
 
-                if (m_ConnectionManager.LocalClient.IsServer == false)
+                if (!m_ConnectionManager.LocalClient.IsServer)
                 {
                     Sync(LastSyncedServerTimeSec + Time.unscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
                 }
@@ -152,8 +156,12 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Server-Side:
-        /// Synchronize time with clients once per tick
+        /// Synchronizes time with clients based on the given <see cref="m_TimeSyncFrequencyTicks"/>.
+        /// Also: <see cref="k_TimeSyncFrequency"/>
         /// </summary>
+        /// <remarks>
+        /// The default is to send 1 time synchronization message per second
+        /// </remarks>
         private void OnTickSyncTime()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -161,14 +169,19 @@ namespace Unity.Netcode
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
-                NetworkLog.LogInfo("Syncing Time To Clients");
+                NetworkLog.LogInfo($"[{m_NetworkTickSystem.ServerTime.TimeAsFloat}][Tick-{m_NetworkTickSystem.ServerTime.Tick}] Syncing Time To Clients");
             }
 
-            var message = new TimeSyncMessage
+            // Check if we need to send a time synchronization message, and if so send it
+            if (m_ConnectionManager.LocalClient.IsServer && m_NetworkTickSystem.ServerTime.Tick % m_TimeSyncFrequencyTicks == 0)
             {
-                Tick = m_NetworkTickSystem.ServerTime.Tick
-            };
-            m_ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, m_ConnectionManager.ConnectedClientIds);
+                var message = new TimeSyncMessage
+                {
+                    Tick = m_NetworkTickSystem.ServerTime.Tick
+                };
+                m_ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, m_ConnectionManager.ConnectedClientIds);
+            }
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.End();
 #endif

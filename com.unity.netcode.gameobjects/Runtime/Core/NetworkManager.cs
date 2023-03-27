@@ -4,10 +4,6 @@ using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
-#if MULTIPLAYER_TOOLS
-using Unity.Multiplayer.Tools;
-#endif
-
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
@@ -708,9 +704,6 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Initialize));
             }
 
-            LocalClientId = ulong.MaxValue;
-
-            NetworkTickSystem = new NetworkTickSystem(NetworkConfig.TickRate, 0, 0);
             if (server)
             {
                 NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
@@ -720,7 +713,7 @@ namespace Unity.Netcode
                 NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             }
 
-            NetworkTimeSystem.InitializeForUpdates(this);
+            NetworkTickSystem = NetworkTimeSystem.InitializeForUpdates(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
@@ -746,7 +739,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetrics;
+            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetricsManager.NetworkMetrics;
 
             NetworkConfig.InitializePrefabs();
 
@@ -1107,8 +1100,6 @@ namespace Unity.Netcode
             // can unsubscribe from tick updates and such.
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
-
-            NetworkMetricsManager?.Shutdown();
 
             // This is required for handling the potential scenario where multiple NetworkManager instances are created.
             // See MTT-860 for more information
