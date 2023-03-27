@@ -52,8 +52,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId] == null)
                 {
-                    Assert.False(
-                        s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId][networkObject.NetworkObjectId] != null,
+                    Assert.False(s_GlobalNetworkObjects[networkObject.NetworkManager.LocalClientId][networkObject.NetworkObjectId] != null,
                         $"Duplicate NetworkObjectId {networkObject.NetworkObjectId} found in {nameof(s_GlobalNetworkObjects)} for client id {networkObject.NetworkManager.LocalClientId}!");
                 }
                 else
@@ -1561,13 +1560,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 switch (stage)
                 {
                     case NetworkUpdateStage.FixedUpdate:
-                        methodName = nameof(NetworkUpdateStage.FixedUpdate);
+                        methodName = "FixedUpdate"; // mapping NetworkUpdateStage.FixedUpdate to MonoBehaviour.FixedUpdate
                         break;
                     case NetworkUpdateStage.Update:
-                        methodName = nameof(NetworkUpdateStage.Update);
+                        methodName = "Update"; // mapping NetworkUpdateStage.Update to MonoBehaviour.Update
                         break;
                     case NetworkUpdateStage.PreLateUpdate:
-                        methodName = nameof(NetworkUpdateStage.PreLateUpdate);
+                        methodName = "LateUpdate"; // mapping NetworkUpdateStage.PreLateUpdate to MonoBehaviour.LateUpdate
                         break;
                 }
 
