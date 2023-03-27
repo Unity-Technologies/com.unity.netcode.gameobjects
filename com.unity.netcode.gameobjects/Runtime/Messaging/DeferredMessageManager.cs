@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Unity.Collections;
-using Time = UnityEngine.Time;
 
 namespace Unity.Netcode
 {
@@ -49,7 +48,7 @@ namespace Unity.Netcode
             {
                 triggerInfo = new TriggerInfo
                 {
-                    Expiry = Time.realtimeSinceStartup + m_NetworkManager.NetworkConfig.SpawnTimeout,
+                    Expiry = m_NetworkManager.RealTimeProvider.RealTimeSinceStartup + m_NetworkManager.NetworkConfig.SpawnTimeout,
                     TriggerData = new NativeList<TriggerData>(Allocator.Persistent)
                 };
                 triggers[key] = triggerInfo;
@@ -77,7 +76,7 @@ namespace Unity.Netcode
                 int index = 0;
                 foreach (var kvp2 in kvp.Value)
                 {
-                    if (kvp2.Value.Expiry < Time.realtimeSinceStartup)
+                    if (kvp2.Value.Expiry < m_NetworkManager.RealTimeProvider.RealTimeSinceStartup)
                     {
                         staleKeys[index++] = kvp2.Key;
                         PurgeTrigger(kvp.Key, kvp2.Key, kvp2.Value);

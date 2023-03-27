@@ -2626,7 +2626,7 @@ namespace Unity.Netcode.Components
             if (Interpolate)
             {
                 var serverTime = NetworkManager.ServerTime;
-                var cachedDeltaTime = Time.deltaTime;
+                var cachedDeltaTime = NetworkManager.RealTimeProvider.DeltaTime;
                 var cachedServerTime = serverTime.Time;
                 // TODO: Investigate Further
                 // With owner authoritative mode, non-authority clients can lag behind
@@ -2705,4 +2705,3 @@ namespace Unity.Netcode.Components
         void AddLogEntry(NetworkTransform.NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
     }
 }
-

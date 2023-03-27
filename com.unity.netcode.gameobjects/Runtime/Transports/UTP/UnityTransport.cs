@@ -450,6 +450,8 @@ namespace Unity.Netcode.Transports.UTP
 
         internal NetworkManager NetworkManager;
 
+        private IRealTimeProvider m_RealTimeProvider;
+
         /// <summary>
         /// SendQueue dictionary is used to batch events instead of sending them immediately.
         /// </summary>
@@ -788,7 +790,7 @@ namespace Unity.Netcode.Transports.UTP
             InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                 ParseClientId(connection),
                 default,
-                Time.realtimeSinceStartup);
+                m_RealTimeProvider.RealTimeSinceStartup);
 
             return true;
 
@@ -823,7 +825,7 @@ namespace Unity.Netcode.Transports.UTP
                     break;
                 }
 
-                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, Time.realtimeSinceStartup);
+                InvokeOnTransportEvent(NetcodeNetworkEvent.Data, clientId, message, m_RealTimeProvider.RealTimeSinceStartup);
             }
         }
 
@@ -839,7 +841,7 @@ namespace Unity.Netcode.Transports.UTP
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Connect,
                             clientId,
                             default,
-                            Time.realtimeSinceStartup);
+                            m_RealTimeProvider.RealTimeSinceStartup);
 
                         m_State = State.Connected;
                         return true;
@@ -867,7 +869,7 @@ namespace Unity.Netcode.Transports.UTP
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             clientId,
                             default,
-                            Time.realtimeSinceStartup);
+                            m_RealTimeProvider.RealTimeSinceStartup);
 
                         return true;
                     }
@@ -897,7 +899,7 @@ namespace Unity.Netcode.Transports.UTP
                     Debug.LogError("Transport failure! Relay allocation needs to be recreated, and NetworkManager restarted. " +
                         "Use NetworkManager.OnTransportFailure to be notified of such events programmatically.");
 
-                    InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, Time.realtimeSinceStartup);
+                    InvokeOnTransportEvent(NetcodeNetworkEvent.TransportFailure, 0, default, m_RealTimeProvider.RealTimeSinceStartup);
                     return;
                 }
 
@@ -1120,7 +1122,7 @@ namespace Unity.Netcode.Transports.UTP
                     InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                         m_ServerClientId,
                         default,
-                        Time.realtimeSinceStartup);
+                        m_RealTimeProvider.RealTimeSinceStartup);
                 }
             }
         }
@@ -1183,6 +1185,8 @@ namespace Unity.Netcode.Transports.UTP
 
             NetworkManager = networkManager;
 
+            m_RealTimeProvider = NetworkManager ? NetworkManager.RealTimeProvider : new RealTimeProvider();
+
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);
 
             // If the user sends a message of exactly m_MaxPayloadSize in length, we need to
@@ -1207,7 +1211,7 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         /// <param name="clientId">The clientId this event is for</param>
         /// <param name="payload">The incoming data payload</param>
-        /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
+        /// <param name="receiveTime">The time the event was received, as reported by m_RealTimeProvider.RealTimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
         public override NetcodeNetworkEvent PollEvent(out ulong clientId, out ArraySegment<byte> payload, out float receiveTime)
         {
@@ -1280,7 +1284,7 @@ namespace Unity.Netcode.Transports.UTP
                         InvokeOnTransportEvent(NetcodeNetworkEvent.Disconnect,
                             clientId,
                             default(ArraySegment<byte>),
-                            Time.realtimeSinceStartup);
+                            m_RealTimeProvider.RealTimeSinceStartup);
                     }
                 }
                 else

@@ -5,7 +5,6 @@ using TestProject.ManualTests;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
@@ -27,6 +26,10 @@ namespace TestProject.RuntimeTests
         private const string k_PlayerToLoad = "PlayerNestedTransforms";
 
         protected override int NumberOfClients => 0;
+
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => true;
+        protected override bool m_TearDownIsACoroutine => false;
 
         private float m_OriginalVarianceThreshold;
 
@@ -107,7 +110,6 @@ namespace TestProject.RuntimeTests
         {
             yield return WaitForConditionOrTimeOut(() => m_BaseSceneLoaded.IsValid() && m_BaseSceneLoaded.isLoaded);
             AssertOnTimeout($"Timed out waiting for scene {k_TestScene} to load!");
-            yield return base.OnSetup();
         }
 
         private void SceneManager_sceneLoaded(Scene sceneLoaded, LoadSceneMode loadSceneMode)
@@ -120,11 +122,10 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override void OnInlineTearDown()
         {
             // This prevents us from trying to destroy the resource loaded
             m_PlayerPrefab = null;
-            return base.OnTearDown();
         }
 
         private void ConfigureNetworkTransform(IntegrationNetworkTransform networkTransform)
@@ -279,8 +280,19 @@ namespace TestProject.RuntimeTests
         // Number of failures in a row with no correction in precision for the test to fail
         private const int k_MaximumPrecisionFailures = 5;
 
-        [UnityTest]
-        public IEnumerator NestedNetworkTransformSynchronization()
+        public int CalculateTimeOutFrames(float timeOutPeriod, uint tickRate = k_DefaultTickRate)
+        {
+            // Calculate the expected number of frame updates that should occur during the tick count wait period
+            var frameFrequency = 1.0f / (Application.targetFrameRate >= 60 && Application.targetFrameRate <= 100 ? Application.targetFrameRate : 60.0f);
+            var tickFrequency = 1.0f / tickRate;
+            var framesPerTick = tickFrequency / frameFrequency;
+            var totalExpectedTicks = timeOutPeriod / tickFrequency;
+
+            return (int)(framesPerTick * totalExpectedTicks);
+        }
+
+        [Test]
+        public void NestedNetworkTransformSynchronization()
         {
             var timeStarted = Time.realtimeSinceStartup;
             var startFrameCount = Time.frameCount;
@@ -288,14 +300,14 @@ namespace TestProject.RuntimeTests
             AutomatedPlayerMover.StopMovement = false;
             ChildMoverManager.StopMovement = false;
             m_ValidationErrors = new StringBuilder();
-            var waitPeriod = new TimeoutFrameCountHelper(3f);
-            var pausePeriod = new TimeoutFrameCountHelper(1f);
-            var synchTimeOut = new TimeoutFrameCountHelper(m_Interpolation == Interpolation.Interpolation ? 4f : 2f, m_ServerNetworkManager.NetworkConfig.TickRate);
+
+            var pauseFrames = CalculateTimeOutFrames(1f);
+            var synchTimeOut = CalculateTimeOutFrames(m_Interpolation == Interpolation.Interpolation ? 4 : 2);
 
             m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneServer;
 
             // We want it to timeout and it is "ok", just assuring that (n) frames have passed
-            yield return WaitForConditionOrTimeOut(() => false, pausePeriod);
+            TimeTravel(1f / k_DefaultTickRate, pauseFrames);
             // ** Do NOT AssertOnTimeout here **
 
             var precisionFailures = 0;
@@ -307,7 +319,7 @@ namespace TestProject.RuntimeTests
             {
                 ChildMoverManager.StopMovement = true;
                 AutomatedPlayerMover.StopMovement = true;
-                yield return WaitForConditionOrTimeOut(ValidateNetworkTransforms, synchTimeOut);
+                var success = WaitForConditionOrTimeOutWithTimeTravel(ValidateNetworkTransforms, synchTimeOut);
                 // Do one last validation pass to make sure one (or more) transforms does not fall within the acceptable ranges
                 if (!ValidateNetworkTransforms())
                 {
@@ -325,8 +337,8 @@ namespace TestProject.RuntimeTests
                     {
                         m_EnableVerboseDebug = true;
                         DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
-                        AssertOnTimeout($"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
-                            $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}", synchTimeOut);
+                        Assert.True(success, $"[{m_Interpolation}][{m_Precision}][{m_Authority}][Iteration: {i}]\n[Precision Failure] Exceeded Precision Failure Count " +
+                            $"({precisionFailures})\n Timed out waiting for all nested NetworkTransform cloned instances to match!\n{m_ValidationErrors}");
                         Assert.IsTrue(false, $"Timed out waiting for all nested NetworkTransform cloned instances to match:\n{m_ValidationErrors}");
                     }
                     else
@@ -345,15 +357,15 @@ namespace TestProject.RuntimeTests
 
                 if (clientCount < k_ClientsToSpawn)
                 {
-                    yield return CreateAndStartNewClient();
+                    CreateAndStartNewClientWithTimeTravel();
                     clientCount++;
 
-                    yield return WaitForConditionOrTimeOut(NewClientInstanceIsOnAllClients, synchTimeOut);
-                    if (synchTimeOut.TimedOut)
+                    success = WaitForConditionOrTimeOutWithTimeTravel(NewClientInstanceIsOnAllClients, synchTimeOut);
+                    if (!success)
                     {
                         DisplayFrameAndTimeInfo(timeStarted, startFrameCount, false);
                     }
-                    AssertOnTimeout($"Timed out waiting for all players to have spawned instances of all other players!", synchTimeOut);
+                    Assert.True(success, $"Timed out waiting for all players to have spawned instances of all other players!");
                 }
 
 
@@ -361,7 +373,7 @@ namespace TestProject.RuntimeTests
                 ChildMoverManager.StopMovement = false;
                 // Now let everything move around a bit
                 // We want it to timeout and it is "ok", just assuring that (n) frames have passed
-                yield return WaitForConditionOrTimeOut(() => false, waitPeriod);
+                TimeTravel(1f / k_DefaultTickRate, pauseFrames);
                 // ** Do NOT AssertOnTimeout here **
 
                 // If we are just about to end this test but there are running precision

@@ -17,7 +17,9 @@ namespace TestProject.RuntimeTests
     public class NetworkSceneManagerEventDataPoolTest : NetcodeIntegrationTest
     {
         protected override int NumberOfClients => 4;
-
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
         public NetworkSceneManagerEventDataPoolTest(HostOrServer hostOrServer, LoadSceneMode loadSceneMode) : base(hostOrServer)
         {
             m_LoadSceneMode = loadSceneMode;
@@ -46,17 +48,16 @@ namespace TestProject.RuntimeTests
         private List<SceneTestInfo> m_ShouldWaitList = new List<SceneTestInfo>();
         private List<ulong> m_ClientsReceivedSynchronize = new List<ulong>();
 
-        protected override IEnumerator OnSetup()
+        protected override void OnInlineSetup()
         {
             m_CanStartServerOrClients = false;
             m_ClientsReceivedSynchronize.Clear();
             m_ShouldWaitList.Clear();
             m_ScenesLoaded.Clear();
             m_CreateServerFirst = false;
-            return base.OnSetup();
         }
 
-        protected override IEnumerator OnStartedServerAndClients()
+        protected override void OnTimeTravelStartedServerAndClients()
         {
             m_ClientVerificationAction = DataPoolVerifySceneClient;
             m_ServerVerificationAction = DataPoolVerifySceneServer;
@@ -68,7 +69,6 @@ namespace TestProject.RuntimeTests
                 client.SceneManager.ClientSynchronizationMode = m_LoadSceneMode;
                 client.SceneManager.DisableValidationWarnings(true);
             }
-            return base.OnStartedServerAndClients();
         }
 
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)
@@ -316,13 +316,13 @@ namespace TestProject.RuntimeTests
         {
             m_CanStartServerOrClients = true;
 
-            yield return StartServerAndClients();
+            StartServerAndClientsWithTimeTravel();
 
             // Now prepare for the loading and unloading additive scene testing
             InitializeSceneTestInfo(true);
 
-            yield return WaitForConditionOrTimeOut(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
-            Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_ClientsReceivedSynchronize.Count == (m_ClientNetworkManagers.Length));
+            Assert.True(success, $"Timed out waiting for all clients to receive synchronization event! Received: {m_ClientsReceivedSynchronize.Count} | Expected: {m_ClientNetworkManagers.Length}");
 
             m_OriginalActiveScene = SceneManager.GetActiveScene();
 

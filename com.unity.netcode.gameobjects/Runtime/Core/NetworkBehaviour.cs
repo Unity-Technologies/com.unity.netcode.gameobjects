@@ -82,7 +82,7 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = Time.realtimeSinceStartup,
+                    Timestamp = NetworkManager.RealTimeProvider.RealTimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
@@ -219,7 +219,7 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = Time.realtimeSinceStartup,
+                    Timestamp = NetworkManager.RealTimeProvider.RealTimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
