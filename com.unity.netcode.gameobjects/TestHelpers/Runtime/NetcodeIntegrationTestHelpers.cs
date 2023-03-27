@@ -186,7 +186,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.NetworkTransport = unityTransport;
         }
 
-        public static NetworkManager CreateServer()
+        private static void AddMockTransport(NetworkManager networkManager)
+        {
+            // Create transport
+            var mockTransport = networkManager.gameObject.AddComponent<MockTransport>();
+            // Set the NetworkConfig
+            networkManager.NetworkConfig ??= new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = mockTransport;
+        }
+
+        public static NetworkManager CreateServer(bool mockTransport = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
@@ -194,7 +203,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Create networkManager component
             var server = go.AddComponent<NetworkManager>();
             NetworkManagerInstances.Insert(0, server);
-            AddUnityTransport(server);
+            if (mockTransport)
+            {
+                AddMockTransport(server);
+            }
+            else
+            {
+                AddUnityTransport(server);
+            }
             return server;
         }
 
@@ -206,20 +222,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
             if (serverFirst)
             {
-                server = CreateServer();
+                server = CreateServer(useMockTransport);
             }
 
-            CreateNewClients(clientCount, out clients);
+            CreateNewClients(clientCount, out clients, useMockTransport);
 
             if (!serverFirst)
             {
-                server = CreateServer();
+                server = CreateServer(useMockTransport);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -228,13 +244,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier)
+        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
             // Create networkManager component
             var networkManager = go.AddComponent<NetworkManager>();
-            AddUnityTransport(networkManager);
+            if (mockTransport)
+            {
+                AddMockTransport(networkManager);
+            }
+            else
+            {
+                AddUnityTransport(networkManager);
+            }
             return networkManager;
         }
 
@@ -244,13 +267,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
         {
             clients = new NetworkManager[clientCount];
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i);
+                clients[i] = CreateNewClient(i, useMockTransport);
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -314,7 +337,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (networkManager.gameObject != null)
                 {
-                    Object.Destroy(networkManager.gameObject);
+                    Object.DestroyImmediate(networkManager.gameObject);
                 }
             }
 
@@ -724,6 +747,40 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            }
+
+            result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;
+
+            if (failIfNull && result.Result == null)
+            {
+                Assert.Fail("NetworkObject could not be found");
+            }
+        }
+
+        /// <summary>
+        /// Gets a NetworkObject instance as it's represented by a certain peer.
+        /// </summary>
+        /// <param name="predicate">The predicate used to filter for your target NetworkObject</param>
+        /// <param name="representation">The representation to get the object from</param>
+        /// <param name="result">The result</param>
+        /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static void GetNetworkObjectByRepresentationWithTimeTravel(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxTries = 60)
+        {
+            if (result == null)
+            {
+                throw new ArgumentNullException("Result cannot be null");
+            }
+
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("Predicate cannot be null");
+            }
+
+            var tries = 0;
+            while (++tries < maxTries && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
+            {
+                NetcodeIntegrationTest.SimulateOneFrame();
             }
 
             result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;

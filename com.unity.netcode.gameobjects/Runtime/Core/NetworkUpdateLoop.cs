@@ -167,7 +167,7 @@ namespace Unity.Netcode
         /// </summary>
         public static NetworkUpdateStage UpdateStage;
 
-        private static void RunNetworkUpdateStage(NetworkUpdateStage updateStage)
+        internal static void RunNetworkUpdateStage(NetworkUpdateStage updateStage)
         {
             UpdateStage = updateStage;
 

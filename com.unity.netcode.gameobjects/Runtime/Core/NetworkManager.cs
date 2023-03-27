@@ -720,6 +720,8 @@ namespace Unity.Netcode
 
             DeferredMessageManager = ComponentFactory.Create<IDeferredMessageManager>(this);
 
+            RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
+
             CustomMessagingManager = new CustomMessagingManager(this);
 
             SceneManager = new NetworkSceneManager(this);

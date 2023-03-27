@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Unity.Netcode.RuntimeTests;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -144,6 +146,75 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected bool m_BypassConnectionTimeout { get; set; }
 
         /// <summary>
+        /// Enables "Time Travel" within the test, which swaps the time provider for the SDK from Unity's
+        /// <see cref="Time"/> class to <see cref="MockTimeProvider"/>, and also swaps the transport implementation
+        /// from <see cref="UnityTransport"/> to <see cref="MockTransport"/>.
+        ///
+        /// This enables five important things that help with both performance and determinism of tests that involve a
+        /// lot of time and waiting:
+        /// 1) It allows time to move in a completely deterministic way (testing that something happens after n seconds,
+        /// the test will always move exactly n seconds with no chance of any variability in the timing),
+        /// 2) It allows skipping periods of time without actually waiting that amount of time, while still simulating
+        /// SDK frames as if that time were passing,
+        /// 3) It dissociates the SDK's update loop from Unity's update loop, allowing us to simulate SDK frame updates
+        /// without waiting for Unity to process things like physics, animation, and rendering that aren't relevant to
+        /// the test,
+        /// 4) It dissociates the SDK's messaging system from the networking hardware, meaning there's no delay between
+        /// a message being sent and it being received, allowing us to deterministically rely on the message being
+        /// received within specific time frames for the test, and
+        /// 5) It allows tests to be written without the use of coroutines, which not only improves the test's runtime,
+        /// but also results in easier-to-read callstacks and removes the possibility for an assertion to result in the
+        /// test hanging.
+        ///
+        /// When time travel is enabled, the following methods become available:
+        ///
+        /// <see cref="TimeTravel"/>: Simulates a specific number of frames passing over a specific time period
+        /// <see cref="TimeTravelToNextTick"/>: Skips forward to the next tick, siumlating at the current application frame rate
+        /// <see cref="WaitForConditionOrTimeOutWithTimeTravel(Func{bool},int)"/>: Simulates frames at the application frame rate until the given condition is true
+        /// <see cref="WaitForMessageReceivedWithTimeTravel{T}"/>: Simulates frames at the application frame rate until the required message is received
+        /// <see cref="WaitForMessagesReceivedWithTimeTravel"/>: Simulates frames at the application frame rate until the required messages are received
+        /// <see cref="StartServerAndClientsWithTimeTravel"/>: Starts a server and client and allows them to connect via simulated frames
+        /// <see cref="CreateAndStartNewClientWithTimeTravel"/>: Creates a client and waits for it to connect via simulated frames
+        /// <see cref="WaitForClientsConnectedOrTimeOutWithTimeTravel(Unity.Netcode.NetworkManager[])"/> Simulates frames at the application frame rate until the given clients are connected
+        /// <see cref="StopOneClientWithTimeTravel"/>: Stops a client and simulates frames until it's fully disconnected.
+        ///
+        /// When time travel is enabled, <see cref="NetcodeIntegrationTest"/> will automatically use these in its methods
+        /// when doing things like automatically connecting clients during SetUp.
+        ///
+        /// Additionally, the following methods replace their non-time-travel equivalents with variants that are not coroutines:
+        /// <see cref="OnTimeTravelStartedServerAndClients"/> - called when server and clients are started
+        /// <see cref="OnTimeTravelServerAndClientsConnected"/> - called when server and clients are connected
+        ///
+        /// Note that all of the non-time travel functions can still be used even when time travel is enabled - this is
+        /// sometimes needed for, e.g., testing NetworkAnimator, where the unity update loop needs to run to process animations.
+        /// However, it's VERY important to note here that, because the SDK will not be operating based on real-world time
+        /// but based on the frozen time that's locked in from MockTimeProvider, actions that pass 10 seconds apart by
+        /// real-world clock time will be perceived by the SDK as having happened simultaneously if you don't call
+        /// <see cref="MockTimeProvider.TimeTravel"/> to cover the equivalent time span in the mock time provider.
+        /// (Calling <see cref="MockTimeProvider.TimeTravel"/> instead of <see cref="TimeTravel"/>
+        /// will move time forward without simulating any frames, which, in the case where real-world time has passed,
+        /// is likely more desirable). In most cases, this desynch won't affect anything, but it is worth noting that
+        /// it happens just in case a tested system depends on both the unity update loop happening *and* time moving forward.
+        /// </summary>
+        protected virtual bool m_EnableTimeTravel => false;
+
+        /// <summary>
+        /// If this is false, SetUp will call OnInlineSetUp instead of OnSetUp.
+        /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
+        /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
+        /// method that called it for a full frame after it returns.
+        /// </summary>
+        protected virtual bool m_SetupIsACoroutine => true;
+
+        /// <summary>
+        /// If this is false, TearDown will call OnInlineTearDown instead of OnTearDown.
+        /// This is a performance advantage when not using the coroutine functionality, as a coroutine that
+        /// has no yield instructions in it will nonetheless still result in delaying the continuation of the
+        /// method that called it for a full frame after it returns.
+        /// </summary>
+        protected virtual bool m_TearDownIsACoroutine => true;
+
+        /// <summary>
         /// Used to display the various integration test
         /// stages and can be used to log verbose information
         /// for troubleshooting an integration test.
@@ -215,6 +286,17 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             yield return null;
         }
+        /// <summary>
+        /// Called before creating and starting the server and clients
+        /// Note: For <see cref="NetworkManagerInstatiationMode.AllTests"/> and
+        /// <see cref="NetworkManagerInstatiationMode.PerTest"/> mode integration tests.
+        /// For those two modes, if you want to have access to the server or client
+        /// <see cref="NetworkManager"/>s then override <see cref="OnServerAndClientsCreated"/>.
+        /// <see cref="m_ServerNetworkManager"/> and <see cref="m_ClientNetworkManagers"/>
+        /// </summary>
+        protected virtual void OnInlineSetup()
+        {
+        }
 
         [UnitySetUp]
         public IEnumerator SetUp()
@@ -222,13 +304,34 @@ namespace Unity.Netcode.TestHelpers.Runtime
             VerboseDebug($"Entering {nameof(SetUp)}");
 
             NetcodeLogAssert = new NetcodeLogAssert();
-            yield return OnSetup();
+            if (m_SetupIsACoroutine)
+            {
+                yield return OnSetup();
+            }
+            else
+            {
+                OnInlineSetup();
+            }
+
+            if (m_EnableTimeTravel)
+            {
+                MockTimeProvider.Reset();
+                ComponentFactory.Register<IRealTimeProvider>(manager => new MockTimeProvider());
+            }
+
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.AllTests && m_ServerNetworkManager == null ||
                 m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 CreateServerAndClients();
 
-                yield return StartServerAndClients();
+                if (m_EnableTimeTravel)
+                {
+                    StartServerAndClientsWithTimeTravel();
+                }
+                else
+                {
+                    yield return StartServerAndClients();
+                }
             }
             VerboseDebug($"Exiting {nameof(SetUp)}");
         }
@@ -331,7 +434,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected IEnumerator CreateAndStartNewClient()
         {
-            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length);
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
             networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
 
             // Notification that the new client (NetworkManager) has been created
@@ -356,9 +459,47 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (s_GlobalTimeoutHelper.TimedOut)
             {
                 AddRemoveNetworkManager(networkManager, false);
-                Object.Destroy(networkManager.gameObject);
+                Object.DestroyImmediate(networkManager.gameObject);
             }
             AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
+            ClientNetworkManagerPostStart(networkManager);
+            VerboseDebug($"[{networkManager.name}] Created and connected!");
+        }
+
+        /// <summary>
+        /// This will create, start, and connect a new client while in the middle of an
+        /// integration test.
+        /// </summary>
+        protected void CreateAndStartNewClientWithTimeTravel()
+        {
+            var networkManager = NetcodeIntegrationTestHelpers.CreateNewClient(m_ClientNetworkManagers.Length, m_EnableTimeTravel);
+            networkManager.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
+
+            // Notification that the new client (NetworkManager) has been created
+            // in the event any modifications need to be made before starting the client
+            OnNewClientCreated(networkManager);
+
+            NetcodeIntegrationTestHelpers.StartOneClient(networkManager);
+
+            if (LogAllMessages)
+            {
+                networkManager.MessagingSystem.Hook(new DebugNetworkHooks());
+            }
+
+            AddRemoveNetworkManager(networkManager, true);
+
+            OnNewClientStarted(networkManager);
+
+            // Wait for the new client to connect
+            var connected = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+
+            OnNewClientStartedAndConnected(networkManager);
+            if (!connected)
+            {
+                AddRemoveNetworkManager(networkManager, false);
+                Object.DestroyImmediate(networkManager.gameObject);
+            }
+            Assert.IsTrue(connected, $"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
             ClientNetworkManagerPostStart(networkManager);
             VerboseDebug($"[{networkManager.name}] Created and connected!");
         }
@@ -374,6 +515,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// This will stop a client while in the middle of an integration test
+        /// </summary>
+        protected void StopOneClientWithTimeTravel(NetworkManager networkManager, bool destroy = false)
+        {
+            NetcodeIntegrationTestHelpers.StopOneClient(networkManager, destroy);
+            AddRemoveNetworkManager(networkManager, false);
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => !networkManager.IsConnectedClient));
+        }
+
+        /// <summary>
         /// Creates the server and clients
         /// </summary>
         /// <param name="numberOfClients"></param>
@@ -383,8 +534,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             CreatePlayerPrefab();
 
+            if (m_EnableTimeTravel)
+            {
+                m_TargetFrameRate = -1;
+            }
+
             // Create multiple NetworkManager instances
-            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst))
+            if (!NetcodeIntegrationTestHelpers.Create(numberOfClients, out NetworkManager server, out NetworkManager[] clients, m_TargetFrameRate, m_CreateServerFirst, m_EnableTimeTravel))
             {
                 Debug.LogError("Failed to create instances");
                 Assert.Fail("Failed to create instances");
@@ -432,12 +588,28 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// Invoked after the server and clients have started.
+        /// Note: No connection verification has been done at this point
+        /// </summary>
+        protected virtual void OnTimeTravelStartedServerAndClients()
+        {
+        }
+
+        /// <summary>
         /// Invoked after the server and clients have started and verified
         /// their connections with each other.
         /// </summary>
         protected virtual IEnumerator OnServerAndClientsConnected()
         {
             yield return null;
+        }
+
+        /// <summary>
+        /// Invoked after the server and clients have started and verified
+        /// their connections with each other.
+        /// </summary>
+        protected virtual void OnTimeTravelServerAndClientsConnected()
+        {
         }
 
         private void ClientNetworkManagerPostStart(NetworkManager networkManager)
@@ -586,6 +758,72 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// This starts the server and clients as long as <see cref="CanStartServerAndClients"/>
+        /// returns true.
+        /// </summary>
+        protected void StartServerAndClientsWithTimeTravel()
+        {
+            if (CanStartServerAndClients())
+            {
+                VerboseDebug($"Entering {nameof(StartServerAndClientsWithTimeTravel)}");
+
+                // Start the instances and pass in our SceneManagerInitialization action that is invoked immediately after host-server
+                // is started and after each client is started.
+                if (!NetcodeIntegrationTestHelpers.Start(m_UseHost, m_ServerNetworkManager, m_ClientNetworkManagers))
+                {
+                    Debug.LogError("Failed to start instances");
+                    Assert.Fail("Failed to start instances");
+                }
+
+                if (LogAllMessages)
+                {
+                    EnableMessageLogging();
+                }
+
+                RegisterSceneManagerHandler();
+
+                // Notification that the server and clients have been started
+                OnTimeTravelStartedServerAndClients();
+
+                // When true, we skip everything else (most likely a connection oriented test)
+                if (!m_BypassConnectionTimeout)
+                {
+                    // Wait for all clients to connect
+                    WaitForClientsConnectedOrTimeOutWithTimeTravel();
+
+                    AssertOnTimeout($"{nameof(StartServerAndClients)} timed out waiting for all clients to be connected!");
+
+                    if (m_UseHost || m_ServerNetworkManager.IsHost)
+                    {
+#if UNITY_2023_1_OR_NEWER
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None).Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#else
+                        // Add the server player instance to all m_ClientSidePlayerNetworkObjects entries
+                        var serverPlayerClones = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsPlayerObject && c.OwnerClientId == m_ServerNetworkManager.LocalClientId);
+#endif
+                        foreach (var playerNetworkObject in serverPlayerClones)
+                        {
+                            if (!m_PlayerNetworkObjects.ContainsKey(playerNetworkObject.NetworkManager.LocalClientId))
+                            {
+                                m_PlayerNetworkObjects.Add(playerNetworkObject.NetworkManager.LocalClientId, new Dictionary<ulong, NetworkObject>());
+                            }
+                            m_PlayerNetworkObjects[playerNetworkObject.NetworkManager.LocalClientId].Add(m_ServerNetworkManager.LocalClientId, playerNetworkObject);
+                        }
+                    }
+
+                    ClientNetworkManagerPostStartInit();
+
+                    // Notification that at this time the server and client(s) are instantiated,
+                    // started, and connected on both sides.
+                    OnTimeTravelServerAndClientsConnected();
+
+                    VerboseDebug($"Exiting {nameof(StartServerAndClients)}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Override this method to control when clients
         /// can fake-load a scene.
         /// </summary>
@@ -665,7 +903,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (m_PlayerPrefab != null)
                 {
-                    Object.Destroy(m_PlayerPrefab);
+                    Object.DestroyImmediate(m_PlayerPrefab);
                     m_PlayerPrefab = null;
                 }
             }
@@ -689,16 +927,32 @@ namespace Unity.Netcode.TestHelpers.Runtime
             yield return null;
         }
 
+        protected virtual void OnInlineTearDown()
+        {
+        }
+
         [UnityTearDown]
         public IEnumerator TearDown()
         {
             IntegrationTestSceneHandler.SceneNameToSceneHandles.Clear();
             VerboseDebug($"Entering {nameof(TearDown)}");
-            yield return OnTearDown();
+            if (m_TearDownIsACoroutine)
+            {
+                yield return OnTearDown();
+            }
+            else
+            {
+                OnInlineTearDown();
+            }
 
             if (m_NetworkManagerInstatiationMode == NetworkManagerInstatiationMode.PerTest)
             {
                 ShutdownAndCleanUp();
+            }
+
+            if (m_EnableTimeTravel)
+            {
+                ComponentFactory.Deregister<IRealTimeProvider>();
             }
 
             VerboseDebug($"Exiting {nameof(TearDown)}");
@@ -836,6 +1090,43 @@ namespace Unity.Netcode.TestHelpers.Runtime
             timeOutHelper.Stop();
         }
 
+
+        /// <summary>
+        /// Waits for the function condition to return true or it will time out. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
+        /// </summary>
+        public bool WaitForConditionOrTimeOutWithTimeTravel(Func<bool> checkForCondition, int maxTries = 60)
+        {
+            if (checkForCondition == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            if (!m_EnableTimeTravel)
+            {
+                throw new ArgumentException($"Time travel must be enabled to use {nameof(WaitForConditionOrTimeOutWithTimeTravel)}!");
+            }
+
+            var frameRate = Application.targetFrameRate;
+            if (frameRate <= 0)
+            {
+                frameRate = 60;
+            }
+
+            var updateInterval = 1f / frameRate;
+            for (var i = 0; i < maxTries; ++i)
+            {
+                // Simulate a frame passing on all network managers
+                TimeTravel(updateInterval, 1);
+                // Update and check to see if the condition has been met
+                if (checkForCondition.Invoke())
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// This version accepts an IConditionalPredicate implementation to provide
         /// more flexibility for checking complex conditional cases.
@@ -859,6 +1150,29 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// This version accepts an IConditionalPredicate implementation to provide
+        /// more flexibility for checking complex conditional cases. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
+        /// </summary>
+        public bool WaitForConditionOrTimeOutWithTimeTravel(IConditionalPredicate conditionalPredicate, int maxTries = 60)
+        {
+            if (conditionalPredicate == null)
+            {
+                throw new ArgumentNullException($"checkForCondition cannot be null!");
+            }
+
+            if (!m_EnableTimeTravel)
+            {
+                throw new ArgumentException($"Time travel must be enabled to use {nameof(WaitForConditionOrTimeOutWithTimeTravel)}!");
+            }
+
+            conditionalPredicate.Started();
+            var success = WaitForConditionOrTimeOutWithTimeTravel(conditionalPredicate.HasConditionBeenReached, maxTries);
+            conditionalPredicate.Finished(!success);
+            return success;
+        }
+
+        /// <summary>
         /// Validates that all remote clients (i.e. non-server) detect they are connected
         /// to the server and that the server reflects the appropriate number of clients
         /// have connected or it will time out.
@@ -870,7 +1184,23 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
 
             yield return WaitForConditionOrTimeOut(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
-            m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+                                                         m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
+        }
+
+        /// <summary>
+        /// Validates that all remote clients (i.e. non-server) detect they are connected
+        /// to the server and that the server reflects the appropriate number of clients
+        /// have connected or it will time out. Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
+        /// </summary>
+        /// <param name="clientsToCheck">An array of clients to be checked</param>
+        protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel(NetworkManager[] clientsToCheck)
+        {
+            var remoteClientCount = clientsToCheck.Length;
+            var serverClientCount = m_ServerNetworkManager.IsHost ? remoteClientCount + 1 : remoteClientCount;
+
+            return WaitForConditionOrTimeOutWithTimeTravel(() => clientsToCheck.Where((c) => c.IsConnectedClient).Count() == remoteClientCount &&
+                                                         m_ServerNetworkManager.ConnectedClients.Count == serverClientCount);
         }
 
         /// <summary>
@@ -880,6 +1210,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
         protected IEnumerator WaitForClientsConnectedOrTimeOut()
         {
             yield return WaitForClientsConnectedOrTimeOut(m_ClientNetworkManagers);
+        }
+
+        /// <summary>
+        /// Overloaded method that just passes in all clients to
+        /// <see cref="WaitForClientsConnectedOrTimeOut(NetworkManager[])"/> Uses time travel to simulate this
+        /// for the given number of frames, simulating delta times at the application frame rate.
+        /// </summary>
+        protected bool WaitForClientsConnectedOrTimeOutWithTimeTravel()
+        {
+            return WaitForClientsConnectedOrTimeOutWithTimeTravel(m_ClientNetworkManagers);
         }
 
         internal IEnumerator WaitForMessageReceived<T>(List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled) where T : INetworkMessage
@@ -898,11 +1238,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.False(s_GlobalTimeoutHelper.TimedOut);
         }
 
-        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> wiatForReceivedBy, ReceiptType type = ReceiptType.Handled)
+        internal IEnumerator WaitForMessagesReceived(List<Type> messagesInOrder, List<NetworkManager> waitForReceivedBy, ReceiptType type = ReceiptType.Handled)
         {
             // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
             var messageHookEntriesForSpawn = new List<MessageHookEntry>();
-            foreach (var clientNetworkManager in wiatForReceivedBy)
+            foreach (var clientNetworkManager in waitForReceivedBy)
             {
                 foreach (var message in messagesInOrder)
                 {
@@ -915,6 +1255,40 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
             yield return WaitForConditionOrTimeOut(hooks);
             Assert.False(s_GlobalTimeoutHelper.TimedOut);
+        }
+
+
+        internal void WaitForMessageReceivedWithTimeTravel<T>(List<NetworkManager> waitForReceivedBy, ReceiptType type = ReceiptType.Handled) where T : INetworkMessage
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in waitForReceivedBy)
+            {
+                var messageHook = new MessageHookEntry(clientNetworkManager, type);
+                messageHook.AssignMessageType<T>();
+                messageHookEntriesForSpawn.Add(messageHook);
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks));
+        }
+
+        internal void WaitForMessagesReceivedWithTimeTravel(List<Type> messagesInOrder, List<NetworkManager> waitForReceivedBy, ReceiptType type = ReceiptType.Handled)
+        {
+            // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
+            var messageHookEntriesForSpawn = new List<MessageHookEntry>();
+            foreach (var clientNetworkManager in waitForReceivedBy)
+            {
+                foreach (var message in messagesInOrder)
+                {
+                    var messageHook = new MessageHookEntry(clientNetworkManager, type);
+                    messageHook.AssignMessageType(message);
+                    messageHookEntriesForSpawn.Add(messageHook);
+                }
+            }
+            // Used to determine if all clients received the CreateObjectMessage
+            var hooks = new MessageHooksConditional(messageHookEntriesForSpawn);
+            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(hooks));
         }
 
         /// <summary>
@@ -1114,6 +1488,81 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var totalFrameCount = framesPerTick * count;
             m_WaitForLog.Append($"[NetworkManager-{networkManager.LocalClientId}][WaitForTicks] TickRate ({networkManager.NetworkConfig.TickRate}) | Tick Wait ({count}) | TargetFrameRate ({Application.targetFrameRate}) | Target Frames ({framesPerTick * count})\n");
             yield return WaitForTickAndFrames(networkManager, count, totalFrameCount);
+        }
+
+        /// <summary>
+        /// Simulate a number of frames passing over a specific amount of time.
+        /// The delta time simulated for each frame will be evenly divided as time/numFrames
+        /// This will only simulate the netcode update loop, as well as update events on
+        /// NetworkBehaviour instances, and will not simulate any Unity update processes (physics, etc)
+        /// </summary>
+        /// <param name="amountOfTimeInSeconds"></param>
+        /// <param name="numFramesToSimulate"></param>
+        protected static void TimeTravel(double amountOfTimeInSeconds, int numFramesToSimulate)
+        {
+            var interval = amountOfTimeInSeconds / numFramesToSimulate;
+            for (var i = 0; i < numFramesToSimulate; ++i)
+            {
+                MockTimeProvider.TimeTravel(interval);
+                SimulateOneFrame();
+            }
+        }
+
+        /// <summary>
+        /// Helper function to time travel exactly one tick's worth of time at the current frame and tick rates.
+        /// </summary>
+        public static void TimeTravelToNextTick()
+        {
+            var timePassed = 1.0f / k_DefaultTickRate;
+            var frameRate = Application.targetFrameRate;
+            if (frameRate <= 0)
+            {
+                frameRate = 60;
+            }
+
+            var frames = Math.Max((int)(timePassed / frameRate), 1);
+            TimeTravel(timePassed, frames);
+        }
+
+        /// <summary>
+        /// Simulates one SDK frame. This can be used even without TimeTravel, though it's of somewhat less use
+        /// without TimeTravel, as, without the mock transport, it will likely not provide enough time for any
+        /// sent messages to be received even if called dozens of times.
+        /// </summary>
+        public static void SimulateOneFrame()
+        {
+            foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            {
+                NetworkUpdateLoop.RunNetworkUpdateStage(stage);
+                var methodName = "";
+                switch (stage)
+                {
+                    case NetworkUpdateStage.FixedUpdate:
+                        methodName = "FixedUpdate";
+                        break;
+                    case NetworkUpdateStage.Update:
+                        methodName = "Update";
+                        break;
+                    case NetworkUpdateStage.PreLateUpdate:
+                        methodName = "LateUpdate";
+                        break;
+
+                }
+
+
+                if (methodName != "")
+                {
+                    foreach (var behaviour in Object.FindObjectsOfType<NetworkBehaviour>())
+                    {
+                        var method = behaviour.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (method == null)
+                        {
+                            method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
+                        }
+                        method?.Invoke(behaviour, new object[] { });
+                    }
+                }
+            }
         }
     }
 }
