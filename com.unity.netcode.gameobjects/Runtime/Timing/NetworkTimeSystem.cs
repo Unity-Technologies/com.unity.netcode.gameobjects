@@ -108,7 +108,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The primary time system is initialized when a server-host or client is started
         /// </summary>
-        internal NetworkTickSystem InitializeForUpdates(NetworkManager networkManager)
+        internal NetworkTickSystem Initialize(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;
             m_ConnectionManager = networkManager.ConnectionManager;

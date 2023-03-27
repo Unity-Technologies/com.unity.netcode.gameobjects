@@ -645,7 +645,7 @@ namespace Unity.Netcode
                 NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             }
 
-            NetworkTickSystem = NetworkTimeSystem.InitializeForUpdates(this);
+            NetworkTickSystem = NetworkTimeSystem.Initialize(this);
 
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
