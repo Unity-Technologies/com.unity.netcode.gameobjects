@@ -130,7 +130,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogWarning($"{NetworkManager.PrefabDebugHelper(this)} is missing " +
+                        NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(this)} is missing " +
                                               $"a {nameof(NetworkObject)} component (entry will be ignored).");
                     }
                     return false;

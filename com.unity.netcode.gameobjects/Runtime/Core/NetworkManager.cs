@@ -15,14 +15,6 @@ namespace Unity.Netcode
     [AddComponentMenu("Netcode/Network Manager", -100)]
     public class NetworkManager : MonoBehaviour
     {
-        // TODO 2023-Q2: Removing this is a "breaking change"
-        // (the issue with interfaces...implementations have to be public!)
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-
-        }
-
-        #region RPC RELATED CODE
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
@@ -37,9 +29,15 @@ namespace Unity.Netcode
 #endif
 
 #pragma warning restore IDE1006 // restore naming rule violation check
-        #endregion
 
-        #region CONNECTION MANAGEMENT RELATED CODE
+        // TODO 2023-Q2: Team discussion
+        // Removing this is a "breaking change"
+        // (the issue with interfaces...implementations have to be public!)
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        {
+
+        }
+
         /// <summary>
         /// The client id used to represent the server
         /// </summary>
@@ -118,10 +116,11 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
         /// </summary>
+        /// // TODO-2023-Q2: Team discussion (see commented out code below)
         /// !!!!!!!!!!!!!!!!!!!!!!!!!!!! (2023-Q2) THIS IS NOT CURRENTLY POPULATED WITH ANYTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 
-        // TODO-2023-Q2: FIXME!!!! (Below is what we want to make this and should not impact the API)
+        // TODO-2023-Q2: Team discussion (Below is what we want to make this and should not impact the API)
         // While the API itself remains exactly the same, our package-validation-suite thinks this breaks the API
         //public IReadOnlyDictionary<ulong, PendingClient> PendingClients => ConnectionManager.PendingClients;
 
@@ -275,20 +274,6 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Disconnects the remote client.
-        /// </summary>
-        /// <param name="clientId">The ClientId to disconnect</param>
-        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId);
-
-        /// <summary>
-        /// Disconnects the remote client.
-        /// </summary>
-        /// <param name="clientId">The ClientId to disconnect</param>
-        /// <param name="reason">Disconnection reason. If set, client will receive a DisconnectReasonMessage and have the
-        /// reason available in the NetworkManager.DisconnectReason property</param>
-        public void DisconnectClient(ulong clientId, string reason = null) => ConnectionManager.DisconnectClient(clientId, reason);
-
-        /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname => ConnectionManager.ConnectedHostname;
@@ -344,112 +329,6 @@ namespace Unity.Netcode
             /// </summary>
             public ulong ClientNetworkId;
         }
-        #endregion
-
-        #region PREFAB RELATED CODE
-
-        internal static string PrefabDebugHelper(NetworkPrefab networkPrefab)
-        {
-            return $"{nameof(NetworkPrefab)} \"{networkPrefab.Prefab.name}\"";
-        }
-
-        /// <summary>
-        /// Returns the <see cref="GameObject"/> to use as the override as could be defined within the NetworkPrefab list
-        /// Note: This should be used to create <see cref="GameObject"/> pools (with <see cref="NetworkObject"/> components)
-        /// under the scenario where you are using the Host model as it spawns everything locally. As such, the override
-        /// will not be applied when spawning locally on a Host.
-        /// Related Classes and Interfaces:
-        /// <see cref="NetworkPrefabHandler"/>
-        /// <see cref="INetworkPrefabInstanceHandler"/>
-        /// </summary>
-        /// <param name="gameObject">the <see cref="GameObject"/> to be checked for a <see cref="NetworkManager"/> defined NetworkPrefab override</param>
-        /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
-        public GameObject GetNetworkPrefabOverride(GameObject gameObject)
-        {
-            if (gameObject.TryGetComponent<NetworkObject>(out var networkObject))
-            {
-                if (NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(networkObject.GlobalObjectIdHash))
-                {
-                    switch (NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].Override)
-                    {
-                        case NetworkPrefabOverride.Hash:
-                        case NetworkPrefabOverride.Prefab:
-                            {
-                                return NetworkConfig.Prefabs.NetworkPrefabOverrideLinks[networkObject.GlobalObjectIdHash].OverridingTargetPrefab;
-                            }
-                    }
-                }
-            }
-            return gameObject;
-        }
-
-        /// <summary>
-        /// Adds a new prefab to the network prefab list.
-        /// This can be any GameObject with a NetworkObject component, from any source (addressables, asset
-        /// bundles, Resource.Load, dynamically created, etc)
-        ///
-        /// There are three limitations to this method:
-        /// - If you have NetworkConfig.ForceSamePrefabs enabled, you can only do this before starting
-        /// networking, and the server and all connected clients must all have the same exact set of prefabs
-        /// added via this method before connecting
-        /// - Adding a prefab on the server does not automatically add it on the client - it's up to you
-        /// to make sure the client and server are synchronized via whatever method makes sense for your game
-        /// (RPCs, configs, deterministic loading, etc)
-        /// - If the server sends a Spawn message to a client that has not yet added a prefab for, the spawn message
-        /// and any other relevant messages will be held for a configurable time (default 1 second, configured via
-        /// NetworkConfig.SpawnTimeout) before an error is logged. This is intented to enable the SDK to gracefully
-        /// handle unexpected conditions (slow disks, slow network, etc) that slow down asset loading. This timeout
-        /// should not be relied on and code shouldn't be written around it - your code should be written so that
-        /// the asset is expected to be loaded before it's needed.
-        /// </summary>
-        /// <param name="prefab"></param>
-        /// <exception cref="Exception"></exception>
-        public void AddNetworkPrefab(GameObject prefab)
-        {
-            if (IsListening && NetworkConfig.ForceSamePrefabs)
-            {
-                throw new Exception($"All prefabs must be registered before starting {nameof(NetworkManager)} when {nameof(NetworkConfig.ForceSamePrefabs)} is enabled.");
-            }
-
-            var networkObject = prefab.GetComponent<NetworkObject>();
-            if (!networkObject)
-            {
-                throw new Exception($"All {nameof(NetworkPrefab)}s must contain a {nameof(NetworkObject)} component.");
-            }
-
-            var networkPrefab = new NetworkPrefab { Prefab = prefab };
-            bool added = NetworkConfig.Prefabs.Add(networkPrefab);
-            if (IsListening && added)
-            {
-                DeferredMessageManager.ProcessTriggers(IDeferredMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
-            }
-        }
-
-        /// <summary>
-        /// Remove a prefab from the prefab list.
-        /// As with AddNetworkPrefab, this is specific to the client it's called on -
-        /// calling it on the server does not automatically remove anything on any of the
-        /// client processes.
-        ///
-        /// Like AddNetworkPrefab, when NetworkConfig.ForceSamePrefabs is enabled,
-        /// this cannot be called after connecting.
-        /// </summary>
-        /// <param name="prefab"></param>
-        public void RemoveNetworkPrefab(GameObject prefab)
-        {
-            if (IsListening && NetworkConfig.ForceSamePrefabs)
-            {
-                throw new Exception($"Prefabs cannot be removed after starting {nameof(NetworkManager)} when {nameof(NetworkConfig.ForceSamePrefabs)} is enabled.");
-            }
-
-            var globalObjectIdHash = prefab.GetComponent<NetworkObject>().GlobalObjectIdHash;
-            NetworkConfig.Prefabs.Remove(prefab);
-            if (PrefabHandler.ContainsHandler(globalObjectIdHash))
-            {
-                PrefabHandler.RemoveHandler(globalObjectIdHash);
-            }
-        }
-        #endregion
 
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
@@ -489,66 +368,7 @@ namespace Unity.Netcode
         /// The singleton instance of the NetworkManager
         /// </summary>
         public static NetworkManager Singleton { get; private set; }
-
-        #region NGO SYSTEMS
-        private NetworkPrefabHandler m_PrefabHandler;
-
-        /// <summary>
-        /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
-        /// </summary>
-        public NetworkPrefabHandler PrefabHandler
-        {
-            get
-            {
-                if (m_PrefabHandler == null)
-                {
-                    m_PrefabHandler = new NetworkPrefabHandler();
-                }
-
-                return m_PrefabHandler;
-            }
-        }
-
-        /// <summary>
-        /// Gets the SpawnManager for this NetworkManager
-        /// </summary>
-        public NetworkSpawnManager SpawnManager { get; private set; }
-
-        internal IDeferredMessageManager DeferredMessageManager { get; private set; }
-
-        /// <summary>
-        /// Gets the CustomMessagingManager for this NetworkManager
-        /// </summary>
-        public CustomMessagingManager CustomMessagingManager { get; private set; }
-
-        /// <summary>
-        /// The <see cref="NetworkSceneManager"/> instance created after starting the <see cref="NetworkManager"/>
-        /// </summary>
-        public NetworkSceneManager SceneManager { get; private set; }
-
-
-        internal NetworkBehaviourUpdater BehaviourUpdater { get; set; }
-
-        /// <summary>
-        /// Accessor property for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
-        /// Prefer the use of the LocalTime and ServerTime properties
-        /// </summary>
-        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
-
-        /// <summary>
-        /// Accessor property for the <see cref="NetworkTickSystem"/> of the NetworkManager.
-        /// </summary>
-        public NetworkTickSystem NetworkTickSystem { get; private set; }
-
-        /// <summary>
-        /// Used for time mocking in tests
-        /// </summary>
-        internal IRealTimeProvider RealTimeProvider { get; private set; }
-
-        internal INetworkMetrics NetworkMetrics => NetworkMetricsManager.NetworkMetrics;
-        internal NetworkMetricsManager NetworkMetricsManager = new NetworkMetricsManager();
-        internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
-        #endregion
+        internal static event Action OnSingletonReady;
 
         /// <summary>
         /// This callback is invoked when the local server is started and listening for incoming connections.
@@ -573,40 +393,63 @@ namespace Unity.Netcode
         /// <param name="arg1">The first parameter of this event will be set to <see cref="true"/> when stopping the host client and <see cref="false"/> when stopping a standard client instance.</param>
         public event Action<bool> OnClientStopped = null;
 
-        internal static event Action OnSingletonReady;
-
         /// <summary>
-        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// The <see cref="NetworkPrefabHandler"/> instance created after starting the <see cref="NetworkManager"/>
         /// </summary>
-        private void OnTransformParentChanged()
+        public NetworkPrefabHandler PrefabHandler
         {
-            NetworkManagerCheckForParent();
-        }
-
-        /// <summary>
-        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
-        /// notifies the user that this is not allowed for the NetworkManager.
-        /// </summary>
-        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
-        {
-#if UNITY_EDITOR
-            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
-#else
-            var isParented = transform.root != transform;
-            if (isParented)
+            get
             {
-                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+                if (m_PrefabHandler == null)
+                {
+                    m_PrefabHandler = new NetworkPrefabHandler();
+                    m_PrefabHandler.Initialize(this);
+                }
+
+                return m_PrefabHandler;
             }
-#endif
-            return isParented;
         }
+        private NetworkPrefabHandler m_PrefabHandler;
 
-        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
-        {
-            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
-        }
+        /// <summary>
+        /// Gets the SpawnManager for this NetworkManager
+        /// </summary>
+        public NetworkSpawnManager SpawnManager { get; private set; }
 
-        #region EDITOR SPECIFIC CODE
+        internal IDeferredMessageManager DeferredMessageManager { get; private set; }
+
+        /// <summary>
+        /// Gets the CustomMessagingManager for this NetworkManager
+        /// </summary>
+        public CustomMessagingManager CustomMessagingManager { get; private set; }
+
+        /// <summary>
+        /// The <see cref="NetworkSceneManager"/> instance created after starting the <see cref="NetworkManager"/>
+        /// </summary>
+        public NetworkSceneManager SceneManager { get; private set; }
+
+        internal NetworkBehaviourUpdater BehaviourUpdater { get; set; }
+
+        /// <summary>
+        /// Accessor property for the <see cref="NetworkTimeSystem"/> of the NetworkManager.
+        /// Prefer the use of the LocalTime and ServerTime properties
+        /// </summary>
+        public NetworkTimeSystem NetworkTimeSystem { get; private set; }
+
+        /// <summary>
+        /// Accessor property for the <see cref="NetworkTickSystem"/> of the NetworkManager.
+        /// </summary>
+        public NetworkTickSystem NetworkTickSystem { get; private set; }
+
+        /// <summary>
+        /// Used for time mocking in tests
+        /// </summary>
+        internal IRealTimeProvider RealTimeProvider { get; private set; }
+
+        internal INetworkMetrics NetworkMetrics => NetworkMetricsManager.NetworkMetrics;
+        internal NetworkMetricsManager NetworkMetricsManager = new NetworkMetricsManager();
+        internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
+
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
         /// <summary>
@@ -669,7 +512,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"Cannot register {PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
+                        NetworkLog.LogError($"Cannot register {NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)}, it does not have a {nameof(NetworkObject)} component at its root");
                     }
 
                     continue;
@@ -682,16 +525,100 @@ namespace Unity.Netcode
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         {
-                            NetworkLog.LogWarning($"{PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+                            NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(networkPrefab)} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
                         }
                     }
                 }
             }
         }
 #endif
-        #endregion
 
-        #region START-UP AND SHUTDOWN CODE
+        /// <summary>
+        /// Determines if the NetworkManager's GameObject is parented under another GameObject and
+        /// notifies the user that this is not allowed for the NetworkManager.
+        /// </summary>
+        internal bool NetworkManagerCheckForParent(bool ignoreNetworkManagerCache = false)
+        {
+#if UNITY_EDITOR
+            var isParented = NetworkManagerHelper.NotifyUserOfNestedNetworkManager(this, ignoreNetworkManagerCache);
+#else
+            var isParented = transform.root != transform;
+            if (isParented)
+            {
+                throw new Exception(GenerateNestedNetworkManagerMessage(transform));
+            }
+#endif
+            return isParented;
+        }
+
+        internal static string GenerateNestedNetworkManagerMessage(Transform transform)
+        {
+            return $"{transform.name} is nested under {transform.root.name}. NetworkManager cannot be nested.\n";
+        }
+
+        /// <summary>
+        /// Handle runtime detection for parenting the NetworkManager's GameObject under another GameObject
+        /// </summary>
+        private void OnTransformParentChanged()
+        {
+            NetworkManagerCheckForParent();
+        }
+
+        /// <summary>
+        /// Set this NetworkManager instance as the static NetworkManager singleton
+        /// </summary>
+        public void SetSingleton()
+        {
+            Singleton = this;
+
+            OnSingletonReady?.Invoke();
+        }
+
+        private void Awake()
+        {
+            NetworkConfig?.InitializePrefabs();
+
+            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+
+        private void OnEnable()
+        {
+            if (RunInBackground)
+            {
+                Application.runInBackground = true;
+            }
+
+            if (Singleton == null)
+            {
+                SetSingleton();
+            }
+
+            if (!NetworkManagerCheckForParent())
+            {
+                DontDestroyOnLoad(gameObject);
+            }
+        }
+
+        /// <summary>
+        /// <see cref="NetworkPrefabHandler.GetNetworkPrefabOverride(GameObject)"/>
+        /// </summary>
+        /// <param name="gameObject">the <see cref="GameObject"/> to be checked for a <see cref="NetworkManager"/> defined NetworkPrefab override</param>
+        /// <returns>a <see cref="GameObject"/> that is either the override or if no overrides exist it returns the same as the one passed in as a parameter</returns>
+        public GameObject GetNetworkPrefabOverride(GameObject gameObject) => PrefabHandler.GetNetworkPrefabOverride(gameObject);
+
+        /// <summary>
+        /// <see cref="NetworkPrefabHandler.AddNetworkPrefab(GameObject)"/>
+        /// </summary>
+        /// <param name="prefab"></param>
+        /// <exception cref="Exception"></exception>
+        public void AddNetworkPrefab(GameObject prefab) => PrefabHandler.AddNetworkPrefab(prefab);
+
+        /// <summary>
+        /// <see cref="NetworkPrefabHandler.RemoveNetworkPrefab(GameObject)"/>
+        /// </summary>
+        /// <param name="prefab"></param>
+        public void RemoveNetworkPrefab(GameObject prefab) => PrefabHandler.RemoveNetworkPrefab(prefab);
+
         internal void Initialize(bool server)
         {
             ConnectionManager.Initialize(this);
@@ -997,45 +924,18 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Set this NetworkManager instance as the static NetworkManager singleton
+        /// Disconnects the remote client.
         /// </summary>
-        public void SetSingleton()
-        {
-            Singleton = this;
+        /// <param name="clientId">The ClientId to disconnect</param>
+        public void DisconnectClient(ulong clientId) => ConnectionManager.DisconnectClient(clientId);
 
-            OnSingletonReady?.Invoke();
-        }
-
-        private void OnEnable()
-        {
-            if (RunInBackground)
-            {
-                Application.runInBackground = true;
-            }
-
-            if (Singleton == null)
-            {
-                SetSingleton();
-            }
-
-            if (!NetworkManagerCheckForParent())
-            {
-                DontDestroyOnLoad(gameObject);
-            }
-        }
-
-        private void Awake()
-        {
-            NetworkConfig?.InitializePrefabs();
-
-            UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
-        }
-
-        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
-        private void OnApplicationQuit()
-        {
-            OnDestroy();
-        }
+        /// <summary>
+        /// Disconnects the remote client.
+        /// </summary>
+        /// <param name="clientId">The ClientId to disconnect</param>
+        /// <param name="reason">Disconnection reason. If set, client will receive a DisconnectReasonMessage and have the
+        /// reason available in the NetworkManager.DisconnectReason property</param>
+        public void DisconnectClient(ulong clientId, string reason = null) => ConnectionManager.DisconnectClient(clientId, reason);
 
         /// <summary>
         /// Globally shuts down the library.
@@ -1063,6 +963,15 @@ namespace Unity.Netcode
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
+        }
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
+        private void OnSceneUnloaded(Scene scene)
+        {
+            if (scene == gameObject.scene)
+            {
+                OnDestroy();
+            }
         }
 
         internal void ShutdownInternal()
@@ -1139,7 +1048,12 @@ namespace Unity.Netcode
             // that the prefab list changes
             NetworkConfig?.ClearConfigHash();
         }
-        #endregion
+
+        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
+        private void OnApplicationQuit()
+        {
+            OnDestroy();
+        }
 
         // Note that this gets also called manually by OnSceneUnloaded and OnApplicationQuit
         private void OnDestroy()
@@ -1151,15 +1065,6 @@ namespace Unity.Netcode
             if (Singleton == this)
             {
                 Singleton = null;
-            }
-        }
-
-        // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
-        private void OnSceneUnloaded(Scene scene)
-        {
-            if (scene == gameObject.scene)
-            {
-                OnDestroy();
             }
         }
     }
