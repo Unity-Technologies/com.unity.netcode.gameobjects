@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Unity.Netcode
 {
-    public class RealTimeProvider : IRealTimeProvider
+    internal class RealTimeProvider : IRealTimeProvider
     {
         public float RealTimeSinceStartup => Time.realtimeSinceStartup;
         public float UnscaledTime => Time.unscaledTime;

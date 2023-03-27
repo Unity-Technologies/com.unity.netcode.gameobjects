@@ -1,10 +1,10 @@
 namespace Unity.Netcode
 {
-    public interface IRealTimeProvider
+    internal interface IRealTimeProvider
     {
-        public float RealTimeSinceStartup { get; }
-        public float UnscaledTime { get; }
-        public float UnscaledDeltaTime { get; }
-        public float DeltaTime { get; }
+        float RealTimeSinceStartup { get; }
+        float UnscaledTime { get; }
+        float UnscaledDeltaTime { get; }
+        float DeltaTime { get; }
     }
 }

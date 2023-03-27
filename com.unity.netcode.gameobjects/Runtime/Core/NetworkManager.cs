@@ -298,7 +298,7 @@ namespace Unity.Netcode
 
         internal IDeferredMessageManager DeferredMessageManager { get; private set; }
 
-        public IRealTimeProvider RealTimeProvider { get; private set; }
+        internal IRealTimeProvider RealTimeProvider { get; private set; }
 
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
