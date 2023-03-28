@@ -41,6 +41,13 @@ namespace Unity.Netcode.Components
                 }
             }
             m_SendTriggerUpdates.Clear();
+
+            foreach (var animationUpdate in m_SendAnimationUpdates)
+            {
+                m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
+            }
+
+            m_SendAnimationUpdates.Clear();
         }
 
         /// <inheritdoc />
@@ -777,11 +784,14 @@ namespace Unity.Netcode.Components
             else
             {
                 var parameters = new ParametersUpdateMessage();
-                var animationStates = new AnimationMessage();
+                var animationMessage = new AnimationMessage();
                 serializer.SerializeValue(ref parameters);
                 UpdateParameters(ref parameters);
-                serializer.SerializeValue(ref animationStates);
-                HandleAnimStateUpdate(ref animationStates);
+                serializer.SerializeValue(ref animationMessage);
+                foreach (var animationState in animationMessage.AnimationStates)
+                {
+                    UpdateAnimationState(animationState);
+                }
             }
         }
 
@@ -1255,23 +1265,11 @@ namespace Unity.Netcode.Components
             }
         }
 
-        internal void HandleAnimStateUpdate(ref AnimationMessage animationMessage)
-        {
-            var isServerAuthoritative = IsServerAuthoritative();
-            if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
-            {
-                foreach (var animationState in animationMessage.AnimationStates)
-                {
-                    UpdateAnimationState(animationState);
-                }
-            }
-        }
-
         /// <summary>
         /// Internally-called RPC client receiving function to update some animation state on a client
         /// </summary>
         [ClientRpc]
-        private unsafe void SendAnimStateClientRpc(AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
+        internal unsafe void SendAnimStateClientRpc(AnimationMessage animationMessage, ClientRpcParams clientRpcParams = default)
         {
             // This should never happen
             if (IsHost)
@@ -1282,7 +1280,10 @@ namespace Unity.Netcode.Components
                 }
                 return;
             }
-            HandleAnimStateUpdate(ref animationMessage);
+            foreach (var animationState in animationMessage.AnimationStates)
+            {
+                UpdateAnimationState(animationState);
+            }
         }
 
         /// <summary>
