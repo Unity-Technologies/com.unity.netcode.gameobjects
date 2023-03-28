@@ -23,6 +23,13 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void FlushMessages()
         {
+            foreach (var animationUpdate in m_SendAnimationUpdates)
+            {
+                m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
+            }
+
+            m_SendAnimationUpdates.Clear();
+
             foreach (var sendEntry in m_SendParameterUpdates)
             {
                 m_NetworkAnimator.SendParametersUpdateClientRpc(sendEntry.ParametersUpdateMessage, sendEntry.ClientRpcParams);
@@ -41,13 +48,6 @@ namespace Unity.Netcode.Components
                 }
             }
             m_SendTriggerUpdates.Clear();
-
-            foreach (var animationUpdate in m_SendAnimationUpdates)
-            {
-                m_NetworkAnimator.SendAnimStateClientRpc(animationUpdate.AnimationMessage, animationUpdate.ClientRpcParams);
-            }
-
-            m_SendAnimationUpdates.Clear();
         }
 
         /// <inheritdoc />
@@ -72,8 +72,8 @@ namespace Unity.Netcode.Components
                         }
                         m_ProcessParameterUpdates.Clear();
 
-                        // Only owners check for Animator changes
-                        if (m_NetworkAnimator.IsOwner && !m_NetworkAnimator.IsServerAuthoritative() || m_NetworkAnimator.IsServerAuthoritative() && m_NetworkAnimator.NetworkManager.IsServer)
+                        // owners or the server checks for Animator changes
+                        if (m_NetworkAnimator.IsOwner || m_NetworkAnimator.IsServer)
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
@@ -804,7 +804,7 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal void CheckForAnimatorChanges()
         {
-            if (!IsSpawned || (!IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && !IsServer))
+            if (!IsSpawned || (!IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && (!IsServer && !IsOwner)))
             {
                 return;
             }
@@ -1226,7 +1226,14 @@ namespace Unity.Netcode.Components
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
-                m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
+                if (isServerAuthoritative)
+                {
+                    m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
+                }
+                else
+                {
+                    m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
+                }
             }
         }
 
@@ -1293,44 +1300,31 @@ namespace Unity.Netcode.Components
         [ServerRpc]
         internal void SendAnimTriggerServerRpc(AnimationTriggerMessage animationTriggerMessage, ServerRpcParams serverRpcParams = default)
         {
-            // If it is server authoritative
+            // Ignore if a non-owner sent this.
+            if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
+            {
+                if (NetworkManager.LogLevel == LogLevel.Developer)
+                {
+                    NetworkLog.LogWarning($"[Owner Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
+                }
+                return;
+            }
+
+            // set the trigger locally on the server
+            InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
+
+            m_ClientSendList.Clear();
+            m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
+            m_ClientSendList.Remove(NetworkManager.ServerClientId);
+
             if (IsServerAuthoritative())
             {
-                // The only condition where this should (be allowed to) happen is when the owner sends the server a trigger message
-                if (OwnerClientId == serverRpcParams.Receive.SenderClientId)
-                {
-                    m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage);
-                }
-                else if (NetworkManager.LogLevel == LogLevel.Developer)
-                {
-                    NetworkLog.LogWarning($"[Server Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
-                }
+                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_ClientRpcParams);
             }
-            else
+            else if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
             {
-                // Ignore if a non-owner sent this.
-                if (serverRpcParams.Receive.SenderClientId != OwnerClientId)
-                {
-                    if (NetworkManager.LogLevel == LogLevel.Developer)
-                    {
-                        NetworkLog.LogWarning($"[Owner Authoritative] Detected the a non-authoritative client is sending the server animation trigger updates. If you recently changed ownership of the {name} object, then this could be the reason.");
-                    }
-                    return;
-                }
-
-                // set the trigger locally on the server
-                InternalSetTrigger(animationTriggerMessage.Hash, animationTriggerMessage.IsTriggerSet);
-
-                // send the message to all non-authority clients excluding the server and the owner
-                if (NetworkManager.ConnectedClientsIds.Count > (IsHost ? 2 : 1))
-                {
-                    m_ClientSendList.Clear();
-                    m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
-                    m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
-                    m_ClientSendList.Remove(NetworkManager.ServerClientId);
-                    m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                    m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_ClientRpcParams);
-                }
+                m_ClientSendList.Remove(serverRpcParams.Receive.SenderClientId);
+                m_NetworkAnimatorStateChangeHandler.QueueTriggerUpdateToClient(animationTriggerMessage, m_ClientRpcParams);
             }
         }
 
