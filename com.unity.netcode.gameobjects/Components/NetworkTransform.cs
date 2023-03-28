@@ -2635,6 +2635,15 @@ namespace Unity.Netcode.Components
                 var ticksAgo = !IsServerAuthoritative() && !IsServer ? 2 : 1;
                 var cachedRenderTime = serverTime.TimeTicksAgo(ticksAgo).Time;
 
+                // Fixed: At the time of teleport, the interpolation queue consumption exceeds the teleport sending time
+                if (ReplicatedNetworkState.Value.IsTeleportingNextFrame)
+                {
+                    if (cachedServerTime > networkState.SentTime)
+                    {
+                        cachedServerTime = networkState.SentTime;
+                    }
+                }
+
                 // Now only update the interpolators for the portions of the transform being synchronized
                 if (SynchronizePosition)
                 {
