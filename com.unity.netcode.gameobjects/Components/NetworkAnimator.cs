@@ -835,8 +835,8 @@ namespace Unity.Netcode.Components
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
                 var totalSpeed = st.speed * st.speedMultiplier;
                 var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
-
-                if (!CheckAnimStateChanged(out stateHash, out normalizedTime, layer))
+                var stateChanged = CheckAnimStateChanged(out stateHash, out normalizedTime, layer);
+                if (stateChanged == AnimStateChangeType.None)
                 {
                     continue;
                 }
@@ -846,7 +846,7 @@ namespace Unity.Netcode.Components
                 // current layer's state.
                 var animationState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
 
-                animationState.Transition = false; // Only used during synchronization
+                animationState.Transition = stateChanged == AnimStateChangeType.Transition; // Set if we detect a transition
                 animationState.StateHash = stateHash;
                 animationState.NormalizedTime = normalizedTime;
                 animationState.Layer = layer;
@@ -969,11 +969,20 @@ namespace Unity.Netcode.Components
             return m_ParametersToUpdate.Count > 0;
         }
 
+        internal enum AnimStateChangeType
+        {
+            None,
+            Transition,
+            Weight,
+            Animation
+        }
+
         /// <summary>
         /// Checks if any of the Animator's states have changed
         /// </summary>
-        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
+        private AnimStateChangeType CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
         {
+            var stateChangeDetected = AnimStateChangeType.None;
             stateHash = 0;
             normalizedTime = 0;
 
@@ -981,7 +990,7 @@ namespace Unity.Netcode.Components
             if (layerWeightNow != m_LayerWeights[layer])
             {
                 m_LayerWeights[layer] = layerWeightNow;
-                return true;
+                stateChangeDetected = AnimStateChangeType.Weight;
             }
 
             if (m_Animator.IsInTransition(layer))
@@ -992,7 +1001,7 @@ namespace Unity.Netcode.Components
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
                     m_AnimationHash[layer] = 0;
-                    return true;
+                    stateChangeDetected = AnimStateChangeType.Transition;
                 }
             }
             else
@@ -1009,10 +1018,10 @@ namespace Unity.Netcode.Components
                     }
                     m_TransitionHash[layer] = 0;
                     m_AnimationHash[layer] = st.fullPathHash;
-                    return true;
+                    stateChangeDetected = AnimStateChangeType.Animation;
                 }
             }
-            return false;
+            return stateChangeDetected;
         }
 
         /// <summary>
