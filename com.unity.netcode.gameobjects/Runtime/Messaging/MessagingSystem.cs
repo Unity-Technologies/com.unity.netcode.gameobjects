@@ -206,8 +206,12 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// TODO 2023: Assign attribute to register for the equivalent update stage
+        /// Invoked by <see cref="NetworkConnectionManager.NetworkUpdate"/>
         /// </summary>
+        /// <remarks>
+        /// This requires a specific order of operations where <see cref="NetworkConnectionManager.OnEarlyUpdate"/> is
+        /// invoked prior to this method.
+        /// </remarks>
         internal void OnEarlyUpdate()
         {
             ProcessIncomingMessageQueue();
