@@ -72,7 +72,9 @@ namespace Unity.Netcode.Components
                         }
                         m_ProcessParameterUpdates.Clear();
                         var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
-                        // owners or the server checks for Animator changes
+
+                        // owners when owner authoritative or the server when server authoritative are the only instances that
+                        // checks for Animator changes
                         if ((!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && m_NetworkAnimator.IsServer))
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
@@ -164,7 +166,6 @@ namespace Unity.Netcode.Components
     [AddComponentMenu("Netcode/Network Animator")]
     [RequireComponent(typeof(Animator))]
     public class NetworkAnimator : NetworkBehaviour, ISerializationCallbackReceiver
-
     {
         [Serializable]
         internal class TransitionStateinfo
@@ -364,94 +365,12 @@ namespace Unity.Netcode.Components
 
                 serializer.SerializeValue(ref NormalizedTime);
                 serializer.SerializeValue(ref Weight);
+
+                // Cross fading includes the duration of the cross fade.
                 if (CrossFade)
                 {
                     serializer.SerializeValue(ref Duration);
                 }
-
-                //if (serializer.IsWriter)
-                //{
-
-                //    var writer = serializer.GetFastBufferWriter();
-                //    var writeSize = FastBufferWriter.GetWriteSize(Transition);
-                //    writeSize += FastBufferWriter.GetWriteSize(CrossFade);
-                //    writeSize += FastBufferWriter.GetWriteSize(StateHash);
-                //    writeSize += FastBufferWriter.GetWriteSize(NormalizedTime);
-                //    writeSize += FastBufferWriter.GetWriteSize(Layer);
-                //    writeSize += FastBufferWriter.GetWriteSize(Weight);
-                //    if (Transition)
-                //    {
-                //        writeSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
-                //        if (CrossFade)
-                //        {
-                //            writeSize += FastBufferWriter.GetWriteSize(Duration);
-                //        }
-                //    }
-
-                //    if (!writer.TryBeginWrite(writeSize))
-                //    {
-                //        throw new OverflowException($"[{GetType().Name}] Could not serialize: Out of buffer space.");
-                //    }
-
-                //    writer.WriteValue(Transition);
-                //    writer.WriteValue(CrossFade);
-                //    writer.WriteValue(StateHash);
-                //    writer.WriteValue(NormalizedTime);
-                //    writer.WriteValue(Layer);
-                //    writer.WriteValue(Weight);
-                //    if (Transition)
-                //    {
-                //        writer.WriteValue(DestinationStateHash);
-                //        if (CrossFade)
-                //        {
-                //            writer.WriteValue(Duration);
-                //        }
-                //    }
-                //}
-                //else
-                //{
-                //    var reader = serializer.GetFastBufferReader();
-                //    // Begin reading the Transition flag
-                //    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Transition) + FastBufferWriter.GetWriteSize(CrossFade)))
-                //    {
-                //        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
-                //    }
-                //    reader.ReadValue(out Transition);
-                //    reader.ReadValue(out CrossFade);
-
-                //    // Now determine what remains to be read
-                //    var readSize = FastBufferWriter.GetWriteSize(StateHash);
-                //    readSize += FastBufferWriter.GetWriteSize(NormalizedTime);
-                //    readSize += FastBufferWriter.GetWriteSize(Layer);
-                //    readSize += FastBufferWriter.GetWriteSize(Weight);
-                //    if (Transition)
-                //    {
-                //        readSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
-                //        if (CrossFade)
-                //        {
-                //            readSize += FastBufferWriter.GetWriteSize(Duration);
-                //        }
-                //    }
-
-                //    // Now read the remaining information about this AnimationState
-                //    if (!reader.TryBeginRead(readSize))
-                //    {
-                //        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
-                //    }
-
-                //    reader.ReadValue(out StateHash);
-                //    reader.ReadValue(out NormalizedTime);
-                //    reader.ReadValue(out Layer);
-                //    reader.ReadValue(out Weight);
-                //    if (Transition)
-                //    {
-                //        reader.ReadValue(out DestinationStateHash);
-                //        if (CrossFade)
-                //        {
-                //            reader.ReadValue(out Duration);
-                //        }
-                //    }
-                //}
             }
         }
 
@@ -851,9 +770,16 @@ namespace Unity.Netcode.Components
             }
         }
 
+        /// <summary>
+        /// Checks for animation state changes in:
+        /// -Layer weights
+        /// -Cross fades
+        /// -Transitions
+        /// -Layer AnimationStates
+        /// </summary>
         private void CheckForStateChange(int layer)
         {
-            var stateChangeDetected = AnimStateChangeType.None;
+            var stateChangeDetected = false;
             var animState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
             float layerWeightNow = m_Animator.GetLayerWeight(layer);
             animState.CrossFade = false;
@@ -867,7 +793,7 @@ namespace Unity.Netcode.Components
             if (layerWeightNow != m_LayerWeights[layer])
             {
                 m_LayerWeights[layer] = layerWeightNow;
-                stateChangeDetected = AnimStateChangeType.Weight;
+                stateChangeDetected = true;
                 animState.Weight = layerWeightNow;
             }
 
@@ -886,13 +812,12 @@ namespace Unity.Netcode.Components
                     animState.Transition = true;
                     animState.Duration = tt.duration;
                     animState.NormalizedTime = tt.normalizedTime;
+                    stateChangeDetected = true;
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
-                    stateChangeDetected = AnimStateChangeType.CrossFade;
                 }
                 else
                 if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer])
                 {
-                    //Debug.Log($"[Transition] TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
                     m_AnimationHash[layer] = 0;
@@ -900,7 +825,8 @@ namespace Unity.Netcode.Components
                     animState.CrossFade = false;
                     animState.Transition = true;
                     animState.NormalizedTime = tt.normalizedTime;
-                    stateChangeDetected = AnimStateChangeType.Transition;
+                    stateChangeDetected = true;
+                    //Debug.Log($"[Transition] TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
             }
             else
@@ -909,7 +835,6 @@ namespace Unity.Netcode.Components
                 {
                     m_TransitionHash[layer] = 0;
                     m_AnimationHash[layer] = st.fullPathHash;
-                    //Debug.Log($"[State] From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                     // first time in this animation state
                     if (m_AnimationHash[layer] != 0)
                     {
@@ -917,10 +842,11 @@ namespace Unity.Netcode.Components
                         animState.StateHash = st.fullPathHash;
                         animState.NormalizedTime = st.normalizedTime;
                     }
-                    stateChangeDetected = AnimStateChangeType.Animation;
+                    stateChangeDetected = true;
+                    //Debug.Log($"[State] From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                 }
             }
-            if (stateChangeDetected != AnimStateChangeType.None)
+            if (stateChangeDetected)
             {
                 m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount] = animState;
                 m_AnimationMessage.IsDirtyCount++;
@@ -950,9 +876,6 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            //int stateHash;
-            //float normalizedTime;
-
             // Reset the dirty count before checking for AnimationState updates
             m_AnimationMessage.IsDirtyCount = 0;
 
@@ -963,26 +886,6 @@ namespace Unity.Netcode.Components
                 var totalSpeed = st.speed * st.speedMultiplier;
                 var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
                 CheckForStateChange(layer);
-                //var stateChanged = CheckForStateChanged(layer);
-                //if (stateChanged == AnimStateChangeType.None)
-                //{
-                //    continue;
-                //}
-
-                //// If we made it here, then we need to synchronize this layer's animation state.
-                //// Get one of the preallocated AnimationState entries and populate it with the
-                //// current layer's state.
-                //var animationState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
-                //animationState.Transition = stateChanged == AnimStateChangeType.Transition; // Set if we detect a transition
-                //animationState.CrossFade = stateChanged == AnimStateChangeType.CrossFade;
-                //animationState.StateHash = stateHash;
-                //animationState.NormalizedTime = normalizedTime;
-                //animationState.Layer = layer;
-                //animationState.Weight = m_LayerWeights[layer];
-
-                // Apply the changes
-                //m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount] = animationState;
-                //m_AnimationMessage.IsDirtyCount++;
             }
 
             // Send an AnimationMessage only if there are dirty AnimationStates to send
@@ -1095,77 +998,6 @@ namespace Unity.Netcode.Components
                 }
             }
             return m_ParametersToUpdate.Count > 0;
-        }
-
-        internal enum AnimStateChangeType
-        {
-            None,
-            Transition,
-            CrossFade,
-            Weight,
-            Animation
-        }
-
-        /// <summary>
-        /// Checks if any of the Animator's states have changed
-        /// </summary>
-        private AnimStateChangeType CheckAnimStateChanged(out int stateHash, out float normalizedTime, int layer)
-        {
-            var stateChangeDetected = AnimStateChangeType.None;
-            stateHash = 0;
-            normalizedTime = 0;
-
-            float layerWeightNow = m_Animator.GetLayerWeight(layer);
-            if (layerWeightNow != m_LayerWeights[layer])
-            {
-                m_LayerWeights[layer] = layerWeightNow;
-                stateChangeDetected = AnimStateChangeType.Weight;
-            }
-
-            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
-
-
-
-            if (m_Animator.IsInTransition(layer))
-            {
-                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(layer);
-                if (tt.anyState && tt.fullPathHash == 0)
-                {
-                    AnimatorStateInfo nt = m_Animator.GetNextAnimatorStateInfo(layer);
-                    m_TransitionHash[layer] = nt.fullPathHash;
-                    m_AnimationHash[layer] = 0;
-                    Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
-                    stateChangeDetected = AnimStateChangeType.CrossFade;
-                }
-                else
-                if (tt.fullPathHash != m_TransitionHash[layer])
-                {
-                    Debug.Log($"[Transition] TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
-                    // first time in this transition for this layer
-                    m_TransitionHash[layer] = tt.fullPathHash;
-                    m_AnimationHash[layer] = 0;
-                    stateChangeDetected = AnimStateChangeType.Transition;
-                }
-            }
-            else
-            {
-                //AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
-                if (st.fullPathHash != m_AnimationHash[layer])
-                {
-                    Debug.Log($"[State] From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
-                    // first time in this animation state
-                    if (m_AnimationHash[layer] != 0)
-                    {
-                        // came from another animation directly - from Play()
-                        stateHash = st.fullPathHash;
-                        normalizedTime = st.normalizedTime;
-                    }
-                    m_TransitionHash[layer] = 0;
-                    m_AnimationHash[layer] = st.fullPathHash;
-                    stateChangeDetected = AnimStateChangeType.Animation;
-                }
-            }
-            return stateChangeDetected;
         }
 
         /// <summary>
@@ -1337,7 +1169,8 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                if (currentState.fullPathHash != animationState.StateHash)
+                // Make sure we are not just updating the weight of a layer.
+                if (currentState.fullPathHash != animationState.StateHash && m_Animator.HasState(animationState.Layer, animationState.StateHash))
                 {
                     m_Animator.Play(animationState.StateHash, animationState.Layer, animationState.NormalizedTime);
                 }
