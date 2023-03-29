@@ -258,6 +258,87 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
+        /// Verifies that cross fading is synchronized with currently connected clients
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CrossFadeUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        {
+            CheckStateEnterCount.ResetTest();
+            TriggerTest.ResetTest();
+            VerboseDebug($" ++++++++++++++++++ Cross Fade Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
+            TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
+            AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
+            CheckStateEnterCount.IsVerboseDebug = true;
+            CheckStateEnterCount.IsIntegrationTest = true;
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
+
+            // Wait for it to spawn server-side
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            var layerCount = animatorTestHelper.GetAnimator().layerCount;
+
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+            Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
+            }
+
+            if (m_EnableVerboseDebug)
+            {
+                var retryTrigger = true;
+                var timeOutHelper = new TimeoutHelper(1.0f);
+                var count = 0;
+                while (retryTrigger)
+                {
+                    VerboseDebug($"Current Cross Fade State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    VerboseDebug($"Beginning Cross Fade");
+                    animatorTestHelper.TestCrossFade();
+                    VerboseDebug($"New Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
+                    // Wait for all triggers to fire
+                    yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode), timeOutHelper);
+                    retryTrigger = timeOutHelper.TimedOut;
+                    if (retryTrigger)
+                    {
+                        count++;
+                        Debug.LogWarning($"[{ownerShipMode}][{count}] Resending trigger!");
+                    }
+                }
+            }
+            else
+            {
+                animatorTestHelper.TestCrossFade();
+                // Wait for all triggers to fire
+                yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
+                AssertOnTimeout($"Timed out waiting for all cross fades to match!");
+            }
+
+            TimeTravelToNextTick();
+
+            var clientIdList = new List<ulong>();
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                clientIdList.Add(client.LocalClientId);
+            }
+
+            // Verify we only entered each state once
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
+            Assert.True(success, $"Timed out waiting for all states entered to match!");
+            CheckStateEnterCount.ResetTest();
+            AnimatorTestHelper.IsTriggerTest = false;
+
+            TimeTravelToNextTick();
+        }
+
+
+        /// <summary>
         /// Verifies that triggers are synchronized with currently connected clients
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
@@ -331,8 +412,6 @@ namespace TestProject.RuntimeTests
             // Verify we only entered each state once
             success = WaitForConditionOrTimeOutWithTimeTravel(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
             Assert.True(success, $"Timed out waiting for all states entered to match!");
-            // Since the com.unity.netcode.components does not allow test project to access its internals
-            // during runtime, this is only used when running test runner from within the editor
 
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);

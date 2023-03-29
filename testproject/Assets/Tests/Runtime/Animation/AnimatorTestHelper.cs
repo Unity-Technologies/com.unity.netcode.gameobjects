@@ -121,6 +121,10 @@ namespace TestProject.RuntimeTests
                 StartCoroutine(TriggerMonitor(name));
             }
         }
+        public void TestCrossFade()
+        {
+            m_Animator.CrossFade("CrossFadeState", 0.25f, 0);
+        }
 
         public void SetBool(string name, bool valueToSet)
         {
