@@ -71,9 +71,9 @@ namespace Unity.Netcode.Components
                             m_NetworkAnimator.UpdateParameters(ref parameterUpdate);
                         }
                         m_ProcessParameterUpdates.Clear();
-
+                        var isServerAuthority = m_NetworkAnimator.IsServerAuthoritative();
                         // owners or the server checks for Animator changes
-                        if (m_NetworkAnimator.IsOwner || m_NetworkAnimator.IsServer)
+                        if ((!isServerAuthority && m_NetworkAnimator.IsOwner) || (isServerAuthority && m_NetworkAnimator.IsServer))
                         {
                             m_NetworkAnimator.CheckForAnimatorChanges();
                         }
@@ -336,88 +336,122 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                if (serializer.IsWriter)
+                var isWriter = serializer.IsWriter;
+                if (isWriter)
                 {
                     var writer = serializer.GetFastBufferWriter();
-                    var writeSize = FastBufferWriter.GetWriteSize(Transition);
-                    writeSize += FastBufferWriter.GetWriteSize(CrossFade);
-                    writeSize += FastBufferWriter.GetWriteSize(StateHash);
-                    writeSize += FastBufferWriter.GetWriteSize(NormalizedTime);
-                    writeSize += FastBufferWriter.GetWriteSize(Layer);
-                    writeSize += FastBufferWriter.GetWriteSize(Weight);
+                    BytePacker.WriteValuePacked(writer, Transition);
+                    BytePacker.WriteValuePacked(writer, CrossFade);
+                    BytePacker.WriteValuePacked(writer, StateHash);
+                    BytePacker.WriteValuePacked(writer, Layer);
                     if (Transition)
                     {
-                        writeSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
-                        if (CrossFade)
-                        {
-                            writeSize += FastBufferWriter.GetWriteSize(Duration);
-                        }
-                    }
-
-                    if (!writer.TryBeginWrite(writeSize))
-                    {
-                        throw new OverflowException($"[{GetType().Name}] Could not serialize: Out of buffer space.");
-                    }
-
-                    writer.WriteValue(Transition);
-                    writer.WriteValue(CrossFade);
-                    writer.WriteValue(StateHash);
-                    writer.WriteValue(NormalizedTime);
-                    writer.WriteValue(Layer);
-                    writer.WriteValue(Weight);
-                    if (Transition)
-                    {
-                        writer.WriteValue(DestinationStateHash);
-                        if (CrossFade)
-                        {
-                            writer.WriteValue(Duration);
-                        }
+                        BytePacker.WriteValuePacked(writer, DestinationStateHash);
                     }
                 }
                 else
                 {
                     var reader = serializer.GetFastBufferReader();
-                    // Begin reading the Transition flag
-                    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Transition) + FastBufferWriter.GetWriteSize(CrossFade)))
-                    {
-                        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
-                    }
-                    reader.ReadValue(out Transition);
-                    reader.ReadValue(out CrossFade);
-
-                    // Now determine what remains to be read
-                    var readSize = FastBufferWriter.GetWriteSize(StateHash);
-                    readSize += FastBufferWriter.GetWriteSize(NormalizedTime);
-                    readSize += FastBufferWriter.GetWriteSize(Layer);
-                    readSize += FastBufferWriter.GetWriteSize(Weight);
+                    ByteUnpacker.ReadValuePacked(reader, out Transition);
+                    ByteUnpacker.ReadValuePacked(reader, out CrossFade);
+                    ByteUnpacker.ReadValuePacked(reader, out StateHash);
+                    ByteUnpacker.ReadValuePacked(reader, out Layer);
                     if (Transition)
                     {
-                        readSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
-                        if (CrossFade)
-                        {
-                            readSize += FastBufferWriter.GetWriteSize(Duration);
-                        }
-                    }
-
-                    // Now read the remaining information about this AnimationState
-                    if (!reader.TryBeginRead(readSize))
-                    {
-                        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
-                    }
-
-                    reader.ReadValue(out StateHash);
-                    reader.ReadValue(out NormalizedTime);
-                    reader.ReadValue(out Layer);
-                    reader.ReadValue(out Weight);
-                    if (Transition)
-                    {
-                        reader.ReadValue(out DestinationStateHash);
-                        if (CrossFade)
-                        {
-                            reader.ReadValue(out Duration);
-                        }
+                        ByteUnpacker.ReadValuePacked(reader, out DestinationStateHash);
                     }
                 }
+
+                serializer.SerializeValue(ref NormalizedTime);
+                serializer.SerializeValue(ref Weight);
+                if (CrossFade)
+                {
+                    serializer.SerializeValue(ref Duration);
+                }
+
+                //if (serializer.IsWriter)
+                //{
+
+                //    var writer = serializer.GetFastBufferWriter();
+                //    var writeSize = FastBufferWriter.GetWriteSize(Transition);
+                //    writeSize += FastBufferWriter.GetWriteSize(CrossFade);
+                //    writeSize += FastBufferWriter.GetWriteSize(StateHash);
+                //    writeSize += FastBufferWriter.GetWriteSize(NormalizedTime);
+                //    writeSize += FastBufferWriter.GetWriteSize(Layer);
+                //    writeSize += FastBufferWriter.GetWriteSize(Weight);
+                //    if (Transition)
+                //    {
+                //        writeSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
+                //        if (CrossFade)
+                //        {
+                //            writeSize += FastBufferWriter.GetWriteSize(Duration);
+                //        }
+                //    }
+
+                //    if (!writer.TryBeginWrite(writeSize))
+                //    {
+                //        throw new OverflowException($"[{GetType().Name}] Could not serialize: Out of buffer space.");
+                //    }
+
+                //    writer.WriteValue(Transition);
+                //    writer.WriteValue(CrossFade);
+                //    writer.WriteValue(StateHash);
+                //    writer.WriteValue(NormalizedTime);
+                //    writer.WriteValue(Layer);
+                //    writer.WriteValue(Weight);
+                //    if (Transition)
+                //    {
+                //        writer.WriteValue(DestinationStateHash);
+                //        if (CrossFade)
+                //        {
+                //            writer.WriteValue(Duration);
+                //        }
+                //    }
+                //}
+                //else
+                //{
+                //    var reader = serializer.GetFastBufferReader();
+                //    // Begin reading the Transition flag
+                //    if (!reader.TryBeginRead(FastBufferWriter.GetWriteSize(Transition) + FastBufferWriter.GetWriteSize(CrossFade)))
+                //    {
+                //        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
+                //    }
+                //    reader.ReadValue(out Transition);
+                //    reader.ReadValue(out CrossFade);
+
+                //    // Now determine what remains to be read
+                //    var readSize = FastBufferWriter.GetWriteSize(StateHash);
+                //    readSize += FastBufferWriter.GetWriteSize(NormalizedTime);
+                //    readSize += FastBufferWriter.GetWriteSize(Layer);
+                //    readSize += FastBufferWriter.GetWriteSize(Weight);
+                //    if (Transition)
+                //    {
+                //        readSize += FastBufferWriter.GetWriteSize(DestinationStateHash);
+                //        if (CrossFade)
+                //        {
+                //            readSize += FastBufferWriter.GetWriteSize(Duration);
+                //        }
+                //    }
+
+                //    // Now read the remaining information about this AnimationState
+                //    if (!reader.TryBeginRead(readSize))
+                //    {
+                //        throw new OverflowException($"[{GetType().Name}] Could not deserialize: Out of buffer space.");
+                //    }
+
+                //    reader.ReadValue(out StateHash);
+                //    reader.ReadValue(out NormalizedTime);
+                //    reader.ReadValue(out Layer);
+                //    reader.ReadValue(out Weight);
+                //    if (Transition)
+                //    {
+                //        reader.ReadValue(out DestinationStateHash);
+                //        if (CrossFade)
+                //        {
+                //            reader.ReadValue(out Duration);
+                //        }
+                //    }
+                //}
             }
         }
 
@@ -817,11 +851,19 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private void CheckForStateChanged(int layer)
+        private void CheckForStateChange(int layer)
         {
             var stateChangeDetected = AnimStateChangeType.None;
             var animState = m_AnimationMessage.AnimationStates[m_AnimationMessage.IsDirtyCount];
             float layerWeightNow = m_Animator.GetLayerWeight(layer);
+            animState.CrossFade = false;
+            animState.Transition = false;
+            animState.NormalizedTime = 0.0f;
+            animState.Layer = layer;
+            animState.Duration = 0.0f;
+            animState.Weight = m_LayerWeights[layer];
+            animState.DestinationStateHash = 0;
+
             if (layerWeightNow != m_LayerWeights[layer])
             {
                 m_LayerWeights[layer] = layerWeightNow;
@@ -842,27 +884,22 @@ namespace Unity.Netcode.Components
                     animState.DestinationStateHash = nt.fullPathHash; // Next state is the destination state for cross fade
                     animState.CrossFade = true;
                     animState.Transition = true;
-                    animState.Layer = layer;
                     animState.Duration = tt.duration;
                     animState.NormalizedTime = tt.normalizedTime;
-                    animState.Weight = m_LayerWeights[layer];
                     //Debug.Log($"[Cross-Fade] To-Hash: {nt.fullPathHash} | TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) | SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                     stateChangeDetected = AnimStateChangeType.CrossFade;
                 }
                 else
-                if (tt.fullPathHash != m_TransitionHash[layer])
+                if (!tt.anyState && tt.fullPathHash != m_TransitionHash[layer])
                 {
                     //Debug.Log($"[Transition] TI-Duration: ({tt.duration}) | TI-Norm: ({tt.normalizedTime}) | From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
                     // first time in this transition for this layer
                     m_TransitionHash[layer] = tt.fullPathHash;
                     m_AnimationHash[layer] = 0;
-                    animState.DestinationStateHash = 0;
                     animState.StateHash = tt.fullPathHash; // Transitioning from state
                     animState.CrossFade = false;
                     animState.Transition = true;
-                    animState.Layer = layer;
                     animState.NormalizedTime = tt.normalizedTime;
-                    animState.Weight = m_LayerWeights[layer];
                     stateChangeDetected = AnimStateChangeType.Transition;
                 }
             }
@@ -870,12 +907,9 @@ namespace Unity.Netcode.Components
             {
                 if (st.fullPathHash != m_AnimationHash[layer])
                 {
-                    animState.CrossFade = false;
-                    animState.Transition = false;
+                    m_TransitionHash[layer] = 0;
+                    m_AnimationHash[layer] = st.fullPathHash;
                     //Debug.Log($"[State] From-Hash: ({m_AnimationHash[layer]}) |SI-FPHash: ({st.fullPathHash}) | SI-Norm: ({st.normalizedTime})");
-                    animState.DestinationStateHash = 0;
-                    animState.Layer = layer;
-                    animState.Weight = m_LayerWeights[layer];
                     // first time in this animation state
                     if (m_AnimationHash[layer] != 0)
                     {
@@ -883,8 +917,6 @@ namespace Unity.Netcode.Components
                         animState.StateHash = st.fullPathHash;
                         animState.NormalizedTime = st.normalizedTime;
                     }
-                    m_TransitionHash[layer] = 0;
-                    m_AnimationHash[layer] = st.fullPathHash;
                     stateChangeDetected = AnimStateChangeType.Animation;
                 }
             }
@@ -904,11 +936,6 @@ namespace Unity.Netcode.Components
         /// </remarks>
         internal void CheckForAnimatorChanges()
         {
-            if (!IsSpawned || (!IsOwner && !IsServerAuthoritative()) || (IsServerAuthoritative() && (!IsServer && !IsOwner)))
-            {
-                return;
-            }
-
             if (CheckParametersChanged())
             {
                 SendParametersUpdate();
@@ -935,7 +962,7 @@ namespace Unity.Netcode.Components
                 AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(layer);
                 var totalSpeed = st.speed * st.speedMultiplier;
                 var adjustedNormalizedMaxTime = totalSpeed > 0.0f ? 1.0f / totalSpeed : 0.0f;
-                CheckForStateChanged(layer);
+                CheckForStateChange(layer);
                 //var stateChanged = CheckForStateChanged(layer);
                 //if (stateChanged == AnimStateChangeType.None)
                 //{
