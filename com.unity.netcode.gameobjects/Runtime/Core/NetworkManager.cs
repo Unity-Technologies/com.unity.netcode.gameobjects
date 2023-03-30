@@ -975,11 +975,6 @@ namespace Unity.Netcode
             BehaviourUpdater?.Shutdown();
             BehaviourUpdater = null;
 
-            // Time & tick systems should be the last system shutdown so other systems
-            // can unsubscribe from tick updates and such.
-            NetworkTimeSystem?.Shutdown();
-            NetworkTickSystem = null;
-
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
 
@@ -1019,6 +1014,11 @@ namespace Unity.Netcode
             // Reset the configuration hash for next session in the event
             // that the prefab list changes
             NetworkConfig?.ClearConfigHash();
+
+            // Time & tick systems should be the last system shutdown so other systems
+            // can unsubscribe from tick updates and such.
+            NetworkTimeSystem?.Shutdown();
+            NetworkTickSystem = null;
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
