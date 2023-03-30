@@ -29,9 +29,10 @@ namespace Unity.Netcode
 #endif
 
         /// <summary>
-        /// The current host name we are connected to, used to validate certificate
+        /// Legacy and no longer used
         /// </summary>
-        public string ConnectedHostname { get; private set; }
+        // TODO 2023-Q2: Mark as deprecated?
+        public string ConnectedHostname { get { return string.Empty; } }
 
         /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
