@@ -257,19 +257,41 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        private bool AllClientsTransitioningAnyState()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                var clientId = networkManager.LocalClientId;
+                if (!AnimatorTestHelper.ClientSideInstances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                var animator = AnimatorTestHelper.ClientSideInstances[clientId].GetComponent<Animator>();
+                if (!animator.isInitialized)
+                {
+                    return false;
+                }
+                var transitionInfo = animator.GetAnimatorTransitionInfo(0);
+                if (!transitionInfo.anyState)
+                {
+                    return false;
+                }
+                VerboseDebug($"{networkManager.name} transitioning from AnyState or CrossFade.");
+            }
+            return true;
+        }
+
         /// <summary>
         /// Verifies that cross fading is synchronized with currently connected clients
         /// </summary>
         [UnityTest]
-        public IEnumerator CrossFadeUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        public IEnumerator CrossFadeTransitionTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
-            CheckStateEnterCount.ResetTest();
-            TriggerTest.ResetTest();
-            VerboseDebug($" ++++++++++++++++++ Cross Fade Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
-            TriggerTest.IsVerboseDebug = m_EnableVerboseDebug;
-            AnimatorTestHelper.IsTriggerTest = m_EnableVerboseDebug;
-            CheckStateEnterCount.IsVerboseDebug = true;
-            CheckStateEnterCount.IsIntegrationTest = true;
+            CrossFadeTransitionDetect.ResetTest();
+            CrossFadeTransitionDetect.SetTargetAnimationState(AnimatorTestHelper.TargetCrossFadeState);
+            VerboseDebug($" ++++++++++++++++++ Cross Fade Transition Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
+            CrossFadeTransitionDetect.IsVerboseDebug = m_EnableVerboseDebug;
+
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
@@ -291,50 +313,17 @@ namespace TestProject.RuntimeTests
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
             }
 
-            if (m_EnableVerboseDebug)
-            {
-                var retryTrigger = true;
-                var timeOutHelper = new TimeoutHelper(1.0f);
-                var count = 0;
-                while (retryTrigger)
-                {
-                    VerboseDebug($"Current Cross Fade State: {animatorTestHelper.GetCurrentTriggerState()}");
-                    VerboseDebug($"Beginning Cross Fade");
-                    animatorTestHelper.TestCrossFade();
-                    VerboseDebug($"New Trigger State: {animatorTestHelper.GetCurrentTriggerState()}");
-                    // Wait for all triggers to fire
-                    yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode), timeOutHelper);
-                    retryTrigger = timeOutHelper.TimedOut;
-                    if (retryTrigger)
-                    {
-                        count++;
-                        Debug.LogWarning($"[{ownerShipMode}][{count}] Resending trigger!");
-                    }
-                }
-            }
-            else
-            {
-                animatorTestHelper.TestCrossFade();
-                // Wait for all triggers to fire
-                yield return WaitForConditionOrTimeOut(() => AllTriggersDetected(ownerShipMode));
-                AssertOnTimeout($"Timed out waiting for all cross fades to match!");
-            }
-
-            TimeTravelToNextTick();
-
-            var clientIdList = new List<ulong>();
+            CrossFadeTransitionDetect.ClientIds.Add(m_ServerNetworkManager.LocalClientId);
             foreach (var client in m_ClientNetworkManagers)
             {
-                clientIdList.Add(client.LocalClientId);
+                CrossFadeTransitionDetect.ClientIds.Add(client.LocalClientId);
             }
 
-            // Verify we only entered each state once
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
-            Assert.True(success, $"Timed out waiting for all states entered to match!");
-            CheckStateEnterCount.ResetTest();
-            AnimatorTestHelper.IsTriggerTest = false;
+            animatorTestHelper.TestCrossFade();
 
-            TimeTravelToNextTick();
+            // Verify the host and all clients performed a cross fade transition
+            yield return WaitForConditionOrTimeOut(CrossFadeTransitionDetect.AllClientsTransitioned);
+            AssertOnTimeout($"Timed out waiting for all clients to transition from synchronized cross fade!");
         }
 
 
