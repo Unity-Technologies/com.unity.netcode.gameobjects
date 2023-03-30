@@ -621,13 +621,14 @@ namespace Unity.Netcode
 
         internal void Initialize(bool server)
         {
-            ConnectionManager.Initialize(this);
             // Don't allow the user to start a network session if the NetworkManager is
             // still parented under another GameObject
             if (NetworkManagerCheckForParent(true))
             {
                 return;
             }
+
+            ConnectionManager.Initialize(this);
 
             ComponentFactory.SetDefaults();
 
