@@ -628,15 +628,32 @@ namespace Unity.Netcode
                 return;
             }
 
-            ConnectionManager.Initialize(this);
+            if (NetworkConfig.NetworkTransport == null)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                {
+                    NetworkLog.LogError("No transport has been selected!");
+                }
+                return;
+            }
 
-            ComponentFactory.SetDefaults();
-
+            // Logging initializes first for any logging during systems initialization
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
             {
                 NetworkLog.LogInfo(nameof(Initialize));
             }
 
+            // ComponentFactory needs to set its defaults next
+            ComponentFactory.SetDefaults();
+
+            // UnityTransport dependencies are then initialized
+            RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
+            NetworkMetricsManager.Initialize(this);
+
+            // Now the connection manager can initialize (which initializes transport)
+            ConnectionManager.Initialize(this);
+
+            // The remaining systems can then be initialized
             if (server)
             {
                 NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
@@ -653,8 +670,6 @@ namespace Unity.Netcode
 
             DeferredMessageManager = ComponentFactory.Create<IDeferredMessageManager>(this);
 
-            RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
-
             CustomMessagingManager = new CustomMessagingManager(this);
 
             SceneManager = new NetworkSceneManager(this);
@@ -662,48 +677,8 @@ namespace Unity.Netcode
             BehaviourUpdater = new NetworkBehaviourUpdater();
             BehaviourUpdater.Initialize(this);
 
-            NetworkMetricsManager.Initialize(this);
-
-            if (NetworkConfig.NetworkTransport == null)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                {
-                    NetworkLog.LogError("No transport has been selected!");
-                }
-
-                return;
-            }
-
-            NetworkConfig.NetworkTransport.NetworkMetrics = NetworkMetricsManager.NetworkMetrics;
-
             NetworkConfig.InitializePrefabs();
-
-            // If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
-            if (NetworkConfig.PlayerPrefab != null)
-            {
-                if (NetworkConfig.PlayerPrefab.TryGetComponent<NetworkObject>(out var playerPrefabNetworkObject))
-                {
-                    //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
-                    if (!NetworkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject
-                        .GlobalObjectIdHash))
-                    {
-                        //Then add a new entry for the player prefab
-                        AddNetworkPrefab(NetworkConfig.PlayerPrefab);
-                    }
-                }
-                else
-                {
-                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
-                    Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{NetworkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
-                }
-            }
-
-            if (!NetworkConfig.NetworkTransport.UseTransportPolling())
-            {
-                NetworkConfig.NetworkTransport.OnTransportEvent += ConnectionManager.HandleNetworkEvent;
-            }
-
-            NetworkConfig.NetworkTransport.Initialize(this);
+            PrefabHandler.RegisterPlayerPrefab();
         }
 
         private enum StartType
@@ -773,10 +748,11 @@ namespace Unity.Netcode
             {
                 return false;
             }
-            ConnectionManager.LocalClient.SetRole(true, false, this);
-            Initialize(true);
 
-            LocalClientId = ServerClientId;
+            ConnectionManager.LocalClient.SetRole(true, false, this);
+            ConnectionManager.LocalClient.ClientId = ServerClientId;
+
+            Initialize(true);
 
             try
             {
@@ -825,15 +801,24 @@ namespace Unity.Netcode
 
             Initialize(false);
 
-            IsListening = NetworkConfig.NetworkTransport.StartClient();
-
-            if (!IsListening)
+            try
             {
-                ConnectionManager.TransportFailureEventHandler(true);
+                IsListening = NetworkConfig.NetworkTransport.StartClient();
+                // If we failed to start then shutdown and notify user that the transport failed to start
+                if (!IsListening)
+                {
+                    ConnectionManager.TransportFailureEventHandler(true);
+                }
+                else
+                {
+                    OnClientStarted?.Invoke();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                OnClientStarted?.Invoke();
+                Debug.LogException(ex);
+                ConnectionManager.LocalClient.SetRole(false, false);
+                IsListening = false;
             }
 
             return IsListening;
@@ -878,6 +863,7 @@ namespace Unity.Netcode
                 ConnectionManager.LocalClient.SetRole(false, false);
                 IsListening = false;
             }
+
             return IsListening;
         }
 
@@ -969,7 +955,7 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
         private void OnSceneUnloaded(Scene scene)
         {
-            if (scene == gameObject.scene)
+            if (gameObject != null && scene == gameObject.scene)
             {
                 OnDestroy();
             }
@@ -982,32 +968,8 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
 
-            ConnectionManager.Shutdown();
-
-            // We need to clean up NetworkObjects before we reset the IsServer
-            // and IsClient properties. This provides consistency of these two
-            // property values for NetworkObjects that are still spawned when
-            // the shutdown cycle begins.
-            SpawnManager?.DespawnAndDestroyNetworkObjects();
-            SpawnManager?.ServerResetShudownStateForSceneObjects();
-            SpawnManager = null;
-
-            bool wasServer = ConnectionManager.LocalClient.IsServer;
-            bool wasClient = ConnectionManager.LocalClient.IsClient;
-            ConnectionManager.LocalClient.SetRole(false, false);
-
-
-            if (NetworkConfig?.NetworkTransport != null)
-            {
-                NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
-            }
-
+            // Everything is shutdown in the order of their dependencies
             DeferredMessageManager?.CleanupAllTriggers();
-
-            // Let the NetworkSceneManager clean up its two SceneEvenData instances
-            SceneManager?.Dispose();
-            SceneManager = null;
-
             CustomMessagingManager = null;
 
             BehaviourUpdater?.Shutdown();
@@ -1018,29 +980,38 @@ namespace Unity.Netcode
             NetworkTimeSystem?.Shutdown();
             NetworkTickSystem = null;
 
-            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
-            // See MTT-860 for more information
-            if (IsListening)
-            {
-                //The Transport is set during initialization, thus it is possible for the Transport to be null
-                NetworkConfig?.NetworkTransport?.Shutdown();
-            }
+            // Shutdown connection manager last which shuts down transport
+            ConnectionManager.Shutdown();
 
+            // We need to clean up NetworkObjects before we reset the IsServer
+            // and IsClient properties. This provides consistency of these two
+            // property values for NetworkObjects that are still spawned when
+            // the shutdown cycle begins.
+            SpawnManager?.DespawnAndDestroyNetworkObjects();
+            SpawnManager?.ServerResetShudownStateForSceneObjects();
+            SpawnManager = null;
+
+            // Let the NetworkSceneManager clean up its two SceneEvenData instances
+            SceneManager?.Dispose();
+            SceneManager = null;
             IsListening = false;
             m_ShuttingDown = false;
 
-            if (wasClient)
+            if (ConnectionManager.LocalClient.IsClient)
             {
                 // If we were a client, we want to know if we were a host
-                // client or not. (why we pass in "wasServer")
-                OnClientStopped?.Invoke(wasServer);
+                // client or not. (why we pass in "IsServer")
+                OnClientStopped?.Invoke(ConnectionManager.LocalClient.IsServer);
             }
-            if (wasServer)
+            if (ConnectionManager.LocalClient.IsServer)
             {
                 // If we were a server, we want to know if we were a host
-                // or not. (why we pass in "wasClient")
-                OnServerStopped?.Invoke(wasClient);
+                // or not. (why we pass in "IsClient")
+                OnServerStopped?.Invoke(ConnectionManager.LocalClient.IsClient);
             }
+
+            // Reset the client's roles
+            ConnectionManager.LocalClient.SetRole(false, false);
 
             // This cleans up the internal prefabs list
             NetworkConfig?.Prefabs?.Shutdown();

@@ -401,6 +401,33 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// If one exists, registers the player prefab
+        /// </summary>
+        internal void RegisterPlayerPrefab()
+        {
+            var networkConfig = m_NetworkManager.NetworkConfig;
+            // If we have a player prefab, then we need to verify it is in the list of NetworkPrefabOverrideLinks for client side spawning.
+            if (networkConfig.PlayerPrefab != null)
+            {
+                if (networkConfig.PlayerPrefab.TryGetComponent<NetworkObject>(out var playerPrefabNetworkObject))
+                {
+                    //In the event there is no NetworkPrefab entry (i.e. no override for default player prefab)
+                    if (!networkConfig.Prefabs.NetworkPrefabOverrideLinks.ContainsKey(playerPrefabNetworkObject
+                        .GlobalObjectIdHash))
+                    {
+                        //Then add a new entry for the player prefab
+                        AddNetworkPrefab(networkConfig.PlayerPrefab);
+                    }
+                }
+                else
+                {
+                    // Provide the name of the prefab with issues so the user can more easily find the prefab and fix it
+                    Debug.LogError($"{nameof(NetworkConfig.PlayerPrefab)} (\"{networkConfig.PlayerPrefab.name}\") has no NetworkObject assigned to it!.");
+                }
+            }
+        }
+
         internal void Initialize(NetworkManager networkManager)
         {
             m_NetworkManager = networkManager;

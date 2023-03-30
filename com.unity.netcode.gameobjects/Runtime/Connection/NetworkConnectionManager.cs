@@ -920,6 +920,15 @@ namespace Unity.Netcode
 #endif
             // Assures there is a server message queue available
             MessagingSystem.ClientConnected(NetworkManager.ServerClientId);
+
+            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.NetworkMetricsManager.NetworkMetrics;
+
+            if (!NetworkManager.NetworkConfig.NetworkTransport.UseTransportPolling())
+            {
+                NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
+            }
+
+            NetworkManager.NetworkConfig.NetworkTransport.Initialize(networkManager);
         }
 
         /// <summary>
@@ -986,6 +995,21 @@ namespace Unity.Netcode
                 }
             }
             MessagingSystem?.Dispose();
+
+
+            if (NetworkManager != null && NetworkManager.NetworkConfig?.NetworkTransport != null)
+            {
+                NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent -= HandleNetworkEvent;
+            }
+
+            // This is required for handling the potential scenario where multiple NetworkManager instances are created.
+            // See MTT-860 for more information
+            if (IsListening)
+            {
+                //The Transport is set during initialization, thus it is possible for the Transport to be null
+                NetworkManager.NetworkConfig?.NetworkTransport?.Shutdown();
+            }
+
         }
 
         /// <summary>
