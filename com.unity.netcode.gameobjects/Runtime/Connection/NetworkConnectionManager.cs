@@ -97,22 +97,22 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdToClientId(ulong transportId)
         {
-            return transportId == GetServerTransporId() ? NetworkManager.ServerClientId : TransportIdToClientIdMap[transportId];
+            return transportId == GetServerTransportId() ? NetworkManager.ServerClientId : TransportIdToClientIdMap[transportId];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong ClientIdToTransportId(ulong clientId)
         {
-            return clientId == NetworkManager.ServerClientId ? GetServerTransporId() : ClientIdToTransportIdMap[clientId];
+            return clientId == NetworkManager.ServerClientId ? GetServerTransportId() : ClientIdToTransportIdMap[clientId];
         }
 
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        internal ulong ServerTransportId => GetServerTransporId();
+        internal ulong ServerTransportId => GetServerTransportId();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ulong GetServerTransporId()
+        private ulong GetServerTransportId()
         {
             if (NetworkManager != null)
             {
