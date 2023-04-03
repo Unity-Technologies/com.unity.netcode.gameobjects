@@ -331,6 +331,14 @@ namespace Unity.Netcode.Components
             // For synchronizing transitions
             internal bool Transition;
             internal bool CrossFade;
+
+            // Flags for bool states
+            private const byte k_IsTransition = 0x01;
+            private const byte k_IsCrossFade = 0x02;
+
+            // Used to serialize the bool states
+            private byte m_StateFlags;
+
             // The StateHash is where the transition starts
             // and the DestinationStateHash is the destination state
             internal int DestinationStateHash;
@@ -341,8 +349,17 @@ namespace Unity.Netcode.Components
                 if (isWriter)
                 {
                     var writer = serializer.GetFastBufferWriter();
-                    BytePacker.WriteValuePacked(writer, Transition);
-                    BytePacker.WriteValuePacked(writer, CrossFade);
+                    m_StateFlags = 0x00;
+                    if (Transition)
+                    {
+                        m_StateFlags |= k_IsTransition;
+                    }
+                    if (CrossFade)
+                    {
+                        m_StateFlags |= k_IsCrossFade;
+                    }
+                    serializer.SerializeValue(ref m_StateFlags);
+
                     BytePacker.WriteValuePacked(writer, StateHash);
                     BytePacker.WriteValuePacked(writer, Layer);
                     if (Transition)
@@ -353,8 +370,10 @@ namespace Unity.Netcode.Components
                 else
                 {
                     var reader = serializer.GetFastBufferReader();
-                    ByteUnpacker.ReadValuePacked(reader, out Transition);
-                    ByteUnpacker.ReadValuePacked(reader, out CrossFade);
+                    serializer.SerializeValue(ref m_StateFlags);
+                    Transition = (m_StateFlags & k_IsTransition) == k_IsTransition;
+                    CrossFade = (m_StateFlags & k_IsCrossFade) == k_IsCrossFade;
+
                     ByteUnpacker.ReadValuePacked(reader, out StateHash);
                     ByteUnpacker.ReadValuePacked(reader, out Layer);
                     if (Transition)
