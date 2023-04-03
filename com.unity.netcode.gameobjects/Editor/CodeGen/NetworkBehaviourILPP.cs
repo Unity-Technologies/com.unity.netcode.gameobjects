@@ -840,7 +840,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private void GetAllBaseTypesAndResolveGenerics(TypeDefinition type, ref List<TypeReference> baseTypes, Dictionary<string, TypeReference> genericParameters)
         {
 
-            if (type.BaseType == null || type.BaseType.Name == "Object")
+            if (type == null || type.BaseType == null || type.BaseType.Name == "Object")
             {
                 return;
             }
