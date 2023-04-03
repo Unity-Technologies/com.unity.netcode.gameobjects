@@ -7,22 +7,63 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkClient
     {
-        internal NetworkManager NetworkManager { get; private set; }
-
-        /// Gets Whether or not a server is running
+        /// <summary>
+        /// Returns true if the session instance is considered a server
         /// </summary>
         public bool IsServer { get; internal set; }
 
         /// <summary>
-        /// Gets Whether or not a client is running
+        /// Returns true if the session instance is considered a client
         /// </summary>
         public bool IsClient { get; internal set; }
 
+        /// <summary>
+        /// Returns true if the session instance is considered a host
+        /// </summary>
         public bool IsHost => IsClient && IsServer;
 
+        /// <summary>
+        /// When true, the client is connected, approved, and synchronized with
+        /// the server.
+        /// </summary>
         public bool IsConnected { get; internal set; }
 
+        /// <summary>
+        /// Is true when the client has been approved.
+        /// </summary>
         public bool IsApproved { get; internal set; }
+
+        /// <summary>
+        /// The ClientId of the NetworkClient
+        /// </summary>
+        // TODO-2023-Q2: Determine if we want to make this property a public get and internal/private set
+        // There is no reason for a user to want to set this, but this will fail the package-validation-suite
+        public ulong ClientId;
+
+        /// <summary>
+        /// The PlayerObject of the Client
+        /// </summary>
+        // TODO-2023-Q2: Determine if we want to make this property a public get and internal/private set
+        // There is no reason for a user to want to set this, but this will fail the package-validation-suite
+        public NetworkObject PlayerObject;
+
+        /// <summary>
+        /// The list of NetworkObject's owned by this client instance
+        /// </summary>
+        public List<NetworkObject> OwnedObjects
+        {
+            get
+            {
+                if (IsConnected)
+                {
+                    return SpawnManager.GetClientOwnedObjects(ClientId);
+                }
+
+                return new List<NetworkObject>();
+            }
+        }
+
+        internal NetworkSpawnManager SpawnManager { get; private set; }
 
         internal void SetRole(bool isServer, bool isClient, NetworkManager networkManager = null)
         {
@@ -32,52 +73,26 @@ namespace Unity.Netcode
             {
                 PlayerObject = null;
                 ClientId = 0;
+                IsConnected = false;
+                IsApproved = false;
             }
-            NetworkManager = networkManager;
+            SpawnManager = networkManager?.SpawnManager;
         }
 
-        /// <summary>
-        /// The ClientId of the NetworkClient
-        /// </summary>
-        /// TODO-2023-Q2: FIXME!!!!
-        /// We need to make this public get internal/private set
-        /// There is no reason for a user to want to set this, but this will fail the package-validation-suite
-        public ulong ClientId;
-
-        /// <summary>
-        /// The PlayerObject of the Client
-        /// </summary>
-        /// TODO-2023-Q2: FIXME!!!!
-        /// We need to make this public get internal/private set
-        /// There is no reason for a user to want to set this, but this will fail the package-validation-suite
-        public NetworkObject PlayerObject;
-
-        /// <summary>
-        /// The NetworkObject's owned by this Client
-        /// </summary>
-        public List<NetworkObject> OwnedObjects
-        {
-            get
-            {
-                if (NetworkManager != null && NetworkManager.IsListening)
-                {
-                    return NetworkManager.SpawnManager.GetClientOwnedObjects(ClientId);
-                }
-
-                return new List<NetworkObject>();
-            }
-        }
         internal void AssignPlayerObject(ref NetworkObject networkObject)
         {
             PlayerObject = networkObject;
         }
 
-        public NetworkClient(bool isServer, bool isClient, ulong clientId, NetworkManager networkManager)
+        internal NetworkClient(bool isServer, bool isClient, ulong clientId, NetworkManager networkManager)
         {
             SetRole(isServer, isClient, networkManager);
             ClientId = clientId;
         }
 
+        /// <summary>
+        /// The default constructor creates a <see cref="NetworkClient"/> with no connection state
+        /// </summary>
         public NetworkClient()
         {
             SetRole(false, false);
