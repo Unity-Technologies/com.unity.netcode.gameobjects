@@ -33,10 +33,10 @@ namespace Unity.Netcode
         // TODO 2023-Q2: Team discussion
         // Removing this is a "breaking change"
         // (the issue with interfaces...implementations have to be public!)
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
+        //public void NetworkUpdate(NetworkUpdateStage updateStage)
+        //{
 
-        }
+        //}
 
         /// <summary>
         /// The client id used to represent the server
