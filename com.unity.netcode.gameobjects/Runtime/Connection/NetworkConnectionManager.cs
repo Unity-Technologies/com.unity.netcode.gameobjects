@@ -97,13 +97,42 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdToClientId(ulong transportId)
         {
-            return transportId == GetServerTransportId() ? NetworkManager.ServerClientId : TransportIdToClientIdMap[transportId];
+            if (transportId == GetServerTransportId())
+            {
+                return NetworkManager.ServerClientId;
+            }
+
+            if (TransportIdToClientIdMap.TryGetValue(transportId, out var clientId))
+            {
+                return clientId;
+            }
+
+            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+            {
+                NetworkLog.LogWarning($"Trying to get the NGO client ID map for the transport ID ({transportId}) but did not find the map entry! Returning default transport ID value.");
+            }
+
+            return default;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong ClientIdToTransportId(ulong clientId)
         {
-            return clientId == NetworkManager.ServerClientId ? GetServerTransportId() : ClientIdToTransportIdMap[clientId];
+            if (clientId == NetworkManager.ServerClientId)
+            {
+                return GetServerTransportId();
+            }
+
+            if (ClientIdToTransportIdMap.TryGetValue(clientId, out var transportClientId))
+            {
+                return transportClientId;
+            }
+
+            if (NetworkLog.CurrentLogLevel == LogLevel.Developer)
+            {
+                NetworkLog.LogWarning($"Trying to get the transport client ID map for the NGO client ID ({clientId}) but did not find the map entry! Returning default transport ID value.");
+            }
+            return default;
         }
 
         /// <summary>
@@ -128,7 +157,6 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdCleanUp(ulong transportId)
         {
-            PendingClients.Remove(transportId);
             // This check is for clients that attempted to connect but failed.
             // When this happens, the client will not have an entry within the
             // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
@@ -142,7 +170,6 @@ namespace Unity.Netcode
             var clientId = TransportIdToClientId(transportId);
             TransportIdToClientIdMap.Remove(transportId);
             ClientIdToTransportIdMap.Remove(clientId);
-
             return clientId;
         }
 
@@ -497,7 +524,7 @@ namespace Unity.Netcode
 
                 if (LocalClient.IsServer)
                 {
-                    NetworkManager.DisconnectClient(clientId);
+                    DisconnectClient(clientId);
                 }
                 else
                 {
@@ -689,8 +716,6 @@ namespace Unity.Netcode
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
                     MessagingSystem.ProcessSendQueues();
                 }
-
-                PendingClients.Remove(ownerClientId);
                 DisconnectRemoteClient(ownerClientId);
             }
         }
@@ -841,14 +866,20 @@ namespace Unity.Netcode
                 ConnectedClientIds.Remove(clientId);
 
             }
+
+            // If the client ID transport map exists
             if (ClientIdToTransportIdMap.ContainsKey(clientId))
             {
                 var transportId = ClientIdToTransportId(clientId);
-
                 NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+                // Clean up the transport to client (and vice versa) mappings
+                TransportIdCleanUp(transportId);
             }
-            MessagingSystem.ClientDisconnected(clientId);
+
+            // Assure the client id is no longer in the pending clients list
             PendingClients.Remove(clientId);
+            // Handle cleaning up the server-side client send queue
+            MessagingSystem.ClientDisconnected(clientId);
         }
 
         /// <summary>
