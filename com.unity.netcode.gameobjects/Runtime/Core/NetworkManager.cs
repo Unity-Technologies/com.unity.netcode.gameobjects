@@ -33,6 +33,7 @@ namespace Unity.Netcode
         // TODO 2023-Q2: Team discussion
         // Removing this is a "breaking change"
         // (the issue with interfaces...implementations have to be public!)
+        // This is to break the API
         //public void NetworkUpdate(NetworkUpdateStage updateStage)
         //{
 
