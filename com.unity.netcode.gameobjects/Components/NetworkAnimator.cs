@@ -345,8 +345,7 @@ namespace Unity.Netcode.Components
 
             public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
             {
-                var isWriter = serializer.IsWriter;
-                if (isWriter)
+                if (serializer.IsWriter)
                 {
                     var writer = serializer.GetFastBufferWriter();
                     m_StateFlags = 0x00;
