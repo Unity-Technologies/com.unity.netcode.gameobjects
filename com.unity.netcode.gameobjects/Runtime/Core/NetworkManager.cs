@@ -118,14 +118,7 @@ namespace Unity.Netcode
         /// </summary>
         /// // TODO-2023-Q2: Team discussion (see commented out code below)
         /// !!!!!!!!!!!!!!!!!!!!!!!!!!!! (2023-Q2) THIS IS NOT CURRENTLY POPULATED WITH ANYTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        public Dictionary<ulong, PendingClient> PendingClients
-        {
-            get
-            {
-                return ConnectionManager.PendingClients;
-            }
-        }
-
+        public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
 
         // TODO-2023-Q2: Team discussion (Below is what we want to make this and should not impact the API)
         // While the API itself remains exactly the same, our package-validation-suite thinks this breaks the API
