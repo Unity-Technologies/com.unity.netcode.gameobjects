@@ -116,13 +116,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the Netcode. This is only populated on the server.
         /// </summary>
-        /// // TODO-2023-Q2: Team discussion (see commented out code below)
-        /// !!!!!!!!!!!!!!!!!!!!!!!!!!!! (2023-Q2) THIS IS NOT CURRENTLY POPULATED WITH ANYTHING !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // See NetworkConnectionManager.AddPendingClient and NetworkConnectionManager.RemovePendingClient to see how this is now populated
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
-
-        // TODO-2023-Q2: Team discussion (Below is what we want to make this and should not impact the API)
-        // While the API itself remains exactly the same, our package-validation-suite thinks this breaks the API
-        //public IReadOnlyDictionary<ulong, PendingClient> PendingClients => ConnectionManager.PendingClients;
 
         /// <summary>
         /// Gets Whether or not a server is running

@@ -81,13 +81,43 @@ namespace Unity.Netcode
         internal NetworkManager NetworkManager;
         internal NetworkClient LocalClient = new NetworkClient();
         internal Dictionary<ulong, NetworkManager.ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
-        internal Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
+
         internal Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
         internal Dictionary<ulong, ulong> ClientIdToTransportIdMap = new Dictionary<ulong, ulong>();
         internal Dictionary<ulong, ulong> TransportIdToClientIdMap = new Dictionary<ulong, ulong>();
         internal List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
         internal List<ulong> ConnectedClientIds = new List<ulong>();
         internal Action<NetworkManager.ConnectionApprovalRequest, NetworkManager.ConnectionApprovalResponse> ConnectionApprovalCallback;
+
+        /// <summary>
+        /// Use <see cref="AddPendingClient(ulong)"/> and <see cref="RemovePendingClient(ulong)"/> to add or remove
+        /// Use <see cref="PendingClients"/> to internally access the pending client dictionary
+        /// </summary>
+        private Dictionary<ulong, PendingClient> m_PendingClients = new Dictionary<ulong, PendingClient>();
+        internal IReadOnlyDictionary<ulong, PendingClient> PendingClients => m_PendingClients;
+
+        /// <summary>
+        /// Handles the issue with populating NetworkManager.PendingClients
+        /// </summary>
+        internal void AddPendingClient(ulong clientId)
+        {
+            m_PendingClients.Add(clientId, new PendingClient()
+            {
+                ClientId = clientId,
+                ConnectionState = PendingClient.State.PendingConnection
+            });
+
+            NetworkManager.PendingClients.Add(clientId, PendingClients[clientId]);
+        }
+
+        /// <summary>
+        /// Handles the issue with depopulating NetworkManager.PendingClients
+        /// </summary>
+        internal void RemovePendingClient(ulong clientId)
+        {
+            m_PendingClients.Remove(clientId);
+            NetworkManager.PendingClients.Remove(clientId);
+        }
 
         /// <summary>
         /// Used to generate client identifiers
@@ -315,12 +345,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogInfo("Client Connected");
                 }
-
-                PendingClients.Add(clientId, new PendingClient()
-                {
-                    ClientId = clientId,
-                    ConnectionState = PendingClient.State.PendingConnection
-                });
+                AddPendingClient(clientId);
 
                 NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
             }
@@ -606,7 +631,7 @@ namespace Unity.Netcode
             if (response.Approved)
             {
                 // Inform new client it got approved
-                PendingClients.Remove(ownerClientId);
+                RemovePendingClient(ownerClientId);
 
                 var client = AddClient(ownerClientId);
 
@@ -878,7 +903,8 @@ namespace Unity.Netcode
             }
 
             // Assure the client id is no longer in the pending clients list
-            PendingClients.Remove(clientId);
+            RemovePendingClient(clientId);
+
             // Handle cleaning up the server-side client send queue
             MessagingSystem.ClientDisconnected(clientId);
         }
@@ -924,7 +950,7 @@ namespace Unity.Netcode
         {
             // Prepare for a new session
             LocalClient.IsApproved = false;
-            PendingClients.Clear();
+            m_PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             ConnectedClientIds.Clear();
