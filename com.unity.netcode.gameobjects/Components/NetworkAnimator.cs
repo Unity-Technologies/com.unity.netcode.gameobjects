@@ -1235,14 +1235,7 @@ namespace Unity.Netcode.Components
             var isServerAuthoritative = IsServerAuthoritative();
             if (!isServerAuthoritative && !IsOwner || isServerAuthoritative)
             {
-                if (isServerAuthoritative)
-                {
-                    m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
-                }
-                else
-                {
-                    m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
-                }
+                m_NetworkAnimatorStateChangeHandler.ProcessParameterUpdate(parametersUpdate);
             }
         }
 
