@@ -19,7 +19,7 @@ namespace Unity.Netcode
     /// - MessagingSystem updates
     /// </summary>
     // TODO 2023-Q2: Discuss what kind of public API exposure we want for this
-    public class NetworkConnectionManager : INetworkUpdateSystem
+    public class NetworkConnectionManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
@@ -93,6 +93,7 @@ namespace Unity.Netcode
         /// Used to generate client identifiers
         /// </summary>
         private ulong m_NextClientId = 1;
+        private NetworkConnectionManagerUpdater m_NetworkConnectionManagerUpdater;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdToClientId(ulong transportId)
@@ -176,7 +177,7 @@ namespace Unity.Netcode
         /// <summary>
         /// ConnectionManager Internal Updates
         /// </summary>
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        internal void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             switch (updateStage)
             {
@@ -934,9 +935,7 @@ namespace Unity.Netcode
 
             DisconnectReason = string.Empty;
             NetworkManager = networkManager;
-
-            // TODO 2023-Q2: We might limit this to the two updates, for now leaving all
-            this.RegisterAllNetworkUpdates();
+            m_NetworkConnectionManagerUpdater = new NetworkConnectionManagerUpdater(this);
 
             MessagingSystem = new MessagingSystem(new DefaultMessageSender(networkManager), networkManager);
 
@@ -968,9 +967,10 @@ namespace Unity.Netcode
         internal void Shutdown()
         {
             StopProcessingMessages = false;
-            this.UnregisterAllNetworkUpdates();
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
+            m_NetworkConnectionManagerUpdater?.Shutdown();
+            m_NetworkConnectionManagerUpdater = null;
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
@@ -1146,6 +1146,30 @@ namespace Unity.Netcode
                 throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
             }
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
+        }
+
+        /// <summary>
+        /// Internal NetworkConnectionManager updater class
+        /// </summary>
+        internal class NetworkConnectionManagerUpdater : INetworkUpdateSystem
+        {
+            private NetworkConnectionManager m_NetworkConnectionManager;
+            public void NetworkUpdate(NetworkUpdateStage updateStage)
+            {
+                m_NetworkConnectionManager.NetworkUpdate(updateStage);
+            }
+
+            internal void Shutdown()
+            {
+                this.UnregisterAllNetworkUpdates();
+            }
+
+            internal NetworkConnectionManagerUpdater(NetworkConnectionManager networkConnectionManager)
+            {
+                m_NetworkConnectionManager = networkConnectionManager;
+                // TODO 2023-Q2: We might limit this to the two updates, for now leaving all
+                this.RegisterAllNetworkUpdates();
+            }
         }
     }
 }

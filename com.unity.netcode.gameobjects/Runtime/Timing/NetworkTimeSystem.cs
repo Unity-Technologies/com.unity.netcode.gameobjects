@@ -7,7 +7,7 @@ namespace Unity.Netcode
     /// <see cref="NetworkTimeSystem"/> is a standalone system which can be used to run a network time simulation.
     /// The network time system maintains both a local and a server time. The local time is based on
     /// </summary>
-    public class NetworkTimeSystem : INetworkUpdateSystem
+    public class NetworkTimeSystem
     {
         /// <summary>
         /// TODO 2023-Q2: Not sure if this just needs to go away, but there is nothing that ever replaces this
@@ -83,6 +83,7 @@ namespace Unity.Netcode
         private NetworkTransport m_NetworkTransport;
         private NetworkTickSystem m_NetworkTickSystem;
         private NetworkManager m_NetworkManager;
+        private NetworkTimeSystemUpdater m_NetworkTimeSystemUpdater;
 
         /// <summary>
         /// <see cref="k_TimeSyncFrequency"/>
@@ -122,7 +123,8 @@ namespace Unity.Netcode
             }
 
             // Both server and client instances update their primary time system
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            m_NetworkTimeSystemUpdater = new NetworkTimeSystemUpdater(this);
+
             return m_NetworkTickSystem;
         }
 
@@ -130,7 +132,7 @@ namespace Unity.Netcode
         /// The primary time system
         /// </summary>
         /// <param name="updateStage"></param>
-        public void NetworkUpdate(NetworkUpdateStage updateStage)
+        internal void NetworkUpdate(NetworkUpdateStage updateStage)
         {
             if (updateStage == NetworkUpdateStage.PreUpdate)
             {
@@ -198,7 +200,8 @@ namespace Unity.Netcode
             {
                 m_NetworkTickSystem.Tick -= OnTickSyncTime;
             }
-            this.UnregisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            m_NetworkTimeSystemUpdater?.Shutdown();
+            m_NetworkTimeSystemUpdater = null;
         }
 
         /// <summary>
@@ -265,5 +268,29 @@ namespace Unity.Netcode
             m_DesiredServerTimeOffset = timeDif - ServerBufferSec;
             m_DesiredLocalTimeOffset = timeDif + rttSec + LocalBufferSec;
         }
+
+        /// <summary>
+        /// Internal NetworkTimeSystem updater class
+        /// </summary>
+        internal class NetworkTimeSystemUpdater : INetworkUpdateSystem
+        {
+            private NetworkTimeSystem m_NetworkTimeSystem;
+            public void NetworkUpdate(NetworkUpdateStage updateStage)
+            {
+                m_NetworkTimeSystem.NetworkUpdate(updateStage);
+            }
+
+            internal void Shutdown()
+            {
+                this.UnregisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            }
+
+            internal NetworkTimeSystemUpdater(NetworkTimeSystem networkTimeSystem)
+            {
+                m_NetworkTimeSystem = networkTimeSystem;
+                this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            }
+        }
+
     }
 }
