@@ -941,7 +941,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             QueuedSceneJobs.Clear();
-            Object.Destroy(CoroutineRunner.gameObject);
+            if (CoroutineRunner != null && CoroutineRunner.gameObject != null)
+            {
+                Object.Destroy(CoroutineRunner.gameObject);
+            }
+
         }
     }
 }

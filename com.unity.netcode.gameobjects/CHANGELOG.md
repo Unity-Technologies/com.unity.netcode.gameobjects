@@ -41,6 +41,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkAnimator` was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
+- Fixed issue where `NetworkAnimator` was not properly synchronizing animation state updates. (#2481)
 - Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)

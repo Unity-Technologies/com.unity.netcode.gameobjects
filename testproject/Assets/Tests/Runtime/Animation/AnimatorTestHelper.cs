@@ -122,6 +122,13 @@ namespace TestProject.RuntimeTests
             }
         }
 
+        public const string TargetCrossFadeState = "CrossFadeState";
+
+        public void TestCrossFade()
+        {
+            m_Animator.CrossFade(TargetCrossFadeState, 0.25f, 0);
+        }
+
         public void SetBool(string name, bool valueToSet)
         {
             m_Animator.SetBool(name, valueToSet);
