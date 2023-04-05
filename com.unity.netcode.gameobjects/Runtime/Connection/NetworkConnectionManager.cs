@@ -1069,10 +1069,6 @@ namespace Unity.Netcode
 
         }
 
-        /// <summary>
-        /// TODO 2023-Q2:
-        /// Should we replace this with direct calls to the MessagingSystem?
-        /// </summary>
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
             where TMessageType : INetworkMessage
             where TClientIdListType : IReadOnlyList<ulong>
@@ -1107,10 +1103,6 @@ namespace Unity.Netcode
             return MessagingSystem.SendMessage(ref message, delivery, clientIds);
         }
 
-        /// <summary>
-        /// TODO 2023-Q2:
-        /// Should we replace this with direct calls to the MessagingSystem?
-        /// </summary>
         internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong* clientIds, int numClientIds)
             where T : INetworkMessage
         {
@@ -1144,20 +1136,12 @@ namespace Unity.Netcode
             return MessagingSystem.SendMessage(ref message, delivery, clientIds, numClientIds);
         }
 
-        /// <summary>
-        /// TODO 2023-Q2:
-        /// Should we replace this with direct calls to the MessagingSystem?
-        /// </summary>
         internal unsafe int SendMessage<T>(ref T message, NetworkDelivery delivery, in NativeArray<ulong> clientIds)
             where T : INetworkMessage
         {
             return SendMessage(ref message, delivery, (ulong*)clientIds.GetUnsafePtr(), clientIds.Length);
         }
 
-        /// <summary>
-        /// TODO 2023-Q2:
-        /// Should we replace this with direct calls to the MessagingSystem?
-        /// </summary>
         internal int SendMessage<T>(ref T message, NetworkDelivery delivery, ulong clientId)
             where T : INetworkMessage
         {
