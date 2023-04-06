@@ -29,7 +29,7 @@ namespace Unity.Netcode
     /// Class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
-    public sealed class NetworkPrefab
+    public class NetworkPrefab
     {
         /// <summary>
         /// The override settings for this NetworkPrefab

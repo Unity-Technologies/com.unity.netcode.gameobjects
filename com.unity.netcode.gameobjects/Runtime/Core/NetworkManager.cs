@@ -188,7 +188,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The current host name we are connected to, used to validate certificate
         /// </summary>
-        public string ConnectedHostname => ConnectionManager.ConnectedHostname;
+        public string ConnectedHostname => string.Empty;
 
         /// <summary>
         /// Connection Approval Response

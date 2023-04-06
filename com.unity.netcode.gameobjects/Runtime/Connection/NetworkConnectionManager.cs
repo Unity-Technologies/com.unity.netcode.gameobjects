@@ -29,12 +29,6 @@ namespace Unity.Netcode
 #endif
 
         /// <summary>
-        /// Legacy and no longer used
-        /// </summary>
-        // TODO 2023-Q2: Mark as deprecated?
-        public string ConnectedHostname { get { return string.Empty; } }
-
-        /// <summary>
         /// When disconnected from the server, the server may send a reason. If a reason was sent, this property will
         /// tell client code what the reason was. It should be queried after the OnClientDisconnectCallback is called
         /// </summary>
@@ -49,6 +43,7 @@ namespace Unity.Netcode
         /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
+
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
         /// <summary>
@@ -94,6 +89,7 @@ namespace Unity.Netcode
         /// Use <see cref="PendingClients"/> to internally access the pending client dictionary
         /// </summary>
         private Dictionary<ulong, PendingClient> m_PendingClients = new Dictionary<ulong, PendingClient>();
+
         internal IReadOnlyDictionary<ulong, PendingClient> PendingClients => m_PendingClients;
 
         /// <summary>
@@ -123,6 +119,7 @@ namespace Unity.Netcode
         /// Used to generate client identifiers
         /// </summary>
         private ulong m_NextClientId = 1;
+
         private NetworkConnectionManagerUpdater m_NetworkConnectionManagerUpdater;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -163,6 +160,7 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogWarning($"Trying to get the transport client ID map for the NGO client ID ({clientId}) but did not find the map entry! Returning default transport ID value.");
             }
+
             return default;
         }
 
@@ -178,6 +176,7 @@ namespace Unity.Netcode
             {
                 return NetworkManager.NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
             }
+
             throw new Exception($"There is no {nameof(NetworkManager)} assigned to this instance!");
         }
 
@@ -218,6 +217,7 @@ namespace Unity.Netcode
                         {
                             return;
                         }
+
                         OnEarlyUpdate();
                         MessagingSystem.OnEarlyUpdate();
                         break;
@@ -335,6 +335,7 @@ namespace Unity.Netcode
             {
                 clientId = NetworkManager.ServerClientId;
             }
+
             ClientIdToTransportIdMap[clientId] = transportClientId;
             TransportIdToClientIdMap[transportClientId] = clientId;
             MessagingSystem.ClientConnected(clientId);
@@ -345,6 +346,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogInfo("Client Connected");
                 }
+
                 AddPendingClient(clientId);
 
                 NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
@@ -597,10 +599,7 @@ namespace Unity.Netcode
                     {
                         HandleConnectionApproval(senderId, response);
 
-                        if (senders == null)
-                        {
-                            senders = new List<ulong>();
-                        }
+                        senders ??= new List<ulong>();
                         senders.Add(senderId);
                     }
                     catch (Exception e)
@@ -742,6 +741,7 @@ namespace Unity.Netcode
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
                     MessagingSystem.ProcessSendQueues();
                 }
+
                 DisconnectRemoteClient(ownerClientId);
             }
         }
@@ -791,6 +791,7 @@ namespace Unity.Netcode
                 networkClient.SetRole(isServer: false, isClient: true, NetworkManager);
                 networkClient.ClientId = clientId;
             }
+
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
             ConnectedClientIds.Add(clientId);
@@ -814,6 +815,7 @@ namespace Unity.Netcode
             {
                 return;
             }
+
             if (ConnectedClients.TryGetValue(clientId, out NetworkClient networkClient))
             {
                 var playerObject = networkClient.PlayerObject;
@@ -891,8 +893,8 @@ namespace Unity.Netcode
                     ConnectedClientsList.Remove(ConnectedClients[clientId]);
                     ConnectedClients.Remove(clientId);
                 }
-                ConnectedClientIds.Remove(clientId);
 
+                ConnectedClientIds.Remove(clientId);
             }
 
             // If the client ID transport map exists
@@ -941,6 +943,7 @@ namespace Unity.Netcode
                 };
                 SendMessage(ref disconnectReason, NetworkDelivery.Reliable, clientId);
             }
+
             DisconnectRemoteClient(clientId);
         }
 
@@ -1038,7 +1041,6 @@ namespace Unity.Netcode
                 {
                     DisconnectRemoteClient(clientId);
                 }
-
             }
             else if (NetworkManager != null && NetworkManager.IsListening && LocalClient.IsClient)
             {
@@ -1053,6 +1055,7 @@ namespace Unity.Netcode
                     Debug.LogException(ex);
                 }
             }
+
             MessagingSystem?.Dispose();
 
 
@@ -1068,7 +1071,6 @@ namespace Unity.Netcode
                 //The Transport is set during initialization, thus it is possible for the Transport to be null
                 NetworkManager.NetworkConfig?.NetworkTransport?.Shutdown();
             }
-
         }
 
         internal unsafe int SendMessage<TMessageType, TClientIdListType>(ref TMessageType message, NetworkDelivery delivery, in TClientIdListType clientIds)
@@ -1094,8 +1096,10 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
+
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
+
             // else
             if (clientIds.Count != 1 || clientIds[0] != NetworkManager.ServerClientId)
             {
@@ -1127,8 +1131,10 @@ namespace Unity.Netcode
                 {
                     return 0;
                 }
+
                 return MessagingSystem.SendMessage(ref message, delivery, nonServerIds, newIdx);
             }
+
             // else
             if (numClientIds != 1 || clientIds[0] != NetworkManager.ServerClientId)
             {
@@ -1157,6 +1163,7 @@ namespace Unity.Netcode
             {
                 throw new ArgumentException($"Clients may only send messages to {nameof(NetworkManager.ServerClientId)}");
             }
+
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
         }
 
@@ -1166,6 +1173,7 @@ namespace Unity.Netcode
         internal class NetworkConnectionManagerUpdater : INetworkUpdateSystem
         {
             private NetworkConnectionManager m_NetworkConnectionManager;
+
             public void NetworkUpdate(NetworkUpdateStage updateStage)
             {
                 m_NetworkConnectionManager.NetworkUpdate(updateStage);
