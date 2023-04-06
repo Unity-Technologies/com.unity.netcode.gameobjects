@@ -189,6 +189,24 @@ namespace Tests.Manual.NetworkAnimatorTests
             return m_Animator.GetLayerWeight(layer);
         }
 
+        [ServerRpc]
+        private void TestCrossFadeServerRpc()
+        {
+            m_Animator.CrossFade("CrossFadeState", 0.25f, 0);
+        }
+
+        private void TestCrossFade()
+        {
+            if (!IsServer && m_IsServerAuthoritative)
+            {
+                TestCrossFadeServerRpc();
+            }
+            else
+            {
+                m_Animator.CrossFade("CrossFadeState", 0.25f, 0);
+            }
+        }
+
         private void LateUpdate()
         {
 
@@ -208,6 +226,11 @@ namespace Tests.Manual.NetworkAnimatorTests
             }
 
             DisplayTestIntValueIfChanged();
+
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                TestCrossFade();
+            }
 
             // Rotates the cube
             if (Input.GetKeyDown(KeyCode.C))
