@@ -13,7 +13,7 @@ namespace Unity.Netcode
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("Netcode/Network Manager", -100)]
-    public class NetworkManager : MonoBehaviour
+    public class NetworkManager : MonoBehaviour, INetworkUpdateSystem
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
 
@@ -30,11 +30,20 @@ namespace Unity.Netcode
 
 #pragma warning restore IDE1006 // restore naming rule violation check
 
-        // TODO 2023-Q2: Team discussion
-        // Removing this is a "breaking change"
-        // (the issue with interfaces...implementations have to be public!)
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
+            switch (updateStage)
+            {
+                case NetworkUpdateStage.EarlyUpdate:
+                    ConnectionManager.NetworkUpdate(updateStage);
+                    break;
+                case NetworkUpdateStage.PreUpdate:
+                    NetworkTimeSystem.NetworkUpdate(updateStage);
+                    break;
+                case NetworkUpdateStage.PostLateUpdate:
+                    ConnectionManager.NetworkUpdate(updateStage);
+                    break;
+            }
         }
 
         /// <summary>
@@ -566,6 +575,10 @@ namespace Unity.Netcode
                 NetworkLog.LogInfo(nameof(Initialize));
             }
 
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PostLateUpdate);
+
             // ComponentFactory needs to set its defaults next
             ComponentFactory.SetDefaults();
 
@@ -881,6 +894,8 @@ namespace Unity.Netcode
             {
                 NetworkLog.LogInfo(nameof(ShutdownInternal));
             }
+
+            this.UnregisterAllNetworkUpdates();
 
             // Everything is shutdown in the order of their dependencies
             DeferredMessageManager?.CleanupAllTriggers();

@@ -120,8 +120,6 @@ namespace Unity.Netcode
         /// </summary>
         private ulong m_NextClientId = 1;
 
-        private NetworkConnectionManagerUpdater m_NetworkConnectionManagerUpdater;
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdToClientId(ulong transportId)
         {
@@ -220,6 +218,7 @@ namespace Unity.Netcode
 
                         OnEarlyUpdate();
                         MessagingSystem.OnEarlyUpdate();
+
                         break;
                     }
                 case NetworkUpdateStage.PostLateUpdate:
@@ -963,7 +962,6 @@ namespace Unity.Netcode
 
             DisconnectReason = string.Empty;
             NetworkManager = networkManager;
-            m_NetworkConnectionManagerUpdater = new NetworkConnectionManagerUpdater(this);
 
             MessagingSystem = new MessagingSystem(new DefaultMessageSender(networkManager), networkManager);
 
@@ -993,8 +991,6 @@ namespace Unity.Netcode
             StopProcessingMessages = false;
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
-            m_NetworkConnectionManagerUpdater?.Shutdown();
-            m_NetworkConnectionManagerUpdater = null;
             if (LocalClient.IsServer)
             {
                 // make sure all messages are flushed before transport disconnect clients
@@ -1158,31 +1154,6 @@ namespace Unity.Netcode
             }
 
             return MessagingSystem.SendMessage(ref message, delivery, clientId);
-        }
-
-        /// <summary>
-        /// Internal NetworkConnectionManager updater class
-        /// </summary>
-        internal class NetworkConnectionManagerUpdater : INetworkUpdateSystem
-        {
-            private NetworkConnectionManager m_NetworkConnectionManager;
-
-            public void NetworkUpdate(NetworkUpdateStage updateStage)
-            {
-                m_NetworkConnectionManager.NetworkUpdate(updateStage);
-            }
-
-            internal void Shutdown()
-            {
-                this.UnregisterAllNetworkUpdates();
-            }
-
-            internal NetworkConnectionManagerUpdater(NetworkConnectionManager networkConnectionManager)
-            {
-                m_NetworkConnectionManager = networkConnectionManager;
-                // TODO 2023-Q2: We might limit this to the two updates, for now leaving all
-                this.RegisterAllNetworkUpdates();
-            }
         }
     }
 }

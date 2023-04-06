@@ -83,7 +83,6 @@ namespace Unity.Netcode
         private NetworkTransport m_NetworkTransport;
         private NetworkTickSystem m_NetworkTickSystem;
         private NetworkManager m_NetworkManager;
-        private NetworkTimeSystemUpdater m_NetworkTimeSystemUpdater;
 
         /// <summary>
         /// <see cref="k_TimeSyncFrequency"/>
@@ -120,9 +119,6 @@ namespace Unity.Netcode
             {
                 m_NetworkTickSystem.Tick += OnTickSyncTime;
             }
-
-            // Both server and client instances update their primary time system
-            m_NetworkTimeSystemUpdater = new NetworkTimeSystemUpdater(this);
 
             return m_NetworkTickSystem;
         }
@@ -200,9 +196,6 @@ namespace Unity.Netcode
             {
                 m_NetworkTickSystem.Tick -= OnTickSyncTime;
             }
-
-            m_NetworkTimeSystemUpdater?.Shutdown();
-            m_NetworkTimeSystemUpdater = null;
         }
 
         /// <summary>
@@ -268,30 +261,6 @@ namespace Unity.Netcode
 
             m_DesiredServerTimeOffset = timeDif - ServerBufferSec;
             m_DesiredLocalTimeOffset = timeDif + rttSec + LocalBufferSec;
-        }
-
-        /// <summary>
-        /// Internal NetworkTimeSystem updater class
-        /// </summary>
-        internal class NetworkTimeSystemUpdater : INetworkUpdateSystem
-        {
-            private NetworkTimeSystem m_NetworkTimeSystem;
-
-            public void NetworkUpdate(NetworkUpdateStage updateStage)
-            {
-                m_NetworkTimeSystem.NetworkUpdate(updateStage);
-            }
-
-            internal void Shutdown()
-            {
-                this.UnregisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-            }
-
-            internal NetworkTimeSystemUpdater(NetworkTimeSystem networkTimeSystem)
-            {
-                m_NetworkTimeSystem = networkTimeSystem;
-                this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-            }
         }
     }
 }
