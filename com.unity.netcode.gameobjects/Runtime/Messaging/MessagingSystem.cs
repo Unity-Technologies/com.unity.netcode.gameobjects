@@ -205,6 +205,19 @@ namespace Unity.Netcode
             return m_LocalVersions[messageType];
         }
 
+        /// <summary>
+        /// Invoked by <see cref="NetworkConnectionManager.NetworkUpdate"/>
+        /// </summary>
+        /// <remarks>
+        /// This requires a specific order of operations where <see cref="NetworkConnectionManager.OnEarlyUpdate"/> is
+        /// invoked prior to this method.
+        /// </remarks>
+        internal void OnEarlyUpdate()
+        {
+            ProcessIncomingMessageQueue();
+            CleanupDisconnectedClients();
+        }
+
         internal static string ByteArrayToString(byte[] ba, int offset, int count)
         {
             var hex = new StringBuilder(ba.Length * 2);

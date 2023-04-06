@@ -1,4 +1,5 @@
 using System;
+using Unity.Profiling;
 
 namespace Unity.Netcode
 {
@@ -8,6 +9,34 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkTimeSystem
     {
+        /// <summary>
+        /// TODO 2023-Q2: Not sure if this just needs to go away, but there is nothing that ever replaces this
+        /// </summary>
+        /// <remarks>
+        /// This was the original comment when it lived in NetworkManager:
+        /// todo talk with UX/Product, find good default value for this
+        /// </remarks>
+        private const float k_DefaultBufferSizeSec = 0.05f;
+
+        /// <summary>
+        /// Time synchronization frequency defaults to 1 synchronization message per second
+        /// </summary>
+        private const double k_TimeSyncFrequency = 1.0d;
+
+        /// <summary>
+        /// The threshold, in seconds, used to force a hard catchup of network time
+        /// </summary>
+        private const double k_HardResetThresholdSeconds = 0.2d;
+
+        /// <summary>
+        /// Default adjustment ratio
+        /// </summary>
+        private const double k_DefaultAdjustmentRatio = 0.01d;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        private static ProfilerMarker s_SyncTime = new ProfilerMarker($"{nameof(NetworkManager)}.SyncTime");
+#endif
+
         private double m_TimeSec;
         private double m_CurrentLocalTimeOffset;
         private double m_DesiredLocalTimeOffset;
@@ -50,6 +79,16 @@ namespace Unity.Netcode
         internal double LastSyncedServerTimeSec { get; private set; }
         internal double LastSyncedRttSec { get; private set; }
 
+        private NetworkConnectionManager m_ConnectionManager;
+        private NetworkTransport m_NetworkTransport;
+        private NetworkTickSystem m_NetworkTickSystem;
+        private NetworkManager m_NetworkManager;
+
+        /// <summary>
+        /// <see cref="k_TimeSyncFrequency"/>
+        /// </summary>
+        private int m_TimeSyncFrequencyTicks;
+
         /// <summary>
         /// The constructor class for <see cref="NetworkTickSystem"/>
         /// </summary>
@@ -57,12 +96,106 @@ namespace Unity.Netcode
         /// <param name="serverBufferSec">The amount of the time in seconds the client should buffer incoming messages from the server.</param>
         /// <param name="hardResetThresholdSec">The threshold, in seconds, used to force a hard catchup of network time.</param>
         /// <param name="adjustmentRatio">The ratio at which the NetworkTimeSystem speeds up or slows down time.</param>
-        public NetworkTimeSystem(double localBufferSec, double serverBufferSec, double hardResetThresholdSec, double adjustmentRatio = 0.01d)
+        public NetworkTimeSystem(double localBufferSec, double serverBufferSec = k_DefaultBufferSizeSec, double hardResetThresholdSec = k_HardResetThresholdSeconds, double adjustmentRatio = k_DefaultAdjustmentRatio)
         {
             LocalBufferSec = localBufferSec;
             ServerBufferSec = serverBufferSec;
             HardResetThresholdSec = hardResetThresholdSec;
             AdjustmentRatio = adjustmentRatio;
+        }
+
+        /// <summary>
+        /// The primary time system is initialized when a server-host or client is started
+        /// </summary>
+        internal NetworkTickSystem Initialize(NetworkManager networkManager)
+        {
+            m_NetworkManager = networkManager;
+            m_ConnectionManager = networkManager.ConnectionManager;
+            m_NetworkTransport = networkManager.NetworkConfig.NetworkTransport;
+            m_TimeSyncFrequencyTicks = (int)(k_TimeSyncFrequency * networkManager.NetworkConfig.TickRate);
+            m_NetworkTickSystem = new NetworkTickSystem(networkManager.NetworkConfig.TickRate, 0, 0);
+            // Only the server side needs to register for tick based time synchronization
+            if (m_ConnectionManager.LocalClient.IsServer)
+            {
+                m_NetworkTickSystem.Tick += OnTickSyncTime;
+            }
+
+            return m_NetworkTickSystem;
+        }
+
+        /// <summary>
+        /// The primary time system
+        /// </summary>
+        /// <param name="updateStage"></param>
+        internal void NetworkUpdate(NetworkUpdateStage updateStage)
+        {
+            if (updateStage == NetworkUpdateStage.PreUpdate)
+            {
+                // As a client wait to run the time system until we are connected.
+                // As a client or server don't worry about the time system if we are no longer processing messages
+                if ((!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected) || m_ConnectionManager.StopProcessingMessages)
+                {
+                    return;
+                }
+
+                // Only update RTT here, server time is updated by time sync messages
+                var reset = Advance(m_NetworkManager.RealTimeProvider.UnscaledDeltaTime);
+                if (reset)
+                {
+                    m_NetworkTickSystem.Reset(LocalTime, ServerTime);
+                }
+
+                m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
+
+                if (!m_ConnectionManager.LocalClient.IsServer)
+                {
+                    Sync(LastSyncedServerTimeSec + m_NetworkManager.RealTimeProvider.UnscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Server-Side:
+        /// Synchronizes time with clients based on the given <see cref="m_TimeSyncFrequencyTicks"/>.
+        /// Also: <see cref="k_TimeSyncFrequency"/>
+        /// </summary>
+        /// <remarks>
+        /// The default is to send 1 time synchronization message per second
+        /// </remarks>
+        private void OnTickSyncTime()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.Begin();
+#endif
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
+            {
+                NetworkLog.LogInfo($"[{m_NetworkTickSystem.ServerTime.TimeAsFloat}][Tick-{m_NetworkTickSystem.ServerTime.Tick}] Syncing Time To Clients");
+            }
+
+            // Check if we need to send a time synchronization message, and if so send it
+            if (m_ConnectionManager.LocalClient.IsServer && m_NetworkTickSystem.ServerTime.Tick % m_TimeSyncFrequencyTicks == 0)
+            {
+                var message = new TimeSyncMessage
+                {
+                    Tick = m_NetworkTickSystem.ServerTime.Tick
+                };
+                m_ConnectionManager.SendMessage(ref message, NetworkDelivery.Unreliable, m_ConnectionManager.ConnectedClientIds);
+            }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.End();
+#endif
+        }
+
+        /// <summary>
+        /// Invoke when shutting down the NetworkManager
+        /// </summary>
+        internal void Shutdown()
+        {
+            if (m_ConnectionManager.LocalClient.IsServer)
+            {
+                m_NetworkTickSystem.Tick -= OnTickSyncTime;
+            }
         }
 
         /// <summary>

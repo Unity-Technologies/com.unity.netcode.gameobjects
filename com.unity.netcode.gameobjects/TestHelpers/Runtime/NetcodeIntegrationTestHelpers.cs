@@ -303,7 +303,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             clientToStart.StartClient();
             s_Hooks[clientToStart] = new MultiInstanceHooks();
-            clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            clientToStart.ConnectionManager.MessagingSystem.Hook(s_Hooks[clientToStart]);
             if (!NetworkManagerInstances.Contains(clientToStart))
             {
                 NetworkManagerInstances.Add(clientToStart);
@@ -440,7 +440,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             var hooks = new MultiInstanceHooks();
-            server.MessagingSystem.Hook(hooks);
+            server.ConnectionManager.MessagingSystem.Hook(hooks);
             s_Hooks[server] = hooks;
 
             // if set, then invoke this for the server
@@ -452,7 +452,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 clients[i].StartClient();
                 hooks = new MultiInstanceHooks();
-                clients[i].MessagingSystem.Hook(hooks);
+                clients[i].ConnectionManager.MessagingSystem.Hook(hooks);
                 s_Hooks[clients[i]] = hooks;
 
                 // if set, then invoke this for the client

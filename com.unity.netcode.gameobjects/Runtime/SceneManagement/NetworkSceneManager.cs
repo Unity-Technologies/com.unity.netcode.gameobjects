@@ -940,7 +940,7 @@ namespace Unity.Netcode
             {
                 EventData = SceneEventDataStore[sceneEventId]
             };
-            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, targetClientIds);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, targetClientIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(targetClientIds, (uint)SceneEventDataStore[sceneEventId].SceneEventType, SceneNameFromHash(SceneEventDataStore[sceneEventId].SceneHash), size);
         }
@@ -1052,7 +1052,7 @@ namespace Unity.Netcode
             {
                 EventData = sceneEventData
             };
-            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, m_NetworkManager.ConnectedClientsIds);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(
                 m_NetworkManager.ConnectedClientsIds,
@@ -1641,7 +1641,7 @@ namespace Unity.Netcode
                     {
                         EventData = sceneEventData
                     };
-                    var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, clientId);
+                    var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, clientId);
                     m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, scene.name, size);
                 }
             }
@@ -1771,7 +1771,7 @@ namespace Unity.Netcode
             {
                 EventData = sceneEventData
             };
-            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, clientId);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, clientId);
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(clientId, (uint)sceneEventData.SceneEventType, "", size);
 
             // Notify the local server that the client has been sent the synchronize event
@@ -1915,7 +1915,7 @@ namespace Unity.Netcode
             {
                 EventData = responseSceneEventData
             };
-            var size = m_NetworkManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, k_DeliveryType, NetworkManager.ServerClientId);
 
             m_NetworkManager.NetworkMetrics.TrackSceneEventSent(NetworkManager.ServerClientId, (uint)responseSceneEventData.SceneEventType, sceneName, size);
 
@@ -2049,7 +2049,7 @@ namespace Unity.Netcode
                             m_NetworkManager.IsConnectedClient = true;
 
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
-                            m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
+                            m_NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
                             // Notify the client that they have finished synchronizing
                             OnSceneEvent?.Invoke(new SceneEvent()
@@ -2186,7 +2186,7 @@ namespace Unity.Netcode
                         // TODO 2023: We should have a better name for this or have multiple states the
                         // client progresses through (the name and associated legacy behavior/expected state
                         // of the client was persisted since MLAPI)
-                        m_NetworkManager.InvokeOnClientConnectedCallback(clientId);
+                        m_NetworkManager.ConnectionManager.InvokeOnClientConnectedCallback(clientId);
 
                         // Check to see if the client needs to resynchronize and before sending the message make sure the client is still connected to avoid
                         // a potential crash within the MessageSystem (i.e. sending to a client that no longer exists)

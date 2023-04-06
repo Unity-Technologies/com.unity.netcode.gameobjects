@@ -939,7 +939,7 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         continue;
                     }
-                    var transportClientId = NetworkManager.ClientIdToTransportId(ngoConnectionId);
+                    var transportClientId = NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
                     ExtractNetworkMetricsForClient(transportClientId);
                 }
             }
@@ -1163,7 +1163,7 @@ namespace Unity.Netcode.Transports.UTP
 
             if (NetworkManager != null)
             {
-                var transportId = NetworkManager.ClientIdToTransportId(clientId);
+                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
 
                 var rtt = ExtractRtt(ParseClientId(transportId));
                 if (rtt > 0)
@@ -1268,7 +1268,7 @@ namespace Unity.Netcode.Transports.UTP
                     // provide any reliability guarantees anymore. Disconnect the client since at
                     // this point they're bound to become desynchronized.
 
-                    var ngoClientId = NetworkManager?.TransportIdToClientId(clientId) ?? clientId;
+                    var ngoClientId = NetworkManager?.ConnectionManager.TransportIdToClientId(clientId) ?? clientId;
                     Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
                         $"Closing connection {ngoClientId} as reliability guarantees can't be maintained.");
 

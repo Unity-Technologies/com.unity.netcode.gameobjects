@@ -59,11 +59,11 @@ namespace Unity.Netcode
             {
                 var messageVersion = new MessageVersionData();
                 messageVersion.Deserialize(reader);
-                networkManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
+                networkManager.ConnectionManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
 
                 // Update the received version since this message will always be passed version 0, due to the map not
                 // being initialized until just now.
-                var messageType = networkManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
+                var messageType = networkManager.ConnectionManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
                 if (messageType == typeof(ConnectionRequestMessage))
                 {
                     receivedMessageVersion = messageVersion.Version;
@@ -135,7 +135,7 @@ namespace Unity.Netcode
             var networkManager = (NetworkManager)context.SystemOwner;
             var senderId = context.SenderId;
 
-            if (networkManager.PendingClients.TryGetValue(senderId, out PendingClient client))
+            if (networkManager.ConnectionManager.PendingClients.TryGetValue(senderId, out PendingClient client))
             {
                 // Set to pending approval to prevent future connection requests from being approved
                 client.ConnectionState = PendingClient.State.PendingApproval;
@@ -143,17 +143,8 @@ namespace Unity.Netcode
 
             if (networkManager.NetworkConfig.ConnectionApproval)
             {
-                // Note: Delegate creation allocates.
-                // Note: ToArray() also allocates. :(
-                var response = new NetworkManager.ConnectionApprovalResponse();
-                networkManager.ClientsToApprove[senderId] = response;
-
-                networkManager.ConnectionApprovalCallback(
-                    new NetworkManager.ConnectionApprovalRequest
-                    {
-                        Payload = ConnectionData,
-                        ClientNetworkId = senderId
-                    }, response);
+                var messageRequest = this;
+                networkManager.ConnectionManager.ApproveConnection(ref messageRequest, ref context);
             }
             else
             {
@@ -162,7 +153,7 @@ namespace Unity.Netcode
                     Approved = true,
                     CreatePlayerObject = networkManager.NetworkConfig.PlayerPrefab != null
                 };
-                networkManager.HandleConnectionApproval(senderId, response);
+                networkManager.ConnectionManager.HandleConnectionApproval(senderId, response);
             }
         }
     }

@@ -40,7 +40,7 @@ namespace Unity.Netcode
 
         public void Handle(ref NetworkContext context)
         {
-            ((NetworkManager)context.SystemOwner).DisconnectReason = Reason;
+            ((NetworkManager)context.SystemOwner).ConnectionManager.DisconnectReason = Reason;
         }
     };
 }

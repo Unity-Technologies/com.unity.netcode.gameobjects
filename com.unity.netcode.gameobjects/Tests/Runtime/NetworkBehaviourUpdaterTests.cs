@@ -312,7 +312,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Update the NetworkBehaviours to make sure all network variables are no longer marked as dirty
-            m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
+            m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate();
 
             // Verify that all network variables are no longer dirty on server side only if we have clients (including host)
             foreach (var serverSpawnedObject in spawnedPrefabs)
