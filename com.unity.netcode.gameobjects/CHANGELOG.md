@@ -44,6 +44,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where `NetworkAnimator` was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters. (#2492)
 - Fixed issue where `NetworkAnimator` was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
 - Fixed issue where `NetworkAnimator` was not properly synchronizing animation state updates. (#2481)
+- Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 - Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
 - Fixed registry of public `NetworkVariable`s in derived `NetworkBehaviour`s (#2423)
 - Fixed issue where runtime association of `Animator` properties to `AnimationCurve`s would cause `NetworkAnimator` to attempt to update those changes. (#2416)
@@ -52,7 +53,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where `NetworkTransform` was not setting the teleport flag when the `NetworkTransform.InLocalSpace` value changed. This issue only impacted `NetworkTransform` when interpolation was enabled. (#2388)
 - Fixed issue when the `NetworkSceneManager.ClientSynchronizationMode` is `LoadSceneMode.Additive` and the server changes the currently active scene prior to a client connecting then upon a client connecting and being synchronized the NetworkSceneManager would clear its internal ScenePlacedObjects list that could already be populated. (#2383)
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
-- Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 
 ## [1.3.1] - 2023-03-27
 
