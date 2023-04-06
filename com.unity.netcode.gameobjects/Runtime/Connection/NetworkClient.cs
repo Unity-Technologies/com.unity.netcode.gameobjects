@@ -83,19 +83,5 @@ namespace Unity.Netcode
         {
             PlayerObject = networkObject;
         }
-
-        internal NetworkClient(bool isServer, bool isClient, ulong clientId, NetworkManager networkManager)
-        {
-            SetRole(isServer, isClient, networkManager);
-            ClientId = clientId;
-        }
-
-        /// <summary>
-        /// The default constructor creates a <see cref="NetworkClient"/> with no connection state
-        /// </summary>
-        public NetworkClient()
-        {
-            SetRole(false, false);
-        }
     }
 }

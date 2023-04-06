@@ -787,7 +787,9 @@ namespace Unity.Netcode
             var networkClient = LocalClient;
             if (clientId != NetworkManager.ServerClientId)
             {
-                networkClient = new NetworkClient(false, true, clientId, NetworkManager);
+                networkClient = new NetworkClient();
+                networkClient.SetRole(isServer: false, isClient: true, NetworkManager);
+                networkClient.ClientId = clientId;
             }
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
