@@ -920,7 +920,7 @@ namespace Unity.Netcode.Components
                     m_ClientSendList.AddRange(NetworkManager.ConnectedClientsIds);
                     m_ClientSendList.Remove(NetworkManager.LocalClientId);
                     m_ClientRpcParams.Send.TargetClientIds = m_ClientSendList;
-                    SendAnimStateClientRpc(m_AnimationMessage);
+                    SendAnimStateClientRpc(m_AnimationMessage, m_ClientRpcParams);
                 }
             }
         }
