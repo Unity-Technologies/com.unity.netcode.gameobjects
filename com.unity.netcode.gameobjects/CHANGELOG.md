@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [1.4.0] - 2023-04-10
 
 ### Added
 
@@ -41,7 +41,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where `NetworkAnimator` was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters.
+- Fixed issue where `NetworkAnimator` was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters. (#2492)
 - Fixed issue where `NetworkAnimator` was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
 - Fixed issue where `NetworkAnimator` was not properly synchronizing animation state updates. (#2481)
 - Fixed an issue where Named Message Handlers could remove themselves causing an exception when the metrics tried to access the name of the message.(#2426)
