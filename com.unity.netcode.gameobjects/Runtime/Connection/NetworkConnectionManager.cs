@@ -268,23 +268,20 @@ namespace Unity.Netcode
         {
             ProcessPendingApprovals();
 
-            if (NetworkManager.NetworkConfig.NetworkTransport.UseTransportPolling())
-            {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_TransportPollMarker.Begin();
+            s_TransportPollMarker.Begin();
 #endif
-                NetworkEvent networkEvent;
-                do
-                {
-                    networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong transportClientId, out ArraySegment<byte> payload, out float receiveTime);
-                    HandleNetworkEvent(networkEvent, transportClientId, payload, receiveTime);
-                    // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
+            NetworkEvent networkEvent;
+            do
+            {
+                networkEvent = NetworkManager.NetworkConfig.NetworkTransport.PollEvent(out ulong transportClientId, out ArraySegment<byte> payload, out float receiveTime);
+                HandleNetworkEvent(networkEvent, transportClientId, payload, receiveTime);
+                // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+            } while (NetworkManager.IsListening && networkEvent != NetworkEvent.Nothing);
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_TransportPollMarker.End();
+            s_TransportPollMarker.End();
 #endif
-            }
         }
 
         /// <summary>
@@ -984,11 +981,7 @@ namespace Unity.Netcode
 
             NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.NetworkMetricsManager.NetworkMetrics;
 
-            if (!NetworkManager.NetworkConfig.NetworkTransport.UseTransportPolling())
-            {
-                NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
-            }
-
+            NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
             NetworkManager.NetworkConfig.NetworkTransport.Initialize(networkManager);
         }
 

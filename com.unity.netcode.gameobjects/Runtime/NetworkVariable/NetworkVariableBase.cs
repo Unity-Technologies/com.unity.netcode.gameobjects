@@ -94,7 +94,8 @@ namespace Unity.Netcode
                                      "Are you modifying a NetworkVariable before the NetworkObject is spawned?");
                     return;
                 }
-                m_NetworkBehaviour.NetworkManager.BehaviourUpdater?.AddForUpdate(m_NetworkBehaviour.NetworkObject);
+
+                m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
             }
         }
 

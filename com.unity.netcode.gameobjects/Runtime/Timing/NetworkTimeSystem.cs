@@ -97,8 +97,7 @@ namespace Unity.Netcode
         /// <param name="serverBufferSec">The amount of the time in seconds the client should buffer incoming messages from the server.</param>
         /// <param name="hardResetThresholdSec">The threshold, in seconds, used to force a hard catchup of network time.</param>
         /// <param name="adjustmentRatio">The ratio at which the NetworkTimeSystem speeds up or slows down time.</param>
-        public NetworkTimeSystem(double localBufferSec, double serverBufferSec = k_DefaultBufferSizeSec,
-            double hardResetThresholdSec = k_HardResetThresholdSeconds, double adjustmentRatio = k_DefaultAdjustmentRatio)
+        public NetworkTimeSystem(double localBufferSec, double serverBufferSec = k_DefaultBufferSizeSec, double hardResetThresholdSec = k_HardResetThresholdSeconds, double adjustmentRatio = k_DefaultAdjustmentRatio)
         {
             LocalBufferSec = localBufferSec;
             ServerBufferSec = serverBufferSec;
@@ -149,6 +148,7 @@ namespace Unity.Netcode
                 {
                     m_NetworkTickSystem.Reset(LocalTime, ServerTime);
                 }
+
                 m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
 
                 if (!m_ConnectionManager.LocalClient.IsServer)
@@ -200,6 +200,7 @@ namespace Unity.Netcode
             {
                 m_NetworkTickSystem.Tick -= OnTickSyncTime;
             }
+
             m_NetworkTimeSystemUpdater?.Shutdown();
             m_NetworkTimeSystemUpdater = null;
         }
@@ -275,6 +276,7 @@ namespace Unity.Netcode
         internal class NetworkTimeSystemUpdater : INetworkUpdateSystem
         {
             private NetworkTimeSystem m_NetworkTimeSystem;
+
             public void NetworkUpdate(NetworkUpdateStage updateStage)
             {
                 m_NetworkTimeSystem.NetworkUpdate(updateStage);
@@ -291,6 +293,5 @@ namespace Unity.Netcode
                 this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
             }
         }
-
     }
 }

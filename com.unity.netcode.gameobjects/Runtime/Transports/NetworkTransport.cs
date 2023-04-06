@@ -31,29 +31,6 @@ namespace Unity.Netcode
         public delegate void TransportEventDelegate(NetworkEvent eventType, ulong clientId, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
-        /// Override this to disable polling for transport events.
-        /// The default return value is true.
-        /// </summary>
-        /// <remarks>
-        /// If your custom transport uses subscriptions to OnTransportEvent
-        /// to handle NetworkEvents, then you can override this and return
-        /// false.
-        /// </remarks>
-        protected virtual bool OnUseTransportPolling()
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Used to determine if the transport is poll or event driven
-        /// </summary>
-        /// <returns>true (poll driven) / false (event driven)</returns>
-        internal bool UseTransportPolling()
-        {
-            return OnUseTransportPolling();
-        }
-
-        /// <summary>
         /// Occurs when the transport has a new transport network event.
         /// Can be used to make an event based transport instead of a poll based.
         /// Invocation has to occur on the Unity thread in the Update loop.
