@@ -19,7 +19,7 @@ namespace Unity.Netcode
     /// - MessagingSystem updates
     /// </summary>
     // TODO 2023-Q2: Discuss what kind of public API exposure we want for this
-    public class NetworkConnectionManager
+    public sealed class NetworkConnectionManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
