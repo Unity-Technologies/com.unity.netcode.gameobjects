@@ -1432,6 +1432,10 @@ namespace Unity.Netcode.Transports.UTP
         private string m_ClientCaCertificate;
 
         /// <summary>Set the server parameters for encryption.</summary>
+        /// <remarks>
+        /// The public certificate and private key are expected to be in the PEM format, including
+        /// the begin/end markers like <c>-----BEGIN CERTIFICATE-----</c>.
+        /// </remarks>
         /// <param name="serverCertificate">Public certificate for the server (PEM format).</param>
         /// <param name="serverPrivateKey">Private key for the server (PEM format).</param>
         public void SetServerSecrets(string serverCertificate, string serverPrivateKey)
@@ -1442,9 +1446,15 @@ namespace Unity.Netcode.Transports.UTP
 
         /// <summary>Set the client parameters for encryption.</summary>
         /// <remarks>
+        /// <para>
         /// If the CA certificate is not provided, validation will be done against the OS/browser
         /// certificate store. This is what you'd want if using certificates from a known provider.
         /// For self-signed certificates, the CA certificate needs to be provided.
+        /// </para>
+        /// <para>
+        /// The CA certificate (if provided) is expected to be in the PEM format, including the
+        /// begin/end markers like <c>-----BEGIN CERTIFICATE-----</c>.
+        /// </para>
         /// </remarks>
         /// <param name="serverCommonName">Common name of the server (typically hostname).</param>
         /// <param name="caCertificate">CA certificate used to validate the server's authenticity.</param>
