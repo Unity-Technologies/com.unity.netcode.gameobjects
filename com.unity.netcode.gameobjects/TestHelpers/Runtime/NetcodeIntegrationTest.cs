@@ -1578,12 +1578,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                     foreach (var behaviour in Object.FindObjectsOfType<NetworkBehaviour>())
 #endif
                     {
-                        var method = behaviour.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (method == null)
-                        {
-                            method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
-                        }
-
+                        var method = behaviour.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
                         method?.Invoke(behaviour, new object[] { });
                     }
                 }
