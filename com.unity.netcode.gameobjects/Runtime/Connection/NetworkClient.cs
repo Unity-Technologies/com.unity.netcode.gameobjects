@@ -50,18 +50,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The list of NetworkObject's owned by this client instance
         /// </summary>
-        public List<NetworkObject> OwnedObjects
-        {
-            get
-            {
-                if (IsConnected)
-                {
-                    return SpawnManager.GetClientOwnedObjects(ClientId);
-                }
-
-                return new List<NetworkObject>();
-            }
-        }
+        public List<NetworkObject> OwnedObjects => IsConnected ? SpawnManager.GetClientOwnedObjects(ClientId) : new List<NetworkObject>();
 
         internal NetworkSpawnManager SpawnManager { get; private set; }
 
@@ -76,7 +65,11 @@ namespace Unity.Netcode
                 IsConnected = false;
                 IsApproved = false;
             }
-            SpawnManager = networkManager?.SpawnManager;
+
+            if (networkManager != null)
+            {
+                SpawnManager = networkManager.SpawnManager;
+            }
         }
 
         internal void AssignPlayerObject(ref NetworkObject networkObject)
