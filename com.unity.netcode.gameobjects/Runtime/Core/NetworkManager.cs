@@ -44,11 +44,6 @@ namespace Unity.Netcode
         public const ulong ServerClientId = 0;
 
         /// <summary>
-        /// Gets the networkId of the server
-        /// </summary>
-        private ulong m_ServerTransportId => ConnectionManager.ServerTransportId;
-
-        /// <summary>
         /// Returns ServerClientId if IsServer or LocalClientId if not
         /// </summary>
         public ulong LocalClientId
