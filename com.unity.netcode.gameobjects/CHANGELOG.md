@@ -53,7 +53,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a client would load duplicate scenes of already preloaded scenes during the initial client synchronization and `NetworkSceneManager.ClientSynchronizationMode` was set to `LoadSceneMode.Additive`. (#2383)
 - Fixed float NetworkVariables not being rendered properly in the inspector of NetworkObjects. (#2441)
 
-## [1.3.0] - 2023-03-20
+## [1.3.1] - 2023-03-27
 
 ### Added
 
