@@ -35,7 +35,6 @@ namespace Unity.Netcode
         // (the issue with interfaces...implementations have to be public!)
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-
         }
 
         /// <summary>
@@ -48,60 +47,24 @@ namespace Unity.Netcode
         /// </summary>
         public ulong LocalClientId
         {
-            get
-            {
-                return ConnectionManager.LocalClient.ClientId;
-            }
-            internal set
-            {
-                ConnectionManager.LocalClient.ClientId = value;
-            }
+            get => ConnectionManager.LocalClient.ClientId;
+            internal set => ConnectionManager.LocalClient.ClientId = value;
         }
 
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only accessible on the server.
         /// </summary>
-        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClients;
-            }
-        }
+        public IReadOnlyDictionary<ulong, NetworkClient> ConnectedClients => IsServer ? ConnectionManager.ConnectedClients : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClients)} should only be accessed on server.");
 
         /// <summary>
         /// Gets a list of connected clients. This is only accessible on the server.
         /// </summary>
-        public IReadOnlyList<NetworkClient> ConnectedClientsList
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClientsList;
-            }
-        }
+        public IReadOnlyList<NetworkClient> ConnectedClientsList => IsServer ? ConnectionManager.ConnectedClientsList : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientsList)} should only be accessed on server.");
 
         /// <summary>
         /// Gets a list of just the IDs of all connected clients. This is only accessible on the server.
         /// </summary>
-        public IReadOnlyList<ulong> ConnectedClientsIds
-        {
-            get
-            {
-                if (IsServer == false)
-                {
-                    throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
-                }
-                return ConnectionManager.ConnectedClientIds;
-            }
-        }
+        public IReadOnlyList<ulong> ConnectedClientsIds => IsServer ? ConnectionManager.ConnectedClientIds : throw new NotServerException($"{nameof(ConnectionManager.ConnectedClientIds)} should only be accessed on server.");
 
         /// <summary>
         /// Gets the local <see cref="NetworkClient"/> for this client.
@@ -142,14 +105,8 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsListening
         {
-            get
-            {
-                return ConnectionManager.IsListening;
-            }
-            internal set
-            {
-                ConnectionManager.IsListening = value;
-            }
+            get => ConnectionManager.IsListening;
+            internal set => ConnectionManager.IsListening = value;
         }
 
         /// <summary>
@@ -160,14 +117,8 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsConnectedClient
         {
-            get
-            {
-                return ConnectionManager.LocalClient.IsConnected;
-            }
-            internal set
-            {
-                ConnectionManager.LocalClient.IsConnected = value;
-            }
+            get => ConnectionManager.LocalClient.IsConnected;
+            internal set => ConnectionManager.LocalClient.IsConnected = value;
         }
 
         /// <summary>
@@ -181,14 +132,8 @@ namespace Unity.Netcode
         /// </remarks>
         public bool IsApproved
         {
-            get
-            {
-                return ConnectionManager.LocalClient.IsApproved;
-            }
-            internal set
-            {
-                ConnectionManager.LocalClient.IsApproved = value;
-            }
+            get => ConnectionManager.LocalClient.IsApproved;
+            internal set => ConnectionManager.LocalClient.IsApproved = value;
         }
 
         /// <summary>
@@ -201,15 +146,8 @@ namespace Unity.Netcode
         /// </remarks>
         public event Action OnTransportFailure
         {
-            add
-            {
-                ConnectionManager.OnTransportFailure += value;
-            }
-
-            remove
-            {
-                ConnectionManager.OnTransportFailure -= value;
-            }
+            add => ConnectionManager.OnTransportFailure += value;
+            remove => ConnectionManager.OnTransportFailure -= value;
         }
 
         /// <summary>
@@ -224,10 +162,8 @@ namespace Unity.Netcode
                 {
                     throw new InvalidOperationException($"Only one {nameof(ConnectionApprovalCallback)} can be registered at a time.");
                 }
-                else
-                {
-                    ConnectionManager.ConnectionApprovalCallback = value;
-                }
+
+                ConnectionManager.ConnectionApprovalCallback = value;
             }
         }
 
@@ -236,15 +172,8 @@ namespace Unity.Netcode
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback
         {
-            add
-            {
-                ConnectionManager.OnClientConnectedCallback += value;
-            }
-
-            remove
-            {
-                ConnectionManager.OnClientConnectedCallback -= value;
-            }
+            add => ConnectionManager.OnClientConnectedCallback += value;
+            remove => ConnectionManager.OnClientConnectedCallback -= value;
         }
 
         /// <summary>
@@ -252,15 +181,8 @@ namespace Unity.Netcode
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback
         {
-            add
-            {
-                ConnectionManager.OnClientDisconnectCallback += value;
-            }
-
-            remove
-            {
-                ConnectionManager.OnClientDisconnectCallback -= value;
-            }
+            add => ConnectionManager.OnClientDisconnectCallback += value;
+            remove => ConnectionManager.OnClientDisconnectCallback -= value;
         }
 
         /// <summary>
@@ -277,22 +199,27 @@ namespace Unity.Netcode
             /// Whether or not the client was approved
             /// </summary>
             public bool Approved;
+
             /// <summary>
             /// If true, a player object will be created. Otherwise the client will have no object.
             /// </summary>
             public bool CreatePlayerObject;
+
             /// <summary>
             /// The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.
             /// </summary>
             public uint? PlayerPrefabHash;
+
             /// <summary>
             /// The position to spawn the client at. If null, the prefab position is used.
             /// </summary>
             public Vector3? Position;
+
             /// <summary>
             /// The rotation to spawn the client with. If null, the prefab position is used.
             /// </summary>
             public Quaternion? Rotation;
+
             /// <summary>
             /// If the Approval decision cannot be made immediately, the client code can set Pending to true, keep a reference to the ConnectionApprovalResponse object and write to it later. Client code must exercise care to setting all the members to the value it wants before marking Pending to false, to indicate completion. If the field is set as Pending = true, we'll monitor the object until it gets set to not pending anymore and use the parameters then.
             /// </summary>
@@ -314,6 +241,7 @@ namespace Unity.Netcode
             /// The connection data payload
             /// </summary>
             public byte[] Payload;
+
             /// <summary>
             /// The Network Id of the client we are about to handle
             /// </summary>
@@ -323,7 +251,8 @@ namespace Unity.Netcode
         /// <summary>
         /// Can be used to determine if the <see cref="NetworkManager"/> is currently shutting itself down
         /// </summary>
-        public bool ShutdownInProgress { get { return m_ShuttingDown; } }
+        public bool ShutdownInProgress => m_ShuttingDown;
+
         private bool m_ShuttingDown;
 
         /// <summary>
@@ -358,6 +287,7 @@ namespace Unity.Netcode
         /// The singleton instance of the NetworkManager
         /// </summary>
         public static NetworkManager Singleton { get; private set; }
+
         internal static event Action OnSingletonReady;
 
         /// <summary>
@@ -399,6 +329,7 @@ namespace Unity.Netcode
                 return m_PrefabHandler;
             }
         }
+
         private NetworkPrefabHandler m_PrefabHandler;
 
         /// <summary>
@@ -442,6 +373,7 @@ namespace Unity.Netcode
 
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
+
         /// <summary>
         /// Interface for NetworkManagerHelper
         /// </summary>
@@ -624,6 +556,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogError("No transport has been selected!");
                 }
+
                 return;
             }
 
@@ -644,15 +577,7 @@ namespace Unity.Netcode
             ConnectionManager.Initialize(this);
 
             // The remaining systems can then be initialized
-            if (server)
-            {
-                NetworkTimeSystem = NetworkTimeSystem.ServerTimeSystem();
-            }
-            else
-            {
-                NetworkTimeSystem = new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
-            }
-
+            NetworkTimeSystem = server ? NetworkTimeSystem.ServerTimeSystem() : new NetworkTimeSystem(1.0 / NetworkConfig.TickRate);
             NetworkTickSystem = NetworkTimeSystem.Initialize(this);
 
             // Create spawn manager instance
@@ -702,8 +627,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning(
-                            "No ConnectionApproval callback defined. Connection approval will timeout");
+                        NetworkLog.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
                     }
                 }
             }
@@ -714,8 +638,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogWarning(
-                            "A ConnectionApproval callback is defined but ConnectionApproval is disabled. In order to use ConnectionApproval it has to be explicitly enabled ");
+                        NetworkLog.LogWarning("A ConnectionApproval callback is defined but ConnectionApproval is disabled. In order to use ConnectionApproval it has to be explicitly enabled ");
                     }
                 }
             }
@@ -756,10 +679,8 @@ namespace Unity.Netcode
                     ConnectionManager.LocalClient.IsApproved = true;
                     return true;
                 }
-                else
-                {
-                    ConnectionManager.TransportFailureEventHandler(true);
-                }
+
+                ConnectionManager.TransportFailureEventHandler(true);
             }
             catch (Exception)
             {
@@ -829,6 +750,7 @@ namespace Unity.Netcode
             {
                 return false;
             }
+
             ConnectionManager.LocalClient.SetRole(true, true, this);
 
             Initialize(true);
@@ -877,6 +799,7 @@ namespace Unity.Netcode
                         NetworkLog.LogWarning("You cannot decline the host connection. The connection was automatically approved.");
                     }
                 }
+
                 response.Approved = true;
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response);
             }
@@ -889,6 +812,7 @@ namespace Unity.Netcode
                 };
                 ConnectionManager.HandleConnectionApproval(ServerClientId, response);
             }
+
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             OnServerStarted?.Invoke();
@@ -988,6 +912,7 @@ namespace Unity.Netcode
                 // client or not. (why we pass in "IsServer")
                 OnClientStopped?.Invoke(ConnectionManager.LocalClient.IsServer);
             }
+
             if (ConnectionManager.LocalClient.IsServer)
             {
                 // If we were a server, we want to know if we were a host
