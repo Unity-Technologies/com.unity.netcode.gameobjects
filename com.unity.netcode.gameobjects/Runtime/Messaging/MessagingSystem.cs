@@ -58,6 +58,8 @@ namespace Unity.Netcode
         private Dictionary<Type, uint> m_MessageTypes = new Dictionary<Type, uint>();
         private Dictionary<ulong, NativeList<SendQueueItem>> m_SendQueues = new Dictionary<ulong, NativeList<SendQueueItem>>();
 
+        private HashSet<ulong> m_DisconnectedClients = new HashSet<ulong>();
+
         // This is m_PerClientMessageVersion[clientId][messageType] = version
         private Dictionary<ulong, Dictionary<Type, int>> m_PerClientMessageVersions = new Dictionary<ulong, Dictionary<Type, int>>();
         private Dictionary<uint, Type> m_MessagesByHash = new Dictionary<uint, Type>();
@@ -155,8 +157,9 @@ namespace Unity.Netcode
             // from the queue.
             foreach (var kvp in m_SendQueues)
             {
-                CleanupDisconnectedClient(kvp.Key);
+                ClientDisconnected(kvp.Key);
             }
+            CleanupDisconnectedClients();
 
             for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
             {
@@ -465,16 +468,16 @@ namespace Unity.Netcode
 
         internal void ClientDisconnected(ulong clientId)
         {
-            if (!m_SendQueues.ContainsKey(clientId))
-            {
-                return;
-            }
-            CleanupDisconnectedClient(clientId);
-            m_SendQueues.Remove(clientId);
+            m_DisconnectedClients.Add(clientId);
         }
 
         private void CleanupDisconnectedClient(ulong clientId)
         {
+            if (!m_SendQueues.ContainsKey(clientId))
+            {
+                return;
+            }
+
             var queue = m_SendQueues[clientId];
             for (var i = 0; i < queue.Length; ++i)
             {
@@ -482,23 +485,19 @@ namespace Unity.Netcode
             }
 
             queue.Dispose();
+            m_SendQueues.Remove(clientId);
+
+            m_PerClientMessageVersions.Remove(clientId);
         }
 
         internal void CleanupDisconnectedClients()
         {
-            var removeList = new NativeList<ulong>(Allocator.Temp);
-            foreach (var clientId in m_PerClientMessageVersions.Keys)
+            foreach (var clientId in m_DisconnectedClients)
             {
-                if (!m_SendQueues.ContainsKey(clientId))
-                {
-                    removeList.Add(clientId);
-                }
+                CleanupDisconnectedClient(clientId);
             }
 
-            foreach (var clientId in removeList)
-            {
-                m_PerClientMessageVersions.Remove(clientId);
-            }
+            m_DisconnectedClients.Clear();
         }
 
         public static int CreateMessageAndGetVersion<T>() where T : INetworkMessage, new()
@@ -637,6 +636,10 @@ namespace Unity.Netcode
 
             for (var i = 0; i < clientIds.Count; ++i)
             {
+                if (m_DisconnectedClients.Contains(clientIds[i]))
+                {
+                    continue;
+                }
                 var messageVersion = 0;
                 // Special case because this is the message that carries the version info - thus the version info isn't
                 // populated yet when we get this. The first part of this message always has to be the version data
@@ -788,6 +791,14 @@ namespace Unity.Netcode
                 for (var i = 0; i < sendQueueItem.Length; ++i)
                 {
                     ref var queueItem = ref sendQueueItem.ElementAt(i);
+                    // this is checked at every iteration because
+                    // 1) each writer needs to be disposed, so we have to do the full loop regardless, and
+                    // 2) the call to m_MessageSender.Send() may result in calling ClientDisconnected(), so the result of this check may change partway through iteration
+                    if (m_DisconnectedClients.Contains(clientId))
+                    {
+                        queueItem.Writer.Dispose();
+                        continue;
+                    }
                     if (queueItem.BatchHeader.BatchCount == 0)
                     {
                         queueItem.Writer.Dispose();
