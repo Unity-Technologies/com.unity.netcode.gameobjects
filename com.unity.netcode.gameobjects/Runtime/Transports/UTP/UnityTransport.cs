@@ -536,6 +536,13 @@ namespace Unity.Netcode.Transports.UTP
                 serverEndpoint = ConnectionData.ServerEndPoint;
             }
 
+            // Verify the endpoint is valid before proceeding
+            if (serverEndpoint.Family == NetworkFamily.Invalid)
+            {
+                Debug.LogError($"Target server network address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
+                return false;
+            }
+
             InitDriver();
 
             var bindEndpoint = serverEndpoint.Family == NetworkFamily.Ipv6 ? NetworkEndpoint.AnyIpv6 : NetworkEndpoint.AnyIpv4;
@@ -554,6 +561,13 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ServerBindAndListen(NetworkEndpoint endPoint)
         {
+            // Verify the endpoint is valid before proceeding
+            if (endPoint.Family == NetworkFamily.Invalid)
+            {
+                Debug.LogError($"Network listen address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
+                return false;
+            }
+
             InitDriver();
 
             int result = m_Driver.Bind(endPoint);
