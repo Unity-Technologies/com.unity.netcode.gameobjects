@@ -167,10 +167,6 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_SyncTime.Begin();
 #endif
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
-            {
-                NetworkLog.LogInfo($"[{m_NetworkTickSystem.ServerTime.TimeAsFloat}][Tick-{m_NetworkTickSystem.ServerTime.Tick}] Syncing Time To Clients");
-            }
 
             // Check if we need to send a time synchronization message, and if so send it
             if (m_ConnectionManager.LocalClient.IsServer && m_NetworkTickSystem.ServerTime.Tick % m_TimeSyncFrequencyTicks == 0)
