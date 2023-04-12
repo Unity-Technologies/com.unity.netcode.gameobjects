@@ -173,15 +173,15 @@ namespace Unity.Netcode.EditorTests
 
         private class TestMessageProvider_v0 : IMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(VersionedTestMessage_v0),
-                        Handler = MessagingSystem.ReceiveMessage<VersionedTestMessage_v0>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<VersionedTestMessage_v0>
+                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessage_v0>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessage_v0>
                     }
                 };
             }
@@ -189,15 +189,15 @@ namespace Unity.Netcode.EditorTests
 
         private class TestMessageProvider_v1 : IMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(VersionedTestMessage_v1),
-                        Handler = MessagingSystem.ReceiveMessage<VersionedTestMessage_v1>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<VersionedTestMessage_v1>
+                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessage_v1>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessage_v1>
                     }
                 };
             }
@@ -205,15 +205,15 @@ namespace Unity.Netcode.EditorTests
 
         private class TestMessageProvider_v2 : IMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(VersionedTestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<VersionedTestMessage>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<VersionedTestMessage>
+                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessage>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessage>
                     }
                 };
             }
@@ -229,12 +229,12 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private MessagingSystem m_MessagingSystem_v0;
-        private MessagingSystem m_MessagingSystem_v1;
-        private MessagingSystem m_MessagingSystem_v2;
+        private NetworkMessageManager m_MessagingSystem_v0;
+        private NetworkMessageManager m_MessagingSystem_v1;
+        private NetworkMessageManager m_MessagingSystem_v2;
         private TestMessageSender m_MessageSender;
 
-        private void CreateFakeClients(MessagingSystem system, uint hash)
+        private void CreateFakeClients(NetworkMessageManager system, uint hash)
         {
             // Create three fake clients for each messaging system
             // client 0 has version 0, client 1 has version 1, and client 2 has version 2
@@ -267,9 +267,9 @@ namespace Unity.Netcode.EditorTests
             VersionedTestMessage.DeserializedValues.Clear();
             m_MessageSender = new TestMessageSender();
 
-            m_MessagingSystem_v0 = new MessagingSystem(m_MessageSender, this, new TestMessageProvider_v0());
-            m_MessagingSystem_v1 = new MessagingSystem(m_MessageSender, this, new TestMessageProvider_v1());
-            m_MessagingSystem_v2 = new MessagingSystem(m_MessageSender, this, new TestMessageProvider_v2());
+            m_MessagingSystem_v0 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v0());
+            m_MessagingSystem_v1 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v1());
+            m_MessagingSystem_v2 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v2());
 
             CreateFakeClients(m_MessagingSystem_v0, XXHash.Hash32(typeof(VersionedTestMessage_v0).FullName));
             CreateFakeClients(m_MessagingSystem_v1, XXHash.Hash32(typeof(VersionedTestMessage_v1).FullName));
@@ -355,7 +355,7 @@ namespace Unity.Netcode.EditorTests
 
         private void SendMessageWithVersions<T>(T message, int fromVersion, int toVersion) where T : unmanaged, INetworkMessage
         {
-            MessagingSystem sendSystem;
+            NetworkMessageManager sendSystem;
             switch (fromVersion)
             {
                 case 0: sendSystem = m_MessagingSystem_v0; break;
@@ -366,7 +366,7 @@ namespace Unity.Netcode.EditorTests
             sendSystem.ProcessSendQueues();
             CheckPostSendExpectations(fromVersion, toVersion);
 
-            MessagingSystem receiveSystem;
+            NetworkMessageManager receiveSystem;
             switch (toVersion)
             {
                 case 0: receiveSystem = m_MessagingSystem_v0; break;

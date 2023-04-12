@@ -113,8 +113,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_Type_GetTypeFromHandle_MethodRef;
         private MethodReference m_List_Add_MethodRef;
 
-        private const string k_ReceiveMessageName = nameof(MessagingSystem.ReceiveMessage);
-        private const string k_CreateMessageAndGetVersionName = nameof(MessagingSystem.CreateMessageAndGetVersion);
+        private const string k_ReceiveMessageName = nameof(NetworkMessageManager.ReceiveMessage);
+        private const string k_CreateMessageAndGetVersionName = nameof(NetworkMessageManager.CreateMessageAndGetVersion);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
@@ -136,19 +136,19 @@ namespace Unity.Netcode.Editor.CodeGen
             TypeDefinition messagingSystemTypeDef = null;
             foreach (var netcodeTypeDef in m_NetcodeModule.GetAllTypes())
             {
-                if (messageHandlerTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.MessageHandler))
+                if (messageHandlerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkMessageManager.MessageHandler))
                 {
                     messageHandlerTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (versionGetterTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.VersionGetter))
+                if (versionGetterTypeDef == null && netcodeTypeDef.Name == nameof(NetworkMessageManager.VersionGetter))
                 {
                     versionGetterTypeDef = netcodeTypeDef;
                     continue;
                 }
 
-                if (messageWithHandlerTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem.MessageWithHandler))
+                if (messageWithHandlerTypeDef == null && netcodeTypeDef.Name == nameof(NetworkMessageManager.MessageWithHandler))
                 {
                     messageWithHandlerTypeDef = netcodeTypeDef;
                     continue;
@@ -160,7 +160,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
 
-                if (messagingSystemTypeDef == null && netcodeTypeDef.Name == nameof(MessagingSystem))
+                if (messagingSystemTypeDef == null && netcodeTypeDef.Name == nameof(NetworkMessageManager))
                 {
                     messagingSystemTypeDef = netcodeTypeDef;
                     continue;
@@ -175,13 +175,13 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 switch (fieldDef.Name)
                 {
-                    case nameof(MessagingSystem.MessageWithHandler.MessageType):
+                    case nameof(NetworkMessageManager.MessageWithHandler.MessageType):
                         m_MessagingSystem_MessageWithHandler_MessageType_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
-                    case nameof(MessagingSystem.MessageWithHandler.Handler):
+                    case nameof(NetworkMessageManager.MessageWithHandler.Handler):
                         m_MessagingSystem_MessageWithHandler_Handler_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
-                    case nameof(MessagingSystem.MessageWithHandler.GetVersion):
+                    case nameof(NetworkMessageManager.MessageWithHandler.GetVersion):
                         m_MessagingSystem_MessageWithHandler_GetVersion_FieldRef = moduleDefinition.ImportReference(fieldDef);
                         break;
                 }

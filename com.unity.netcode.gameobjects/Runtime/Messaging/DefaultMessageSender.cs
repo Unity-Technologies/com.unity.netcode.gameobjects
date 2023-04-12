@@ -3,7 +3,7 @@ namespace Unity.Netcode
 {
     /// <summary>
     /// Default NetworkTransport Message Sender
-    /// <see cref="MessagingSystem"/>
+    /// <see cref="NetworkMessageManager"/>
     /// </summary>
     internal class DefaultMessageSender : IMessageSender
     {

@@ -25,7 +25,7 @@ namespace Unity.Netcode.EditorTests
 
         private class DisconnectOnSendMessageSender : IMessageSender
         {
-            public MessagingSystem MessagingSystem;
+            public NetworkMessageManager MessagingSystem;
 
             public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
@@ -35,16 +35,16 @@ namespace Unity.Netcode.EditorTests
         private class TestMessageProvider : IMessageProvider
         {
             // Keep track of what we sent
-            private List<MessagingSystem.MessageWithHandler> m_MessageList = new List<MessagingSystem.MessageWithHandler>{
-                new MessagingSystem.MessageWithHandler
+            private List<NetworkMessageManager.MessageWithHandler> m_MessageList = new List<NetworkMessageManager.MessageWithHandler>{
+                new NetworkMessageManager.MessageWithHandler
                 {
                     MessageType = typeof(TestMessage),
-                    Handler = MessagingSystem.ReceiveMessage<TestMessage>,
-                    GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                    Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
+                    GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                 }
             };
 
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
                 return m_MessageList;
             }
@@ -52,7 +52,7 @@ namespace Unity.Netcode.EditorTests
 
         private TestMessageProvider m_TestMessageProvider;
         private DisconnectOnSendMessageSender m_MessageSender;
-        private MessagingSystem m_MessagingSystem;
+        private NetworkMessageManager m_MessagingSystem;
         private ulong[] m_Clients = { 0 };
 
         [SetUp]
@@ -60,7 +60,7 @@ namespace Unity.Netcode.EditorTests
         {
             m_MessageSender = new DisconnectOnSendMessageSender();
             m_TestMessageProvider = new TestMessageProvider();
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this, m_TestMessageProvider);
+            m_MessagingSystem = new NetworkMessageManager(m_MessageSender, this, m_TestMessageProvider);
             m_MessageSender.MessagingSystem = m_MessagingSystem;
             m_MessagingSystem.ClientConnected(0);
             m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);

@@ -11,17 +11,27 @@ namespace Unity.Netcode
 {
     internal class HandlerNotRegisteredException : SystemException
     {
-        public HandlerNotRegisteredException() { }
-        public HandlerNotRegisteredException(string issue) : base(issue) { }
+        public HandlerNotRegisteredException()
+        {
+        }
+
+        public HandlerNotRegisteredException(string issue) : base(issue)
+        {
+        }
     }
 
     internal class InvalidMessageStructureException : SystemException
     {
-        public InvalidMessageStructureException() { }
-        public InvalidMessageStructureException(string issue) : base(issue) { }
+        public InvalidMessageStructureException()
+        {
+        }
+
+        public InvalidMessageStructureException(string issue) : base(issue)
+        {
+        }
     }
 
-    internal class MessagingSystem : IDisposable
+    internal class NetworkMessageManager : IDisposable
     {
         private struct ReceiveQueueItem
         {
@@ -46,7 +56,8 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, MessagingSystem system);
+        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager system);
+
         internal delegate int VersionGetter();
 
         private NativeList<ReceiveQueueItem> m_IncomingMessageQueue = new NativeList<ReceiveQueueItem>(16, Allocator.Persistent);
@@ -82,8 +93,8 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public const int NON_FRAGMENTED_MESSAGE_MAX_SIZE = 1300;
-        public const int FRAGMENTED_MESSAGE_MAX_SIZE = int.MaxValue;
+        public const int NonFragmentedMessageMaxSize = 1300;
+        public const int FragmentedMessageMaxSize = int.MaxValue;
 
         internal struct MessageWithHandler
         {
@@ -96,7 +107,7 @@ namespace Unity.Netcode
         {
             var prioritizedTypes = new List<MessageWithHandler>();
 
-            // first pass puts the priority message in the first indices
+            // First pass puts the priority message in the first indices
             // Those are the messages that must be delivered in order to allow re-ordering the others later
             foreach (var t in allowedTypes)
             {
@@ -119,7 +130,7 @@ namespace Unity.Netcode
             return prioritizedTypes;
         }
 
-        public MessagingSystem(IMessageSender messageSender, object owner, IMessageProvider provider = null)
+        public NetworkMessageManager(IMessageSender messageSender, object owner, IMessageProvider provider = null)
         {
             try
             {
@@ -130,6 +141,7 @@ namespace Unity.Netcode
                 {
                     provider = new ILPPMessageProvider();
                 }
+
                 var allowedTypes = provider.GetMessages();
 
                 allowedTypes.Sort((a, b) => string.CompareOrdinal(a.MessageType.FullName, b.MessageType.FullName));
@@ -146,19 +158,19 @@ namespace Unity.Netcode
             }
         }
 
-        public unsafe void Dispose()
+        public void Dispose()
         {
             if (m_Disposed)
             {
                 return;
             }
 
-            // Can't just iterate SendQueues or SendQueues.Keys because ClientDisconnected removes
-            // from the queue.
+            // Can't just iterate SendQueues or SendQueues.Keys because ClientDisconnected removes from the queue.
             foreach (var kvp in m_SendQueues)
             {
                 ClientDisconnected(kvp.Key);
             }
+
             CleanupDisconnectedClients();
 
             for (var queueIndex = 0; queueIndex < m_IncomingMessageQueue.Length; ++queueIndex)
@@ -172,7 +184,7 @@ namespace Unity.Netcode
             m_Disposed = true;
         }
 
-        ~MessagingSystem()
+        ~NetworkMessageManager()
         {
             Dispose();
         }
@@ -189,7 +201,7 @@ namespace Unity.Netcode
 
         private void RegisterMessageType(MessageWithHandler messageWithHandler)
         {
-            // if we are out of space, perform amortized linear growth
+            // If we are out of space, perform amortized linear growth
             if (m_HighMessageType == m_MessageHandlers.Length)
             {
                 Array.Resize(ref m_MessageHandlers, 2 * m_MessageHandlers.Length);
@@ -238,8 +250,7 @@ namespace Unity.Netcode
             {
                 fixed (byte* nativeData = data.Array)
                 {
-                    var batchReader =
-                        new FastBufferReader(nativeData + data.Offset, Allocator.None, data.Count);
+                    var batchReader = new FastBufferReader(nativeData + data.Offset, Allocator.None, data.Count);
                     if (!batchReader.TryBeginRead(sizeof(BatchHeader)))
                     {
                         NetworkLog.LogError("Received a packet too small to contain a BatchHeader. Ignoring it.");
@@ -275,7 +286,6 @@ namespace Unity.Netcode
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchCount; ++messageIdx)
                     {
-
                         var messageHeader = new MessageHeader();
                         var position = batchReader.Position;
                         try
@@ -296,19 +306,20 @@ namespace Unity.Netcode
                             NetworkLog.LogError("Received a message that claimed a size larger than the packet, ending early!");
                             return;
                         }
+
                         m_IncomingMessageQueue.Add(new ReceiveQueueItem
                         {
                             Header = messageHeader,
                             SenderId = clientId,
                             Timestamp = receiveTime,
                             // Copy the data for this message into a new FastBufferReader that owns that memory.
-                            // We can't guarantee the memory in the ArraySegment stays valid because we don't own it,
-                            // so we must move it to memory we do own.
+                            // We can't guarantee the memory in the ArraySegment stays valid because we don't own it, so we must move it to memory we do own.
                             Reader = new FastBufferReader(batchReader.GetUnsafePtrAtCurrentPosition(), Allocator.TempJob, (int)messageHeader.MessageSize),
                             MessageHeaderSerializedSize = receivedHeaderSize,
                         });
                         batchReader.Seek(batchReader.Position + (int)messageHeader.MessageSize);
                     }
+
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
                         m_Hooks[hookIdx].OnAfterReceiveBatch(clientId, batchHeader.BatchCount, batchReader.Length);
@@ -336,6 +347,7 @@ namespace Unity.Netcode
             {
                 return null;
             }
+
             return m_MessagesByHash[messageHash];
         }
 
@@ -345,6 +357,7 @@ namespace Unity.Netcode
             {
                 return;
             }
+
             var messageType = m_MessagesByHash[messageHash];
 
             if (!m_PerClientMessageVersions.ContainsKey(clientId))
@@ -369,6 +382,7 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
+
                 var messageType = m_MessagesByHash[messagesInIdOrder[i]];
                 var oldId = oldTypes[messageType];
                 var handler = oldHandlers[oldId];
@@ -388,6 +402,7 @@ namespace Unity.Netcode
                     Debug.LogWarning($"Received a message with invalid message type value {header.MessageType}");
                     return;
                 }
+
                 var context = new NetworkContext
                 {
                     SystemOwner = m_Owner,
@@ -410,10 +425,9 @@ namespace Unity.Netcode
                     m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
                 }
 
-                // This will also log an exception is if the server knows about a message type the client doesn't know
-                // about. In this case the handler will be null. It is still an issue the user must deal with: If the
-                // two connecting builds know about different messages, the server should not send a message to a client
-                // that doesn't know about it
+                // This will also log an exception is if the server knows about a message type the client doesn't know about.
+                // In this case the handler will be null. It is still an issue the user must deal with:
+                // If the two connecting builds know about different messages, the server should not send a message to a client that doesn't know about it
                 if (handler == null)
                 {
                     Debug.LogException(new HandlerNotRegisteredException(header.MessageType.ToString()));
@@ -422,9 +436,7 @@ namespace Unity.Netcode
                 {
                     // No user-land message handler exceptions should escape the receive loop.
                     // If an exception is throw, the message is ignored.
-                    // Example use case: A bad message is received that can't be deserialized and throws
-                    // an OverflowException because it specifies a length greater than the number of bytes in it
-                    // for some dynamic-length value.
+                    // Example use case: A bad message is received that can't be deserialized and throws an OverflowException because it specifies a length greater than the number of bytes in it for some dynamic-length value.
                     try
                     {
                         handler.Invoke(reader, ref context, this);
@@ -434,6 +446,7 @@ namespace Unity.Netcode
                         Debug.LogException(e);
                     }
                 }
+
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
                     m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
@@ -463,6 +476,7 @@ namespace Unity.Netcode
             {
                 return;
             }
+
             m_SendQueues[clientId] = new NativeList<SendQueueItem>(16, Allocator.Persistent);
         }
 
@@ -512,14 +526,15 @@ namespace Unity.Netcode
                 if (forReceive)
                 {
                     Debug.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
-
                 }
                 else
                 {
                     Debug.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
                 }
+
                 return -1;
             }
+
             if (!versionMap.TryGetValue(type, out var messageVersion))
             {
                 return -1;
@@ -528,7 +543,7 @@ namespace Unity.Netcode
             return messageVersion;
         }
 
-        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, MessagingSystem system) where T : INetworkMessage, new()
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager system) where T : INetworkMessage, new()
         {
             var message = new T();
             var messageVersion = 0;
@@ -543,6 +558,7 @@ namespace Unity.Netcode
                     return;
                 }
             }
+
             if (message.Deserialize(reader, ref context, messageVersion))
             {
                 for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
@@ -586,9 +602,8 @@ namespace Unity.Netcode
             for (var i = 0; i < clientIds.Count; ++i)
             {
                 var messageVersion = 0;
-                // Special case because this is the message that carries the version info - thus the version info isn't
-                // populated yet when we get this. The first part of this message always has to be the version data
-                // and can't change.
+                // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
+                // The first part of this message always has to be the version data and can't change.
                 if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
                 {
                     messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
@@ -606,9 +621,9 @@ namespace Unity.Netcode
 
                 sentMessageVersions.Add(messageVersion);
 
-                var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FRAGMENTED_MESSAGE_MAX_SIZE : NON_FRAGMENTED_MESSAGE_MAX_SIZE;
+                var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FragmentedMessageMaxSize : NonFragmentedMessageMaxSize;
 
-                using var tmpSerializer = new FastBufferWriter(NON_FRAGMENTED_MESSAGE_MAX_SIZE - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
+                using var tmpSerializer = new FastBufferWriter(NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
 
                 message.Serialize(tmpSerializer, messageVersion);
 
@@ -640,13 +655,12 @@ namespace Unity.Netcode
                 {
                     continue;
                 }
-                var messageVersion = 0;
-                // Special case because this is the message that carries the version info - thus the version info isn't
-                // populated yet when we get this. The first part of this message always has to be the version data
-                // and can't change.
+
+                // Special case because this is the message that carries the version info - thus the version info isn't populated yet when we get this.
+                // The first part of this message always has to be the version data and can't change.
                 if (typeof(TMessageType) != typeof(ConnectionRequestMessage))
                 {
-                    messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
+                    var messageVersion = GetMessageVersion(typeof(TMessageType), clientIds[i]);
                     if (messageVersion < 0)
                     {
                         // Client doesn't know this message exists, don't send it at all.
@@ -674,19 +688,15 @@ namespace Unity.Netcode
                 var sendQueueItem = m_SendQueues[clientId];
                 if (sendQueueItem.Length == 0)
                 {
-                    sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
-                        maxSize));
+                    sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
                     sendQueueItem.ElementAt(0).Writer.Seek(sizeof(BatchHeader));
                 }
                 else
                 {
                     ref var lastQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
-                    if (lastQueueItem.NetworkDelivery != delivery ||
-                        lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position
-                        < tmpSerializer.Length + headerSerializer.Length)
+                    if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length + headerSerializer.Length)
                     {
-                        sendQueueItem.Add(new SendQueueItem(delivery, NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.TempJob,
-                            maxSize));
+                        sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
                         sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
                     }
                 }
@@ -791,7 +801,7 @@ namespace Unity.Netcode
                 for (var i = 0; i < sendQueueItem.Length; ++i)
                 {
                     ref var queueItem = ref sendQueueItem.ElementAt(i);
-                    // this is checked at every iteration because
+                    // This is checked at every iteration because
                     // 1) each writer needs to be disposed, so we have to do the full loop regardless, and
                     // 2) the call to m_MessageSender.Send() may result in calling ClientDisconnected(), so the result of this check may change partway through iteration
                     if (m_DisconnectedClients.Contains(clientId))
@@ -799,6 +809,7 @@ namespace Unity.Netcode
                         queueItem.Writer.Dispose();
                         continue;
                     }
+
                     if (queueItem.BatchHeader.BatchCount == 0)
                     {
                         queueItem.Writer.Dispose();
@@ -836,6 +847,7 @@ namespace Unity.Netcode
                         queueItem.Writer.Dispose();
                     }
                 }
+
                 sendQueueItem.Clear();
             }
         }

@@ -49,7 +49,7 @@ namespace Unity.Netcode.EditorTests
         private class TestMessageProvider : IMessageProvider, IDisposable
         {
             // Keep track of what we sent
-            private List<List<MessagingSystem.MessageWithHandler>> m_CachedMessages = new List<List<MessagingSystem.MessageWithHandler>>();
+            private List<List<NetworkMessageManager.MessageWithHandler>> m_CachedMessages = new List<List<NetworkMessageManager.MessageWithHandler>>();
 
             public void Dispose()
             {
@@ -61,15 +61,15 @@ namespace Unity.Netcode.EditorTests
                 m_CachedMessages.Clear();
             }
 
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                var messageList = new List<MessagingSystem.MessageWithHandler>
+                var messageList = new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
                 // Track messages sent
@@ -80,7 +80,7 @@ namespace Unity.Netcode.EditorTests
 
         private TestMessageProvider m_TestMessageProvider;
         private TestMessageSender m_MessageSender;
-        private MessagingSystem m_MessagingSystem;
+        private NetworkMessageManager m_MessagingSystem;
         private ulong[] m_Clients = { 0 };
 
         [SetUp]
@@ -89,7 +89,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Serialized = false;
             m_MessageSender = new TestMessageSender();
             m_TestMessageProvider = new TestMessageProvider();
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this, m_TestMessageProvider);
+            m_MessagingSystem = new NetworkMessageManager(m_MessageSender, this, m_TestMessageProvider);
             m_MessagingSystem.ClientConnected(0);
             m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
@@ -253,15 +253,15 @@ namespace Unity.Netcode.EditorTests
 
         private class TestNoHandlerMessageProvider : IMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
                         Handler = null,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }
@@ -278,7 +278,7 @@ namespace Unity.Netcode.EditorTests
             }
 
             // Since m_MessagingSystem is disposed during teardown we don't need to worry about that here.
-            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
+            m_MessagingSystem = new NetworkMessageManager(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
             m_MessagingSystem.ClientConnected(0);
 
             var messageHeader = new MessageHeader

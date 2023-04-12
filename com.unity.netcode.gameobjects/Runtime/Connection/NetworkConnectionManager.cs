@@ -24,7 +24,7 @@ namespace Unity.Netcode
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         private static ProfilerMarker s_TransportPollMarker = new ProfilerMarker($"{nameof(NetworkManager)}.TransportPoll");
         private static ProfilerMarker s_TransportConnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportConnect");
-        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(MessagingSystem.HandleIncomingData)}");
+        private static ProfilerMarker s_HandleIncomingData = new ProfilerMarker($"{nameof(NetworkManager)}.{nameof(NetworkMessageManager.HandleIncomingData)}");
         private static ProfilerMarker s_TransportDisconnect = new ProfilerMarker($"{nameof(NetworkManager)}.TransportDisconnect");
 #endif
 
@@ -69,9 +69,9 @@ namespace Unity.Netcode
         internal bool StopProcessingMessages;
 
         /// <summary>
-        /// The <see cref="Netcode.MessagingSystem"/> is updated in <see cref="NetworkUpdate"/>
+        /// The <see cref="NetworkMessageManager"/> is updated in <see cref="NetworkUpdate"/>
         /// </summary>
-        internal MessagingSystem MessagingSystem;
+        internal NetworkMessageManager MessagingSystem;
 
         internal NetworkManager NetworkManager;
         internal NetworkClient LocalClient = new NetworkClient();
@@ -963,7 +963,7 @@ namespace Unity.Netcode
             DisconnectReason = string.Empty;
             NetworkManager = networkManager;
 
-            MessagingSystem = new MessagingSystem(new DefaultMessageSender(networkManager), networkManager);
+            MessagingSystem = new NetworkMessageManager(new DefaultMessageSender(networkManager), networkManager);
 
             MessagingSystem.Hook(new NetworkManagerHooks(networkManager));
 

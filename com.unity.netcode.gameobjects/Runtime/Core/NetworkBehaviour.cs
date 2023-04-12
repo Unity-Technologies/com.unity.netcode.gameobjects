@@ -65,7 +65,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
+                    if (bufferWriter.Length > NetworkMessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -146,7 +146,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
+                    if (bufferWriter.Length > NetworkMessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -718,7 +718,7 @@ namespace Unity.Netcode
                     // so we don't have to do this serialization work if we're not going to use the result.
                     if (IsServer && targetClientId == NetworkManager.ServerClientId)
                     {
-                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
+                        var tmpWriter = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkMessageManager.FragmentedMessageMaxSize);
                         using (tmpWriter)
                         {
                             message.Serialize(tmpWriter, message.Version);

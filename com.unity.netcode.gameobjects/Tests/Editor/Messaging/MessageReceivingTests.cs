@@ -41,21 +41,21 @@ namespace Unity.Netcode.EditorTests
 
         private class TestMessageProvider : IMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }
         }
 
-        private MessagingSystem m_MessagingSystem;
+        private NetworkMessageManager m_MessagingSystem;
 
         [SetUp]
         public void SetUp()
@@ -64,7 +64,7 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Handled = false;
             TestMessage.DeserializedValues.Clear();
 
-            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestMessageProvider());
+            m_MessagingSystem = new NetworkMessageManager(new NopMessageSender(), this, new TestMessageProvider());
             m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 

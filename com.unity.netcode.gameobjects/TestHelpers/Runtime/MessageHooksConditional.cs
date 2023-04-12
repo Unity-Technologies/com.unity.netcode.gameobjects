@@ -95,7 +95,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 Assert.IsNotNull(m_MessageReceiptCheck, $"{nameof(m_MessageReceiptCheck)} is null, did you forget to initialize?");
                 MessageHooks.ReceiptCheck = m_MessageReceiptCheck;
             }
-            Assert.IsNotNull(m_NetworkManager.ConnectionManager.MessagingSystem, $"{nameof(MessagingSystem)} is null! Did you forget to start first?");
+            Assert.IsNotNull(m_NetworkManager.ConnectionManager.MessagingSystem, $"{nameof(NetworkMessageManager)} is null! Did you forget to start first?");
             m_NetworkManager.ConnectionManager.MessagingSystem.Hook(MessageHooks);
         }
 
