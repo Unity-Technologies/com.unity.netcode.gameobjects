@@ -41,6 +41,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where during client synchronization the synchronizing client could receive a ObjectSceneChanged message before the client-side NetworkObject instance had been instantiated and spawned. (#2502)
 - Fixed issue where `NetworkAnimator` was building client RPC parameters to exclude the host from sending itself messages but was not including it in the ClientRpc parameters. (#2492)
 - Fixed issue where `NetworkAnimator` was not properly detecting and synchronizing cross fade initiated transitions. (#2481)
 - Fixed issue where `NetworkAnimator` was not properly synchronizing animation state updates. (#2481)
