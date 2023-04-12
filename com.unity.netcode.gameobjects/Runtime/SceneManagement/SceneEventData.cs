@@ -1054,12 +1054,6 @@ namespace Unity.Netcode
             }
         }
 
-        private struct DeferredObjectsMovedEvent
-        {
-            internal Dictionary<int, List<ulong>> ObjectsMigratedTable;
-        }
-
-        private List<DeferredObjectsMovedEvent> m_DeferredObjectsMovedEvents = new List<DeferredObjectsMovedEvent>();
 
         /// <summary>
         /// While a client is synchronizing ObjectSceneChanged messages could be received.
@@ -1076,7 +1070,7 @@ namespace Unity.Netcode
             var objectCount = 0;
             var networkObjectId = (ulong)0;
 
-            var deferredObjectsMovedEvent = new DeferredObjectsMovedEvent()
+            var deferredObjectsMovedEvent = new NetworkSceneManager.DeferredObjectsMovedEvent()
             {
                 ObjectsMigratedTable = new Dictionary<int, List<ulong>>()
             };
@@ -1093,18 +1087,18 @@ namespace Unity.Netcode
                     deferredObjectsMovedEvent.ObjectsMigratedTable[sceneHandle].Add(networkObjectId);
                 }
             }
-            m_DeferredObjectsMovedEvents.Add(deferredObjectsMovedEvent);
+            sceneManager.DeferredObjectsMovedEvents.Add(deferredObjectsMovedEvent);
         }
 
         internal void ProcessDeferredObjectsMovedEvents()
         {
             var sceneManager = m_NetworkManager.SceneManager;
             var spawnManager = m_NetworkManager.SpawnManager;
-            if (m_DeferredObjectsMovedEvents.Count == 0)
+            if (sceneManager.DeferredObjectsMovedEvents.Count == 0)
             {
                 return;
             }
-            foreach (var objectsMovedEvent in m_DeferredObjectsMovedEvents)
+            foreach (var objectsMovedEvent in sceneManager.DeferredObjectsMovedEvents)
             {
                 foreach (var keyEntry in objectsMovedEvent.ObjectsMigratedTable)
                 {
@@ -1129,7 +1123,7 @@ namespace Unity.Netcode
                 objectsMovedEvent.ObjectsMigratedTable.Clear();
             }
 
-            m_DeferredObjectsMovedEvents.Clear();
+            sceneManager.DeferredObjectsMovedEvents.Clear();
 
             // If there are any pending objects to migrate, then migrate them
             if (sceneManager.ObjectsMigratedIntoNewScene.Count > 0)
