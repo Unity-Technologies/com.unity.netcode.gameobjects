@@ -133,7 +133,7 @@ namespace Unity.Netcode
             {
                 // As a client wait to run the time system until we are connected.
                 // As a client or server don't worry about the time system if we are no longer processing messages
-                if ((!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected) || m_ConnectionManager.StopProcessingMessages)
+                if (!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected)
                 {
                     return;
                 }

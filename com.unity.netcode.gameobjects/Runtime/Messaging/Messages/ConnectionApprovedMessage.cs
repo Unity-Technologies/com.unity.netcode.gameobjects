@@ -84,18 +84,18 @@ namespace Unity.Netcode
             {
                 var messageVersion = new MessageVersionData();
                 messageVersion.Deserialize(reader);
-                networkManager.ConnectionManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
+                networkManager.ConnectionManager.MessageManager.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
                 messageHashesInOrder[i] = messageVersion.Hash;
 
                 // Update the received version since this message will always be passed version 0, due to the map not
                 // being initialized until just now.
-                var messageType = networkManager.ConnectionManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
+                var messageType = networkManager.ConnectionManager.MessageManager.GetMessageForHash(messageVersion.Hash);
                 if (messageType == typeof(ConnectionApprovedMessage))
                 {
                     receivedMessageVersion = messageVersion.Version;
                 }
             }
-            networkManager.ConnectionManager.MessagingSystem.SetServerMessageOrder(messageHashesInOrder);
+            networkManager.ConnectionManager.MessageManager.SetServerMessageOrder(messageHashesInOrder);
             messageHashesInOrder.Dispose();
             // ============================================================
             // END FORBIDDEN SEGMENT

@@ -35,13 +35,39 @@ namespace Unity.Netcode
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
-                    ConnectionManager.NetworkUpdate(updateStage);
+                    {
+                        ConnectionManager.OnEarlyUpdate();
+                        MessageManager.OnEarlyUpdate();
+                    }
                     break;
                 case NetworkUpdateStage.PreUpdate:
-                    NetworkTimeSystem.NetworkUpdate(updateStage);
+                    {
+                        NetworkTimeSystem.NetworkUpdate(updateStage);
+                    }
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
-                    ConnectionManager.NetworkUpdate(updateStage);
+                    {
+                        // This should be invoked just prior to the MessageManager processes its outbound queue.
+                        SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
+                        // Process outbound messages
+                        MessageManager.ProcessSendQueues();
+
+                        // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
+                        MetricsManager.UpdateMetrics();
+
+                        // TODO 2023-Q2: Determine a better way to handle this
+                        NetworkObject.VerifyParentingStatus();
+
+                        // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
+                        DeferredMessageManager.CleanupStaleTriggers();
+
+                        // TODO 2023-Q2: Determine a better way to handle this
+                        if (m_ShuttingDown)
+                        {
+                            ShutdownInternal();
+                        }
+                    }
                     break;
             }
         }
@@ -346,7 +372,7 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
 
-        internal IDeferredMessageManager DeferredMessageManager { get; private set; }
+        internal IDeferredNetworkMessageManager DeferredMessageManager { get; private set; }
 
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
@@ -376,9 +402,10 @@ namespace Unity.Netcode
         /// </summary>
         internal IRealTimeProvider RealTimeProvider { get; private set; }
 
-        internal INetworkMetrics NetworkMetrics => NetworkMetricsManager.NetworkMetrics;
-        internal NetworkMetricsManager NetworkMetricsManager = new NetworkMetricsManager();
+        internal INetworkMetrics NetworkMetrics => MetricsManager.NetworkMetrics;
+        internal NetworkMetricsManager MetricsManager = new NetworkMetricsManager();
         internal NetworkConnectionManager ConnectionManager = new NetworkConnectionManager();
+        internal NetworkMessageManager MessageManager = null;
 
 #if UNITY_EDITOR
         internal static INetworkManagerHelper NetworkManagerHelper;
@@ -584,7 +611,24 @@ namespace Unity.Netcode
 
             // UnityTransport dependencies are then initialized
             RealTimeProvider = ComponentFactory.Create<IRealTimeProvider>(this);
-            NetworkMetricsManager.Initialize(this);
+            MetricsManager.Initialize(this);
+
+            {
+                MessageManager = new NetworkMessageManager(new DefaultMessageSender(this), this);
+
+                MessageManager.Hook(new NetworkManagerHooks(this));
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                MessageManager.Hook(new ProfilingHooks());
+#endif
+
+#if MULTIPLAYER_TOOLS
+                MessageManager.Hook(new MetricHooks(this));
+#endif
+
+                // Assures there is a server message queue available
+                MessageManager.ClientConnected(ServerClientId);
+            }
 
             // Now the connection manager can initialize (which initializes transport)
             ConnectionManager.Initialize(this);
@@ -596,7 +640,7 @@ namespace Unity.Netcode
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
 
-            DeferredMessageManager = ComponentFactory.Create<IDeferredMessageManager>(this);
+            DeferredMessageManager = ComponentFactory.Create<IDeferredNetworkMessageManager>(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
 
@@ -873,7 +917,7 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                ConnectionManager.StopProcessingMessages = discardMessageQueue;
+                MessageManager.StopProcessing = discardMessageQueue;
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
@@ -906,6 +950,12 @@ namespace Unity.Netcode
 
             // Shutdown connection manager last which shuts down transport
             ConnectionManager.Shutdown();
+
+            if (MessageManager != null)
+            {
+                MessageManager.Dispose();
+                MessageManager = null;
+            }
 
             // We need to clean up NetworkObjects before we reset the IsServer
             // and IsClient properties. This provides consistency of these two
