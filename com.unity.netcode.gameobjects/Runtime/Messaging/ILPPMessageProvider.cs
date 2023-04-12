@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Unity.Netcode
 {
-    internal struct ILPPMessageProvider : IMessageProvider
+    internal struct ILPPMessageProvider : INetworkMessageProvider
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
         // This is NOT modified by RuntimeAccessModifiersILPP right now, but is populated by ILPP.

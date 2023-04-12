@@ -5,7 +5,7 @@ namespace Unity.Netcode
     /// Default NetworkTransport Message Sender
     /// <see cref="NetworkMessageManager"/>
     /// </summary>
-    internal class DefaultMessageSender : IMessageSender
+    internal class DefaultMessageSender : INetworkMessageSender
     {
         private NetworkTransport m_NetworkTransport;
         private NetworkConnectionManager m_ConnectionManager;

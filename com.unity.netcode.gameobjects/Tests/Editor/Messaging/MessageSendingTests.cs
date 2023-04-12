@@ -37,7 +37,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private class TestMessageSender : IMessageSender
+        private class TestMessageSender : INetworkMessageSender
         {
             public List<byte[]> MessageQueue = new List<byte[]>();
 
@@ -47,7 +47,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageProvider : IMessageProvider, IDisposable
+        private class TestMessageProvider : INetworkMessageProvider, IDisposable
         {
             // Keep track of what we sent
             private List<List<NetworkMessageManager.MessageWithHandler>> m_CachedMessages = new List<List<NetworkMessageManager.MessageWithHandler>>();
@@ -157,7 +157,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size; ++i)
+            for (var i = 0; i < (1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -171,7 +171,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -185,7 +185,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<BatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
@@ -230,10 +230,10 @@ namespace Unity.Netcode.EditorTests
             var reader = new FastBufferReader(m_MessageSender.MessageQueue[0], Allocator.Temp);
             using (reader)
             {
-                reader.ReadValueSafe(out BatchHeader header);
+                reader.ReadValueSafe(out NetworkBatchHeader header);
                 Assert.AreEqual(2, header.BatchCount);
 
-                MessageHeader messageHeader;
+                NetworkMessageHeader messageHeader;
 
                 ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageType);
                 ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageSize);
@@ -253,7 +253,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestNoHandlerMessageProvider : IMessageProvider
+        private class TestNoHandlerMessageProvider : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -283,7 +283,7 @@ namespace Unity.Netcode.EditorTests
             m_MessageManager = new NetworkMessageManager(new NopMessageSender(), this, new TestNoHandlerMessageProvider());
             m_MessageManager.ClientConnected(0);
 
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),

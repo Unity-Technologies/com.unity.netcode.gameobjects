@@ -3,7 +3,7 @@ namespace Unity.Netcode
     /// <summary>
     /// Header placed at the start of each message batch
     /// </summary>
-    internal struct BatchHeader : INetworkSerializeByMemcpy
+    internal struct NetworkBatchHeader : INetworkSerializeByMemcpy
     {
         internal const ushort MagicValue = 0x1160;
         /// <summary>

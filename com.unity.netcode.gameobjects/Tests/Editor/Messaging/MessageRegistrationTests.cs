@@ -48,7 +48,7 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderOne : IMessageProvider
+        private class TestMessageProviderOne : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -91,7 +91,7 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderTwo : IMessageProvider
+        private class TestMessageProviderTwo : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -127,7 +127,7 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderThree : IMessageProvider
+        private class TestMessageProviderThree : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -216,7 +216,7 @@ namespace Unity.Netcode.EditorTests
         }
 #pragma warning restore IDE1006
 
-        internal class OrderingMessageProvider : IMessageProvider
+        internal class OrderingMessageProvider : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {

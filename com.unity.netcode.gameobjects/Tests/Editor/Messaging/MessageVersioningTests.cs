@@ -171,7 +171,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 2;
         }
 
-        private class TestMessageProviderV0 : IMessageProvider
+        private class TestMessageProviderV0 : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -187,7 +187,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageProviderV1 : IMessageProvider
+        private class TestMessageProviderV1 : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -203,7 +203,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageProviderV2 : IMessageProvider
+        private class TestMessageProviderV2 : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -219,7 +219,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageSender : IMessageSender
+        private class TestMessageSender : INetworkMessageSender
         {
             public List<byte[]> MessageQueue = new List<byte[]>();
 

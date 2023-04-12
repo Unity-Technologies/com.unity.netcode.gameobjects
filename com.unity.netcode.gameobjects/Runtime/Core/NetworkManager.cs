@@ -346,7 +346,7 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkSpawnManager SpawnManager { get; private set; }
 
-        internal IDeferredMessageManager DeferredMessageManager { get; private set; }
+        internal IDeferredNetworkMessageManager DeferredMessageManager { get; private set; }
 
         /// <summary>
         /// Gets the CustomMessagingManager for this NetworkManager
@@ -596,7 +596,7 @@ namespace Unity.Netcode
             // Create spawn manager instance
             SpawnManager = new NetworkSpawnManager(this);
 
-            DeferredMessageManager = ComponentFactory.Create<IDeferredMessageManager>(this);
+            DeferredMessageManager = ComponentFactory.Create<IDeferredNetworkMessageManager>(this);
 
             CustomMessagingManager = new CustomMessagingManager(this);
 

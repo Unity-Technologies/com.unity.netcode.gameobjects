@@ -36,7 +36,7 @@ namespace Unity.Netcode
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
-            public MessageHeader Header;
+            public NetworkMessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
             public int MessageHeaderSerializedSize;
@@ -44,7 +44,7 @@ namespace Unity.Netcode
 
         private struct SendQueueItem
         {
-            public BatchHeader BatchHeader;
+            public NetworkBatchHeader BatchHeader;
             public FastBufferWriter Writer;
             public readonly NetworkDelivery NetworkDelivery;
 
@@ -52,7 +52,7 @@ namespace Unity.Netcode
             {
                 Writer = new FastBufferWriter(writerSize, writerAllocator, maxWriterSize);
                 NetworkDelivery = delivery;
-                BatchHeader = new BatchHeader { Magic = BatchHeader.MagicValue };
+                BatchHeader = new NetworkBatchHeader { Magic = NetworkBatchHeader.MagicValue };
             }
         }
 
@@ -80,7 +80,7 @@ namespace Unity.Netcode
 
         private uint m_HighMessageType;
         private object m_Owner;
-        private IMessageSender m_MessageSender;
+        private INetworkMessageSender m_Sender;
         private bool m_Disposed;
 
         internal Type[] MessageTypes => m_ReverseTypeMap;
@@ -130,11 +130,11 @@ namespace Unity.Netcode
             return prioritizedTypes;
         }
 
-        public NetworkMessageManager(IMessageSender messageSender, object owner, IMessageProvider provider = null)
+        public NetworkMessageManager(INetworkMessageSender sender, object owner, INetworkMessageProvider provider = null)
         {
             try
             {
-                m_MessageSender = messageSender;
+                m_Sender = sender;
                 m_Owner = owner;
 
                 if (provider == null)
@@ -251,15 +251,15 @@ namespace Unity.Netcode
                 fixed (byte* nativeData = data.Array)
                 {
                     var batchReader = new FastBufferReader(nativeData + data.Offset, Allocator.None, data.Count);
-                    if (!batchReader.TryBeginRead(sizeof(BatchHeader)))
+                    if (!batchReader.TryBeginRead(sizeof(NetworkBatchHeader)))
                     {
                         NetworkLog.LogError("Received a packet too small to contain a BatchHeader. Ignoring it.");
                         return;
                     }
 
-                    batchReader.ReadValue(out BatchHeader batchHeader);
+                    batchReader.ReadValue(out NetworkBatchHeader batchHeader);
 
-                    if (batchHeader.Magic != BatchHeader.MagicValue)
+                    if (batchHeader.Magic != NetworkBatchHeader.MagicValue)
                     {
                         NetworkLog.LogError($"Received a packet with an invalid Magic Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
                         return;
@@ -286,7 +286,7 @@ namespace Unity.Netcode
 
                     for (var messageIdx = 0; messageIdx < batchHeader.BatchCount; ++messageIdx)
                     {
-                        var messageHeader = new MessageHeader();
+                        var messageHeader = new NetworkMessageHeader();
                         var position = batchReader.Position;
                         try
                         {
@@ -393,7 +393,7 @@ namespace Unity.Netcode
             }
         }
 
-        public void HandleMessage(in MessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
+        public void HandleMessage(in NetworkMessageHeader header, FastBufferReader reader, ulong senderId, float timestamp, int serializedHeaderSize)
         {
             using (reader)
             {
@@ -422,7 +422,7 @@ namespace Unity.Netcode
                 var handler = m_MessageHandlers[header.MessageType];
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                    m_Hooks[hookIdx].OnBeforeReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<NetworkMessageHeader>());
                 }
 
                 // This will also log an exception is if the server knows about a message type the client doesn't know about.
@@ -449,7 +449,7 @@ namespace Unity.Netcode
 
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
-                    m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<MessageHeader>());
+                    m_Hooks[hookIdx].OnAfterReceiveMessage(senderId, type, reader.Length + FastBufferWriter.GetWriteSize<NetworkMessageHeader>());
                 }
             }
         }
@@ -623,7 +623,7 @@ namespace Unity.Netcode
 
                 var maxSize = delivery == NetworkDelivery.ReliableFragmentedSequenced ? FragmentedMessageMaxSize : NonFragmentedMessageMaxSize;
 
-                using var tmpSerializer = new FastBufferWriter(NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<MessageHeader>());
+                using var tmpSerializer = new FastBufferWriter(NonFragmentedMessageMaxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>(), Allocator.Temp, maxSize - FastBufferWriter.GetWriteSize<NetworkMessageHeader>());
 
                 message.Serialize(tmpSerializer, messageVersion);
 
@@ -639,9 +639,9 @@ namespace Unity.Netcode
         internal unsafe int SendPreSerializedMessage<TMessageType>(in FastBufferWriter tmpSerializer, int maxSize, ref TMessageType message, NetworkDelivery delivery, in IReadOnlyList<ulong> clientIds, int messageVersionFilter)
             where TMessageType : INetworkMessage
         {
-            using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<MessageHeader>(), Allocator.Temp);
+            using var headerSerializer = new FastBufferWriter(FastBufferWriter.GetWriteSize<NetworkMessageHeader>(), Allocator.Temp);
 
-            var header = new MessageHeader
+            var header = new NetworkMessageHeader
             {
                 MessageSize = (uint)tmpSerializer.Length,
                 MessageType = m_MessageTypes[typeof(TMessageType)],
@@ -689,7 +689,7 @@ namespace Unity.Netcode
                 if (sendQueueItem.Length == 0)
                 {
                     sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
-                    sendQueueItem.ElementAt(0).Writer.Seek(sizeof(BatchHeader));
+                    sendQueueItem.ElementAt(0).Writer.Seek(sizeof(NetworkBatchHeader));
                 }
                 else
                 {
@@ -697,7 +697,7 @@ namespace Unity.Netcode
                     if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length + headerSerializer.Length)
                     {
                         sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
-                        sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(BatchHeader));
+                        sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(NetworkBatchHeader));
                     }
                 }
 
@@ -824,9 +824,9 @@ namespace Unity.Netcode
                     queueItem.Writer.Seek(0);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
-                    queueItem.Writer.Handle->AllowedWriteMark = sizeof(BatchHeader);
+                    queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
-                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(BatchHeader), queueItem.Writer.Length - sizeof(BatchHeader));
+                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
 
                     queueItem.BatchHeader.BatchSize = queueItem.Writer.Length;
 
@@ -835,7 +835,7 @@ namespace Unity.Netcode
 
                     try
                     {
-                        m_MessageSender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
+                        m_Sender.Send(clientId, queueItem.NetworkDelivery, queueItem.Writer);
 
                         for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                         {

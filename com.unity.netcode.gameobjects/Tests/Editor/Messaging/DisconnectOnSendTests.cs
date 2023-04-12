@@ -23,7 +23,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private class DisconnectOnSendMessageSender : IMessageSender
+        private class DisconnectOnSendMessageSender : INetworkMessageSender
         {
             public NetworkMessageManager MessageManager;
 
@@ -33,7 +33,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private class TestMessageProvider : IMessageProvider
+        private class TestMessageProvider : INetworkMessageProvider
         {
             // Keep track of what we sent
             private List<NetworkMessageManager.MessageWithHandler> m_MessageList = new List<NetworkMessageManager.MessageWithHandler>

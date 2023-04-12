@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         private struct TriggerData
         {
             public FastBufferReader Reader;
-            public MessageHeader Header;
+            public NetworkMessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
             public int SerializedHeaderSize;

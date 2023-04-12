@@ -39,7 +39,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private class TestMessageProvider : IMessageProvider
+        private class TestMessageProvider : INetworkMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -88,7 +88,7 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenHandlingAMessage_ReceiveMethodIsCalled()
         {
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
@@ -116,11 +116,11 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public unsafe void WhenHandlingIncomingData_ReceiveIsNotCalledBeforeProcessingIncomingMessageQueue()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
                 BatchCount = 1
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
@@ -139,11 +139,11 @@ namespace Unity.Netcode.EditorTests
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
-                batchHeader = new BatchHeader
+                batchHeader = new NetworkBatchHeader
                 {
-                    Magic = BatchHeader.MagicValue,
+                    Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -162,11 +162,11 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public unsafe void WhenReceivingAMessageAndProcessingMessageQueue_ReceiveMethodIsCalled()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
                 BatchCount = 1
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (uint)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
@@ -183,11 +183,11 @@ namespace Unity.Netcode.EditorTests
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
-                batchHeader = new BatchHeader
+                batchHeader = new NetworkBatchHeader
                 {
-                    Magic = BatchHeader.MagicValue,
+                    Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -208,11 +208,11 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public unsafe void WhenReceivingMultipleMessagesAndProcessingMessageQueue_ReceiveMethodIsCalledMultipleTimes()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
                 BatchCount = 2
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
                 MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
@@ -233,11 +233,11 @@ namespace Unity.Netcode.EditorTests
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
-                batchHeader = new BatchHeader
+                batchHeader = new NetworkBatchHeader
                 {
-                    Magic = BatchHeader.MagicValue,
+                    Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 2
                 };
                 writer.WriteValue(batchHeader);

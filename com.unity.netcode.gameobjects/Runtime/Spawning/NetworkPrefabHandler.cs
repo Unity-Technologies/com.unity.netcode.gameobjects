@@ -362,7 +362,7 @@ namespace Unity.Netcode
             bool added = m_NetworkManager.NetworkConfig.Prefabs.Add(networkPrefab);
             if (m_NetworkManager.IsListening && added)
             {
-                m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
+                m_NetworkManager.DeferredMessageManager.ProcessTriggers(IDeferredNetworkMessageManager.TriggerType.OnAddPrefab, networkObject.GlobalObjectIdHash);
             }
         }
 
