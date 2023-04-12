@@ -2048,11 +2048,6 @@ namespace Unity.Netcode
                             // All scenes are synchronized, let the server know we are done synchronizing
                             m_NetworkManager.IsConnectedClient = true;
 
-                            // Process any SceneEventType.ObjectSceneChanged messages that
-                            // were deferred while synchronizing and migrate the associated
-                            // NetworkObjects to their newly assigned scenes.
-                            sceneEventData.ProcessDeferredObjectsMovedEvents();
-
                             // Client is now synchronized and fully "connected".  This also means the client can send "RPCs" at this time
                             m_NetworkManager.InvokeOnClientConnectedCallback(m_NetworkManager.LocalClientId);
 
@@ -2062,6 +2057,11 @@ namespace Unity.Netcode
                                 SceneEventType = sceneEventData.SceneEventType,
                                 ClientId = m_NetworkManager.LocalClientId, // Client sent this to the server
                             });
+
+                            // Process any SceneEventType.ObjectSceneChanged messages that
+                            // were deferred while synchronizing and migrate the associated
+                            // NetworkObjects to their newly assigned scenes.
+                            sceneEventData.ProcessDeferredObjectSceneChangedEvents();
 
                             // Only if PostSynchronizationSceneUnloading is set and we are running in client synchronization
                             // mode additive do we unload any remaining scene that was not synchronized (otherwise any loaded

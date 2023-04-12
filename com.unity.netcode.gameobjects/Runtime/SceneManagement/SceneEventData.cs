@@ -1090,7 +1090,7 @@ namespace Unity.Netcode
             sceneManager.DeferredObjectsMovedEvents.Add(deferredObjectsMovedEvent);
         }
 
-        internal void ProcessDeferredObjectsMovedEvents()
+        internal void ProcessDeferredObjectSceneChangedEvents()
         {
             var sceneManager = m_NetworkManager.SceneManager;
             var spawnManager = m_NetworkManager.SpawnManager;
