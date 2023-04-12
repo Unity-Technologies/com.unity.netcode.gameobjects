@@ -2436,7 +2436,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Invoked by clients when processing a <see cref="SceneEventType.ObjectSceneChanged"/> event
-        /// or invoked by SceneEventData.ProcessDeferredObjectsMovedEvents when a client finishes
+        /// or invoked by <see cref="SceneEventData.ProcessDeferredObjectSceneChangedEvents"/> when a client finishes
         /// synchronization.
         /// </summary>
         internal void MigrateNetworkObjectsIntoScenes()
