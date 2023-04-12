@@ -15,7 +15,7 @@ namespace Unity.Netcode.EditorTests
         private const int k_DefaultD = 15;
         private const long k_DefaultE = 20;
 
-        private struct VersionedTestMessage_v0 : INetworkMessage, INetworkSerializeByMemcpy
+        private struct VersionedTestMessageV0 : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
@@ -23,7 +23,7 @@ namespace Unity.Netcode.EditorTests
             public static bool Serialized;
             public static bool Deserialized;
             public static bool Handled;
-            public static List<VersionedTestMessage_v0> DeserializedValues = new List<VersionedTestMessage_v0>();
+            public static List<VersionedTestMessageV0> DeserializedValues = new List<VersionedTestMessageV0>();
 
             public void Serialize(FastBufferWriter writer, int targetVersion)
             {
@@ -53,7 +53,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private struct VersionedTestMessage_v1 : INetworkMessage, INetworkSerializeByMemcpy
+        private struct VersionedTestMessageV1 : INetworkMessage, INetworkSerializeByMemcpy
         {
             public int A;
             public int B;
@@ -64,14 +64,14 @@ namespace Unity.Netcode.EditorTests
             public static bool Downgraded;
             public static bool Upgraded;
             public static bool Handled;
-            public static List<VersionedTestMessage_v1> DeserializedValues = new List<VersionedTestMessage_v1>();
+            public static List<VersionedTestMessageV1> DeserializedValues = new List<VersionedTestMessageV1>();
 
             public void Serialize(FastBufferWriter writer, int targetVersion)
             {
                 if (targetVersion < Version)
                 {
                     Downgraded = true;
-                    var v0 = new VersionedTestMessage_v0 { A = A, B = B, C = C };
+                    var v0 = new VersionedTestMessageV0 { A = A, B = B, C = C };
                     v0.Serialize(writer, targetVersion);
                     return;
                 }
@@ -87,7 +87,7 @@ namespace Unity.Netcode.EditorTests
             {
                 if (receivedMessageVersion < Version)
                 {
-                    var v0 = new VersionedTestMessage_v0();
+                    var v0 = new VersionedTestMessageV0();
                     v0.Deserialize(reader, ref context, receivedMessageVersion);
                     A = v0.A;
                     B = v0.B;
@@ -131,7 +131,7 @@ namespace Unity.Netcode.EditorTests
                 if (targetVersion < Version)
                 {
                     Downgraded = true;
-                    var v1 = new VersionedTestMessage_v1 { A = A, B = k_DefaultB, C = k_DefaultC, D = (int)D };
+                    var v1 = new VersionedTestMessageV1 { A = A, B = k_DefaultB, C = k_DefaultC, D = (int)D };
                     v1.Serialize(writer, targetVersion);
                     return;
                 }
@@ -146,7 +146,7 @@ namespace Unity.Netcode.EditorTests
             {
                 if (receivedMessageVersion < Version)
                 {
-                    var v1 = new VersionedTestMessage_v1();
+                    var v1 = new VersionedTestMessageV1();
                     v1.Deserialize(reader, ref context, receivedMessageVersion);
                     A = v1.A;
                     D = v1.D;
@@ -171,7 +171,7 @@ namespace Unity.Netcode.EditorTests
             public int Version => 2;
         }
 
-        private class TestMessageProvider_v0 : IMessageProvider
+        private class TestMessageProviderV0 : IMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -179,15 +179,15 @@ namespace Unity.Netcode.EditorTests
                 {
                     new NetworkMessageManager.MessageWithHandler
                     {
-                        MessageType = typeof(VersionedTestMessage_v0),
-                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessage_v0>,
-                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessage_v0>
+                        MessageType = typeof(VersionedTestMessageV0),
+                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessageV0>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessageV0>
                     }
                 };
             }
         }
 
-        private class TestMessageProvider_v1 : IMessageProvider
+        private class TestMessageProviderV1 : IMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -195,15 +195,15 @@ namespace Unity.Netcode.EditorTests
                 {
                     new NetworkMessageManager.MessageWithHandler
                     {
-                        MessageType = typeof(VersionedTestMessage_v1),
-                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessage_v1>,
-                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessage_v1>
+                        MessageType = typeof(VersionedTestMessageV1),
+                        Handler = NetworkMessageManager.ReceiveMessage<VersionedTestMessageV1>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<VersionedTestMessageV1>
                     }
                 };
             }
         }
 
-        private class TestMessageProvider_v2 : IMessageProvider
+        private class TestMessageProviderV2 : IMessageProvider
         {
             public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
@@ -229,14 +229,14 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private NetworkMessageManager m_MessagingSystem_v0;
-        private NetworkMessageManager m_MessagingSystem_v1;
-        private NetworkMessageManager m_MessagingSystem_v2;
+        private NetworkMessageManager m_MessageManagerV0;
+        private NetworkMessageManager m_MessageManagerV1;
+        private NetworkMessageManager m_MessageManagerV2;
         private TestMessageSender m_MessageSender;
 
         private void CreateFakeClients(NetworkMessageManager system, uint hash)
         {
-            // Create three fake clients for each messaging system
+            // Create three fake clients for each NetworkMessageManager
             // client 0 has version 0, client 1 has version 1, and client 2 has version 2
             system.ClientConnected(0);
             system.ClientConnected(1);
@@ -249,16 +249,16 @@ namespace Unity.Netcode.EditorTests
         [SetUp]
         public void SetUp()
         {
-            VersionedTestMessage_v0.Serialized = false;
-            VersionedTestMessage_v0.Deserialized = false;
-            VersionedTestMessage_v0.Handled = false;
-            VersionedTestMessage_v0.DeserializedValues.Clear();
-            VersionedTestMessage_v1.Serialized = false;
-            VersionedTestMessage_v1.Deserialized = false;
-            VersionedTestMessage_v1.Downgraded = false;
-            VersionedTestMessage_v1.Upgraded = false;
-            VersionedTestMessage_v1.Handled = false;
-            VersionedTestMessage_v1.DeserializedValues.Clear();
+            VersionedTestMessageV0.Serialized = false;
+            VersionedTestMessageV0.Deserialized = false;
+            VersionedTestMessageV0.Handled = false;
+            VersionedTestMessageV0.DeserializedValues.Clear();
+            VersionedTestMessageV1.Serialized = false;
+            VersionedTestMessageV1.Deserialized = false;
+            VersionedTestMessageV1.Downgraded = false;
+            VersionedTestMessageV1.Upgraded = false;
+            VersionedTestMessageV1.Handled = false;
+            VersionedTestMessageV1.DeserializedValues.Clear();
             VersionedTestMessage.Serialized = false;
             VersionedTestMessage.Deserialized = false;
             VersionedTestMessage.Downgraded = false;
@@ -267,35 +267,35 @@ namespace Unity.Netcode.EditorTests
             VersionedTestMessage.DeserializedValues.Clear();
             m_MessageSender = new TestMessageSender();
 
-            m_MessagingSystem_v0 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v0());
-            m_MessagingSystem_v1 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v1());
-            m_MessagingSystem_v2 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider_v2());
+            m_MessageManagerV0 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProviderV0());
+            m_MessageManagerV1 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProviderV1());
+            m_MessageManagerV2 = new NetworkMessageManager(m_MessageSender, this, new TestMessageProviderV2());
 
-            CreateFakeClients(m_MessagingSystem_v0, XXHash.Hash32(typeof(VersionedTestMessage_v0).FullName));
-            CreateFakeClients(m_MessagingSystem_v1, XXHash.Hash32(typeof(VersionedTestMessage_v1).FullName));
-            CreateFakeClients(m_MessagingSystem_v2, XXHash.Hash32(typeof(VersionedTestMessage).FullName));
+            CreateFakeClients(m_MessageManagerV0, XXHash.Hash32(typeof(VersionedTestMessageV0).FullName));
+            CreateFakeClients(m_MessageManagerV1, XXHash.Hash32(typeof(VersionedTestMessageV1).FullName));
+            CreateFakeClients(m_MessageManagerV2, XXHash.Hash32(typeof(VersionedTestMessage).FullName));
 
             // Make sure that all three messages got the same IDs...
             Assert.AreEqual(
-                m_MessagingSystem_v0.GetMessageType(typeof(VersionedTestMessage_v0)),
-                m_MessagingSystem_v1.GetMessageType(typeof(VersionedTestMessage_v1)));
+                m_MessageManagerV0.GetMessageType(typeof(VersionedTestMessageV0)),
+                m_MessageManagerV1.GetMessageType(typeof(VersionedTestMessageV1)));
             Assert.AreEqual(
-                m_MessagingSystem_v0.GetMessageType(typeof(VersionedTestMessage_v0)),
-                m_MessagingSystem_v2.GetMessageType(typeof(VersionedTestMessage)));
+                m_MessageManagerV0.GetMessageType(typeof(VersionedTestMessageV0)),
+                m_MessageManagerV2.GetMessageType(typeof(VersionedTestMessage)));
         }
 
         [TearDown]
         public void TearDown()
         {
-            m_MessagingSystem_v0.Dispose();
-            m_MessagingSystem_v1.Dispose();
-            m_MessagingSystem_v2.Dispose();
+            m_MessageManagerV0.Dispose();
+            m_MessageManagerV1.Dispose();
+            m_MessageManagerV2.Dispose();
         }
 
-        private VersionedTestMessage_v0 GetMessage_v0()
+        private VersionedTestMessageV0 GetMessage_v0()
         {
             var random = new Random();
-            return new VersionedTestMessage_v0
+            return new VersionedTestMessageV0
             {
                 A = random.Next(),
                 B = random.Next(),
@@ -303,10 +303,10 @@ namespace Unity.Netcode.EditorTests
             };
         }
 
-        private VersionedTestMessage_v1 GetMessage_v1()
+        private VersionedTestMessageV1 GetMessage_v1()
         {
             var random = new Random();
-            return new VersionedTestMessage_v1
+            return new VersionedTestMessageV1
             {
                 A = random.Next(),
                 B = random.Next(),
@@ -328,10 +328,10 @@ namespace Unity.Netcode.EditorTests
 
         public void CheckPostSendExpectations(int sourceLocalVersion, int remoteVersion)
         {
-            Assert.AreEqual(Math.Min(sourceLocalVersion, remoteVersion) == 0, VersionedTestMessage_v0.Serialized);
-            Assert.AreEqual(Math.Min(sourceLocalVersion, remoteVersion) == 1, VersionedTestMessage_v1.Serialized);
+            Assert.AreEqual(Math.Min(sourceLocalVersion, remoteVersion) == 0, VersionedTestMessageV0.Serialized);
+            Assert.AreEqual(Math.Min(sourceLocalVersion, remoteVersion) == 1, VersionedTestMessageV1.Serialized);
             Assert.AreEqual(Math.Min(sourceLocalVersion, remoteVersion) == 2, VersionedTestMessage.Serialized);
-            Assert.AreEqual(sourceLocalVersion >= 1 && remoteVersion < 1, VersionedTestMessage_v1.Downgraded);
+            Assert.AreEqual(sourceLocalVersion >= 1 && remoteVersion < 1, VersionedTestMessageV1.Downgraded);
             Assert.AreEqual(sourceLocalVersion >= 2 && remoteVersion < 2, VersionedTestMessage.Downgraded);
 
             Assert.AreEqual(1, m_MessageSender.MessageQueue.Count);
@@ -340,14 +340,14 @@ namespace Unity.Netcode.EditorTests
 
         public void CheckPostReceiveExpectations(int sourceLocalVersion, int remoteVersion)
         {
-            Assert.AreEqual(SentVersion == 0, VersionedTestMessage_v0.Deserialized);
-            Assert.AreEqual(SentVersion == 1, VersionedTestMessage_v1.Deserialized);
+            Assert.AreEqual(SentVersion == 0, VersionedTestMessageV0.Deserialized);
+            Assert.AreEqual(SentVersion == 1, VersionedTestMessageV1.Deserialized);
             Assert.AreEqual(SentVersion == 2, VersionedTestMessage.Deserialized);
-            Assert.AreEqual(remoteVersion >= 1 && sourceLocalVersion < 1, VersionedTestMessage_v1.Upgraded);
+            Assert.AreEqual(remoteVersion >= 1 && sourceLocalVersion < 1, VersionedTestMessageV1.Upgraded);
             Assert.AreEqual(remoteVersion >= 2 && sourceLocalVersion < 2, VersionedTestMessage.Upgraded);
 
-            Assert.AreEqual((remoteVersion == 0 ? 1 : 0), VersionedTestMessage_v0.DeserializedValues.Count);
-            Assert.AreEqual((remoteVersion == 1 ? 1 : 0), VersionedTestMessage_v1.DeserializedValues.Count);
+            Assert.AreEqual((remoteVersion == 0 ? 1 : 0), VersionedTestMessageV0.DeserializedValues.Count);
+            Assert.AreEqual((remoteVersion == 1 ? 1 : 0), VersionedTestMessageV1.DeserializedValues.Count);
             Assert.AreEqual((remoteVersion == 2 ? 1 : 0), VersionedTestMessage.DeserializedValues.Count);
 
             Assert.AreEqual(SentVersion, ReceivedVersion);
@@ -358,9 +358,9 @@ namespace Unity.Netcode.EditorTests
             NetworkMessageManager sendSystem;
             switch (fromVersion)
             {
-                case 0: sendSystem = m_MessagingSystem_v0; break;
-                case 1: sendSystem = m_MessagingSystem_v1; break;
-                default: sendSystem = m_MessagingSystem_v2; break;
+                case 0: sendSystem = m_MessageManagerV0; break;
+                case 1: sendSystem = m_MessageManagerV1; break;
+                default: sendSystem = m_MessageManagerV2; break;
             }
             sendSystem.SendMessage(ref message, NetworkDelivery.Reliable, (ulong)toVersion);
             sendSystem.ProcessSendQueues();
@@ -369,9 +369,9 @@ namespace Unity.Netcode.EditorTests
             NetworkMessageManager receiveSystem;
             switch (toVersion)
             {
-                case 0: receiveSystem = m_MessagingSystem_v0; break;
-                case 1: receiveSystem = m_MessagingSystem_v1; break;
-                default: receiveSystem = m_MessagingSystem_v2; break;
+                case 0: receiveSystem = m_MessageManagerV0; break;
+                case 1: receiveSystem = m_MessageManagerV1; break;
+                default: receiveSystem = m_MessageManagerV2; break;
             }
             receiveSystem.HandleIncomingData((ulong)fromVersion, new ArraySegment<byte>(m_MessageSender.MessageQueue[0]), 0.0f);
             receiveSystem.ProcessIncomingMessageQueue();
@@ -387,7 +387,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 0, 0);
 
-            var receivedMessage = VersionedTestMessage_v0.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV0.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(message.B, receivedMessage.B);
             Assert.AreEqual(message.C, receivedMessage.C);
@@ -400,7 +400,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 0, 1);
 
-            var receivedMessage = VersionedTestMessage_v1.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV1.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(message.B, receivedMessage.B);
             Assert.AreEqual(message.C, receivedMessage.C);
@@ -427,7 +427,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 1, 0);
 
-            var receivedMessage = VersionedTestMessage_v0.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV0.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(message.B, receivedMessage.B);
             Assert.AreEqual(message.C, receivedMessage.C);
@@ -440,7 +440,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 1, 1);
 
-            var receivedMessage = VersionedTestMessage_v1.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV1.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(message.B, receivedMessage.B);
             Assert.AreEqual(message.C, receivedMessage.C);
@@ -467,7 +467,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 2, 0);
 
-            var receivedMessage = VersionedTestMessage_v0.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV0.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(k_DefaultB, receivedMessage.B);
             Assert.AreEqual(k_DefaultC, receivedMessage.C);
@@ -480,7 +480,7 @@ namespace Unity.Netcode.EditorTests
 
             SendMessageWithVersions(message, 2, 1);
 
-            var receivedMessage = VersionedTestMessage_v1.DeserializedValues[0];
+            var receivedMessage = VersionedTestMessageV1.DeserializedValues[0];
             Assert.AreEqual(message.A, receivedMessage.A);
             Assert.AreEqual(k_DefaultB, receivedMessage.B);
             Assert.AreEqual(k_DefaultC, receivedMessage.C);

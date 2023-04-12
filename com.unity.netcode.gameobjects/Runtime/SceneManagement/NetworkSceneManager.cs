@@ -2461,8 +2461,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Should be invoked during PostLateUpdate just prior to the
-        /// MessagingSystem processes its outbound message queue.
+        /// Should be invoked during PostLateUpdate just prior to the NetworkMessageManager processes its outbound message queue.
         /// </summary>
         internal void CheckForAndSendNetworkObjectSceneChanged()
         {
@@ -2471,6 +2470,7 @@ namespace Unity.Netcode
             {
                 return;
             }
+
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
             SendSceneEventData(sceneEvent.SceneEventId, m_NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());

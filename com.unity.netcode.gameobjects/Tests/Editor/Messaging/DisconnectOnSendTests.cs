@@ -25,17 +25,19 @@ namespace Unity.Netcode.EditorTests
 
         private class DisconnectOnSendMessageSender : IMessageSender
         {
-            public NetworkMessageManager MessagingSystem;
+            public NetworkMessageManager MessageManager;
 
             public void Send(ulong clientId, NetworkDelivery delivery, FastBufferWriter batchData)
             {
-                MessagingSystem.ClientDisconnected(clientId);
+                MessageManager.ClientDisconnected(clientId);
             }
         }
+
         private class TestMessageProvider : IMessageProvider
         {
             // Keep track of what we sent
-            private List<NetworkMessageManager.MessageWithHandler> m_MessageList = new List<NetworkMessageManager.MessageWithHandler>{
+            private List<NetworkMessageManager.MessageWithHandler> m_MessageList = new List<NetworkMessageManager.MessageWithHandler>
+            {
                 new NetworkMessageManager.MessageWithHandler
                 {
                     MessageType = typeof(TestMessage),
@@ -52,7 +54,7 @@ namespace Unity.Netcode.EditorTests
 
         private TestMessageProvider m_TestMessageProvider;
         private DisconnectOnSendMessageSender m_MessageSender;
-        private NetworkMessageManager m_MessagingSystem;
+        private NetworkMessageManager m_MessageManager;
         private ulong[] m_Clients = { 0 };
 
         [SetUp]
@@ -60,16 +62,16 @@ namespace Unity.Netcode.EditorTests
         {
             m_MessageSender = new DisconnectOnSendMessageSender();
             m_TestMessageProvider = new TestMessageProvider();
-            m_MessagingSystem = new NetworkMessageManager(m_MessageSender, this, m_TestMessageProvider);
-            m_MessageSender.MessagingSystem = m_MessagingSystem;
-            m_MessagingSystem.ClientConnected(0);
-            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager = new NetworkMessageManager(m_MessageSender, this, m_TestMessageProvider);
+            m_MessageSender.MessageManager = m_MessageManager;
+            m_MessageManager.ClientConnected(0);
+            m_MessageManager.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]
         public void TearDown()
         {
-            m_MessagingSystem.Dispose();
+            m_MessageManager.Dispose();
         }
 
         private TestMessage GetMessage()
@@ -81,10 +83,10 @@ namespace Unity.Netcode.EditorTests
         public void WhenDisconnectIsCalledDuringSend_NoErrorsOccur()
         {
             var message = GetMessage();
-            m_MessagingSystem.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
+            m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
 
             // This is where an exception would be thrown and logged.
-            m_MessagingSystem.ProcessSendQueues();
+            m_MessageManager.ProcessSendQueues();
         }
     }
 }

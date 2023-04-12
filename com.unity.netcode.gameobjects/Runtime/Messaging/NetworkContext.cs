@@ -6,7 +6,7 @@ namespace Unity.Netcode
     internal ref struct NetworkContext
     {
         /// <summary>
-        /// An opaque object used to represent the owner of the MessagingSystem that's receiving the message.
+        /// An opaque object used to represent the owner of the NetworkMessageManager that's receiving the message.
         /// Outside of testing environments, the type of this variable will be <see cref="NetworkManager"/>
         /// </summary>
         public object SystemOwner;

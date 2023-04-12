@@ -56,7 +56,7 @@ namespace Unity.Netcode
             }
         }
 
-        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager system);
+        internal delegate void MessageHandler(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager);
 
         internal delegate int VersionGetter();
 
@@ -543,7 +543,7 @@ namespace Unity.Netcode
             return messageVersion;
         }
 
-        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager system) where T : INetworkMessage, new()
+        public static void ReceiveMessage<T>(FastBufferReader reader, ref NetworkContext context, NetworkMessageManager manager) where T : INetworkMessage, new()
         {
             var message = new T();
             var messageVersion = 0;
@@ -552,7 +552,7 @@ namespace Unity.Netcode
             // and can't change.
             if (typeof(T) != typeof(ConnectionRequestMessage) && typeof(T) != typeof(ConnectionApprovedMessage) && typeof(T) != typeof(DisconnectReasonMessage))
             {
-                messageVersion = system.GetMessageVersion(typeof(T), context.SenderId, true);
+                messageVersion = manager.GetMessageVersion(typeof(T), context.SenderId, true);
                 if (messageVersion < 0)
                 {
                     return;
@@ -561,16 +561,16 @@ namespace Unity.Netcode
 
             if (message.Deserialize(reader, ref context, messageVersion))
             {
-                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                for (var hookIdx = 0; hookIdx < manager.m_Hooks.Count; ++hookIdx)
                 {
-                    system.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
+                    manager.m_Hooks[hookIdx].OnBeforeHandleMessage(ref message, ref context);
                 }
 
                 message.Handle(ref context);
 
-                for (var hookIdx = 0; hookIdx < system.m_Hooks.Count; ++hookIdx)
+                for (var hookIdx = 0; hookIdx < manager.m_Hooks.Count; ++hookIdx)
                 {
-                    system.m_Hooks[hookIdx].OnAfterHandleMessage(ref message, ref context);
+                    manager.m_Hooks[hookIdx].OnAfterHandleMessage(ref message, ref context);
                 }
             }
         }

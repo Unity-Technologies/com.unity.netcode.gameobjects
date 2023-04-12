@@ -6,10 +6,8 @@ namespace Unity.Netcode
     internal struct MessageHeader : INetworkSerializeByMemcpy
     {
         /// <summary>
-        /// The byte representation of the message type. This is automatically assigned to each message
-        /// by the MessagingSystem. This value is deterministic only so long as the list of messages remains
-        /// unchanged - if new messages are added or messages are removed, MessageType assignments may be
-        /// calculated differently.
+        /// The byte representation of the message type. This is automatically assigned to each message by the NetworkMessageManager.
+        /// This value is deterministic only so long as the list of messages remains unchanged - if new messages are added or messages are removed, MessageType assignments may be calculated differently.
         /// </summary>
         public uint MessageType;
 

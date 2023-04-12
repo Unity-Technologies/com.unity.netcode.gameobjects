@@ -250,18 +250,18 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
             var provider = new OrderingMessageProvider();
-            using var messagingSystem = new NetworkMessageManager(sender, null, provider);
+            using var messageManager = new NetworkMessageManager(sender, null, provider);
 
             // the 2 priority messages should appear first, in lexicographic order
-            Assert.AreEqual(messagingSystem.MessageTypes[0], typeof(ConnectionApprovedMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[1], typeof(ConnectionRequestMessage));
+            Assert.AreEqual(messageManager.MessageTypes[0], typeof(ConnectionApprovedMessage));
+            Assert.AreEqual(messageManager.MessageTypes[1], typeof(ConnectionRequestMessage));
 
             // the other should follow after
-            Assert.AreEqual(messagingSystem.MessageTypes[2], typeof(AAAEarlyLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
+            Assert.AreEqual(messageManager.MessageTypes[2], typeof(AAAEarlyLexicographicNetworkMessage));
+            Assert.AreEqual(messageManager.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
 
             // there should not be any extras
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 4);
+            Assert.AreEqual(messageManager.MessageHandlerCount, 4);
         }
     }
 }

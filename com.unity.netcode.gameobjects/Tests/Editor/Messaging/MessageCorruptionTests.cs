@@ -108,7 +108,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private NetworkMessageManager m_MessagingSystem;
+        private NetworkMessageManager m_MessageManager;
         private TestMessageSender m_MessageSender;
 
         [SetUp]
@@ -118,16 +118,16 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Deserialized = false;
             m_MessageSender = new TestMessageSender();
 
-            m_MessagingSystem = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider());
+            m_MessageManager = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider());
 
-            m_MessagingSystem.ClientConnected(0);
-            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager.ClientConnected(0);
+            m_MessageManager.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]
         public void TearDown()
         {
-            m_MessagingSystem.Dispose();
+            m_MessageManager.Dispose();
         }
 
         private TestMessage GetMessage()
@@ -166,7 +166,7 @@ namespace Unity.Netcode.EditorTests
             var messageHeader = new MessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
 
@@ -194,7 +194,7 @@ namespace Unity.Netcode.EditorTests
 
                 var receivedMessage = m_MessageSender.MessageQueue[0];
                 m_MessageSender.MessageQueue.Clear();
-                m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(receivedMessage), 0);
+                m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(receivedMessage), 0);
                 Assert.IsFalse(TestMessage.Deserialized);
                 Assert.IsFalse(TestMessage.Handled);
             }
