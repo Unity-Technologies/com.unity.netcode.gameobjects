@@ -16,7 +16,6 @@ namespace Unity.Netcode
     /// - Client Approval
     /// - Processing <see cref="NetworkEvent"/>s.
     /// - Client Disconnection
-    /// - NetworkMessageManager updates
     /// </summary>
     // TODO 2023-Q2: Discuss what kind of public API exposure we want for this
     public sealed class NetworkConnectionManager
@@ -68,12 +67,9 @@ namespace Unity.Netcode
         /// </summary>
         internal bool StopProcessingMessages;
 
-        /// <summary>
-        /// The <see cref="NetworkMessageManager"/> is updated in <see cref="NetworkUpdate"/>
-        /// </summary>
+        internal NetworkManager NetworkManager;
         internal NetworkMessageManager MessageManager;
 
-        internal NetworkManager NetworkManager;
         internal NetworkClient LocalClient = new NetworkClient();
         internal Dictionary<ulong, NetworkManager.ConnectionApprovalResponse> ClientsToApprove = new Dictionary<ulong, NetworkManager.ConnectionApprovalResponse>();
 
@@ -172,7 +168,13 @@ namespace Unity.Netcode
         {
             if (NetworkManager != null)
             {
-                return NetworkManager.NetworkConfig.NetworkTransport?.ServerClientId ?? throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
+                var transport = NetworkManager.NetworkConfig.NetworkTransport;
+                if (transport != null)
+                {
+                    return transport.ServerClientId;
+                }
+
+                throw new NullReferenceException($"The transport in the active {nameof(NetworkConfig)} is null");
             }
 
             throw new Exception($"There is no {nameof(NetworkManager)} assigned to this instance!");
@@ -199,58 +201,6 @@ namespace Unity.Netcode
             TransportIdToClientIdMap.Remove(transportId);
             ClientIdToTransportIdMap.Remove(clientId);
             return clientId;
-        }
-
-        /// <summary>
-        /// ConnectionManager Internal Updates
-        /// </summary>
-        internal void NetworkUpdate(NetworkUpdateStage updateStage)
-        {
-            switch (updateStage)
-            {
-                case NetworkUpdateStage.EarlyUpdate:
-                    {
-                        // Exit early if we haven't started or are no longer processing messages.
-                        if (StopProcessingMessages)
-                        {
-                            return;
-                        }
-
-                        OnEarlyUpdate();
-                        MessageManager.OnEarlyUpdate();
-
-                        break;
-                    }
-                case NetworkUpdateStage.PostLateUpdate:
-                    {
-                        // Things that should only be invoked when we are processing messages
-                        if (!StopProcessingMessages)
-                        {
-                            // This should be invoked just prior to the MessageManager processes its outbound queue.
-                            NetworkManager.SceneManager.CheckForAndSendNetworkObjectSceneChanged();
-
-                            // Process outbound messages
-                            MessageManager.ProcessSendQueues();
-
-                            // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
-                            NetworkManager.NetworkMetricsManager.UpdateMetrics();
-
-                            // TODO 2023-Q2: Determine a better way to handle this
-                            NetworkObject.VerifyParentingStatus();
-                        }
-
-                        // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
-                        NetworkManager.DeferredMessageManager.CleanupStaleTriggers();
-
-                        // TODO 2023-Q2: Determine a better way to handle this
-                        if (NetworkManager.ShutdownInProgress)
-                        {
-                            NetworkManager.ShutdownInternal();
-                        }
-
-                        break;
-                    }
-            }
         }
 
         /// <summary>
@@ -941,25 +891,12 @@ namespace Unity.Netcode
             TransportIdToClientIdMap.Clear();
             ClientsToApprove.Clear();
             NetworkObject.OrphanChildren.Clear();
-
             DisconnectReason = string.Empty;
+
             NetworkManager = networkManager;
+            MessageManager = networkManager.MessageManager;
 
-            MessageManager = new NetworkMessageManager(new DefaultMessageSender(networkManager), networkManager);
-
-            MessageManager.Hook(new NetworkManagerHooks(networkManager));
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            MessageManager.Hook(new ProfilingHooks());
-#endif
-
-#if MULTIPLAYER_TOOLS
-            MessageManager.Hook(new MetricHooks(networkManager));
-#endif
-            // Assures there is a server message queue available
-            MessageManager.ClientConnected(NetworkManager.ServerClientId);
-
-            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.NetworkMetricsManager.NetworkMetrics;
+            NetworkManager.NetworkConfig.NetworkTransport.NetworkMetrics = NetworkManager.MetricsManager.NetworkMetrics;
 
             NetworkManager.NetworkConfig.NetworkTransport.OnTransportEvent += HandleNetworkEvent;
             NetworkManager.NetworkConfig.NetworkTransport.Initialize(networkManager);
@@ -987,12 +924,12 @@ namespace Unity.Netcode
                 {
                     if (!disconnectedIds.Contains(pair.Key))
                     {
-                        disconnectedIds.Add(pair.Key);
-
                         if (pair.Key == serverTransportId)
                         {
                             continue;
                         }
+
+                        disconnectedIds.Add(pair.Key);
                     }
                 }
 
@@ -1000,11 +937,12 @@ namespace Unity.Netcode
                 {
                     if (!disconnectedIds.Contains(pair.Key))
                     {
-                        disconnectedIds.Add(pair.Key);
                         if (pair.Key == serverTransportId)
                         {
                             continue;
                         }
+
+                        disconnectedIds.Add(pair.Key);
                     }
                 }
 
@@ -1025,9 +963,6 @@ namespace Unity.Netcode
                     Debug.LogException(ex);
                 }
             }
-
-            MessageManager?.Dispose();
-
 
             if (NetworkManager != null && NetworkManager.NetworkConfig?.NetworkTransport != null)
             {
