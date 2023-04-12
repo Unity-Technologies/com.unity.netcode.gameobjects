@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Unity.Netcode
 {
@@ -66,6 +67,7 @@ namespace Unity.Netcode
         /// Gets or sets the name of the network variable's instance
         /// (MemberInfo) where it was declared.
         /// </summary>
+        [Preserve]
         public string Name { get; internal set; }
 
         /// <summary>
