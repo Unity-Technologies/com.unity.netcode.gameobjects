@@ -2058,6 +2058,11 @@ namespace Unity.Netcode
                                 ClientId = m_NetworkManager.LocalClientId, // Client sent this to the server
                             });
 
+                            // Process any SceneEventType.ObjectSceneChanged messages that
+                            // were deferred while synchronizing and migrate the associated
+                            // NetworkObjects to their newly assigned scenes.
+                            sceneEventData.ProcessDeferredObjectSceneChangedEvents();
+
                             // Only if PostSynchronizationSceneUnloading is set and we are running in client synchronization
                             // mode additive do we unload any remaining scene that was not synchronized (otherwise any loaded
                             // scene not synchronized by the server will remain loaded)
@@ -2412,6 +2417,7 @@ namespace Unity.Netcode
             }
 
             // Don't notify if a scene event is in progress
+            // Note: This does not apply to SceneEventType.Synchronize since synchronization isn't a global connected client event.
             foreach (var sceneEventEntry in SceneEventProgressTracking)
             {
                 if (!sceneEventEntry.Value.HasTimedOut() && sceneEventEntry.Value.Status == SceneEventProgressStatus.Started)
@@ -2430,8 +2436,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Invoked by clients when processing a <see cref="SceneEventType.ObjectSceneChanged"/> event
+        /// or invoked by <see cref="SceneEventData.ProcessDeferredObjectSceneChangedEvents"/> when a client finishes
+        /// synchronization.
         /// </summary>
-        private void MigrateNetworkObjectsIntoScenes()
+        internal void MigrateNetworkObjectsIntoScenes()
         {
             try
             {
@@ -2476,5 +2484,13 @@ namespace Unity.Netcode
             SendSceneEventData(sceneEvent.SceneEventId, m_NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
             EndSceneEvent(sceneEvent.SceneEventId);
         }
+
+        // Used to handle client-side scene migration messages received while
+        // a client is synchronizing
+        internal struct DeferredObjectsMovedEvent
+        {
+            internal Dictionary<int, List<ulong>> ObjectsMigratedTable;
+        }
+        internal List<DeferredObjectsMovedEvent> DeferredObjectsMovedEvents = new List<DeferredObjectsMovedEvent>();
     }
 }
