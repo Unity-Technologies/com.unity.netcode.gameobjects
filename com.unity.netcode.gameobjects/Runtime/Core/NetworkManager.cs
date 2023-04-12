@@ -36,12 +36,8 @@ namespace Unity.Netcode
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
-                        // Only if we haven't started or are no longer processing messages.
-                        if (!ConnectionManager.StopProcessingMessages)
-                        {
-                            ConnectionManager.OnEarlyUpdate();
-                            MessageManager.OnEarlyUpdate();
-                        }
+                        ConnectionManager.OnEarlyUpdate();
+                        MessageManager.OnEarlyUpdate();
                     }
                     break;
                 case NetworkUpdateStage.PreUpdate:
@@ -51,27 +47,23 @@ namespace Unity.Netcode
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
                     {
-                        // Things that should only be invoked when we are processing messages
-                        if (!ConnectionManager.StopProcessingMessages)
-                        {
-                            // This should be invoked just prior to the MessageManager processes its outbound queue.
-                            SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+                        // This should be invoked just prior to the MessageManager processes its outbound queue.
+                        SceneManager.CheckForAndSendNetworkObjectSceneChanged();
 
-                            // Process outbound messages
-                            MessageManager.ProcessSendQueues();
+                        // Process outbound messages
+                        MessageManager.ProcessSendQueues();
 
-                            // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
-                            MetricsManager.UpdateMetrics();
+                        // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
+                        MetricsManager.UpdateMetrics();
 
-                            // TODO 2023-Q2: Determine a better way to handle this
-                            NetworkObject.VerifyParentingStatus();
-                        }
+                        // TODO 2023-Q2: Determine a better way to handle this
+                        NetworkObject.VerifyParentingStatus();
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
 
                         // TODO 2023-Q2: Determine a better way to handle this
-                        if (ShutdownInProgress)
+                        if (m_ShuttingDown)
                         {
                             ShutdownInternal();
                         }
@@ -925,7 +917,7 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                ConnectionManager.StopProcessingMessages = discardMessageQueue;
+                MessageManager.StopProcessing = discardMessageQueue;
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;

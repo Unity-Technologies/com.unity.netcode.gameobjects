@@ -33,6 +33,8 @@ namespace Unity.Netcode
 
     internal class NetworkMessageManager : IDisposable
     {
+        public bool StopProcessing = false;
+
         private struct ReceiveQueueItem
         {
             public FastBufferReader Reader;
@@ -229,6 +231,11 @@ namespace Unity.Netcode
         /// </remarks>
         internal void OnEarlyUpdate()
         {
+            if (StopProcessing)
+            {
+                return;
+            }
+
             ProcessIncomingMessageQueue();
             CleanupDisconnectedClients();
         }
@@ -794,6 +801,11 @@ namespace Unity.Netcode
 
         internal unsafe void ProcessSendQueues()
         {
+            if (StopProcessing)
+            {
+                return;
+            }
+
             foreach (var kvp in m_SendQueues)
             {
                 var clientId = kvp.Key;

@@ -62,11 +62,6 @@ namespace Unity.Netcode
         /// </summary>
         public bool IsListening { get; internal set; }
 
-        /// <summary>
-        /// When set ConnectionManager and MessageManager will stop processing messages
-        /// </summary>
-        internal bool StopProcessingMessages;
-
         internal NetworkManager NetworkManager;
         internal NetworkMessageManager MessageManager;
 
@@ -907,7 +902,6 @@ namespace Unity.Netcode
         /// </summary>
         internal void Shutdown()
         {
-            StopProcessingMessages = false;
             LocalClient.IsApproved = false;
             LocalClient.IsConnected = false;
             if (LocalClient.IsServer)
@@ -974,7 +968,11 @@ namespace Unity.Netcode
             if (IsListening)
             {
                 //The Transport is set during initialization, thus it is possible for the Transport to be null
-                NetworkManager.NetworkConfig?.NetworkTransport?.Shutdown();
+                var transport = NetworkManager.NetworkConfig?.NetworkTransport;
+                if (transport != null)
+                {
+                    transport.Shutdown();
+                }
             }
         }
 
