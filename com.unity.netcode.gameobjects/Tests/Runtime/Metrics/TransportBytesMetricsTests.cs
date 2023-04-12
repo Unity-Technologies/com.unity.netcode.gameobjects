@@ -14,7 +14,7 @@ namespace Unity.Netcode.RuntimeTests.Metrics
     {
         // Header is dynamically sized due to packing, will be 2 bytes for all test messages.
         private const int k_MessageHeaderSize = 2;
-        private static readonly long k_MessageOverhead = 8 + FastBufferWriter.GetWriteSize<BatchHeader>() + k_MessageHeaderSize;
+        private static readonly long k_MessageOverhead = 8 + FastBufferWriter.GetWriteSize<NetworkBatchHeader>() + k_MessageHeaderSize;
 
         [UnityTest]
         public IEnumerator TrackTotalNumberOfBytesSent()
