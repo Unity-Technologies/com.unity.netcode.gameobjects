@@ -35,39 +35,39 @@ namespace Unity.Netcode
             switch (updateStage)
             {
                 case NetworkUpdateStage.EarlyUpdate:
-                    {
-                        ConnectionManager.OnEarlyUpdate();
-                        MessageManager.OnEarlyUpdate();
-                    }
+                {
+                    ConnectionManager.OnEarlyUpdate();
+                    MessageManager.OnEarlyUpdate();
+                }
                     break;
                 case NetworkUpdateStage.PreUpdate:
-                    {
-                        NetworkTimeSystem.NetworkUpdate(updateStage);
-                    }
+                {
+                    NetworkTimeSystem.NetworkUpdate(updateStage);
+                }
                     break;
                 case NetworkUpdateStage.PostLateUpdate:
+                {
+                    // This should be invoked just prior to the MessageManager processes its outbound queue.
+                    SceneManager.CheckForAndSendNetworkObjectSceneChanged();
+
+                    // Process outbound messages
+                    MessageManager.ProcessSendQueues();
+
+                    // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
+                    MetricsManager.UpdateMetrics();
+
+                    // TODO 2023-Q2: Determine a better way to handle this
+                    NetworkObject.VerifyParentingStatus();
+
+                    // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
+                    DeferredMessageManager.CleanupStaleTriggers();
+
+                    // TODO 2023-Q2: Determine a better way to handle this
+                    if (m_ShuttingDown)
                     {
-                        // This should be invoked just prior to the MessageManager processes its outbound queue.
-                        SceneManager.CheckForAndSendNetworkObjectSceneChanged();
-
-                        // Process outbound messages
-                        MessageManager.ProcessSendQueues();
-
-                        // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
-                        MetricsManager.UpdateMetrics();
-
-                        // TODO 2023-Q2: Determine a better way to handle this
-                        NetworkObject.VerifyParentingStatus();
-
-                        // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
-                        DeferredMessageManager.CleanupStaleTriggers();
-
-                        // TODO 2023-Q2: Determine a better way to handle this
-                        if (m_ShuttingDown)
-                        {
-                            ShutdownInternal();
-                        }
+                        ShutdownInternal();
                     }
+                }
                     break;
             }
         }
@@ -293,8 +293,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The current netcode project configuration
         /// </summary>
-        [HideInInspector]
-        public NetworkConfig NetworkConfig;
+        [HideInInspector] public NetworkConfig NetworkConfig;
 
         /// <summary>
         /// The local <see cref="NetworkTime"/>
@@ -309,14 +308,12 @@ namespace Unity.Netcode
         /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
-        [HideInInspector]
-        public bool RunInBackground = true;
+        [HideInInspector] public bool RunInBackground = true;
 
         /// <summary>
         /// The log level to use
         /// </summary>
-        [HideInInspector]
-        public LogLevel LogLevel = LogLevel.Normal;
+        [HideInInspector] public LogLevel LogLevel = LogLevel.Normal;
 
         /// <summary>
         /// The singleton instance of the NetworkManager
@@ -623,7 +620,7 @@ namespace Unity.Netcode
 #endif
 
 #if MULTIPLAYER_TOOLS
-            MessageManager.Hook(new MetricHooks(networkManager));
+                MessageManager.Hook(new MetricHooks(this));
 #endif
 
                 // Assures there is a server message queue available
