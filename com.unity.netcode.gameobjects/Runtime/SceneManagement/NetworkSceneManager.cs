@@ -2068,6 +2068,11 @@ namespace Unity.Netcode
 
                             OnSynchronizeComplete?.Invoke(m_NetworkManager.LocalClientId);
 
+                            // Process any SceneEventType.ObjectSceneChanged messages that
+                            // were deferred while synchronizing and migrate the associated
+                            // NetworkObjects to their newly assigned scenes.
+                            sceneEventData.ProcessDeferredObjectsMovedEvents();
+
                             EndSceneEvent(sceneEventId);
                         }
                         break;
@@ -2430,8 +2435,10 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Invoked by clients when processing a <see cref="SceneEventType.ObjectSceneChanged"/> event
+        /// or invoked by SceneEventData.ProcessDeferredObjectsMovedEvents when a client finishes
+        /// synchronization.
         /// </summary>
-        private void MigrateNetworkObjectsIntoScenes()
+        internal void MigrateNetworkObjectsIntoScenes()
         {
             try
             {
