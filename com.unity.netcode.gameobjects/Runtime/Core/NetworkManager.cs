@@ -36,13 +36,16 @@ namespace Unity.Netcode
             {
                 case NetworkUpdateStage.EarlyUpdate:
                     {
-                        ConnectionManager.OnEarlyUpdate();
-                        MessageManager.OnEarlyUpdate();
+                        ConnectionManager.ProcessPendingApprovals();
+                        ConnectionManager.PollAndHandleNetworkEvents();
+
+                        MessageManager.ProcessIncomingMessageQueue();
+                        MessageManager.CleanupDisconnectedClients();
                     }
                     break;
                 case NetworkUpdateStage.PreUpdate:
                     {
-                        NetworkTimeSystem.NetworkUpdate(updateStage);
+                        NetworkTimeSystem.UpdateTime();
                     }
                     break;
                 case NetworkUpdateStage.PostLateUpdate:

@@ -176,17 +176,13 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Handles cleaning up the transport id/client id tables after
-        /// receiving a disconnect event from transport
+        /// Handles cleaning up the transport id/client id tables after receiving a disconnect event from transport
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal ulong TransportIdCleanUp(ulong transportId)
         {
             // This check is for clients that attempted to connect but failed.
-            // When this happens, the client will not have an entry within the
-            // m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup
-            // tables so we exit early and just return 0 to be used for the
-            // disconnect event.
+            // When this happens, the client will not have an entry within the m_TransportIdToClientIdMap or m_ClientIdToTransportIdMap lookup tables so we exit early and just return 0 to be used for the disconnect event.
             if (!LocalClient.IsServer && !TransportIdToClientIdMap.ContainsKey(transportId))
             {
                 return 0;
@@ -198,16 +194,8 @@ namespace Unity.Netcode
             return clientId;
         }
 
-        /// <summary>
-        /// ConnectionManager specific logic during the EarlyUpdate
-        /// </summary>
-        /// <remarks>
-        /// Also handles NetworkTransport implementations that are polled as opposed to event driven.
-        /// </remarks>
-        internal void OnEarlyUpdate()
+        internal void PollAndHandleNetworkEvents()
         {
-            ProcessPendingApprovals();
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_TransportPollMarker.Begin();
 #endif
@@ -512,7 +500,7 @@ namespace Unity.Netcode
         /// Server-Side:
         /// Processes pending approvals and removes any stale pending clients
         /// </summary>
-        private void ProcessPendingApprovals()
+        internal void ProcessPendingApprovals()
         {
             List<ulong> senders = null;
 
