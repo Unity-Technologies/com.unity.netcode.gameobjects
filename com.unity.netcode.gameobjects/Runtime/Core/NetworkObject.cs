@@ -540,17 +540,18 @@ namespace Unity.Netcode
             if (NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
-                // Clients are not allowed to despawn NetworkObjects while connected to a session
+                // Clients should not despawn NetworkObjects while connected to a session, but we should not throw an exception but rather inform the user
+                // that this will cause issues.
                 if (!NetworkManager.ShutdownInProgress)
                 {
-                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    // Since we still have a session connection, log locally and on the server to inform user of this issue.
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
-                        // We still have a session connection, log locally and on the server to inform user of this issue.
                         NetworkLog.LogErrorServer($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
                     }
                     return;
                 }
-                // Otherwise, clients are allowed to despawn NetworkObjects while shutting down.
+                // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
             }
 
             if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))

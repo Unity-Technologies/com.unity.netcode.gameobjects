@@ -65,7 +65,6 @@ namespace Unity.Netcode.RuntimeTests
         public IEnumerator TestNetworkObjectClientDestroy([Values] ClientDestroyObject clientDestroyObject)
         {
             var isShuttingDown = clientDestroyObject == ClientDestroyObject.ShuttingDown;
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
             var clientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
             var clientId = clientPlayer.OwnerClientId;
 
@@ -73,7 +72,7 @@ namespace Unity.Netcode.RuntimeTests
             if (!isShuttingDown)
             {
                 NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
-                // Since NetworkLog uses singleton, we set the server header (normally it would be Netcode-Client Sender=<clientId>)
+                // Expect a client-side error message and server-side error message
                 LogAssert.Expect(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
                 LogAssert.Expect(LogType.Error, $"[Netcode-Server Sender={clientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
             }
