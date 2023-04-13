@@ -540,8 +540,8 @@ namespace Unity.Netcode
             if (NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
-                // Clients should not despawn NetworkObjects while connected to a session, but we should not throw an exception but rather inform the user
-                // that this will cause issues.
+                // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
+                // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
                 if (!NetworkManager.ShutdownInProgress)
                 {
                     // Since we still have a session connection, log locally and on the server to inform user of this issue.
