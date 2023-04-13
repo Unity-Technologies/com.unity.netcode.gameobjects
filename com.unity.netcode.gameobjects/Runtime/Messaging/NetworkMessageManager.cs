@@ -222,24 +222,6 @@ namespace Unity.Netcode
             return m_LocalVersions[messageType];
         }
 
-        /// <summary>
-        /// Invoked by <see cref="NetworkConnectionManager.NetworkUpdate"/>
-        /// </summary>
-        /// <remarks>
-        /// This requires a specific order of operations where <see cref="NetworkConnectionManager.OnEarlyUpdate"/> is
-        /// invoked prior to this method.
-        /// </remarks>
-        internal void OnEarlyUpdate()
-        {
-            if (StopProcessing)
-            {
-                return;
-            }
-
-            ProcessIncomingMessageQueue();
-            CleanupDisconnectedClients();
-        }
-
         internal static string ByteArrayToString(byte[] ba, int offset, int count)
         {
             var hex = new StringBuilder(ba.Length * 2);
@@ -255,9 +237,9 @@ namespace Unity.Netcode
         {
             unsafe
             {
-                fixed (byte* nativeData = data.Array)
+                fixed (byte* dataPtr = data.Array)
                 {
-                    var batchReader = new FastBufferReader(nativeData + data.Offset, Allocator.None, data.Count);
+                    var batchReader = new FastBufferReader(dataPtr + data.Offset, Allocator.None, data.Count);
                     if (!batchReader.TryBeginRead(sizeof(NetworkBatchHeader)))
                     {
                         NetworkLog.LogError("Received a packet too small to contain a BatchHeader. Ignoring it.");
@@ -461,8 +443,13 @@ namespace Unity.Netcode
             }
         }
 
-        internal unsafe void ProcessIncomingMessageQueue()
+        internal void ProcessIncomingMessageQueue()
         {
+            if (StopProcessing)
+            {
+                return;
+            }
+
             for (var index = 0; index < m_IncomingMessageQueue.Length; ++index)
             {
                 // Avoid copies...
