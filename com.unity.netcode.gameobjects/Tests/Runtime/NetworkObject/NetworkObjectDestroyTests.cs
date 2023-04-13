@@ -52,24 +52,48 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(go == null);
         }
 
-        /// <summary>
-        /// Tests that a client cannot destroy a spawned networkobject.
-        /// </summary>
-        /// <returns></returns>
-        [UnityTest]
-        public IEnumerator TestNetworkObjectClientDestroy()
+
+        public enum ClientDestroyObject
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
-
+            ShuttingDown,
+            ActiveSession
+        }
+        /// <summary>
+        /// Validates the expected behavior when the client-side destroys a <see cref="NetworkObject"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestNetworkObjectClientDestroy([Values] ClientDestroyObject clientDestroyObject)
+        {
+            var isShuttingDown = clientDestroyObject == ClientDestroyObject.ShuttingDown;
             // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
+            var clientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            var clientId = clientPlayer.OwnerClientId;
 
-            // destroy the client player, this is not allowed
-            LogAssert.Expect(LogType.Exception, "NotServerException: Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
-            Object.DestroyImmediate(clientClientPlayerResult.Result.gameObject);
+            // destroying a NetworkObject while a session is active is not allowed
+            if (!isShuttingDown)
+            {
+                NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
+                // Since NetworkLog uses singleton, we set the server header (normally it would be Netcode-Client Sender=<clientId>)
+                LogAssert.Expect(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
+                LogAssert.Expect(LogType.Error, $"[Netcode-Server Sender={clientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
+            }
+            else //destroying a NetworkObject while shutting down is allowed
+            {
+                m_ClientNetworkManagers[0].Shutdown();
+            }
+            Object.DestroyImmediate(clientPlayer.gameObject);
+
+            // If not shutting down, provide time for network log to reach the server
+            if (!isShuttingDown)
+            {
+                yield return s_DefaultWaitForTick;
+            }
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            NetworkLog.NetworkManagerOverride = null;
+            return base.OnTearDown();
         }
     }
 }
