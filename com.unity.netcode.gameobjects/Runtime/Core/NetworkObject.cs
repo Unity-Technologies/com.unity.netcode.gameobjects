@@ -545,7 +545,8 @@ namespace Unity.Netcode
                 {
                     if (NetworkManager.LogLevel <= LogLevel.Normal)
                     {
-                        NetworkLog.LogError($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                        // We still have a session connection, log locally and on the server to inform user of this issue.
+                        NetworkLog.LogErrorServer($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
                     }
                     return;
                 }
