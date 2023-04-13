@@ -531,14 +531,28 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            // If no NetworkManager is assigned, then just exit early
+            if (NetworkManager == null)
             {
-                throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                return;
             }
 
-            if (NetworkManager != null && NetworkManager.SpawnManager != null &&
-                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
+                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            {
+                // Clients are not allowed to despawn NetworkObjects while connected to a session
+                if (!NetworkManager.ShutdownInProgress)
+                {
+                    if (NetworkManager.LogLevel <= LogLevel.Normal)
+                    {
+                        NetworkLog.LogError($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                    }
+                    return;
+                }
+                // Otherwise, clients are allowed to despawn NetworkObjects while shutting down.
+            }
+
+            if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
