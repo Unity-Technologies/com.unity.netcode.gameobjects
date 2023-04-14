@@ -68,30 +68,46 @@ namespace Unity.Netcode.RuntimeTests
             var clientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
             var clientId = clientPlayer.OwnerClientId;
 
-            // destroying a NetworkObject while a session is active is not allowed
-            if (!isShuttingDown)
-            {
-                NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
-                // Expect a client-side error message and server-side error message
-                LogAssert.Expect(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
-                LogAssert.Expect(LogType.Error, $"[Netcode-Server Sender={clientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
-            }
-            else //destroying a NetworkObject while shutting down is allowed
+            //destroying a NetworkObject while shutting down is allowed
+            if (isShuttingDown)
             {
                 m_ClientNetworkManagers[0].Shutdown();
             }
+            else
+            {
+                LogAssert.ignoreFailingMessages = true;
+                NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
+            }
+
             Object.DestroyImmediate(clientPlayer.gameObject);
 
-            // If not shutting down, provide time for network log to reach the server
+            // destroying a NetworkObject while a session is active is not allowed
             if (!isShuttingDown)
             {
-                yield return s_DefaultWaitForTick;
+                yield return WaitForConditionOrTimeOut(HaveLogsBeenReceived);
+                AssertOnTimeout($"Not all expected logs were received when destroying a {nameof(NetworkObject)} on the client side during an active session!");
             }
+        }
+
+        private bool HaveLogsBeenReceived()
+        {
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            {
+                return false;
+            }
+
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         protected override IEnumerator OnTearDown()
         {
             NetworkLog.NetworkManagerOverride = null;
+            LogAssert.ignoreFailingMessages = false;
             return base.OnTearDown();
         }
     }

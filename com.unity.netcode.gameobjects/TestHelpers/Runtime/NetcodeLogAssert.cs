@@ -157,6 +157,23 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        public bool HasLogBeenReceived(LogType type, string message)
+        {
+            var found = false;
+            lock (m_Lock)
+            {
+                foreach (var logEvent in AllLogs)
+                {
+                    if (logEvent.LogType == type && message.Equals(logEvent.Message))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            return found;
+        }
+
         public void Reset()
         {
             lock (m_Lock)
