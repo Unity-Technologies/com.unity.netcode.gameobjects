@@ -147,6 +147,7 @@ namespace Unity.Netcode.RuntimeTests
                     if (logEvent.LogType == type && messageRegex.IsMatch(logEvent.Message))
                     {
                         found = true;
+                        break;
                     }
                 }
 
