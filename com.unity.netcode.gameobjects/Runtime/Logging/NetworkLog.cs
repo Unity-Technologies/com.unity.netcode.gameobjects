@@ -55,10 +55,10 @@ namespace Unity.Netcode
 
         private static void LogServer(string message, LogType logType)
         {
-            var networkManager = NetworkManagerOverride != null ? NetworkManagerOverride : NetworkManager.Singleton;
+            var networkManager = NetworkManagerOverride ??= NetworkManager.Singleton;
             // Get the sender of the local log
-            ulong localId = networkManager != null ? networkManager.LocalClientId : 0;
-            bool isServer = networkManager != null ? networkManager.IsServer : true;
+            ulong localId = networkManager?.LocalClientId ?? 0;
+            bool isServer = networkManager?.IsServer ?? true;
             switch (logType)
             {
                 case LogType.Info:

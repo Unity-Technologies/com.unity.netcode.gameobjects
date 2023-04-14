@@ -532,12 +532,12 @@ namespace Unity.Netcode
         private void OnDestroy()
         {
             // If no NetworkManager is assigned, then just exit early
-            if (NetworkManager == null)
+            if (!NetworkManager)
             {
                 return;
             }
 
-            if (NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
+            if (NetworkManager.IsListening && !NetworkManager.IsServer && IsSpawned &&
                 (IsSceneObject == null || (IsSceneObject.Value != true)))
             {
                 // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
