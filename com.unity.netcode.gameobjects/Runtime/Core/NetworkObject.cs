@@ -531,14 +531,30 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            // If no NetworkManager is assigned, then just exit early
+            if (!NetworkManager)
             {
-                throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                return;
             }
 
-            if (NetworkManager != null && NetworkManager.SpawnManager != null &&
-                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (NetworkManager.IsListening && !NetworkManager.IsServer && IsSpawned &&
+                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            {
+                // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
+                // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
+                if (!NetworkManager.ShutdownInProgress)
+                {
+                    // Since we still have a session connection, log locally and on the server to inform user of this issue.
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogErrorServer($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                    }
+                    return;
+                }
+                // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
+            }
+
+            if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
