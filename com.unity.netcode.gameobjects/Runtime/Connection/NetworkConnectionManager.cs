@@ -448,13 +448,7 @@ namespace Unity.Netcode
                 {
                     if (timedOut)
                     {
-                        if (LocalClient.IsServer)
-                        {
-                            // Log a warning that the transport detected a connection but then did not receive a follow up connection request message.
-                            // (hacking or something happened to the server's network connection)
-                            NetworkLog.LogWarning($"Server detected a transport connection from Client-{clientId}, but timed out waiting for the connection request message.");
-                        }
-                        else
+                        if (!LocalClient.IsServer)
                         {
                             // We only provide informational logging for the client side
                             NetworkLog.LogInfo("Timed out waiting for the server to approve the connection request.");
@@ -646,6 +640,8 @@ namespace Unity.Netcode
             }
             else
             {
+                NetworkLog.LogInfo($"Disconnecting disapproved client {ownerClientId}");
+
                 if (!string.IsNullOrEmpty(response.Reason))
                 {
                     var disconnectReason = new DisconnectReasonMessage
