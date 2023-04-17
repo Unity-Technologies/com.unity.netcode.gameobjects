@@ -345,7 +345,7 @@ namespace Unity.Netcode
 
                 AddPendingClient(clientId);
 
-                NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
+                m_PendingClients[clientId].ApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
             }
             else
             {
@@ -355,7 +355,7 @@ namespace Unity.Netcode
                 }
 
                 SendConnectionRequest();
-                NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
+                m_PendingClients[clientId].ApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -736,6 +736,11 @@ namespace Unity.Netcode
                     };
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
                     MessagingSystem.ProcessSendQueues();
+                }
+
+                if (m_PendingClients[ownerClientId].ApprovalCoroutine != null)
+                {
+                    NetworkManager.StopCoroutine(m_PendingClients[ownerClientId].ApprovalCoroutine);
                 }
 
                 DisconnectRemoteClient(ownerClientId);

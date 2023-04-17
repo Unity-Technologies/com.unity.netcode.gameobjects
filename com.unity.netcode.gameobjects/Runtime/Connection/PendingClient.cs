@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -5,6 +7,8 @@ namespace Unity.Netcode
     /// </summary>
     public class PendingClient
     {
+        internal Coroutine ApprovalCoroutine = null;
+
         /// <summary>
         /// The ClientId of the client
         /// </summary>
