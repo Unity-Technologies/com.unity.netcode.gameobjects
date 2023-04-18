@@ -560,7 +560,7 @@ namespace Unity.Netcode
             {
                 foreach (var sender in senders)
                 {
-                    RemovePendingClient(sender);
+                    ClientsToApprove.Remove(sender);
                 }
             }
         }
