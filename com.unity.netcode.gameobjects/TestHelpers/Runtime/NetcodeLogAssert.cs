@@ -147,6 +147,7 @@ namespace Unity.Netcode.RuntimeTests
                     if (logEvent.LogType == type && messageRegex.IsMatch(logEvent.Message))
                     {
                         found = true;
+                        break;
                     }
                 }
 
@@ -155,6 +156,23 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail($"Expected log was not received: [{type}] {messageRegex}");
                 }
             }
+        }
+
+        public bool HasLogBeenReceived(LogType type, string message)
+        {
+            var found = false;
+            lock (m_Lock)
+            {
+                foreach (var logEvent in AllLogs)
+                {
+                    if (logEvent.LogType == type && message.Equals(logEvent.Message))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            return found;
         }
 
         public void Reset()

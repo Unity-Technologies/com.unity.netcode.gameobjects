@@ -16,7 +16,7 @@ namespace Unity.Netcode.RuntimeTests
         private struct TriggerData
         {
             public FastBufferReader Reader;
-            public MessageHeader Header;
+            public NetworkMessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
             public int SerializedHeaderSize;
@@ -29,7 +29,7 @@ namespace Unity.Netcode.RuntimeTests
             foreach (var caughtSpawn in m_CaughtMessages)
             {
                 // Reader will be disposed within HandleMessage
-                m_OwnerNetworkManager.ConnectionManager.MessagingSystem.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
+                m_OwnerNetworkManager.ConnectionManager.MessageManager.HandleMessage(caughtSpawn.Header, caughtSpawn.Reader, caughtSpawn.SenderId, caughtSpawn.Timestamp, caughtSpawn.SerializedHeaderSize);
             }
         }
 

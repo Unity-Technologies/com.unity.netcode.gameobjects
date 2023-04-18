@@ -110,7 +110,7 @@ namespace Unity.Netcode.RuntimeTests
             // Send ClientRpc
             serverClientRpcTestNB.MyClientRpc();
 
-            // Validate each NetworkManager relative MessagingSystem received each respective RPC
+            // Validate each NetworkManager relative NetworkMessageManager received each respective RPC
             var messageHookList = new List<MessageHookEntry>();
             var serverMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
             serverMessageHookEntry.AssignMessageType<ServerRpcMessage>();
@@ -126,6 +126,7 @@ namespace Unity.Netcode.RuntimeTests
                 clientMessageHookEntry.AssignMessageType<ClientRpcMessage>();
                 messageHookList.Add(clientMessageHookEntry);
             }
+
             var rpcMessageHooks = new MessageHooksConditional(messageHookList);
             yield return WaitForConditionOrTimeOut(rpcMessageHooks);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");

@@ -3,12 +3,12 @@ using Unity.Collections;
 
 namespace Unity.Netcode
 {
-    internal class DeferredMessageManager : IDeferredMessageManager
+    internal class DeferredMessageManager : IDeferredNetworkMessageManager
     {
         protected struct TriggerData
         {
             public FastBufferReader Reader;
-            public MessageHeader Header;
+            public NetworkMessageHeader Header;
             public ulong SenderId;
             public float Timestamp;
             public int SerializedHeaderSize;
@@ -19,7 +19,7 @@ namespace Unity.Netcode
             public NativeList<TriggerData> TriggerData;
         }
 
-        protected readonly Dictionary<IDeferredMessageManager.TriggerType, Dictionary<ulong, TriggerInfo>> m_Triggers = new Dictionary<IDeferredMessageManager.TriggerType, Dictionary<ulong, TriggerInfo>>();
+        protected readonly Dictionary<IDeferredNetworkMessageManager.TriggerType, Dictionary<ulong, TriggerInfo>> m_Triggers = new Dictionary<IDeferredNetworkMessageManager.TriggerType, Dictionary<ulong, TriggerInfo>>();
 
         private readonly NetworkManager m_NetworkManager;
 
@@ -36,7 +36,7 @@ namespace Unity.Netcode
         /// There is a one second maximum lifetime of triggers to avoid memory leaks. After one second has passed
         /// without the requested object ID being spawned, the triggers for it are automatically deleted.
         /// </summary>
-        public virtual unsafe void DeferMessage(IDeferredMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
+        public virtual unsafe void DeferMessage(IDeferredNetworkMessageManager.TriggerType trigger, ulong key, FastBufferReader reader, ref NetworkContext context)
         {
             if (!m_Triggers.TryGetValue(trigger, out var triggers))
             {
@@ -90,7 +90,7 @@ namespace Unity.Netcode
             }
         }
 
-        protected virtual void PurgeTrigger(IDeferredMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo)
+        protected virtual void PurgeTrigger(IDeferredNetworkMessageManager.TriggerType triggerType, ulong key, TriggerInfo triggerInfo)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
             {
@@ -105,7 +105,7 @@ namespace Unity.Netcode
             triggerInfo.TriggerData.Dispose();
         }
 
-        public virtual void ProcessTriggers(IDeferredMessageManager.TriggerType trigger, ulong key)
+        public virtual void ProcessTriggers(IDeferredNetworkMessageManager.TriggerType trigger, ulong key)
         {
             if (m_Triggers.TryGetValue(trigger, out var triggers))
             {
@@ -116,7 +116,7 @@ namespace Unity.Netcode
                     foreach (var deferredMessage in triggerInfo.TriggerData)
                     {
                         // Reader will be disposed within HandleMessage
-                        m_NetworkManager.ConnectionManager.MessagingSystem.HandleMessage(deferredMessage.Header, deferredMessage.Reader, deferredMessage.SenderId, deferredMessage.Timestamp, deferredMessage.SerializedHeaderSize);
+                        m_NetworkManager.ConnectionManager.MessageManager.HandleMessage(deferredMessage.Header, deferredMessage.Reader, deferredMessage.SenderId, deferredMessage.Timestamp, deferredMessage.SerializedHeaderSize);
                     }
 
                     triggerInfo.TriggerData.Dispose();

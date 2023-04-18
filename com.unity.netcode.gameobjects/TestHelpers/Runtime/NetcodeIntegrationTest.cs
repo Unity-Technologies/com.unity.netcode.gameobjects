@@ -448,7 +448,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (LogAllMessages)
             {
-                networkManager.ConnectionManager.MessagingSystem.Hook(new DebugNetworkHooks());
+                networkManager.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
             }
 
             AddRemoveNetworkManager(networkManager, true);
@@ -487,7 +487,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             if (LogAllMessages)
             {
-                networkManager.ConnectionManager.MessagingSystem.Hook(new DebugNetworkHooks());
+                networkManager.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
             }
 
             AddRemoveNetworkManager(networkManager, true);
@@ -1056,10 +1056,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         protected void EnableMessageLogging()
         {
-            m_ServerNetworkManager.ConnectionManager.MessagingSystem.Hook(new DebugNetworkHooks());
+            m_ServerNetworkManager.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
             foreach (var client in m_ClientNetworkManagers)
             {
-                client.ConnectionManager.MessagingSystem.Hook(new DebugNetworkHooks());
+                client.ConnectionManager.MessageManager.Hook(new DebugNetworkHooks());
             }
         }
 

@@ -123,34 +123,27 @@ namespace Unity.Netcode
             return m_NetworkTickSystem;
         }
 
-        /// <summary>
-        /// The primary time system
-        /// </summary>
-        /// <param name="updateStage"></param>
-        internal void NetworkUpdate(NetworkUpdateStage updateStage)
+        internal void UpdateTime()
         {
-            if (updateStage == NetworkUpdateStage.PreUpdate)
+            // As a client wait to run the time system until we are connected.
+            // As a client or server don't worry about the time system if we are no longer processing messages
+            if (!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected)
             {
-                // As a client wait to run the time system until we are connected.
-                // As a client or server don't worry about the time system if we are no longer processing messages
-                if ((!m_ConnectionManager.LocalClient.IsServer && !m_ConnectionManager.LocalClient.IsConnected) || m_ConnectionManager.StopProcessingMessages)
-                {
-                    return;
-                }
+                return;
+            }
 
-                // Only update RTT here, server time is updated by time sync messages
-                var reset = Advance(m_NetworkManager.RealTimeProvider.UnscaledDeltaTime);
-                if (reset)
-                {
-                    m_NetworkTickSystem.Reset(LocalTime, ServerTime);
-                }
+            // Only update RTT here, server time is updated by time sync messages
+            var reset = Advance(m_NetworkManager.RealTimeProvider.UnscaledDeltaTime);
+            if (reset)
+            {
+                m_NetworkTickSystem.Reset(LocalTime, ServerTime);
+            }
 
-                m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
+            m_NetworkTickSystem.UpdateTick(LocalTime, ServerTime);
 
-                if (!m_ConnectionManager.LocalClient.IsServer)
-                {
-                    Sync(LastSyncedServerTimeSec + m_NetworkManager.RealTimeProvider.UnscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
-                }
+            if (!m_ConnectionManager.LocalClient.IsServer)
+            {
+                Sync(LastSyncedServerTimeSec + m_NetworkManager.RealTimeProvider.UnscaledDeltaTime, m_NetworkTransport.GetCurrentRtt(NetworkManager.ServerClientId) / 1000d);
             }
         }
 
