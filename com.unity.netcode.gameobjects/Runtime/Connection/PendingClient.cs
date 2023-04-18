@@ -3,6 +3,7 @@ using UnityEngine;
 namespace Unity.Netcode
 {
     /// <summary>
+    /// Server-Side Only:
     /// A class representing a client that is currently in the process of connecting
     /// </summary>
     public class PendingClient

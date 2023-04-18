@@ -92,7 +92,34 @@ namespace Unity.Netcode
 
         internal IReadOnlyDictionary<ulong, PendingClient> PendingClients => m_PendingClients;
 
+        internal Coroutine LocalClientApprovalCoroutine;
+
         /// <summary>
+        /// Client-Side:
+        /// Starts the client-side approval timeout coroutine
+        /// </summary>
+        /// <param name="clientId"></param>
+        internal void StartClientApprovalCoroutine(ulong clientId)
+        {
+            LocalClientApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
+        }
+
+        /// <summary>
+        /// Client-Side:
+        /// Stops the client-side approval timeout when it is approved.
+        /// <see cref="ConnectionApprovedMessage.Handle(ref NetworkContext)"/>
+        /// </summary>
+        internal void StopClientApprovalCoroutine()
+        {
+            if (LocalClientApprovalCoroutine != null)
+            {
+                NetworkManager.StopCoroutine(LocalClientApprovalCoroutine);
+                LocalClientApprovalCoroutine = null;
+            }
+        }
+
+        /// <summary>
+        /// Server-Side:
         /// Handles the issue with populating NetworkManager.PendingClients
         /// </summary>
         internal void AddPendingClient(ulong clientId)
@@ -100,17 +127,23 @@ namespace Unity.Netcode
             m_PendingClients.Add(clientId, new PendingClient()
             {
                 ClientId = clientId,
-                ConnectionState = PendingClient.State.PendingConnection
+                ConnectionState = PendingClient.State.PendingConnection,
+                ApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId))
             });
 
             NetworkManager.PendingClients.Add(clientId, PendingClients[clientId]);
         }
 
         /// <summary>
+        /// Server-Side:
         /// Handles the issue with depopulating NetworkManager.PendingClients
         /// </summary>
         internal void RemovePendingClient(ulong clientId)
         {
+            if (m_PendingClients.ContainsKey(clientId) && m_PendingClients[clientId].ApprovalCoroutine != null)
+            {
+                NetworkManager.StopCoroutine(m_PendingClients[clientId].ApprovalCoroutine);
+            }
             m_PendingClients.Remove(clientId);
             NetworkManager.PendingClients.Remove(clientId);
         }
@@ -344,8 +377,6 @@ namespace Unity.Netcode
                 }
 
                 AddPendingClient(clientId);
-
-                m_PendingClients[clientId].ApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
             }
             else
             {
@@ -355,7 +386,7 @@ namespace Unity.Netcode
                 }
 
                 SendConnectionRequest();
-                m_PendingClients[clientId].ApprovalCoroutine = NetworkManager.StartCoroutine(ApprovalTimeout(clientId));
+                StartClientApprovalCoroutine(clientId);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -609,7 +640,7 @@ namespace Unity.Netcode
             {
                 foreach (var sender in senders)
                 {
-                    ClientsToApprove.Remove(sender);
+                    RemovePendingClient(sender);
                 }
             }
         }
@@ -625,7 +656,7 @@ namespace Unity.Netcode
             LocalClient.IsApproved = response.Approved;
             if (response.Approved)
             {
-                // Inform new client it got approved
+                // The client was approved, stop the server-side approval time out coroutine
                 RemovePendingClient(ownerClientId);
 
                 var client = AddClient(ownerClientId);
@@ -736,11 +767,6 @@ namespace Unity.Netcode
                     };
                     SendMessage(ref disconnectReason, NetworkDelivery.Reliable, ownerClientId);
                     MessagingSystem.ProcessSendQueues();
-                }
-
-                if (m_PendingClients[ownerClientId].ApprovalCoroutine != null)
-                {
-                    NetworkManager.StopCoroutine(m_PendingClients[ownerClientId].ApprovalCoroutine);
                 }
 
                 DisconnectRemoteClient(ownerClientId);
@@ -908,6 +934,8 @@ namespace Unity.Netcode
             }
 
             // Assure the client id is no longer in the pending clients list
+            // and stop the server-side client approval timeout since the client
+            // is no longer connected.
             RemovePendingClient(clientId);
 
             // Handle cleaning up the server-side client send queue
