@@ -120,6 +120,8 @@ namespace Unity.Netcode
             networkManager.ConnectionManager.LocalClient.SetRole(false, true, networkManager);
             networkManager.ConnectionManager.LocalClient.IsApproved = true;
             networkManager.ConnectionManager.LocalClient.ClientId = OwnerClientId;
+            // Stop the client-side approval timeout coroutine since we are approved.
+            networkManager.ConnectionManager.StopClientApprovalCoroutine();
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
