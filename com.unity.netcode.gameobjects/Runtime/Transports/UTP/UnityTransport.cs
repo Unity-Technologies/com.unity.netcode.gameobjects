@@ -1382,23 +1382,21 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void Shutdown()
         {
-            if (!m_Driver.IsCreated)
+            if (m_Driver.IsCreated)
             {
-                return;
-            }
+                // Flush all send queues to the network. NGO can be configured to flush its message
+                // queue on shutdown. But this only calls the Send() method, which doesn't actually
+                // get anything to the network.
+                foreach (var kvp in m_SendQueue)
+                {
+                    SendBatchedMessages(kvp.Key, kvp.Value);
+                }
 
-            // Flush all send queues to the network. NGO can be configured to flush its message
-            // queue on shutdown. But this only calls the Send() method, which doesn't actually
-            // get anything to the network.
-            foreach (var kvp in m_SendQueue)
-            {
-                SendBatchedMessages(kvp.Key, kvp.Value);
+                // The above flush only puts the message in UTP internal buffers, need an update to
+                // actually get the messages on the wire. (Normally a flush send would be sufficient,
+                // but there might be disconnect messages and those require an update call.)
+                m_Driver.ScheduleUpdate().Complete();
             }
-
-            // The above flush only puts the message in UTP internal buffers, need an update to
-            // actually get the messages on the wire. (Normally a flush send would be sufficient,
-            // but there might be disconnect messages and those require an update call.)
-            m_Driver.ScheduleUpdate().Complete();
 
             DisposeInternals();
 
