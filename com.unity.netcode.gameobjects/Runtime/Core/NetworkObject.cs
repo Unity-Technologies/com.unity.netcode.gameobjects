@@ -1084,7 +1084,7 @@ namespace Unity.Netcode
                 }
 
                 m_ChildNetworkBehaviours = new List<NetworkBehaviour>();
-                var networkBehaviours = GetComponentsInChildren<NetworkBehaviour>(true);
+                var networkBehaviours = gameObject.GetComponentsInChildren<NetworkBehaviour>(true);
                 for (int i = 0; i < networkBehaviours.Length; i++)
                 {
                     if (networkBehaviours[i].NetworkObject == this)
