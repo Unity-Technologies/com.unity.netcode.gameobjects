@@ -50,7 +50,12 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<T> TheVar;
     }
 
-    public class ClassHavingNetworkBehaviour : TemplateNetworkBehaviourType<TestClass>
+    public class IntermediateNetworkBehavior<T> : TemplateNetworkBehaviourType<T>
+    {
+        public NetworkVariable<T> TheVar2;
+    }
+
+    public class ClassHavingNetworkBehaviour : IntermediateNetworkBehavior<TestClass>
     {
 
     }
@@ -918,12 +923,16 @@ namespace Unity.Netcode.RuntimeTests
 
             bool VerifyClass()
             {
-                return m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value != null && m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeBool == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeBool &&
-                       m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeInt == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeInt;
+                return (m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value != null && m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeBool == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeBool &&
+                       m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeInt == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value.SomeInt)
+                       && (m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value != null && m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value.SomeBool == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value.SomeBool &&
+                       m_Player1OnClient1.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value.SomeInt == m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value.SomeInt);
             }
 
             m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.Value = new TestClass { SomeInt = k_TestUInt, SomeBool = false };
+            m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.Value = new TestClass { SomeInt = k_TestUInt, SomeBool = false };
             m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar.SetDirty(true);
+            m_Player1OnServer.GetComponent<ClassHavingNetworkBehaviour>().TheVar2.SetDirty(true);
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyClass));

@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using Unity.Collections;
 using UnityEngine;
 
@@ -551,35 +549,27 @@ namespace Unity.Netcode
 
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
         private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
+
+        // RuntimeAccessModifiersILPP will make this `protected`
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 
-        private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
-
-        private static FieldInfo[] GetFieldInfoForType(Type type)
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal virtual void __initializeVariables()
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (!s_FieldTypes.ContainsKey(type))
-            {
-                s_FieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
-            }
-
-            return s_FieldTypes[type];
+            // ILPP generates code for all NetworkBehaviour subtypes to initialize
+            // each type's network variables.
         }
 
-        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null)
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        // Using this method here because ILPP doesn't seem to let us do visibility
+        // modification on properties.
+        internal void __nameNetworkVariable(NetworkVariableBase variable, string varName)
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (list == null)
-            {
-                list = new List<FieldInfo>();
-            }
-
-            list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-
-            if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
-            {
-                return GetFieldInfoForTypeRecursive(type.BaseType, list);
-            }
-
-            return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
+            variable.Name = varName;
         }
 
         internal void InitializeVariables()
@@ -591,22 +581,7 @@ namespace Unity.Netcode
 
             m_VarInit = true;
 
-            var sortedFields = GetFieldInfoForType(GetType());
-            for (int i = 0; i < sortedFields.Length; i++)
-            {
-                var fieldType = sortedFields[i].FieldType;
-                if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
-                {
-                    var instance = (NetworkVariableBase)sortedFields[i].GetValue(this) ?? throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
-                    instance.Initialize(this);
-
-                    var instanceNameProperty = fieldType.GetProperty(nameof(NetworkVariableBase.Name));
-                    var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
-                    instanceNameProperty?.SetValue(instance, sanitizedVariableName);
-
-                    NetworkVariableFields.Add(instance);
-                }
-            }
+            __initializeVariables();
 
             {
                 // Create index map for delivery types
