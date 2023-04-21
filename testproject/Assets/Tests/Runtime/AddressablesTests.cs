@@ -1,5 +1,6 @@
 #if TESTPROJECT_USE_ADDRESSABLES
 using System.Collections;
+using System.Collections.Generic;
 using DefaultNamespace;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -17,6 +18,10 @@ namespace TestProject.RuntimeTests
     {
         protected override int NumberOfClients => 2;
 
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
+
         private const string k_ValidObject = "AddressableTestObject.prefab";
 
         public AddressablesTests(HostOrServer hostOrServer)
@@ -29,10 +34,9 @@ namespace TestProject.RuntimeTests
         }
 
 
-        protected override IEnumerator OnTearDown()
+        protected override void OnInlineTearDown()
         {
             ShutdownAndCleanUp();
-            yield return null;
         }
 
         private IEnumerator LoadAsset(AssetReferenceGameObject asset, NetcodeIntegrationTestHelpers.ResultWrapper<GameObject> prefab)
@@ -46,9 +50,9 @@ namespace TestProject.RuntimeTests
             prefab.Result = handle.Result;
         }
 
-        protected IEnumerator StartWithAddressableAssetAdded()
+        protected void StartWithAddressableAssetAdded()
         {
-            yield return StartServerAndClients();
+            StartServerAndClientsWithTimeTravel();
         }
 
         private void AddPrefab(GameObject prefab)
@@ -60,7 +64,7 @@ namespace TestProject.RuntimeTests
             }
         }
 
-        private IEnumerator SpawnAndValidate(GameObject prefab, bool waitAndAddOnClient = false)
+        private void SpawnAndValidate(GameObject prefab, bool waitAndAddOnClient = false)
         {
             // Have to spawn it ourselves.
             var serverObj = Object.Instantiate(prefab);
@@ -77,9 +81,9 @@ namespace TestProject.RuntimeTests
             // Unlike other tests that make prefabs programmatically, those aren't added to the scene until they're instantiated
             Assert.AreEqual(1, objs.Length);
 
-            var startTime = Time.realtimeSinceStartup;
+            var startTime = MockTimeProvider.StaticRealTimeSinceStartup;
 
-            yield return NetcodeIntegrationTestHelpers.WaitForMessageOfTypeReceived<CreateObjectMessage>(m_ClientNetworkManagers[0]);
+            WaitForMessageReceivedWithTimeTravel<CreateObjectMessage>(new List<NetworkManager> { m_ClientNetworkManagers[0] }, ReceiptType.Received);
 
             if (waitAndAddOnClient)
             {
@@ -91,7 +95,7 @@ namespace TestProject.RuntimeTests
                 objs = Object.FindObjectsOfType<AddressableTestScript>();
 #endif
                 Assert.AreEqual(1, objs.Length);
-                yield return new WaitUntil(() => Time.realtimeSinceStartup - startTime >= m_ClientNetworkManagers[0].NetworkConfig.SpawnTimeout - 0.25);
+                WaitForConditionOrTimeOutWithTimeTravel(() => MockTimeProvider.StaticRealTimeSinceStartup - startTime >= m_ClientNetworkManagers[0].NetworkConfig.SpawnTimeout - 0.25);
                 foreach (var client in m_ClientNetworkManagers)
                 {
                     client.AddNetworkPrefab(prefab);
@@ -121,9 +125,9 @@ namespace TestProject.RuntimeTests
             var prefabResult = new NetcodeIntegrationTestHelpers.ResultWrapper<GameObject>();
             yield return LoadAsset(asset, prefabResult);
             AddPrefab(prefabResult.Result);
-            yield return StartServerAndClients();
+            StartServerAndClientsWithTimeTravel();
 
-            yield return SpawnAndValidate(prefabResult.Result);
+            SpawnAndValidate(prefabResult.Result);
         }
 
         [UnityTest]
@@ -140,10 +144,10 @@ namespace TestProject.RuntimeTests
 
             var prefabResult = new NetcodeIntegrationTestHelpers.ResultWrapper<GameObject>();
             yield return LoadAsset(asset, prefabResult);
-            yield return StartServerAndClients();
+            StartServerAndClientsWithTimeTravel();
             AddPrefab(prefabResult.Result);
 
-            yield return SpawnAndValidate(prefabResult.Result);
+            SpawnAndValidate(prefabResult.Result);
         }
 
         [UnityTest]
@@ -161,10 +165,10 @@ namespace TestProject.RuntimeTests
 
             var prefabResult = new NetcodeIntegrationTestHelpers.ResultWrapper<GameObject>();
             yield return LoadAsset(asset, prefabResult);
-            yield return StartServerAndClients();
+            StartServerAndClientsWithTimeTravel();
             m_ServerNetworkManager.AddNetworkPrefab(prefabResult.Result);
 
-            yield return SpawnAndValidate(prefabResult.Result, true);
+            SpawnAndValidate(prefabResult.Result, true);
         }
     }
 }

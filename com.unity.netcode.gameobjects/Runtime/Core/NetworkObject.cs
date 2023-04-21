@@ -17,6 +17,28 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
+        /// <summary>
+        /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
+        /// </summary>
+        [HideInInspector]
+        public uint PrefabIdHash
+        {
+            get
+            {
+                foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    if (prefab.Prefab == gameObject)
+                    {
+                        return GlobalObjectIdHash;
+                    }
+                }
+
+                return 0;
+            }
+        }
+
+        private bool m_IsPrefab;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -74,6 +96,18 @@ namespace Unity.Netcode
         /// Gets if this object is a player object
         /// </summary>
         public bool IsPlayerObject { get; internal set; }
+
+        /// <summary>
+        /// Determines if the associated NetworkObject's transform will get
+        /// synchronized when spawned.
+        /// </summary>
+        /// <remarks>
+        /// For things like in-scene placed NetworkObjects that have no visual
+        /// components can help reduce the instance's initial synchronization
+        /// bandwidth cost. This can also be useful for UI elements that have
+        /// a predetermined fixed position.
+        /// </remarks>
+        public bool SynchronizeTransform = true;
 
         /// <summary>
         /// Gets if the object is the personal clients player object
@@ -319,7 +353,15 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("The object is already visible");
             }
 
-            NetworkManager.MarkObjectForShowingTo(this, clientId);
+            if (CheckObjectVisibility != null && !CheckObjectVisibility(clientId))
+            {
+                if (NetworkManager.LogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning($"[NetworkShow] Trying to make {nameof(NetworkObject)} {gameObject.name} visible to client ({clientId}) but {nameof(CheckObjectVisibility)} returned false!");
+                }
+                return;
+            }
+            NetworkManager.SpawnManager.MarkObjectForShowingTo(this, clientId);
             Observers.Add(clientId);
         }
 
@@ -409,7 +451,7 @@ namespace Unity.Netcode
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
 
-            if (!NetworkManager.RemoveObjectFromShowingTo(this, clientId))
+            if (!NetworkManager.SpawnManager.RemoveObjectFromShowingTo(this, clientId))
             {
                 if (!Observers.Contains(clientId))
                 {
@@ -423,7 +465,7 @@ namespace Unity.Netcode
                     DestroyGameObject = !IsSceneObject.Value
                 };
                 // Send destroy call
-                var size = NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
+                var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientId);
                 NetworkManager.NetworkMetrics.TrackObjectDestroySent(clientId, this, size);
             }
         }
@@ -489,14 +531,30 @@ namespace Unity.Netcode
 
         private void OnDestroy()
         {
-            if (NetworkManager != null && NetworkManager.IsListening && NetworkManager.IsServer == false && IsSpawned &&
-                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            // If no NetworkManager is assigned, then just exit early
+            if (!NetworkManager)
             {
-                throw new NotServerException($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                return;
             }
 
-            if (NetworkManager != null && NetworkManager.SpawnManager != null &&
-                NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
+            if (NetworkManager.IsListening && !NetworkManager.IsServer && IsSpawned &&
+                (IsSceneObject == null || (IsSceneObject.Value != true)))
+            {
+                // Clients should not despawn NetworkObjects while connected to a session, but we don't want to destroy the current call stack
+                // if this happens. Instead, we should just generate a network log error and exit early (as long as we are not shutting down).
+                if (!NetworkManager.ShutdownInProgress)
+                {
+                    // Since we still have a session connection, log locally and on the server to inform user of this issue.
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    {
+                        NetworkLog.LogErrorServer($"Destroy a spawned {nameof(NetworkObject)} on a non-host client is not valid. Call {nameof(Destroy)} or {nameof(Despawn)} on the server/host instead.");
+                    }
+                    return;
+                }
+                // Otherwise, clients can despawn NetworkObjects while shutting down and should not generate any messages when this happens
+            }
+
+            if (NetworkManager.SpawnManager != null && NetworkManager.SpawnManager.SpawnedObjects.TryGetValue(NetworkObjectId, out var networkObject))
             {
                 if (this == networkObject)
                 {
@@ -631,6 +689,22 @@ namespace Unity.Netcode
         private ulong? m_LatestParent; // What is our last set parent NetworkObject's ID?
         private Transform m_CachedParent; // What is our last set parent Transform reference?
         private bool m_CachedWorldPositionStays = true; // Used to preserve the world position stays parameter passed in TrySetParent
+
+        /// <summary>
+        /// Returns the last known cached WorldPositionStays value for this NetworkObject
+        /// </summary>
+        /// <remarks>
+        /// When parenting NetworkObjects, the optional WorldPositionStays value is cached and synchronized with clients.
+        /// This method provides access to the instance relative cached value.
+        /// <see cref="TrySetParent(GameObject, bool)"/>
+        /// <see cref="TrySetParent(NetworkObject, bool)"/>
+        /// <see cref="TrySetParent(Transform, bool)"/>
+        /// </remarks>
+        /// <returns><see cref="true"/> or <see cref="false"/></returns>
+        public bool WorldPositionStays()
+        {
+            return m_CachedWorldPositionStays;
+        }
 
         internal void SetCachedParent(Transform parentTransform)
         {
@@ -839,7 +913,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                NetworkManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
+                NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, clientIds, idx);
             }
         }
 
@@ -1321,7 +1395,7 @@ namespace Unity.Netcode
                 var synchronizationCount = (byte)0;
                 foreach (var childBehaviour in ChildNetworkBehaviours)
                 {
-                    if (childBehaviour.Synchronize(ref serializer))
+                    if (childBehaviour.Synchronize(ref serializer, targetClientId))
                     {
                         synchronizationCount++;
                     }
@@ -1360,7 +1434,7 @@ namespace Unity.Netcode
                 {
                     serializer.SerializeValue(ref networkBehaviourId);
                     var networkBehaviour = GetNetworkBehaviourAtOrderIndex(networkBehaviourId);
-                    networkBehaviour.Synchronize(ref serializer);
+                    networkBehaviour.Synchronize(ref serializer, targetClientId);
                 }
             }
         }
@@ -1409,7 +1483,7 @@ namespace Unity.Netcode
 
             if (IncludeTransformWhenSpawning == null || IncludeTransformWhenSpawning(OwnerClientId))
             {
-                obj.HasTransform = true;
+                obj.HasTransform = SynchronizeTransform;
 
                 // We start with the default AutoObjectParentSync values to determine which transform space we will
                 // be synchronizing clients with.

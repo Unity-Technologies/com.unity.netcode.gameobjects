@@ -84,18 +84,18 @@ namespace Unity.Netcode
             {
                 var messageVersion = new MessageVersionData();
                 messageVersion.Deserialize(reader);
-                networkManager.MessagingSystem.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
+                networkManager.ConnectionManager.MessageManager.SetVersion(context.SenderId, messageVersion.Hash, messageVersion.Version);
                 messageHashesInOrder[i] = messageVersion.Hash;
 
                 // Update the received version since this message will always be passed version 0, due to the map not
                 // being initialized until just now.
-                var messageType = networkManager.MessagingSystem.GetMessageForHash(messageVersion.Hash);
+                var messageType = networkManager.ConnectionManager.MessageManager.GetMessageForHash(messageVersion.Hash);
                 if (messageType == typeof(ConnectionApprovedMessage))
                 {
                     receivedMessageVersion = messageVersion.Version;
                 }
             }
-            networkManager.MessagingSystem.SetServerMessageOrder(messageHashesInOrder);
+            networkManager.ConnectionManager.MessageManager.SetServerMessageOrder(messageHashesInOrder);
             messageHashesInOrder.Dispose();
             // ============================================================
             // END FORBIDDEN SEGMENT
@@ -117,8 +117,11 @@ namespace Unity.Netcode
             networkManager.NetworkTimeSystem.Reset(time.Time, 0.15f); // Start with a constant RTT of 150 until we receive values from the transport.
             networkManager.NetworkTickSystem.Reset(networkManager.NetworkTimeSystem.LocalTime, networkManager.NetworkTimeSystem.ServerTime);
 
-            networkManager.LocalClient = new NetworkClient() { ClientId = networkManager.LocalClientId };
-            networkManager.IsApproved = true;
+            networkManager.ConnectionManager.LocalClient.SetRole(false, true, networkManager);
+            networkManager.ConnectionManager.LocalClient.IsApproved = true;
+            networkManager.ConnectionManager.LocalClient.ClientId = OwnerClientId;
+            // Stop the client-side approval timeout coroutine since we are approved.
+            networkManager.ConnectionManager.StopClientApprovalCoroutine();
 
             // Only if scene management is disabled do we handle NetworkObject synchronization at this point
             if (!networkManager.NetworkConfig.EnableSceneManagement)
@@ -138,7 +141,7 @@ namespace Unity.Netcode
                 // Mark the client being connected
                 networkManager.IsConnectedClient = true;
                 // When scene management is disabled we notify after everything is synchronized
-                networkManager.InvokeOnClientConnectedCallback(context.SenderId);
+                networkManager.ConnectionManager.InvokeOnClientConnectedCallback(context.SenderId);
             }
         }
     }

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {

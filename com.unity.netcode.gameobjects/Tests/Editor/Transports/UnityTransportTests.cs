@@ -116,14 +116,14 @@ namespace Unity.Netcode.EditorTests
             transport.Initialize();
 
             transport.SetConnectionData("127.0.0.", 4242, "127.0.0.");
+
             Assert.False(transport.StartServer());
 
             LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
+            LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
 #if UTP_TRANSPORT_2_0_ABOVE
             LogAssert.Expect(LogType.Error, "Socket creation failed (error Unity.Baselib.LowLevel.Binding+Baselib_ErrorState: Invalid argument (0x01000003) <argument name stripped>");
 #endif
-            LogAssert.Expect(LogType.Error, "Server failed to bind. This is usually caused by another process being bound to the same port.");
-
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
             Assert.True(transport.StartServer());
 
@@ -139,6 +139,22 @@ namespace Unity.Netcode.EditorTests
 
             transport.SetConnectionData(string.Empty, 4242);
             Assert.True(transport.StartServer());
+
+            transport.Shutdown();
+        }
+
+        // Check that StartClient returns false with bad connection data.
+        [Test]
+        public void UnityTransport_StartClientFailsWithBadAddress()
+        {
+            UnityTransport transport = new GameObject().AddComponent<UnityTransport>();
+            transport.Initialize();
+
+            transport.SetConnectionData("foobar", 4242);
+            Assert.False(transport.StartClient());
+
+            LogAssert.Expect(LogType.Error, "Invalid network endpoint: foobar:4242.");
+            LogAssert.Expect(LogType.Error, "Target server network address (foobar) is Invalid!");
 
             transport.Shutdown();
         }

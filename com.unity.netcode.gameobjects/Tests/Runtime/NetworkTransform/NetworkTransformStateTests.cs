@@ -5,8 +5,14 @@ using UnityEngine;
 namespace Unity.Netcode.RuntimeTests
 {
 
-    [TestFixture(TransformSpace.World)]
-    [TestFixture(TransformSpace.Local)]
+    [TestFixture(TransformSpace.World, Precision.Full, Rotation.Euler)]
+    [TestFixture(TransformSpace.World, Precision.Half, Rotation.Euler)]
+    [TestFixture(TransformSpace.Local, Precision.Full, Rotation.Euler)]
+    [TestFixture(TransformSpace.Local, Precision.Half, Rotation.Euler)]
+    [TestFixture(TransformSpace.World, Precision.Full, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.World, Precision.Half, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.Local, Precision.Full, Rotation.Quaternion)]
+    [TestFixture(TransformSpace.Local, Precision.Half, Rotation.Quaternion)]
     public class NetworkTransformStateTests
     {
         public enum SyncAxis
@@ -47,17 +53,33 @@ namespace Unity.Netcode.RuntimeTests
             Local
         }
 
+        public enum Rotation
+        {
+            Euler,
+            Quaternion
+        }
+
         public enum SynchronizationType
         {
             Delta,
             Teleport
         }
 
-        private TransformSpace m_TransformSpace;
+        public enum Precision
+        {
+            Half,
+            Full
+        }
 
-        public NetworkTransformStateTests(TransformSpace transformSpace)
+        private TransformSpace m_TransformSpace;
+        private Precision m_Precision;
+        private Rotation m_Rotation;
+
+        public NetworkTransformStateTests(TransformSpace transformSpace, Precision precision, Rotation rotation)
         {
             m_TransformSpace = transformSpace;
+            m_Precision = precision;
+            m_Rotation = rotation;
         }
 
         private bool WillAnAxisBeSynchronized(ref NetworkTransform networkTransform)
@@ -93,7 +115,8 @@ namespace Unity.Netcode.RuntimeTests
             var initialPosition = Vector3.zero;
             var initialRotAngles = Vector3.zero;
             var initialScale = Vector3.one;
-
+            networkTransform.UseHalfFloatPrecision = m_Precision == Precision.Half;
+            networkTransform.UseQuaternionSynchronization = m_Rotation == Rotation.Quaternion;
             networkTransform.transform.position = initialPosition;
             networkTransform.transform.eulerAngles = initialRotAngles;
             networkTransform.transform.localScale = initialScale;
@@ -115,6 +138,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 InLocalSpace = inLocalSpace,
                 IsTeleportingNextFrame = isTeleporting,
+                NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0)
             };
 
             // Step 1: change properties, expect state to be dirty
@@ -277,6 +301,8 @@ namespace Unity.Netcode.RuntimeTests
             // Step 3: disable a particular sync flag, expect state to be not dirty
             // We do this last because it changes which axis will be synchronized.
             {
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
                 networkTransformState = new NetworkTransform.NetworkTransformState
                 {
                     InLocalSpace = inLocalSpace,
@@ -309,6 +335,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncPositionY
                 if (syncPosY)
                 {
@@ -334,6 +367,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncPositionZ
                 if (syncPosZ)
                 {
@@ -359,8 +399,15 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
-                // SyncRotAngleX
-                if (syncRotX)
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
+                // SyncRotAngleX - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotX && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleX = false;
 
@@ -383,8 +430,16 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
-                // SyncRotAngleY
-                if (syncRotY)
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
+                // SyncRotAngleY - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotY && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleY = false;
 
@@ -407,8 +462,16 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
-                // SyncRotAngleZ
-                if (syncRotZ)
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
+                // SyncRotAngleZ - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
+                if (syncRotZ && m_Rotation == Rotation.Euler)
                 {
                     networkTransform.SyncRotAngleZ = false;
 
@@ -432,6 +495,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleX
                 if (syncScaX)
                 {
@@ -456,6 +526,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleY
                 if (syncScaY)
                 {
@@ -480,6 +558,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleZ
                 if (syncScaZ)
                 {

@@ -149,7 +149,7 @@ namespace Unity.Netcode.Transports.UNET
             var eventType = UnityEngine.Networking.NetworkTransport.Receive(out int hostId, out int connectionId, out _, m_MessageBuffer, m_MessageBuffer.Length, out int receivedSize, out byte error);
 
             clientId = GetNetcodeClientId((byte)hostId, (ushort)connectionId, false);
-            receiveTime = Time.realtimeSinceStartup;
+            receiveTime = NetworkManager.RealTimeProvider.RealTimeSinceStartup;
 
             var networkError = (NetworkError)error;
             if (networkError == NetworkError.MessageToLong)
@@ -214,7 +214,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            UnityEngine.Networking.NetworkTransport.Disconnect((int)hostId, (int)connectionId, out byte error);
+            UnityEngine.Networking.NetworkTransport.Disconnect(hostId, connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
@@ -226,7 +226,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             GetUNetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT((int)hostId, (int)connectionId, out byte error);
+            return (ulong)UnityEngine.Networking.NetworkTransport.GetCurrentRTT(hostId, connectionId, out byte error);
         }
 
         public override void Shutdown()

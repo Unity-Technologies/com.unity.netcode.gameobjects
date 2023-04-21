@@ -51,7 +51,9 @@ namespace Unity.Netcode
         /// </summary>
         public static void SetDefaults()
         {
-            SetDefault<IDeferredMessageManager>(networkManager => new DeferredMessageManager(networkManager));
+            SetDefault<IDeferredNetworkMessageManager>(networkManager => new DeferredMessageManager(networkManager));
+
+            SetDefault<IRealTimeProvider>(networkManager => new RealTimeProvider());
         }
 
         private static void SetDefault<T>(CreateObjectDelegate creator)

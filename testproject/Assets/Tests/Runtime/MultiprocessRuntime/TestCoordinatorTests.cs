@@ -20,7 +20,7 @@ namespace Unity.Netcode.MultiprocessRuntimeTests
             m_WorkerCount = workerCount;
         }
 
-        static private float s_ValueToValidateAgainst;
+        private static float s_ValueToValidateAgainst;
         private static void ValidateSimpleCoordinatorTestValue(float resultReceived)
         {
             Assert.AreEqual(s_ValueToValidateAgainst, resultReceived);

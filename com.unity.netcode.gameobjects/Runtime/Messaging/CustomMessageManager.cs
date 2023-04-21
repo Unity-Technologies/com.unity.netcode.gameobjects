@@ -90,7 +90,7 @@ namespace Unity.Netcode
             {
                 SendData = messageBuffer
             };
-            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientIds);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientIds);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
@@ -123,7 +123,7 @@ namespace Unity.Netcode
             {
                 SendData = messageBuffer
             };
-            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientId);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
             {
@@ -275,7 +275,7 @@ namespace Unity.Netcode
                 Hash = hash,
                 SendData = messageStream,
             };
-            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientId);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientId);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)
@@ -333,7 +333,7 @@ namespace Unity.Netcode
                 Hash = hash,
                 SendData = messageStream
             };
-            var size = m_NetworkManager.SendMessage(ref message, networkDelivery, clientIds);
+            var size = m_NetworkManager.ConnectionManager.SendMessage(ref message, networkDelivery, clientIds);
 
             // Size is zero if we were only sending the message to ourself in which case it isn't sent.
             if (size != 0)

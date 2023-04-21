@@ -1,6 +1,6 @@
-using UnityEngine;
 using System;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace Unity.Netcode.MultiprocessRuntimeTests
 {

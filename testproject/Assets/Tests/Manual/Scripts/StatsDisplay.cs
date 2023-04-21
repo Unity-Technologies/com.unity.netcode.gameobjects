@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 
 namespace TestProject.ManualTests
@@ -54,10 +54,7 @@ namespace TestProject.ManualTests
             }
             else
             {
-                if (m_ClientServerToggle != null)
-                {
-                    m_ClientServerToggle.SetActive(true);
-                }
+                m_ClientServerToggle?.SetActive(true);
                 UpdateButton();
             }
 
@@ -78,10 +75,7 @@ namespace TestProject.ManualTests
             if (!IsServer)
             {
                 var networkObject = GetComponent<NetworkObject>();
-                if (networkObject != null)
-                {
-                    networkObject.SpawnWithOwnership(clientId, true);
-                }
+                networkObject?.SpawnWithOwnership(clientId, true);
             }
         }
 
@@ -173,7 +167,7 @@ namespace TestProject.ManualTests
         {
             while (true)
             {
-                if (NetworkManager.Singleton)
+                if (NetworkManager.Singleton && NetworkManager.Singleton.IsListening && !NetworkManager.Singleton.ShutdownInProgress)
                 {
                     if (m_ClientMode)
                     {
@@ -182,6 +176,7 @@ namespace TestProject.ManualTests
                         m_LastStatsDump += "\ndeltaTime: [" + Time.deltaTime.ToString() + "]";
                         m_LastStatsDump += "\n";
                         m_LastStatsDump += $"Active Scene: {SceneManager.GetActiveScene().name}\n";
+                        m_LastStatsDump += $"NetworkObjects: {NetworkManager.Singleton.SpawnManager.SpawnedObjectsList.Count}\n";
                         if (m_SceneEventNotificationQueue != null)
                         {
                             var sceneEvents = m_SceneEventNotificationQueue.GetCurrentNotifications();
@@ -194,8 +189,10 @@ namespace TestProject.ManualTests
                     }
                     if (NetworkManager.Singleton.IsServer && m_ClientsToUpdate.Count > 0)
                     {
-                        var statsInfoContainer = new StatsInfoContainer();
-                        statsInfoContainer.StatValues = new List<float>();
+                        var statsInfoContainer = new StatsInfoContainer
+                        {
+                            StatValues = new List<float>()
+                        };
                         statsInfoContainer.StatValues.Add(Time.deltaTime);
                         ReceiveStatsClientRpc(statsInfoContainer);
                     }

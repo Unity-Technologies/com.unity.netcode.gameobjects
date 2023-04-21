@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -9,9 +9,9 @@ using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
+using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
-using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
@@ -958,6 +958,58 @@ namespace Unity.Netcode.Editor.CodeGen
             GetAllFieldsAndResolveGenerics(resolved, ref fieldTypes, genericParams);
         }
 
+        private void GetAllBaseTypesAndResolveGenerics(TypeDefinition type, ref List<TypeReference> baseTypes, Dictionary<string, TypeReference> genericParameters)
+        {
+
+            if (type == null || type.BaseType == null || type.BaseType.Name == "Object")
+            {
+                return;
+            }
+
+            var baseType = type.BaseType;
+
+            var genericParams = new Dictionary<string, TypeReference>();
+
+            if (baseType.IsGenericInstance)
+            {
+                var genericType = (GenericInstanceType)baseType;
+                var newGenericType = new GenericInstanceType(baseType.Resolve());
+                for (var i = 0; i < genericType.GenericArguments.Count; ++i)
+                {
+                    var argument = genericType.GenericArguments[i];
+
+                    if (genericParameters != null && genericParameters.ContainsKey(argument.Name))
+                    {
+                        newGenericType.GenericArguments.Add(genericParameters[argument.Name]);
+                        genericParams[baseType.Resolve().GenericParameters[newGenericType.GenericArguments.Count - 1].Name] = genericParameters[argument.Name];
+                    }
+                    else
+                    {
+                        newGenericType.GenericArguments.Add(argument);
+                    }
+                }
+                baseTypes.Add(newGenericType);
+            }
+            else
+            {
+                baseTypes.Add(baseType);
+            }
+
+            var resolved = type.BaseType.Resolve();
+            if (type.BaseType.IsGenericInstance)
+            {
+                var genericType = (GenericInstanceType)type.BaseType;
+                for (var i = 0; i < genericType.GenericArguments.Count; ++i)
+                {
+                    if (!genericParams.ContainsKey(resolved.GenericParameters[i].Name))
+                    {
+                        genericParams[resolved.GenericParameters[i].Name] = genericType.GenericArguments[i];
+                    }
+                }
+            }
+            GetAllBaseTypesAndResolveGenerics(resolved, ref baseTypes, genericParams);
+        }
+
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition, string[] assemblyDefines)
         {
             var rpcHandlers = new List<(uint RpcMethodId, MethodDefinition RpcHandler)>();
@@ -1016,6 +1068,34 @@ namespace Unity.Netcode.Editor.CodeGen
                             if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
                             {
                                 m_WrappedNetworkVariableTypes.Add(wrappedType);
+                            }
+                        }
+                    }
+                    {
+                        var baseTypes = new List<TypeReference>();
+
+                        var genericParams = new Dictionary<string, TypeReference>();
+                        var resolved = type.Resolve();
+                        if (type.IsGenericInstance)
+                        {
+                            var genericType = (GenericInstanceType)type;
+                            for (var i = 0; i < genericType.GenericArguments.Count; ++i)
+                            {
+                                genericParams[resolved.GenericParameters[i].Name] = genericType.GenericArguments[i];
+                            }
+                        }
+
+                        GetAllBaseTypesAndResolveGenerics(type.Resolve(), ref baseTypes, genericParams);
+                        foreach (var baseType in baseTypes)
+                        {
+                            if (baseType.Resolve().Name == typeof(NetworkVariable<>).Name || baseType.Resolve().Name == typeof(NetworkList<>).Name)
+                            {
+                                var genericInstanceType = (GenericInstanceType)baseType;
+                                var wrappedType = genericInstanceType.GenericArguments[0];
+                                if (!m_WrappedNetworkVariableTypes.Contains(wrappedType))
+                                {
+                                    m_WrappedNetworkVariableTypes.Add(wrappedType);
+                                }
                             }
                         }
                     }

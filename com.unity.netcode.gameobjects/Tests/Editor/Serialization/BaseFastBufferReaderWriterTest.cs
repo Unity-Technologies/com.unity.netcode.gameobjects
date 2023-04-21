@@ -8,8 +8,6 @@ namespace Unity.Netcode.EditorTests
 {
     public abstract class BaseFastBufferReaderWriterTest
     {
-
-        #region Test Types
         protected enum ByteEnum : byte
         {
             A,
@@ -79,7 +77,6 @@ namespace Unity.Netcode.EditorTests
             WriteDirect,
             WriteSafe
         }
-        #endregion
 
         protected abstract void RunTypeTest<T>(T valueToTest) where T : unmanaged;
 
@@ -97,7 +94,6 @@ namespace Unity.Netcode.EditorTests
 
         protected abstract void RunTypeNativeListTestSafe<T>(NativeList<T> valueToTest) where T : unmanaged;
 
-        #region Helpers
         private Random m_Random = new Random();
         protected TestStruct GetTestStruct()
         {
@@ -106,7 +102,7 @@ namespace Unity.Netcode.EditorTests
                 A = (byte)m_Random.Next(),
                 B = (short)m_Random.Next(),
                 C = (ushort)m_Random.Next(),
-                D = (int)m_Random.Next(),
+                D = m_Random.Next(),
                 E = (uint)m_Random.Next(),
                 F = ((long)m_Random.Next() << 32) + m_Random.Next(),
                 G = ((ulong)m_Random.Next() << 32) + (ulong)m_Random.Next(),
@@ -118,9 +114,6 @@ namespace Unity.Netcode.EditorTests
 
             return testStruct;
         }
-
-        #endregion
-
 
         private void RunTestWithWriteType<T>(T val, WriteType wt, FastBufferWriter.ForPrimitives _ = default) where T : unmanaged
         {
@@ -157,7 +150,7 @@ namespace Unity.Netcode.EditorTests
             }
             else if (testType == typeof(int))
             {
-                RunTestWithWriteType((int)random.Next(), writeType);
+                RunTestWithWriteType(random.Next(), writeType);
             }
             else if (testType == typeof(uint))
             {
@@ -362,10 +355,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(long))
             {
                 RunTypeTestLocal(new[]{
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
                 }, writeType);
             }
             else if (testType == typeof(ulong))
@@ -704,10 +697,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(long))
             {
                 RunTypeTestLocal(new NativeArray<long>(new[]{
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
                 }, Allocator.Temp), writeType);
             }
             else if (testType == typeof(ulong))
@@ -1050,10 +1043,10 @@ namespace Unity.Netcode.EditorTests
             else if (testType == typeof(long))
             {
                 RunTypeTestLocal(new NativeArray<long>(new[]{
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next(),
-                    ((long)random.Next() << 32) + (long)random.Next()
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
                 }, Allocator.Temp), writeType);
             }
             else if (testType == typeof(ulong))

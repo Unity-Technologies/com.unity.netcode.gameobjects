@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Linq;
-using UnityEngine.TestTools;
 using NUnit.Framework;
-using UnityEngine;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {

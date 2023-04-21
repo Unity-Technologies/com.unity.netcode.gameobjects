@@ -106,7 +106,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes scene loading jobs
         /// </summary>
         /// <param name="queuedSceneJob">job to process</param>
-        static internal IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
+        internal static IEnumerator ProcessLoadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
             while (!itegrationTestSceneHandler.OnCanClientsLoad())
@@ -180,7 +180,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes scene unloading jobs
         /// </summary>
         /// <param name="queuedSceneJob">job to process</param>
-        static internal IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
+        internal static IEnumerator ProcessUnloadingSceneJob(QueuedSceneJob queuedSceneJob)
         {
             var itegrationTestSceneHandler = queuedSceneJob.IntegrationTestSceneHandler;
             while (!itegrationTestSceneHandler.OnCanClientsUnload())
@@ -223,7 +223,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// Processes all jobs within the queue.
         /// When all jobs are finished, the coroutine stops.
         /// </summary>
-        static internal IEnumerator JobQueueProcessor()
+        internal static IEnumerator JobQueueProcessor()
         {
             while (QueuedSceneJobs.Count != 0)
             {
@@ -625,11 +625,6 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
         private Dictionary<Scene, NetworkManager> m_ScenesToUnload = new Dictionary<Scene, NetworkManager>();
 
-        // When true, any remaining scenes loaded will be unloaded
-        // TODO: There needs to be a way to validate if a scene should be unloaded
-        // or not (i.e. local client-side UI loaded additively)
-        public bool AllowUnassignedScenesToBeUnloaded = false;
-
         /// <summary>
         /// Handles unloading any scenes that might remain on a client that
         /// need to be unloaded.
@@ -637,14 +632,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="networkManager"></param>
         public void UnloadUnassignedScenes(NetworkManager networkManager = null)
         {
-            // Only if we are specifically testing this functionality
-            if (!AllowUnassignedScenesToBeUnloaded)
+            if (!SceneNameToSceneHandles.ContainsKey(networkManager))
             {
                 return;
             }
-
-            SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
             var relativeSceneNameToSceneHandles = SceneNameToSceneHandles[networkManager];
+            var sceneManager = networkManager.SceneManager;
+            SceneManager.sceneUnloaded += SceneManager_SceneUnloaded;
 
             foreach (var sceneEntry in relativeSceneNameToSceneHandles)
             {
@@ -653,10 +647,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 {
                     if (!sceneHandleEntry.Value.IsAssigned)
                     {
-                        m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene, networkManager);
+                        if (sceneManager.VerifySceneBeforeUnloading == null || sceneManager.VerifySceneBeforeUnloading.Invoke(sceneHandleEntry.Value.Scene))
+                        {
+                            m_ScenesToUnload.Add(sceneHandleEntry.Value.Scene, networkManager);
+                        }
                     }
                 }
             }
+
             foreach (var sceneToUnload in m_ScenesToUnload)
             {
                 SceneManager.UnloadSceneAsync(sceneToUnload.Key);
@@ -702,7 +700,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             // Create a local copy of the spawned objects list since the spawn manager will adjust the list as objects
             // are despawned.
+#if UNITY_2023_1_OR_NEWER
+            var networkObjects = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.InstanceID).Where((c) => c.IsSpawned);
+#else
             var networkObjects = Object.FindObjectsOfType<NetworkObject>().Where((c) => c.IsSpawned);
+#endif
             foreach (var networkObject in networkObjects)
             {
                 if (networkObject == null || (networkObject != null && networkObject.gameObject.scene.handle != scene.handle))
@@ -771,7 +773,26 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="mode"><see cref="LoadSceneMode.Single"/> or <see cref="LoadSceneMode.Additive"/></param>
         public void SetClientSynchronizationMode(ref NetworkManager networkManager, LoadSceneMode mode)
         {
+
             var sceneManager = networkManager.SceneManager;
+
+            // Don't let client's set this value
+            if (!networkManager.IsServer)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Clients should not set this value as it is automatically synchronized with the server's setting!");
+                }
+                return;
+            }
+            else if (networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
+            {
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                {
+                    NetworkLog.LogWarning("Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+                }
+            }
+
 
 
             // For additive client synchronization, we take into consideration scenes
@@ -920,7 +941,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
                 }
             }
             QueuedSceneJobs.Clear();
-            Object.Destroy(CoroutineRunner.gameObject);
+            if (CoroutineRunner != null && CoroutineRunner.gameObject != null)
+            {
+                Object.Destroy(CoroutineRunner.gameObject);
+            }
+
         }
     }
 }

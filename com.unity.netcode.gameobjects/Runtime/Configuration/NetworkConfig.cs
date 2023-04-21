@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using System.Linq;
 using Unity.Collections;
+using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Unity.Netcode
@@ -156,7 +156,7 @@ namespace Unity.Netcode
         public string ToBase64()
         {
             NetworkConfig config = this;
-            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp);
+            var writer = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp);
             using (writer)
             {
                 writer.WriteValueSafe(config.ProtocolVersion);
@@ -209,6 +209,14 @@ namespace Unity.Netcode
         private ulong? m_ConfigHash = null;
 
         /// <summary>
+        /// Clears out the configuration hash value generated for a specific network session
+        /// </summary>
+        internal void ClearConfigHash()
+        {
+            m_ConfigHash = null;
+        }
+
+        /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkConfig instance
         /// </summary>
         /// <param name="cache"></param>
@@ -220,7 +228,7 @@ namespace Unity.Netcode
                 return m_ConfigHash.Value;
             }
 
-            var writer = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, int.MaxValue);
+            var writer = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, int.MaxValue);
             using (writer)
             {
                 writer.WriteValueSafe(ProtocolVersion);
@@ -272,8 +280,6 @@ namespace Unity.Netcode
 
             Prefabs.Initialize();
         }
-
-        #region Legacy Network Prefab List
 
         [NonSerialized]
         private bool m_DidWarnOldPrefabList = false;
@@ -334,7 +340,5 @@ namespace Unity.Netcode
         [FormerlySerializedAs("NetworkPrefabs")]
         [SerializeField]
         internal List<NetworkPrefab> OldPrefabList;
-
-        #endregion
     }
 }

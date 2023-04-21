@@ -2,10 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 
 namespace TestProject.RuntimeTests
@@ -25,6 +25,10 @@ namespace TestProject.RuntimeTests
     {
         private const string k_AnimatorObjectName = "AnimatorObject";
         private const string k_OwnerAnimatorObjectName = "OwnerAnimatorObject";
+
+        protected override bool m_EnableTimeTravel => true;
+        protected override bool m_SetupIsACoroutine => false;
+        protected override bool m_TearDownIsACoroutine => false;
 
         protected override int NumberOfClients => 3;
         private GameObject m_AnimationTestPrefab => m_AnimatorObjectPrefab ? m_AnimatorObjectPrefab as GameObject : null;
@@ -48,19 +52,17 @@ namespace TestProject.RuntimeTests
             base.OnOneTimeSetup();
         }
 
-        protected override IEnumerator OnSetup()
+        protected override void OnInlineSetup()
         {
             AnimatorTestHelper.Initialize();
             CheckStateEnterCount.ResetTest();
             TriggerTest.ResetTest();
             StateSyncTest.ResetTest();
-            yield return base.OnSetup();
         }
 
-        protected override IEnumerator OnTearDown()
+        protected override void OnInlineTearDown()
         {
             m_EnableVerboseDebug = false;
-            yield return base.OnTearDown();
         }
 
         protected override void OnServerAndClientsCreated()
@@ -150,8 +152,8 @@ namespace TestProject.RuntimeTests
         /// when no transition or layer change has occurred.
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
-        [UnityTest]
-        public IEnumerator ParameterUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        [Test]
+        public void ParameterUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             VerboseDebug($" ++++++++++++++++++ Parameter Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
 
@@ -159,12 +161,12 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ClientSideInstances.ContainsKey(m_ClientNetworkManagers[0].LocalClientId));
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Create new parameter values
             m_ParameterValues = new AnimatorTestHelper.ParameterValues() { FloatValue = 1.0f, IntValue = 5, BoolValue = true };
@@ -182,8 +184,8 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for the client side to update to the new parameter values
-            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
-            AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
+            Assert.True(success, $"Timed out waiting for the client-side parameters to match {m_ParameterValues}!");
             VerboseDebug($" ------------------ Parameter Test [{ownerShipMode}] Stopping ------------------ ");
         }
 
@@ -255,6 +257,76 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        private bool AllClientsTransitioningAnyState()
+        {
+            foreach (var networkManager in m_ClientNetworkManagers)
+            {
+                var clientId = networkManager.LocalClientId;
+                if (!AnimatorTestHelper.ClientSideInstances.ContainsKey(clientId))
+                {
+                    return false;
+                }
+                var animator = AnimatorTestHelper.ClientSideInstances[clientId].GetComponent<Animator>();
+                if (!animator.isInitialized)
+                {
+                    return false;
+                }
+                var transitionInfo = animator.GetAnimatorTransitionInfo(0);
+                if (!transitionInfo.anyState)
+                {
+                    return false;
+                }
+                VerboseDebug($"{networkManager.name} transitioning from AnyState or CrossFade.");
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Verifies that cross fading is synchronized with currently connected clients
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CrossFadeTransitionTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        {
+            CrossFadeTransitionDetect.ResetTest();
+            CrossFadeTransitionDetect.SetTargetAnimationState(AnimatorTestHelper.TargetCrossFadeState);
+            VerboseDebug($" ++++++++++++++++++ Cross Fade Transition Test [{ownerShipMode}] Starting ++++++++++++++++++ ");
+            CrossFadeTransitionDetect.IsVerboseDebug = m_EnableVerboseDebug;
+
+            // Spawn our test animator object
+            var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
+
+            // Wait for it to spawn server-side
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+
+            // Wait for it to spawn client-side
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
+            var layerCount = animatorTestHelper.GetAnimator().layerCount;
+
+            var animationStateCount = animatorTestHelper.GetAnimatorStateCount();
+            Assert.True(layerCount == animationStateCount, $"AnimationState count {animationStateCount} does not equal the layer count {layerCount}!");
+
+            if (authoritativeMode == AuthoritativeMode.ServerAuth)
+            {
+                animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
+            }
+
+            CrossFadeTransitionDetect.ClientIds.Add(m_ServerNetworkManager.LocalClientId);
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                CrossFadeTransitionDetect.ClientIds.Add(client.LocalClientId);
+            }
+
+            animatorTestHelper.TestCrossFade();
+
+            // Verify the host and all clients performed a cross fade transition
+            yield return WaitForConditionOrTimeOut(CrossFadeTransitionDetect.AllClientsTransitioned);
+            AssertOnTimeout($"Timed out waiting for all clients to transition from synchronized cross fade!");
+        }
+
+
         /// <summary>
         /// Verifies that triggers are synchronized with currently connected clients
         /// </summary>
@@ -272,12 +344,12 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
 
@@ -318,7 +390,7 @@ namespace TestProject.RuntimeTests
                 AssertOnTimeout($"Timed out waiting for all triggers to match!");
             }
 
-            yield return s_DefaultWaitForTick;
+            TimeTravelToNextTick();
 
             var clientIdList = new List<ulong>();
             foreach (var client in m_ClientNetworkManagers)
@@ -327,11 +399,9 @@ namespace TestProject.RuntimeTests
             }
 
             // Verify we only entered each state once
-            yield return WaitForConditionOrTimeOut(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
-            AssertOnTimeout($"Timed out waiting for all states entered to match!");
-            // Since the com.unity.netcode.components does not allow test project to access its internals
-            // during runtime, this is only used when running test runner from within the editor
-#if UNITY_EDITOR
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => CheckStateEnterCount.AllStatesEnteredMatch(clientIdList));
+            Assert.True(success, $"Timed out waiting for all states entered to match!");
+
             // Now, update some states for several seconds to assure the AnimationState count does not grow
             var waitForSeconds = new WaitForSeconds(0.25f);
             bool rotateToggle = true;
@@ -344,7 +414,7 @@ namespace TestProject.RuntimeTests
                 yield return waitForSeconds;
                 rotateToggle = !rotateToggle;
             }
-#endif
+
             CheckStateEnterCount.ResetTest();
             if (m_EnableVerboseDebug)
             {
@@ -395,8 +465,8 @@ namespace TestProject.RuntimeTests
         /// Verifies that triggers are synchronized with currently connected clients
         /// </summary>
         /// <param name="authoritativeMode">Server or Owner authoritative</param>
-        [UnityTest]
-        public IEnumerator WeightUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
+        [Test]
+        public void WeightUpdateTests([Values] OwnerShipMode ownerShipMode, [Values] AuthoritativeMode authoritativeMode)
         {
             CheckStateEnterCount.ResetTest();
             TriggerTest.ResetTest();
@@ -408,12 +478,12 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
             var animatorTestHelper = ownerShipMode == OwnerShipMode.ClientOwner ? AnimatorTestHelper.ClientSideInstances[m_ClientNetworkManagers[0].LocalClientId] : AnimatorTestHelper.ServerSideInstance;
             var layerCount = animatorTestHelper.GetAnimator().layerCount;
 
@@ -427,15 +497,15 @@ namespace TestProject.RuntimeTests
 
             animatorTestHelper.SetLayerWeight(1, 0.75f);
             // Wait for all instances to update their weight value for layer 1
-            yield return WaitForConditionOrTimeOut(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
-            AssertOnTimeout($"Timed out waiting for all instances to match weight 0.75 on layer 1!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
+            Assert.True(success, $"Timed out waiting for all instances to match weight 0.75 on layer 1!");
 
             // Now late join a client
-            yield return CreateAndStartNewClient();
+            CreateAndStartNewClientWithTimeTravel();
 
             // Verify the late joined client is synchronized to the changed weight
-            yield return WaitForConditionOrTimeOut(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
-            AssertOnTimeout($"[Late-Join] Timed out waiting for all instances to match weight 0.75 on layer 1!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
+            Assert.True(success, $"[Late-Join] Timed out waiting for all instances to match weight 0.75 on layer 1!");
 
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Weight Test [{ownerShipMode}] Stopping ------------------ ");
@@ -459,12 +529,12 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Set the trigger based on the type of test
             if (authoritativeMode == AuthoritativeMode.OwnerAuth)
@@ -499,16 +569,16 @@ namespace TestProject.RuntimeTests
             }
 
             // Wait for the client side to update to the new parameter values
-            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
-            AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
+            Assert.True(success, $"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
-            yield return CreateAndStartNewClient();
+            CreateAndStartNewClientWithTimeTravel();
 
             Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
             var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
@@ -528,11 +598,11 @@ namespace TestProject.RuntimeTests
             }
             AssertOnTimeout($"Timed out waiting for the late joining client's triggers to match!{message}", s_GlobalTimeoutHelper);
             // Now check that the late joining client and all other clients are synchronized to the updated parameter values
-            yield return WaitForConditionOrTimeOut(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
-            AssertOnTimeout($"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => ParameterValuesMatch(ownerShipMode, authoritativeMode, m_EnableVerboseDebug));
+            Assert.True(success, $"Timed out waiting for the client-side parameters to match {m_ParameterValues.ValuesToString()}!");
 
             var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
-            yield return StopOneClient(newlyJoinedClient);
+            StopOneClientWithTimeTravel(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Trigger Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
 
@@ -555,12 +625,12 @@ namespace TestProject.RuntimeTests
             var objectInstance = SpawnPrefab(ownerShipMode == OwnerShipMode.ClientOwner, authoritativeMode);
 
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Set the late join parameter based on the type of test
             if (authoritativeMode == AuthoritativeMode.OwnerAuth)
@@ -584,13 +654,13 @@ namespace TestProject.RuntimeTests
 
             AnimatorTestHelper.ServerSideInstance.GetNetworkAnimator().SynchronizationStateInfo = new List<AnimatorStateInfo>();
             // Create and join a new client (late joining client)
-            yield return CreateAndStartNewClient();
+            CreateAndStartNewClientWithTimeTravel();
 
             Assert.IsTrue(m_ClientNetworkManagers.Length == NumberOfClients + 1, $"Newly created and connected client was not added to {nameof(m_ClientNetworkManagers)}!");
 
             // Wait for the client to have spawned and the spawned prefab to be instantiated
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the late joining client-side instance of {GetNetworkAnimatorName(authoritativeMode)} to be spawned!");
 
             // Make sure the AnimatorTestHelper client side instances is the same as the TotalClients
             var calculatedClients = (AnimatorTestHelper.ClientSideInstances.Count + (m_UseHost ? 1 : 0));
@@ -601,11 +671,11 @@ namespace TestProject.RuntimeTests
             AssertOnTimeout($"[Late Join] Timed out waiting for cube to reach 180.0f!");
 
             // Validate the fix by making sure the late joining client was synchronized to the server's Animator's states
-            yield return WaitForConditionOrTimeOut(LateJoinClientSynchronized);
-            AssertOnTimeout("[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(LateJoinClientSynchronized);
+            Assert.True(success, "[Late Join] Timed out waiting for newly joined client to have expected state synchronized!");
 
             var newlyJoinedClient = m_ClientNetworkManagers[NumberOfClients];
-            yield return StopOneClient(newlyJoinedClient);
+            StopOneClientWithTimeTravel(newlyJoinedClient);
             VerboseDebug($" ------------------ Late Join Synchronization Test [{TriggerTest.Iteration}][{ownerShipMode}] Stopping ------------------ ");
         }
 
@@ -658,50 +728,62 @@ namespace TestProject.RuntimeTests
         /// OnClientConnectedCallback when it is despawned and destroyed during the
         /// shutdown sequence on both the server and the client.
         /// </summary>
-        [UnityTest]
-        public IEnumerator ShutdownWhileSpawnedAndStartBackUpTest()
+        [Test]
+        public void ShutdownWhileSpawnedAndStartBackUpTest()
         {
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Starting ++++++++++++++++++ ");
             // Spawn our test animator object
             var objectInstance = SpawnPrefab(false, AuthoritativeMode.ServerAuth);
             var networkObjectInstance = objectInstance.GetComponent<NetworkObject>();
             var serverAnimatorTestHelper = objectInstance.GetComponent<AnimatorTestHelper>();
-            m_ServerNetworkManager.OnClientDisconnectCallback += ServerNetworkManager_OnClientDisconnectCallback;
+
             // Wait for it to spawn server-side
-            yield return WaitForConditionOrTimeOut(() => AnimatorTestHelper.ServerSideInstance != null);
-            AssertOnTimeout($"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+            var success = WaitForConditionOrTimeOutWithTimeTravel(() => AnimatorTestHelper.ServerSideInstance != null);
+            Assert.True(success, $"Timed out waiting for the server-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
 
             // Wait for it to spawn client-side
-            yield return WaitForConditionOrTimeOut(WaitForClientsToInitialize);
-            AssertOnTimeout($"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(WaitForClientsToInitialize);
+            Assert.True(success, $"Timed out waiting for the client-side instance of {GetNetworkAnimatorName(AuthoritativeMode.ServerAuth)} to be spawned!");
 
             var clientAnimatorTestHelper = s_GlobalNetworkObjects[m_ClientNetworkManagers[0].LocalClientId].Values.Where((c) => c.GetComponent<AnimatorTestHelper>() != null).First().GetComponent<AnimatorTestHelper>();
             Assert.IsNotNull(clientAnimatorTestHelper, $"Could not find the client side {nameof(AnimatorTestHelper)}!");
-            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Client and Server ++++++++++++++++++ ");
+            VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Shutting Down Clients and Server ++++++++++++++++++ ");
             clientAnimatorTestHelper.OnCheckIsServerIsClient += Client_OnCheckIsServerIsClient;
 
-            // Now shutdown the client-side to verify this fix.
+            // Now shutdown the clients to verify this fix.
             // The client-side spawned NetworkObject should get despawned
             // and invoke the Client_OnCheckIsServerIsClient action.
-            m_ClientNetworkManagers[0].Shutdown(true);
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.Shutdown(true);
+            }
 
-            // Wait for the server to receive the client disconnection notification
-            yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
-            AssertOnTimeout($"Timed out waiting for the client to disconnect!");
+            // Wait for all clients to be disconnected
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllClientsDisconnected);
+            Assert.True(success, $"Timed out waiting for the client to disconnect!");
 
             Assert.IsTrue(m_ClientTestHelperDespawned, $"Client-Side {nameof(AnimatorTestHelper)} did not have a valid IsClient setting!");
 
             serverAnimatorTestHelper.OnCheckIsServerIsClient += Server_OnCheckIsServerIsClient;
-            m_ServerNetworkManager.OnClientDisconnectCallback -= ServerNetworkManager_OnClientDisconnectCallback;
 
             // Now shutdown the server-side to verify this fix.
             // The server-side spawned NetworkObject should get despawned
             // and invoke the Server_OnCheckIsServerIsClient action.
+            var playerPrefabIndex = 0;
+            for (int i = 0; i < m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs.Count; i++)
+            {
+                if (m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[i].Prefab.name.Contains("Player"))
+                {
+                    playerPrefabIndex = i;
+                    break;
+                }
+            }
+
             m_ServerNetworkManager.Shutdown();
 
-            yield return s_DefaultWaitForTick;
+            TimeTravelToNextTick();
 
-            yield return WaitForConditionOrTimeOut(() => !m_ServerNetworkManager.ShutdownInProgress);
+            WaitForConditionOrTimeOutWithTimeTravel(() => !m_ServerNetworkManager.ShutdownInProgress);
 
             Assert.IsTrue(m_ServerTestHelperDespawned, $"Server-Side {nameof(AnimatorTestHelper)} did not have a valid IsServer setting!");
             AssertOnTimeout($"Timed out waiting for the server to shutdown!");
@@ -712,17 +794,20 @@ namespace TestProject.RuntimeTests
             m_PlayerPrefab = new GameObject("Player");
             NetworkObject networkObject = m_PlayerPrefab.AddComponent<NetworkObject>();
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            m_ClientNetworkManagers[0].NetworkConfig.Prefabs.Prefabs[0].Prefab = m_PlayerPrefab;
-            OnCreatePlayerPrefab();
+            m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
 
             // Now, restart the server and the client
             m_ServerNetworkManager.StartHost();
-            m_ClientNetworkManagers[0].StartClient();
 
-            // Wait for the server and client to start and connect
-            yield return WaitForClientsConnectedOrTimeOut();
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.NetworkConfig.Prefabs.Prefabs[playerPrefabIndex].Prefab = m_PlayerPrefab;
+                clientNetworkManager.StartClient();
+            }
 
+            // Wait for the server and clients to start and connect
+            success = WaitForClientsConnectedOrTimeOutWithTimeTravel();
+            Assert.True(success, $"Client Failed to Connect!");
             VerboseDebug($" ++++++++++++++++++ Disconnect-Reconnect Server Test Stopping ++++++++++++++++++ ");
         }
 
@@ -751,11 +836,18 @@ namespace TestProject.RuntimeTests
         }
 
         /// <summary>
-        /// Verifies the client has disconnected
+        /// Wait condition to determine if all clients are disconnected and no longer listening.
         /// </summary>
-        private void ServerNetworkManager_OnClientDisconnectCallback(ulong obj)
+        private bool AllClientsDisconnected()
         {
-            m_ClientDisconnected = true;
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (client.IsConnectedClient || client.IsListening || client.ShutdownInProgress)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

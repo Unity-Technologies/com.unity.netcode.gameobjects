@@ -2,14 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.Netcode.Components;
 using NUnit.Framework;
+using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetworkTransformOwnershipTests : NetcodeIntegrationTest
+    public class NetworkTransformOwnershipTests : IntegrationTestWithApproximation
     {
         protected override int NumberOfClients => 1;
 
@@ -22,20 +22,26 @@ namespace Unity.Netcode.RuntimeTests
             m_ClientNetworkTransformPrefab = CreateNetworkObjectPrefab("OwnerAuthorityTest");
             var clientNetworkTransform = m_ClientNetworkTransformPrefab.AddComponent<TestClientNetworkTransform>();
             clientNetworkTransform.Interpolate = false;
+            clientNetworkTransform.UseHalfFloatPrecision = false;
             var rigidBody = m_ClientNetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            // NOTE: We don't use a sphere collider for this integration test because by the time we can
+            // assure they don't collide and skew the results the NetworkObjects are already synchronized
+            // with skewed results
             m_ClientNetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-            m_ClientNetworkTransformPrefab.AddComponent<SphereCollider>();
             m_ClientNetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
 
             m_NetworkTransformPrefab = CreateNetworkObjectPrefab("ServerAuthorityTest");
             var networkTransform = m_NetworkTransformPrefab.AddComponent<NetworkTransform>();
             rigidBody = m_NetworkTransformPrefab.AddComponent<Rigidbody>();
             rigidBody.useGravity = false;
+            // NOTE: We don't use a sphere collider for this integration test because by the time we can
+            // assure they don't collide and skew the results the NetworkObjects are already synchronized
+            // with skewed results
             m_NetworkTransformPrefab.AddComponent<NetworkRigidbody>();
-            m_NetworkTransformPrefab.AddComponent<SphereCollider>();
             m_NetworkTransformPrefab.AddComponent<VerifyObjectIsSpawnedOnClient>();
             networkTransform.Interpolate = false;
+            networkTransform.UseHalfFloatPrecision = false;
 
             base.OnServerAndClientsCreated();
         }
@@ -78,11 +84,13 @@ namespace Unity.Netcode.RuntimeTests
             var valueSetByOwner = Vector3.one * 2;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
-            var rotation = new Quaternion();
-            rotation.eulerAngles = valueSetByOwner;
+            var rotation = new Quaternion
+            {
+                eulerAngles = valueSetByOwner
+            };
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -91,7 +99,7 @@ namespace Unity.Netcode.RuntimeTests
             // Verify non-owners cannot change transform values
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
-            Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
+            Assert.True(Approximately(nonOwnerInstance.transform.position, valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {valueSetByOwner} Is Currently:{nonOwnerInstance.transform.position}");
 
             // Change ownership and wait for the non-owner to reflect the change
             VerifyObjectIsSpawnedOnClient.ResetObjectTable();
@@ -113,13 +121,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(nonOwnerInstance.GetComponent<Rigidbody>().isKinematic, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} is not kinematic when it should be!");
 
             // Have the new owner change transform values and wait for those values to be applied on the non-owner side.
-            valueSetByOwner = Vector3.one * 50;
+            valueSetByOwner = Vector3.one * 10;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
             rotation.eulerAngles = valueSetByOwner;
             ownerInstance.transform.rotation = rotation;
             transformToTest = nonOwnerInstance.transform;
-            yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
+            yield return WaitForConditionOrTimeOut(() => Approximately(transformToTest.position, valueSetByOwner) && Approximately(transformToTest.localScale, valueSetByOwner) && Approximately(transformToTest.rotation, rotation));
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} to change its transform!\n" +
                 $"Expected Position: {valueSetByOwner} | Current Position: {transformToTest.position}\n" +
                 $"Expected Rotation: {valueSetByOwner} | Current Rotation: {transformToTest.rotation.eulerAngles}\n" +
@@ -128,7 +136,7 @@ namespace Unity.Netcode.RuntimeTests
             // The last check is to verify non-owners cannot change transform values after ownership has changed
             nonOwnerInstance.transform.position = Vector3.zero;
             yield return s_DefaultWaitForTick;
-            Assert.True(nonOwnerInstance.transform.position == valueSetByOwner, $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
+            Assert.True(Approximately(nonOwnerInstance.transform.position, valueSetByOwner), $"{networkManagerNonOwner.name}'s object instance {nonOwnerInstance.name} was allowed to change its position! Expected: {Vector3.one} Is Currently:{nonOwnerInstance.transform.position}");
         }
 
         /// <summary>
@@ -155,8 +163,10 @@ namespace Unity.Netcode.RuntimeTests
             var valueSetByOwner = Vector3.one * 2;
             ownerInstance.transform.position = valueSetByOwner;
             ownerInstance.transform.localScale = valueSetByOwner;
-            var rotation = new Quaternion();
-            rotation.eulerAngles = valueSetByOwner;
+            var rotation = new Quaternion
+            {
+                eulerAngles = valueSetByOwner
+            };
             ownerInstance.transform.rotation = rotation;
             var transformToTest = nonOwnerInstance.transform;
             yield return WaitForConditionOrTimeOut(() => transformToTest.position == valueSetByOwner && transformToTest.localScale == valueSetByOwner && transformToTest.rotation == rotation);
@@ -217,13 +227,6 @@ namespace Unity.Netcode.RuntimeTests
 
             public override void OnNetworkSpawn()
             {
-                // This makes sure that the NetworkManager relative NetworkObject instances don't collide with each other
-                // and skew the expected changes to the transforms
-                foreach (var entry in s_NetworkManagerRelativeSpawnedObjects)
-                {
-                    Physics.IgnoreCollision(entry.Value.GetComponent<SphereCollider>(), GetComponent<SphereCollider>());
-                }
-
                 if (!s_NetworkManagerRelativeSpawnedObjects.ContainsKey(NetworkManager.LocalClientId))
                 {
                     s_NetworkManagerRelativeSpawnedObjects.Add(NetworkManager.LocalClientId, this);

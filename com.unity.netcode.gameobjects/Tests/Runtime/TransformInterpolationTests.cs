@@ -1,28 +1,77 @@
 using System.Collections;
-using Unity.Netcode.Components;
 using NUnit.Framework;
+using Unity.Netcode.Components;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class TransformInterpolationObject : NetworkBehaviour
+    public class TransformInterpolationObject : NetworkTransform
     {
+        public static bool TestComplete = false;
         // Set the minimum threshold which we will use as our margin of error
+#if UNITY_EDITOR
         public const float MinThreshold = 0.005f;
+#else
+        // Add additional room for error on console tests
+        public const float MinThreshold = 0.009999f;
+#endif
+
+        private const int k_TargetLocalSpaceToggles = 10;
 
         public bool CheckPosition;
         public bool IsMoving;
         public bool IsFixed;
 
-        private void Update()
+        private float m_FrameRateFractional;
+        private bool m_CurrentLocalSpace;
+
+        private int m_LocalSpaceToggles;
+        private int m_LastFrameCount;
+
+        public bool ReachedTargetLocalSpaceTransitionCount()
         {
+            TestComplete = m_LocalSpaceToggles >= k_TargetLocalSpaceToggles;
+            return TestComplete;
+        }
+
+        protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
+        {
+            m_LocalSpaceToggles = 0;
+            m_FrameRateFractional = 1.0f / Application.targetFrameRate;
+            PositionThreshold = MinThreshold;
+            SetMaxInterpolationBound(1.0f);
+            base.OnInitialize(ref replicatedState);
+        }
+
+        private int m_StartFrameCount;
+
+        public void StartMoving()
+        {
+            m_StartFrameCount = Time.frameCount;
+            IsMoving = true;
+        }
+
+        public void StopMoving()
+        {
+            IsMoving = false;
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (!IsSpawned || TestComplete)
+            {
+                return;
+            }
+
             // Check the position of the nested object on the client
             if (CheckPosition)
             {
-                if (transform.position.y < -MinThreshold || transform.position.y > 100.0f + MinThreshold)
+                if (transform.position.y < -MinThreshold || transform.position.y > Application.targetFrameRate + MinThreshold)
                 {
                     Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0. Current threshold is [+/- {MinThreshold}].");
                 }
@@ -31,19 +80,47 @@ namespace Unity.Netcode.RuntimeTests
             // Move the nested object on the server
             if (IsMoving)
             {
-                var y = Time.realtimeSinceStartup % 10.0f;
+                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
 
-                // change the space between local and global every second
-                GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
+                if (m_LastFrameCount == Time.frameCount)
+                {
+                    Debug.Log($"Detected duplicate frame update count {Time.frameCount}. Ignoring this update.");
+                    return;
+                }
 
-                transform.position = new Vector3(0.0f, y * 10, 0.0f);
+                m_LastFrameCount = Time.frameCount;
+
+                // Leaving this here for reference.
+                // If a system is running at a slower frame rate than expected, then the below code could toggle
+                // the local to world space value at a higher frequency which might not provide enough updates to
+                // handle interpolating between the transitions.
+                //var y = Time.realtimeSinceStartup % 10.0f;
+                //// change the space between local and global every second
+                //GetComponent<NetworkTransform>().InLocalSpace = ((int)y % 2 == 0);
+
+                // Reduce the total frame count down to the frame rate
+                var y = (Time.frameCount - m_StartFrameCount) % Application.targetFrameRate;
+
+                // change the space between local and global every time we hit the expected number of frames
+                // (or every second if running at the target frame rate)
+                InLocalSpace = y == 0 ? !InLocalSpace : InLocalSpace;
+
+                if (m_CurrentLocalSpace != InLocalSpace)
+                {
+                    m_LocalSpaceToggles++;
+                    m_CurrentLocalSpace = InLocalSpace;
+                }
+
+                transform.position = new Vector3(0.0f, (y * m_FrameRateFractional), 0.0f);
             }
 
             // On the server, make sure to keep the parent object at a fixed position
             if (IsFixed)
             {
+                Assert.True(CanCommitToTransform, $"Using non-authority instance to update transform!");
                 transform.position = new Vector3(1000.0f, 1000.0f, 1000.0f);
             }
+
         }
     }
 
@@ -63,9 +140,7 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             m_PrefabToSpawn = CreateNetworkObjectPrefab("InterpTestObject");
-            var networkTransform = m_PrefabToSpawn.AddComponent<NetworkTransform>();
-            networkTransform.PositionThreshold = TransformInterpolationObject.MinThreshold;
-            m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
+            var networkTransform = m_PrefabToSpawn.AddComponent<TransformInterpolationObject>();
         }
 
         private IEnumerator RefreshNetworkObjects()
@@ -89,6 +164,7 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TransformInterpolationTest()
         {
+            TransformInterpolationObject.TestComplete = false;
             // create an object
             var spawnedObject = Object.Instantiate(m_PrefabToSpawn);
             var baseObject = Object.Instantiate(m_PrefabToSpawn);
@@ -101,7 +177,6 @@ namespace Unity.Netcode.RuntimeTests
             m_BaseAsNetworkObject = baseObject.GetComponent<NetworkObject>();
             m_BaseAsNetworkObject.NetworkManagerOwner = m_ServerNetworkManager;
 
-
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);
 
             m_SpawnedAsNetworkObject.Spawn();
@@ -109,10 +184,9 @@ namespace Unity.Netcode.RuntimeTests
             yield return RefreshNetworkObjects();
 
             m_SpawnedAsNetworkObject.TrySetParent(baseObject);
-
+            var spawnedObjectNetworkTransform = spawnedObject.GetComponent<TransformInterpolationObject>();
             baseObject.GetComponent<TransformInterpolationObject>().IsFixed = true;
-            spawnedObject.GetComponent<TransformInterpolationObject>().IsMoving = true;
-            spawnedObject.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
+            spawnedObject.GetComponent<TransformInterpolationObject>().StartMoving();
 
             const float maxPlacementError = 0.01f;
 
@@ -125,13 +199,15 @@ namespace Unity.Netcode.RuntimeTests
                 yield return new WaitForSeconds(0.01f);
             }
 
-            m_SpawnedObjectOnClient.GetComponent<NetworkTransform>().SetMaxInterpolationBound(1.0f);
             m_SpawnedObjectOnClient.GetComponent<TransformInterpolationObject>().CheckPosition = true;
 
-            // Test that interpolation works correctly for 10 seconds
+            // Test that interpolation works correctly for ~10 seconds or 10 local to world space transitions while moving
             // Increasing this duration gives you the opportunity to go check in the Editor how the objects are setup
             // and how they move
-            yield return new WaitForSeconds(10.0f);
+            var timeOutHelper = new TimeoutFrameCountHelper(10);
+            yield return WaitForConditionOrTimeOut(spawnedObjectNetworkTransform.ReachedTargetLocalSpaceTransitionCount, timeOutHelper);
+            Debug.Log($"[TransformInterpolationTest] Wait condition reached or timed out. Frame Count ({timeOutHelper.GetFrameCount()}) | Time Elapsed ({timeOutHelper.GetTimeElapsed()})");
+            AssertOnTimeout($"Failed to reach desired local to world space transitions in the given time!", timeOutHelper);
         }
     }
 }

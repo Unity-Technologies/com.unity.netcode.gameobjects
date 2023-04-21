@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
 using Vector3 = UnityEngine.Vector3;
 
@@ -69,9 +69,11 @@ namespace Unity.Netcode.RuntimeTests
 
             var vector3 = new Vector3(1, 2, 3);
             Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
-            using var vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent);
-            vector3sNativeList.Add(new Vector3(10, 11, 12));
-            vector3sNativeList.Add(new Vector3(13, 14, 15));
+            using var vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent)
+            {
+                new Vector3(10, 11, 12),
+                new Vector3(13, 14, 15)
+            };
 
             localClienRpcTestNB.OnClient_Rpc += () =>
             {
@@ -124,7 +126,7 @@ namespace Unity.Netcode.RuntimeTests
             // Send ClientRpc
             serverClientRpcTestNB.MyClientRpc();
 
-            // Validate each NetworkManager relative MessagingSystem received each respective RPC
+            // Validate each NetworkManager relative NetworkMessageManager received each respective RPC
             var messageHookList = new List<MessageHookEntry>();
             var serverMessageHookEntry = new MessageHookEntry(m_ServerNetworkManager);
             serverMessageHookEntry.AssignMessageType<ServerRpcMessage>();
@@ -140,6 +142,7 @@ namespace Unity.Netcode.RuntimeTests
                 clientMessageHookEntry.AssignMessageType<ClientRpcMessage>();
                 messageHookList.Add(clientMessageHookEntry);
             }
+
             var rpcMessageHooks = new MessageHooksConditional(messageHookList);
             yield return WaitForConditionOrTimeOut(rpcMessageHooks);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for messages: {rpcMessageHooks.GetHooksStillWaiting()}");

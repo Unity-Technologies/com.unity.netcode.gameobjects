@@ -240,10 +240,7 @@ public class ConnectionModeScript : MonoBehaviour
         NetworkManager.Singleton.StartClient();
         OnNotifyConnectionEventClient?.Invoke();
         m_ConnectionModeButtons.SetActive(false);
-        if (m_DisconnectClientButton != null)
-        {
-            m_DisconnectClientButton.SetActive(true);
-        }
+        m_DisconnectClientButton?.SetActive(true);
     }
 
     public void DisconnectClient()

@@ -1,8 +1,8 @@
 using System.Collections;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -52,24 +52,63 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(go == null);
         }
 
-        /// <summary>
-        /// Tests that a client cannot destroy a spawned networkobject.
-        /// </summary>
-        /// <returns></returns>
-        [UnityTest]
-        public IEnumerator TestNetworkObjectClientDestroy()
+
+        public enum ClientDestroyObject
         {
-            // This is the *SERVER VERSION* of the *CLIENT PLAYER*
-            var serverClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ServerNetworkManager, serverClientPlayerResult);
+            ShuttingDown,
+            ActiveSession
+        }
+        /// <summary>
+        /// Validates the expected behavior when the client-side destroys a <see cref="NetworkObject"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator TestNetworkObjectClientDestroy([Values] ClientDestroyObject clientDestroyObject)
+        {
+            var isShuttingDown = clientDestroyObject == ClientDestroyObject.ShuttingDown;
+            var clientPlayer = m_ClientNetworkManagers[0].LocalClient.PlayerObject;
+            var clientId = clientPlayer.OwnerClientId;
 
-            // This is the *CLIENT VERSION* of the *CLIENT PLAYER*
-            var clientClientPlayerResult = new NetcodeIntegrationTestHelpers.ResultWrapper<NetworkObject>();
-            yield return NetcodeIntegrationTestHelpers.GetNetworkObjectByRepresentation(x => x.IsPlayerObject && x.OwnerClientId == m_ClientNetworkManagers[0].LocalClientId, m_ClientNetworkManagers[0], clientClientPlayerResult);
+            //destroying a NetworkObject while shutting down is allowed
+            if (isShuttingDown)
+            {
+                m_ClientNetworkManagers[0].Shutdown();
+            }
+            else
+            {
+                LogAssert.ignoreFailingMessages = true;
+                NetworkLog.NetworkManagerOverride = m_ClientNetworkManagers[0];
+            }
 
-            // destroy the client player, this is not allowed
-            LogAssert.Expect(LogType.Exception, "NotServerException: Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead.");
-            Object.DestroyImmediate(clientClientPlayerResult.Result.gameObject);
+            Object.DestroyImmediate(clientPlayer.gameObject);
+
+            // destroying a NetworkObject while a session is active is not allowed
+            if (!isShuttingDown)
+            {
+                yield return WaitForConditionOrTimeOut(HaveLogsBeenReceived);
+                AssertOnTimeout($"Not all expected logs were received when destroying a {nameof(NetworkObject)} on the client side during an active session!");
+            }
+        }
+
+        private bool HaveLogsBeenReceived()
+        {
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, "[Netcode] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            {
+                return false;
+            }
+
+            if (!NetcodeLogAssert.HasLogBeenReceived(LogType.Error, $"[Netcode-Server Sender={m_ClientNetworkManagers[0].LocalClientId}] Destroy a spawned NetworkObject on a non-host client is not valid. Call Destroy or Despawn on the server/host instead."))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            NetworkLog.NetworkManagerOverride = null;
+            LogAssert.ignoreFailingMessages = false;
+            return base.OnTearDown();
         }
     }
 }

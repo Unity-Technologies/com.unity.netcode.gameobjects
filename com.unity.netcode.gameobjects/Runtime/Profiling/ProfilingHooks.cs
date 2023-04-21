@@ -8,8 +8,8 @@ namespace Unity.Netcode
     {
         private Dictionary<Type, ProfilerMarker> m_HandlerProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
         private Dictionary<Type, ProfilerMarker> m_SenderProfilerMarkers = new Dictionary<Type, ProfilerMarker>();
-        private readonly ProfilerMarker m_SendBatch = new ProfilerMarker($"{nameof(MessagingSystem)}.SendBatch");
-        private readonly ProfilerMarker m_ReceiveBatch = new ProfilerMarker($"{nameof(MessagingSystem)}.ReceiveBatchBatch");
+        private readonly ProfilerMarker m_SendBatch = new ProfilerMarker($"{nameof(NetworkMessageManager)}.SendBatch");
+        private readonly ProfilerMarker m_ReceiveBatch = new ProfilerMarker($"{nameof(NetworkMessageManager)}.ReceiveBatchBatch");
 
         private ProfilerMarker GetHandlerProfilerMarker(Type type)
         {
@@ -19,7 +19,7 @@ namespace Unity.Netcode
                 return marker;
             }
 
-            marker = new ProfilerMarker($"{nameof(MessagingSystem)}.DeserializeAndHandle.{type.Name}");
+            marker = new ProfilerMarker($"{nameof(NetworkMessageManager)}.DeserializeAndHandle.{type.Name}");
             m_HandlerProfilerMarkers[type] = marker;
             return marker;
         }
@@ -32,7 +32,7 @@ namespace Unity.Netcode
                 return marker;
             }
 
-            marker = new ProfilerMarker($"{nameof(MessagingSystem)}.SerializeAndEnqueue.{type.Name}");
+            marker = new ProfilerMarker($"{nameof(NetworkMessageManager)}.SerializeAndEnqueue.{type.Name}");
             m_SenderProfilerMarkers[type] = marker;
             return marker;
         }

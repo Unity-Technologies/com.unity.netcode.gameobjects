@@ -63,8 +63,12 @@ MonoBehaviour:
   SyncScaleX: 1
   SyncScaleY: 1
   SyncScaleZ: 1
-  PositionThreshold: 0.01
-  RotAngleThreshold: 0.01
+  SlerpPosition: 0
+  UseQuaternionSynchronization: 1
+  UseQuaternionCompression: 1
+  UseHalfFloatPrecision: 1
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.001
   ScaleThreshold: 0.01
   InLocalSpace: 0
   Interpolate: 1
@@ -175,6 +179,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24a9235f10bc6456183432fdb3015157, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ApplyColorToChildren: 0
 --- !u!114 &6442518961346739709
 MonoBehaviour:
   m_ObjectHideFlags: 0

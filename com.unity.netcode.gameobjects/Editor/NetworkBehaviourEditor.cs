@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine;
-using UnityEditor;
 using Unity.Netcode.Editor.Configuration;
+using UnityEditor;
+using UnityEngine;
 
 namespace Unity.Netcode.Editor
 {
@@ -135,23 +135,23 @@ namespace Unity.Netcode.Editor
                 }
                 else if (type == typeof(uint))
                 {
-                    val = (uint)EditorGUILayout.LongField(variableName, (long)((uint)val));
+                    val = (uint)EditorGUILayout.LongField(variableName, (uint)val);
                 }
                 else if (type == typeof(short))
                 {
-                    val = (short)EditorGUILayout.IntField(variableName, (int)((short)val));
+                    val = (short)EditorGUILayout.IntField(variableName, (short)val);
                 }
                 else if (type == typeof(ushort))
                 {
-                    val = (ushort)EditorGUILayout.IntField(variableName, (int)((ushort)val));
+                    val = (ushort)EditorGUILayout.IntField(variableName, (ushort)val);
                 }
                 else if (type == typeof(sbyte))
                 {
-                    val = (sbyte)EditorGUILayout.IntField(variableName, (int)((sbyte)val));
+                    val = (sbyte)EditorGUILayout.IntField(variableName, (sbyte)val);
                 }
                 else if (type == typeof(byte))
                 {
-                    val = (byte)EditorGUILayout.IntField(variableName, (int)((byte)val));
+                    val = (byte)EditorGUILayout.IntField(variableName, (byte)val);
                 }
                 else if (type == typeof(long))
                 {
@@ -160,6 +160,10 @@ namespace Unity.Netcode.Editor
                 else if (type == typeof(ulong))
                 {
                     val = (ulong)EditorGUILayout.LongField(variableName, (long)((ulong)val));
+                }
+                else if (type == typeof(float))
+                {
+                    val = EditorGUILayout.FloatField(variableName, (float)((float)val));
                 }
                 else if (type == typeof(bool))
                 {

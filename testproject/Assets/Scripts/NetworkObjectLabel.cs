@@ -1,12 +1,23 @@
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 public class NetworkObjectLabel : NetworkBehaviour
 {
+    public static bool GlobalVisibility = true;
     private TextMesh m_ObjectLabel;
     private MeshRenderer m_Renderer;
 
-    private void OnEnable()
+    private bool m_IsLabelVisible = true;
+
+    public void SetLabelVisibility(bool isVisiable)
+    {
+        m_IsLabelVisible = isVisiable;
+
+        ShowHideLabel(m_IsLabelVisible);
+    }
+
+
+    private void ShowHideLabel(bool isVisible)
     {
         if (m_Renderer == null)
         {
@@ -15,20 +26,23 @@ public class NetworkObjectLabel : NetworkBehaviour
 
         if (m_Renderer != null)
         {
-            m_Renderer.enabled = true;
+            m_Renderer.enabled = isVisible;
+        }
+    }
+
+    private void OnEnable()
+    {
+        if (m_IsLabelVisible)
+        {
+            ShowHideLabel(GlobalVisibility);
         }
     }
 
     private void OnDisable()
     {
-        if (m_Renderer == null)
+        if (m_IsLabelVisible)
         {
-            m_Renderer = GetComponent<MeshRenderer>();
-        }
-
-        if (m_Renderer != null)
-        {
-            m_Renderer.enabled = false;
+            ShowHideLabel(false);
         }
     }
 
@@ -40,6 +54,7 @@ public class NetworkObjectLabel : NetworkBehaviour
         }
 
         m_ObjectLabel.text = NetworkObject.NetworkObjectId.ToString();
+        SetLabelVisibility(GlobalVisibility);
 
         base.OnNetworkSpawn();
     }

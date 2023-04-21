@@ -1,11 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Unity.Netcode;
-using Unity.Netcode.Transports.UTP;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
@@ -40,12 +40,14 @@ namespace TestProject.RuntimeTests
 
             networkManager.StartHost();
 
-            var sceneEventData = new SceneEventData(networkManager);
-            sceneEventData.SceneEventType = SceneEventType.Load;
-            sceneEventData.SceneHash = XXHash.Hash32("SomeRandomSceneName");
-            sceneEventData.SceneEventProgressId = Guid.NewGuid();
-            sceneEventData.LoadSceneMode = LoadSceneMode.Single;
-            sceneEventData.SceneHandle = 32768;
+            var sceneEventData = new SceneEventData(networkManager)
+            {
+                SceneEventType = SceneEventType.Load,
+                SceneHash = XXHash.Hash32("SomeRandomSceneName"),
+                SceneEventProgressId = Guid.NewGuid(),
+                LoadSceneMode = LoadSceneMode.Single,
+                SceneHandle = 32768
+            };
 
             sceneEventData.Serialize(fastBufferWriter);
             var nativeArray = new Unity.Collections.NativeArray<byte>(fastBufferWriter.ToArray(), Unity.Collections.Allocator.Persistent);

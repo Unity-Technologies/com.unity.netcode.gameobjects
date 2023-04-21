@@ -6,7 +6,7 @@ namespace Unity.Netcode
     internal ref struct NetworkContext
     {
         /// <summary>
-        /// An opaque object used to represent the owner of the MessagingSystem that's receiving the message.
+        /// An opaque object used to represent the owner of the NetworkMessageManager that's receiving the message.
         /// Outside of testing environments, the type of this variable will be <see cref="NetworkManager"/>
         /// </summary>
         public object SystemOwner;
@@ -24,7 +24,7 @@ namespace Unity.Netcode
         /// <summary>
         /// The header data that was sent with the message
         /// </summary>
-        public MessageHeader Header;
+        public NetworkMessageHeader Header;
 
         /// <summary>
         /// The actual serialized size of the header when packed into the buffer

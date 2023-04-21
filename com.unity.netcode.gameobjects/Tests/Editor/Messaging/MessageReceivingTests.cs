@@ -39,23 +39,23 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private class TestMessageProvider : IMessageProvider
+        private class TestMessageProvider : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }
         }
 
-        private MessagingSystem m_MessagingSystem;
+        private NetworkMessageManager m_MessageManager;
 
         [SetUp]
         public void SetUp()
@@ -64,14 +64,14 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Handled = false;
             TestMessage.DeserializedValues.Clear();
 
-            m_MessagingSystem = new MessagingSystem(new NopMessageSender(), this, new TestMessageProvider());
-            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager = new NetworkMessageManager(new NopMessageSender(), this, new TestMessageProvider());
+            m_MessageManager.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]
         public void TearDown()
         {
-            m_MessagingSystem.Dispose();
+            m_MessageManager.Dispose();
         }
 
         private TestMessage GetMessage()
@@ -88,10 +88,10 @@ namespace Unity.Netcode.EditorTests
         [Test]
         public void WhenHandlingAMessage_ReceiveMethodIsCalled()
         {
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
 
@@ -104,7 +104,7 @@ namespace Unity.Netcode.EditorTests
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleMessage(messageHeader, reader, 0, 0, 0);
+                    m_MessageManager.HandleMessage(messageHeader, reader, 0, 0, 0);
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.IsTrue(TestMessage.Handled);
                     Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
@@ -114,16 +114,16 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenHandlingIncomingData_ReceiveIsNotCalledBeforeProcessingIncomingMessageQueue()
+        public unsafe void WhenHandlingIncomingData_ReceiveIsNotCalledBeforeProcessingIncomingMessageQueue()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
-                BatchSize = 1
+                BatchCount = 1
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
 
@@ -137,10 +137,21 @@ namespace Unity.Netcode.EditorTests
                 writer.WriteValue(messageHeader);
                 writer.WriteValue(message);
 
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new NetworkBatchHeader
+                {
+                    Magic = NetworkBatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchCount = 1
+                };
+                writer.WriteValue(batchHeader);
+
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
+                    m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
                     Assert.IsFalse(TestMessage.Deserialized);
                     Assert.IsFalse(TestMessage.Handled);
                     Assert.IsEmpty(TestMessage.DeserializedValues);
@@ -149,16 +160,16 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenReceivingAMessageAndProcessingMessageQueue_ReceiveMethodIsCalled()
+        public unsafe void WhenReceivingAMessageAndProcessingMessageQueue_ReceiveMethodIsCalled()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
-                BatchSize = 1
+                BatchCount = 1
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (uint)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
 
@@ -170,11 +181,22 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
 
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new NetworkBatchHeader
+                {
+                    Magic = NetworkBatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchCount = 1
+                };
+                writer.WriteValue(batchHeader);
+
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
-                    m_MessagingSystem.ProcessIncomingMessageQueue();
+                    m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
+                    m_MessageManager.ProcessIncomingMessageQueue();
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.IsTrue(TestMessage.Handled);
                     Assert.AreEqual(1, TestMessage.DeserializedValues.Count);
@@ -184,16 +206,16 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenReceivingMultipleMessagesAndProcessingMessageQueue_ReceiveMethodIsCalledMultipleTimes()
+        public unsafe void WhenReceivingMultipleMessagesAndProcessingMessageQueue_ReceiveMethodIsCalledMultipleTimes()
         {
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
-                BatchSize = 2
+                BatchCount = 2
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
             var message2 = GetMessage();
@@ -209,15 +231,26 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message2);
 
+                // Fill out the rest of the batch header
+                writer.Seek(0);
+                batchHeader = new NetworkBatchHeader
+                {
+                    Magic = NetworkBatchHeader.MagicValue,
+                    BatchSize = writer.Length,
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchCount = 2
+                };
+                writer.WriteValue(batchHeader);
+
                 var reader = new FastBufferReader(writer, Allocator.Temp);
                 using (reader)
                 {
-                    m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
+                    m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(writer.ToArray()), 0);
                     Assert.IsFalse(TestMessage.Deserialized);
                     Assert.IsFalse(TestMessage.Handled);
                     Assert.IsEmpty(TestMessage.DeserializedValues);
 
-                    m_MessagingSystem.ProcessIncomingMessageQueue();
+                    m_MessageManager.ProcessIncomingMessageQueue();
                     Assert.IsTrue(TestMessage.Deserialized);
                     Assert.IsTrue(TestMessage.Handled);
                     Assert.AreEqual(2, TestMessage.DeserializedValues.Count);

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 public class StateSyncTest : StateMachineBehaviour
 {
@@ -15,7 +15,7 @@ public class StateSyncTest : StateMachineBehaviour
     // OnStateEnter is called when a transition starts and the state machine starts to evaluate this state
     // This provides us with the AnimatorStateInfo when a SendAnimStateClientRpc is received by the client
     // (the server and the connected client are updated elsewhere)
-    override public void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
+    public override void OnStateEnter(Animator animator, AnimatorStateInfo stateInfo, int layerIndex)
     {
         var networkObject = animator.GetComponent<NetworkObject>();
         if (networkObject == null || networkObject.NetworkManager == null || !networkObject.IsSpawned)

@@ -75,7 +75,7 @@ namespace Unity.Netcode
                 return;
             }
 
-            m_NetworkBehaviour.NetworkManager.MarkNetworkObjectDirty(m_NetworkBehaviour.NetworkObject);
+            m_NetworkBehaviour.NetworkManager.BehaviourUpdater.AddForUpdate(m_NetworkBehaviour.NetworkObject);
         }
 
         /// <inheritdoc />
