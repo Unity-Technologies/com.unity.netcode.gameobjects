@@ -18,7 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed some errors that could occur if a connection is lost and the loss is detected when attempting to write to the socket. (#2495)
 
 ## Changed
-- Improved performance of NetworkBehaviour initialization, which should help reduce hitching during additive scene loads. (#2522)
+- Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
 
 ## [1.4.0]
 

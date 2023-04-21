@@ -595,7 +595,6 @@ namespace Unity.Netcode.Editor.CodeGen
             m_NetworkVariableBase_TypeRef = moduleDefinition.ImportReference(networkVariableBaseTypeDef);
             foreach (var methodDef in networkVariableBaseTypeDef.Methods)
             {
-                Console.WriteLine($"=>Method: {methodDef.Name}");
                 switch (methodDef.Name)
                 {
                     case k_NetworkVariableBase_Initialize:
@@ -1948,6 +1947,16 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private void GenerateVariableInitialization(TypeDefinition type)
         {
+            foreach (var methodDefinition in type.Methods)
+            {
+                if (methodDefinition.Name == k_NetworkBehaviour___initializeVariables)
+                {
+                    // If this hits, we've already generated the method for this class
+                    // because a child class got processed first.
+                    return;
+                }
+            }
+
             var method = new MethodDefinition(
                 k_NetworkBehaviour___initializeVariables,
                 MethodAttributes.Family | MethodAttributes.Virtual | MethodAttributes.HideBySig,
@@ -1973,6 +1982,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
                 if (field.FieldType.IsSubclassOf(m_NetworkVariableBase_TypeRef))
                 {
+                    // if({variable} != null) {
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldfld, field);
                     processor.Emit(OpCodes.Ldnull);
@@ -1984,24 +1994,30 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     processor.Emit(OpCodes.Brfalse, afterThrowInstruction);
 
+                    // throw new Exception("...");
                     processor.Emit(OpCodes.Nop);
                     processor.Emit(OpCodes.Ldstr, $"{type.Name}.{field.Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
                     processor.Emit(OpCodes.Newobj, m_ExceptionCtorMethodReference);
                     processor.Emit(OpCodes.Throw);
 
+                    // }
                     processor.Append(afterThrowInstruction);
+
+                    // {variable}.Initialize(this);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldfld, field);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Callvirt, m_NetworkVariableBase_Initialize_MethodRef);
 
+                    // __nameNetworkVariable({variable}, "{variable}");
                     processor.Emit(OpCodes.Nop);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldfld, field);
-                    processor.Emit(OpCodes.Ldstr, field.Name);
+                    processor.Emit(OpCodes.Ldstr, field.Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty));
                     processor.Emit(OpCodes.Call, m_NetworkBehaviour___nameNetworkVariable_MethodRef);
 
+                    // NetworkVariableFields.Add({variable});
                     processor.Emit(OpCodes.Nop);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldfld, m_NetworkBehaviour_NetworkVariableFields_FieldRef);
@@ -2011,6 +2027,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
+            // Find the base method...
             MethodReference initializeVariablesBaseReference = null;
             foreach (var methodDefinition in type.BaseType.Resolve().Methods)
             {
@@ -2023,6 +2040,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (initializeVariablesBaseReference == null)
             {
+                // If we couldn't find it, we have to go ahead and add it.
+                // The base class could be in another assembly... that's ok, this won't
+                // actually save but it'll generate the same method the same way later,
+                // so this at least allows us to reference it.
                 GenerateVariableInitialization(type.BaseType.Resolve());
                 foreach (var methodDefinition in type.BaseType.Resolve().Methods)
                 {
@@ -2040,10 +2061,12 @@ namespace Unity.Netcode.Editor.CodeGen
                 initializeVariablesBaseReference = initializeVariablesBaseReference.MakeGeneric(baseTypeInstance.GenericArguments.ToArray());
             }
 
+            // base.__initializeVariables();
             processor.Emit(OpCodes.Nop);
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Call, initializeVariablesBaseReference);
             processor.Emit(OpCodes.Nop);
+
             processor.Emit(OpCodes.Ret);
 
             type.Methods.Add(method);
