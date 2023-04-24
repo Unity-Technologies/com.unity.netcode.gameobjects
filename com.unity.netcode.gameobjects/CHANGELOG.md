@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed Multiplayer Tools installation docs page link on the NetworkManager popup. (#2526)
 - Fixed a memory leak in `UnityTransport` that occurred if `StartClient` failed. (#2518)
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
 - Fixed issue where invalid endpoint addresses were not being detected and returning false from NGO UnityTransport. (#2496)
