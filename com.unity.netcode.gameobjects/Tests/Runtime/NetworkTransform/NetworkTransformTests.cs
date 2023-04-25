@@ -930,8 +930,9 @@ namespace Unity.Netcode.RuntimeTests
             var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
             Assert.True(success, $"[Teleport] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => TeleportPositionMatches(nonAuthPosition));
-            Assert.True(success, $"[Timed-Out][Teleport] Timed out waiting for NonAuthoritative position ({m_NonAuthoritativeTransform.GetSpaceRelativePosition()}) to teleport to position {teleportDestination}!");
+            SimulateOneFrame();
+            Assert.True(TeleportPositionMatches(nonAuthPosition), $"NonAuthoritative position ({m_NonAuthoritativeTransform.GetSpaceRelativePosition()}) is not the same as the destination position {teleportDestination}!");
+
             var targetDistance = 0.0f;
             if (!Approximately(m_DetectedPotentialInterpolatedTeleport, 0.0f))
             {
