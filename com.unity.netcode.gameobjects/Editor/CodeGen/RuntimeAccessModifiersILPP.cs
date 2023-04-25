@@ -112,7 +112,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage))
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage) || fieldDefinition.Name == nameof(NetworkBehaviour.NetworkVariableFields))
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -123,7 +123,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 if (methodDefinition.Name == nameof(NetworkBehaviour.__beginSendServerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__endSendServerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
-                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc))
+                    methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc) || methodDefinition.Name == nameof(NetworkBehaviour.__initializeVariables) || methodDefinition.Name == nameof(NetworkBehaviour.__nameNetworkVariable))
                 {
                     methodDefinition.IsFamily = true;
                 }
