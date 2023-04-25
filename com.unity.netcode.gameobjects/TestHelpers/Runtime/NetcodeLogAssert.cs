@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class NetcodeLogAssert
+    public class NetcodeLogAssert : IDisposable
     {
         private struct LogData
         {
@@ -20,8 +21,11 @@ namespace Unity.Netcode.RuntimeTests
 
         private List<LogData> AllLogs { get; }
 
-        public NetcodeLogAssert()
+        private bool m_ResetIgnoreFailingMessagesOnTearDown;
+        public NetcodeLogAssert(bool ignorFailingMessages = false, bool resetOnTearDown = true)
         {
+            LogAssert.ignoreFailingMessages = ignorFailingMessages;
+            m_ResetIgnoreFailingMessagesOnTearDown = resetOnTearDown;
             AllLogs = new List<LogData>();
             Activate();
         }
@@ -51,6 +55,16 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+        [UnityTearDown]
+        public void OnTearDown()
+        {
+            // Defaults to true and will reset LogAssert.ignoreFailingMessages during tear down
+            if (m_ResetIgnoreFailingMessagesOnTearDown)
+            {
+                LogAssert.ignoreFailingMessages = false;
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -59,6 +73,8 @@ namespace Unity.Netcode.RuntimeTests
 
         private void Dispose(bool disposing)
         {
+            // Always reset when disposing
+            LogAssert.ignoreFailingMessages = false;
             if (m_Disposed)
             {
                 return;
@@ -131,6 +147,7 @@ namespace Unity.Netcode.RuntimeTests
                     if (logEvent.LogType == type && messageRegex.IsMatch(logEvent.Message))
                     {
                         found = true;
+                        break;
                     }
                 }
 
@@ -139,6 +156,23 @@ namespace Unity.Netcode.RuntimeTests
                     Assert.Fail($"Expected log was not received: [{type}] {messageRegex}");
                 }
             }
+        }
+
+        public bool HasLogBeenReceived(LogType type, string message)
+        {
+            var found = false;
+            lock (m_Lock)
+            {
+                foreach (var logEvent in AllLogs)
+                {
+                    if (logEvent.LogType == type && message.Equals(logEvent.Message))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            return found;
         }
 
         public void Reset()

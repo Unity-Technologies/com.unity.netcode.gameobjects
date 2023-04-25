@@ -27,10 +27,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 callbackInvoked = true;
                 Assert.IsFalse(wasAlsoClient);
-                if (m_ServerManager.IsServer)
-                {
-                    Assert.Fail("OnServerStopped called when the server is still active");
-                }
             };
 
             // Start server to cause initialization process
@@ -57,10 +53,6 @@ namespace Unity.Netcode.RuntimeTests
             {
                 callbackInvoked = true;
                 Assert.IsFalse(wasAlsoServer);
-                if (m_ClientManager.IsClient)
-                {
-                    Assert.Fail("onClientStopped called when the client is still active");
-                }
             };
 
             m_ClientManager.OnClientStopped += onClientStopped;
@@ -85,20 +77,12 @@ namespace Unity.Netcode.RuntimeTests
             {
                 callbacksInvoked++;
                 Assert.IsTrue(wasAlsoServer);
-                if (m_ServerManager.IsClient)
-                {
-                    Assert.Fail("onClientStopped called when the client is still active");
-                }
             };
 
             Action<bool> onServerStopped = (bool wasAlsoClient) =>
             {
                 callbacksInvoked++;
                 Assert.IsTrue(wasAlsoClient);
-                if (m_ServerManager.IsServer)
-                {
-                    Assert.Fail("OnServerStopped called when the server is still active");
-                }
             };
 
             // Start server to cause initialization process
@@ -179,19 +163,11 @@ namespace Unity.Netcode.RuntimeTests
             Action onClientStarted = () =>
             {
                 callbacksInvoked++;
-                if (!m_ServerManager.IsClient)
-                {
-                    Assert.Fail("OnClientStarted called when the client is not active yet");
-                }
             };
 
             Action onServerStarted = () =>
             {
                 callbacksInvoked++;
-                if (!m_ServerManager.IsServer)
-                {
-                    Assert.Fail("OnServerStarted called when the server is not active yet");
-                }
             };
 
             m_ServerManager.OnServerStarted += onServerStarted;

@@ -536,6 +536,13 @@ namespace Unity.Netcode.Transports.UTP
                 serverEndpoint = ConnectionData.ServerEndPoint;
             }
 
+            // Verify the endpoint is valid before proceeding
+            if (serverEndpoint.Family == NetworkFamily.Invalid)
+            {
+                Debug.LogError($"Target server network address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
+                return false;
+            }
+
             InitDriver();
 
             var bindEndpoint = serverEndpoint.Family == NetworkFamily.Ipv6 ? NetworkEndpoint.AnyIpv6 : NetworkEndpoint.AnyIpv4;
@@ -554,6 +561,13 @@ namespace Unity.Netcode.Transports.UTP
 
         private bool ServerBindAndListen(NetworkEndpoint endPoint)
         {
+            // Verify the endpoint is valid before proceeding
+            if (endPoint.Family == NetworkFamily.Invalid)
+            {
+                Debug.LogError($"Network listen address ({ConnectionData.Address}) is {nameof(NetworkFamily.Invalid)}!");
+                return false;
+            }
+
             InitDriver();
 
             int result = m_Driver.Bind(endPoint);
@@ -939,7 +953,7 @@ namespace Unity.Netcode.Transports.UTP
                     {
                         continue;
                     }
-                    var transportClientId = NetworkManager.ClientIdToTransportId(ngoConnectionId);
+                    var transportClientId = NetworkManager.ConnectionManager.ClientIdToTransportId(ngoConnectionId);
                     ExtractNetworkMetricsForClient(transportClientId);
                 }
             }
@@ -1163,7 +1177,7 @@ namespace Unity.Netcode.Transports.UTP
 
             if (NetworkManager != null)
             {
-                var transportId = NetworkManager.ClientIdToTransportId(clientId);
+                var transportId = NetworkManager.ConnectionManager.ClientIdToTransportId(clientId);
 
                 var rtt = ExtractRtt(ParseClientId(transportId));
                 if (rtt > 0)
@@ -1268,7 +1282,7 @@ namespace Unity.Netcode.Transports.UTP
                     // provide any reliability guarantees anymore. Disconnect the client since at
                     // this point they're bound to become desynchronized.
 
-                    var ngoClientId = NetworkManager?.TransportIdToClientId(clientId) ?? clientId;
+                    var ngoClientId = NetworkManager?.ConnectionManager.TransportIdToClientId(clientId) ?? clientId;
                     Debug.LogError($"Couldn't add payload of size {payload.Count} to reliable send queue. " +
                         $"Closing connection {ngoClientId} as reliability guarantees can't be maintained.");
 
@@ -1368,23 +1382,21 @@ namespace Unity.Netcode.Transports.UTP
         /// </summary>
         public override void Shutdown()
         {
-            if (!m_Driver.IsCreated)
+            if (m_Driver.IsCreated)
             {
-                return;
-            }
+                // Flush all send queues to the network. NGO can be configured to flush its message
+                // queue on shutdown. But this only calls the Send() method, which doesn't actually
+                // get anything to the network.
+                foreach (var kvp in m_SendQueue)
+                {
+                    SendBatchedMessages(kvp.Key, kvp.Value);
+                }
 
-            // Flush all send queues to the network. NGO can be configured to flush its message
-            // queue on shutdown. But this only calls the Send() method, which doesn't actually
-            // get anything to the network.
-            foreach (var kvp in m_SendQueue)
-            {
-                SendBatchedMessages(kvp.Key, kvp.Value);
+                // The above flush only puts the message in UTP internal buffers, need an update to
+                // actually get the messages on the wire. (Normally a flush send would be sufficient,
+                // but there might be disconnect messages and those require an update call.)
+                m_Driver.ScheduleUpdate().Complete();
             }
-
-            // The above flush only puts the message in UTP internal buffers, need an update to
-            // actually get the messages on the wire. (Normally a flush send would be sufficient,
-            // but there might be disconnect messages and those require an update call.)
-            m_Driver.ScheduleUpdate().Complete();
 
             DisposeInternals();
 

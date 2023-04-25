@@ -39,17 +39,17 @@ namespace Unity.Netcode.EditorTests
             public int Version => 0;
         }
 
-        private class TestMessageProvider : IMessageProvider
+        private class TestMessageProvider : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessage),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessage>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessage>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessage>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessage>
                     }
                 };
             }
@@ -64,7 +64,7 @@ namespace Unity.Netcode.EditorTests
             AdditionalGarbageData,
         }
 
-        private class TestMessageSender : IMessageSender
+        private class TestMessageSender : INetworkMessageSender
         {
 
             public TypeOfCorruption Corruption;
@@ -108,7 +108,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        private MessagingSystem m_MessagingSystem;
+        private NetworkMessageManager m_MessageManager;
         private TestMessageSender m_MessageSender;
 
         [SetUp]
@@ -118,16 +118,16 @@ namespace Unity.Netcode.EditorTests
             TestMessage.Deserialized = false;
             m_MessageSender = new TestMessageSender();
 
-            m_MessagingSystem = new MessagingSystem(m_MessageSender, this, new TestMessageProvider());
+            m_MessageManager = new NetworkMessageManager(m_MessageSender, this, new TestMessageProvider());
 
-            m_MessagingSystem.ClientConnected(0);
-            m_MessagingSystem.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
+            m_MessageManager.ClientConnected(0);
+            m_MessageManager.SetVersion(0, XXHash.Hash32(typeof(TestMessage).FullName), 0);
         }
 
         [TearDown]
         public void TearDown()
         {
-            m_MessagingSystem.Dispose();
+            m_MessageManager.Dispose();
         }
 
         private TestMessage GetMessage()
@@ -159,14 +159,14 @@ namespace Unity.Netcode.EditorTests
             }
 
             // Dummy batch header
-            var batchHeader = new BatchHeader
+            var batchHeader = new NetworkBatchHeader
             {
                 BatchCount = 1
             };
-            var messageHeader = new MessageHeader
+            var messageHeader = new NetworkMessageHeader
             {
                 MessageSize = (ushort)UnsafeUtility.SizeOf<TestMessage>(),
-                MessageType = m_MessagingSystem.GetMessageType(typeof(TestMessage)),
+                MessageType = m_MessageManager.GetMessageType(typeof(TestMessage)),
             };
             var message = GetMessage();
 
@@ -182,11 +182,11 @@ namespace Unity.Netcode.EditorTests
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
-                batchHeader = new BatchHeader
+                batchHeader = new NetworkBatchHeader
                 {
-                    Magic = BatchHeader.MagicValue,
+                    Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(BatchHeader), writer.Length - sizeof(BatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -194,7 +194,7 @@ namespace Unity.Netcode.EditorTests
 
                 var receivedMessage = m_MessageSender.MessageQueue[0];
                 m_MessageSender.MessageQueue.Clear();
-                m_MessagingSystem.HandleIncomingData(0, new ArraySegment<byte>(receivedMessage), 0);
+                m_MessageManager.HandleIncomingData(0, new ArraySegment<byte>(receivedMessage), 0);
                 Assert.IsFalse(TestMessage.Deserialized);
                 Assert.IsFalse(TestMessage.Handled);
             }

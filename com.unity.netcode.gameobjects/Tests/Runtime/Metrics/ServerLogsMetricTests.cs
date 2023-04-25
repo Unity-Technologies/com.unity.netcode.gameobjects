@@ -37,6 +37,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
         [UnityTest]
         public IEnumerator TrackServerLogSentMetric()
         {
+            // Set the client NetworkManager to assure the log is sent
+            NetworkLog.NetworkManagerOverride = Client;
             var waitForSentMetric = new WaitForEventMetricValues<ServerLogEvent>(ClientMetrics.Dispatcher, NetworkMetricTypes.ServerLogSent);
 
             var message = Guid.NewGuid().ToString();
@@ -81,6 +83,12 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             var serializedLength = GetWriteSizeForLog(NetworkLog.LogType.Warning, message);
             Assert.AreEqual(serializedLength, receivedMetric.BytesCount);
+        }
+
+        protected override IEnumerator OnTearDown()
+        {
+            NetworkLog.NetworkManagerOverride = null;
+            return base.OnTearDown();
         }
     }
 }

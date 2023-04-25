@@ -67,8 +67,8 @@ namespace Unity.Netcode
                 // The object containing the behaviour we're about to process is about to be shown to this client
                 // As a result, the client will get the fully serialized NetworkVariable and would be confused by
                 // an extraneous delta
-                if (NetworkBehaviour.NetworkManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
-                    NetworkBehaviour.NetworkManager.ObjectsToShowToClient[TargetClientId]
+                if (NetworkBehaviour.NetworkManager.SpawnManager.ObjectsToShowToClient.ContainsKey(TargetClientId) &&
+                    NetworkBehaviour.NetworkManager.SpawnManager.ObjectsToShowToClient[TargetClientId]
                     .Contains(NetworkBehaviour.NetworkObject))
                 {
                     shouldWrite = false;
@@ -90,7 +90,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tempWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
+                        var tempWriter = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkMessageManager.FragmentedMessageMaxSize);
                         NetworkBehaviour.NetworkVariableFields[i].WriteDelta(tempWriter);
                         BytePacker.WriteValueBitPacked(writer, tempWriter.Length);
 
@@ -234,7 +234,7 @@ namespace Unity.Netcode
             }
             else
             {
-                networkManager.DeferredMessageManager.DeferMessage(IDeferredMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
+                networkManager.DeferredMessageManager.DeferMessage(IDeferredNetworkMessageManager.TriggerType.OnSpawn, NetworkObjectId, m_ReceivedNetworkVariableData, ref context);
             }
         }
     }

@@ -57,7 +57,7 @@ namespace TestProject.RuntimeTests
 
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
-            networkManager.SceneManager.DisableValidationWarnings(true);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             base.OnNewClientStarted(networkManager);
         }
 

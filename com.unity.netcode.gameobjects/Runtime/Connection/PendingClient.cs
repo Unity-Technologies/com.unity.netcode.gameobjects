@@ -1,10 +1,15 @@
+using UnityEngine;
+
 namespace Unity.Netcode
 {
     /// <summary>
+    /// Server-Side Only:
     /// A class representing a client that is currently in the process of connecting
     /// </summary>
     public class PendingClient
     {
+        internal Coroutine ApprovalCoroutine = null;
+
         /// <summary>
         /// The ClientId of the client
         /// </summary>

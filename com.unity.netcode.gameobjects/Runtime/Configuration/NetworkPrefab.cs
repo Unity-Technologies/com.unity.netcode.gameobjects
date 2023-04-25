@@ -12,10 +12,12 @@ namespace Unity.Netcode
         /// No oeverride is present
         /// </summary>
         None,
+
         /// <summary>
         /// Override the prefab when the given SourcePrefabToOverride is requested
         /// </summary>
         Prefab,
+
         /// <summary>
         /// Override the prefab when the given SourceHashToOverride is requested
         /// Used in situations where the server assets do not exist in client builds
@@ -71,19 +73,23 @@ namespace Unity.Netcode
                 switch (Override)
                 {
                     case NetworkPrefabOverride.None:
-                        if (Prefab != null && Prefab.TryGetComponent(out NetworkObject no))
                         {
-                            return no.GlobalObjectIdHash;
-                        }
+                            if (Prefab != null && Prefab.TryGetComponent(out NetworkObject networkObject))
+                            {
+                                return networkObject.GlobalObjectIdHash;
+                            }
 
-                        throw new InvalidOperationException("Prefab field isn't set or isn't a Network Object");
+                            throw new InvalidOperationException($"Prefab field is not set or is not a {nameof(NetworkObject)}");
+                        }
                     case NetworkPrefabOverride.Prefab:
-                        if (SourcePrefabToOverride != null && SourcePrefabToOverride.TryGetComponent(out no))
                         {
-                            return no.GlobalObjectIdHash;
-                        }
+                            if (SourcePrefabToOverride != null && SourcePrefabToOverride.TryGetComponent(out NetworkObject networkObject))
+                            {
+                                return networkObject.GlobalObjectIdHash;
+                            }
 
-                        throw new InvalidOperationException("Source Prefab field isn't set or isn't a Network Object");
+                            throw new InvalidOperationException($"Source Prefab field is not set or is not a {nameof(NetworkObject)}");
+                        }
                     case NetworkPrefabOverride.Hash:
                         return SourceHashToOverride;
                     default:
@@ -102,12 +108,14 @@ namespace Unity.Netcode
                         return 0;
                     case NetworkPrefabOverride.Prefab:
                     case NetworkPrefabOverride.Hash:
-                        if (OverridingTargetPrefab != null && OverridingTargetPrefab.TryGetComponent(out NetworkObject no))
                         {
-                            return no.GlobalObjectIdHash;
-                        }
+                            if (OverridingTargetPrefab != null && OverridingTargetPrefab.TryGetComponent(out NetworkObject networkObject))
+                            {
+                                return networkObject.GlobalObjectIdHash;
+                            }
 
-                        throw new InvalidOperationException("Target Prefab field isn't set or isn't a Network Object");
+                            throw new InvalidOperationException($"Target Prefab field is not set or is not a {nameof(NetworkObject)}");
+                        }
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -130,9 +138,9 @@ namespace Unity.Netcode
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                     {
-                        NetworkLog.LogWarning($"{NetworkManager.PrefabDebugHelper(this)} is missing " +
-                                              $"a {nameof(NetworkObject)} component (entry will be ignored).");
+                        NetworkLog.LogWarning($"{NetworkPrefabHandler.PrefabDebugHelper(this)} is missing a {nameof(NetworkObject)} component (entry will be ignored).");
                     }
+
                     return false;
                 }
 
@@ -148,9 +156,9 @@ namespace Unity.Netcode
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                             {
-                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero " +
-                                    "(entry will be ignored).");
+                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(SourceHashToOverride)} is zero (entry will be ignored).");
                             }
+
                             return false;
                         }
 
@@ -178,9 +186,9 @@ namespace Unity.Netcode
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                             {
-                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({SourcePrefabToOverride.name}) " +
-                                    $"is missing a {nameof(NetworkObject)} component (entry will be ignored).");
+                                NetworkLog.LogWarning($"{nameof(NetworkPrefab)} ({SourcePrefabToOverride.name}) is missing a {nameof(NetworkObject)} component (entry will be ignored).");
                             }
+
                             return false;
                         }
 
@@ -195,6 +203,7 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {nameof(OverridingTargetPrefab)} is null!");
                 }
+
                 switch (Override)
                 {
                     case NetworkPrefabOverride.Hash:
@@ -208,8 +217,10 @@ namespace Unity.Netcode
                             break;
                         }
                 }
+
                 return false;
             }
+
             return true;
         }
 

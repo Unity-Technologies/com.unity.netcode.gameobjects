@@ -48,23 +48,23 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderOne : IMessageProvider
+        private class TestMessageProviderOne : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageOne),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageOne>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageOne>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessageOne>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessageOne>
                     },
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageTwo),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageTwo>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageTwo>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessageTwo>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessageTwo>
                     }
                 };
             }
@@ -91,17 +91,17 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderTwo : IMessageProvider
+        private class TestMessageProviderTwo : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageThree),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageThree>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageThree>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessageThree>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessageThree>
                     }
                 };
             }
@@ -127,17 +127,17 @@ namespace Unity.Netcode.EditorTests
 
             public int Version => 0;
         }
-        private class TestMessageProviderThree : IMessageProvider
+        private class TestMessageProviderThree : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                return new List<MessagingSystem.MessageWithHandler>
+                return new List<NetworkMessageManager.MessageWithHandler>
                 {
-                    new MessagingSystem.MessageWithHandler
+                    new NetworkMessageManager.MessageWithHandler
                     {
                         MessageType = typeof(TestMessageFour),
-                        Handler = MessagingSystem.ReceiveMessage<TestMessageFour>,
-                        GetVersion = MessagingSystem.CreateMessageAndGetVersion<TestMessageFour>
+                        Handler = NetworkMessageManager.ReceiveMessage<TestMessageFour>,
+                        GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<TestMessageFour>
                     }
                 };
             }
@@ -148,9 +148,9 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
 
-            using var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
-            using var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
-            using var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
+            using var systemOne = new NetworkMessageManager(sender, null, new TestMessageProviderOne());
+            using var systemTwo = new NetworkMessageManager(sender, null, new TestMessageProviderTwo());
+            using var systemThree = new NetworkMessageManager(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
@@ -172,18 +172,18 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
 
-            using var systemOne = new MessagingSystem(sender, null, new TestMessageProviderOne());
-            using var systemTwo = new MessagingSystem(sender, null, new TestMessageProviderTwo());
-            using var systemThree = new MessagingSystem(sender, null, new TestMessageProviderThree());
+            using var systemOne = new NetworkMessageManager(sender, null, new TestMessageProviderOne());
+            using var systemTwo = new NetworkMessageManager(sender, null, new TestMessageProviderTwo());
+            using var systemThree = new NetworkMessageManager(sender, null, new TestMessageProviderThree());
 
             using (systemOne)
             using (systemTwo)
             using (systemThree)
             {
-                MessagingSystem.MessageHandler handlerOne = MessagingSystem.ReceiveMessage<TestMessageOne>;
-                MessagingSystem.MessageHandler handlerTwo = MessagingSystem.ReceiveMessage<TestMessageTwo>;
-                MessagingSystem.MessageHandler handlerThree = MessagingSystem.ReceiveMessage<TestMessageThree>;
-                MessagingSystem.MessageHandler handlerFour = MessagingSystem.ReceiveMessage<TestMessageFour>;
+                NetworkMessageManager.MessageHandler handlerOne = NetworkMessageManager.ReceiveMessage<TestMessageOne>;
+                NetworkMessageManager.MessageHandler handlerTwo = NetworkMessageManager.ReceiveMessage<TestMessageTwo>;
+                NetworkMessageManager.MessageHandler handlerThree = NetworkMessageManager.ReceiveMessage<TestMessageThree>;
+                NetworkMessageManager.MessageHandler handlerFour = NetworkMessageManager.ReceiveMessage<TestMessageFour>;
 
                 Assert.AreEqual(handlerOne, systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageOne))]);
                 Assert.AreEqual(handlerTwo, systemOne.MessageHandlers[systemOne.GetMessageType(typeof(TestMessageTwo))]);
@@ -216,29 +216,29 @@ namespace Unity.Netcode.EditorTests
         }
 #pragma warning restore IDE1006
 
-        internal class OrderingMessageProvider : IMessageProvider
+        internal class OrderingMessageProvider : INetworkMessageProvider
         {
-            public List<MessagingSystem.MessageWithHandler> GetMessages()
+            public List<NetworkMessageManager.MessageWithHandler> GetMessages()
             {
-                var listMessages = new List<MessagingSystem.MessageWithHandler>();
+                var listMessages = new List<NetworkMessageManager.MessageWithHandler>();
 
-                var messageWithHandler = new MessagingSystem.MessageWithHandler
+                var messageWithHandler = new NetworkMessageManager.MessageWithHandler
                 {
                     MessageType = typeof(zzzLateLexicographicNetworkMessage),
-                    GetVersion = MessagingSystem.CreateMessageAndGetVersion<zzzLateLexicographicNetworkMessage>
+                    GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<zzzLateLexicographicNetworkMessage>
                 };
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(ConnectionRequestMessage);
-                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<ConnectionRequestMessage>;
+                messageWithHandler.GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<ConnectionRequestMessage>;
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(ConnectionApprovedMessage);
-                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<ConnectionApprovedMessage>;
+                messageWithHandler.GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<ConnectionApprovedMessage>;
                 listMessages.Add(messageWithHandler);
 
                 messageWithHandler.MessageType = typeof(AAAEarlyLexicographicNetworkMessage);
-                messageWithHandler.GetVersion = MessagingSystem.CreateMessageAndGetVersion<AAAEarlyLexicographicNetworkMessage>;
+                messageWithHandler.GetVersion = NetworkMessageManager.CreateMessageAndGetVersion<AAAEarlyLexicographicNetworkMessage>;
                 listMessages.Add(messageWithHandler);
 
                 return listMessages;
@@ -250,18 +250,18 @@ namespace Unity.Netcode.EditorTests
         {
             var sender = new NopMessageSender();
             var provider = new OrderingMessageProvider();
-            using var messagingSystem = new MessagingSystem(sender, null, provider);
+            using var messageManager = new NetworkMessageManager(sender, null, provider);
 
             // the 2 priority messages should appear first, in lexicographic order
-            Assert.AreEqual(messagingSystem.MessageTypes[0], typeof(ConnectionApprovedMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[1], typeof(ConnectionRequestMessage));
+            Assert.AreEqual(messageManager.MessageTypes[0], typeof(ConnectionApprovedMessage));
+            Assert.AreEqual(messageManager.MessageTypes[1], typeof(ConnectionRequestMessage));
 
             // the other should follow after
-            Assert.AreEqual(messagingSystem.MessageTypes[2], typeof(AAAEarlyLexicographicNetworkMessage));
-            Assert.AreEqual(messagingSystem.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
+            Assert.AreEqual(messageManager.MessageTypes[2], typeof(AAAEarlyLexicographicNetworkMessage));
+            Assert.AreEqual(messageManager.MessageTypes[3], typeof(zzzLateLexicographicNetworkMessage));
 
             // there should not be any extras
-            Assert.AreEqual(messagingSystem.MessageHandlerCount, 4);
+            Assert.AreEqual(messageManager.MessageHandlerCount, 4);
         }
     }
 }
