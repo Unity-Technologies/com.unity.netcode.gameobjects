@@ -217,7 +217,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
                                 if (!hasEmptyConstructor)
                                 {
-                                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the new() constraint.");
+                                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
                                     continue;
                                 }
                                 serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
