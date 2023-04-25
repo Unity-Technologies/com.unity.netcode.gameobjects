@@ -827,10 +827,8 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-            // Standard stuff is really hard to reliably find using the normal way
-            // It's different in mono vs. .net core
-            // Importing with typeof() is less dangeroud for standard stuff though
-            // so we can just do it
+            // Standard types are really hard to reliably find using the Mono Cecil way, they resolve differently in Mono vs .NET Core
+            // Importing with typeof() is less dangerous for standard framework types though, so we can just do it
             var exceptionType = typeof(Exception);
             var exceptionCtor = exceptionType.GetConstructor(new[] { typeof(string) });
             m_ExceptionCtorMethodReference = m_MainModule.ImportReference(exceptionCtor);
@@ -1951,8 +1949,7 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 if (methodDefinition.Name == k_NetworkBehaviour___initializeVariables)
                 {
-                    // If this hits, we've already generated the method for this class
-                    // because a child class got processed first.
+                    // If this hits, we've already generated the method for this class because a child class got processed first.
                     return;
                 }
             }

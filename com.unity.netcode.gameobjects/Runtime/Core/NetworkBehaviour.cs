@@ -558,14 +558,12 @@ namespace Unity.Netcode
         internal virtual void __initializeVariables()
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
-            // ILPP generates code for all NetworkBehaviour subtypes to initialize
-            // each type's network variables.
+            // ILPP generates code for all NetworkBehaviour subtypes to initialize each type's network variables.
         }
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
-        // Using this method here because ILPP doesn't seem to let us do visibility
-        // modification on properties.
+        // Using this method here because ILPP doesn't seem to let us do visibility modification on properties.
         internal void __nameNetworkVariable(NetworkVariableBase variable, string varName)
 #pragma warning restore IDE1006 // restore naming rule violation check
         {
