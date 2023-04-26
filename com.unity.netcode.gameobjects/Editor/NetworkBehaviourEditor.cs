@@ -81,7 +81,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.BeginHorizontal();
             if (genericType.IsValueType)
             {
-               var isEquatable = false;
+                var isEquatable = false;
                 foreach (var iface in genericType.GetInterfaces())
                 {
                     if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEquatable<>))
@@ -93,11 +93,11 @@ namespace Unity.Netcode.Editor
                 MethodInfo method;
                 if (isEquatable)
                 {
-                    method = typeof(NetworkBehaviourEditor).GetMethod("RenderNetworkContainerValueTypeIEquatable", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                    method = typeof(NetworkBehaviourEditor).GetMethod(nameof(RenderNetworkContainerValueTypeIEquatable), BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
                 }
                 else
                 {
-                    method = typeof(NetworkBehaviourEditor).GetMethod("RenderNetworkContainerValueType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                    method = typeof(NetworkBehaviourEditor).GetMethod(nameof(RenderNetworkContainerValueType), BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
                 }
 
                 var genericMethod = method.MakeGenericMethod(genericType);
@@ -274,7 +274,7 @@ namespace Unity.Netcode.Editor
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
-                if (m_NetworkVariableNames.Contains(property.name))
+                if (m_NetworkVariableNames.Contains(ObjectNames.NicifyVariableName(property.name)))
                 {
                     // Skip rendering of NetworkVars, they have special rendering
                     continue;
