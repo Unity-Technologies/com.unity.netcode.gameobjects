@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.SetMaxSingleMessageSize() and NetworkManager.SetMaxFragmentedMessageSize() for transports that don't work with the default values (#2530)
+
 ### Fixed
 
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
