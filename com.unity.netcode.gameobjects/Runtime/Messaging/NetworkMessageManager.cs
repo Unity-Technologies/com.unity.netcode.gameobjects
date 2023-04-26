@@ -95,8 +95,8 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public const int NonFragmentedMessageMaxSize = 1300;
-        public const int FragmentedMessageMaxSize = int.MaxValue;
+        public int NonFragmentedMessageMaxSize = 1300;
+        public int FragmentedMessageMaxSize = int.MaxValue;
 
         internal struct MessageWithHandler
         {
@@ -158,6 +158,16 @@ namespace Unity.Netcode
                 Dispose();
                 throw;
             }
+        }
+
+        public void SetMaxSingleMessageSize(int size)
+        {
+            NonFragmentedMessageMaxSize = size;
+        }
+
+        public void SetMaxFragmentedMessageSize(int size)
+        {
+            FragmentedMessageMaxSize = size;
         }
 
         public void Dispose()

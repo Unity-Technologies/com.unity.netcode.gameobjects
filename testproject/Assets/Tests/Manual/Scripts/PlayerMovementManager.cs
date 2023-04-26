@@ -11,6 +11,17 @@ namespace TestProject.ManualTests
         public int MoveSpeed = 10;
 
         private RandomMovement m_RandomMovement;
+        public enum Foo
+        {
+            Bar,
+            Baz,
+            Qux
+        }
+
+        public NetworkVariable<int> i;
+        public NetworkVariable<float> f;
+        public NetworkVariable<Foo> g;
+        public NetworkList<int> il;
 
         // Start is called before the first frame update
         private void Start()

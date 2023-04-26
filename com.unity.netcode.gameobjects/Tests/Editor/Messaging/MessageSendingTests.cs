@@ -157,7 +157,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
+            for (var i = 0; i < (m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -167,11 +167,12 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenExceedingBatchSize_NewBatchesAreCreated()
+        public void WhenExceedingBatchSize_NewBatchesAreCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
+            m_MessageManager.SetMaxSingleMessageSize(maxMessageSize);
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -181,11 +182,12 @@ namespace Unity.Netcode.EditorTests
         }
 
         [Test]
-        public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated()
+        public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
+            m_MessageManager.SetMaxSingleMessageSize(maxMessageSize);
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((1300 - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
@@ -291,7 +293,7 @@ namespace Unity.Netcode.EditorTests
 
             var message = GetMessage();
 
-            var writer = new FastBufferWriter(1300, Allocator.Temp);
+            var writer = new FastBufferWriter(m_MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp);
             using (writer)
             {
                 writer.TryBeginWrite(FastBufferWriter.GetWriteSize(message));
