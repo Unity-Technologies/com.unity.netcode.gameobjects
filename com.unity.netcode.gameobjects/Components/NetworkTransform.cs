@@ -2503,6 +2503,33 @@ namespace Unity.Netcode.Components
             OnInitialize(ref replicatedState);
         }
 
+        /// <inheritdoc/>
+        /// <remarks>
+        /// When a parent changes, non-authoritative instances should:
+        /// - Apply the resultant position, rotation, and scale from the parenting action.
+        /// - Clear interpolators (even if not enabled on this frame)
+        /// - Reset the interpolators to the position, rotation, and scale resultant values.
+        /// This prevents interpolation visual anomalies and issues during initial synchronization
+        /// </remarks>
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // Only if we are not authority
+            if (!CanCommitToTransform)
+            {
+                m_CurrentPosition = GetSpaceRelativePosition();
+                m_CurrentRotation = GetSpaceRelativeRotation();
+                m_CurrentScale = GetScale();
+                m_ScaleInterpolator.Clear();
+                m_PositionInterpolator.Clear();
+                m_RotationInterpolator.Clear();
+                var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
+                m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
+                m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+            }
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
+        }
+
         /// <summary>
         /// Directly sets a state on the authoritative transform.
         /// Owner clients can directly set the state on a server authoritative transform
