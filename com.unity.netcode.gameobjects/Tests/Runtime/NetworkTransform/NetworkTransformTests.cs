@@ -367,10 +367,19 @@ namespace Unity.Netcode.RuntimeTests
         /// parented under another NetworkTransform
         /// </summary>
         [Test]
-        public void NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation)
+        public void NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation, [Values(0.5f, 1.0f, 5.0f)] float scale)
         {
             m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            // Change the parent scale to assure that it will impact the child's scale when not Vector3.one
+            if (m_AuthoritativeTransform.IsServerAuthoritative())
+            {
+                m_AuthoritativeTransform.transform.localScale = new Vector3(scale, scale, scale);
+            }
+            else
+            {
+                m_NonAuthoritativeTransform.transform.localScale = new Vector3(scale, scale, scale);
+            }
             var authoritativeChildObject = SpawnObject(m_ChildObjectToBeParented.gameObject, m_AuthoritativeTransform.NetworkManager);
 
             // Assure all of the child object instances are spawned
@@ -394,6 +403,10 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
+            WaitForAllChildrenLocalTransformValuesToMatch();
+
+            // This validates that a late joining client will synchronize to the other players with parented NetworkObjects
+            CreateAndStartNewClientWithTimeTravel();
             WaitForAllChildrenLocalTransformValuesToMatch();
         }
 
