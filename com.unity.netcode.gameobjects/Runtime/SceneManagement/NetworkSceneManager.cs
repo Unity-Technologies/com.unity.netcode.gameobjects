@@ -2485,9 +2485,9 @@ namespace Unity.Netcode
 
             // Double check that the NetworkObjects to migrate still exist
             m_ScenesToRemoveFromObjectMigration.Clear();
-            foreach(var sceneEntry in ObjectsMigratedIntoNewScene)
+            foreach (var sceneEntry in ObjectsMigratedIntoNewScene)
             {
-                for(int i = sceneEntry.Value.Count - 1; i >= 0; i--)
+                for (int i = sceneEntry.Value.Count - 1; i >= 0; i--)
                 {
                     // Remove NetworkObjects that are no longer spawned
                     if (!sceneEntry.Value[i].IsSpawned)
@@ -2505,7 +2505,7 @@ namespace Unity.Netcode
             }
 
             // Remove sceneHandle entries that no longer have any NetworkObjects remaining
-            foreach(var sceneHandle in m_ScenesToRemoveFromObjectMigration)
+            foreach (var sceneHandle in m_ScenesToRemoveFromObjectMigration)
             {
                 ObjectsMigratedIntoNewScene.Remove(sceneHandle);
             }
