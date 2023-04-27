@@ -2003,7 +2003,7 @@ namespace Unity.Netcode.Components
 
                     if (Interpolate)
                     {
-                        UpdatePositionInterpolator(currentPosition, sentTime);
+                        UpdatePositionInterpolator(currentPosition, sentTime, true);
                     }
 
                 }
