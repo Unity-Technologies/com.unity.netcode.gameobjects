@@ -11,7 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Fixed
-
+- Fixed issue where parenting a NetworkTransform under a transform with a scale other than Vector3.one would result in incorrect values on non-authoritative instances. (#2538)
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
 - Fixed a memory leak in `UnityTransport` that occurred if `StartClient` failed. (#2518)
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
