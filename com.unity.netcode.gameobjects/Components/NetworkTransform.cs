@@ -2683,6 +2683,12 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // If we have not received any additional state updates since the very
+            // initial synchronization, then exit early.
+            if (m_LocalAuthoritativeNetworkState.IsSynchronizing)
+            {
+                return;
+            }
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }
