@@ -334,9 +334,6 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private bool AllInstancesKeptLocalTransformValues()
         {
-            //var authorityObjectLocalPosition = ChildObjectComponent.ServerInstance.transform.localPosition;
-            //var authorityObjectLocalRotation = ChildObjectComponent.ServerInstance.transform.localRotation.eulerAngles;
-            //var authorityObjectLocalScale = ChildObjectComponent.ServerInstance.transform.localScale;
             var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
             var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
             var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
