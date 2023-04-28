@@ -37,9 +37,16 @@ namespace Unity.Netcode.RuntimeTests
             return ServerAuthority;
         }
 
+        public static NetworkTransformTestComponent AuthorityInstance;
+
         public override void OnNetworkSpawn()
         {
             base.OnNetworkSpawn();
+
+            if (CanCommitToTransform)
+            {
+                AuthorityInstance = this;
+            }
 
             ReadyToReceivePositionUpdate = true;
         }
@@ -59,31 +66,38 @@ namespace Unity.Netcode.RuntimeTests
     /// <summary>
     /// Helper component for NetworkTransform parenting tests
     /// </summary>
-    public class ChildObjectComponent : NetworkBehaviour
+    public class ChildObjectComponent : NetworkTransform
     {
         public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
-        public static ChildObjectComponent ServerInstance { get; internal set; }
+        public static ChildObjectComponent AuthorityInstance { get; internal set; }
         public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
 
         public static void Reset()
         {
-            ServerInstance = null;
+            AuthorityInstance = null;
             ClientInstances.Clear();
             Instances.Clear();
         }
 
+        public bool ServerAuthority;
+
+        protected override bool OnIsServerAuthoritative()
+        {
+            return ServerAuthority;
+        }
+
         public override void OnNetworkSpawn()
         {
-            if (IsServer)
+            base.OnNetworkSpawn();
+            if (CanCommitToTransform)
             {
-                ServerInstance = this;
+                AuthorityInstance = this;
             }
             else
             {
-                ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+                Instances.Add(this);
             }
-            Instances.Add(this);
-            base.OnNetworkSpawn();
+            ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
         }
     }
 
@@ -101,7 +115,8 @@ namespace Unity.Netcode.RuntimeTests
     {
         private NetworkObject m_AuthoritativePlayer;
         private NetworkObject m_NonAuthoritativePlayer;
-        private NetworkObject m_ChildObjectToBeParented;
+        private NetworkObject m_ChildObject;
+        private NetworkObject m_ParentObject;
 
         private NetworkTransformTestComponent m_AuthoritativeTransform;
         private NetworkTransformTestComponent m_NonAuthoritativeTransform;
@@ -132,6 +147,13 @@ namespace Unity.Netcode.RuntimeTests
             Euler,
             Quaternion
         }
+
+        public enum RotationCompression
+        {
+            None,
+            QuaternionCompress
+        }
+
 
         public enum TransformSpace
         {
@@ -190,6 +212,7 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnInlineSetup()
         {
+            NetworkTransformTestComponent.AuthorityInstance = null;
             m_Precision = Precision.Full;
             ChildObjectComponent.Reset();
         }
@@ -209,17 +232,22 @@ namespace Unity.Netcode.RuntimeTests
         protected override void OnServerAndClientsCreated()
         {
             var childObject = CreateNetworkObjectPrefab("ChildObject");
-            childObject.AddComponent<ChildObjectComponent>();
-            var childNetworkTransform = childObject.AddComponent<NetworkTransform>();
-            childNetworkTransform.InLocalSpace = true;
-            m_ChildObjectToBeParented = childObject.GetComponent<NetworkObject>();
+            var childNetworkTransform = childObject.AddComponent<ChildObjectComponent>();
+            childNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
+            m_ChildObject = childObject.GetComponent<NetworkObject>();
+
+            var parentObject = CreateNetworkObjectPrefab("ParentObject");
+            var parentNetworkTransform = parentObject.AddComponent<NetworkTransformTestComponent>();
+            parentNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
+            m_ParentObject = parentObject.GetComponent<NetworkObject>();
+
 
             // Now apply local transform values
-            m_ChildObjectToBeParented.transform.position = m_ChildObjectLocalPosition;
-            var childRotation = m_ChildObjectToBeParented.transform.rotation;
+            m_ChildObject.transform.position = m_ChildObjectLocalPosition;
+            var childRotation = m_ChildObject.transform.rotation;
             childRotation.eulerAngles = m_ChildObjectLocalRotation;
-            m_ChildObjectToBeParented.transform.rotation = childRotation;
-            m_ChildObjectToBeParented.transform.localScale = m_ChildObjectLocalScale;
+            m_ChildObject.transform.rotation = childRotation;
+            m_ChildObject.transform.localScale = m_ChildObjectLocalScale;
             if (m_EnableVerboseDebug)
             {
                 m_ServerNetworkManager.LogLevel = LogLevel.Developer;
@@ -268,7 +296,7 @@ namespace Unity.Netcode.RuntimeTests
         /// <returns></returns>
         private bool AllChildObjectInstancesAreSpawned()
         {
-            if (ChildObjectComponent.ServerInstance == null)
+            if (ChildObjectComponent.AuthorityInstance == null)
             {
                 return false;
             }
@@ -306,21 +334,37 @@ namespace Unity.Netcode.RuntimeTests
         /// </summary>
         private bool AllInstancesKeptLocalTransformValues()
         {
+            //var authorityObjectLocalPosition = ChildObjectComponent.ServerInstance.transform.localPosition;
+            //var authorityObjectLocalRotation = ChildObjectComponent.ServerInstance.transform.localRotation.eulerAngles;
+            //var authorityObjectLocalScale = ChildObjectComponent.ServerInstance.transform.localScale;
+            var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
+            var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
+            var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
+
             foreach (var childInstance in ChildObjectComponent.Instances)
             {
                 var childLocalPosition = childInstance.transform.localPosition;
                 var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
                 var childLocalScale = childInstance.transform.localScale;
-
-                if (!Approximately(childLocalPosition, m_ChildObjectLocalPosition))
+                // Adjust approximation based on precision
+                if (m_Precision == Precision.Half)
+                {
+                    m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
+                }
+                if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
                 {
                     return false;
                 }
-                if (!ApproximatelyEuler(childLocalRotation, m_ChildObjectLocalRotation))
+                if (!Approximately(childLocalScale, authorityObjectLocalScale))
                 {
                     return false;
                 }
-                if (!Approximately(childLocalScale, m_ChildObjectLocalScale))
+                // Adjust approximation based on precision
+                if (m_Precision == Precision.Half)
+                {
+                    m_CurrentHalfPrecision = k_HalfPrecisionRot;
+                }
+                if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
                 {
                     return false;
                 }
@@ -333,81 +377,133 @@ namespace Unity.Netcode.RuntimeTests
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private void WaitForAllChildrenLocalTransformValuesToMatch()
+        private void AllChildrenLocalTransformValuesMatch()
         {
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
-            var infoMessage = string.Empty;
-            if (s_GlobalTimeoutHelper.TimedOut)
+            //TimeTravelToNextTick();
+            var infoMessage = new System.Text.StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
+            var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
+            var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
+            var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
+
+            if (s_GlobalTimeoutHelper.TimedOut || !success)
             {
                 foreach (var childInstance in ChildObjectComponent.Instances)
                 {
                     var childLocalPosition = childInstance.transform.localPosition;
                     var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
                     var childLocalScale = childInstance.transform.localScale;
+                    // Adjust approximation based on precision
+                    if (m_Precision == Precision.Half)
+                    {
+                        m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
+                    }
+                    if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
+                    {
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Position ({childLocalPosition}) | Authority Local Position ({authorityObjectLocalPosition})");
+                        success = false;
+                    }
+                    if (!Approximately(childLocalScale, authorityObjectLocalScale))
+                    {
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Authority Local Scale ({authorityObjectLocalScale})");
+                        success = false;
+                    }
 
-                    if (!Approximately(childLocalPosition, m_ChildObjectLocalPosition))
+                    // Adjust approximation based on precision
+                    if (m_Precision == Precision.Half)
                     {
-                        infoMessage += $"[{childInstance.name}] Child's Local Position ({childLocalPosition}) | Original Local Position ({m_ChildObjectLocalPosition})\n";
+                        m_CurrentHalfPrecision = k_HalfPrecisionRot;
                     }
-                    if (!ApproximatelyEuler(childLocalRotation, m_ChildObjectLocalRotation))
+                    if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
                     {
-                        infoMessage += $"[{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Original Local Rotation ({m_ChildObjectLocalRotation})\n";
-                    }
-                    if (!Approximately(childLocalScale, m_ChildObjectLocalScale))
-                    {
-                        infoMessage += $"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Original Local Rotation ({m_ChildObjectLocalScale})\n";
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Authority Local Rotation ({authorityObjectLocalRotation})");
+                        success = false;
                     }
                 }
-                Assert.True(success, $"Timed out waiting for all children to have the correct local space values:\n {infoMessage}");
+                if (!success)
+                {
+                    Assert.True(success, infoMessage.ToString());
+                }
             }
         }
 
+        private NetworkObject m_AuthorityParentObject;
+        private NetworkTransformTestComponent m_AuthorityParentNetworkTransform;
+        private NetworkObject m_AuthorityChildObject;
+        private ChildObjectComponent m_AuthorityChildNetworkTransform;
+
         /// <summary>
-        /// Validates that local space transform values remain the same when a NetworkTransform is
-        /// parented under another NetworkTransform
+        /// Validates that transform values remain the same when a NetworkTransform is
+        /// parented under another NetworkTransform under all of the possible axial conditions
+        /// as well as when the parent has a varying scale.
         /// </summary>
         [Test]
-        public void NetworkTransformParentedLocalSpaceTest([Values] Interpolation interpolation, [Values(0.5f, 1.0f, 5.0f)] float scale)
+        public void ParentedNetworkTransformTest([Values] Precision precision, [Values] Rotation rotation,
+            [Values] RotationCompression rotationCompression, [Values] Interpolation interpolation, [Values] bool worldPositionStays,
+            [Values(0.5f, 1.0f, 5.0f)] float scale)
         {
-            m_AuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            m_NonAuthoritativeTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
-            // Change the parent scale to assure that it will impact the child's scale when not Vector3.one
-            if (m_AuthoritativeTransform.IsServerAuthoritative())
-            {
-                m_AuthoritativeTransform.transform.localScale = new Vector3(scale, scale, scale);
-            }
-            else
-            {
-                m_NonAuthoritativeTransform.transform.localScale = new Vector3(scale, scale, scale);
-            }
-            var authoritativeChildObject = SpawnObject(m_ChildObjectToBeParented.gameObject, m_AuthoritativeTransform.NetworkManager);
+            // Set the precision being used for threshold adjustments
+            m_Precision = precision;
 
-            // Assure all of the child object instances are spawned
+            // Get the NetworkManager that will have authority in order to spawn with the correct authority
+            var isServerAuthority = m_Authority == Authority.ServerAuthority;
+            var authorityNetworkManager = m_ServerNetworkManager;
+            if (!isServerAuthority)
+            {
+                authorityNetworkManager = m_ClientNetworkManagers[0];
+            }
+
+            // Spawn a parent and child object
+            var serverSideParent = SpawnObject(m_ParentObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+            var serverSideChild = SpawnObject(m_ChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+
+            // Assure all of the child object instances are spawned before proceeding to parenting
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
             Assert.True(success, "Timed out waiting for all child instances to be spawned!");
-            // Just a sanity check as it should have timed out before this check
-            Assert.IsNotNull(ChildObjectComponent.ServerInstance, $"The server-side {nameof(ChildObjectComponent)} instance is null!");
 
-            // This determines which parent on the server side should be the parent
-            if (m_AuthoritativeTransform.IsServerAuthoritative())
-            {
-                Assert.True(ChildObjectComponent.ServerInstance.NetworkObject.TrySetParent(m_AuthoritativeTransform.transform, false), "[Authoritative] Failed to parent the child object!");
-            }
-            else
-            {
-                Assert.True(ChildObjectComponent.ServerInstance.NetworkObject.TrySetParent(m_NonAuthoritativeTransform.transform, false), "[Non-Authoritative] Failed to parent the child object!");
-            }
+            // Get the authority parent and child instances
+            m_AuthorityParentObject = NetworkTransformTestComponent.AuthorityInstance.NetworkObject;
+            m_AuthorityChildObject = ChildObjectComponent.AuthorityInstance.NetworkObject;
+
+            // The child NetworkTransform will use world space when world position stays and
+            // local space when world position does not stay when parenting.
+            ChildObjectComponent.AuthorityInstance.InLocalSpace = !worldPositionStays;
+            ChildObjectComponent.AuthorityInstance.UseHalfFloatPrecision = precision == Precision.Half;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionSynchronization = rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthorityInstance.UseQuaternionCompression = rotationCompression == RotationCompression.QuaternionCompress;
+
+            // Set whether we are interpolating or not
+            m_AuthorityParentNetworkTransform = m_AuthorityParentObject.GetComponent<NetworkTransformTestComponent>();
+            m_AuthorityParentNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_AuthorityChildNetworkTransform = m_AuthorityChildObject.GetComponent<ChildObjectComponent>();
+            m_AuthorityChildNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
+            // Apply a scale to the parent object to make sure the scale on the child is properly updated on
+            // non-authority instances.
+            m_AuthorityParentObject.transform.localScale = new Vector3(scale, scale, scale);
+
+            // Allow one tick for authority to update these changes
+            TimeTravelToNextTick();
+
+            // Parent the child under the parent with the current world position stays setting
+            Assert.True(serverSideChild.TrySetParent(serverSideParent.transform, worldPositionStays), "[Server-Side Child] Failed to set child's parent!");
 
             // This waits for all child instances to be parented
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            WaitForAllChildrenLocalTransformValuesToMatch();
+            AllChildrenLocalTransformValuesMatch();
 
-            // This validates that a late joining client will synchronize to the other players with parented NetworkObjects
+            // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
-            WaitForAllChildrenLocalTransformValuesToMatch();
+
+            // Assure all of the child object instances are spawned (basically for the newly connected client)
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
+            Assert.True(success, "Timed out waiting for all child instances to be spawned!");
+
+            // Assure the newly connected client's child object's transform values are correct
+            AllChildrenLocalTransformValuesMatch();
         }
 
         /// <summary>
