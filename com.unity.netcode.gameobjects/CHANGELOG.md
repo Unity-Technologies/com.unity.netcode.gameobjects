@@ -17,6 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where `NetworkVariable`s on a `NetworkBehaviour` could fail to synchronize changes if one has `NetworkVariableUpdateTraits` set and is dirty but is not ready to send. (#3465)
 - Fixed issue where when a client changes ownership via RPC the `NetworkBehaviour.OnOwnershipChanged` can result in identical previous and current owner identifiers. (#3434)
+- Fixed `NullReferenceException` on `NetworkList` when used without a NetworkManager in scene. (#2539)
 
 ### Changed
 
