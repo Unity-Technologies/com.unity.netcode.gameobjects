@@ -425,7 +425,7 @@ namespace Unity.Netcode
         public void Add(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
                 return;
@@ -452,7 +452,7 @@ namespace Unity.Netcode
         public void Clear()
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
                 return;
@@ -490,7 +490,7 @@ namespace Unity.Netcode
         public bool Remove(T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
                 return false;
@@ -539,7 +539,7 @@ namespace Unity.Netcode
         public void Insert(int index, T item)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
                 return;
@@ -575,7 +575,7 @@ namespace Unity.Netcode
         public void RemoveAt(int index)
         {
             // check write permissions
-            if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+            if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
             {
                 LogWritePermissionError();
                 return;
@@ -608,7 +608,7 @@ namespace Unity.Netcode
             set
             {
                 // check write permissions
-                if (!CanClientWrite(m_NetworkBehaviour.NetworkManager.LocalClientId))
+                if (m_NetworkManager && !CanClientWrite(m_NetworkManager.LocalClientId))
                 {
                     LogWritePermissionError();
                     return;
