@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- The location of the automatically-created default network prefab list can now be configured (#2544)
+
 ### Fixed
 
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
