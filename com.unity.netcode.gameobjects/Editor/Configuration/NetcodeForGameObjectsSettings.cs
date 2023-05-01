@@ -43,7 +43,19 @@ namespace Unity.Netcode.Editor.Configuration
     [FilePath("ProjectSettings/NetcodeForGameObjects.settings", FilePathAttribute.Location.ProjectFolder)]
     internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
     {
+        internal static readonly string DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
         [SerializeField] public bool GenerateDefaultNetworkPrefabs = true;
+        [SerializeField] public string NetworkPrefabsPath = DefaultNetworkPrefabsPath;
+        public string TempNetworkPrefabsPath;
+
+        private void OnEnable()
+        {
+            if (NetworkPrefabsPath == "")
+            {
+                NetworkPrefabsPath = DefaultNetworkPrefabsPath;
+            }
+            TempNetworkPrefabsPath = NetworkPrefabsPath;
+        }
 
         internal void SaveSettings()
         {
