@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
-using System.Reflection;
 using Unity.Collections;
+using UnityEngine;
 
 namespace Unity.Netcode
 {
@@ -65,7 +63,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
+                    if (bufferWriter.Length > NetworkMessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -82,11 +80,11 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = Time.realtimeSinceStartup,
+                    Timestamp = NetworkManager.RealTimeProvider.RealTimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
-                    Header = new MessageHeader(),
+                    Header = new NetworkMessageHeader(),
                     SerializedHeaderSize = 0,
                     MessageSize = 0
                 };
@@ -96,7 +94,7 @@ namespace Unity.Netcode
             }
             else
             {
-                rpcWriteSize = NetworkManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
+                rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref serverRpcMessage, networkDelivery, NetworkManager.ServerClientId);
             }
 
             bufferWriter.Dispose();
@@ -146,7 +144,7 @@ namespace Unity.Netcode
                     networkDelivery = NetworkDelivery.ReliableFragmentedSequenced;
                     break;
                 case RpcDelivery.Unreliable:
-                    if (bufferWriter.Length > MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE)
+                    if (bufferWriter.Length > NetworkMessageManager.NonFragmentedMessageMaxSize)
                     {
                         throw new OverflowException("RPC parameters are too large for unreliable delivery.");
                     }
@@ -176,7 +174,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
+                rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, in clientRpcParams.Send.TargetClientIds);
             }
             else if (clientRpcParams.Send.TargetClientIdsNativeArray != null)
             {
@@ -195,7 +193,7 @@ namespace Unity.Netcode
                     }
                 }
 
-                rpcWriteSize = NetworkManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
+                rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, clientRpcParams.Send.TargetClientIdsNativeArray.Value);
             }
             else
             {
@@ -208,7 +206,7 @@ namespace Unity.Netcode
                         shouldSendToHost = true;
                         continue;
                     }
-                    rpcWriteSize = NetworkManager.MessagingSystem.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
+                    rpcWriteSize = NetworkManager.ConnectionManager.SendMessage(ref clientRpcMessage, networkDelivery, observerEnumerator.Current);
                 }
             }
 
@@ -219,11 +217,11 @@ namespace Unity.Netcode
                 var context = new NetworkContext
                 {
                     SenderId = NetworkManager.ServerClientId,
-                    Timestamp = Time.realtimeSinceStartup,
+                    Timestamp = NetworkManager.RealTimeProvider.RealTimeSinceStartup,
                     SystemOwner = NetworkManager,
                     // header information isn't valid since it's not a real message.
                     // RpcMessage doesn't access this stuff so it's just left empty.
-                    Header = new MessageHeader(),
+                    Header = new NetworkMessageHeader(),
                     SerializedHeaderSize = 0,
                     MessageSize = 0
                 };
@@ -551,35 +549,25 @@ namespace Unity.Netcode
 
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
         private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
+
+        // RuntimeAccessModifiersILPP will make this `protected`
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 
-        private static Dictionary<Type, FieldInfo[]> s_FieldTypes = new Dictionary<Type, FieldInfo[]>();
-
-        private static FieldInfo[] GetFieldInfoForType(Type type)
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal virtual void __initializeVariables()
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (!s_FieldTypes.ContainsKey(type))
-            {
-                s_FieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
-            }
-
-            return s_FieldTypes[type];
+            // ILPP generates code for all NetworkBehaviour subtypes to initialize each type's network variables.
         }
 
-        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null)
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        // Using this method here because ILPP doesn't seem to let us do visibility modification on properties.
+        internal void __nameNetworkVariable(NetworkVariableBase variable, string varName)
+#pragma warning restore IDE1006 // restore naming rule violation check
         {
-            if (list == null)
-            {
-                list = new List<FieldInfo>();
-            }
-
-            list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
-
-            if (type.BaseType != null && type.BaseType != typeof(NetworkBehaviour))
-            {
-                return GetFieldInfoForTypeRecursive(type.BaseType, list);
-            }
-
-            return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
+            variable.Name = varName;
         }
 
         internal void InitializeVariables()
@@ -591,28 +579,7 @@ namespace Unity.Netcode
 
             m_VarInit = true;
 
-            var sortedFields = GetFieldInfoForType(GetType());
-            for (int i = 0; i < sortedFields.Length; i++)
-            {
-                var fieldType = sortedFields[i].FieldType;
-                if (fieldType.IsSubclassOf(typeof(NetworkVariableBase)))
-                {
-                    var instance = (NetworkVariableBase)sortedFields[i].GetValue(this);
-
-                    if (instance == null)
-                    {
-                        throw new Exception($"{GetType().FullName}.{sortedFields[i].Name} cannot be null. All {nameof(NetworkVariableBase)} instances must be initialized.");
-                    }
-
-                    instance.Initialize(this);
-
-                    var instanceNameProperty = fieldType.GetProperty(nameof(NetworkVariableBase.Name));
-                    var sanitizedVariableName = sortedFields[i].Name.Replace("<", string.Empty).Replace(">k__BackingField", string.Empty);
-                    instanceNameProperty?.SetValue(instance, sanitizedVariableName);
-
-                    NetworkVariableFields.Add(instance);
-                }
-            }
+            __initializeVariables();
 
             {
                 // Create index map for delivery types
@@ -724,7 +691,7 @@ namespace Unity.Netcode
                     // so we don't have to do this serialization work if we're not going to use the result.
                     if (IsServer && targetClientId == NetworkManager.ServerClientId)
                     {
-                        var tmpWriter = new FastBufferWriter(MessagingSystem.NON_FRAGMENTED_MESSAGE_MAX_SIZE, Allocator.Temp, MessagingSystem.FRAGMENTED_MESSAGE_MAX_SIZE);
+                        var tmpWriter = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkMessageManager.FragmentedMessageMaxSize);
                         using (tmpWriter)
                         {
                             message.Serialize(tmpWriter, message.Version);
@@ -732,7 +699,7 @@ namespace Unity.Netcode
                     }
                     else
                     {
-                        NetworkManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
+                        NetworkManager.ConnectionManager.SendMessage(ref message, m_DeliveryTypesForNetworkVariableGroups[j], targetClientId);
                     }
                 }
             }
@@ -897,10 +864,21 @@ namespace Unity.Netcode
         /// is in read mode or write mode.
         /// </typeparam>
         /// <param name="targetClientId">the relative client identifier being synchronized</param>
-        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
+        protected virtual void OnSynchronize<T>(ref BufferSerializer<T> serializer) where T : IReaderWriter
         {
 
         }
+
+        /// <summary>
+        /// The relative client identifier targeted for the serialization of this <see cref="NetworkBehaviour"/> instance.
+        /// </summary>
+        /// <remarks>
+        /// This value will be set prior to <see cref="OnSynchronize{T}(ref BufferSerializer{T})"/> being invoked.
+        /// For writing (server-side), this is useful to know which client will receive the serialized data.
+        /// For reading (client-side), this will be the <see cref="NetworkManager.LocalClientId"/>.
+        /// When synchronization of this instance is complete, this value will be reset to 0
+        /// </remarks>
+        protected ulong m_TargetIdBeingSynchronized { get; private set; }
 
         /// <summary>
         /// Internal method that determines if a NetworkBehaviour has additional synchronization data to
@@ -913,6 +891,7 @@ namespace Unity.Netcode
         /// <returns>true if it wrote synchronization data and false if it did not</returns>
         internal bool Synchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0) where T : IReaderWriter
         {
+            m_TargetIdBeingSynchronized = targetClientId;
             if (serializer.IsWriter)
             {
                 // Get the writer to handle seeking and determining how many bytes were written
@@ -931,7 +910,7 @@ namespace Unity.Netcode
                 var threwException = false;
                 try
                 {
-                    OnSynchronize(ref serializer, targetClientId);
+                    OnSynchronize(ref serializer);
                 }
                 catch (Exception ex)
                 {
@@ -947,6 +926,8 @@ namespace Unity.Netcode
                 }
                 var finalPosition = writer.Position;
 
+                // Reset before exiting
+                m_TargetIdBeingSynchronized = default;
                 // If we wrote nothing then skip writing anything for this NetworkBehaviour
                 if (finalPosition == positionBeforeSynchronize || threwException)
                 {
@@ -999,6 +980,9 @@ namespace Unity.Netcode
                     }
                     synchronizationError = true;
                 }
+
+                // Reset before exiting
+                m_TargetIdBeingSynchronized = default;
 
                 // Skip over the entry if deserialization fails
                 if (synchronizationError)

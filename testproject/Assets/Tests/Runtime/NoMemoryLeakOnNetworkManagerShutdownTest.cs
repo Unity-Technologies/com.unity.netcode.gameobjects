@@ -1,10 +1,10 @@
 using System.Collections;
-using Unity.Netcode;
 using NUnit.Framework;
 using TestProject.RuntimeTests.Support;
+using Unity.Netcode;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
@@ -45,8 +45,10 @@ namespace TestProject.RuntimeTests
             // Make it a prefab
             NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
 
-            var validNetworkPrefab = new NetworkPrefab();
-            validNetworkPrefab.Prefab = m_Prefab;
+            var validNetworkPrefab = new NetworkPrefab
+            {
+                Prefab = m_Prefab
+            };
             server.NetworkConfig.Prefabs.Add(validNetworkPrefab);
             foreach (var client in clients)
             {

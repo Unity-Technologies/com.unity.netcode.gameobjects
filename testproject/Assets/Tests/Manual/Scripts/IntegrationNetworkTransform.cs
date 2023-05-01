@@ -28,6 +28,10 @@ namespace TestProject.ManualTests
         public Vector3 LastUpdatedScale;
         public Quaternion LastUpdatedRotation;
 
+        public Vector3 PushedPosition;
+        public Vector3 PushedScale;
+        public Quaternion PushedRotation;
+
         public Vector3 PreviousUpdatedPosition;
         public Vector3 PreviousUpdatedScale;
         public Quaternion PreviousUpdatedRotation;
@@ -42,7 +46,7 @@ namespace TestProject.ManualTests
         protected override void Awake()
         {
             base.Awake();
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
             if (DebugTransform)
             {
                 m_AddLogEntry = InternalAddLogEntry;
@@ -55,6 +59,28 @@ namespace TestProject.ManualTests
             return IsServerAuthority;
         }
 
+        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
+        {
+            base.OnAuthorityPushTransformState(ref networkTransformState);
+
+            // Store off the exact position, scale, and rotation for each push to non-authority instances.
+            if (networkTransformState.HasPositionChange)
+            {
+                PushedPosition = GetSpaceRelativePosition();
+            }
+
+            if (networkTransformState.HasScaleChange)
+            {
+                PushedScale = GetScale();
+            }
+
+            if (networkTransformState.HasRotAngleChange)
+            {
+                PushedRotation = GetSpaceRelativeRotation();
+            }
+        }
+
+
         private void UpdateTransformHistory(bool updatePosition, bool updateRotation, bool updateScale)
         {
             if (updatePosition)
@@ -63,7 +89,7 @@ namespace TestProject.ManualTests
                 {
                     PreviousUpdatedPosition = LastUpdatedPosition;
                 }
-                LastUpdatedPosition = InLocalSpace ? transform.localPosition : transform.position;
+                LastUpdatedPosition = GetSpaceRelativePosition();
             }
 
             if (updateRotation)
@@ -73,7 +99,7 @@ namespace TestProject.ManualTests
                     PreviousUpdatedRotation = LastUpdatedRotation;
                 }
 
-                LastUpdatedRotation = InLocalSpace ? transform.localRotation : transform.rotation;
+                LastUpdatedRotation = GetSpaceRelativeRotation();
             }
 
             if (updateScale)
@@ -82,7 +108,7 @@ namespace TestProject.ManualTests
                 {
                     PreviousUpdatedScale = LastUpdatedScale;
                 }
-                LastUpdatedScale = transform.localScale;
+                LastUpdatedScale = GetScale();
             }
         }
 
@@ -97,8 +123,9 @@ namespace TestProject.ManualTests
             UpdateTransformHistory(networkTransformStateUpdate.PositionUpdate, networkTransformStateUpdate.RotationUpdate, networkTransformStateUpdate.ScaleUpdate);
         }
 
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         private NetworkTransformStateUpdate m_NetworkTransformStateUpdate = new NetworkTransformStateUpdate();
-
+#endif
         protected struct NetworkTransformStateUpdate
         {
             public bool PositionUpdate;
@@ -158,23 +185,25 @@ namespace TestProject.ManualTests
             {
                 return;
             }
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
             var halfPositionState = GetHalfPositionState();
-            var state = new HalfPosDebugStates();
-            state.IsPreUpdate = preUpdate;
-            state.IsTeleporting = networkTransformState.IsTeleportingNextFrame;
-            state.IsSynchronizing = networkTransformState.IsSynchronizing;
+            var state = new HalfPosDebugStates
+            {
+                IsPreUpdate = preUpdate,
+                IsTeleporting = networkTransformState.IsTeleportingNextFrame,
+                IsSynchronizing = networkTransformState.IsSynchronizing,
 
-            state.StateId = GetStateId(ref networkTransformState);
+                StateId = GetStateId(ref networkTransformState),
 
-            state.Tick = networkTransformState.GetNetworkTick();
-            state.ClientTarget = targetClient;
-            state.BasePosition = halfPositionState.GetCurrentBasePosition();
-            state.HalfBackDelta = halfPositionState.GetConvertedDelta();
-            state.DeltaPosition = halfPositionState.GetDeltaPosition();
-            state.FullPosition = halfPositionState.GetFullPosition();
-            state.Rotation = networkTransformState.GetRotation();
-            state.TransformPosition = InLocalSpace ? transform.localPosition : transform.position;
+                Tick = networkTransformState.GetNetworkTick(),
+                ClientTarget = targetClient,
+                BasePosition = halfPositionState.GetCurrentBasePosition(),
+                HalfBackDelta = halfPositionState.GetConvertedDelta(),
+                DeltaPosition = halfPositionState.GetDeltaPosition(),
+                FullPosition = halfPositionState.GetFullPosition(),
+                Rotation = networkTransformState.GetRotation(),
+                TransformPosition = InLocalSpace ? transform.localPosition : transform.position
+            };
             var localClientId = NetworkManager.LocalClientId;
             var ownerId = NetworkObject.OwnerClientId;
             if (!m_FirstInitialStateUpdates.ContainsKey(ownerId))
@@ -251,7 +280,7 @@ namespace TestProject.ManualTests
                 var isTeleporing = stateEntry.IsTeleporting ? "[Teleporting]" : "";
                 var isApppliedLocal = stateEntry.ClientTarget == clientId ? "[Applied Local]" : $"[Targeting Client-{stateEntry.ClientTarget}]";
                 m_LogEntry.Append($"{isPreUpdate}{isApppliedLocal} State Entry ({stateEntry.StateId}) on Tick ({stateEntry.Tick}). {isSynchronization}{isTeleporing}\n");
-                m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{ stateEntry.HalfBackDelta}\n");
+                m_LogEntry.Append($"[BasePos]{stateEntry.BasePosition} [DeltaPos] {stateEntry.DeltaPosition} [HalfBack]{stateEntry.HalfBackDelta}\n");
                 m_LogEntry.Append($"[FullPos]{stateEntry.FullPosition} [TransPos] {stateEntry.TransformPosition}\n");
                 m_LogEntry.Append($"[Rotation]{stateEntry.Rotation.eulerAngles}\n");
                 if (lineCounter >= 75)
@@ -276,6 +305,7 @@ namespace TestProject.ManualTests
             }
         }
 
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         private void DebugTransformStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
         {
             m_NetworkTransformStateUpdate.PositionUpdate = newState.HasPositionChange;
@@ -288,7 +318,7 @@ namespace TestProject.ManualTests
 
             OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
         }
-
+#endif
 
         private NetworkVariable<NetworkTransformState> m_CurrentReplicatedState = new NetworkVariable<NetworkTransformState>();
 
@@ -313,21 +343,11 @@ namespace TestProject.ManualTests
             base.OnNetworkDespawn();
         }
 
-        protected override void OnAuthorityPushTransformState(ref NetworkTransformState networkTransformState)
-        {
-            if (networkTransformState.HasPositionChange)
-            {
-
-            }
-            base.OnAuthorityPushTransformState(ref networkTransformState);
-        }
-
         /// <summary>
         /// Authoritative State Update
         /// </summary>
         private void OnStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
         {
-
             if (DebugTransform)
             {
                 if (IsOwner && !IsServerAuthoritative() && !m_StopLoggingStates)
@@ -341,6 +361,7 @@ namespace TestProject.ManualTests
             }
         }
 
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
         /// Non-Authoritative State Update
         /// </summary>
@@ -354,6 +375,8 @@ namespace TestProject.ManualTests
                     InternalAddLogEntry(ref newState, OwnerClientId);
                 }
             }
+
         }
+#endif
     }
 }

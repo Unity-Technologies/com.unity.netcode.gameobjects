@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -81,10 +81,7 @@ namespace TestProject.ManualTests
                 }
             }
 
-            if (SpawnSlider != null)
-            {
-                SpawnSlider.gameObject.SetActive(false);
-            }
+            SpawnSlider?.gameObject.SetActive(false);
         }
 
         private bool m_IsExitingScene;
@@ -305,9 +302,9 @@ namespace TestProject.ManualTests
 
         private void SetGlobalTransformPropertiesUI(bool isVisible)
         {
-            if (HalfFloat != null) { HalfFloat.gameObject.SetActive(isVisible); }
-            if (QuatComp != null) { QuatComp.gameObject.SetActive(isVisible); }
-            if (QuatSynch != null) { QuatSynch.gameObject.SetActive(isVisible); }
+            HalfFloat?.gameObject.SetActive(isVisible);
+            QuatComp?.gameObject.SetActive(isVisible);
+            QuatSynch?.gameObject.SetActive(isVisible);
         }
 
         private void Awake()
@@ -351,7 +348,11 @@ namespace TestProject.ManualTests
         {
             m_LabelEnabled = isVisible;
             NetworkObjectLabel.GlobalVisibility = m_LabelEnabled;
+#if UNITY_2023_1_OR_NEWER
+            var labels = FindObjectsByType<NetworkObjectLabel>(FindObjectsSortMode.InstanceID);
+#else
             var labels = FindObjectsOfType<NetworkObjectLabel>();
+#endif
 
             foreach (var label in labels)
             {
@@ -457,10 +458,7 @@ namespace TestProject.ManualTests
             genericNetworkObjectBehaviour.HasHandler = EnableHandler;
             genericNetworkObjectBehaviour.IsRegisteredPoolObject = true;
             var networkObjectLabel = obj.GetComponentInChildren<NetworkObjectLabel>();
-            if (networkObjectLabel != null)
-            {
-                networkObjectLabel.SetLabelVisibility(LabelEnabled);
-            }
+            networkObjectLabel?.SetLabelVisibility(LabelEnabled);
             ApplyPrecisionAdjustments(obj);
             m_ObjectPool.Add(obj);
             return m_ObjectPool[m_ObjectPool.Count - 1];
@@ -575,7 +573,7 @@ namespace TestProject.ManualTests
                     {
                         entitySpawnUpdateRate = 1.0f / Mathf.Min(SpawnsPerSecond, 60.0f);
                         //While not 100% accurate, this basically allows for higher entities per second generation
-                        m_EntitiesPerFrame = (float)SpawnsPerSecond * entitySpawnUpdateRate;
+                        m_EntitiesPerFrame = SpawnsPerSecond * entitySpawnUpdateRate;
                         int entitityCountPerFrame = Mathf.RoundToInt(m_EntitiesPerFrame);
                         //Spawn (n) entities then wait for 1/60th of a second and repeat
                         for (int i = 0; i < entitityCountPerFrame; i++)

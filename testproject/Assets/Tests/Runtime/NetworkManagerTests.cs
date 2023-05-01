@@ -1,9 +1,9 @@
+using System.Collections;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.SceneManagement;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
-using System.Collections;
+using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace TestProject.RuntimeTests
 {

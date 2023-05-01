@@ -1,8 +1,8 @@
 using System;
 using NUnit.Framework;
 using Unity.Collections;
-using UnityEngine;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -255,14 +255,14 @@ namespace Unity.Netcode.RuntimeTests
 
             // NetworkVariable Value Type Constructor Test Coverage
             m_NetworkVariableBool = new NetworkVariable<bool>(true);
-            m_NetworkVariableByte = new NetworkVariable<byte>((byte)0);
+            m_NetworkVariableByte = new NetworkVariable<byte>(0);
             m_NetworkVariableColor = new NetworkVariable<Color>(new Color(1, 1, 1, 1));
             m_NetworkVariableColor32 = new NetworkVariable<Color32>(new Color32(1, 1, 1, 1));
             m_NetworkVariableDouble = new NetworkVariable<double>(1.0);
             m_NetworkVariableFloat = new NetworkVariable<float>(1.0f);
             m_NetworkVariableInt = new NetworkVariable<int>(1);
             m_NetworkVariableLong = new NetworkVariable<long>(1);
-            m_NetworkVariableSByte = new NetworkVariable<sbyte>((sbyte)0);
+            m_NetworkVariableSByte = new NetworkVariable<sbyte>(0);
             m_NetworkVariableQuaternion = new NetworkVariable<Quaternion>(Quaternion.identity);
             m_NetworkVariableShort = new NetworkVariable<short>(256);
             m_NetworkVariableVector4 = new NetworkVariable<Vector4>(new Vector4(1, 1, 1, 1));

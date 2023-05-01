@@ -9,7 +9,6 @@ namespace Unity.Netcode.EditorTests
 {
     public class FastBufferReaderTests : BaseFastBufferReaderWriterTest
     {
-        #region Common Checks
         private void WriteCheckBytes(FastBufferWriter writer, int writeSize, string failMessage = "")
         {
             Assert.IsTrue(writer.TryBeginWrite(2), "Writer denied write permission");
@@ -230,9 +229,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(reader, args);
             value = (T[])args[0];
         }
-        #endregion
 
-        #region Generic Checks
         protected override unsafe void RunTypeTest<T>(T valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -343,9 +340,6 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
-        #endregion
-
-        #region Tests
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingUnmanagedType_ValueMatchesWhatWasWritten(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -1220,7 +1214,5 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(reader.Handle->AllowedReadMark, 25);
             }
         }
-
-        #endregion
     }
 }

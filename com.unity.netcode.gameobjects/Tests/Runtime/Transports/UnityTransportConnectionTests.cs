@@ -1,8 +1,8 @@
-using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using NUnit.Framework;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -43,6 +43,22 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             yield return null;
+        }
+
+        // Check that invalid endpoint addresses are detected and return false if detected
+        [Test]
+        public void DetectInvalidEndpoint()
+        {
+            using var netcodeLogAssert = new NetcodeLogAssert(true);
+            InitializeTransport(out m_Server, out m_ServerEvents);
+            InitializeTransport(out m_Clients[0], out m_ClientsEvents[0]);
+            m_Server.ConnectionData.Address = "Fubar";
+            m_Server.ConnectionData.ServerListenAddress = "Fubar";
+            m_Clients[0].ConnectionData.Address = "MoreFubar";
+            Assert.False(m_Server.StartServer(), "Server failed to detect invalid endpoint!");
+            Assert.False(m_Clients[0].StartClient(), "Client failed to detect invalid endpoint!");
+            netcodeLogAssert.LogWasReceived(LogType.Error, $"Network listen address ({m_Server.ConnectionData.Address}) is Invalid!");
+            netcodeLogAssert.LogWasReceived(LogType.Error, $"Target server network address ({m_Clients[0].ConnectionData.Address}) is Invalid!");
         }
 
         // Check connection with a single client.

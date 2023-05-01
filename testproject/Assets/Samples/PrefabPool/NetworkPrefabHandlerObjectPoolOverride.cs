@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 /// <summary>
 /// This is an example of using more than one Network Prefab override when using a custom handler
@@ -159,7 +159,7 @@ public class NetworkPrefabHandlerObjectPoolOverride : NetworkBehaviour, INetwork
 
         while (m_IsSpawningObjects)
         {
-            entitySpawnUpdateRate = 1.0f / (float)m_SpawnsPerSecond;
+            entitySpawnUpdateRate = 1.0f / m_SpawnsPerSecond;
 
             GameObject go = GetNextSpawnObject();
             if (go != null)

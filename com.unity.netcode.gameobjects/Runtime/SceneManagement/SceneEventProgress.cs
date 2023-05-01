@@ -83,7 +83,7 @@ namespace Unity.Netcode
         /// </summary>
         internal bool HasTimedOut()
         {
-            return WhenSceneEventHasTimedOut <= Time.realtimeSinceStartup;
+            return WhenSceneEventHasTimedOut <= m_NetworkManager.RealTimeProvider.RealTimeSinceStartup;
         }
 
         /// <summary>
@@ -164,7 +164,7 @@ namespace Unity.Netcode
                         ClientsProcessingSceneEvent.Add(connectedClientId, false);
                     }
 
-                    WhenSceneEventHasTimedOut = Time.realtimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
+                    WhenSceneEventHasTimedOut = networkManager.RealTimeProvider.RealTimeSinceStartup + networkManager.NetworkConfig.LoadSceneTimeOut;
                     m_TimeOutCoroutine = m_NetworkManager.StartCoroutine(TimeOutSceneEventProgress());
                 }
             }

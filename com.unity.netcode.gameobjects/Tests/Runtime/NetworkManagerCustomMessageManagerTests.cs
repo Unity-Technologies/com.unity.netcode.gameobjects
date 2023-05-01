@@ -12,12 +12,11 @@ namespace Unity.Netcode.RuntimeTests
             var networkManager = gameObject.AddComponent<NetworkManager>();
             var transport = gameObject.AddComponent<DummyTransport>();
 
-            networkManager.NetworkConfig = new NetworkConfig();
-
-
-
-            // Set dummy transport that does nothing
-            networkManager.NetworkConfig.NetworkTransport = transport;
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                // Set dummy transport that does nothing
+                NetworkTransport = transport
+            };
 
             CustomMessagingManager preManager = networkManager.CustomMessagingManager;
 

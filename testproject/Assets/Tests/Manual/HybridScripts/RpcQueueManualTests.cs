@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
-using Unity.Netcode;
 
 namespace TestProject.ManualTests
 {
@@ -259,7 +259,7 @@ namespace TestProject.ManualTests
             if (!UnitTesting)
             {
                 m_GlobalDirectScale = 2;
-                m_GlobalDirectFrequency = 1.0f / (100.0f / (float)m_GlobalDirectScale);
+                m_GlobalDirectFrequency = 1.0f / (100.0f / m_GlobalDirectScale);
             }
             else
             {
@@ -580,7 +580,7 @@ namespace TestProject.ManualTests
             if (m_ClientIndices.Count == 0)
             {
                 m_ClientIndices.Add(m_ClientIds[m_GlobalDirectCurrentClientIdIndex]);
-                var divFactor = (float)m_ClientIds.Count * 0.5f;
+                var divFactor = m_ClientIds.Count * 0.5f;
                 var modFactor = (m_GlobalDirectCurrentClientIdIndex + (int)divFactor) % m_ClientIds.Count;
                 m_ClientIndices.Add(m_ClientIds[modFactor]);
             }
@@ -687,7 +687,7 @@ namespace TestProject.ManualTests
             }
             m_MultiParameterIntValue = Random.Range(0, 100);
             m_MultiParameterFloatValue = Random.Range(0.0f, 1.0f);
-            m_MultiParameterLongValue = (long)Random.Range(0, 10000);
+            m_MultiParameterLongValue = Random.Range(0, 10000);
         }
 
         /// <summary>
@@ -774,7 +774,7 @@ namespace TestProject.ManualTests
                 m_CounterTextObject.text = m_ClientUpdateInfo;
                 if (m_ClientProgressBar)
                 {
-                    m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
+                    m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
                 }
             }
         }
@@ -811,7 +811,7 @@ namespace TestProject.ManualTests
                     {
                         if (m_ClientProgressBar && m_ClientIndices.Contains(NetworkManager.LocalClientId))
                         {
-                            m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * (float)m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
+                            m_ClientProgressBar.fillAmount = Mathf.Clamp((2.0f * m_GlobalDirectCounter) * k_ProgressBarDivisor, 0.01f, 1.0f);
                         }
                     }
                 }

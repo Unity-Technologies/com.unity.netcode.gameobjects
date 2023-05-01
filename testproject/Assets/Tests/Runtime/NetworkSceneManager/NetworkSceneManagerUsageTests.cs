@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
 using NUnit.Framework;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
@@ -45,6 +45,31 @@ namespace TestProject.RuntimeTests
                 }
             }
             Assert.IsTrue(threwException);
+        }
+
+        /// <summary>
+        /// Validate warning message generation for setting client synchronization mode on the client side.
+        /// </summary>
+        [Test]
+        public void ClientSetClientSynchronizationMode()
+        {
+            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Clients should not set this value as it is automatically synchronized with the server's setting!");
+            m_ClientNetworkManagers[0].SceneManager.SetClientSynchronizationMode(LoadSceneMode.Single);
+        }
+
+        /// <summary>
+        /// Validate warning message generation for setting client synchronization mode on the server side.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ServerSetClientSynchronizationModeAfterClientsConnected()
+        {
+            // Verify that changing this setting when additional clients are connect will generate the warning
+            LogAssert.Expect(UnityEngine.LogType.Warning, "[Netcode] Server is changing client synchronization mode after clients have been synchronized! It is recommended to do this before clients are connected!");
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+            // Verify that changing this setting when no additional clients are connected will not generate a warning
+            yield return StopOneClient(m_ClientNetworkManagers[0]);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
+            LogAssert.NoUnexpectedReceived();
         }
 
         /// <summary>
@@ -97,12 +122,21 @@ namespace TestProject.RuntimeTests
             }
             Assert.IsTrue(threwException);
 
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                clientNetworkManager.SceneManager.VerifySceneBeforeUnloading = OnClientVerifySceneBeforeUnloading;
+            }
             // Loading additive only because we don't want to unload the
             // Test Runner's scene using LoadSceneMode.Single
             retStatus = m_ServerNetworkManager.SceneManager.UnloadScene(m_CurrentScene);
             Assert.AreEqual(retStatus, SceneEventProgressStatus.Started);
             yield return WaitForConditionOrTimeOut(() => !m_ClientLoadedScene);
             Assert.IsFalse(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for {m_CurrentSceneName} {nameof(SceneEventType.UnloadComplete)} event from client!");
+        }
+
+        private bool OnClientVerifySceneBeforeUnloading(Scene scene)
+        {
+            return m_CurrentSceneName == scene.name;
         }
 
         private void ServerSceneManager_OnSceneEvent(SceneEvent sceneEvent)

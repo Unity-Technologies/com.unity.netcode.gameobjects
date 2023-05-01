@@ -2,9 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace Unity.Netcode.RuntimeTests
@@ -312,7 +312,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             // Update the NetworkBehaviours to make sure all network variables are no longer marked as dirty
-            m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate(m_ServerNetworkManager);
+            m_ServerNetworkManager.BehaviourUpdater.NetworkBehaviourUpdate();
 
             // Verify that all network variables are no longer dirty on server side only if we have clients (including host)
             foreach (var serverSpawnedObject in spawnedPrefabs)

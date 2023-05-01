@@ -1,12 +1,12 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using Unity.Netcode.Transports.UTP;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests

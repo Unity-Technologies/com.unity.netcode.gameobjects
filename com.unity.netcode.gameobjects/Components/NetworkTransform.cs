@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Unity.Netcode.Components
@@ -92,7 +93,7 @@ namespace Unity.Netcode.Components
             // Used for half precision delta position updates
             internal Vector3 CurrentPosition;
             internal Vector3 DeltaPosition;
-            internal HalfVector3DeltaPosition HalfVectorPosition;
+            internal NetworkDeltaPosition NetworkDeltaPosition;
 
             // Used for half precision scale
             internal HalfVector3 HalfVectorScale;
@@ -113,7 +114,7 @@ namespace Unity.Netcode.Components
             /// </summary>
             public int LastSerializedSize { get; internal set; }
 
-            // Used for HalfVector3DeltaPosition delta position synchronization
+            // Used for NetworkDeltaPosition delta position synchronization
             internal int NetworkTick;
 
             // Used when tracking by state ID is enabled
@@ -481,7 +482,7 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
-                            return HalfVectorPosition.GetFullPosition();
+                            return NetworkDeltaPosition.GetFullPosition();
                         }
                     }
                     else
@@ -603,12 +604,12 @@ namespace Unity.Netcode.Components
                                 serializer.SerializeValue(ref DeltaPosition);
                                 if (!isWriting)
                                 {
-                                    HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(HasPositionX, HasPositionY, HasPositionZ));
-                                    HalfVectorPosition.NetworkSerialize(serializer);
+                                    NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                    NetworkDeltaPosition.NetworkSerialize(serializer);
                                 }
                                 else
                                 {
-                                    serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
+                                    serializer.SerializeNetworkSerializable(ref NetworkDeltaPosition);
                                 }
                             }
                         }
@@ -616,12 +617,12 @@ namespace Unity.Netcode.Components
                         {
                             if (!isWriting)
                             {
-                                HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(HasPositionX, HasPositionY, HasPositionZ));
-                                HalfVectorPosition.NetworkSerialize(serializer);
+                                NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                NetworkDeltaPosition.NetworkSerialize(serializer);
                             }
                             else
                             {
-                                serializer.SerializeNetworkSerializable(ref HalfVectorPosition);
+                                serializer.SerializeNetworkSerializable(ref NetworkDeltaPosition);
                             }
                         }
                     }
@@ -702,7 +703,7 @@ namespace Unity.Netcode.Components
                         {
                             if (HasRotAngleChange)
                             {
-                                var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, new Vector3AxisToSynchronize(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
+                                var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, math.bool3(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
                                 serializer.SerializeValue(ref halfPrecisionRotation);
                                 if (!isWriting)
                                 {
@@ -758,7 +759,7 @@ namespace Unity.Netcode.Components
                         else
                         {
                             // For scale, when half precision is enabled we can still only send the axis with deltas
-                            HalfVectorScale = new HalfVector3(Scale, new Vector3AxisToSynchronize(HasScaleX, HasScaleY, HasScaleZ));
+                            HalfVectorScale = new HalfVector3(Scale, math.bool3(HasScaleX, HasScaleY, HasScaleZ));
                             serializer.SerializeValue(ref HalfVectorScale);
                             if (!isWriting)
                             {
@@ -1178,7 +1179,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-#if DEBUG_NETWORKTRANSFORM
+#if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
         /// For debugging delta position and half vector3
         /// </summary>
@@ -1199,7 +1200,7 @@ namespace Unity.Netcode.Components
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected HalfVector3DeltaPosition GetHalfPositionState()
+        protected NetworkDeltaPosition GetHalfPositionState()
         {
             return m_HalfPositionState;
         }
@@ -1214,7 +1215,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Only used when UseHalfFloatPrecision is enabled
         /// </summary>
-        private HalfVector3DeltaPosition m_HalfPositionState = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(true));
+        private NetworkDeltaPosition m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0);
 
         internal void UpdatePositionSlerp()
         {
@@ -1251,8 +1252,9 @@ namespace Unity.Netcode.Components
         /// <typeparam name="T"></typeparam>
         /// <param name="serializer"></param>
         /// <param name="targetClientId">the clientId being synchronized (both reading and writing)</param>
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
+            var targetClientId = m_TargetIdBeingSynchronized;
             var synchronizationState = new NetworkTransformState();
 
             if (serializer.IsWriter)
@@ -1366,6 +1368,8 @@ namespace Unity.Netcode.Components
 
                 // "push"/commit the state
                 ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+
+                m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
         }
 
@@ -1413,7 +1417,7 @@ namespace Unity.Netcode.Components
             networkState.QuaternionSync = UseQuaternionSynchronization;
             networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
             networkState.QuaternionCompression = UseQuaternionCompression;
-            m_HalfPositionState = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+            m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
             return ApplyTransformToNetworkStateWithInfo(ref networkState, ref transformToUse);
         }
@@ -1424,10 +1428,11 @@ namespace Unity.Netcode.Components
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool ApplyTransformToNetworkStateWithInfo(ref NetworkTransformState networkState, ref Transform transformToUse, bool isSynchronization = false, ulong targetClientId = 0)
         {
+            var isTeleportingAndNotSynchronizing = networkState.IsTeleportingNextFrame && !isSynchronization;
             var isDirty = false;
-            var isPositionDirty = false;
-            var isRotationDirty = false;
-            var isScaleDirty = false;
+            var isPositionDirty = isTeleportingAndNotSynchronizing ? networkState.HasPositionChange : false;
+            var isRotationDirty = isTeleportingAndNotSynchronizing ? networkState.HasRotAngleChange : false;
+            var isScaleDirty = isTeleportingAndNotSynchronizing ? networkState.HasScaleChange : false;
 
             var position = InLocalSpace ? transformToUse.localPosition : transformToUse.position;
             var rotAngles = InLocalSpace ? transformToUse.localEulerAngles : transformToUse.eulerAngles;
@@ -1506,7 +1511,7 @@ namespace Unity.Netcode.Components
                 // If we are teleporting then we can skip the delta threshold check
                 isPositionDirty = networkState.IsTeleportingNextFrame;
 
-                // For HalfVector3DeltaPosition, if any axial value is dirty then we always send a full update
+                // For NetworkDeltaPosition, if any axial value is dirty then we always send a full update
                 if (!isPositionDirty)
                 {
                     for (int i = 0; i < 3; i++)
@@ -1524,33 +1529,33 @@ namespace Unity.Netcode.Components
                 }
 
                 // If the position is dirty or we are teleporting (which includes synchronization)
-                // then determine what parts of the HalfVector3DeltaPosition should be updated
+                // then determine what parts of the NetworkDeltaPosition should be updated
                 if (isPositionDirty)
                 {
                     // If we are not synchronizing the transform state for the first time
                     if (!isSynchronization)
                     {
                         // With global teleporting (broadcast to all non-authority instances)
-                        // we re-initialize authority's HalfVector3DeltaPosition and synchronize all
+                        // we re-initialize authority's NetworkDeltaPosition and synchronize all
                         // non-authority instances with the new full precision position
                         if (networkState.IsTeleportingNextFrame)
                         {
-                            m_HalfPositionState = new HalfVector3DeltaPosition(position, networkState.NetworkTick, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                            m_HalfPositionState = new NetworkDeltaPosition(position, networkState.NetworkTick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                             networkState.CurrentPosition = position;
                         }
                         else // Otherwise, just synchronize the delta position value
                         {
-                            m_HalfPositionState.UpdateAxisToSynchronize(new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                            m_HalfPositionState.HalfVector3.AxisToSynchronize = math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ);
                             m_HalfPositionState.UpdateFrom(ref position, networkState.NetworkTick);
                         }
 
-                        networkState.HalfVectorPosition = m_HalfPositionState;
+                        networkState.NetworkDeltaPosition = m_HalfPositionState;
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
                         if (ShouldSynchronizeHalfFloat(targetClientId))
                         {
-                            // If we have a HalfVector3DeltaPosition that has a state applied, then we want to determine
+                            // If we have a NetworkDeltaPosition that has a state applied, then we want to determine
                             // what needs to be synchronized. For owner authoritative mode, the server side
                             // will have no valid state yet.
                             if (m_HalfPositionState.NetworkTick > 0)
@@ -1558,7 +1563,7 @@ namespace Unity.Netcode.Components
                                 // Always synchronize the base position and the ushort values of the
                                 // current m_HalfPositionState
                                 networkState.CurrentPosition = m_HalfPositionState.CurrentBasePosition;
-                                networkState.HalfVectorPosition = m_HalfPositionState;
+                                networkState.NetworkDeltaPosition = m_HalfPositionState;
                                 // If the server is the owner, in both server and owner authoritative modes,
                                 // or we are running in server authoritative mode, then we use the
                                 // HalfDeltaConvertedBack value as the delta position
@@ -1568,21 +1573,21 @@ namespace Unity.Netcode.Components
                                 }
                                 else
                                 {
-                                    // Otherwise, we are in owner authoritative mode and the server's HalfVector3DeltaPosition
+                                    // Otherwise, we are in owner authoritative mode and the server's NetworkDeltaPosition
                                     // state is "non-authoritative" relative so we use the DeltaPosition.
                                     networkState.DeltaPosition = m_HalfPositionState.DeltaPosition;
                                 }
                             }
                             else // Reset everything and just send the current position
                             {
-                                networkState.HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                                networkState.NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                                 networkState.DeltaPosition = Vector3.zero;
                                 networkState.CurrentPosition = position;
                             }
                         }
                         else
                         {
-                            networkState.HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                            networkState.NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                             networkState.CurrentPosition = position;
                         }
                         // Add log entry for this update relative to the client being synchronized
@@ -1969,9 +1974,8 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    // With half float vector3 delta position teleport updates or synchronization, we
-                    // create a new instance and provide the current network tick.
-                    m_HalfPositionState = new HalfVector3DeltaPosition(newState.CurrentPosition, newState.NetworkTick, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    // With delta position teleport updates or synchronization, we create a new instance and provide the current network tick.
+                    m_HalfPositionState = new NetworkDeltaPosition(newState.CurrentPosition, newState.NetworkTick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
                     // When first synchronizing we determine if we need to apply the current delta position
                     // offset or not. This is specific to owner authoritative mode on the owner side only
@@ -1979,7 +1983,7 @@ namespace Unity.Netcode.Components
                     {
                         if (ShouldSynchronizeHalfFloat(NetworkManager.LocalClientId))
                         {
-                            m_HalfPositionState.Axis = newState.HalfVectorPosition.Axis;
+                            m_HalfPositionState.HalfVector3.Axis = newState.NetworkDeltaPosition.HalfVector3.Axis;
                             m_HalfPositionState.DeltaPosition = newState.DeltaPosition;
                             currentPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
                         }
@@ -1992,14 +1996,14 @@ namespace Unity.Netcode.Components
                     }
                     else
                     {
-                        // If we are just teleporting, then we already created a new HalfVector3DeltaPosition value.
+                        // If we are just teleporting, then we already created a new NetworkDeltaPosition value.
                         // set the current position to the state's current position
                         currentPosition = newState.CurrentPosition;
                     }
 
                     if (Interpolate)
                     {
-                        UpdatePositionInterpolator(currentPosition, sentTime);
+                        UpdatePositionInterpolator(currentPosition, sentTime, true);
                     }
 
                 }
@@ -2131,8 +2135,8 @@ namespace Unity.Netcode.Components
             // Only if using half float precision and our position had changed last update then
             if (UseHalfFloatPrecision && m_LocalAuthoritativeNetworkState.HasPositionChange)
             {
-                // assure our local HalfVector3DeltaPosition state is updated
-                m_HalfPositionState.Axis = m_LocalAuthoritativeNetworkState.HalfVectorPosition.Axis;
+                // assure our local NetworkDeltaPosition state is updated
+                m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
                 // and update our current position
                 m_LocalAuthoritativeNetworkState.CurrentPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
             }
@@ -2301,7 +2305,7 @@ namespace Unity.Netcode.Components
         /// delta position and the current position for the axis exceeds the adjustment range
         /// before it is collapsed into the base position.
         /// If it does exceed the adjustment range, then we have to teleport the object so
-        /// a full position synchronization takes place and the HalfVector3DeltaPosition is
+        /// a full position synchronization takes place and the NetworkDeltaPosition is
         /// reset with the updated base position that it then will generating a new delta position from.
         /// </summary>
         /// <remarks>
@@ -2312,8 +2316,8 @@ namespace Unity.Netcode.Components
         {
             if (UseHalfFloatPrecision && SynchronizePosition)
             {
-                var synAxis = m_HalfPositionState.AxisToSynchronize;
-                if (SyncPositionX != synAxis.X || SyncPositionY != synAxis.Y || SyncPositionZ != synAxis.Z)
+                var synAxis = m_HalfPositionState.HalfVector3.AxisToSynchronize;
+                if (SyncPositionX != synAxis.x || SyncPositionY != synAxis.y || SyncPositionZ != synAxis.z)
                 {
                     var positionState = m_HalfPositionState.GetFullPosition();
                     var relativePosition = GetSpaceRelativePosition();
@@ -2321,17 +2325,17 @@ namespace Unity.Netcode.Components
                     // Only if the synchronization of an axis is turned on do we need to
                     // check if a teleport is required due to the delta from the last known
                     // to the currently known axis value exceeds MaxDeltaBeforeAdjustment.
-                    if (SyncPositionX && SyncPositionX != synAxis.X)
+                    if (SyncPositionX && SyncPositionX != synAxis.x)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.x - positionState.x) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport = Mathf.Abs(relativePosition.x - positionState.x) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
-                    if (SyncPositionY && SyncPositionY != synAxis.Y)
+                    if (SyncPositionY && SyncPositionY != synAxis.y)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.y - positionState.y) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport = Mathf.Abs(relativePosition.y - positionState.y) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
-                    if (SyncPositionZ && SyncPositionZ != synAxis.Z)
+                    if (SyncPositionZ && SyncPositionZ != synAxis.z)
                     {
-                        needsToTeleport = Mathf.Abs(relativePosition.z - positionState.z) >= HalfVector3DeltaPosition.MaxDeltaBeforeAdjustment;
+                        needsToTeleport = Mathf.Abs(relativePosition.z - positionState.z) >= NetworkDeltaPosition.MaxDeltaBeforeAdjustment;
                     }
                     // If needed, force a teleport as the delta is outside of the valid delta boundary
                     m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = needsToTeleport;
@@ -2346,7 +2350,7 @@ namespace Unity.Netcode.Components
         internal void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
-            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty)
+            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
@@ -2397,10 +2401,6 @@ namespace Unity.Netcode.Components
                 var currentRotation = GetSpaceRelativeRotation();
                 // Teleport to current position
                 SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
-
-                // Force the state update to be sent
-                var transformToCommit = transform;
-                TryCommitTransform(ref transformToCommit);
             }
         }
 
@@ -2477,7 +2477,7 @@ namespace Unity.Netcode.Components
             {
                 if (UseHalfFloatPrecision)
                 {
-                    m_HalfPositionState = new HalfVector3DeltaPosition(currentPosition, NetworkManager.NetworkTickSystem.ServerTime.Tick, new Vector3AxisToSynchronize(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    m_HalfPositionState = new NetworkDeltaPosition(currentPosition, NetworkManager.NetworkTickSystem.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                 }
 
                 // Authority only updates once per network tick
@@ -2626,7 +2626,7 @@ namespace Unity.Netcode.Components
             if (Interpolate)
             {
                 var serverTime = NetworkManager.ServerTime;
-                var cachedDeltaTime = Time.deltaTime;
+                var cachedDeltaTime = NetworkManager.RealTimeProvider.DeltaTime;
                 var cachedServerTime = serverTime.Time;
                 // TODO: Investigate Further
                 // With owner authoritative mode, non-authority clients can lag behind
@@ -2705,4 +2705,3 @@ namespace Unity.Netcode.Components
         void AddLogEntry(NetworkTransform.NetworkTransformState networkTransformState, ulong targetClient, bool preUpdate = false);
     }
 }
-

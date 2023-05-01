@@ -138,7 +138,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 InLocalSpace = inLocalSpace,
                 IsTeleportingNextFrame = isTeleporting,
-                HalfVectorPosition = new HalfVector3DeltaPosition(Vector3.zero, 0)
+                NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0)
             };
 
             // Step 1: change properties, expect state to be dirty
@@ -301,6 +301,8 @@ namespace Unity.Netcode.RuntimeTests
             // Step 3: disable a particular sync flag, expect state to be not dirty
             // We do this last because it changes which axis will be synchronized.
             {
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
                 networkTransformState = new NetworkTransform.NetworkTransformState
                 {
                     InLocalSpace = inLocalSpace,
@@ -333,6 +335,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncPositionY
                 if (syncPosY)
                 {
@@ -358,6 +367,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncPositionZ
                 if (syncPosZ)
                 {
@@ -383,6 +399,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncRotAngleX - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
                 if (syncRotX && m_Rotation == Rotation.Euler)
                 {
@@ -407,6 +430,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncRotAngleY - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
                 if (syncRotY && m_Rotation == Rotation.Euler)
                 {
@@ -431,6 +462,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncRotAngleZ - Now test that we don't synchronize this specific axis as long as we are not using quaternion synchronization
                 if (syncRotZ && m_Rotation == Rotation.Euler)
                 {
@@ -456,6 +495,13 @@ namespace Unity.Netcode.RuntimeTests
                     }
                 }
 
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleX
                 if (syncScaX)
                 {
@@ -480,6 +526,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleY
                 if (syncScaY)
                 {
@@ -504,6 +558,14 @@ namespace Unity.Netcode.RuntimeTests
                         Assert.IsFalse(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                     }
                 }
+
+                // Reset the NetworkTransformState since teleporting will preserve
+                // any dirty values
+                networkTransformState = new NetworkTransform.NetworkTransformState
+                {
+                    InLocalSpace = inLocalSpace,
+                    IsTeleportingNextFrame = isTeleporting,
+                };
                 // SyncScaleZ
                 if (syncScaZ)
                 {

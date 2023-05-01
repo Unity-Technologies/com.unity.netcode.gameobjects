@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using UnityEngine;
 using Unity.Netcode.Editor;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -107,7 +107,7 @@ namespace Unity.Netcode.EditorTests
             networkManager.OnValidate();
 
             // Expect a warning
-            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkManager.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
+            LogAssert.Expect(LogType.Warning, $"[Netcode] {NetworkPrefabHandler.PrefabDebugHelper(networkManager.NetworkConfig.Prefabs.Prefabs[0])} has child {nameof(NetworkObject)}(s) but they will not be spawned across the network (unsupported {nameof(NetworkPrefab)} setup)");
 
             // Clean up
             Object.DestroyImmediate(networkManagerObject);
@@ -125,9 +125,16 @@ namespace Unity.Netcode.EditorTests
             var overridingTargetPrefab = new GameObject("Overriding Target Prefab").AddComponent<NetworkObject>();
             var sourcePrefabToOverride = new GameObject("Overriding Source Prefab").AddComponent<NetworkObject>();
 
-            networkConfig.OldPrefabList = new List<NetworkPrefab>();
-            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = regularPrefab.gameObject });
-            networkConfig.OldPrefabList.Add(new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 });
+            regularPrefab.GlobalObjectIdHash = 1;
+            overriddenPrefab.GlobalObjectIdHash = 2;
+            overridingTargetPrefab.GlobalObjectIdHash = 3;
+            sourcePrefabToOverride.GlobalObjectIdHash = 4;
+
+            networkConfig.OldPrefabList = new List<NetworkPrefab>
+            {
+                new NetworkPrefab { Prefab = regularPrefab.gameObject },
+                new NetworkPrefab { Prefab = overriddenPrefab.gameObject, Override = NetworkPrefabOverride.Prefab, OverridingTargetPrefab = overridingTargetPrefab.gameObject, SourcePrefabToOverride = sourcePrefabToOverride.gameObject, SourceHashToOverride = 123456 }
+            };
 
             networkConfig.InitializePrefabs();
 
@@ -154,17 +161,26 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
 
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
@@ -196,17 +212,25 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
 
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
@@ -238,17 +262,25 @@ namespace Unity.Netcode.EditorTests
             // Setup
             var networkManagerObject = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager = networkManagerObject.AddComponent<NetworkManager>();
-            networkManager.NetworkConfig = new NetworkConfig();
-            networkManager.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var networkManagerObject2 = new GameObject(nameof(NestedNetworkObjectPrefabCheck));
             var networkManager2 = networkManagerObject2.AddComponent<NetworkManager>();
-            networkManager2.NetworkConfig = new NetworkConfig();
-            networkManager2.NetworkConfig.NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>();
+            networkManager2.NetworkConfig = new NetworkConfig
+            {
+                NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
+            };
 
             var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
             var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
             var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+
+            object1.GlobalObjectIdHash = 1;
+            object2.GlobalObjectIdHash = 2;
+            object3.GlobalObjectIdHash = 3;
 
             var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
             sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });

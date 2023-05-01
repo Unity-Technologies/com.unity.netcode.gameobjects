@@ -1,6 +1,6 @@
 namespace Unity.Netcode
 {
-    internal interface IDeferredMessageManager
+    internal interface IDeferredNetworkMessageManager
     {
         internal enum TriggerType
         {

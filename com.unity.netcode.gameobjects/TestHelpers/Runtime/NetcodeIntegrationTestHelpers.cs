@@ -186,7 +186,16 @@ namespace Unity.Netcode.TestHelpers.Runtime
             networkManager.NetworkConfig.NetworkTransport = unityTransport;
         }
 
-        public static NetworkManager CreateServer()
+        private static void AddMockTransport(NetworkManager networkManager)
+        {
+            // Create transport
+            var mockTransport = networkManager.gameObject.AddComponent<MockTransport>();
+            // Set the NetworkConfig
+            networkManager.NetworkConfig ??= new NetworkConfig();
+            networkManager.NetworkConfig.NetworkTransport = mockTransport;
+        }
+
+        public static NetworkManager CreateServer(bool mockTransport = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Server");
@@ -194,7 +203,14 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Create networkManager component
             var server = go.AddComponent<NetworkManager>();
             NetworkManagerInstances.Insert(0, server);
-            AddUnityTransport(server);
+            if (mockTransport)
+            {
+                AddMockTransport(server);
+            }
+            else
+            {
+                AddUnityTransport(server);
+            }
             return server;
         }
 
@@ -206,20 +222,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <param name="clients">The clients NetworkManagers</param>
         /// <param name="targetFrameRate">The targetFrameRate of the Unity engine to use while the multi instance helper is running. Will be reset on shutdown.</param>
         /// <param name="serverFirst">This determines if the server or clients will be instantiated first (defaults to server first)</param>
-        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true)
+        public static bool Create(int clientCount, out NetworkManager server, out NetworkManager[] clients, int targetFrameRate = 60, bool serverFirst = true, bool useMockTransport = false)
         {
             s_NetworkManagerInstances = new List<NetworkManager>();
             server = null;
             if (serverFirst)
             {
-                server = CreateServer();
+                server = CreateServer(useMockTransport);
             }
 
-            CreateNewClients(clientCount, out clients);
+            CreateNewClients(clientCount, out clients, useMockTransport);
 
             if (!serverFirst)
             {
-                server = CreateServer();
+                server = CreateServer(useMockTransport);
             }
 
             s_OriginalTargetFrameRate = Application.targetFrameRate;
@@ -228,13 +244,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
-        internal static NetworkManager CreateNewClient(int identifier)
+        internal static NetworkManager CreateNewClient(int identifier, bool mockTransport = false)
         {
             // Create gameObject
             var go = new GameObject("NetworkManager - Client - " + identifier);
             // Create networkManager component
             var networkManager = go.AddComponent<NetworkManager>();
-            AddUnityTransport(networkManager);
+            if (mockTransport)
+            {
+                AddMockTransport(networkManager);
+            }
+            else
+            {
+                AddUnityTransport(networkManager);
+            }
             return networkManager;
         }
 
@@ -244,13 +267,13 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// </summary>
         /// <param name="clientCount">The amount of clients</param>
         /// <param name="clients"></param>
-        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients)
+        public static bool CreateNewClients(int clientCount, out NetworkManager[] clients, bool useMockTransport = false)
         {
             clients = new NetworkManager[clientCount];
             for (int i = 0; i < clientCount; i++)
             {
                 // Create networkManager component
-                clients[i] = CreateNewClient(i);
+                clients[i] = CreateNewClient(i, useMockTransport);
             }
 
             NetworkManagerInstances.AddRange(clients);
@@ -280,7 +303,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             clientToStart.StartClient();
             s_Hooks[clientToStart] = new MultiInstanceHooks();
-            clientToStart.MessagingSystem.Hook(s_Hooks[clientToStart]);
+            clientToStart.ConnectionManager.MessageManager.Hook(s_Hooks[clientToStart]);
             if (!NetworkManagerInstances.Contains(clientToStart))
             {
                 NetworkManagerInstances.Add(clientToStart);
@@ -314,7 +337,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 if (networkManager.gameObject != null)
                 {
-                    Object.Destroy(networkManager.gameObject);
+                    Object.DestroyImmediate(networkManager.gameObject);
                 }
             }
 
@@ -339,6 +362,12 @@ namespace Unity.Netcode.TestHelpers.Runtime
             return true;
         }
 
+        private static bool VerifySceneIsValidForClientsToUnload(Scene scene)
+        {
+            // Unless specifically set, we always return false
+            return false;
+        }
+
         /// <summary>
         /// This registers scene validation callback for the server to prevent it from telling connecting
         /// clients to synchronize (i.e. load) the test runner scene.  This will also register the test runner
@@ -351,9 +380,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
             if (networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeLoading == null)
             {
                 networkManager.SceneManager.VerifySceneBeforeLoading = VerifySceneIsValidForClientsToLoad;
+
                 // If a unit/integration test does not handle this on their own, then Ignore the validation warning
                 networkManager.SceneManager.DisableValidationWarnings(true);
             }
+
+            // For testing purposes, all clients always set the VerifySceneBeforeUnloading callback and enabled
+            // PostSynchronizationSceneUnloading. Where tests that expect clients to unload scenes should override
+            // the callback and return true for the scenes the client(s) is/are allowed to unload.
+            if (!networkManager.IsServer && networkManager.SceneManager.VerifySceneBeforeUnloading == null)
+            {
+                networkManager.SceneManager.VerifySceneBeforeUnloading = VerifySceneIsValidForClientsToUnload;
+                networkManager.SceneManager.PostSynchronizationSceneUnloading = true;
+            }
+
 
             // Register the test runner scene so it will be able to synchronize NetworkObjects without logging a
             // warning about using the currently active scene
@@ -400,7 +440,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             }
 
             var hooks = new MultiInstanceHooks();
-            server.MessagingSystem.Hook(hooks);
+            server.ConnectionManager.MessageManager.Hook(hooks);
             s_Hooks[server] = hooks;
 
             // if set, then invoke this for the server
@@ -412,7 +452,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 clients[i].StartClient();
                 hooks = new MultiInstanceHooks();
-                clients[i].MessagingSystem.Hook(hooks);
+                clients[i].ConnectionManager.MessageManager.Hook(hooks);
                 s_Hooks[clients[i]] = hooks;
 
                 // if set, then invoke this for the client
@@ -494,8 +534,10 @@ namespace Unity.Netcode.TestHelpers.Runtime
             Assert.IsNotNull(server, prefabCreateAssertError);
             Assert.IsFalse(server.IsListening, prefabCreateAssertError);
 
-            var gameObject = new GameObject();
-            gameObject.name = baseName;
+            var gameObject = new GameObject
+            {
+                name = baseName
+            };
             var networkObject = gameObject.AddComponent<NetworkObject>();
             networkObject.NetworkManagerOwner = server;
             MakeNetworkObjectTestPrefab(networkObject);
@@ -705,6 +747,40 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 var nextFrameNumber = Time.frameCount + 1;
                 yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+            }
+
+            result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;
+
+            if (failIfNull && result.Result == null)
+            {
+                Assert.Fail("NetworkObject could not be found");
+            }
+        }
+
+        /// <summary>
+        /// Gets a NetworkObject instance as it's represented by a certain peer.
+        /// </summary>
+        /// <param name="predicate">The predicate used to filter for your target NetworkObject</param>
+        /// <param name="representation">The representation to get the object from</param>
+        /// <param name="result">The result</param>
+        /// <param name="failIfNull">Whether or not to fail if no object is found and result is null</param>
+        /// <param name="maxFrames">The max frames to wait for</param>
+        public static void GetNetworkObjectByRepresentationWithTimeTravel(Func<NetworkObject, bool> predicate, NetworkManager representation, ResultWrapper<NetworkObject> result, bool failIfNull = true, int maxTries = 60)
+        {
+            if (result == null)
+            {
+                throw new ArgumentNullException("Result cannot be null");
+            }
+
+            if (predicate == null)
+            {
+                throw new ArgumentNullException("Predicate cannot be null");
+            }
+
+            var tries = 0;
+            while (++tries < maxTries && !representation.SpawnManager.SpawnedObjects.Any(x => predicate(x.Value)))
+            {
+                NetcodeIntegrationTest.SimulateOneFrame();
             }
 
             result.Result = representation.SpawnManager.SpawnedObjects.FirstOrDefault(x => predicate(x.Value)).Value;

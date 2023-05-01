@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Unity.Collections;
 using UnityEngine.SceneManagement;
@@ -476,7 +476,7 @@ namespace Unity.Netcode
             // Size Place Holder -- Start
             // !!NOTE!!: Since this is a placeholder to be set after we know how much we have written,
             // for stream offset purposes this MUST not be a packed value!
-            writer.WriteValueSafe((int)0);
+            writer.WriteValueSafe(0);
             int totalBytes = 0;
 
             // Write the number of NetworkObjects we are serializing
@@ -489,7 +489,7 @@ namespace Unity.Netcode
                 var sceneObject = m_NetworkObjectsSync[i].GetMessageSceneObject(TargetClientId);
                 sceneObject.Serialize(writer);
                 var noStop = writer.Position;
-                totalBytes += (int)(noStop - noStart);
+                totalBytes += noStop - noStart;
             }
 
             // Write the number of despawned in-scene placed NetworkObjects
@@ -501,7 +501,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GetSceneOriginHandle());
                 writer.WriteValueSafe(m_DespawnedInSceneObjectsSync[i].GlobalObjectIdHash);
                 var noStop = writer.Position;
-                totalBytes += (int)(noStop - noStart);
+                totalBytes += noStop - noStart;
             }
 
             // Size Place Holder -- End
@@ -575,7 +575,15 @@ namespace Unity.Netcode
 
             if (SceneEventType == SceneEventType.ObjectSceneChanged)
             {
-                DeserializeObjectsMovedIntoNewScene(reader);
+                // Defer these scene event types if a client hasn't finished synchronizing
+                if (!m_NetworkManager.IsConnectedClient)
+                {
+                    DeferObjectsMovedIntoNewScene(reader);
+                }
+                else
+                {
+                    DeserializeObjectsMovedIntoNewScene(reader);
+                }
                 return;
             }
 
@@ -1036,13 +1044,93 @@ namespace Unity.Netcode
                     reader.ReadValueSafe(out networkObjectId);
                     if (!spawnManager.SpawnedObjects.ContainsKey(networkObjectId))
                     {
-                        throw new Exception($"[Object Scene Migration] Trying to synchronize NetworkObjectId ({networkObjectId}) but it no longer exists!");
+                        NetworkLog.LogError($"[Object Scene Migration] Trying to synchronize NetworkObjectId ({networkObjectId}) but it was not spawned or no longer exists!!");
+                        continue;
                     }
+                    // Add NetworkObject scene migration to ObjectsMigratedIntoNewScene dictionary that is processed
+                    //
                     sceneManager.ObjectsMigratedIntoNewScene[sceneHandle].Add(spawnManager.SpawnedObjects[networkObjectId]);
                 }
             }
         }
 
+
+        /// <summary>
+        /// While a client is synchronizing ObjectSceneChanged messages could be received.
+        /// This defers any ObjectSceneChanged message processing to occur after the client
+        /// has completed synchronization to assure the associated NetworkObjects being
+        /// migrated to a new scene are instantiated and spawned.
+        /// </summary>
+        private void DeferObjectsMovedIntoNewScene(FastBufferReader reader)
+        {
+            var sceneManager = m_NetworkManager.SceneManager;
+            var spawnManager = m_NetworkManager.SpawnManager;
+            var numberOfScenes = 0;
+            var sceneHandle = 0;
+            var objectCount = 0;
+            var networkObjectId = (ulong)0;
+
+            var deferredObjectsMovedEvent = new NetworkSceneManager.DeferredObjectsMovedEvent()
+            {
+                ObjectsMigratedTable = new Dictionary<int, List<ulong>>()
+            };
+
+            reader.ReadValueSafe(out numberOfScenes);
+            for (int i = 0; i < numberOfScenes; i++)
+            {
+                reader.ReadValueSafe(out sceneHandle);
+                deferredObjectsMovedEvent.ObjectsMigratedTable.Add(sceneHandle, new List<ulong>());
+                reader.ReadValueSafe(out objectCount);
+                for (int j = 0; j < objectCount; j++)
+                {
+                    reader.ReadValueSafe(out networkObjectId);
+                    deferredObjectsMovedEvent.ObjectsMigratedTable[sceneHandle].Add(networkObjectId);
+                }
+            }
+            sceneManager.DeferredObjectsMovedEvents.Add(deferredObjectsMovedEvent);
+        }
+
+        internal void ProcessDeferredObjectSceneChangedEvents()
+        {
+            var sceneManager = m_NetworkManager.SceneManager;
+            var spawnManager = m_NetworkManager.SpawnManager;
+            if (sceneManager.DeferredObjectsMovedEvents.Count == 0)
+            {
+                return;
+            }
+            foreach (var objectsMovedEvent in sceneManager.DeferredObjectsMovedEvents)
+            {
+                foreach (var keyEntry in objectsMovedEvent.ObjectsMigratedTable)
+                {
+                    if (!sceneManager.ObjectsMigratedIntoNewScene.ContainsKey(keyEntry.Key))
+                    {
+                        sceneManager.ObjectsMigratedIntoNewScene.Add(keyEntry.Key, new List<NetworkObject>());
+                    }
+                    foreach (var objectId in keyEntry.Value)
+                    {
+                        if (!spawnManager.SpawnedObjects.ContainsKey(objectId))
+                        {
+                            NetworkLog.LogWarning($"[Deferred][Object Scene Migration] Trying to synchronize NetworkObjectId ({objectId}) but it was not spawned or no longer exists!");
+                            continue;
+                        }
+                        var networkObject = spawnManager.SpawnedObjects[objectId];
+                        if (!sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key].Contains(networkObject))
+                        {
+                            sceneManager.ObjectsMigratedIntoNewScene[keyEntry.Key].Add(networkObject);
+                        }
+                    }
+                }
+                objectsMovedEvent.ObjectsMigratedTable.Clear();
+            }
+
+            sceneManager.DeferredObjectsMovedEvents.Clear();
+
+            // If there are any pending objects to migrate, then migrate them
+            if (sceneManager.ObjectsMigratedIntoNewScene.Count > 0)
+            {
+                sceneManager.MigrateNetworkObjectsIntoScenes();
+            }
+        }
 
         /// <summary>
         /// Used to release the pooled network buffer

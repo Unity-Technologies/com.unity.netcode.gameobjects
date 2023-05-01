@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace TestProject.ManualTests
 {
     public class ChildMoverManager : NetworkBehaviour
     {
-        static public bool StopMovement;
+        public static bool StopMovement;
 
         public List<ChildMover> ChildMovers;
 

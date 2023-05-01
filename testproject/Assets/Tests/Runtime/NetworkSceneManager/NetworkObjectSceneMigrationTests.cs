@@ -2,11 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Unity.Netcode;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Unity.Netcode;
-using Unity.Netcode.TestHelpers.Runtime;
 using Object = UnityEngine.Object;
 
 namespace TestProject.RuntimeTests
@@ -157,6 +157,7 @@ namespace TestProject.RuntimeTests
             return true;
         }
 
+        private const int k_MaxObjectsToSpawn = 9;
         /// <summary>
         /// Integration test to verify that migrating NetworkObjects
         /// into different scenes (in the same frame) is synchronized
@@ -167,7 +168,7 @@ namespace TestProject.RuntimeTests
         public IEnumerator MigrateIntoNewSceneTest()
         {
             // Spawn 9 NetworkObject instances
-            for (int i = 0; i < 9; i++)
+            for (int i = 0; i < k_MaxObjectsToSpawn; i++)
             {
                 var serverInstance = Object.Instantiate(m_TestPrefab);
                 var serverNetworkObject = serverInstance.GetComponent<NetworkObject>();
@@ -204,10 +205,34 @@ namespace TestProject.RuntimeTests
             yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
             AssertOnTimeout($"Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
 
-            // Verify that a late joining client synchronizes properly
+            // Register for the server-side client synchronization so we can send an object scene migration event at the same time
+            // the new client begins to synchronize
+            m_ServerNetworkManager.SceneManager.OnSynchronize += SceneManager_OnSynchronize;
+
+            // Verify that a late joining client synchronizes properly even while new scene migrations occur
+            // during its synchronization
             yield return CreateAndStartNewClient();
             yield return WaitForConditionOrTimeOut(VerifySpawnedObjectsMigrated);
+
             AssertOnTimeout($"[Late Joined Client] Timed out waiting for all clients to migrate all NetworkObjects into the appropriate scenes!");
+        }
+
+        /// <summary>
+        /// Migrate objects into other scenes when a client begins synchronization
+        /// </summary>
+        /// <param name="clientId"></param>
+        private void SceneManager_OnSynchronize(ulong clientId)
+        {
+            var objectCount = k_MaxObjectsToSpawn - 1;
+
+            // Migrate the NetworkObjects into different scenes than they originally were migrated into
+            foreach (var scene in m_ScenesLoaded)
+            {
+                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount - 1].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(m_ServerSpawnedPrefabInstances[objectCount - 2].gameObject, scene);
+                objectCount -= 3;
+            }
         }
 
         /// <summary>

@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine.TestTools;
 using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine;
+using UnityEngine.TestTools;
 using Random = UnityEngine.Random;
 
 namespace Unity.Netcode.RuntimeTests
@@ -575,7 +575,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNetworkSpawn();
         }
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             // Assign the failure type first
             m_MyCustomData.FailureType = m_FailureType.Value;
@@ -615,7 +615,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNetworkSpawn();
         }
 
-        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer, ulong targetClientId = 0)
+        protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             serializer.SerializeNetworkSerializable(ref CustomSerializationData);
             base.OnSynchronize(ref serializer);

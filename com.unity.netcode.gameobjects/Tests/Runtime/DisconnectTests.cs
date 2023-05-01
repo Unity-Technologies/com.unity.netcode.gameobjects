@@ -1,112 +1,166 @@
 using System.Collections;
 using System.Linq;
 using NUnit.Framework;
-using UnityEngine;
-using UnityEngine.TestTools;
 using Unity.Netcode.TestHelpers.Runtime;
+using UnityEngine.TestTools;
 
 namespace Unity.Netcode.RuntimeTests
 {
-    public class DisconnectTests
+    /// <summary>
+    /// Validates the client disconnection process.
+    /// This assures that:
+    /// - When a client disconnects from the server that the server:
+    /// -- Detects the client disconnected.
+    /// -- Cleans up the transport to NGO client (and vice versa) mappings.
+    /// - When a server disconnects a client that:
+    /// -- The client detects this disconnection.
+    /// -- The server cleans up the transport to NGO client (and vice versa) mappings.
+    /// - When <see cref="OwnerPersistence.DestroyWithOwner"/> the server-side player object is destroyed
+    /// - When <see cref="OwnerPersistence.DontDestroyWithOwner"/> the server-side player object ownership is transferred back to the server
+    /// </summary>
+    [TestFixture(OwnerPersistence.DestroyWithOwner)]
+    [TestFixture(OwnerPersistence.DontDestroyWithOwner)]
+    public class DisconnectTests : NetcodeIntegrationTest
     {
-
-        private bool m_ClientDisconnected;
-        [UnityTest]
-        public IEnumerator RemoteDisconnectPlayerObjectCleanup()
+        public enum OwnerPersistence
         {
-            // create server and client instances
-            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
-
-            // create prefab
-            var gameObject = new GameObject("PlayerObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.DontDestroyWithOwner = true;
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            server.NetworkConfig.PlayerPrefab = gameObject;
-
-            for (int i = 0; i < clients.Length; i++)
-            {
-                clients[i].NetworkConfig.PlayerPrefab = gameObject;
-            }
-
-            // start server and connect clients
-            NetcodeIntegrationTestHelpers.Start(false, server, clients);
-
-            // wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
-
-            // wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
-
-            // disconnect the remote client
-            m_ClientDisconnected = false;
-            server.DisconnectClient(clients[0].LocalClientId);
-            clients[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnected, timeoutHelper);
-
-            // We need to do this to remove other associated client properties/values from NetcodeIntegrationTestHelpers
-            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
-
-            // ensure the object was destroyed
-            Assert.False(server.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == clients[0].LocalClientId));
-
-            // cleanup
-            NetcodeIntegrationTestHelpers.Destroy();
+            DestroyWithOwner,
+            DontDestroyWithOwner
         }
 
+        public enum ClientDisconnectType
+        {
+            ServerDisconnectsClient,
+            ClientDisconnectsFromServer
+        }
+
+        protected override int NumberOfClients => 1;
+
+        private OwnerPersistence m_OwnerPersistence;
+        private bool m_ClientDisconnected;
+        private ulong m_TransportClientId;
+        private ulong m_ClientId;
+
+
+        public DisconnectTests(OwnerPersistence ownerPersistence)
+        {
+            m_OwnerPersistence = ownerPersistence;
+        }
+
+        protected override void OnCreatePlayerPrefab()
+        {
+            m_PlayerPrefab.GetComponent<NetworkObject>().DontDestroyWithOwner = m_OwnerPersistence == OwnerPersistence.DontDestroyWithOwner;
+            base.OnCreatePlayerPrefab();
+        }
+
+        protected override void OnServerAndClientsCreated()
+        {
+            // Adjusting client and server timeout periods to reduce test time
+            // Get the tick frequency in milliseconds and triple it for the heartbeat timeout
+            var heartBeatTimeout = (int)(300 * (1.0f / m_ServerNetworkManager.NetworkConfig.TickRate));
+            var unityTransport = m_ServerNetworkManager.NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
+            if (unityTransport != null)
+            {
+                unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
+            }
+
+            unityTransport = m_ClientNetworkManagers[0].NetworkConfig.NetworkTransport as Transports.UTP.UnityTransport;
+            if (unityTransport != null)
+            {
+                unityTransport.HeartbeatTimeoutMS = heartBeatTimeout;
+            }
+
+            base.OnServerAndClientsCreated();
+        }
+
+        protected override IEnumerator OnSetup()
+        {
+            m_ClientDisconnected = false;
+            m_ClientId = 0;
+            m_TransportClientId = 0;
+            return base.OnSetup();
+        }
+
+        /// <summary>
+        /// Used to detect the client disconnected on the server side
+        /// </summary>
         private void OnClientDisconnectCallback(ulong obj)
         {
             m_ClientDisconnected = true;
         }
 
-        [UnityTest]
-        public IEnumerator ClientDisconnectPlayerObjectCleanup()
+        /// <summary>
+        /// Conditional check to assure the transport to client (and vice versa) mappings are cleaned up
+        /// </summary>
+        private bool TransportIdCleanedUp()
         {
-            // create server and client instances
-            NetcodeIntegrationTestHelpers.Create(1, out NetworkManager server, out NetworkManager[] clients);
-
-            // create prefab
-            var gameObject = new GameObject("PlayerObject");
-            var networkObject = gameObject.AddComponent<NetworkObject>();
-            networkObject.DontDestroyWithOwner = true;
-            NetcodeIntegrationTestHelpers.MakeNetworkObjectTestPrefab(networkObject);
-
-            server.NetworkConfig.PlayerPrefab = gameObject;
-
-            for (int i = 0; i < clients.Length; i++)
+            if (m_ServerNetworkManager.ConnectionManager.TransportIdToClientId(m_TransportClientId) == m_ClientId)
             {
-                clients[i].NetworkConfig.PlayerPrefab = gameObject;
+                return false;
             }
 
-            // start server and connect clients
-            NetcodeIntegrationTestHelpers.Start(false, server, clients);
+            if (m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId) == m_TransportClientId)
+            {
+                return false;
+            }
+            return true;
+        }
 
-            // wait for connection on client side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientsConnected(clients);
+        /// <summary>
+        /// Conditional check to make sure the client player object no longer exists on the server side
+        /// </summary>
+        private bool DoesServerStillHaveSpawnedPlayerObject()
+        {
+            if (m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].ContainsKey(m_ClientId))
+            {
+                var playerObject = m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId][m_ClientId];
+                if (playerObject != null && playerObject.IsSpawned)
+                {
+                    return false;
+                }
+            }
+            return !m_ServerNetworkManager.SpawnManager.SpawnedObjects.Any(x => x.Value.IsPlayerObject && x.Value.OwnerClientId == m_ClientId);
+        }
 
-            // wait for connection on server side
-            yield return NetcodeIntegrationTestHelpers.WaitForClientConnectedToServer(server);
+        [UnityTest]
+        public IEnumerator ClientPlayerDisconnected([Values] ClientDisconnectType clientDisconnectType)
+        {
+            m_ClientId = m_ClientNetworkManagers[0].LocalClientId;
 
-            // disconnect the remote client
-            m_ClientDisconnected = false;
+            var serverSideClientPlayer = m_ServerNetworkManager.ConnectionManager.ConnectedClients[m_ClientId].PlayerObject;
 
-            server.OnClientDisconnectCallback += OnClientDisconnectCallback;
+            m_TransportClientId = m_ServerNetworkManager.ConnectionManager.ClientIdToTransportId(m_ClientId);
 
-            var serverSideClientPlayer = server.ConnectedClients[clients[0].LocalClientId].PlayerObject;
+            if (clientDisconnectType == ClientDisconnectType.ServerDisconnectsClient)
+            {
+                m_ClientNetworkManagers[0].OnClientDisconnectCallback += OnClientDisconnectCallback;
+                m_ServerNetworkManager.DisconnectClient(m_ClientId);
+            }
+            else
+            {
+                m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
 
-            // Stopping the client is the same as the client disconnecting
-            NetcodeIntegrationTestHelpers.StopOneClient(clients[0]);
+                yield return StopOneClient(m_ClientNetworkManagers[0]);
+            }
 
-            var timeoutHelper = new TimeoutHelper();
-            yield return NetcodeIntegrationTest.WaitForConditionOrTimeOut(() => m_ClientDisconnected, timeoutHelper);
+            yield return WaitForConditionOrTimeOut(() => m_ClientDisconnected);
+            AssertOnTimeout("Timed out waiting for client to disconnect!");
 
-            // ensure the object was destroyed
-            Assert.True(serverSideClientPlayer.IsOwnedByServer, $"The client's player object's ownership was not transferred back to the server!");
+            if (m_OwnerPersistence == OwnerPersistence.DestroyWithOwner)
+            {
+                // When we are destroying with the owner, validate the player object is destroyed on the server side
+                yield return WaitForConditionOrTimeOut(DoesServerStillHaveSpawnedPlayerObject);
+                AssertOnTimeout("Timed out waiting for client's player object to be destroyed!");
+            }
+            else
+            {
+                // When we are not destroying with the owner, ensure the player object's ownership was transferred back to the server
+                yield return WaitForConditionOrTimeOut(() => serverSideClientPlayer.IsOwnedByServer);
+                AssertOnTimeout("The client's player object's ownership was not transferred back to the server!");
+            }
 
-            // cleanup
-            NetcodeIntegrationTestHelpers.Destroy();
+            yield return WaitForConditionOrTimeOut(TransportIdCleanedUp);
+            AssertOnTimeout("Timed out waiting for transport and client id mappings to be cleaned up!");
         }
     }
 }

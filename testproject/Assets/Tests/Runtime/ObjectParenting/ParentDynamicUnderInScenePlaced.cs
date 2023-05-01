@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
-using Unity.Netcode;
-using Unity.Netcode.TestHelpers.Runtime;
 
 namespace TestProject.RuntimeTests
 {
@@ -57,7 +57,7 @@ namespace TestProject.RuntimeTests
 
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
-            networkManager.SceneManager.DisableValidationWarnings(true);
+            m_ServerNetworkManager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             base.OnNewClientStarted(networkManager);
         }
 
