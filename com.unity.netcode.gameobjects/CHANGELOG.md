@@ -17,6 +17,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
 - Fixed issue where invalid endpoint addresses were not being detected and returning false from NGO UnityTransport. (#2496)
 - Fixed some errors that could occur if a connection is lost and the loss is detected when attempting to write to the socket. (#2495)
+- Fixed the inspector throwing exceptions when attempting to render `NetworkVariable`s of enum types. (#2529)
 - Fixed an exception and error logging when two different objects are shown and hidden on the same frame (#2524)
 
 ## Changed
