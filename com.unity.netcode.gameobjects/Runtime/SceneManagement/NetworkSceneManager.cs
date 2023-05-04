@@ -791,6 +791,10 @@ namespace Unity.Netcode
             return ValidateSceneBeforeLoading(sceneIndex, sceneName, loadSceneMode);
         }
 
+        /// <summary>
+        /// Overloaded version that is invoked by <see cref="ValidateSceneBeforeLoading"/> and <see cref="SynchronizeNetworkObjects"/>.
+        /// This specifically is to allow runtime generated scenes to be excluded by the server during synchronization.
+        /// </summary>
         internal bool ValidateSceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
         {
             var validated = true;
