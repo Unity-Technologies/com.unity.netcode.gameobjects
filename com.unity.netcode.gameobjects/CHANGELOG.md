@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where users could not use NetworkSceneManager.VerifySceneBeforeLoading to exclude runtime generated scenes from client synchronization. (#2550)
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
 - Fixed a memory leak in `UnityTransport` that occurred if `StartClient` failed. (#2518)
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
