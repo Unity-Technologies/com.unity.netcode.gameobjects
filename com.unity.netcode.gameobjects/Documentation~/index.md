@@ -7,8 +7,8 @@ Netcode for GameObjects is a Unity package that provides networking capabilities
 See guides below to install Unity Netcode for GameObjects, set up your project, and get started with your first networked game:
 
 - [Documentation](https://docs-multiplayer.unity3d.com/netcode/current/about)
-- [Installation](https://docs-multiplayer.unity3d.com/netcode/current/migration/install)
-- [First Steps](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/helloworld/helloworldintro)
+- [Installation](https://docs-multiplayer.unity3d.com/netcode/current/installation)
+- [First Steps](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/get-started-ngo)
 - [API Reference](https://docs-multiplayer.unity3d.com/netcode/current/api/introduction)
 
 # Technical details
