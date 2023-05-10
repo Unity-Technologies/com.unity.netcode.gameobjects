@@ -210,6 +210,21 @@ namespace Unity.Netcode.Editor.CodeGen
                         {
                             if (type.HasInterface(typeof(INetworkSerializable).FullName))
                             {
+                                var constructors = type.Resolve().GetConstructors();
+                                var hasEmptyConstructor = false;
+                                foreach (var constructor in constructors)
+                                {
+                                    if (constructor.Parameters.Count == 0)
+                                    {
+                                        hasEmptyConstructor = true;
+                                    }
+                                }
+
+                                if (!hasEmptyConstructor)
+                                {
+                                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
+                                    continue;
+                                }
                                 serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
                             }
 
