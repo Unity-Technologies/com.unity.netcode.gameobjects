@@ -67,7 +67,10 @@ namespace Unity.Netcode
                 ret = true;
             }
 
-            networkObject.Observers.Remove(clientId);
+            if (ret)
+            {
+                networkObject.Observers.Remove(clientId);
+            }
 
             return ret;
         }
