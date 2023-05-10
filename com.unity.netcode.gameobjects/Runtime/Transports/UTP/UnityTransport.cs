@@ -524,7 +524,7 @@ namespace Unity.Netcode.Transports.UTP
                 //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
                 if (m_RelayServerData.Equals(default(RelayServerData)))
                 {
-                    Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
+                    Debug.LogError("You must call SetRelayServerData() at least once before calling StartClient.");
                     return false;
                 }
 
@@ -710,7 +710,7 @@ namespace Unity.Netcode.Transports.UTP
             //reflection, but this does not live in the context of a performance-critical loop, it runs once at initial connection time.
             if (m_RelayServerData.Equals(default(RelayServerData)))
             {
-                Debug.LogError("You must call SetRelayServerData() at least once before calling StartRelayServer.");
+                Debug.LogError("You must call SetRelayServerData() at least once before calling StartServer.");
                 return false;
             }
             else
