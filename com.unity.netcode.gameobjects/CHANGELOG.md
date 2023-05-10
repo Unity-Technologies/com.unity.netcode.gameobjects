@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where a server would include scene migrated and then despawned NetworkObjects to a client that was being synchronized. (#2532)
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
 - Fixed a memory leak in `UnityTransport` that occurred if `StartClient` failed. (#2518)
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
@@ -23,9 +24,9 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## Changed
 
+- Connecting clients being synchronized now switch to the server's active scene before spawning and synchronizing NetworkObjects. (#2532)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.4. (#2533)
 - Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
-
 
 ## [1.4.0] - 2023-04-10
 
