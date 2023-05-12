@@ -557,7 +557,7 @@ namespace Unity.Netcode.RuntimeTests
         /// This is an adjustment to how the server and clients are started in order
         /// to avoid timing issues when running in a stand alone test runner build.
         /// </summary>
-        private void InitializeServerAndClients(bool useHost)
+        private void InitializeServerAndClients(HostOrServer useHost)
         {
             s_ClientNetworkVariableTestInstances.Clear();
             m_PlayerPrefab.AddComponent<NetworkVariableTest>();
@@ -574,7 +574,7 @@ namespace Unity.Netcode.RuntimeTests
                 client.NetworkConfig.PlayerPrefab = m_PlayerPrefab;
             }
 
-            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
+            Assert.True(NetcodeIntegrationTestHelpers.Start(useHost == HostOrServer.Host, m_ServerNetworkManager, m_ClientNetworkManagers), "Failed to start server and client instances");
 
             RegisterSceneManagerHandler();
 
@@ -611,7 +611,7 @@ namespace Unity.Netcode.RuntimeTests
                 throw new Exception("at least one client network container not empty at start");
             }
 
-            var instanceCount = useHost ? NumberOfClients * 3 : NumberOfClients * 2;
+            var instanceCount = useHost == HostOrServer.Host ? NumberOfClients * 3 : NumberOfClients * 2;
             // Wait for the client-side to notify it is finished initializing and spawning.
             success = WaitForConditionOrTimeOutWithTimeTravel(() => s_ClientNetworkVariableTestInstances.Count == instanceCount);
 
@@ -624,15 +624,15 @@ namespace Unity.Netcode.RuntimeTests
         /// Runs generalized tests on all predefined NetworkVariable types
         /// </summary>
         [Test]
-        public void AllNetworkVariableTypes([Values(true, false)] bool useHost)
+        public void AllNetworkVariableTypes([Values] HostOrServer useHost)
         {
             // Create, instantiate, and host
             // This would normally go in Setup, but since every other test but this one
             //  uses NetworkManagerHelper, and it does its own NetworkManager setup / teardown,
             //  for now we put this within this one test until we migrate it to MIH
-            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
+            Assert.IsTrue(NetworkManagerHelper.StartNetworkManager(out NetworkManager server, useHost == HostOrServer.Host ? NetworkManagerHelper.NetworkManagerOperatingMode.Host : NetworkManagerHelper.NetworkManagerOperatingMode.Server));
 
-            Assert.IsTrue(server.IsHost == useHost, $"{nameof(useHost)} does not match the server.IsHost value!");
+            Assert.IsTrue(server.IsHost == (useHost == HostOrServer.Host), $"{nameof(useHost)} does not match the server.IsHost value!");
 
             Guid gameObjectId = NetworkManagerHelper.AddGameNetworkObject("NetworkVariableTestComponent");
 
@@ -662,7 +662,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void ClientWritePermissionTest([Values(true, false)] bool useHost)
+        public void ClientWritePermissionTest([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -674,7 +674,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Runs tests that network variables sync on client whatever the local value of <see cref="Time.timeScale"/>.
         /// </summary>
         [Test]
-        public void NetworkVariableSync_WithDifferentTimeScale([Values(true, false)] bool useHost, [Values(0.0f, 1.0f, 2.0f)] float timeScale)
+        public void NetworkVariableSync_WithDifferentTimeScale([Values] HostOrServer useHost, [Values(0.0f, 1.0f, 2.0f)] float timeScale)
         {
             Time.timeScale = timeScale;
 
@@ -688,7 +688,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void FixedString32Test([Values(true, false)] bool useHost)
+        public void FixedString32Test([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
             m_Player1OnServer.FixedString32.Value = k_FixedStringTestValue;
@@ -699,7 +699,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void NetworkListAdd([Values(true, false)] bool useHost)
+        public void NetworkListAdd([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
             m_NetworkListPredicateHandler = new NetworkListTestPredicate(m_Player1OnServer, m_Player1OnClient1, NetworkListTestPredicate.NetworkListTestStates.Add, 10);
@@ -707,7 +707,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values(true, false)] bool useHost)
+        public void WhenListContainsManyLargeValues_OverflowExceptionIsNotThrown([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
             m_NetworkListPredicateHandler = new NetworkListTestPredicate(m_Player1OnServer, m_Player1OnClient1, NetworkListTestPredicate.NetworkListTestStates.ContainsLarge, 20);
@@ -715,7 +715,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void NetworkListContains([Values(true, false)] bool useHost)
+        public void NetworkListContains([Values] HostOrServer useHost)
         {
             // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
             NetworkListAdd(useHost);
@@ -725,23 +725,9 @@ namespace Unity.Netcode.RuntimeTests
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(m_NetworkListPredicateHandler));
         }
 
-        [Test]
-        public void NetworkListRemove([Values(true, false)] bool useHost)
-        {
-            // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
-            NetworkListAdd(useHost);
-
-            // Remove two entries by index
-            m_Player1OnServer.TheList.Remove(3);
-            m_Player1OnServer.TheList.Remove(5);
-
-            // Really just verifies the data at this point
-            m_NetworkListPredicateHandler.SetNetworkListTestState(NetworkListTestPredicate.NetworkListTestStates.VerifyData);
-            Assert.True(WaitForConditionOrTimeOutWithTimeTravel(m_NetworkListPredicateHandler));
-        }
 
         [Test]
-        public void NetworkListInsert([Values(true, false)] bool useHost)
+        public void NetworkListInsert([Values] HostOrServer useHost)
         {
             // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
             NetworkListAdd(useHost);
@@ -755,7 +741,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void NetworkListIndexOf([Values(true, false)] bool useHost)
+        public void NetworkListIndexOf([Values] HostOrServer useHost)
         {
             // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
             NetworkListAdd(useHost);
@@ -765,7 +751,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void NetworkListValueUpdate([Values(true, false)] bool useHost)
+        public void NetworkListValueUpdate([Values] HostOrServer useHost)
         {
             var testSucceeded = false;
             InitializeServerAndClients(useHost);
@@ -796,24 +782,68 @@ namespace Unity.Netcode.RuntimeTests
             m_Player1OnClient1.TheList.OnListChanged -= TestValueUpdatedCallback;
         }
 
-        [Test]
-        public void NetworkListRemoveAt([Values(true, false)] bool useHost)
+        private List<int> m_ExpectedValuesServer = new List<int>();
+        private List<int> m_ExpectedValuesClient = new List<int>();
+
+        public enum ListRemoveTypes
         {
+            Remove,
+            RemoveAt
+        }
+
+
+        [Test]
+        public void NetworkListRemoveTests([Values] HostOrServer useHost, [Values] ListRemoveTypes listRemoveType)
+        {
+            m_ExpectedValuesServer.Clear();
+            m_ExpectedValuesClient.Clear();
             // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
             NetworkListAdd(useHost);
 
             // Randomly remove a few entries
-            m_Player1OnServer.TheList.RemoveAt(Random.Range(0, m_Player1OnServer.TheList.Count - 1));
-            m_Player1OnServer.TheList.RemoveAt(Random.Range(0, m_Player1OnServer.TheList.Count - 1));
-            m_Player1OnServer.TheList.RemoveAt(Random.Range(0, m_Player1OnServer.TheList.Count - 1));
+            m_Player1OnServer.TheList.OnListChanged += Server_OnListChanged;
+            m_Player1OnClient1.TheList.OnListChanged += Client_OnListChanged;
+
+            // Remove half of the elements
+            for (int i = 0; i < (int)(m_Player1OnServer.TheList.Count * 0.5f); i++)
+            {
+                var index = Random.Range(0, m_Player1OnServer.TheList.Count - 1);
+                var value = m_Player1OnServer.TheList[index];
+                m_ExpectedValuesServer.Add(value);
+                m_ExpectedValuesClient.Add(value);
+
+                if (listRemoveType == ListRemoveTypes.RemoveAt)
+                {
+                    m_Player1OnServer.TheList.RemoveAt(index);
+                }
+                else
+                {
+                    m_Player1OnServer.TheList.Remove(value);
+                }
+            }
 
             // Verify the element count and values on the client matches the server
             m_NetworkListPredicateHandler.SetNetworkListTestState(NetworkListTestPredicate.NetworkListTestStates.VerifyData);
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(m_NetworkListPredicateHandler));
+
+            Assert.True(m_ExpectedValuesServer.Count == 0, $"Server was not notified of all elements removed and still has {m_ExpectedValuesServer.Count} elements left!");
+            Assert.True(m_ExpectedValuesClient.Count == 0, $"Client was not notified of all elements removed and still has {m_ExpectedValuesClient.Count} elements left!");
+        }
+
+        private void Server_OnListChanged(NetworkListEvent<int> changeEvent)
+        {
+            Assert.True(m_ExpectedValuesServer.Contains(changeEvent.Value));
+            m_ExpectedValuesServer.Remove(changeEvent.Value);
+        }
+
+        private void Client_OnListChanged(NetworkListEvent<int> changeEvent)
+        {
+            Assert.True(m_ExpectedValuesClient.Contains(changeEvent.Value));
+            m_ExpectedValuesClient.Remove(changeEvent.Value);
         }
 
         [Test]
-        public void NetworkListClear([Values(true, false)] bool useHost)
+        public void NetworkListClear([Values] HostOrServer useHost)
         {
             // Re-use the NetworkListAdd to initialize the server and client as well as make sure the list is populated
             NetworkListAdd(useHost);
@@ -824,7 +854,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableClass([Values(true, false)] bool useHost)
+        public void TestNetworkVariableClass([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -843,7 +873,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableTemplateClass([Values(true, false)] bool useHost)
+        public void TestNetworkVariableTemplateClass([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -861,7 +891,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkListStruct([Values(true, false)] bool useHost)
+        public void TestNetworkListStruct([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -881,7 +911,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableStruct([Values(true, false)] bool useHost)
+        public void TestNetworkVariableStruct([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -899,7 +929,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableTemplateStruct([Values(true, false)] bool useHost)
+        public void TestNetworkVariableTemplateStruct([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -917,7 +947,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableTemplateBehaviourClass([Values(true, false)] bool useHost)
+        public void TestNetworkVariableTemplateBehaviourClass([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -939,7 +969,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableTemplateBehaviourClassNotReferencedElsewhere([Values(true, false)] bool useHost)
+        public void TestNetworkVariableTemplateBehaviourClassNotReferencedElsewhere([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -957,7 +987,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableTemplateBehaviourStruct([Values(true, false)] bool useHost)
+        public void TestNetworkVariableTemplateBehaviourStruct([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -975,7 +1005,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestNetworkVariableEnum([Values(true, false)] bool useHost)
+        public void TestNetworkVariableEnum([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
 
@@ -992,7 +1022,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestINetworkSerializableClassCallsNetworkSerialize([Values(true, false)] bool useHost)
+        public void TestINetworkSerializableClassCallsNetworkSerialize([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
             TestClass.NetworkSerializeCalledOnWrite = false;
@@ -1010,7 +1040,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [Test]
-        public void TestINetworkSerializableStructCallsNetworkSerialize([Values(true, false)] bool useHost)
+        public void TestINetworkSerializableStructCallsNetworkSerialize([Values] HostOrServer useHost)
         {
             InitializeServerAndClients(useHost);
             TestStruct.NetworkSerializeCalledOnWrite = false;
@@ -1021,41 +1051,6 @@ namespace Unity.Netcode.RuntimeTests
 
             // Wait for the client-side to notify it is finished initializing and spawning.
             Assert.True(WaitForConditionOrTimeOutWithTimeTravel(VerifyCallback));
-        }
-
-        [Test]
-        [Ignore("This is used several times already in the NetworkListPredicate")]
-        // TODO: If we end up using the new suggested pattern, then delete this
-        public void NetworkListArrayOperator([Values(true, false)] bool useHost)
-        {
-            NetworkListAdd(useHost);
-        }
-
-        [Test]
-        [Ignore("This is used several times already in the NetworkListPredicate")]
-        // TODO: If we end up using the new suggested pattern, then delete this
-        public void NetworkListIEnumerator([Values(true, false)] bool useHost)
-        {
-            InitializeServerAndClients(useHost);
-            var correctVals = new int[3];
-            correctVals[0] = k_TestVal1;
-            correctVals[1] = k_TestVal2;
-            correctVals[2] = k_TestVal3;
-
-            m_Player1OnServer.TheList.Add(correctVals[0]);
-            m_Player1OnServer.TheList.Add(correctVals[1]);
-            m_Player1OnServer.TheList.Add(correctVals[2]);
-
-            Assert.IsTrue(m_Player1OnServer.TheList.Count == 3);
-
-            int index = 0;
-            foreach (var val in m_Player1OnServer.TheList)
-            {
-                if (val != correctVals[index++])
-                {
-                    Assert.Fail();
-                }
-            }
         }
 
         [Test]
