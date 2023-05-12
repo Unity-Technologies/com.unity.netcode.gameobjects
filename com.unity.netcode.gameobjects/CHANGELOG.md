@@ -13,6 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
+- Fixed missing value on `NetworkListEvent` for `EventType.RemoveAt` events.  (#2542,#2543)
 - Fixed issue where a server would include scene migrated and then despawned NetworkObjects to a client that was being synchronized. (#2532)
 - Fixed the inspector throwing exceptions when attempting to render `NetworkVariable`s of enum types. (#2529)
 - Making a `NetworkVariable` with an `INetworkSerializable` type that doesn't meet the `new()` constraint will now create a compile-time error instead of an editor crash (#2528)
