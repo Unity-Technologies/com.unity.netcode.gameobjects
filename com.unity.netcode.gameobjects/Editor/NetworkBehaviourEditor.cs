@@ -40,14 +40,12 @@ namespace Unity.Netcode.Editor
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkVariable<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
-                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
-                    Debug.Log($"Adding NetworkVariable {fields[i].Name}");
+                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);                    
                 }
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
-                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
-                    Debug.Log($"Adding NetworkList {fields[i].Name}");
+                    m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);                    
                 }
             }
         }
