@@ -2392,16 +2392,6 @@ namespace Unity.Netcode.Components
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
-            // This assures the initial spawning of the object synchronizes all connected clients
-            // with the current transform values. This should not be placed within Initialize since
-            // that can be invoked when ownership changes.
-            if (CanCommitToTransform)
-            {
-                var currentPosition = GetSpaceRelativePosition();
-                var currentRotation = GetSpaceRelativeRotation();
-                // Teleport to current position
-                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
-            }
         }
 
         /// <inheritdoc/>
@@ -2472,6 +2462,7 @@ namespace Unity.Netcode.Components
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
             var currentPosition = GetSpaceRelativePosition();
+            var currentRotation = GetSpaceRelativeRotation();
 
             if (CanCommitToTransform)
             {
@@ -2483,6 +2474,9 @@ namespace Unity.Netcode.Components
                 // Authority only updates once per network tick
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+
+                // Teleport to current position
+                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
             }
             else
             {
@@ -2494,9 +2488,9 @@ namespace Unity.Netcode.Components
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-                m_CurrentPosition = GetSpaceRelativePosition();
+                m_CurrentPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
-                m_CurrentRotation = GetSpaceRelativeRotation();
+                m_CurrentRotation = currentRotation;
 
             }
 
