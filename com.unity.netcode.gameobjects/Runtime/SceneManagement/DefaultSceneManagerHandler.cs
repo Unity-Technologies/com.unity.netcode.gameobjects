@@ -337,7 +337,7 @@ namespace Unity.Netcode
                 return;
             }
             else // Warn users if they are changing this after there are clients already connected and synchronized
-            if (networkManager.ConnectedClientsIds.Count > (networkManager.IsServer ? 0 : 1) && sceneManager.ClientSynchronizationMode != mode)
+            if (networkManager.ConnectedClientsIds.Count > (networkManager.IsHost ? 1 : 0) && sceneManager.ClientSynchronizationMode != mode)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                 {
