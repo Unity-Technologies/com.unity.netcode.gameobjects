@@ -2026,8 +2026,6 @@ namespace Unity.Netcode
                         {
                             // Include anything in the DDOL scene
                             PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
-                            // Synchronize the NetworkObjects for this scene
-                            sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
 
                             // If needed, set the currently active scene
                             if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
@@ -2039,7 +2037,10 @@ namespace Unity.Netcode
                                 }
                             }
 
-                            // If needed, migrate dynamically spawned NetworkObjects to the same scene as on the server side
+                            // Spawn and Synchronize all NetworkObjects
+                            sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
+
+                            // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
                             SynchronizeNetworkObjectScene();
 
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
@@ -2468,6 +2469,9 @@ namespace Unity.Netcode
             ObjectsMigratedIntoNewScene.Clear();
         }
 
+
+        private List<int> m_ScenesToRemoveFromObjectMigration = new List<int>();
+
         /// <summary>
         /// Should be invoked during PostLateUpdate just prior to the NetworkMessageManager processes its outbound message queue.
         /// </summary>
@@ -2479,6 +2483,40 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Double check that the NetworkObjects to migrate still exist
+            m_ScenesToRemoveFromObjectMigration.Clear();
+            foreach (var sceneEntry in ObjectsMigratedIntoNewScene)
+            {
+                for (int i = sceneEntry.Value.Count - 1; i >= 0; i--)
+                {
+                    // Remove NetworkObjects that are no longer spawned
+                    if (!sceneEntry.Value[i].IsSpawned)
+                    {
+                        sceneEntry.Value.RemoveAt(i);
+                    }
+                }
+                // If the scene entry no longer has any NetworkObjects to migrate
+                // then add it to the list of scenes to be removed from the table
+                // of scenes containing NetworkObjects to migrate.
+                if (sceneEntry.Value.Count == 0)
+                {
+                    m_ScenesToRemoveFromObjectMigration.Add(sceneEntry.Key);
+                }
+            }
+
+            // Remove sceneHandle entries that no longer have any NetworkObjects remaining
+            foreach (var sceneHandle in m_ScenesToRemoveFromObjectMigration)
+            {
+                ObjectsMigratedIntoNewScene.Remove(sceneHandle);
+            }
+
+            // If there is nothing to send a migration notification for then exit
+            if (ObjectsMigratedIntoNewScene.Count == 0)
+            {
+                return;
+            }
+
+            // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
             SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());
