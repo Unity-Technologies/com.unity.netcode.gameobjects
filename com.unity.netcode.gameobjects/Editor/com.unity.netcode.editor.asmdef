@@ -1,6 +1,6 @@
 {
-    "name": "Unity.Netcode.Editor",
-    "rootNamespace": "Unity.Netcode.Editor",
+    "name": "Unity.Netcode.GameObjects.Editor",
+    "rootNamespace": "Unity.Netcode.GameObjects.Editor",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Netcode.Components"

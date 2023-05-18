@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 
-namespace Unity.Netcode.Editor.Configuration
+namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
     internal class NetcodeForGameObjectsEditorSettings
     {

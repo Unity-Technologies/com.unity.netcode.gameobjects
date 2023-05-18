@@ -1,6 +1,6 @@
 using NUnit.Framework;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     public class ArithmeticTests
     {

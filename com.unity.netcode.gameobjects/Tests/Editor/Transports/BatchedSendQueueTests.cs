@@ -4,7 +4,7 @@ using Unity.Collections;
 using Unity.Netcode.Transports.UTP;
 using Unity.Networking.Transport;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     public class BatchedSendQueueTests
     {

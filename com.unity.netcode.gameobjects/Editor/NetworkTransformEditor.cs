@@ -2,7 +2,7 @@ using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor
+namespace Unity.Netcode.GameObjects.Editor
 {
     /// <summary>
     /// The <see cref="CustomEditor"/> for <see cref="NetworkTransform"/>

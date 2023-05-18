@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using NUnit.Framework;
-using Unity.Netcode.Editor;
+using Unity.Netcode.GameObjects.Editor;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     public class NetworkManagerConfigurationTests
     {

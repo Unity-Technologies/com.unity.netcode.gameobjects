@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.TestTools;
 using Random = System.Random;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     public class MessageSendingTests
     {

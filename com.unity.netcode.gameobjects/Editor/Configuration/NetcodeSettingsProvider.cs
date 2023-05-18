@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.Editor.Configuration
+namespace Unity.Netcode.GameObjects.Editor.Configuration
 {
     internal static class NetcodeSettingsProvider
     {

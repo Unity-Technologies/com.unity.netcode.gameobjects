@@ -13,7 +13,7 @@ using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostPr
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
-namespace Unity.Netcode.Editor.CodeGen
+namespace Unity.Netcode.GameObjects.Editor.CodeGen
 {
     internal sealed class NetworkBehaviourILPP : ILPPInterface
     {

@@ -6,7 +6,7 @@ using NUnit.Framework;
 using Unity.Multiplayer.Tools.MetricTypes;
 using Unity.Multiplayer.Tools.NetStats;
 
-namespace Unity.Netcode.EditorTests.Metrics
+namespace Unity.Netcode.GameObjects.EditorTests.Metrics
 {
     public class NetworkMetricsRegistrationTests
     {

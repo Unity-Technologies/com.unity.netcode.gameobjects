@@ -1,7 +1,7 @@
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Unity.Netcode.EditorTests.NetworkVar
+namespace Unity.Netcode.GameObjects.EditorTests.NetworkVar
 {
     public class NetworkVarTests
     {

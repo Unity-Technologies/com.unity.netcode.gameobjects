@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 
-namespace Unity.Netcode.Editor.PackageChecker
+namespace Unity.Netcode.GameObjects.Editor.PackageChecker
 {
     [InitializeOnLoad]
     internal class UTPAdapterChecker

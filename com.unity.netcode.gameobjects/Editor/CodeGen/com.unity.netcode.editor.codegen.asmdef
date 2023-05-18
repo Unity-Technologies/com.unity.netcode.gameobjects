@@ -1,6 +1,6 @@
 {
-    "name": "Unity.Netcode.Editor.CodeGen",
-    "rootNamespace": "Unity.Netcode.Editor.CodeGen",
+    "name": "Unity.Netcode.GameObjects.Editor.CodeGen",
+    "rootNamespace": "Unity.Netcode.GameObjects.Editor.CodeGen",
     "references": [
         "Unity.Netcode.Runtime",
         "Unity.Collections"

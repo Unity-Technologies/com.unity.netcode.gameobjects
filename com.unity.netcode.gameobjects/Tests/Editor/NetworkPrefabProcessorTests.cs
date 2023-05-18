@@ -1,9 +1,9 @@
 using NUnit.Framework;
-using Unity.Netcode.Editor.Configuration;
+using Unity.Netcode.GameObjects.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
 
-namespace Unity.Netcode.EditorTests
+namespace Unity.Netcode.GameObjects.EditorTests
 {
     public class NetworkPrefabProcessorTests
     {

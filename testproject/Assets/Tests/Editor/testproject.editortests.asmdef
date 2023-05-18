@@ -3,7 +3,7 @@
     "rootNamespace": "TestProject.EditorTests",
     "references": [
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor"
+        "Unity.Netcode.GameObjects.Editor"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

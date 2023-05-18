@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace Unity.Netcode.Editor.CodeGen
+namespace Unity.Netcode.GameObjects.Editor.CodeGen
 {
     internal class PostProcessorReflectionImporterProvider : IReflectionImporterProvider
     {

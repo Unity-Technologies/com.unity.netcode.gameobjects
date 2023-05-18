@@ -12,7 +12,7 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 using Object = System.Object;
 
-namespace Unity.Netcode.Editor.CodeGen
+namespace Unity.Netcode.GameObjects.Editor.CodeGen
 {
     internal static class CodeGenHelpers
     {

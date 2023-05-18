@@ -1,10 +1,10 @@
 {
-    "name": "Unity.Netcode.EditorTests",
-    "rootNamespace": "Unity.Netcode.EditorTests",
+    "name": "Unity.Netcode.GameObjects.EditorTests",
+    "rootNamespace": "Unity.Netcode.GameObjects.EditorTests",
     "references": [
         "Unity.Collections",
         "Unity.Netcode.Runtime",
-        "Unity.Netcode.Editor",
+        "Unity.Netcode.GameObjects.Editor",
         "Unity.Netcode.Components",
         "Unity.Multiplayer.MetricTypes",
         "Unity.Multiplayer.NetStats",
