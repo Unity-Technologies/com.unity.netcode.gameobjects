@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
 - Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
 - Fixed issue where users could not use NetworkSceneManager.VerifySceneBeforeLoading to exclude runtime generated scenes from client synchronization. (#2550)
@@ -29,6 +30,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## Changed
 
+- Adding network prefabs before NetworkManager initialization is now supported. (#2565)
 - Connecting clients being synchronized now switch to the server's active scene before spawning and synchronizing NetworkObjects. (#2532)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.4. (#2533)
 - Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
