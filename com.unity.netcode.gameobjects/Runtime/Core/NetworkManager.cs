@@ -585,14 +585,22 @@ namespace Unity.Netcode
         /// This should represent the transport's MTU size, minus any transport-level overhead.
         /// </summary>
         /// <param name="size"></param>
-        public void SetMaxSingleMessageSize(int size) => MessageManager.SetMaxSingleMessageSize(size);
+        public int MaxTransmissionUnitSize
+        {
+            set => MessageManager.NonFragmentedMessageMaxSize = value;
+            get => MessageManager.NonFragmentedMessageMaxSize;
+        }
 
         /// <summary>
         /// Sets the maximum size of a message (or message batch) passed through the transport with the ReliableFragmented delivery.
         /// Warning: setting this value too low may result in the SDK becoming non-functional with projects that have a large number of NetworkBehaviours or NetworkVariables, as the SDK relies on the transport's ability to fragment some messages when they grow beyond the MTU size.
         /// </summary>
         /// <param name="size"></param>
-        public void SetMaxFragmentedMessageSize(int size) => MessageManager.SetMaxFragmentedMessageSize(size);
+        public int MaximumFragmentedMessageSize
+        {
+            set => MessageManager.FragmentedMessageMaxSize = value;
+            get => MessageManager.FragmentedMessageMaxSize;
+        }
 
         internal void Initialize(bool server)
         {

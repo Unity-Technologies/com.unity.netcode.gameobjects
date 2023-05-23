@@ -161,16 +161,6 @@ namespace Unity.Netcode
             }
         }
 
-        public void SetMaxSingleMessageSize(int size)
-        {
-            NonFragmentedMessageMaxSize = size;
-        }
-
-        public void SetMaxFragmentedMessageSize(int size)
-        {
-            FragmentedMessageMaxSize = size;
-        }
-
         public void Dispose()
         {
             if (m_Disposed)

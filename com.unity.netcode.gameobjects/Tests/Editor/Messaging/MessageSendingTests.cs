@@ -170,7 +170,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenExceedingBatchSize_NewBatchesAreCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
-            m_MessageManager.SetMaxSingleMessageSize(maxMessageSize);
+            m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
@@ -185,7 +185,7 @@ namespace Unity.Netcode.EditorTests
         public void WhenExceedingMTUSizeWithFragmentedDelivery_NewBatchesAreNotCreated([Values(500, 1000, 1300, 2000)] int maxMessageSize)
         {
             var message = GetMessage();
-            m_MessageManager.SetMaxSingleMessageSize(maxMessageSize);
+            m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
             {
