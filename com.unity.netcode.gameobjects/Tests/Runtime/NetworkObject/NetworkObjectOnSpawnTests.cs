@@ -14,6 +14,86 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override int NumberOfClients => 2;
 
+        public enum ObserverTestTypes
+        {
+            WithObservers,
+            WithoutObservers
+        }
+        private GameObject m_ObserverPrefab;
+        private NetworkObject m_ObserverTestNetworkObject;
+        private ObserverTestTypes m_ObserverTestType;
+
+        private const string k_ObserverTestObjName = "ObsObj";
+        private const string k_WithObserversError = "Not all clients spawned the";
+        private const string k_WithoutObserversError = "A client spawned the";
+
+        protected override void OnServerAndClientsCreated()
+        {
+            m_ObserverPrefab = CreateNetworkObjectPrefab(k_ObserverTestObjName);
+            base.OnServerAndClientsCreated();
+        }
+
+
+        private bool CheckClientsSideObserverTestObj()
+        {
+            foreach (var client in m_ClientNetworkManagers)
+            {
+                if (!s_GlobalNetworkObjects.ContainsKey(client.LocalClientId))
+                {
+                    // When no observers there shouldn't be any client spawned NetworkObjects
+                    // (players are held in a different list)
+                    return !(m_ObserverTestType == ObserverTestTypes.WithObservers);
+                }
+                var clientObjects = s_GlobalNetworkObjects[client.LocalClientId];
+                // Make sure they did spawn the object
+                if (m_ObserverTestType == ObserverTestTypes.WithObservers)
+                {
+                    if (!clientObjects.ContainsKey(m_ObserverTestNetworkObject.NetworkObjectId))
+                    {
+                        return false;
+                    }
+                    if (!clientObjects[m_ObserverTestNetworkObject.NetworkObjectId].IsSpawned)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+
+
+        [UnityTest]
+        public IEnumerator ObserverSpawnTests([Values] ObserverTestTypes observerTestTypes)
+        {
+            m_ObserverTestType = observerTestTypes;
+            var prefabNetworkObject = m_ObserverPrefab.GetComponent<NetworkObject>();
+            prefabNetworkObject.SpawnWithObservers = observerTestTypes == ObserverTestTypes.WithObservers;
+            var instance = SpawnObject(m_ObserverPrefab, m_ServerNetworkManager);
+            m_ObserverTestNetworkObject = instance.GetComponent<NetworkObject>();
+            var withoutObservers = m_ObserverTestType == ObserverTestTypes.WithoutObservers;
+            if (withoutObservers)
+            {
+                // Just give a little time to make sure nothing spawned
+                yield return s_DefaultWaitForTick;
+            }
+            yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+            AssertOnTimeout($"{(withoutObservers ? k_WithoutObserversError : k_WithObserversError)} {k_ObserverTestObjName} object!");
+            // If we spawned without observers
+            if (withoutObservers)
+            {
+                // Make each client an observer
+                foreach (var client in m_ClientNetworkManagers)
+                {
+                    m_ObserverTestNetworkObject.NetworkShow(client.LocalClientId);
+                }
+
+                // Validate the clients spawned the NetworkObject
+                m_ObserverTestType = ObserverTestTypes.WithObservers;
+                yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+                AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
+            }
+        }
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.
@@ -52,6 +132,11 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override IEnumerator OnTearDown()
         {
+            if (m_ObserverPrefab != null)
+            {
+                Object.Destroy(m_ObserverPrefab);
+            }
+
             if (m_TestNetworkObjectPrefab != null)
             {
                 Object.Destroy(m_TestNetworkObjectPrefab);
