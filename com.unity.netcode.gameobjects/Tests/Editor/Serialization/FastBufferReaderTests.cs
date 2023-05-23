@@ -69,6 +69,10 @@ namespace Unity.Netcode.EditorTests
                         {
                             continue;
                         }
+                        if (candidateMethod.GetParameters()[0].ParameterType.IsGenericType)
+                        {
+                            continue;
+                        }
                         try
                         {
                             method = candidateMethod.MakeGenericMethod(typeof(T));
@@ -107,6 +111,10 @@ namespace Unity.Netcode.EditorTests
                             continue;
                         }
                         if (!candidateMethod.GetParameters()[0].ParameterType.IsArray)
+                        {
+                            continue;
+                        }
+                        if (candidateMethod.GetParameters()[0].ParameterType.IsGenericType)
                         {
                             continue;
                         }
@@ -233,6 +241,10 @@ namespace Unity.Netcode.EditorTests
                         {
                             continue;
                         }
+                        if (candidateMethod.GetParameters()[0].ParameterType.IsGenericType)
+                        {
+                            continue;
+                        }
                         try
                         {
                             method = candidateMethod.MakeGenericMethod(typeof(T));
@@ -282,6 +294,10 @@ namespace Unity.Netcode.EditorTests
                             continue;
                         }
                         if (!candidateMethod.GetParameters()[0].ParameterType.HasElementType || !candidateMethod.GetParameters()[0].ParameterType.GetElementType().IsArray)
+                        {
+                            continue;
+                        }
+                        if (candidateMethod.GetParameters()[0].ParameterType.IsGenericType)
                         {
                             continue;
                         }
