@@ -468,7 +468,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private const string k_NetworkBehaviour_beginSendClientRpc = nameof(NetworkBehaviour.__beginSendClientRpc);
         private const string k_NetworkBehaviour_endSendClientRpc = nameof(NetworkBehaviour.__endSendClientRpc);
         private const string k_NetworkBehaviour___initializeVariables = nameof(NetworkBehaviour.__initializeVariables);
-        private const string k_NetworkBehaviour_createNativeList = nameof(NetworkBehaviour.__createNativeList);        
+        private const string k_NetworkBehaviour_createNativeList = nameof(NetworkBehaviour.__createNativeList);
         private const string k_NetworkBehaviour_NetworkManager = nameof(NetworkBehaviour.NetworkManager);
         private const string k_NetworkBehaviour_OwnerClientId = nameof(NetworkBehaviour.OwnerClientId);
         private const string k_NetworkBehaviour___nameNetworkVariable = nameof(NetworkBehaviour.__nameNetworkVariable);

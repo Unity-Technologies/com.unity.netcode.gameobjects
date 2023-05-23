@@ -2148,7 +2148,7 @@ namespace Unity.Netcode.RuntimeTests
                     InMemoryValue = 1,
                     Ints = new[] { 2, 3, 4 },
                     Str = "five",
-                    Embedded = new EmbeddedManagedNetworkSerializableType{Int = 6}
+                    Embedded = new EmbeddedManagedNetworkSerializableType { Int = 6 }
                 }
             };
 
@@ -2163,7 +2163,7 @@ namespace Unity.Netcode.RuntimeTests
                 InMemoryValue = 10,
                 Ints = new[] { 20, 30, 40, 50 },
                 Str = "sixty",
-                Embedded = new EmbeddedManagedNetworkSerializableType{Int = 60}
+                Embedded = new EmbeddedManagedNetworkSerializableType { Int = 60 }
             };
 
             using var reader = new FastBufferReader(writer, Allocator.None);

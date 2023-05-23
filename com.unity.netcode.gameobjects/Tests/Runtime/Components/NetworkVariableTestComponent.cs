@@ -297,7 +297,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Str = "1234567890",
                 Ints = new[] { 1, 2, 3, 4, 5 },
-                Embedded = new EmbeddedManagedNetworkSerializableType{Int = 6}
+                Embedded = new EmbeddedManagedNetworkSerializableType { Int = 6 }
             });
 
             // Use this nifty class: NetworkVariableHelper
@@ -404,7 +404,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 Str = "ManagedNetworkSerializableType",
                 Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 },
-                Embedded = new EmbeddedManagedNetworkSerializableType{Int = 20000}
+                Embedded = new EmbeddedManagedNetworkSerializableType { Int = 20000 }
             }));
         }
 
@@ -452,7 +452,7 @@ namespace Unity.Netcode.RuntimeTests
                         {
                             Str = "ManagedNetworkSerializableType",
                             Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 },
-                            Embedded = new EmbeddedManagedNetworkSerializableType{Int = 20000}
+                            Embedded = new EmbeddedManagedNetworkSerializableType { Int = 20000 }
                         };
 
                         //Set the timeout (i.e. how long we will wait for all NetworkVariables to have registered their changes)
