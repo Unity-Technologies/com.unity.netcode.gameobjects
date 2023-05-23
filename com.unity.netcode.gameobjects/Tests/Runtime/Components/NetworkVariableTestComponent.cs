@@ -6,10 +6,19 @@ using UnityEngine;
 
 namespace Unity.Netcode.RuntimeTests
 {
+    public class EmbeddedManagedNetworkSerializableType : INetworkSerializable
+    {
+        public int Int;
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Int);
+        }
+    }
     public class ManagedNetworkSerializableType : INetworkSerializable, IEquatable<ManagedNetworkSerializableType>
     {
         public string Str = "";
         public int[] Ints = Array.Empty<int>();
+        public EmbeddedManagedNetworkSerializableType Embedded = new EmbeddedManagedNetworkSerializableType();
         public int InMemoryValue;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
@@ -28,6 +37,8 @@ namespace Unity.Netcode.RuntimeTests
                 serializer.SerializeValue(ref val);
                 Ints[i] = val;
             }
+
+            serializer.SerializeValue(ref Embedded);
         }
 
         public bool Equals(ManagedNetworkSerializableType other)
@@ -58,6 +69,11 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     return false;
                 }
+            }
+
+            if (Embedded.Int != other.Embedded.Int)
+            {
+                return false;
             }
 
             return true;
@@ -280,7 +296,8 @@ namespace Unity.Netcode.RuntimeTests
             m_NetworkVariableManaged = new NetworkVariable<ManagedNetworkSerializableType>(new ManagedNetworkSerializableType
             {
                 Str = "1234567890",
-                Ints = new[] { 1, 2, 3, 4, 5 }
+                Ints = new[] { 1, 2, 3, 4, 5 },
+                Embedded = new EmbeddedManagedNetworkSerializableType{Int = 6}
             });
 
             // Use this nifty class: NetworkVariableHelper
@@ -386,7 +403,8 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsTrue(m_NetworkVariableManaged.Value.Equals(new ManagedNetworkSerializableType
             {
                 Str = "ManagedNetworkSerializableType",
-                Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 }
+                Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 },
+                Embedded = new EmbeddedManagedNetworkSerializableType{Int = 20000}
             }));
         }
 
@@ -433,7 +451,8 @@ namespace Unity.Netcode.RuntimeTests
                         m_NetworkVariableManaged.Value = new ManagedNetworkSerializableType
                         {
                             Str = "ManagedNetworkSerializableType",
-                            Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 }
+                            Ints = new[] { 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000 },
+                            Embedded = new EmbeddedManagedNetworkSerializableType{Int = 20000}
                         };
 
                         //Set the timeout (i.e. how long we will wait for all NetworkVariables to have registered their changes)

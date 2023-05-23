@@ -30,78 +30,52 @@ namespace Unity.Netcode
         public void SerializeValue(ref byte value) => m_Writer.WriteByteSafe(value);
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValueSafe(value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValueSafe(value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValueSafe(value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValueSafe(value);
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Writer.WriteValueSafe(value);
+        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Writer.WriteValue(value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Writer.WriteValue(value);
-        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForFixedStrings unused = default) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
-        public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForFixedStrings unused = default) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
+        public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
+        public void SerializeValue<T>(ref NativeList<T> value) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Vector2 value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector2[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Vector2> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Vector2> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Vector3 value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector3[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Vector3> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Vector3> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Vector2Int value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector2Int[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Vector2Int> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Vector2Int> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Vector3Int value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector3Int[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Vector3Int> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Vector3Int> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Vector4 value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Vector4[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Vector4> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Vector4> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Quaternion value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Quaternion[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Quaternion> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Quaternion> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Color value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Color[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Color> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Color> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Color32 value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Color32[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Color32> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Color32> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Ray value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Ray[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Ray> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Ray> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeValue(ref Ray2D value) => m_Writer.WriteValueSafe(value);
         public void SerializeValue(ref Ray2D[] value) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeArray<Ray2D> value, Allocator allocator) => m_Writer.WriteValueSafe(value);
-        public void SerializeValue(ref NativeList<Ray2D> value) => m_Writer.WriteValueSafe(value);
 
         public void SerializeNetworkSerializable<T>(ref T value) where T : INetworkSerializable, new()
         {
@@ -117,70 +91,46 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked(ref byte value) => m_Writer.WriteByte(value);
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Writer.WriteValue(value);
+        public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Vector2 value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector2[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Vector2> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Vector2> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Vector3 value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector3[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Vector3> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Vector3> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Vector2Int value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector2Int[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Vector2Int> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Vector2Int> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Vector3Int value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector3Int[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Vector3Int> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Vector3Int> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Vector4 value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Vector4[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Vector4> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Vector4> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Quaternion value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Quaternion[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Quaternion> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Quaternion> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Color value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Color[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Color> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Color> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Color32 value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Color32[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Color32> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Color32> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Ray value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Ray> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Ray> value) => m_Writer.WriteValue(value);
 
         public void SerializeValuePreChecked(ref Ray2D value) => m_Writer.WriteValue(value);
         public void SerializeValuePreChecked(ref Ray2D[] value) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeArray<Ray2D> value, Allocator allocator) => m_Writer.WriteValue(value);
-        public void SerializeValuePreChecked(ref NativeList<Ray2D> value) => m_Writer.WriteValue(value);
     }
 }

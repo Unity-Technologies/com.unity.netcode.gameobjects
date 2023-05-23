@@ -10,6 +10,7 @@ using Unity.Collections;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
+using Object = System.Object;
 
 namespace Unity.Netcode.Editor.CodeGen
 {
@@ -111,6 +112,60 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             return name;
+        }
+        public static TypeReference MakeGenericType(this TypeReference self, params TypeReference[] arguments)
+        {
+            if (self.GenericParameters.Count != arguments.Length)
+            {
+                throw new ArgumentException();
+            }
+
+            var instance = new GenericInstanceType(self);
+            foreach (var argument in arguments)
+            {
+                instance.GenericArguments.Add(argument);
+            }
+
+            return instance;
+        }
+
+        public static MethodReference MakeGeneric(this MethodReference self, params TypeReference[] arguments)
+        {
+            var reference = new MethodReference(self.Name, self.ReturnType)
+            {
+                DeclaringType = self.DeclaringType.MakeGenericType(arguments),
+                HasThis = self.HasThis,
+                ExplicitThis = self.ExplicitThis,
+                CallingConvention = self.CallingConvention,
+            };
+
+            foreach (var parameter in self.Parameters)
+            {
+                reference.Parameters.Add(new ParameterDefinition(parameter.ParameterType));
+            }
+
+            foreach (var generic_parameter in self.GenericParameters)
+            {
+                reference.GenericParameters.Add(new GenericParameter(generic_parameter.Name, reference));
+            }
+
+            return reference;
+        }
+
+        public static bool IsSubclassOf(this TypeReference typeReference, TypeReference baseClass)
+        {
+            var type = typeReference.Resolve();
+            if (type.BaseType == null || type.BaseType.Name == nameof(Object))
+            {
+                return false;
+            }
+
+            if (type.BaseType.Resolve() == baseClass.Resolve())
+            {
+                return true;
+            }
+
+            return type.BaseType.IsSubclassOf(baseClass);
         }
 
         public static bool HasInterface(this TypeReference typeReference, string interfaceTypeFullName)

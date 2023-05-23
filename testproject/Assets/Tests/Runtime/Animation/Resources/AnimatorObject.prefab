@@ -29,7 +29,6 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -305, y: -240, z: 0}
   m_LocalScale: {x: 10, y: 10, z: 10}
-  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3456315205079358758}
   - {fileID: 8794063308444682358}
@@ -55,7 +54,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -128,7 +126,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0.505}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5566730610036911080}
   m_RootOrder: 1
@@ -152,7 +149,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -225,7 +221,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -0.514}
   m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
-  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5566730610036911080}
   m_RootOrder: 0
@@ -249,7 +244,6 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -324,7 +318,6 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 320, y: 240, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5566730610036911080}
   m_Father: {fileID: 0}
@@ -344,11 +337,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
 --- !u!95 &6515743261518512780
 Animator:
-  serializedVersion: 4
+  serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -361,7 +357,6 @@ Animator:
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -378,38 +373,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  TableData:
-  - Layer: 0
+  TransitionStateInfoList:
+  - IsCrossFadeExit: 0
+    Layer: 0
     OriginatingState: 2081823275
     DestinationState: -570305638
     TransitionDuration: 0.30227518
     TriggerNameHash: 1033918907
     TransitionIndex: 1
-  - Layer: 0
+  - IsCrossFadeExit: 0
+    Layer: 0
     OriginatingState: 2081823275
     DestinationState: -1509639022
     TransitionDuration: 0.25
     TriggerNameHash: 1033918907
     TransitionIndex: 2
-  - Layer: 1
+  - IsCrossFadeExit: 0
+    Layer: 1
     OriginatingState: 2081823275
     DestinationState: -623385122
-    TransitionDuration: 0.8019884
+    TransitionDuration: 2.2832582
     TriggerNameHash: -623385122
     TransitionIndex: 0
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: -1829531531
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 0
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: 705160537
     TransitionDuration: 0.25
     TriggerNameHash: 1080829965
     TransitionIndex: 1
-  - Layer: 3
+  - IsCrossFadeExit: 0
+    Layer: 3
     OriginatingState: 2081823275
     DestinationState: 801385362
     TransitionDuration: 0.25

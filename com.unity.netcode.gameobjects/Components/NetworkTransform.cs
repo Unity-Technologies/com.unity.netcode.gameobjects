@@ -2003,7 +2003,7 @@ namespace Unity.Netcode.Components
 
                     if (Interpolate)
                     {
-                        UpdatePositionInterpolator(currentPosition, sentTime);
+                        UpdatePositionInterpolator(currentPosition, sentTime, true);
                     }
 
                 }
@@ -2392,16 +2392,6 @@ namespace Unity.Netcode.Components
             m_CachedNetworkManager = NetworkManager;
 
             Initialize();
-            // This assures the initial spawning of the object synchronizes all connected clients
-            // with the current transform values. This should not be placed within Initialize since
-            // that can be invoked when ownership changes.
-            if (CanCommitToTransform)
-            {
-                var currentPosition = GetSpaceRelativePosition();
-                var currentRotation = GetSpaceRelativeRotation();
-                // Teleport to current position
-                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
-            }
         }
 
         /// <inheritdoc/>
@@ -2472,6 +2462,7 @@ namespace Unity.Netcode.Components
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
             var replicatedState = ReplicatedNetworkState;
             var currentPosition = GetSpaceRelativePosition();
+            var currentRotation = GetSpaceRelativeRotation();
 
             if (CanCommitToTransform)
             {
@@ -2483,6 +2474,9 @@ namespace Unity.Netcode.Components
                 // Authority only updates once per network tick
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+
+                // Teleport to current position
+                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
             }
             else
             {
@@ -2494,13 +2488,40 @@ namespace Unity.Netcode.Components
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-                m_CurrentPosition = GetSpaceRelativePosition();
+                m_CurrentPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
-                m_CurrentRotation = GetSpaceRelativeRotation();
+                m_CurrentRotation = currentRotation;
 
             }
 
             OnInitialize(ref replicatedState);
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// When a parent changes, non-authoritative instances should:
+        /// - Apply the resultant position, rotation, and scale from the parenting action.
+        /// - Clear interpolators (even if not enabled on this frame)
+        /// - Reset the interpolators to the position, rotation, and scale resultant values.
+        /// This prevents interpolation visual anomalies and issues during initial synchronization
+        /// </remarks>
+        public override void OnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
+        {
+            // Only if we are not authority
+            if (!CanCommitToTransform)
+            {
+                m_CurrentPosition = GetSpaceRelativePosition();
+                m_CurrentRotation = GetSpaceRelativeRotation();
+                m_CurrentScale = GetScale();
+                m_ScaleInterpolator.Clear();
+                m_PositionInterpolator.Clear();
+                m_RotationInterpolator.Clear();
+                var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
+                UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
+                m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
+                m_RotationInterpolator.ResetTo(m_CurrentRotation, tempTime);
+            }
+            base.OnNetworkObjectParentChanged(parentNetworkObject);
         }
 
         /// <summary>
@@ -2656,6 +2677,12 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            // If we have not received any additional state updates since the very
+            // initial synchronization, then exit early.
+            if (m_LocalAuthoritativeNetworkState.IsSynchronizing)
+            {
+                return;
+            }
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }

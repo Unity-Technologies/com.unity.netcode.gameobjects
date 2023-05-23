@@ -847,34 +847,6 @@ namespace Unity.Netcode
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
         /// <summary>
-        /// Read a NetworkSerializable NativeArray
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializable(out value, allocator);
-
-        /// <summary>
-        /// Read a NetworkSerializable NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializable(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a NetworkSerializable NativeList
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializableInPlace(ref value);
-
-        /// <summary>
         /// Read a NetworkSerializable value
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -911,30 +883,6 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializable(out value, allocator);
 
-        /// <summary>
-        /// Read a NetworkSerializable NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializable(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a NetworkSerializable NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializableInPlace(ref value);
-
 
         /// <summary>
         /// Read a struct
@@ -962,7 +910,19 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value, allocator);
+        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, allocator);
+            }
+            else
+            {
+                ReadUnmanaged(out value, allocator);
+            }
+        }
 
         /// <summary>
         /// Read a struct NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
@@ -971,7 +931,19 @@ namespace Unity.Netcode
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value, Allocator.Temp);
+        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, Allocator.Temp);
+            }
+            else
+            {
+                ReadUnmanaged(out value, Allocator.Temp);
+            }
+        }
 
         /// <summary>
         /// Read a struct NativeList
@@ -980,7 +952,19 @@ namespace Unity.Netcode
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedInPlace(ref value);
+        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Read(this, ref value);
+            }
+            else
+            {
+                ReadUnmanagedInPlace(ref value);
+            }
+        }
 
         /// <summary>
         /// Read a struct
@@ -1017,7 +1001,19 @@ namespace Unity.Netcode
         /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value, allocator);
+        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, allocator);
+            }
+            else
+            {
+                ReadUnmanagedSafe(out value, allocator);
+            }
+        }
 
         /// <summary>
         /// Read a struct NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
@@ -1029,7 +1025,19 @@ namespace Unity.Netcode
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value, Allocator.Temp);
+        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, Allocator.Temp);
+            }
+            else
+            {
+                ReadUnmanagedSafe(out value, Allocator.Temp);
+            }
+        }
 
         /// <summary>
         /// Read a struct NativeList
@@ -1041,7 +1049,19 @@ namespace Unity.Netcode
         /// <param name="value">The values to read</param>
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafeInPlace(ref value);
+        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Read(this, ref value);
+            }
+            else
+            {
+                ReadUnmanagedSafeInPlace(ref value);
+            }
+        }
 
         /// <summary>
         /// Read a primitive value (int, bool, etc)
@@ -1064,40 +1084,6 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeArray
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeList
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedInPlace(ref value);
 
         /// <summary>
         /// Read a primitive value (int, bool, etc)
@@ -1128,49 +1114,6 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeArray
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The value to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The value to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a primitive value (int, bool, etc) NativeList
-        /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
-        /// on values that are not primitives.
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The value to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read an enum value
         /// </summary>
         /// <typeparam name="T">The type being serialized</typeparam>
@@ -1187,34 +1130,6 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read an enum NativeArray
-        /// </summary>
-        /// <param name="value">The values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read an enum NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read an enum NativeList
-        /// </summary>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedInPlace(ref value);
 
 
         /// <summary>
@@ -1241,42 +1156,6 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
 
-        /// <summary>
-        /// Read an enum NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read an enum NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read an enum NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <typeparam name="T">The type being serialized</typeparam>
-        /// <param name="value">The values to read</param>
-        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafeInPlace(ref value);
 
         /// <summary>
         /// Read a Vector2
@@ -1293,28 +1172,6 @@ namespace Unity.Netcode
         public void ReadValue(out Vector2[] value) => ReadUnmanaged(out value);
 
         /// <summary>
-        /// Read a Vector2 NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Vector2> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector2 NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Vector2> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector2 NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Vector2> value) => ReadUnmanagedInPlace(ref value);
-
-        /// <summary>
         /// Read a Vector3
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1327,28 +1184,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3[] value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a Vector3 NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Vector3> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector3 NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Vector3> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector3 NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Vector3> value) => ReadUnmanagedInPlace(ref value);
 
         /// <summary>
         /// Read a Vector2Int
@@ -1365,28 +1200,6 @@ namespace Unity.Netcode
         public void ReadValue(out Vector2Int[] value) => ReadUnmanaged(out value);
 
         /// <summary>
-        /// Read a Vector2Int NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Vector2Int> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector2Int NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Vector2Int> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector2Int NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Vector2Int> value) => ReadUnmanagedInPlace(ref value);
-
-        /// <summary>
         /// Read a Vector3Int
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1399,28 +1212,6 @@ namespace Unity.Netcode
         /// <param name="value">the value to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Vector3Int[] value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a Vector3Int NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Vector3Int> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector3Int NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Vector3Int> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector3Int NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Vector3Int> value) => ReadUnmanagedInPlace(ref value);
 
         /// <summary>
         /// Read a Vector4
@@ -1437,28 +1228,6 @@ namespace Unity.Netcode
         public void ReadValue(out Vector4[] value) => ReadUnmanaged(out value);
 
         /// <summary>
-        /// Read a Vector4 NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Vector4> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector4 NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Vector4> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector4 NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Vector4> value) => ReadUnmanagedInPlace(ref value);
-
-        /// <summary>
         /// Read a Quaternion
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1471,28 +1240,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Quaternion[] value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a Quaternion NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Quaternion> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Quaternion NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Quaternion> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Quaternion NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Quaternion> value) => ReadUnmanagedInPlace(ref value);
 
         /// <summary>
         /// Read a Color
@@ -1509,28 +1256,6 @@ namespace Unity.Netcode
         public void ReadValue(out Color[] value) => ReadUnmanaged(out value);
 
         /// <summary>
-        /// Read a Color NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Color> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Color NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Color> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Color NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Color> value) => ReadUnmanagedInPlace(ref value);
-
-        /// <summary>
         /// Read a Color32
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1543,28 +1268,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Color32[] value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a Color32 NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Color32> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Color32 NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Color32> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Color32 NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Color32> value) => ReadUnmanagedInPlace(ref value);
 
         /// <summary>
         /// Read a Ray
@@ -1581,28 +1284,6 @@ namespace Unity.Netcode
         public void ReadValue(out Ray[] value) => ReadUnmanaged(out value);
 
         /// <summary>
-        /// Read a Ray NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Ray> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Ray NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Ray> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Ray NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Ray> value) => ReadUnmanagedInPlace(ref value);
-
-        /// <summary>
         /// Read a Ray2D
         /// </summary>
         /// <param name="value">the value to read</param>
@@ -1615,28 +1296,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue(out Ray2D[] value) => ReadUnmanaged(out value);
-
-        /// <summary>
-        /// Read a Ray2D NativeArray
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValue(out NativeArray<Ray2D> value, Allocator allocator) => ReadUnmanaged(out value, allocator);
-
-        /// <summary>
-        /// Read a Ray2D NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueTemp(out NativeArray<Ray2D> value) => ReadUnmanaged(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Ray2D NativeList
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueInPlace(ref NativeList<Ray2D> value) => ReadUnmanagedInPlace(ref value);
 
 
         /// <summary>
@@ -1660,37 +1319,6 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Vector2[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a Vector2 NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Vector2> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector2 NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Vector2> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector2 NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Vector2> value) => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read a Vector3
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1709,37 +1337,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3[] value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a Vector3 NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Vector3> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector3 NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Vector3> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector3 NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Vector3> value) => ReadUnmanagedSafeInPlace(ref value);
 
         /// <summary>
         /// Read a Vector2Int
@@ -1762,37 +1359,6 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Vector2Int[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a Vector2Int NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Vector2Int> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector2Int NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Vector2Int> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector2Int NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Vector2Int> value) => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read a Vector3Int
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1811,37 +1377,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Vector3Int[] value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a Vector3Int NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Vector3Int> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector3Int NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Vector3Int> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector3Int NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Vector3Int> value) => ReadUnmanagedSafeInPlace(ref value);
 
         /// <summary>
         /// Read a Vector4
@@ -1864,37 +1399,6 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Vector4[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a Vector4 NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Vector4> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Vector4 NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Vector4> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Vector4 NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Vector4> value) => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read a Quaternion
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1913,37 +1417,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Quaternion[] value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a Quaternion NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Quaternion> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Quaternion NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Quaternion> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Quaternion NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Quaternion> value) => ReadUnmanagedSafeInPlace(ref value);
 
         /// <summary>
         /// Read a Color
@@ -1966,37 +1439,6 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Color[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a Color NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Color> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Color NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Color> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Color NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Color> value) => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read a Color32
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -2015,37 +1457,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Color32[] value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a Color32 NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Color32> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Color32 NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Color32> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Color32 NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Color32> value) => ReadUnmanagedSafeInPlace(ref value);
 
         /// <summary>
         /// Read a Ray
@@ -2068,37 +1479,6 @@ namespace Unity.Netcode
         public void ReadValueSafe(out Ray[] value) => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a Ray NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Ray> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Ray NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Ray> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Ray NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Ray> value) => ReadUnmanagedSafeInPlace(ref value);
-
-        /// <summary>
         /// Read a Ray2D
         ///
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -2117,37 +1497,6 @@ namespace Unity.Netcode
         /// <param name="value">the values to read</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe(out Ray2D[] value) => ReadUnmanagedSafe(out value);
-
-        /// <summary>
-        /// Read a Ray2D NativeArray
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafe(out NativeArray<Ray2D> value, Allocator allocator) => ReadUnmanagedSafe(out value, allocator);
-
-        /// <summary>
-        /// Read a Ray2D NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeTemp(out NativeArray<Ray2D> value) => ReadUnmanagedSafe(out value, Allocator.Temp);
-
-        /// <summary>
-        /// Read a Ray2D NativeList
-        ///
-        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
-        /// for multiple reads at once by calling TryBeginRead.
-        /// </summary>
-        /// <param name="value">the values to read</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace(ref NativeList<Ray2D> value) => ReadUnmanagedSafeInPlace(ref value);
 
         // There are many FixedString types, but all of them share the interfaces INativeList<bool> and IUTF8Bytes.
         // INativeList<bool> provides the Length property
@@ -2230,7 +1579,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForFixedStrings unused = default)
+        public unsafe void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             ReadUnmanagedSafe(out int length);
@@ -2252,7 +1601,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public unsafe void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForFixedStrings unused = default)
+        public unsafe void ReadValueSafeTemp<T>(out NativeArray<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             ReadUnmanagedSafe(out int length);
@@ -2295,7 +1644,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForFixedStrings unused = default)
+        public void ReadValueSafeInPlace<T>(ref NativeList<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {
             ReadUnmanagedSafe(out int length);

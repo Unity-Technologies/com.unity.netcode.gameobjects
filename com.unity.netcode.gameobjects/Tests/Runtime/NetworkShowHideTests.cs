@@ -287,6 +287,36 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
+        public IEnumerator ConcurrentShowAndHideOnDifferentObjects()
+        {
+            m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;
+            ShowHideObject.ClientTargetedNetworkObjects.Clear();
+            ShowHideObject.ClientIdToTarget = m_ClientId0;
+
+
+            // create 3 objects
+            var spawnedObject1 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject2 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            var spawnedObject3 = SpawnObject(m_PrefabToSpawn, m_ServerNetworkManager);
+            m_NetSpawnedObject1 = spawnedObject1.GetComponent<NetworkObject>();
+            m_NetSpawnedObject2 = spawnedObject2.GetComponent<NetworkObject>();
+            m_NetSpawnedObject3 = spawnedObject3.GetComponent<NetworkObject>();
+
+            // get the NetworkObject on a client instance
+            yield return WaitForConditionOrTimeOut(RefreshNetworkObjects);
+            AssertOnTimeout($"Could not refresh all NetworkObjects!");
+
+            m_NetSpawnedObject1.NetworkHide(m_ClientId0);
+
+            yield return WaitForTicks(m_ServerNetworkManager, 5);
+
+            m_NetSpawnedObject1.NetworkShow(m_ClientId0);
+            m_NetSpawnedObject2.NetworkHide(m_ClientId0);
+
+            yield return WaitForTicks(m_ServerNetworkManager, 5);
+        }
+
+        [UnityTest]
         public IEnumerator NetworkShowHideQuickTest()
         {
             m_ClientId0 = m_ClientNetworkManagers[0].LocalClientId;

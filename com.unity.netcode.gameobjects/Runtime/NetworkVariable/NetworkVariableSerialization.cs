@@ -20,6 +20,7 @@ namespace Unity.Netcode
         // of it to pass it as a ref parameter.
         public void Write(FastBufferWriter writer, ref T value);
         public void Read(FastBufferReader reader, ref T value);
+        internal void ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator);
         public void Duplicate(in T value, ref T duplicatedValue);
     }
 
@@ -35,6 +36,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref short value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        void INetworkVariableSerializer<short>.ReadWithAllocator(FastBufferReader reader, out short value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in short value, ref short duplicatedValue)
@@ -57,6 +63,11 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        void INetworkVariableSerializer<ushort>.ReadWithAllocator(FastBufferReader reader, out ushort value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in ushort value, ref ushort duplicatedValue)
         {
             duplicatedValue = value;
@@ -75,6 +86,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref int value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        void INetworkVariableSerializer<int>.ReadWithAllocator(FastBufferReader reader, out int value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in int value, ref int duplicatedValue)
@@ -97,6 +113,11 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        void INetworkVariableSerializer<uint>.ReadWithAllocator(FastBufferReader reader, out uint value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in uint value, ref uint duplicatedValue)
         {
             duplicatedValue = value;
@@ -117,6 +138,11 @@ namespace Unity.Netcode
             ByteUnpacker.ReadValueBitPacked(reader, out value);
         }
 
+        void INetworkVariableSerializer<long>.ReadWithAllocator(FastBufferReader reader, out long value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in long value, ref long duplicatedValue)
         {
             duplicatedValue = value;
@@ -135,6 +161,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref ulong value)
         {
             ByteUnpacker.ReadValueBitPacked(reader, out value);
+        }
+
+        void INetworkVariableSerializer<ulong>.ReadWithAllocator(FastBufferReader reader, out ulong value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in ulong value, ref ulong duplicatedValue)
@@ -162,6 +193,11 @@ namespace Unity.Netcode
             reader.ReadUnmanagedSafe(out value);
         }
 
+        void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in T value, ref T duplicatedValue)
         {
             duplicatedValue = value;
@@ -178,6 +214,11 @@ namespace Unity.Netcode
         {
             value.Dispose();
             reader.ReadUnmanagedSafe(out value, Allocator.Persistent);
+        }
+
+        void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
+        {
+            reader.ReadUnmanagedSafe(out value, allocator);
         }
 
         public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
@@ -205,6 +246,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadUnmanagedSafeInPlace(ref value);
+        }
+
+        void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
@@ -237,6 +283,11 @@ namespace Unity.Netcode
             reader.ReadValueSafeInPlace(ref value);
         }
 
+        void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in T value, ref T duplicatedValue)
         {
             duplicatedValue = value;
@@ -257,6 +308,11 @@ namespace Unity.Netcode
         {
             value.Dispose();
             reader.ReadValueSafe(out value, Allocator.Persistent);
+        }
+
+        void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
+        {
+            reader.ReadValueSafe(out value, allocator);
         }
 
         public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
@@ -288,6 +344,11 @@ namespace Unity.Netcode
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
             reader.ReadValueSafeInPlace(ref value);
+        }
+
+        void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
@@ -322,6 +383,11 @@ namespace Unity.Netcode
             value.NetworkSerialize(bufferSerializer);
         }
 
+        void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in T value, ref T duplicatedValue)
         {
             duplicatedValue = value;
@@ -336,12 +402,17 @@ namespace Unity.Netcode
     {
         public void Write(FastBufferWriter writer, ref NativeArray<T> value)
         {
-            writer.WriteValueSafe(value);
+            writer.WriteNetworkSerializable(value);
         }
         public void Read(FastBufferReader reader, ref NativeArray<T> value)
         {
             value.Dispose();
-            reader.ReadValueSafe(out value, Allocator.Persistent);
+            reader.ReadNetworkSerializable(out value, Allocator.Persistent);
+        }
+
+        void INetworkVariableSerializer<NativeArray<T>>.ReadWithAllocator(FastBufferReader reader, out NativeArray<T> value, Allocator allocator)
+        {
+            reader.ReadNetworkSerializable(out value, allocator);
         }
 
         public void Duplicate(in NativeArray<T> value, ref NativeArray<T> duplicatedValue)
@@ -368,11 +439,16 @@ namespace Unity.Netcode
     {
         public void Write(FastBufferWriter writer, ref NativeList<T> value)
         {
-            writer.WriteValueSafe(value);
+            writer.WriteNetworkSerializable(value);
         }
         public void Read(FastBufferReader reader, ref NativeList<T> value)
         {
-            reader.ReadValueSafeInPlace(ref value);
+            reader.ReadNetworkSerializableInPlace(ref value);
+        }
+
+        void INetworkVariableSerializer<NativeList<T>>.ReadWithAllocator(FastBufferReader reader, out NativeList<T> value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in NativeList<T> value, ref NativeList<T> duplicatedValue)
@@ -423,6 +499,11 @@ namespace Unity.Netcode
                 }
                 value.NetworkSerialize(bufferSerializer);
             }
+        }
+
+        void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
+        {
+            throw new NotImplementedException();
         }
 
         public void Duplicate(in T value, ref T duplicatedValue)
@@ -509,6 +590,12 @@ namespace Unity.Netcode
             }
             UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
         }
+
+        void INetworkVariableSerializer<T>.ReadWithAllocator(FastBufferReader reader, out T value, Allocator allocator)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Duplicate(in T value, ref T duplicatedValue)
         {
             if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
