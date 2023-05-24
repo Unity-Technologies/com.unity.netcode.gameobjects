@@ -467,7 +467,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             OnNewClientStarted(networkManager);
 
-            if (WaitForNewClientToConnect(networkManager))
+            if (ShouldWaitForNewClientToConnect(networkManager))
             {
                 // Wait for the new client to connect
                 yield return WaitForClientsConnectedOrTimeOut();
