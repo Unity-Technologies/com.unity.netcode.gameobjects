@@ -56,7 +56,7 @@ namespace Unity.Netcode.Editor.Configuration
             }
             TempNetworkPrefabsPath = NetworkPrefabsPath;
         }
-        
+
         [SerializeField]
         [FormerlySerializedAs("GenerateDefaultNetworkPrefabs")]
         private byte m_GenerateDefaultNetworkPrefabs;
