@@ -1,4 +1,6 @@
+using NUnit.Framework;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine.TestTools;
 
@@ -7,16 +9,12 @@ namespace Unity.Netcode.RuntimeTests
 {
     public class ClientApprovalDenied : NetcodeIntegrationTest
     {
-        protected override int NumberOfClients => 0;
+        protected override int NumberOfClients => 2;
         private bool m_ApproveConnection = true;
         private ulong m_PendingClientId = 0;
         private ulong m_DisconnectedClientId = 0;
 
-        protected override void OnServerAndClientsCreated()
-        {
-            m_ServerNetworkManager.NetworkConfig.ConnectionApproval = true;
-            m_ServerNetworkManager.ConnectionApprovalCallback = ConnectionApproval;
-        }
+        private List<ulong> m_DisconnectedClientIdentifiers = new List<ulong>();
 
         private void ConnectionApproval(NetworkManager.ConnectionApprovalRequest connectionApprovalRequest, NetworkManager.ConnectionApprovalResponse connectionApprovalResponse)
         {
@@ -45,19 +43,28 @@ namespace Unity.Netcode.RuntimeTests
         /// OnClientDisconnected method will return the valid pending client identifier.
         /// </summary>
         [UnityTest]
-        public IEnumerator ClientApprovalDeniedNotificationTest()
+        public IEnumerator ClientDeniedAndDisconnectionNotificationTest()
         {
+            m_ServerNetworkManager.NetworkConfig.ConnectionApproval = true;
+            m_ServerNetworkManager.ConnectionApprovalCallback = ConnectionApproval;
             m_ApproveConnection = false;
             m_ServerNetworkManager.OnClientDisconnectCallback += OnClientDisconnectCallback;
             yield return CreateAndStartNewClient();
-            m_ServerNetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
-
             yield return WaitForConditionOrTimeOut(() => m_PendingClientId == m_DisconnectedClientId);
             AssertOnTimeout($"Timed out waiting for disconnect notification for pending Client-{m_PendingClientId}!");
+
+            // Validate that we don't get multiple disconnect notifications for clients being disconnected
+            // Have a client disconnect
+            m_ClientNetworkManagers[0].Shutdown();
+            // Have the server disconnect a client
+            m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId);
+            m_ServerNetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
         }
 
         private void OnClientDisconnectCallback(ulong clientId)
         {
+            Assert.False(m_DisconnectedClientIdentifiers.Contains(clientId), $"Received two disconnect notifications from Client-{clientId}!");
+            m_DisconnectedClientIdentifiers.Add(clientId);
             m_DisconnectedClientId = clientId;
         }
     }
