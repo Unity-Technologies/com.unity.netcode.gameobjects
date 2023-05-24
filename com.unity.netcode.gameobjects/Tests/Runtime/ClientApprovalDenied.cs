@@ -35,7 +35,7 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNewClientCreated(networkManager);
         }
 
-        protected override bool WaitForNewClientToConnect(NetworkManager networkManager)
+        protected override bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
         {
             return false;
         }

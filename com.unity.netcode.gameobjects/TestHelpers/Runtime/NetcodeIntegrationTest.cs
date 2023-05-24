@@ -438,7 +438,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
         /// <remarks>
         /// Use this for testing connection and disconnection scenarios
         /// </remarks>
-        protected virtual bool WaitForNewClientToConnect(NetworkManager networkManager)
+        protected virtual bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
         {
             return true;
         }
