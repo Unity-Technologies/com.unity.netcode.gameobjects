@@ -90,7 +90,7 @@ namespace Unity.Netcode
                 {
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
-                        var tempWriter = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkMessageManager.FragmentedMessageMaxSize);
+                        var tempWriter = new FastBufferWriter(NetworkBehaviour.NetworkManager.MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkBehaviour.NetworkManager.MessageManager.FragmentedMessageMaxSize);
                         NetworkBehaviour.NetworkVariableFields[i].WriteDelta(tempWriter);
                         BytePacker.WriteValueBitPacked(writer, tempWriter.Length);
 

@@ -580,6 +580,28 @@ namespace Unity.Netcode
         /// <param name="prefab"></param>
         public void RemoveNetworkPrefab(GameObject prefab) => PrefabHandler.RemoveNetworkPrefab(prefab);
 
+        /// <summary>
+        /// Sets the maximum size of a single non-fragmented message (or message batch) passed through the transport.
+        /// This should represent the transport's MTU size, minus any transport-level overhead.
+        /// </summary>
+        /// <param name="size"></param>
+        public int MaxTransmissionUnitSize
+        {
+            set => MessageManager.NonFragmentedMessageMaxSize = value;
+            get => MessageManager.NonFragmentedMessageMaxSize;
+        }
+
+        /// <summary>
+        /// Sets the maximum size of a message (or message batch) passed through the transport with the ReliableFragmented delivery.
+        /// Warning: setting this value too low may result in the SDK becoming non-functional with projects that have a large number of NetworkBehaviours or NetworkVariables, as the SDK relies on the transport's ability to fragment some messages when they grow beyond the MTU size.
+        /// </summary>
+        /// <param name="size"></param>
+        public int MaximumFragmentedMessageSize
+        {
+            set => MessageManager.FragmentedMessageMaxSize = value;
+            get => MessageManager.FragmentedMessageMaxSize;
+        }
+
         internal void Initialize(bool server)
         {
             // Don't allow the user to start a network session if the NetworkManager is
