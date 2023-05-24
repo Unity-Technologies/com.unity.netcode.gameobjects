@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using Unity.Collections;
 using UnityEngine;
 using Random = System.Random;
 
@@ -11,50 +12,50 @@ namespace Unity.Netcode.EditorTests
         {
             A,
             B,
-            C
-        };
+            C = byte.MaxValue
+        }
         protected enum SByteEnum : sbyte
         {
             A,
             B,
-            C
-        };
+            C = sbyte.MaxValue
+        }
         protected enum ShortEnum : short
         {
             A,
             B,
-            C
-        };
+            C = short.MaxValue
+        }
         protected enum UShortEnum : ushort
         {
             A,
             B,
-            C
-        };
+            C = ushort.MaxValue
+        }
         protected enum IntEnum : int
         {
             A,
             B,
-            C
-        };
+            C = int.MaxValue
+        }
         protected enum UIntEnum : uint
         {
             A,
             B,
-            C
-        };
+            C = uint.MaxValue
+        }
         protected enum LongEnum : long
         {
             A,
             B,
-            C
-        };
+            C = long.MaxValue
+        }
         protected enum ULongEnum : ulong
         {
             A,
             B,
-            C
-        };
+            C = ulong.MaxValue
+        }
 
         protected struct TestStruct : INetworkSerializeByMemcpy
         {
@@ -85,23 +86,30 @@ namespace Unity.Netcode.EditorTests
 
         protected abstract void RunTypeArrayTestSafe<T>(T[] valueToTest) where T : unmanaged;
 
+        protected abstract void RunTypeNativeArrayTest<T>(NativeArray<T> valueToTest) where T : unmanaged;
+
+        protected abstract void RunTypeNativeArrayTestSafe<T>(NativeArray<T> valueToTest) where T : unmanaged;
+
+        protected abstract void RunTypeNativeListTest<T>(NativeList<T> valueToTest) where T : unmanaged;
+
+        protected abstract void RunTypeNativeListTestSafe<T>(NativeList<T> valueToTest) where T : unmanaged;
+
+        private Random m_Random = new Random();
         protected TestStruct GetTestStruct()
         {
-            var random = new Random();
-
             var testStruct = new TestStruct
             {
-                A = (byte)random.Next(),
-                B = (short)random.Next(),
-                C = (ushort)random.Next(),
-                D = random.Next(),
-                E = (uint)random.Next(),
-                F = ((long)random.Next() << 32) + random.Next(),
-                G = ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                A = (byte)m_Random.Next(),
+                B = (short)m_Random.Next(),
+                C = (ushort)m_Random.Next(),
+                D = m_Random.Next(),
+                E = (uint)m_Random.Next(),
+                F = ((long)m_Random.Next() << 32) + m_Random.Next(),
+                G = ((ulong)m_Random.Next() << 32) + (ulong)m_Random.Next(),
                 H = true,
                 I = '\u263a',
-                J = (float)random.NextDouble(),
-                K = random.NextDouble(),
+                J = (float)m_Random.NextDouble(),
+                K = m_Random.NextDouble(),
             };
 
             return testStruct;
@@ -594,6 +602,694 @@ namespace Unity.Netcode.EditorTests
                     GetTestStruct(),
                     GetTestStruct(),
                 }, writeType);
+            }
+            else
+            {
+                Assert.Fail("No type handler was provided for this type in the test!");
+            }
+        }
+
+        public void BaseNativeArrayTypeTest(Type testType, WriteType writeType)
+        {
+            var random = new Random();
+            void RunTypeTestLocal<T>(NativeArray<T> val, WriteType wt) where T : unmanaged
+            {
+                switch (wt)
+                {
+                    case WriteType.WriteDirect:
+                        RunTypeNativeArrayTest(val);
+                        break;
+                    case WriteType.WriteSafe:
+                        RunTypeNativeArrayTestSafe(val);
+                        break;
+                }
+            }
+
+            if (testType == typeof(byte))
+            {
+                RunTypeTestLocal(new NativeArray<byte>(new[]{
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                RunTypeTestLocal(new NativeArray<sbyte>(new[]{
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(short))
+            {
+                RunTypeTestLocal(new NativeArray<short>(new[]{
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ushort))
+            {
+                RunTypeTestLocal(new NativeArray<ushort>(new[]{
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(int))
+            {
+                RunTypeTestLocal(new NativeArray<int>(new[]{
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(uint))
+            {
+                RunTypeTestLocal(new NativeArray<uint>(new[]{
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(long))
+            {
+                RunTypeTestLocal(new NativeArray<long>(new[]{
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ulong))
+            {
+                RunTypeTestLocal(new NativeArray<ulong>(new[]{
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(bool))
+            {
+                RunTypeTestLocal(new NativeArray<bool>(new[]{
+                    true,
+                    false,
+                    true,
+                    true,
+                    false,
+                    false,
+                    true,
+                    false,
+                    true
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(char))
+            {
+                RunTypeTestLocal(new NativeArray<char>(new[]{
+                    'a',
+                    '\u263a'
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(float))
+            {
+                RunTypeTestLocal(new NativeArray<float>(new[]{
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(double))
+            {
+                RunTypeTestLocal(new NativeArray<double>(new[]{
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ByteEnum>(new[]{
+                    ByteEnum.C,
+                    ByteEnum.A,
+                    ByteEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                RunTypeTestLocal(new NativeArray<SByteEnum>(new[]{
+                    SByteEnum.C,
+                    SByteEnum.A,
+                    SByteEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ShortEnum>(new[]{
+                    ShortEnum.C,
+                    ShortEnum.A,
+                    ShortEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                RunTypeTestLocal(new NativeArray<UShortEnum>(new[]{
+                    UShortEnum.C,
+                    UShortEnum.A,
+                    UShortEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                RunTypeTestLocal(new NativeArray<IntEnum>(new[]{
+                    IntEnum.C,
+                    IntEnum.A,
+                    IntEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                RunTypeTestLocal(new NativeArray<UIntEnum>(new[]{
+                    UIntEnum.C,
+                    UIntEnum.A,
+                    UIntEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                RunTypeTestLocal(new NativeArray<LongEnum>(new[]{
+                    LongEnum.C,
+                    LongEnum.A,
+                    LongEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ULongEnum>(new[]{
+                    ULongEnum.C,
+                    ULongEnum.A,
+                    ULongEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                RunTypeTestLocal(new NativeArray<Vector2>(new[]{
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                RunTypeTestLocal(new NativeArray<Vector3>(new[]{
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                RunTypeTestLocal(new NativeArray<Vector2Int>(new[]{
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                RunTypeTestLocal(new NativeArray<Vector3Int>(new[]{
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                RunTypeTestLocal(new NativeArray<Vector4>(new[]{
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                RunTypeTestLocal(new NativeArray<Quaternion>(new[]{
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Color))
+            {
+                RunTypeTestLocal(new NativeArray<Color>(new[]{
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Color32))
+            {
+                RunTypeTestLocal(new NativeArray<Color32>(new[]{
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Ray))
+            {
+                RunTypeTestLocal(new NativeArray<Ray>(new[]{
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                RunTypeTestLocal(new NativeArray<Ray2D>(new[]{
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(TestStruct))
+            {
+                RunTypeTestLocal(new NativeArray<TestStruct>(new[] {
+                    GetTestStruct(),
+                    GetTestStruct(),
+                    GetTestStruct(),
+                }, Allocator.Temp), writeType);
+            }
+            else
+            {
+                Assert.Fail("No type handler was provided for this type in the test!");
+            }
+        }
+        public void BaseNativeListTypeTest(Type testType, WriteType writeType)
+        {
+            var random = new Random();
+            void RunTypeTestLocal<T>(NativeArray<T> val, WriteType wt) where T : unmanaged
+            {
+                var lst = new NativeList<T>(val.Length, Allocator.Temp);
+                foreach (var item in val)
+                {
+                    lst.Add(item);
+                }
+                switch (wt)
+                {
+                    case WriteType.WriteDirect:
+                        RunTypeNativeListTest(lst);
+                        break;
+                    case WriteType.WriteSafe:
+                        RunTypeNativeListTestSafe(lst);
+                        break;
+                }
+            }
+
+            if (testType == typeof(byte))
+            {
+                RunTypeTestLocal(new NativeArray<byte>(new[]{
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next(),
+                    (byte) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                RunTypeTestLocal(new NativeArray<sbyte>(new[]{
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next(),
+                    (sbyte) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(short))
+            {
+                RunTypeTestLocal(new NativeArray<short>(new[]{
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next(),
+                    (short) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ushort))
+            {
+                RunTypeTestLocal(new NativeArray<ushort>(new[]{
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next(),
+                    (ushort) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(int))
+            {
+                RunTypeTestLocal(new NativeArray<int>(new[]{
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next(),
+                    random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(uint))
+            {
+                RunTypeTestLocal(new NativeArray<uint>(new[]{
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next(),
+                    (uint) random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(long))
+            {
+                RunTypeTestLocal(new NativeArray<long>(new[]{
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next(),
+                    ((long)random.Next() << 32) + random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ulong))
+            {
+                RunTypeTestLocal(new NativeArray<ulong>(new[]{
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next(),
+                    ((ulong)random.Next() << 32) + (ulong)random.Next()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(bool))
+            {
+                RunTypeTestLocal(new NativeArray<bool>(new[]{
+                    true,
+                    false,
+                    true,
+                    true,
+                    false,
+                    false,
+                    true,
+                    false,
+                    true
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(char))
+            {
+                RunTypeTestLocal(new NativeArray<char>(new[]{
+                    'a',
+                    '\u263a'
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(float))
+            {
+                RunTypeTestLocal(new NativeArray<float>(new[]{
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble(),
+                    (float)random.NextDouble()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(double))
+            {
+                RunTypeTestLocal(new NativeArray<double>(new[]{
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble(),
+                    random.NextDouble()
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ByteEnum>(new[]{
+                    ByteEnum.C,
+                    ByteEnum.A,
+                    ByteEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                RunTypeTestLocal(new NativeArray<SByteEnum>(new[]{
+                    SByteEnum.C,
+                    SByteEnum.A,
+                    SByteEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ShortEnum>(new[]{
+                    ShortEnum.C,
+                    ShortEnum.A,
+                    ShortEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                RunTypeTestLocal(new NativeArray<UShortEnum>(new[]{
+                    UShortEnum.C,
+                    UShortEnum.A,
+                    UShortEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                RunTypeTestLocal(new NativeArray<IntEnum>(new[]{
+                    IntEnum.C,
+                    IntEnum.A,
+                    IntEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                RunTypeTestLocal(new NativeArray<UIntEnum>(new[]{
+                    UIntEnum.C,
+                    UIntEnum.A,
+                    UIntEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                RunTypeTestLocal(new NativeArray<LongEnum>(new[]{
+                    LongEnum.C,
+                    LongEnum.A,
+                    LongEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                RunTypeTestLocal(new NativeArray<ULongEnum>(new[]{
+                    ULongEnum.C,
+                    ULongEnum.A,
+                    ULongEnum.B
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                RunTypeTestLocal(new NativeArray<Vector2>(new[]{
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector3))
+            {
+                RunTypeTestLocal(new NativeArray<Vector3>(new[]{
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Vector3((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                RunTypeTestLocal(new NativeArray<Vector2Int>(new[]{
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector2Int((int) random.NextDouble(), (int) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                RunTypeTestLocal(new NativeArray<Vector3Int>(new[]{
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                    new Vector3Int((int) random.NextDouble(), (int) random.NextDouble(), (int) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Vector4))
+            {
+                RunTypeTestLocal(new NativeArray<Vector4>(new[]{
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Vector4((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                RunTypeTestLocal(new NativeArray<Quaternion>(new[]{
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                    new Quaternion((float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble(), (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Color))
+            {
+                RunTypeTestLocal(new NativeArray<Color>(new[]{
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                    new Color((float) random.NextDouble(), (float) random.NextDouble(), (float) random.NextDouble(),
+                        (float) random.NextDouble()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Color32))
+            {
+                RunTypeTestLocal(new NativeArray<Color32>(new[]{
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                    new Color32((byte) random.Next(), (byte) random.Next(), (byte) random.Next(), (byte) random.Next()),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Ray))
+            {
+                RunTypeTestLocal(new NativeArray<Ray>(new[]{
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                    new Ray(
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble()),
+                        new Vector3((float) random.NextDouble(), (float) random.NextDouble(),
+                            (float) random.NextDouble())),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                RunTypeTestLocal(new NativeArray<Ray2D>(new[]{
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                    new Ray2D(
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble()),
+                        new Vector2((float) random.NextDouble(), (float) random.NextDouble())),
+                }, Allocator.Temp), writeType);
+            }
+            else if (testType == typeof(TestStruct))
+            {
+                RunTypeTestLocal(new NativeArray<TestStruct>(new[] {
+                    GetTestStruct(),
+                    GetTestStruct(),
+                    GetTestStruct(),
+                }, Allocator.Temp), writeType);
             }
             else
             {

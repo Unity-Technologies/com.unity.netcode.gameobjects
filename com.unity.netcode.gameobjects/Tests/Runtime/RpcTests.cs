@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.Collections;
 using Unity.Netcode.TestHelpers.Runtime;
-using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
+using Vector3 = UnityEngine.Vector3;
 
 namespace Unity.Netcode.RuntimeTests
 {
@@ -15,7 +15,8 @@ namespace Unity.Netcode.RuntimeTests
         public class RpcTestNB : NetworkBehaviour
         {
             public event Action<ulong, ServerRpcParams> OnServer_Rpc;
-            public event Action<Vector3, Vector3[], FixedString32Bytes> OnTypedServer_Rpc;
+            public event Action<NativeList<ulong>, ServerRpcParams> OnNativeListServer_Rpc;
+            public event Action<Vector3, Vector3[], NativeList<Vector3>, FixedString32Bytes> OnTypedServer_Rpc;
             public event Action OnClient_Rpc;
 
             [ServerRpc]
@@ -24,6 +25,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnServer_Rpc(clientId, param);
             }
 
+            [ServerRpc]
+            public void MyNativeListServerRpc(NativeList<ulong> clientId, ServerRpcParams param = default)
+            {
+                OnNativeListServer_Rpc(clientId, param);
+            }
+
+
             [ClientRpc]
             public void MyClientRpc()
             {
@@ -31,9 +39,9 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             [ServerRpc]
-            public void MyTypedServerRpc(Vector3 param1, Vector3[] param2, FixedString32Bytes param3)
+            public void MyTypedServerRpc(Vector3 param1, Vector3[] param2, NativeList<Vector3> param3, FixedString32Bytes param4)
             {
-                OnTypedServer_Rpc(param1, param2, param3);
+                OnTypedServer_Rpc(param1, param2, param3, param4);
             }
         }
 
@@ -61,6 +69,11 @@ namespace Unity.Netcode.RuntimeTests
 
             var vector3 = new Vector3(1, 2, 3);
             Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
+            using var vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent)
+            {
+                new Vector3(10, 11, 12),
+                new Vector3(13, 14, 15)
+            };
 
             localClienRpcTestNB.OnClient_Rpc += () =>
             {
@@ -90,14 +103,17 @@ namespace Unity.Netcode.RuntimeTests
 
             var str = new FixedString32Bytes("abcdefg");
 
-            serverClientRpcTestNB.OnTypedServer_Rpc += (param1, param2, param3) =>
+            serverClientRpcTestNB.OnTypedServer_Rpc += (param1, param2, param3, param4) =>
             {
                 Debug.Log("TypedServerRpc received on server object");
                 Assert.AreEqual(param1, vector3);
                 Assert.AreEqual(param2.Length, vector3s.Length);
                 Assert.AreEqual(param2[0], vector3s[0]);
                 Assert.AreEqual(param2[1], vector3s[1]);
-                Assert.AreEqual(param3, str);
+                Assert.AreEqual(param3.Length, vector3s.Length);
+                Assert.AreEqual(param3[0], vector3sNativeList[0]);
+                Assert.AreEqual(param3[1], vector3sNativeList[1]);
+                Assert.AreEqual(param4, str);
                 hasReceivedTypedServerRpc = true;
             };
 
@@ -105,7 +121,7 @@ namespace Unity.Netcode.RuntimeTests
             localClienRpcTestNB.MyServerRpc(m_ClientNetworkManagers[0].LocalClientId);
 
             // Send TypedServerRpc
-            localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s, str);
+            localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s, vector3sNativeList, str);
 
             // Send ClientRpc
             serverClientRpcTestNB.MyClientRpc();

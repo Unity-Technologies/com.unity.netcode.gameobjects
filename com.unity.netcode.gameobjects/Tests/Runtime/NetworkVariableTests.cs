@@ -34,12 +34,200 @@ namespace Unity.Netcode.RuntimeTests
         public T Value;
     }
 
+    public enum ByteEnum : byte
+    {
+        A,
+        B,
+        C = byte.MaxValue
+    }
+    public enum SByteEnum : sbyte
+    {
+        A,
+        B,
+        C = sbyte.MaxValue
+    }
+    public enum ShortEnum : short
+    {
+        A,
+        B,
+        C = short.MaxValue
+    }
+    public enum UShortEnum : ushort
+    {
+        A,
+        B,
+        C = ushort.MaxValue
+    }
+    public enum IntEnum : int
+    {
+        A,
+        B,
+        C = int.MaxValue
+    }
+    public enum UIntEnum : uint
+    {
+        A,
+        B,
+        C = uint.MaxValue
+    }
+    public enum LongEnum : long
+    {
+        A,
+        B,
+        C = long.MaxValue
+    }
+    public enum ULongEnum : ulong
+    {
+        A,
+        B,
+        C = ulong.MaxValue
+    }
+
+    public struct NetworkVariableTestStruct : INetworkSerializeByMemcpy
+    {
+        public byte A;
+        public short B;
+        public ushort C;
+        public int D;
+        public uint E;
+        public long F;
+        public ulong G;
+        public bool H;
+        public char I;
+        public float J;
+        public double K;
+
+        private static System.Random s_Random = new System.Random();
+
+        public static NetworkVariableTestStruct GetTestStruct()
+        {
+            var testStruct = new NetworkVariableTestStruct
+            {
+                A = (byte)s_Random.Next(),
+                B = (short)s_Random.Next(),
+                C = (ushort)s_Random.Next(),
+                D = s_Random.Next(),
+                E = (uint)s_Random.Next(),
+                F = ((long)s_Random.Next() << 32) + s_Random.Next(),
+                G = ((ulong)s_Random.Next() << 32) + (ulong)s_Random.Next(),
+                H = true,
+                I = '\u263a',
+                J = (float)s_Random.NextDouble(),
+                K = s_Random.NextDouble(),
+            };
+
+            return testStruct;
+        }
+    }
+
     // The ILPP code for NetworkVariables to determine how to serialize them relies on them existing as fields of a NetworkBehaviour to find them.
     // Some of the tests below create NetworkVariables on the stack, so this class is here just to make sure the relevant types are all accounted for.
     public class NetVarILPPClassForTests : NetworkBehaviour
     {
+        public NetworkVariable<byte> ByteVar;
+        public NetworkVariable<NativeArray<byte>> ByteArrayVar;
+        public NetworkVariable<NativeList<byte>> ByteListVar;
+        public NetworkVariable<sbyte> SbyteVar;
+        public NetworkVariable<NativeArray<sbyte>> SbyteArrayVar;
+        public NetworkVariable<NativeList<sbyte>> SbyteListVar;
+        public NetworkVariable<short> ShortVar;
+        public NetworkVariable<NativeArray<short>> ShortArrayVar;
+        public NetworkVariable<NativeList<short>> ShortListVar;
+        public NetworkVariable<ushort> UshortVar;
+        public NetworkVariable<NativeArray<ushort>> UshortArrayVar;
+        public NetworkVariable<NativeList<ushort>> UshortListVar;
+        public NetworkVariable<int> IntVar;
+        public NetworkVariable<NativeArray<int>> IntArrayVar;
+        public NetworkVariable<NativeList<int>> IntListVar;
+        public NetworkVariable<uint> UintVar;
+        public NetworkVariable<NativeArray<uint>> UintArrayVar;
+        public NetworkVariable<NativeList<uint>> UintListVar;
+        public NetworkVariable<long> LongVar;
+        public NetworkVariable<NativeArray<long>> LongArrayVar;
+        public NetworkVariable<NativeList<long>> LongListVar;
+        public NetworkVariable<ulong> UlongVar;
+        public NetworkVariable<NativeArray<ulong>> UlongArrayVar;
+        public NetworkVariable<NativeList<ulong>> UlongListVar;
+        public NetworkVariable<bool> BoolVar;
+        public NetworkVariable<NativeArray<bool>> BoolArrayVar;
+        public NetworkVariable<NativeList<bool>> BoolListVar;
+        public NetworkVariable<char> CharVar;
+        public NetworkVariable<NativeArray<char>> CharArrayVar;
+        public NetworkVariable<NativeList<char>> CharListVar;
+        public NetworkVariable<float> FloatVar;
+        public NetworkVariable<NativeArray<float>> FloatArrayVar;
+        public NetworkVariable<NativeList<float>> FloatListVar;
+        public NetworkVariable<double> DoubleVar;
+        public NetworkVariable<NativeArray<double>> DoubleArrayVar;
+        public NetworkVariable<NativeList<double>> DoubleListVar;
+        public NetworkVariable<ByteEnum> ByteEnumVar;
+        public NetworkVariable<NativeArray<ByteEnum>> ByteEnumArrayVar;
+        public NetworkVariable<NativeList<ByteEnum>> ByteEnumListVar;
+        public NetworkVariable<SByteEnum> SByteEnumVar;
+        public NetworkVariable<NativeArray<SByteEnum>> SByteEnumArrayVar;
+        public NetworkVariable<NativeList<SByteEnum>> SByteEnumListVar;
+        public NetworkVariable<ShortEnum> ShortEnumVar;
+        public NetworkVariable<NativeArray<ShortEnum>> ShortEnumArrayVar;
+        public NetworkVariable<NativeList<ShortEnum>> ShortEnumListVar;
+        public NetworkVariable<UShortEnum> UShortEnumVar;
+        public NetworkVariable<NativeArray<UShortEnum>> UShortEnumArrayVar;
+        public NetworkVariable<NativeList<UShortEnum>> UShortEnumListVar;
+        public NetworkVariable<IntEnum> IntEnumVar;
+        public NetworkVariable<NativeArray<IntEnum>> IntEnumArrayVar;
+        public NetworkVariable<NativeList<IntEnum>> IntEnumListVar;
+        public NetworkVariable<UIntEnum> UIntEnumVar;
+        public NetworkVariable<NativeArray<UIntEnum>> UIntEnumArrayVar;
+        public NetworkVariable<NativeList<UIntEnum>> UIntEnumListVar;
+        public NetworkVariable<LongEnum> LongEnumVar;
+        public NetworkVariable<NativeArray<LongEnum>> LongEnumArrayVar;
+        public NetworkVariable<NativeList<LongEnum>> LongEnumListVar;
+        public NetworkVariable<ULongEnum> ULongEnumVar;
+        public NetworkVariable<NativeArray<ULongEnum>> ULongEnumArrayVar;
+        public NetworkVariable<NativeList<ULongEnum>> ULongEnumListVar;
+        public NetworkVariable<Vector2> Vector2Var;
+        public NetworkVariable<NativeArray<Vector2>> Vector2ArrayVar;
+        public NetworkVariable<NativeList<Vector2>> Vector2ListVar;
+        public NetworkVariable<Vector3> Vector3Var;
+        public NetworkVariable<NativeArray<Vector3>> Vector3ArrayVar;
+        public NetworkVariable<NativeList<Vector3>> Vector3ListVar;
+        public NetworkVariable<Vector2Int> Vector2IntVar;
+        public NetworkVariable<NativeArray<Vector2Int>> Vector2IntArrayVar;
+        public NetworkVariable<NativeList<Vector2Int>> Vector2IntListVar;
+        public NetworkVariable<Vector3Int> Vector3IntVar;
+        public NetworkVariable<NativeArray<Vector3Int>> Vector3IntArrayVar;
+        public NetworkVariable<NativeList<Vector3Int>> Vector3IntListVar;
+        public NetworkVariable<Vector4> Vector4Var;
+        public NetworkVariable<NativeArray<Vector4>> Vector4ArrayVar;
+        public NetworkVariable<NativeList<Vector4>> Vector4ListVar;
+        public NetworkVariable<Quaternion> QuaternionVar;
+        public NetworkVariable<NativeArray<Quaternion>> QuaternionArrayVar;
+        public NetworkVariable<NativeList<Quaternion>> QuaternionListVar;
+        public NetworkVariable<Color> ColorVar;
+        public NetworkVariable<NativeArray<Color>> ColorArrayVar;
+        public NetworkVariable<NativeList<Color>> ColorListVar;
+        public NetworkVariable<Color32> Color32Var;
+        public NetworkVariable<NativeArray<Color32>> Color32ArrayVar;
+        public NetworkVariable<NativeList<Color32>> Color32ListVar;
+        public NetworkVariable<Ray> RayVar;
+        public NetworkVariable<NativeArray<Ray>> RayArrayVar;
+        public NetworkVariable<NativeList<Ray>> RayListVar;
+        public NetworkVariable<Ray2D> Ray2DVar;
+        public NetworkVariable<NativeArray<Ray2D>> Ray2DArrayVar;
+        public NetworkVariable<NativeList<Ray2D>> Ray2DListVar;
+        public NetworkVariable<NetworkVariableTestStruct> TestStructVar;
+        public NetworkVariable<NativeArray<NetworkVariableTestStruct>> TestStructArrayVar;
+        public NetworkVariable<NativeList<NetworkVariableTestStruct>> TestStructListVar;
+
+        public NetworkVariable<FixedString32Bytes> FixedStringVar;
+        public NetworkVariable<NativeArray<FixedString32Bytes>> FixedStringArrayVar;
+        public NetworkVariable<NativeList<FixedString32Bytes>> FixedStringListVar;
+
         public NetworkVariable<UnmanagedNetworkSerializableType> UnmanagedNetworkSerializableTypeVar;
+        public NetworkVariable<NativeList<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableListVar;
+        public NetworkVariable<NativeArray<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableArrayVar;
+
         public NetworkVariable<ManagedNetworkSerializableType> ManagedNetworkSerializableTypeVar;
+
         public NetworkVariable<string> StringVar;
         public NetworkVariable<Guid> GuidVar;
         public NetworkVariableSubclass<TemplatedValueOnlyReferencedByNetworkVariableSubclass<int>> SubclassVar;
@@ -60,7 +248,7 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
-    // Please do not reference TestClass2 anywhere other than here!
+    // Please do not reference TestClass_ReferencedOnlyByTemplateNetworkBehavourType anywhere other than here!
     public class ClassHavingNetworkBehaviour2 : TemplateNetworkBehaviourType<TestClass_ReferencedOnlyByTemplateNetworkBehavourType>
     {
 
@@ -1062,6 +1250,7 @@ namespace Unity.Netcode.RuntimeTests
             // Just making sure these are null, just in case.
             UserNetworkVariableSerialization<string>.ReadValue = null;
             UserNetworkVariableSerialization<string>.WriteValue = null;
+            UserNetworkVariableSerialization<string>.DuplicateValue = null;
             Assert.Throws<ArgumentException>(() =>
             {
                 variable.WriteField(writer);
@@ -1084,6 +1273,10 @@ namespace Unity.Netcode.RuntimeTests
             {
                 writer.WriteValueSafe(value);
             };
+            UserNetworkVariableSerialization<string>.DuplicateValue = (in string a, ref string b) =>
+            {
+                b = string.Copy(a);
+            };
             try
             {
                 using var writer = new FastBufferWriter(1024, Allocator.Temp);
@@ -1099,6 +1292,7 @@ namespace Unity.Netcode.RuntimeTests
             {
                 UserNetworkVariableSerialization<string>.ReadValue = null;
                 UserNetworkVariableSerialization<string>.WriteValue = null;
+                UserNetworkVariableSerialization<string>.DuplicateValue = null;
             }
         }
 
@@ -1111,6 +1305,7 @@ namespace Unity.Netcode.RuntimeTests
             // Just making sure these are null, just in case.
             UserNetworkVariableSerialization<Guid>.ReadValue = null;
             UserNetworkVariableSerialization<Guid>.WriteValue = null;
+            UserNetworkVariableSerialization<Guid>.DuplicateValue = null;
             Assert.Throws<ArgumentException>(() =>
             {
                 variable.WriteField(writer);
@@ -1151,6 +1346,10 @@ namespace Unity.Netcode.RuntimeTests
                 var tmpValue = new ForceNetworkSerializeByMemcpy<Guid>(value);
                 writer.WriteValueSafe(tmpValue);
             };
+            UserNetworkVariableSerialization<Guid>.DuplicateValue = (in Guid a, ref Guid b) =>
+            {
+                b = a;
+            };
             try
             {
                 using var writer = new FastBufferWriter(1024, Allocator.Temp);
@@ -1167,6 +1366,775 @@ namespace Unity.Netcode.RuntimeTests
             {
                 UserNetworkVariableSerialization<Guid>.ReadValue = null;
                 UserNetworkVariableSerialization<Guid>.WriteValue = null;
+                UserNetworkVariableSerialization<Guid>.DuplicateValue = null;
+            }
+        }
+
+        private void TestValueType<T>(T testValue, T changedValue) where T : unmanaged
+        {
+            var serverVariable = new NetworkVariable<T>(testValue);
+            var clientVariable = new NetworkVariable<T>();
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            serverVariable.WriteField(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            Assert.IsTrue(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            serverVariable.Value = changedValue;
+            Assert.IsFalse(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            Assert.IsTrue(NetworkVariableSerialization<T>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+        }
+
+        private void TestValueTypeNativeArray<T>(NativeArray<T> testValue, NativeArray<T> changedValue) where T : unmanaged
+        {
+            var serverVariable = new NetworkVariable<NativeArray<T>>(testValue);
+            var clientVariable = new NetworkVariable<NativeArray<T>>(new NativeArray<T>(1, Allocator.Persistent));
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            serverVariable.WriteField(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            serverVariable.Dispose();
+            serverVariable.Value = changedValue;
+            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            Assert.IsTrue(NetworkVariableSerialization<NativeArray<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            var cachedValue = changedValue[0];
+            changedValue[0] = testValue[0];
+            Assert.IsTrue(serverVariable.IsDirty());
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            changedValue[0] = cachedValue;
+            Assert.IsTrue(serverVariable.IsDirty());
+
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
+        }
+
+        private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
+        {
+            var serverVariable = new NetworkVariable<NativeList<T>>(testValue);
+            var inPlaceList = new NativeList<T>(1, Allocator.Temp);
+            var clientVariable = new NetworkVariable<NativeList<T>>(inPlaceList);
+            using var writer = new FastBufferWriter(1024, Allocator.Temp);
+            serverVariable.WriteField(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+
+            using var reader = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadField(reader);
+
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+
+            serverVariable.Dispose();
+            serverVariable.Value = changedValue;
+            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+
+            writer.Seek(0);
+
+            serverVariable.WriteDelta(writer);
+
+            Assert.IsFalse(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+
+            using var reader2 = new FastBufferReader(writer, Allocator.None);
+            clientVariable.ReadDelta(reader2, false);
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref serverVariable.RefValue(), ref clientVariable.RefValue()));
+            // Lists are deserialized in place so this should ALWAYS be true. Checking it every time to make sure!
+            Assert.IsTrue(NetworkVariableSerialization<NativeList<T>>.AreEqual(ref clientVariable.RefValue(), ref inPlaceList));
+
+            serverVariable.ResetDirty();
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Clear();
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.ResetDirty();
+
+            Assert.IsFalse(serverVariable.IsDirty());
+            serverVariable.Value.Add(default);
+            Assert.IsTrue(serverVariable.IsDirty());
+
+            serverVariable.Dispose();
+            clientVariable.Dispose();
+        }
+
+        [Test]
+        public void WhenSerializingAndDeserializingValueTypeNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                TestValueType<byte>(byte.MinValue + 5, byte.MaxValue);
+            }
+            else if (testType == typeof(sbyte))
+            {
+                TestValueType<sbyte>(sbyte.MinValue + 5, sbyte.MaxValue);
+            }
+            else if (testType == typeof(short))
+            {
+                TestValueType<short>(short.MinValue + 5, short.MaxValue);
+            }
+            else if (testType == typeof(ushort))
+            {
+                TestValueType<ushort>(ushort.MinValue + 5, ushort.MaxValue);
+            }
+            else if (testType == typeof(int))
+            {
+                TestValueType(int.MinValue + 5, int.MaxValue);
+            }
+            else if (testType == typeof(uint))
+            {
+                TestValueType(uint.MinValue + 5, uint.MaxValue);
+            }
+            else if (testType == typeof(long))
+            {
+                TestValueType(long.MinValue + 5, long.MaxValue);
+            }
+            else if (testType == typeof(ulong))
+            {
+                TestValueType(ulong.MinValue + 5, ulong.MaxValue);
+            }
+            else if (testType == typeof(bool))
+            {
+                TestValueType(true, false);
+            }
+            else if (testType == typeof(char))
+            {
+                TestValueType('z', ' ');
+            }
+            else if (testType == typeof(float))
+            {
+                TestValueType(float.MinValue + 5.12345678f, float.MaxValue);
+            }
+            else if (testType == typeof(double))
+            {
+                TestValueType(double.MinValue + 5.12345678, double.MaxValue);
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                TestValueType(ByteEnum.B, ByteEnum.C);
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                TestValueType(SByteEnum.B, SByteEnum.C);
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                TestValueType(ShortEnum.B, ShortEnum.C);
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                TestValueType(UShortEnum.B, UShortEnum.C);
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                TestValueType(IntEnum.B, IntEnum.C);
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                TestValueType(UIntEnum.B, UIntEnum.C);
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                TestValueType(LongEnum.B, LongEnum.C);
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                TestValueType(ULongEnum.B, ULongEnum.C);
+            }
+            else if (testType == typeof(Vector2))
+            {
+                TestValueType(
+                    new Vector2(5, 10),
+                    new Vector2(15, 20));
+            }
+            else if (testType == typeof(Vector3))
+            {
+                TestValueType(
+                    new Vector3(5, 10, 15),
+                    new Vector3(20, 25, 30));
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                TestValueType(
+                    new Vector2Int(5, 10),
+                    new Vector2Int(15, 20));
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                TestValueType(
+                    new Vector3Int(5, 10, 15),
+                    new Vector3Int(20, 25, 30));
+            }
+            else if (testType == typeof(Vector4))
+            {
+                TestValueType(
+                    new Vector4(5, 10, 15, 20),
+                    new Vector4(25, 30, 35, 40));
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                TestValueType(
+                    new Quaternion(5, 10, 15, 20),
+                    new Quaternion(25, 30, 35, 40));
+            }
+            else if (testType == typeof(Color))
+            {
+                TestValueType(
+                    new Color(1, 0, 0),
+                    new Color(0, 1, 1));
+            }
+            else if (testType == typeof(Color32))
+            {
+                TestValueType(
+                    new Color32(255, 0, 0, 128),
+                    new Color32(0, 255, 255, 255));
+            }
+            else if (testType == typeof(Ray))
+            {
+                TestValueType(
+                    new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
+                    new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)));
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                TestValueType(
+                    new Ray2D(new Vector2(0, 1), new Vector2(2, 3)),
+                    new Ray2D(new Vector2(4, 5), new Vector2(6, 7)));
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                TestValueType(NetworkVariableTestStruct.GetTestStruct(), NetworkVariableTestStruct.GetTestStruct());
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueType(new FixedString32Bytes("foobar"), new FixedString32Bytes("12345678901234567890123456789"));
+            }
+        }
+
+        [Test]
+        public void WhenSerializingAndDeserializingValueTypeNativeArrayNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<byte>(new byte[] { byte.MinValue + 5, byte.MaxValue }, Allocator.Temp),
+                    new NativeArray<byte>(new byte[] { 0, byte.MinValue + 10, byte.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(sbyte))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<sbyte>(new sbyte[] { sbyte.MinValue + 5, sbyte.MaxValue }, Allocator.Temp),
+                    new NativeArray<sbyte>(new sbyte[] { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(short))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<short>(new short[] { short.MinValue + 5, short.MaxValue }, Allocator.Temp),
+                    new NativeArray<short>(new short[] { 0, short.MinValue + 10, short.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(ushort))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<ushort>(new ushort[] { ushort.MinValue + 5, ushort.MaxValue }, Allocator.Temp),
+                    new NativeArray<ushort>(new ushort[] { 0, ushort.MinValue + 10, ushort.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(int))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<int>(new int[] { int.MinValue + 5, int.MaxValue }, Allocator.Temp),
+                    new NativeArray<int>(new int[] { 0, int.MinValue + 10, int.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(uint))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<uint>(new uint[] { uint.MinValue + 5, uint.MaxValue }, Allocator.Temp),
+                    new NativeArray<uint>(new uint[] { 0, uint.MinValue + 10, uint.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(long))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<long>(new long[] { long.MinValue + 5, long.MaxValue }, Allocator.Temp),
+                    new NativeArray<long>(new long[] { 0, long.MinValue + 10, long.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(ulong))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<ulong>(new ulong[] { ulong.MinValue + 5, ulong.MaxValue }, Allocator.Temp),
+                    new NativeArray<ulong>(new ulong[] { 0, ulong.MinValue + 10, ulong.MaxValue - 10 }, Allocator.Temp));
+            }
+            else if (testType == typeof(bool))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<bool>(new bool[] { true, false, true }, Allocator.Temp),
+                    new NativeArray<bool>(new bool[] { false, true, false, true, false }, Allocator.Temp));
+            }
+            else if (testType == typeof(char))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<char>(new char[] { 'z', ' ', '?' }, Allocator.Temp),
+                    new NativeArray<char>(new char[] { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' }, Allocator.Temp));
+            }
+            else if (testType == typeof(float))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<float>(new float[] { float.MinValue + 5.12345678f, float.MaxValue }, Allocator.Temp),
+                    new NativeArray<float>(new float[] { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f }, Allocator.Temp));
+            }
+            else if (testType == typeof(double))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<double>(new double[] { double.MinValue + 5.12345678, double.MaxValue }, Allocator.Temp),
+                    new NativeArray<double>(new double[] { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 }, Allocator.Temp));
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.C, ByteEnum.B, ByteEnum.A }, Allocator.Temp),
+                    new NativeArray<ByteEnum>(new ByteEnum[] { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.C, SByteEnum.B, SByteEnum.A }, Allocator.Temp),
+                    new NativeArray<SByteEnum>(new SByteEnum[] { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.C, ShortEnum.B, ShortEnum.A }, Allocator.Temp),
+                    new NativeArray<ShortEnum>(new ShortEnum[] { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.C, UShortEnum.B, UShortEnum.A }, Allocator.Temp),
+                    new NativeArray<UShortEnum>(new UShortEnum[] { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<IntEnum>(new IntEnum[] { IntEnum.C, IntEnum.B, IntEnum.A }, Allocator.Temp),
+                    new NativeArray<IntEnum>(new IntEnum[] { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.C, UIntEnum.B, UIntEnum.A }, Allocator.Temp),
+                    new NativeArray<UIntEnum>(new UIntEnum[] { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<LongEnum>(new LongEnum[] { LongEnum.C, LongEnum.B, LongEnum.A }, Allocator.Temp),
+                    new NativeArray<LongEnum>(new LongEnum[] { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.C, ULongEnum.B, ULongEnum.A }, Allocator.Temp),
+                    new NativeArray<ULongEnum>(new ULongEnum[] { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C }, Allocator.Temp));
+            }
+            else if (testType == typeof(Vector2))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Vector2>(new Vector2[] { new Vector2(5, 10), new Vector2(15, 20) }, Allocator.Temp),
+                    new NativeArray<Vector2>(new Vector2[] { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Vector3))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Vector3>(new Vector3[] { new Vector3(5, 10, 15), new Vector3(20, 25, 30) }, Allocator.Temp),
+                    new NativeArray<Vector3>(new Vector3[] { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(5, 10), new Vector2Int(15, 20) }, Allocator.Temp),
+                    new NativeArray<Vector2Int>(new Vector2Int[] { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) }, Allocator.Temp),
+                    new NativeArray<Vector3Int>(new Vector3Int[] { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Vector4))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Vector4>(new Vector4[] { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) }, Allocator.Temp),
+                    new NativeArray<Vector4>(new Vector4[] { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) }, Allocator.Temp),
+                    new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Color))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Color>(new Color[] { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) }, Allocator.Temp),
+                    new NativeArray<Color>(new Color[] { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Color32))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Color32>(new Color32[] { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) }, Allocator.Temp),
+                    new NativeArray<Color32>(new Color32[] { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) }, Allocator.Temp));
+            }
+            else if (testType == typeof(Ray))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Ray>(new Ray[]
+                    {
+                        new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
+                        new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)),
+                    }, Allocator.Temp),
+                    new NativeArray<Ray>(new Ray[]
+                    {
+                        new Ray(new Vector3(12, 13, 14), new Vector3(15, 16, 17)),
+                        new Ray(new Vector3(18, 19, 20), new Vector3(21, 22, 23)),
+                        new Ray(new Vector3(24, 25, 26), new Vector3(27, 28, 29)),
+                    }, Allocator.Temp));
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Ray2D>(new Ray2D[]
+                    {
+                        new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
+                        new Ray2D(new Vector2(6, 7), new Vector2(9, 10)),
+                    }, Allocator.Temp),
+                    new NativeArray<Ray2D>(new Ray2D[]
+                    {
+                        new Ray2D(new Vector2(12, 13), new Vector2(15, 16)),
+                        new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
+                        new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
+                    }, Allocator.Temp));
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<NetworkVariableTestStruct>(new NetworkVariableTestStruct[]
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    }, Allocator.Temp),
+                    new NativeArray<NetworkVariableTestStruct>(new NetworkVariableTestStruct[]
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    }, Allocator.Temp));
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("foobar"),
+                        new FixedString32Bytes("12345678901234567890123456789")
+                    }, Allocator.Temp),
+                    new NativeArray<FixedString32Bytes>(new FixedString32Bytes[]
+                    {
+                        new FixedString32Bytes("BazQux"),
+                        new FixedString32Bytes("98765432109876543210987654321"),
+                        new FixedString32Bytes("FixedString32Bytes")
+                    }, Allocator.Temp));
+            }
+        }
+
+        [Test]
+        public void WhenSerializingAndDeserializingValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
+
+            [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
+                typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
+                typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
+                typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
+            Type testType)
+        {
+            if (testType == typeof(byte))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<byte>(Allocator.Temp) { byte.MinValue + 5, byte.MaxValue },
+                    new NativeList<byte>(Allocator.Temp) { 0, byte.MinValue + 10, byte.MaxValue - 10 });
+            }
+            else if (testType == typeof(sbyte))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<sbyte>(Allocator.Temp) { sbyte.MinValue + 5, sbyte.MaxValue },
+                    new NativeList<sbyte>(Allocator.Temp) { 0, sbyte.MinValue + 10, sbyte.MaxValue - 10 });
+            }
+            else if (testType == typeof(short))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<short>(Allocator.Temp) { short.MinValue + 5, short.MaxValue },
+                    new NativeList<short>(Allocator.Temp) { 0, short.MinValue + 10, short.MaxValue - 10 });
+            }
+            else if (testType == typeof(ushort))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<ushort>(Allocator.Temp) { ushort.MinValue + 5, ushort.MaxValue },
+                    new NativeList<ushort>(Allocator.Temp) { 0, ushort.MinValue + 10, ushort.MaxValue - 10 });
+            }
+            else if (testType == typeof(int))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<int>(Allocator.Temp) { int.MinValue + 5, int.MaxValue },
+                    new NativeList<int>(Allocator.Temp) { 0, int.MinValue + 10, int.MaxValue - 10 });
+            }
+            else if (testType == typeof(uint))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<uint>(Allocator.Temp) { uint.MinValue + 5, uint.MaxValue },
+                    new NativeList<uint>(Allocator.Temp) { 0, uint.MinValue + 10, uint.MaxValue - 10 });
+            }
+            else if (testType == typeof(long))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<long>(Allocator.Temp) { long.MinValue + 5, long.MaxValue },
+                    new NativeList<long>(Allocator.Temp) { 0, long.MinValue + 10, long.MaxValue - 10 });
+            }
+            else if (testType == typeof(ulong))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<ulong>(Allocator.Temp) { ulong.MinValue + 5, ulong.MaxValue },
+                    new NativeList<ulong>(Allocator.Temp) { 0, ulong.MinValue + 10, ulong.MaxValue - 10 });
+            }
+            else if (testType == typeof(bool))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<bool>(Allocator.Temp) { true, false, true },
+                    new NativeList<bool>(Allocator.Temp) { false, true, false, true, false });
+            }
+            else if (testType == typeof(char))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<char>(Allocator.Temp) { 'z', ' ', '?' },
+                    new NativeList<char>(Allocator.Temp) { 'n', 'e', 'w', ' ', 'v', 'a', 'l', 'u', 'e' });
+            }
+            else if (testType == typeof(float))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<float>(Allocator.Temp) { float.MinValue + 5.12345678f, float.MaxValue },
+                    new NativeList<float>(Allocator.Temp) { 0, float.MinValue + 10.987654321f, float.MaxValue - 10.135792468f });
+            }
+            else if (testType == typeof(double))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<double>(Allocator.Temp) { double.MinValue + 5.12345678, double.MaxValue },
+                    new NativeList<double>(Allocator.Temp) { 0, double.MinValue + 10.987654321, double.MaxValue - 10.135792468 });
+            }
+            else if (testType == typeof(ByteEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<ByteEnum>(Allocator.Temp) { ByteEnum.C, ByteEnum.B, ByteEnum.A },
+                    new NativeList<ByteEnum>(Allocator.Temp) { ByteEnum.B, ByteEnum.C, ByteEnum.B, ByteEnum.A, ByteEnum.C });
+            }
+            else if (testType == typeof(SByteEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<SByteEnum>(Allocator.Temp) { SByteEnum.C, SByteEnum.B, SByteEnum.A },
+                    new NativeList<SByteEnum>(Allocator.Temp) { SByteEnum.B, SByteEnum.C, SByteEnum.B, SByteEnum.A, SByteEnum.C });
+            }
+            else if (testType == typeof(ShortEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<ShortEnum>(Allocator.Temp) { ShortEnum.C, ShortEnum.B, ShortEnum.A },
+                    new NativeList<ShortEnum>(Allocator.Temp) { ShortEnum.B, ShortEnum.C, ShortEnum.B, ShortEnum.A, ShortEnum.C });
+            }
+            else if (testType == typeof(UShortEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<UShortEnum>(Allocator.Temp) { UShortEnum.C, UShortEnum.B, UShortEnum.A },
+                    new NativeList<UShortEnum>(Allocator.Temp) { UShortEnum.B, UShortEnum.C, UShortEnum.B, UShortEnum.A, UShortEnum.C });
+            }
+            else if (testType == typeof(IntEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<IntEnum>(Allocator.Temp) { IntEnum.C, IntEnum.B, IntEnum.A },
+                    new NativeList<IntEnum>(Allocator.Temp) { IntEnum.B, IntEnum.C, IntEnum.B, IntEnum.A, IntEnum.C });
+            }
+            else if (testType == typeof(UIntEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<UIntEnum>(Allocator.Temp) { UIntEnum.C, UIntEnum.B, UIntEnum.A },
+                    new NativeList<UIntEnum>(Allocator.Temp) { UIntEnum.B, UIntEnum.C, UIntEnum.B, UIntEnum.A, UIntEnum.C });
+            }
+            else if (testType == typeof(LongEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<LongEnum>(Allocator.Temp) { LongEnum.C, LongEnum.B, LongEnum.A },
+                    new NativeList<LongEnum>(Allocator.Temp) { LongEnum.B, LongEnum.C, LongEnum.B, LongEnum.A, LongEnum.C });
+            }
+            else if (testType == typeof(ULongEnum))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<ULongEnum>(Allocator.Temp) { ULongEnum.C, ULongEnum.B, ULongEnum.A },
+                    new NativeList<ULongEnum>(Allocator.Temp) { ULongEnum.B, ULongEnum.C, ULongEnum.B, ULongEnum.A, ULongEnum.C });
+            }
+            else if (testType == typeof(Vector2))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Vector2>(Allocator.Temp) { new Vector2(5, 10), new Vector2(15, 20) },
+                    new NativeList<Vector2>(Allocator.Temp) { new Vector2(25, 30), new Vector2(35, 40), new Vector2(45, 50) });
+            }
+            else if (testType == typeof(Vector3))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Vector3>(Allocator.Temp) { new Vector3(5, 10, 15), new Vector3(20, 25, 30) },
+                    new NativeList<Vector3>(Allocator.Temp) { new Vector3(35, 40, 45), new Vector3(50, 55, 60), new Vector3(65, 70, 75) });
+            }
+            else if (testType == typeof(Vector2Int))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Vector2Int>(Allocator.Temp) { new Vector2Int(5, 10), new Vector2Int(15, 20) },
+                    new NativeList<Vector2Int>(Allocator.Temp) { new Vector2Int(25, 30), new Vector2Int(35, 40), new Vector2Int(45, 50) });
+            }
+            else if (testType == typeof(Vector3Int))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Vector3Int>(Allocator.Temp) { new Vector3Int(5, 10, 15), new Vector3Int(20, 25, 30) },
+                    new NativeList<Vector3Int>(Allocator.Temp) { new Vector3Int(35, 40, 45), new Vector3Int(50, 55, 60), new Vector3Int(65, 70, 75) });
+            }
+            else if (testType == typeof(Vector4))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Vector4>(Allocator.Temp) { new Vector4(5, 10, 15, 20), new Vector4(25, 30, 35, 40) },
+                    new NativeList<Vector4>(Allocator.Temp) { new Vector4(45, 50, 55, 60), new Vector4(65, 70, 75, 80), new Vector4(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Quaternion))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
+                    new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Color))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Color>(Allocator.Temp) { new Color(.5f, .10f, .15f), new Color(.20f, .25f, .30f) },
+                    new NativeList<Color>(Allocator.Temp) { new Color(.35f, .40f, .45f), new Color(.50f, .55f, .60f), new Color(.65f, .70f, .75f) });
+            }
+            else if (testType == typeof(Color32))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Color32>(Allocator.Temp) { new Color32(5, 10, 15, 20), new Color32(25, 30, 35, 40) },
+                    new NativeList<Color32>(Allocator.Temp) { new Color32(45, 50, 55, 60), new Color32(65, 70, 75, 80), new Color32(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Ray))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Ray>(Allocator.Temp)
+                    {
+                        new Ray(new Vector3(0, 1, 2), new Vector3(3, 4, 5)),
+                        new Ray(new Vector3(6, 7, 8), new Vector3(9, 10, 11)),
+                    },
+                    new NativeList<Ray>(Allocator.Temp)
+                    {
+                        new Ray(new Vector3(12, 13, 14), new Vector3(15, 16, 17)),
+                        new Ray(new Vector3(18, 19, 20), new Vector3(21, 22, 23)),
+                        new Ray(new Vector3(24, 25, 26), new Vector3(27, 28, 29)),
+                    });
+            }
+            else if (testType == typeof(Ray2D))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Ray2D>(Allocator.Temp)
+                    {
+                        new Ray2D(new Vector2(0, 1), new Vector2(3, 4)),
+                        new Ray2D(new Vector2(6, 7), new Vector2(9, 10)),
+                    },
+                    new NativeList<Ray2D>(Allocator.Temp)
+                    {
+                        new Ray2D(new Vector2(12, 13), new Vector2(15, 16)),
+                        new Ray2D(new Vector2(18, 19), new Vector2(21, 22)),
+                        new Ray2D(new Vector2(24, 25), new Vector2(27, 28)),
+                    });
+            }
+            else if (testType == typeof(NetworkVariableTestStruct))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<NetworkVariableTestStruct>(Allocator.Temp)
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    },
+                    new NativeList<NetworkVariableTestStruct>(Allocator.Temp)
+                    {
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct(),
+                        NetworkVariableTestStruct.GetTestStruct()
+                    });
+            }
+            else if (testType == typeof(FixedString32Bytes))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<FixedString32Bytes>(Allocator.Temp)
+                    {
+                        new FixedString32Bytes("foobar"),
+                        new FixedString32Bytes("12345678901234567890123456789")
+                    },
+                    new NativeList<FixedString32Bytes>(Allocator.Temp)
+                    {
+                        new FixedString32Bytes("BazQux"),
+                        new FixedString32Bytes("98765432109876543210987654321"),
+                        new FixedString32Bytes("FixedString32Bytes")
+                    });
             }
         }
 
@@ -1179,7 +2147,8 @@ namespace Unity.Netcode.RuntimeTests
                 {
                     InMemoryValue = 1,
                     Ints = new[] { 2, 3, 4 },
-                    Str = "five"
+                    Str = "five",
+                    Embedded = new EmbeddedManagedNetworkSerializableType { Int = 6 }
                 }
             };
 
@@ -1188,11 +2157,13 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(1, variable.Value.InMemoryValue);
             Assert.AreEqual(new[] { 2, 3, 4 }, variable.Value.Ints);
             Assert.AreEqual("five", variable.Value.Str);
+            Assert.AreEqual(6, variable.Value.Embedded.Int);
             variable.Value = new ManagedNetworkSerializableType
             {
                 InMemoryValue = 10,
                 Ints = new[] { 20, 30, 40, 50 },
-                Str = "sixty"
+                Str = "sixty",
+                Embedded = new EmbeddedManagedNetworkSerializableType { Int = 60 }
             };
 
             using var reader = new FastBufferReader(writer, Allocator.None);
@@ -1200,6 +2171,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.AreEqual(10, variable.Value.InMemoryValue, "In-memory value was not the same - in-place deserialization should not change this");
             Assert.AreEqual(new[] { 2, 3, 4 }, variable.Value.Ints, "Ints were not correctly deserialized");
             Assert.AreEqual("five", variable.Value.Str, "Str was not correctly deserialized");
+            Assert.AreEqual(6, variable.Value.Embedded.Int, "Embedded int was not correctly deserialized");
         }
 
         [Test]

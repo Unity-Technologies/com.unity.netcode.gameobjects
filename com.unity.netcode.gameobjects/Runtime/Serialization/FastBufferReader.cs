@@ -62,7 +62,7 @@ namespace Unity.Netcode
 
         private static unsafe ReaderHandle* CreateHandle(byte* buffer, int length, int offset, Allocator copyAllocator, Allocator internalAllocator)
         {
-            ReaderHandle* readerHandle = null;
+            ReaderHandle* readerHandle;
             if (copyAllocator == Allocator.None)
             {
                 readerHandle = (ReaderHandle*)UnsafeUtility.Malloc(sizeof(ReaderHandle), UnsafeUtility.AlignOf<byte>(), internalAllocator);
@@ -462,6 +462,40 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Read a NativeArray of INetworkSerializables
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
+        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializable<T>(out NativeArray<T> value, Allocator allocator) where T : unmanaged, INetworkSerializable
+        {
+            ReadValueSafe(out int size);
+            value = new NativeArray<T>(size, allocator);
+            for (var i = 0; i < size; ++i)
+            {
+                ReadNetworkSerializable(out T item);
+                value[i] = item;
+            }
+        }
+
+        /// <summary>
+        /// Read a NativeList of INetworkSerializables
+        /// </summary>
+        /// <param name="value">INetworkSerializable instance</param>
+        /// <typeparam name="T">the array to read the values of type `T` into</typeparam>
+        /// <exception cref="NotImplementedException"></exception>
+        public void ReadNetworkSerializableInPlace<T>(ref NativeList<T> value) where T : unmanaged, INetworkSerializable
+        {
+            ReadValueSafe(out int size);
+            value.Resize(size, NativeArrayOptions.UninitializedMemory);
+            for (var i = 0; i < size; ++i)
+            {
+                ReadNetworkSerializable(out value.ElementAt(i));
+            }
+        }
+
+        /// <summary>
         /// Read an INetworkSerializable in-place, without constructing a new one
         /// Note that this will NOT check for null before calling NetworkSerialize
         /// </summary>
@@ -757,6 +791,42 @@ namespace Unity.Netcode
                 ReadBytesSafe(bytes, sizeInBytes);
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void ReadUnmanaged<T>(out NativeArray<T> value, Allocator allocator) where T : unmanaged
+        {
+            ReadUnmanaged(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new NativeArray<T>(sizeInTs, allocator);
+            byte* bytes = (byte*)value.GetUnsafePtr();
+            ReadBytes(bytes, sizeInBytes);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void ReadUnmanagedSafe<T>(out NativeArray<T> value, Allocator allocator) where T : unmanaged
+        {
+            ReadUnmanagedSafe(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value = new NativeArray<T>(sizeInTs, allocator);
+            byte* bytes = (byte*)value.GetUnsafePtr();
+            ReadBytesSafe(bytes, sizeInBytes);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void ReadUnmanagedInPlace<T>(ref NativeList<T> value) where T : unmanaged
+        {
+            ReadUnmanaged(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value.Resize(sizeInTs, NativeArrayOptions.UninitializedMemory);
+            byte* bytes = (byte*)value.GetUnsafePtr();
+            ReadBytes(bytes, sizeInBytes);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal unsafe void ReadUnmanagedSafeInPlace<T>(ref NativeList<T> value) where T : unmanaged
+        {
+            ReadUnmanagedSafe(out int sizeInTs);
+            int sizeInBytes = sizeInTs * sizeof(T);
+            value.Resize(sizeInTs, NativeArrayOptions.UninitializedMemory);
+            byte* bytes = (byte*)value.GetUnsafePtr();
+            ReadBytesSafe(bytes, sizeInBytes);
+        }
 
         /// <summary>
         /// Read a NetworkSerializable value
@@ -800,6 +870,19 @@ namespace Unity.Netcode
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => ReadNetworkSerializable(out value);
 
+        /// <summary>
+        /// Read a NetworkSerializable NativeArray
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForNetworkSerializable unused = default) where T : unmanaged, INetworkSerializable => ReadNetworkSerializable(out value, allocator);
+
 
         /// <summary>
         /// Read a struct
@@ -818,6 +901,70 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValue<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanaged(out value);
+
+        /// <summary>
+        /// Read a struct NativeArray
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValue<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, allocator);
+            }
+            else
+            {
+                ReadUnmanaged(out value, allocator);
+            }
+        }
+
+        /// <summary>
+        /// Read a struct NativeArray using a Temp allocator. Equivalent to ReadValue(out value, Allocator.Temp)
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueTemp<T>(out NativeArray<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, Allocator.Temp);
+            }
+            else
+            {
+                ReadUnmanaged(out value, Allocator.Temp);
+            }
+        }
+
+        /// <summary>
+        /// Read a struct NativeList
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Read(this, ref value);
+            }
+            else
+            {
+                ReadUnmanagedInPlace(ref value);
+            }
+        }
 
         /// <summary>
         /// Read a struct
@@ -842,6 +989,79 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => ReadUnmanagedSafe(out value);
+
+        /// <summary>
+        /// Read a struct NativeArray
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, allocator);
+            }
+            else
+            {
+                ReadUnmanagedSafe(out value, allocator);
+            }
+        }
+
+        /// <summary>
+        /// Read a struct NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafeTemp<T>(out NativeArray<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeArray<T>>.Serializer.ReadWithAllocator(this, out value, Allocator.Temp);
+            }
+            else
+            {
+                ReadUnmanagedSafe(out value, Allocator.Temp);
+            }
+        }
+
+        /// <summary>
+        /// Read a struct NativeList
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        /// <param name="value">The values to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafeInPlace<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged
+        {
+            if (typeof(INetworkSerializable).IsAssignableFrom(typeof(T)))
+            {
+                // This calls WriteNetworkSerializable in a way that doesn't require
+                // any boxing.
+                NetworkVariableSerialization<NativeList<T>>.Serializer.Read(this, ref value);
+            }
+            else
+            {
+                ReadUnmanagedSafeInPlace(ref value);
+            }
+        }
 
         /// <summary>
         /// Read a primitive value (int, bool, etc)
@@ -880,7 +1100,7 @@ namespace Unity.Netcode
         public void ReadValueSafe<T>(out T value, FastBufferWriter.ForPrimitives unused = default) where T : unmanaged, IComparable, IConvertible, IComparable<T>, IEquatable<T> => ReadUnmanagedSafe(out value);
 
         /// <summary>
-        /// Read a primitive value (int, bool, etc)
+        /// Read a primitive value (int, bool, etc) array
         /// Accepts any value that implements the given interfaces, but is not guaranteed to work correctly
         /// on values that are not primitives.
         ///
@@ -935,6 +1155,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForEnums unused = default) where T : unmanaged, Enum => ReadUnmanagedSafe(out value);
+
 
         /// <summary>
         /// Read a Vector2
@@ -1345,6 +1566,93 @@ namespace Unity.Netcode
             ReadUnmanagedSafe(out int length);
             value.Length = length;
             ReadBytesSafe(value.GetUnsafePtr(), length);
+        }
+
+        /// <summary>
+        /// Read a FixedString NativeArray.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="allocator">The allocator to use to construct the resulting NativeArray</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafe<T>(out NativeArray<T> value, Allocator allocator)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value = new NativeArray<T>(length, allocator);
+            var ptr = (T*)value.GetUnsafePtr();
+            for (var i = 0; i < length; ++i)
+            {
+                ReadValueSafeInPlace(ref ptr[i]);
+            }
+        }
+
+        /// <summary>
+        /// Read a FixedString NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe void ReadValueSafeTemp<T>(out NativeArray<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value = new NativeArray<T>(length, Allocator.Temp);
+            var ptr = (T*)value.GetUnsafePtr();
+            for (var i = 0; i < length; ++i)
+            {
+                ReadValueSafeInPlace(ref ptr[i]);
+            }
+        }
+
+        /// <summary>
+        /// Read a FixedString NativeArray using a Temp allocator. Equivalent to ReadValueSafe(out value, Allocator.Temp)
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafe<T>(out T[] value, FastBufferWriter.ForFixedStrings unused = default)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value = new T[length];
+            for (var i = 0; i < length; ++i)
+            {
+                ReadValueSafeInPlace(ref value[i]);
+            }
+        }
+
+        /// <summary>
+        /// Read a FixedString NativeList.
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple reads at once by calling TryBeginRead.
+        /// </summary>
+        /// <param name="value">the value to read</param>
+        /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
+        /// <typeparam name="T">The type being serialized</typeparam>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void ReadValueSafeInPlace<T>(ref NativeList<T> value)
+            where T : unmanaged, INativeList<byte>, IUTF8Bytes
+        {
+            ReadUnmanagedSafe(out int length);
+            value.Resize(length, NativeArrayOptions.UninitializedMemory);
+            for (var i = 0; i < length; ++i)
+            {
+                ReadValueSafeInPlace(ref value.ElementAt(i));
+            }
         }
     }
 }
