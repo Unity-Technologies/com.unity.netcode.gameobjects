@@ -432,6 +432,18 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
         /// <summary>
+        /// CreateAndStartNewClient Only
+        /// Override this method to bypass the waiting for a client to connect.
+        /// </summary>
+        /// <remarks>
+        /// Use this for testing connection and disconnection scenarios
+        /// </remarks>
+        protected virtual bool ShouldWaitForNewClientToConnect(NetworkManager networkManager)
+        {
+            return true;
+        }
+
+        /// <summary>
         /// This will create, start, and connect a new client while in the middle of an
         /// integration test.
         /// </summary>
@@ -455,19 +467,22 @@ namespace Unity.Netcode.TestHelpers.Runtime
 
             OnNewClientStarted(networkManager);
 
-            // Wait for the new client to connect
-            yield return WaitForClientsConnectedOrTimeOut();
-
-            OnNewClientStartedAndConnected(networkManager);
-            if (s_GlobalTimeoutHelper.TimedOut)
+            if (ShouldWaitForNewClientToConnect(networkManager))
             {
-                AddRemoveNetworkManager(networkManager, false);
-                Object.DestroyImmediate(networkManager.gameObject);
-            }
+                // Wait for the new client to connect
+                yield return WaitForClientsConnectedOrTimeOut();
 
-            AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
-            ClientNetworkManagerPostStart(networkManager);
-            VerboseDebug($"[{networkManager.name}] Created and connected!");
+                OnNewClientStartedAndConnected(networkManager);
+                if (s_GlobalTimeoutHelper.TimedOut)
+                {
+                    AddRemoveNetworkManager(networkManager, false);
+                    Object.DestroyImmediate(networkManager.gameObject);
+                }
+
+                AssertOnTimeout($"{nameof(CreateAndStartNewClient)} timed out waiting for the new client to be connected!");
+                ClientNetworkManagerPostStart(networkManager);
+                VerboseDebug($"[{networkManager.name}] Created and connected!");
+            }
         }
 
         /// <summary>

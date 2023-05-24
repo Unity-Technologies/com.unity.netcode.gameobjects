@@ -844,6 +844,16 @@ namespace Unity.Netcode
             {
                 var transportId = ClientIdToTransportId(clientId);
                 NetworkManager.NetworkConfig.NetworkTransport.DisconnectRemoteClient(transportId);
+
+                try
+                {
+                    OnClientDisconnectCallback?.Invoke(clientId);
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogException(exception);
+                }
+
                 // Clean up the transport to client (and vice versa) mappings
                 TransportIdCleanUp(transportId);
             }
