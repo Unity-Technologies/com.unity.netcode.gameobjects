@@ -617,8 +617,10 @@ namespace Unity.Netcode
                 }
             }
 
-            if (NetworkManager.IsServer)
+            // If we are the server and should spawn with observers
+            if (NetworkManager.IsServer && networkObject.SpawnWithObservers)
             {
+                // Add client observers
                 for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
                 {
                     if (networkObject.CheckObjectVisibility == null || networkObject.CheckObjectVisibility(NetworkManager.ConnectedClientsList[i].ClientId))

@@ -786,9 +786,18 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool ValidateSceneBeforeLoading(uint sceneHash, LoadSceneMode loadSceneMode)
         {
-            var validated = true;
             var sceneName = SceneNameFromHash(sceneHash);
             var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
+            return ValidateSceneBeforeLoading(sceneIndex, sceneName, loadSceneMode);
+        }
+
+        /// <summary>
+        /// Overloaded version that is invoked by <see cref="ValidateSceneBeforeLoading"/> and <see cref="SynchronizeNetworkObjects"/>.
+        /// This specifically is to allow runtime generated scenes to be excluded by the server during synchronization.
+        /// </summary>
+        internal bool ValidateSceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            var validated = true;
             if (VerifySceneBeforeLoading != null)
             {
                 validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
@@ -1744,24 +1753,22 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                var sceneHash = SceneHashFromNameOrPath(scene.path);
-
                 // This would depend upon whether we are additive or not
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if (!ValidateSceneBeforeLoading(sceneHash, sceneEventData.LoadSceneMode))
+                    if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, sceneEventData.LoadSceneMode))
                     {
                         continue;
                     }
-                    sceneEventData.SceneHash = sceneHash;
+                    sceneEventData.SceneHash = SceneHashFromNameOrPath(scene.path);
                     sceneEventData.SceneHandle = scene.handle;
                 }
-                else if (!ValidateSceneBeforeLoading(sceneHash, LoadSceneMode.Additive))
+                else if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive))
                 {
                     continue;
                 }
-                sceneEventData.AddSceneToSynchronize(sceneHash, scene.handle);
+                sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();

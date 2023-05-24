@@ -10,11 +10,16 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
+
 ### Fixed
 
+- Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
 - Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
+- Fixed issue where users could not use NetworkSceneManager.VerifySceneBeforeLoading to exclude runtime generated scenes from client synchronization. (#2550)
 - Fixed missing value on `NetworkListEvent` for `EventType.RemoveAt` events.  (#2542,#2543)
+- Fixed issue where parenting a NetworkTransform under a transform with a scale other than Vector3.one would result in incorrect values on non-authoritative instances. (#2538)
 - Fixed issue where a server would include scene migrated and then despawned NetworkObjects to a client that was being synchronized. (#2532)
 - Fixed the inspector throwing exceptions when attempting to render `NetworkVariable`s of enum types. (#2529)
 - Making a `NetworkVariable` with an `INetworkSerializable` type that doesn't meet the `new()` constraint will now create a compile-time error instead of an editor crash (#2528)
@@ -27,6 +32,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ## Changed
 
+- Adding network prefabs before NetworkManager initialization is now supported. (#2565)
 - Connecting clients being synchronized now switch to the server's active scene before spawning and synchronizing NetworkObjects. (#2532)
 - Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.4. (#2533)
 - Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
