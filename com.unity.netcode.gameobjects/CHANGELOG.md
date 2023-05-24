@@ -10,7 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added support for native containers in FastBufferReader/Writer, BufferSerializer, NetworkVariable, and RPCs. (#2375)
+- Added support for serializing `NativeArray<>` and `NativeList<>` in `FastBufferReader`/`FastBufferWriter`, `BufferSerializer`, `NetworkVariable`, and RPCs. (#2375)
 - Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
 
 ### Fixed
