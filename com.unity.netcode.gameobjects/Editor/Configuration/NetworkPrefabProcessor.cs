@@ -9,16 +9,15 @@ namespace Unity.Netcode.Editor.Configuration
     /// </summary>
     public class NetworkPrefabProcessor : AssetPostprocessor
     {
-        private static string s_DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
         public static string DefaultNetworkPrefabsPath
         {
             get
             {
-                return s_DefaultNetworkPrefabsPath;
+                return NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath;
             }
             internal set
             {
-                s_DefaultNetworkPrefabsPath = value;
+                NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath = value;
                 // Force a recache of the prefab list
                 s_PrefabsList = null;
             }
