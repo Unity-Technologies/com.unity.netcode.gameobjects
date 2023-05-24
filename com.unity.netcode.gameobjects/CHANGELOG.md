@@ -11,18 +11,32 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 - Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.SetMaxSingleMessageSize() and NetworkManager.SetMaxFragmentedMessageSize() for transports that don't work with the default values (#2530)
+- Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
 
 ### Fixed
 
+- Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
+- Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
+- Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
+- Fixed issue where users could not use NetworkSceneManager.VerifySceneBeforeLoading to exclude runtime generated scenes from client synchronization. (#2550)
+- Fixed missing value on `NetworkListEvent` for `EventType.RemoveAt` events.  (#2542,#2543)
+- Fixed issue where parenting a NetworkTransform under a transform with a scale other than Vector3.one would result in incorrect values on non-authoritative instances. (#2538)
+- Fixed issue where a server would include scene migrated and then despawned NetworkObjects to a client that was being synchronized. (#2532)
+- Fixed the inspector throwing exceptions when attempting to render `NetworkVariable`s of enum types. (#2529)
+- Making a `NetworkVariable` with an `INetworkSerializable` type that doesn't meet the `new()` constraint will now create a compile-time error instead of an editor crash (#2528)
 - Fixed Multiplayer Tools package installation docs page link on the NetworkManager popup. (#2526)
+- Fixed an exception and error logging when two different objects are shown and hidden on the same frame (#2524)
 - Fixed a memory leak in `UnityTransport` that occurred if `StartClient` failed. (#2518)
 - Fixed issue where a client could throw an exception if abruptly disconnected from a network session with one or more spawned `NetworkObject`(s). (#2510)
 - Fixed issue where invalid endpoint addresses were not being detected and returning false from NGO UnityTransport. (#2496)
 - Fixed some errors that could occur if a connection is lost and the loss is detected when attempting to write to the socket. (#2495)
 
 ## Changed
-- Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
 
+- Adding network prefabs before NetworkManager initialization is now supported. (#2565)
+- Connecting clients being synchronized now switch to the server's active scene before spawning and synchronizing NetworkObjects. (#2532)
+- Updated `UnityTransport` dependency on `com.unity.transport` to 1.3.4. (#2533)
+- Improved performance of NetworkBehaviour initialization by replacing reflection when initializing NetworkVariables with compile-time code generation, which should help reduce hitching during additive scene loads. (#2522)
 
 ## [1.4.0] - 2023-04-10
 

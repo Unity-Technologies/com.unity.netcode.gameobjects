@@ -786,9 +786,18 @@ namespace Unity.Netcode
         /// <returns>true (Valid) or false (Invalid)</returns>
         internal bool ValidateSceneBeforeLoading(uint sceneHash, LoadSceneMode loadSceneMode)
         {
-            var validated = true;
             var sceneName = SceneNameFromHash(sceneHash);
             var sceneIndex = SceneUtility.GetBuildIndexByScenePath(sceneName);
+            return ValidateSceneBeforeLoading(sceneIndex, sceneName, loadSceneMode);
+        }
+
+        /// <summary>
+        /// Overloaded version that is invoked by <see cref="ValidateSceneBeforeLoading"/> and <see cref="SynchronizeNetworkObjects"/>.
+        /// This specifically is to allow runtime generated scenes to be excluded by the server during synchronization.
+        /// </summary>
+        internal bool ValidateSceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            var validated = true;
             if (VerifySceneBeforeLoading != null)
             {
                 validated = VerifySceneBeforeLoading.Invoke(sceneIndex, sceneName, loadSceneMode);
@@ -1744,24 +1753,22 @@ namespace Unity.Netcode
                     continue;
                 }
 
-                var sceneHash = SceneHashFromNameOrPath(scene.path);
-
                 // This would depend upon whether we are additive or not
                 // If we are the base scene, then we set the root scene index;
                 if (activeScene == scene)
                 {
-                    if (!ValidateSceneBeforeLoading(sceneHash, sceneEventData.LoadSceneMode))
+                    if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, sceneEventData.LoadSceneMode))
                     {
                         continue;
                     }
-                    sceneEventData.SceneHash = sceneHash;
+                    sceneEventData.SceneHash = SceneHashFromNameOrPath(scene.path);
                     sceneEventData.SceneHandle = scene.handle;
                 }
-                else if (!ValidateSceneBeforeLoading(sceneHash, LoadSceneMode.Additive))
+                else if (!ValidateSceneBeforeLoading(scene.buildIndex, scene.name, LoadSceneMode.Additive))
                 {
                     continue;
                 }
-                sceneEventData.AddSceneToSynchronize(sceneHash, scene.handle);
+                sceneEventData.AddSceneToSynchronize(SceneHashFromNameOrPath(scene.path), scene.handle);
             }
 
             sceneEventData.AddSpawnedNetworkObjects();
@@ -2026,8 +2033,6 @@ namespace Unity.Netcode
                         {
                             // Include anything in the DDOL scene
                             PopulateScenePlacedObjects(DontDestroyOnLoadScene, false);
-                            // Synchronize the NetworkObjects for this scene
-                            sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
 
                             // If needed, set the currently active scene
                             if (HashToBuildIndex.ContainsKey(sceneEventData.ActiveSceneHash))
@@ -2039,7 +2044,10 @@ namespace Unity.Netcode
                                 }
                             }
 
-                            // If needed, migrate dynamically spawned NetworkObjects to the same scene as on the server side
+                            // Spawn and Synchronize all NetworkObjects
+                            sceneEventData.SynchronizeSceneNetworkObjects(NetworkManager);
+
+                            // If needed, migrate dynamically spawned NetworkObjects to the same scene as they are on the server
                             SynchronizeNetworkObjectScene();
 
                             sceneEventData.SceneEventType = SceneEventType.SynchronizeComplete;
@@ -2468,6 +2476,9 @@ namespace Unity.Netcode
             ObjectsMigratedIntoNewScene.Clear();
         }
 
+
+        private List<int> m_ScenesToRemoveFromObjectMigration = new List<int>();
+
         /// <summary>
         /// Should be invoked during PostLateUpdate just prior to the NetworkMessageManager processes its outbound message queue.
         /// </summary>
@@ -2479,6 +2490,40 @@ namespace Unity.Netcode
                 return;
             }
 
+            // Double check that the NetworkObjects to migrate still exist
+            m_ScenesToRemoveFromObjectMigration.Clear();
+            foreach (var sceneEntry in ObjectsMigratedIntoNewScene)
+            {
+                for (int i = sceneEntry.Value.Count - 1; i >= 0; i--)
+                {
+                    // Remove NetworkObjects that are no longer spawned
+                    if (!sceneEntry.Value[i].IsSpawned)
+                    {
+                        sceneEntry.Value.RemoveAt(i);
+                    }
+                }
+                // If the scene entry no longer has any NetworkObjects to migrate
+                // then add it to the list of scenes to be removed from the table
+                // of scenes containing NetworkObjects to migrate.
+                if (sceneEntry.Value.Count == 0)
+                {
+                    m_ScenesToRemoveFromObjectMigration.Add(sceneEntry.Key);
+                }
+            }
+
+            // Remove sceneHandle entries that no longer have any NetworkObjects remaining
+            foreach (var sceneHandle in m_ScenesToRemoveFromObjectMigration)
+            {
+                ObjectsMigratedIntoNewScene.Remove(sceneHandle);
+            }
+
+            // If there is nothing to send a migration notification for then exit
+            if (ObjectsMigratedIntoNewScene.Count == 0)
+            {
+                return;
+            }
+
+            // Some NetworkObjects still exist, send the message
             var sceneEvent = BeginSceneEvent();
             sceneEvent.SceneEventType = SceneEventType.ObjectSceneChanged;
             SendSceneEventData(sceneEvent.SceneEventId, NetworkManager.ConnectedClientsIds.Where(c => c != NetworkManager.ServerClientId).ToArray());

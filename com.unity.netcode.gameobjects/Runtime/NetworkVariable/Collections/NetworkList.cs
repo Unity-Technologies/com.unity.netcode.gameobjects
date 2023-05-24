@@ -490,12 +490,14 @@ namespace Unity.Netcode
                 throw new InvalidOperationException("Client is not allowed to write to this NetworkList");
             }
 
+            var value = m_List[index];
             m_List.RemoveAt(index);
 
             var listEvent = new NetworkListEvent<T>()
             {
                 Type = NetworkListEvent<T>.EventType.RemoveAt,
-                Index = index
+                Index = index,
+                Value = value
             };
 
             HandleAddListEvent(listEvent);

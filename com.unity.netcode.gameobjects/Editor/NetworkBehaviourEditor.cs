@@ -41,13 +41,11 @@ namespace Unity.Netcode.Editor
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
-                    Debug.Log($"Adding NetworkVariable {fields[i].Name}");
                 }
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkList<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
                     m_NetworkVariableNames.Add(ObjectNames.NicifyVariableName(fields[i].Name));
                     m_NetworkVariableFields.Add(ObjectNames.NicifyVariableName(fields[i].Name), fields[i]);
-                    Debug.Log($"Adding NetworkList {fields[i].Name}");
                 }
             }
         }
@@ -81,7 +79,25 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.BeginHorizontal();
             if (genericType.IsValueType)
             {
-                var method = typeof(NetworkBehaviourEditor).GetMethod("RenderNetworkContainerValueType", BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                var isEquatable = false;
+                foreach (var iface in genericType.GetInterfaces())
+                {
+                    if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEquatable<>))
+                    {
+                        isEquatable = true;
+                    }
+                }
+
+                MethodInfo method;
+                if (isEquatable)
+                {
+                    method = typeof(NetworkBehaviourEditor).GetMethod(nameof(RenderNetworkContainerValueTypeIEquatable), BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                }
+                else
+                {
+                    method = typeof(NetworkBehaviourEditor).GetMethod(nameof(RenderNetworkContainerValueType), BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+                }
+
                 var genericMethod = method.MakeGenericMethod(genericType);
                 genericMethod.Invoke(this, new[] { (object)index });
             }
@@ -94,7 +110,23 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        private void RenderNetworkContainerValueType<T>(int index) where T : unmanaged, IEquatable<T>
+        private void RenderNetworkContainerValueType<T>(int index) where T : unmanaged
+        {
+            try
+            {
+                var networkVariable = (NetworkVariable<T>)m_NetworkVariableFields[m_NetworkVariableNames[index]].GetValue(target);
+                RenderNetworkVariableValueType(index, networkVariable);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+                throw;
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void RenderNetworkContainerValueTypeIEquatable<T>(int index) where T : unmanaged, IEquatable<T>
         {
             try
             {
@@ -240,7 +272,7 @@ namespace Unity.Netcode.Editor
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
-                if (m_NetworkVariableNames.Contains(property.name))
+                if (m_NetworkVariableNames.Contains(ObjectNames.NicifyVariableName(property.name)))
                 {
                     // Skip rendering of NetworkVars, they have special rendering
                     continue;
