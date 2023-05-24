@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- The location of the automatically-created default network prefab list can now be configured (#2544)
 - Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.SetMaxSingleMessageSize() and NetworkManager.SetMaxFragmentedMessageSize() for transports that don't work with the default values (#2530)
 - Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
 

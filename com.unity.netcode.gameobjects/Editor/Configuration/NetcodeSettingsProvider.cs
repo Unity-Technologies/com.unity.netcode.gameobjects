@@ -1,5 +1,9 @@
+using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
+using Directory = UnityEngine.Windows.Directory;
+using File = UnityEngine.Windows.File;
 
 namespace Unity.Netcode.Editor.Configuration
 {
@@ -20,9 +24,58 @@ namespace Unity.Netcode.Editor.Configuration
                 label = "Netcode for GameObjects",
                 keywords = new[] { "netcode", "editor" },
                 guiHandler = OnGuiHandler,
+                deactivateHandler = OnDeactivate
             };
 
             return provider;
+        }
+
+        private static void OnDeactivate()
+        {
+            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            if (settings.TempNetworkPrefabsPath != settings.NetworkPrefabsPath)
+            {
+                var newPath = settings.TempNetworkPrefabsPath;
+                if (newPath == "")
+                {
+                    newPath = NetcodeForGameObjectsProjectSettings.DefaultNetworkPrefabsPath;
+                    settings.TempNetworkPrefabsPath = newPath;
+                }
+                var oldPath = settings.NetworkPrefabsPath;
+                settings.NetworkPrefabsPath = settings.TempNetworkPrefabsPath;
+                var dirName = Path.GetDirectoryName(newPath);
+                if (!Directory.Exists(dirName))
+                {
+                    var dirs = dirName.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar });
+                    var dirsQueue = new Queue<string>(dirs);
+                    var parent = dirsQueue.Dequeue();
+                    while (dirsQueue.Count != 0)
+                    {
+                        var child = dirsQueue.Dequeue();
+                        var together = Path.Combine(parent, child);
+                        if (!Directory.Exists(together))
+                        {
+                            AssetDatabase.CreateFolder(parent, child);
+                        }
+
+                        parent = together;
+                    }
+                }
+
+                if (Directory.Exists(dirName))
+                {
+                    if (File.Exists(oldPath))
+                    {
+                        AssetDatabase.MoveAsset(oldPath, newPath);
+                        if (File.Exists(oldPath))
+                        {
+                            File.Delete(oldPath);
+                        }
+                        AssetDatabase.Refresh();
+                    }
+                }
+                settings.SaveSettings();
+            }
         }
 
 
@@ -70,6 +123,7 @@ namespace Unity.Netcode.Editor.Configuration
             var multiplayerToolsTipStatus = NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
             var settings = NetcodeForGameObjectsProjectSettings.instance;
             var generateDefaultPrefabs = settings.GenerateDefaultNetworkPrefabs;
+            var networkPrefabsPath = settings.TempNetworkPrefabsPath;
 
             EditorGUI.BeginChangeCheck();
 
@@ -97,6 +151,7 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 GUILayout.BeginVertical("Box");
                 const string generateNetworkPrefabsString = "Generate Default Network Prefabs List";
+                const string networkPrefabsLocationString = "Default Network Prefabs List path";
 
                 if (s_MaxLabelWidth == 0)
                 {
@@ -114,6 +169,14 @@ namespace Unity.Netcode.Editor.Configuration
                         "to date with all NetworkObject prefabs."),
                     generateDefaultPrefabs,
                     GUILayout.Width(s_MaxLabelWidth + 20));
+
+                GUI.SetNextControlName("Location");
+                networkPrefabsPath = EditorGUILayout.TextField(
+                    new GUIContent(
+                        networkPrefabsLocationString,
+                        "The path to the asset the default NetworkPrefabList object should be stored in."),
+                    networkPrefabsPath,
+                    GUILayout.Width(s_MaxLabelWidth + 270));
                 GUILayout.EndVertical();
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -123,6 +186,7 @@ namespace Unity.Netcode.Editor.Configuration
                 NetcodeForGameObjectsEditorSettings.SetAutoAddNetworkObjectSetting(autoAddNetworkObjectSetting);
                 NetcodeForGameObjectsEditorSettings.SetNetcodeInstallMultiplayerToolTips(multiplayerToolsTipStatus ? 0 : 1);
                 settings.GenerateDefaultNetworkPrefabs = generateDefaultPrefabs;
+                settings.TempNetworkPrefabsPath = networkPrefabsPath;
                 settings.SaveSettings();
             }
         }
