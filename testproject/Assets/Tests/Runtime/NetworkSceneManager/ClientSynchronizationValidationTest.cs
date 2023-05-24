@@ -15,18 +15,69 @@ namespace TestProject.RuntimeTests
         private const string k_FirstSceneToLoad = "UnitTestBaseScene";
         private const string k_SecondSceneToLoad = "InSceneNetworkObject";
         private const string k_ThirdSceneToSkip = "EmptyScene";
+        private Scene m_RuntimeGeneratedScene;
+        private bool m_IncludeSceneVerificationHandler;
+        private bool m_RuntimeSceneWasExcludedFromSynch;
 
         private List<ClientSceneVerificationHandler> m_ClientSceneVerifiers = new List<ClientSceneVerificationHandler>();
 
         protected override void OnNewClientStarted(NetworkManager networkManager)
         {
-            m_ClientSceneVerifiers.Add(new ClientSceneVerificationHandler(networkManager));
+            if (m_IncludeSceneVerificationHandler)
+            {
+                m_ClientSceneVerifiers.Add(new ClientSceneVerificationHandler(networkManager));
+            }
             base.OnNewClientStarted(networkManager);
         }
 
+        /// <summary>
+        /// Handle excluding runtime scene from synchronization
+        /// </summary>
+        private bool OnServerVerifySceneBeforeLoading(int sceneIndex, string sceneName, LoadSceneMode loadSceneMode)
+        {
+            // exclude test runner scene
+            if (sceneName.StartsWith(NetcodeIntegrationTestHelpers.FirstPartOfTestRunnerSceneName))
+            {
+                return false;
+            }
+
+            // Exclude the runtime generated scene
+            if (sceneIndex == m_RuntimeGeneratedScene.buildIndex && m_RuntimeGeneratedScene.name == sceneName)
+            {
+                m_RuntimeSceneWasExcludedFromSynch = true;
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Test that validates users can exclude runtime generated scenes from the initial client synchronization
+        /// process using <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator ClientSynchWithServerSideRuntimeGeneratedScene()
+        {
+            m_IncludeSceneVerificationHandler = false;
+            m_ServerNetworkManager.SceneManager.VerifySceneBeforeLoading = OnServerVerifySceneBeforeLoading;
+            m_ServerNetworkManager.SceneManager.DisableValidationWarnings(true);
+            // For this test we want to disable the check for scenes in build list
+            m_ServerNetworkManager.SceneManager.ExcludeSceneFromSychronization = null;
+            // Create a runtime scene in the server side
+            m_RuntimeGeneratedScene = SceneManager.CreateScene("RuntimeGeneratedScene");
+            yield return s_DefaultWaitForTick;
+            yield return CreateAndStartNewClient();
+
+            Assert.True(m_RuntimeSceneWasExcludedFromSynch, $"Server did not exclude the runtime generated scene when creating synchronization message data!");
+        }
+
+        /// <summary>
+        /// Validates that connecting clients will exclude scenes using <see cref="NetworkSceneManager.VerifySceneBeforeLoading"/>
+        /// </summary>
         [UnityTest]
         public IEnumerator ClientVerifySceneBeforeLoading()
         {
+            m_IncludeSceneVerificationHandler = true;
             var scenesToLoad = new List<string>() { k_FirstSceneToLoad, k_SecondSceneToLoad, k_ThirdSceneToSkip };
             m_ServerNetworkManager.SceneManager.OnLoadComplete += OnLoadComplete;
             foreach (var sceneToLoad in scenesToLoad)

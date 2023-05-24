@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 
 namespace Unity.Netcode.Editor.Configuration
@@ -44,7 +45,6 @@ namespace Unity.Netcode.Editor.Configuration
     internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
     {
         internal static readonly string DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
-        [SerializeField] public bool GenerateDefaultNetworkPrefabs = true;
         [SerializeField] public string NetworkPrefabsPath = DefaultNetworkPrefabsPath;
         public string TempNetworkPrefabsPath;
 
@@ -55,6 +55,22 @@ namespace Unity.Netcode.Editor.Configuration
                 NetworkPrefabsPath = DefaultNetworkPrefabsPath;
             }
             TempNetworkPrefabsPath = NetworkPrefabsPath;
+        }
+        
+        [SerializeField]
+        [FormerlySerializedAs("GenerateDefaultNetworkPrefabs")]
+        private byte m_GenerateDefaultNetworkPrefabs;
+
+        public bool GenerateDefaultNetworkPrefabs
+        {
+            get
+            {
+                return m_GenerateDefaultNetworkPrefabs != 0;
+            }
+            set
+            {
+                m_GenerateDefaultNetworkPrefabs = (byte)(value ? 1 : 0);
+            }
         }
 
         internal void SaveSettings()

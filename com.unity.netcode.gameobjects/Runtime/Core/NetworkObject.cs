@@ -189,6 +189,12 @@ namespace Unity.Netcode
         public Action OnMigratedToNewScene;
 
         /// <summary>
+        /// When set to false, the NetworkObject will be spawned with no observers initially (other than the server)
+        /// </summary>
+        [Tooltip("When false, the NetworkObject will spawn with no observers initially. (default is true)")]
+        public bool SpawnWithObservers = true;
+
+        /// <summary>
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>
