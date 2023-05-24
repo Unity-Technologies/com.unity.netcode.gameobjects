@@ -156,7 +156,7 @@ namespace Unity.Netcode
         public string ToBase64()
         {
             NetworkConfig config = this;
-            var writer = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp);
+            var writer = new FastBufferWriter(1024, Allocator.Temp);
             using (writer)
             {
                 writer.WriteValueSafe(config.ProtocolVersion);
@@ -228,7 +228,7 @@ namespace Unity.Netcode
                 return m_ConfigHash.Value;
             }
 
-            var writer = new FastBufferWriter(NetworkMessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, int.MaxValue);
+            var writer = new FastBufferWriter(1024, Allocator.Temp, int.MaxValue);
             using (writer)
             {
                 writer.WriteValueSafe(ProtocolVersion);
