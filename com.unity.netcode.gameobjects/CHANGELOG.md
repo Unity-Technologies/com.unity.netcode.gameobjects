@@ -14,7 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where the `OnClientDisconnected` client identifier was incorrect when trigger after a pending client connection was denied. (#2569)
+- Fixed issue where the `OnClientDisconnected` client identifier was incorrect after a pending client connection was denied. (#2569)
 - Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
 - Fixed the "Generate Default Network Prefabs List" setting not loading correctly and always reverting to being checked. (#2545)
