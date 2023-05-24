@@ -54,8 +54,9 @@ namespace Unity.Netcode.RuntimeTests
             AssertOnTimeout($"Timed out waiting for disconnect notification for pending Client-{m_PendingClientId}!");
 
             // Validate that we don't get multiple disconnect notifications for clients being disconnected
-            // Have a client disconnect
+            // Have a client disconnect remotely
             m_ClientNetworkManagers[0].Shutdown();
+
             // Have the server disconnect a client
             m_ServerNetworkManager.DisconnectClient(m_ClientNetworkManagers[1].LocalClientId);
             m_ServerNetworkManager.OnClientDisconnectCallback -= OnClientDisconnectCallback;
