@@ -155,7 +155,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public static bool IsSubclassOf(this TypeReference typeReference, TypeReference baseClass)
         {
             var type = typeReference.Resolve();
-            if (type.BaseType == null || type.BaseType.Name == nameof(Object))
+            if (type == null || type.BaseType == null || type.BaseType.Name == nameof(Object))
             {
                 return false;
             }
