@@ -32,13 +32,13 @@ namespace Unity.Netcode.Editor.Configuration
 
         private static void OnDeactivate()
         {
-            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var settings = NetcodeForGameObjectsJsonProjectSettings.Instance;
             if (settings.TempNetworkPrefabsPath != settings.NetworkPrefabsPath)
             {
                 var newPath = settings.TempNetworkPrefabsPath;
                 if (newPath == "")
                 {
-                    newPath = NetcodeForGameObjectsProjectSettings.DefaultNetworkPrefabsPath;
+                    newPath = NetcodeForGameObjectsJsonProjectSettings.DefaultNetworkPrefabsPath;
                     settings.TempNetworkPrefabsPath = newPath;
                 }
                 var oldPath = settings.NetworkPrefabsPath;
@@ -121,7 +121,7 @@ namespace Unity.Netcode.Editor.Configuration
 
             var autoAddNetworkObjectSetting = NetcodeForGameObjectsEditorSettings.GetAutoAddNetworkObjectSetting();
             var multiplayerToolsTipStatus = NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() == 0;
-            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var settings = NetcodeForGameObjectsJsonProjectSettings.Instance;
             var generateDefaultPrefabs = settings.GenerateDefaultNetworkPrefabs;
             var networkPrefabsPath = settings.TempNetworkPrefabsPath;
 

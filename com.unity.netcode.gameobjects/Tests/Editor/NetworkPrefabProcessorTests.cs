@@ -7,7 +7,7 @@ namespace Unity.Netcode.EditorTests
 {
     public class NetworkPrefabProcessorTests
     {
-        private NetcodeForGameObjectsProjectSettings m_Settings;
+        private NetcodeForGameObjectsJsonProjectSettings m_Settings;
         private bool m_EditorDefaultPrefabSetting;
         private string m_EditorDefaultPrefabLocation;
 
@@ -19,7 +19,7 @@ namespace Unity.Netcode.EditorTests
         [SetUp]
         public void SetUp()
         {
-            m_Settings = NetcodeForGameObjectsProjectSettings.instance;
+            m_Settings = NetcodeForGameObjectsJsonProjectSettings.Instance;
             m_EditorDefaultPrefabSetting = m_Settings.GenerateDefaultNetworkPrefabs;
             m_EditorDefaultPrefabLocation = NetworkPrefabProcessor.DefaultNetworkPrefabsPath;
             NetworkPrefabProcessor.DefaultNetworkPrefabsPath = k_DefaultAssetString;

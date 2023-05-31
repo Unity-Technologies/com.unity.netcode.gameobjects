@@ -44,7 +44,7 @@ namespace Unity.Netcode.Editor
             // in the inspector.
             NetworkManager.OnNetworkManagerReset = manager =>
             {
-                var settings = NetcodeForGameObjectsProjectSettings.instance;
+                var settings = NetcodeForGameObjectsJsonProjectSettings.Instance;
                 if (settings.GenerateDefaultNetworkPrefabs)
                 {
                     manager.NetworkConfig = new NetworkConfig();

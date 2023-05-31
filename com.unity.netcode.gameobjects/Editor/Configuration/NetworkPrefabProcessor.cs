@@ -13,11 +13,11 @@ namespace Unity.Netcode.Editor.Configuration
         {
             get
             {
-                return NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath;
+                return NetcodeForGameObjectsJsonProjectSettings.Instance.NetworkPrefabsPath;
             }
             internal set
             {
-                NetcodeForGameObjectsProjectSettings.instance.NetworkPrefabsPath = value;
+                NetcodeForGameObjectsJsonProjectSettings.Instance.NetworkPrefabsPath = value;
                 // Force a recache of the prefab list
                 s_PrefabsList = null;
             }
@@ -27,7 +27,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
         {
-            var settings = NetcodeForGameObjectsProjectSettings.instance;
+            var settings = NetcodeForGameObjectsJsonProjectSettings.Instance;
             if (!settings.GenerateDefaultNetworkPrefabs)
             {
                 return;

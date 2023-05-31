@@ -1,6 +1,7 @@
+using System;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 
 namespace Unity.Netcode.Editor.Configuration
@@ -41,14 +42,47 @@ namespace Unity.Netcode.Editor.Configuration
         }
     }
 
-    [FilePath("ProjectSettings/NetcodeForGameObjects.settings", FilePathAttribute.Location.ProjectFolder)]
-    internal class NetcodeForGameObjectsProjectSettings : ScriptableSingleton<NetcodeForGameObjectsProjectSettings>
+    [Serializable]
+    internal class NetcodeForGameObjectsJsonProjectSettings
     {
+        private const string FilePath = "ProjectSettings/NetcodeForGameObjects.settings";
+
+        private static NetcodeForGameObjectsJsonProjectSettings s_Instance;
+
+        public static NetcodeForGameObjectsJsonProjectSettings Instance
+        {
+            get
+            {
+                if (s_Instance == null)
+                {
+                    if (File.Exists(FilePath))
+                    {
+                        var json = File.ReadAllText(FilePath);
+                        if (json == "" || json[0] != '{')
+                        {
+                            s_Instance = new NetcodeForGameObjectsJsonProjectSettings();
+                        }
+                        else
+                        {
+                            s_Instance = JsonUtility.FromJson<NetcodeForGameObjectsJsonProjectSettings>(json);
+                            s_Instance.OnLoad();
+                        }
+                    }
+                }
+
+                return s_Instance;
+            }
+        }
+
         internal static readonly string DefaultNetworkPrefabsPath = "Assets/DefaultNetworkPrefabs.asset";
-        [SerializeField] public string NetworkPrefabsPath = DefaultNetworkPrefabsPath;
+        public string NetworkPrefabsPath = DefaultNetworkPrefabsPath;
+
+        [NonSerialized]
         public string TempNetworkPrefabsPath;
 
-        private void OnEnable()
+        public bool GenerateDefaultNetworkPrefabs;
+
+        private void OnLoad()
         {
             if (NetworkPrefabsPath == "")
             {
@@ -57,25 +91,10 @@ namespace Unity.Netcode.Editor.Configuration
             TempNetworkPrefabsPath = NetworkPrefabsPath;
         }
 
-        [SerializeField]
-        [FormerlySerializedAs("GenerateDefaultNetworkPrefabs")]
-        private byte m_GenerateDefaultNetworkPrefabs;
-
-        public bool GenerateDefaultNetworkPrefabs
-        {
-            get
-            {
-                return m_GenerateDefaultNetworkPrefabs != 0;
-            }
-            set
-            {
-                m_GenerateDefaultNetworkPrefabs = (byte)(value ? 1 : 0);
-            }
-        }
-
         internal void SaveSettings()
         {
-            Save(true);
+            var json = JsonUtility.ToJson(this);
+            File.WriteAllText(FilePath, json);
         }
     }
 }
