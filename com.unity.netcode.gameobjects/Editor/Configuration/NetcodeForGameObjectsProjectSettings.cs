@@ -24,12 +24,7 @@ namespace Unity.Netcode.Editor.Configuration
 
         internal void SaveSettings()
         {
-            GetSerializedObject();
             Save(true);
-        }
-        internal SerializedObject GetSerializedObject()
-        {
-            return new SerializedObject(this);
         }
     }
 }
