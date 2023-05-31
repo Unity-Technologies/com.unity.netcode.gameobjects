@@ -45,7 +45,7 @@ namespace Unity.Netcode.Editor.Configuration
     [Serializable]
     internal class NetcodeForGameObjectsJsonProjectSettings
     {
-        private const string FilePath = "ProjectSettings/NetcodeForGameObjects.settings";
+        private const string k_FilePath = "ProjectSettings/NetcodeForGameObjects.settings";
 
         private static NetcodeForGameObjectsJsonProjectSettings s_Instance;
 
@@ -55,9 +55,9 @@ namespace Unity.Netcode.Editor.Configuration
             {
                 if (s_Instance == null)
                 {
-                    if (File.Exists(FilePath))
+                    if (File.Exists(k_FilePath))
                     {
-                        var json = File.ReadAllText(FilePath);
+                        var json = File.ReadAllText(k_FilePath);
                         if (json == "" || json[0] != '{')
                         {
                             s_Instance = new NetcodeForGameObjectsJsonProjectSettings();
@@ -94,7 +94,7 @@ namespace Unity.Netcode.Editor.Configuration
         internal void SaveSettings()
         {
             var json = JsonUtility.ToJson(this);
-            File.WriteAllText(FilePath, json);
+            File.WriteAllText(k_FilePath, json);
         }
     }
 }
