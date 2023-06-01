@@ -128,7 +128,7 @@ namespace Unity.Netcode.RuntimeTests
         public NetworkVariable<NativeArray<byte>> ByteArrayVar;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<byte>> ByteListVar;
-    #endif
+#endif
         public NetworkVariable<sbyte> SbyteVar;
         public NetworkVariable<NativeArray<sbyte>> SbyteArrayVar;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
