@@ -37,7 +37,9 @@ namespace Unity.Netcode
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Reader.ReadValueSafe(out value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Reader.ReadValueSafe(out value);
         public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Reader.ReadValueSafe(out value, allocator);
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Reader.ReadValueSafeInPlace(ref value);
+#endif
 
         public void SerializeValue<T>(ref T value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Reader.ReadNetworkSerializableInPlace(ref value);
         public void SerializeValue<T>(ref T[] value, FastBufferWriter.ForNetworkSerializable unused = default) where T : INetworkSerializable, new() => m_Reader.ReadValue(out value);
@@ -47,7 +49,9 @@ namespace Unity.Netcode
 
         public void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Reader.ReadValueSafe(out value, allocator);
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public void SerializeValue<T>(ref NativeList<T> value) where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Reader.ReadValueSafeInPlace(ref value);
+#endif
 
         public void SerializeValue(ref Vector2 value) => m_Reader.ReadValueSafe(out value);
         public void SerializeValue(ref Vector2[] value) => m_Reader.ReadValueSafe(out value);
@@ -98,7 +102,9 @@ namespace Unity.Netcode
         public void SerializeValuePreChecked<T>(ref T[] value, FastBufferWriter.ForStructs unused = default) where T : unmanaged, INetworkSerializeByMemcpy => m_Reader.ReadValue(out value);
         public void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Reader.ReadValue(out value, allocator);
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged => m_Reader.ReadValueInPlace(ref value);
+#endif
 
         public void SerializeValuePreChecked<T>(ref T value, FastBufferWriter.ForFixedStrings unused = default)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes => m_Reader.ReadValue(out value);
