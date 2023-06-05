@@ -17,7 +17,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed: Fixed a null reference in codegen in some projects (#2581)
 - Fixed issue where the `OnClientDisconnected` client identifier was incorrect after a pending client connection was denied. (#2569)
 - Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)
