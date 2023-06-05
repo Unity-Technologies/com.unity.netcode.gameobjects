@@ -237,6 +237,7 @@ namespace Unity.Netcode
         }
     }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
     internal class UnmanagedListSerializer<T> : INetworkVariableSerializer<NativeList<T>> where T : unmanaged
     {
         public void Write(FastBufferWriter writer, ref NativeList<T> value)
@@ -267,6 +268,7 @@ namespace Unity.Netcode
             duplicatedValue.CopyFrom(value);
         }
     }
+#endif
 
     /// <summary>
     /// Serializer for FixedStrings
@@ -331,6 +333,7 @@ namespace Unity.Netcode
         }
     }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
     /// <summary>
     /// Serializer for FixedStrings
     /// </summary>
@@ -365,6 +368,7 @@ namespace Unity.Netcode
             duplicatedValue.CopyFrom(value);
         }
     }
+#endif
 
     /// <summary>
     /// Serializer for unmanaged INetworkSerializable types
@@ -431,6 +435,7 @@ namespace Unity.Netcode
         }
     }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
     /// <summary>
     /// Serializer for unmanaged INetworkSerializable types
     /// </summary>
@@ -465,6 +470,7 @@ namespace Unity.Netcode
             duplicatedValue.CopyFrom(value);
         }
     }
+#endif
 
     /// <summary>
     /// Serializer for managed INetworkSerializable types, which differs from the unmanaged implementation in that it
@@ -658,6 +664,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new UnmanagedArraySerializer<T>();
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Registeres an unmanaged type that will be serialized by a direct memcpy into a buffer
         /// </summary>
@@ -666,6 +673,7 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new UnmanagedListSerializer<T>();
         }
+#endif
 
         /// <summary>
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
@@ -687,6 +695,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new UnmanagedNetworkSerializableArraySerializer<T>();
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Registers an unmanaged type that implements INetworkSerializable and will be serialized through a call to
         /// NetworkSerialize
@@ -696,6 +705,7 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new UnmanagedNetworkSerializableListSerializer<T>();
         }
+#endif
 
         /// <summary>
         /// Registers a managed type that implements INetworkSerializable and will be serialized through a call to
@@ -727,6 +737,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<NativeArray<T>>.Serializer = new FixedStringArraySerializer<T>();
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Registers a FixedString type that will be serialized through FastBufferReader/FastBufferWriter's FixedString
         /// serializers
@@ -736,6 +747,7 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.Serializer = new FixedStringListSerializer<T>();
         }
+#endif
 
         /// <summary>
         /// Registers a managed type that will be checked for equality using T.Equals()
@@ -764,6 +776,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<NativeArray<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsArray;
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using T.Equals()
         /// </summary>
@@ -772,6 +785,7 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.EqualityEqualsList;
         }
+#endif
 
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using memcmp and only considered
@@ -793,6 +807,7 @@ namespace Unity.Netcode
             NetworkVariableSerialization<NativeArray<T>>.AreEqual = NetworkVariableSerialization<T>.ValueEqualsArray;
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Registers an unmanaged type that will be checked for equality using memcmp and only considered
         /// equal if they are bitwise equivalent in memory
@@ -802,6 +817,7 @@ namespace Unity.Netcode
         {
             NetworkVariableSerialization<NativeList<T>>.AreEqual = NetworkVariableSerialization<T>.ValueEqualsList;
         }
+#endif
 
         /// <summary>
         /// Registers a managed type that will be checked for equality using the == operator
@@ -841,6 +857,7 @@ namespace Unity.Netcode
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType)) == 0;
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks
         // Size is fixed
@@ -865,6 +882,7 @@ namespace Unity.Netcode
             var bptr = (TValueType*)b.GetUnsafePtr();
             return UnsafeUtility.MemCmp(aptr, bptr, sizeof(TValueType) * a.Length) == 0;
         }
+#endif
 
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks
@@ -911,6 +929,7 @@ namespace Unity.Netcode
             return a.Equals(b);
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks
         // Size is fixed
@@ -943,6 +962,7 @@ namespace Unity.Netcode
 
             return true;
         }
+#endif
 
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks

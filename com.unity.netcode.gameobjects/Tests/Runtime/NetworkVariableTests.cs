@@ -126,104 +126,170 @@ namespace Unity.Netcode.RuntimeTests
     {
         public NetworkVariable<byte> ByteVar;
         public NetworkVariable<NativeArray<byte>> ByteArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<byte>> ByteListVar;
+#endif
         public NetworkVariable<sbyte> SbyteVar;
         public NetworkVariable<NativeArray<sbyte>> SbyteArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<sbyte>> SbyteListVar;
+#endif
         public NetworkVariable<short> ShortVar;
         public NetworkVariable<NativeArray<short>> ShortArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<short>> ShortListVar;
+#endif
         public NetworkVariable<ushort> UshortVar;
         public NetworkVariable<NativeArray<ushort>> UshortArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<ushort>> UshortListVar;
+#endif
         public NetworkVariable<int> IntVar;
         public NetworkVariable<NativeArray<int>> IntArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<int>> IntListVar;
+#endif
         public NetworkVariable<uint> UintVar;
         public NetworkVariable<NativeArray<uint>> UintArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<uint>> UintListVar;
+#endif
         public NetworkVariable<long> LongVar;
         public NetworkVariable<NativeArray<long>> LongArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<long>> LongListVar;
+#endif
         public NetworkVariable<ulong> UlongVar;
         public NetworkVariable<NativeArray<ulong>> UlongArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<ulong>> UlongListVar;
+#endif
         public NetworkVariable<bool> BoolVar;
         public NetworkVariable<NativeArray<bool>> BoolArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<bool>> BoolListVar;
+#endif
         public NetworkVariable<char> CharVar;
         public NetworkVariable<NativeArray<char>> CharArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<char>> CharListVar;
+#endif
         public NetworkVariable<float> FloatVar;
         public NetworkVariable<NativeArray<float>> FloatArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<float>> FloatListVar;
+#endif
         public NetworkVariable<double> DoubleVar;
         public NetworkVariable<NativeArray<double>> DoubleArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<double>> DoubleListVar;
+#endif
         public NetworkVariable<ByteEnum> ByteEnumVar;
         public NetworkVariable<NativeArray<ByteEnum>> ByteEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<ByteEnum>> ByteEnumListVar;
+#endif
         public NetworkVariable<SByteEnum> SByteEnumVar;
         public NetworkVariable<NativeArray<SByteEnum>> SByteEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<SByteEnum>> SByteEnumListVar;
+#endif
         public NetworkVariable<ShortEnum> ShortEnumVar;
         public NetworkVariable<NativeArray<ShortEnum>> ShortEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<ShortEnum>> ShortEnumListVar;
+#endif
         public NetworkVariable<UShortEnum> UShortEnumVar;
         public NetworkVariable<NativeArray<UShortEnum>> UShortEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<UShortEnum>> UShortEnumListVar;
+#endif
         public NetworkVariable<IntEnum> IntEnumVar;
         public NetworkVariable<NativeArray<IntEnum>> IntEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<IntEnum>> IntEnumListVar;
+#endif
         public NetworkVariable<UIntEnum> UIntEnumVar;
         public NetworkVariable<NativeArray<UIntEnum>> UIntEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<UIntEnum>> UIntEnumListVar;
+#endif
         public NetworkVariable<LongEnum> LongEnumVar;
         public NetworkVariable<NativeArray<LongEnum>> LongEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<LongEnum>> LongEnumListVar;
+#endif
         public NetworkVariable<ULongEnum> ULongEnumVar;
         public NetworkVariable<NativeArray<ULongEnum>> ULongEnumArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<ULongEnum>> ULongEnumListVar;
+#endif
         public NetworkVariable<Vector2> Vector2Var;
         public NetworkVariable<NativeArray<Vector2>> Vector2ArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Vector2>> Vector2ListVar;
+#endif
         public NetworkVariable<Vector3> Vector3Var;
         public NetworkVariable<NativeArray<Vector3>> Vector3ArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Vector3>> Vector3ListVar;
+#endif
         public NetworkVariable<Vector2Int> Vector2IntVar;
         public NetworkVariable<NativeArray<Vector2Int>> Vector2IntArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Vector2Int>> Vector2IntListVar;
+#endif
         public NetworkVariable<Vector3Int> Vector3IntVar;
         public NetworkVariable<NativeArray<Vector3Int>> Vector3IntArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Vector3Int>> Vector3IntListVar;
+#endif
         public NetworkVariable<Vector4> Vector4Var;
         public NetworkVariable<NativeArray<Vector4>> Vector4ArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Vector4>> Vector4ListVar;
+#endif
         public NetworkVariable<Quaternion> QuaternionVar;
         public NetworkVariable<NativeArray<Quaternion>> QuaternionArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Quaternion>> QuaternionListVar;
+#endif
         public NetworkVariable<Color> ColorVar;
         public NetworkVariable<NativeArray<Color>> ColorArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Color>> ColorListVar;
+#endif
         public NetworkVariable<Color32> Color32Var;
         public NetworkVariable<NativeArray<Color32>> Color32ArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Color32>> Color32ListVar;
+#endif
         public NetworkVariable<Ray> RayVar;
         public NetworkVariable<NativeArray<Ray>> RayArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Ray>> RayListVar;
+#endif
         public NetworkVariable<Ray2D> Ray2DVar;
         public NetworkVariable<NativeArray<Ray2D>> Ray2DArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Ray2D>> Ray2DListVar;
+#endif
         public NetworkVariable<NetworkVariableTestStruct> TestStructVar;
         public NetworkVariable<NativeArray<NetworkVariableTestStruct>> TestStructArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<NetworkVariableTestStruct>> TestStructListVar;
+#endif
 
         public NetworkVariable<FixedString32Bytes> FixedStringVar;
         public NetworkVariable<NativeArray<FixedString32Bytes>> FixedStringArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<FixedString32Bytes>> FixedStringListVar;
+#endif
 
         public NetworkVariable<UnmanagedNetworkSerializableType> UnmanagedNetworkSerializableTypeVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableListVar;
+#endif
         public NetworkVariable<NativeArray<UnmanagedNetworkSerializableType>> UnmanagedNetworkSerializableArrayVar;
 
         public NetworkVariable<ManagedNetworkSerializableType> ManagedNetworkSerializableTypeVar;
@@ -1441,6 +1507,7 @@ namespace Unity.Netcode.RuntimeTests
             clientVariable.Dispose();
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private void TestValueTypeNativeList<T>(NativeList<T> testValue, NativeList<T> changedValue) where T : unmanaged
         {
             var serverVariable = new NetworkVariable<NativeList<T>>(testValue);
@@ -1494,6 +1561,7 @@ namespace Unity.Netcode.RuntimeTests
             serverVariable.Dispose();
             clientVariable.Dispose();
         }
+#endif
 
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNetworkVariables_ValuesAreSerializedCorrectly(
@@ -1897,6 +1965,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNativeListNetworkVariables_ValuesAreSerializedCorrectly(
 
@@ -2137,6 +2206,7 @@ namespace Unity.Netcode.RuntimeTests
                     });
             }
         }
+#endif
 
         [Test]
         public void TestManagedINetworkSerializableNetworkVariablesDeserializeInPlace()

@@ -90,9 +90,11 @@ namespace Unity.Netcode.EditorTests
 
         protected abstract void RunTypeNativeArrayTestSafe<T>(NativeArray<T> valueToTest) where T : unmanaged;
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         protected abstract void RunTypeNativeListTest<T>(NativeList<T> valueToTest) where T : unmanaged;
 
         protected abstract void RunTypeNativeListTestSafe<T>(NativeList<T> valueToTest) where T : unmanaged;
+#endif
 
         private Random m_Random = new Random();
         protected TestStruct GetTestStruct()
@@ -950,6 +952,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.Fail("No type handler was provided for this type in the test!");
             }
         }
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public void BaseNativeListTypeTest(Type testType, WriteType writeType)
         {
             var random = new Random();
@@ -1296,5 +1299,6 @@ namespace Unity.Netcode.EditorTests
                 Assert.Fail("No type handler was provided for this type in the test!");
             }
         }
+#endif
     }
 }

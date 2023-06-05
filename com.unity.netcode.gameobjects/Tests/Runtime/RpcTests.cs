@@ -15,8 +15,15 @@ namespace Unity.Netcode.RuntimeTests
         public class RpcTestNB : NetworkBehaviour
         {
             public event Action<ulong, ServerRpcParams> OnServer_Rpc;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             public event Action<NativeList<ulong>, ServerRpcParams> OnNativeListServer_Rpc;
-            public event Action<Vector3, Vector3[], NativeList<Vector3>, FixedString32Bytes> OnTypedServer_Rpc;
+#endif
+            public event Action<Vector3, Vector3[],
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                NativeList<Vector3>,
+#endif
+                FixedString32Bytes> OnTypedServer_Rpc;
+
             public event Action OnClient_Rpc;
 
             [ServerRpc]
@@ -25,11 +32,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnServer_Rpc(clientId, param);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ServerRpc]
             public void MyNativeListServerRpc(NativeList<ulong> clientId, ServerRpcParams param = default)
             {
                 OnNativeListServer_Rpc(clientId, param);
             }
+#endif
 
 
             [ClientRpc]
@@ -39,9 +48,17 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             [ServerRpc]
-            public void MyTypedServerRpc(Vector3 param1, Vector3[] param2, NativeList<Vector3> param3, FixedString32Bytes param4)
+            public void MyTypedServerRpc(Vector3 param1, Vector3[] param2,
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                NativeList<Vector3> param3,
+#endif
+                FixedString32Bytes param4)
             {
-                OnTypedServer_Rpc(param1, param2, param3, param4);
+                OnTypedServer_Rpc(param1, param2,
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                    param3,
+#endif
+                    param4);
             }
         }
 
@@ -69,11 +86,13 @@ namespace Unity.Netcode.RuntimeTests
 
             var vector3 = new Vector3(1, 2, 3);
             Vector3[] vector3s = new[] { new Vector3(4, 5, 6), new Vector3(7, 8, 9) };
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             using var vector3sNativeList = new NativeList<Vector3>(Allocator.Persistent)
             {
                 new Vector3(10, 11, 12),
                 new Vector3(13, 14, 15)
             };
+#endif
 
             localClienRpcTestNB.OnClient_Rpc += () =>
             {
@@ -103,16 +122,23 @@ namespace Unity.Netcode.RuntimeTests
 
             var str = new FixedString32Bytes("abcdefg");
 
-            serverClientRpcTestNB.OnTypedServer_Rpc += (param1, param2, param3, param4) =>
+            serverClientRpcTestNB.OnTypedServer_Rpc += (param1, param2,
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                param3,
+#endif
+                param4) =>
             {
                 Debug.Log("TypedServerRpc received on server object");
                 Assert.AreEqual(param1, vector3);
                 Assert.AreEqual(param2.Length, vector3s.Length);
                 Assert.AreEqual(param2[0], vector3s[0]);
                 Assert.AreEqual(param2[1], vector3s[1]);
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                 Assert.AreEqual(param3.Length, vector3s.Length);
                 Assert.AreEqual(param3[0], vector3sNativeList[0]);
                 Assert.AreEqual(param3[1], vector3sNativeList[1]);
+#endif
                 Assert.AreEqual(param4, str);
                 hasReceivedTypedServerRpc = true;
             };
@@ -121,7 +147,11 @@ namespace Unity.Netcode.RuntimeTests
             localClienRpcTestNB.MyServerRpc(m_ClientNetworkManagers[0].LocalClientId);
 
             // Send TypedServerRpc
-            localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s, vector3sNativeList, str);
+            localClienRpcTestNB.MyTypedServerRpc(vector3, vector3s,
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                vector3sNativeList,
+#endif
+                str);
 
             // Send ClientRpc
             serverClientRpcTestNB.MyClientRpc();
