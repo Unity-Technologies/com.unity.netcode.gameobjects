@@ -28,6 +28,28 @@ namespace Unity.Netcode.RuntimeTests
 
     }
 
+    public class NetworkBehaviourWithNetVarArray : NetworkBehaviour
+    {
+        public NetworkVariable<int> Int0 = new NetworkVariable<int>();
+        public NetworkVariable<int> Int1 = new NetworkVariable<int>();
+        public NetworkVariable<int> Int2 = new NetworkVariable<int>();
+        public NetworkVariable<int> Int3 = new NetworkVariable<int>();
+        public NetworkVariable<int> Int4 = new NetworkVariable<int>();
+        public NetworkVariable<int>[] AllInts = new NetworkVariable<int>[5];
+
+        public int InitializedFieldCount => NetworkVariableFields.Count;
+
+
+        private void Awake()
+        {
+            AllInts[0] = Int0;
+            AllInts[1] = Int1;
+            AllInts[2] = Int2;
+            AllInts[3] = Int3;
+            AllInts[4] = Int4;
+        }
+    }
+
     public struct TemplatedValueOnlyReferencedByNetworkVariableSubclass<T> : INetworkSerializeByMemcpy
         where T : unmanaged
     {
@@ -1435,6 +1457,40 @@ namespace Unity.Netcode.RuntimeTests
                 UserNetworkVariableSerialization<Guid>.DuplicateValue = null;
             }
         }
+        [Test]
+        public void WhenCreatingAnArrayOfNetVars_InitializingVariablesDoesNotThrowAnException()
+        {
+            var testObjPrefab = CreateNetworkObjectPrefab($"NetVarArrayPrefab");
+            var testComp = testObjPrefab.AddComponent<NetworkBehaviourWithNetVarArray>();
+            testComp.InitializeVariables();
+
+            // Verify all variables were initialized
+            Assert.AreEqual(testComp.InitializedFieldCount, 5);
+
+            Assert.NotNull(testComp.Int0.GetBehaviour());
+            Assert.NotNull(testComp.Int1.GetBehaviour());
+            Assert.NotNull(testComp.Int2.GetBehaviour());
+            Assert.NotNull(testComp.Int3.GetBehaviour());
+            Assert.NotNull(testComp.Int4.GetBehaviour());
+
+            Assert.NotNull(testComp.Int0.Name);
+            Assert.NotNull(testComp.Int1.Name);
+            Assert.NotNull(testComp.Int2.Name);
+            Assert.NotNull(testComp.Int3.Name);
+            Assert.NotNull(testComp.Int4.Name);
+
+            Assert.AreNotEqual("", testComp.Int0.Name);
+            Assert.AreNotEqual("", testComp.Int1.Name);
+            Assert.AreNotEqual("", testComp.Int2.Name);
+            Assert.AreNotEqual("", testComp.Int3.Name);
+            Assert.AreNotEqual("", testComp.Int4.Name);
+
+            Assert.AreSame(testComp.AllInts[0], testComp.Int0);
+            Assert.AreSame(testComp.AllInts[1], testComp.Int1);
+            Assert.AreSame(testComp.AllInts[2], testComp.Int2);
+            Assert.AreSame(testComp.AllInts[3], testComp.Int3);
+            Assert.AreSame(testComp.AllInts[4], testComp.Int4);
+        }
 
         private void TestValueType<T>(T testValue, T changedValue) where T : unmanaged
         {
@@ -1562,7 +1618,6 @@ namespace Unity.Netcode.RuntimeTests
             clientVariable.Dispose();
         }
 #endif
-
         [Test]
         public void WhenSerializingAndDeserializingValueTypeNetworkVariables_ValuesAreSerializedCorrectly(
 
