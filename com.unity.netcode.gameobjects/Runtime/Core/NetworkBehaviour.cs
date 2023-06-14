@@ -560,6 +560,9 @@ namespace Unity.Netcode
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
         private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
 
+        // Since NetworkVariableFields converts to protected, this provides internal access to the network variable fields list
+        internal List<NetworkVariableBase> InternalNetworkVariableFields => NetworkVariableFields;
+
         // RuntimeAccessModifiersILPP will make this `protected`
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
 

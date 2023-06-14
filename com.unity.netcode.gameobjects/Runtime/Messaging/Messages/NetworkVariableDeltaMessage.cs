@@ -33,7 +33,7 @@ namespace Unity.Netcode
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
 
-            for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
+            for (int i = 0; i < NetworkBehaviour.InternalNetworkVariableFields.Count; i++)
             {
                 if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
@@ -51,7 +51,7 @@ namespace Unity.Netcode
                 }
 
                 var startingSize = writer.Length;
-                var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
+                var networkVariable = NetworkBehaviour.InternalNetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
                     (NetworkBehaviour.NetworkManager.IsServer || networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
@@ -91,7 +91,7 @@ namespace Unity.Netcode
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var tempWriter = new FastBufferWriter(NetworkBehaviour.NetworkManager.MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkBehaviour.NetworkManager.MessageManager.FragmentedMessageMaxSize);
-                        NetworkBehaviour.NetworkVariableFields[i].WriteDelta(tempWriter);
+                        NetworkBehaviour.InternalNetworkVariableFields[i].WriteDelta(tempWriter);
                         BytePacker.WriteValueBitPacked(writer, tempWriter.Length);
 
                         if (!writer.TryBeginWrite(tempWriter.Length))
@@ -144,7 +144,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
+                    for (int i = 0; i < networkBehaviour.InternalNetworkVariableFields.Count; i++)
                     {
                         int varSize = 0;
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -165,7 +165,7 @@ namespace Unity.Netcode
                             }
                         }
 
-                        var networkVariable = networkBehaviour.NetworkVariableFields[i];
+                        var networkVariable = networkBehaviour.InternalNetworkVariableFields[i];
 
                         if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
                         {
