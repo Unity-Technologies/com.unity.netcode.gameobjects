@@ -1218,6 +1218,7 @@ namespace Unity.Netcode.Editor.CodeGen
 
             // override NetworkBehaviour.__getTypeName() method to return concrete type
             {
+#if NGO_INCLUDE_GET_TYPE_NAME
                 var networkBehaviour_TypeDef = m_NetworkBehaviour_TypeRef.Resolve();
                 var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));
 
@@ -1235,6 +1236,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 processor.Body.Instructions.Add(processor.Create(OpCodes.Ret));
 
                 typeDefinition.Methods.Add(newGetTypeNameMethod);
+#endif
             }
 
             m_MainModule.RemoveRecursiveReferences();

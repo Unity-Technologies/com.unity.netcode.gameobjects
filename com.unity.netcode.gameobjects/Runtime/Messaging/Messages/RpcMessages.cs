@@ -40,7 +40,7 @@ namespace Unity.Netcode
             }
 
             payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
-
+#if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
             {
@@ -51,6 +51,7 @@ namespace Unity.Netcode
                     networkBehaviour.__getTypeName(),
                     reader.Length);
             }
+#endif
 #endif
 
             return true;

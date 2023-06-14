@@ -19,10 +19,10 @@ namespace Unity.Netcode
             Client = 2
         }
 
-
+#if NGO_INCLUDE_GET_TYPE_NAME
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
-
+#endif
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
@@ -98,7 +98,7 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-
+#if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -109,6 +109,7 @@ namespace Unity.Netcode
                     __getTypeName(),
                     rpcWriteSize);
             }
+#endif
 #endif
         }
 
@@ -230,7 +231,7 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-
+#if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -272,6 +273,7 @@ namespace Unity.Netcode
                     }
                 }
             }
+#endif
 #endif
         }
 

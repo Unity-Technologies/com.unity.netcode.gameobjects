@@ -105,13 +105,14 @@ namespace Unity.Netcode
                     {
                         networkVariable.WriteDelta(writer);
                     }
-
+#if NGO_INCLUDE_GET_TYPE_NAME
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
                         NetworkBehaviour.NetworkObject,
                         networkVariable.Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length - startingSize);
+#endif
                 }
             }
         }
@@ -199,14 +200,14 @@ namespace Unity.Netcode
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
                         networkVariable.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
-
+#if NGO_INCLUDE_GET_TYPE_NAME
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             context.SenderId,
                             networkObject,
                             networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
-
+#endif
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {

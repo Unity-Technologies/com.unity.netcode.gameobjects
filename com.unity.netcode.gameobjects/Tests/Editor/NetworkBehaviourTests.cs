@@ -45,7 +45,7 @@ namespace Unity.Netcode.EditorTests
             // Cleanup
             Object.DestroyImmediate(gameObject);
         }
-
+#if NGO_INCLUDE_GET_TYPE_NAME
         [Test]
         public void GivenClassDerivesFromNetworkBehaviour_GetTypeNameReturnsCorrectValue()
         {
@@ -63,7 +63,7 @@ namespace Unity.Netcode.EditorTests
 
             Assert.AreEqual(nameof(DerivedNetworkBehaviour), networkBehaviour.__getTypeName());
         }
-
+#endif
         // Note: in order to repro https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues/1078
         // this child class must be defined before its parent to assure it is processed first by ILPP
         public class DerivedNetworkBehaviour : EmptyNetworkBehaviour
