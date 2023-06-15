@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 
@@ -1040,6 +1042,70 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[i].Dispose();
             }
+        }
+
+        static NetworkBehaviour()
+        {
+
+            var allTypes = TypeHelper.GetAllDerivedTypes(typeof(NetworkBehaviour));
+            foreach (var type in allTypes)
+            {
+                Debug.Log(type.FullName);
+                var methodInfo = type.GetMethod($"InitializeRPCS_{type.Name}");
+                if (methodInfo != null)
+                {
+                    try
+                    {
+                        Debug.Log($"----> {methodInfo.Name} : Invoked!");
+                        methodInfo.Invoke(type, null);
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogException(ex);
+                    }
+
+                }
+            }
+        }
+    }
+
+    internal static class TypeHelper
+    {
+        public static IEnumerable<Type> GetAllDerivedTypes(this Type type, bool allAssemblies = true)
+        {
+            var derivedTypes = GetAllDerivedTypes(type, type.Assembly).ToList();
+
+            if (allAssemblies)
+            {
+                IEnumerable<Assembly> dependentAssemblies = GetDependentAssemblies(Assembly.GetAssembly(type)!);
+                derivedTypes.AddRange(dependentAssemblies.SelectMany(a => GetAllDerivedTypes(type, a)));
+            }
+
+            return derivedTypes;
+        }
+
+        private static IEnumerable<Assembly> GetDependentAssemblies(Assembly analyzedAssembly)
+        {
+            return AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a.GetReferencedAssemblies()
+                    .Select(assemblyName => assemblyName.FullName)
+                    .Contains(analyzedAssembly.FullName));
+        }
+
+        private static IEnumerable<Type> GetAllDerivedTypes(this Type baseType, Assembly assembly)
+        {
+            TypeInfo baseTypeInfo = baseType.GetTypeInfo();
+
+            return assembly.DefinedTypes.Where(type =>
+            {
+                if (baseTypeInfo.IsClass)
+                {
+                    return type.IsSubclassOf(baseType);
+                }
+
+                return baseTypeInfo.IsInterface && type.ImplementedInterfaces.Contains(baseTypeInfo.AsType());
+
+            }).Select(type => type.AsType());
         }
     }
 }

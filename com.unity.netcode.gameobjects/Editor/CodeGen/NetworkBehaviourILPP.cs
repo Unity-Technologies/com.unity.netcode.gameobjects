@@ -1173,19 +1173,30 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (rpcHandlers.Count > 0 || rpcNames.Count > 0)
             {
-                var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-                if (staticCtorMethodDef == null)
-                {
-                    staticCtorMethodDef = new MethodDefinition(
-                        ".cctor", // Static Constructor (constant-constructor)
-                        MethodAttributes.HideBySig |
-                        MethodAttributes.SpecialName |
-                        MethodAttributes.RTSpecialName |
+                //var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
+
+                //if (staticCtorMethodDef == null)
+                //{
+                //    staticCtorMethodDef = new MethodDefinition(
+                //        ".cctor", // Static Constructor (constant-constructor)
+                //        MethodAttributes.HideBySig |
+                //        MethodAttributes.SpecialName |
+                //        MethodAttributes.RTSpecialName |
+                //        MethodAttributes.Static,
+                //        typeDefinition.Module.TypeSystem.Void);
+                //    staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                //    typeDefinition.Methods.Insert(0,staticCtorMethodDef);
+                //}
+
+
+                 var staticCtorMethodDef = new MethodDefinition(
+                        $"InitializeRPCS_{typeDefinition.Name}",
+                        MethodAttributes.Public |
                         MethodAttributes.Static,
                         typeDefinition.Module.TypeSystem.Void);
-                    staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                    typeDefinition.Methods.Add(staticCtorMethodDef);
-                }
+                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                typeDefinition.Methods.Add(staticCtorMethodDef);
+
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
