@@ -105,6 +105,10 @@ namespace Unity.Netcode
                     {
                         networkVariable.WriteDelta(writer);
                     }
+                    // TODO: FIXME (Issue #1)
+                    // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+                    // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+                    // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
@@ -200,6 +204,10 @@ namespace Unity.Netcode
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
                         networkVariable.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
+                        // TODO: FIXME (Issue #1)
+                        // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+                        // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+                        // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             context.SenderId,

@@ -23,7 +23,7 @@ namespace Unity.Netcode
         #region FIXME_CoreCLR
         public delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
         /// <summary>
-        /// TODO: FIXME
+        /// TODO: FIXME (Issue #3)
         /// We will need to determine a slightly different approach to populating
         /// the RPC look up table. CoreCLR will "optimize out" injected static
         /// constructors which leads to the NetworkManager.__rpc_func_table never

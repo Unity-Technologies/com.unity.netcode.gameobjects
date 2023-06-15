@@ -1189,7 +1189,7 @@ namespace Unity.Netcode.Editor.CodeGen
                 //}
 
 
-                /// TODO: FIXME
+                /// TODO: FIXME (Issue #3)
                 /// The modifications made to this IL injected code, NetworkManager.__rpc_func_table,
                 /// NetworkManager.RpcReceiveHandler, and __RpcParams are only a temporary work around
                 /// in order to progress forward with CoreCLR & NGO testing (to determine
@@ -1202,7 +1202,6 @@ namespace Unity.Netcode.Editor.CodeGen
                         typeDefinition.Module.TypeSystem.Void);
                 staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
                 typeDefinition.Methods.Add(staticCtorMethodDef);
-
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
@@ -1235,6 +1234,10 @@ namespace Unity.Netcode.Editor.CodeGen
 
             // override NetworkBehaviour.__getTypeName() method to return concrete type
             {
+                // TODO: FIXME (Issue #1)
+                // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+                // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+                // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
                 var networkBehaviour_TypeDef = m_NetworkBehaviour_TypeRef.Resolve();
                 var baseGetTypeNameMethod = networkBehaviour_TypeDef.Methods.First(p => p.Name.Equals(nameof(NetworkBehaviour.__getTypeName)));

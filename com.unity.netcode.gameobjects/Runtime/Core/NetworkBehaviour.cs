@@ -20,7 +20,10 @@ namespace Unity.Netcode
             Server = 1,
             Client = 2
         }
-
+        // TODO: FIXME (Issue #1)
+        // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+        // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+        // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
@@ -100,6 +103,10 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
+            // TODO: FIXME (Issue #1)
+            // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+            // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+            // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -233,6 +240,10 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
+            // TODO: FIXME (Issue #1)
+            // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+            // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+            // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
@@ -562,6 +573,17 @@ namespace Unity.Netcode
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
         private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
 
+
+        /// <summary>
+        /// TODO: REVIEW FIX (Issue #2)
+        /// Since CoreCLR is a bit more strict in permissions, the issue with NetworkVariableFields was that upon it being
+        /// changed from internal to protected access, in order for the derived class to have access to and add the
+        /// NetworkVariable fields, any internal class not derived from NetworkBehaviour would no longer be able to access
+        /// the NetworkVariableFields property.
+        /// POTENTIAL RESOLUTION FOR ISSUE #2:
+        /// Just add an addition "accessor property" that has internal permissions.
+        /// All references to InternalNetworkVariableFields are within <see cref="NetworkBehaviourUpdater"/> 
+        /// </summary>
         // Since NetworkVariableFields converts to protected, this provides internal access to the network variable fields list
         internal List<NetworkVariableBase> InternalNetworkVariableFields => NetworkVariableFields;
 
@@ -1045,12 +1067,11 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// TODO: FIXME
+        /// TODO: FIXME (Issue #3)
         /// <see cref="NetworkManager.__rpc_func_table"/>
         /// </summary>
         static NetworkBehaviour()
         {
-
             var allTypes = TypeHelper.GetAllDerivedTypes(typeof(NetworkBehaviour));
             foreach (var type in allTypes)
             {
@@ -1067,14 +1088,13 @@ namespace Unity.Netcode
                     {
                         Debug.LogException(ex);
                     }
-
                 }
             }
         }
     }
 
     /// <summary>
-    /// TODO: FIXME
+    /// TODO: FIXME (Issue #3)
     /// Depending upon the final fix, most likely remove this code
     /// <see cref="NetworkManager.__rpc_func_table"/>
     /// </summary>
