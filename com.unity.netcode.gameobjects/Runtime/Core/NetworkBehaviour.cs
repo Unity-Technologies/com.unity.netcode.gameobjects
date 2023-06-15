@@ -1044,6 +1044,10 @@ namespace Unity.Netcode
             }
         }
 
+        /// <summary>
+        /// TODO: FIXME
+        /// <see cref="NetworkManager.__rpc_func_table"/>
+        /// </summary>
         static NetworkBehaviour()
         {
 
@@ -1069,6 +1073,11 @@ namespace Unity.Netcode
         }
     }
 
+    /// <summary>
+    /// TODO: FIXME
+    /// Depending upon the final fix, most likely remove this code
+    /// <see cref="NetworkManager.__rpc_func_table"/>
+    /// </summary>
     internal static class TypeHelper
     {
         public static IEnumerable<Type> GetAllDerivedTypes(this Type type, bool allAssemblies = true)

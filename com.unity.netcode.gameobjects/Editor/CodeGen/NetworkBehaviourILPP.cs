@@ -1189,7 +1189,13 @@ namespace Unity.Netcode.Editor.CodeGen
                 //}
 
 
-                 var staticCtorMethodDef = new MethodDefinition(
+                /// TODO: FIXME
+                /// The modifications made to this IL injected code, NetworkManager.__rpc_func_table,
+                /// NetworkManager.RpcReceiveHandler, and __RpcParams are only a temporary work around
+                /// in order to progress forward with CoreCLR & NGO testing (to determine
+                /// if there is anything else impacted).
+                /// <see cref="NetworkManager.__rpc_func_table"/> region of code for more info
+                var staticCtorMethodDef = new MethodDefinition(
                         $"InitializeRPCS_{typeDefinition.Name}",
                         MethodAttributes.Public |
                         MethodAttributes.Static,

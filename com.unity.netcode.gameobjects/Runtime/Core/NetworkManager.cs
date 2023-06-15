@@ -19,10 +19,23 @@ namespace Unity.Netcode
 #pragma warning disable IDE1006 // disable naming rule violation check
 
         // RuntimeAccessModifiersILPP will make this `public`
-        public delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
 
+        #region FIXME_CoreCLR
+        public delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
+        /// <summary>
+        /// TODO: FIXME
+        /// We will need to determine a slightly different approach to populating
+        /// the RPC look up table. CoreCLR will "optimize out" injected static
+        /// constructors which leads to the NetworkManager.__rpc_func_table never
+        /// getting populated.
+        /// Other areas impacted:
+        /// <see cref="NetworkBehaviour.NetworkBehaviour"/>
+        /// Temporarily Added Code:
+        /// <see cref="TypeHelper"/>
+        /// </summary>
         // RuntimeAccessModifiersILPP will make this `public`
         public static readonly Dictionary<uint, RpcReceiveHandler> __rpc_func_table = new Dictionary<uint, RpcReceiveHandler>();
+        #endregion
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         // RuntimeAccessModifiersILPP will make this `public`
