@@ -40,6 +40,10 @@ namespace Unity.Netcode
             }
 
             payload = new FastBufferReader(reader.GetUnsafePtrAtCurrentPosition(), Allocator.None, reader.Length - reader.Position);
+            // TODO: FIXME (Issue #1)
+            // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
+            // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
+            // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
 #if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(metadata.NetworkRpcMethodId, out var rpcMethodName))
@@ -73,6 +77,11 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(new Exception("Unhandled RPC exception!", ex));
+                Debug.Log($"RPC Table Contents");
+                foreach (var entry in NetworkManager.__rpc_func_table)
+                {
+                    Debug.Log($"{entry.Key} | {entry.Value.Method.Name}");
+                }
             }
         }
     }
