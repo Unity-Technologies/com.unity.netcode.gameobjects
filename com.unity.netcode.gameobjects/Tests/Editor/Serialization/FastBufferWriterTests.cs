@@ -196,6 +196,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private void RunMethod<T>(string methodName, FastBufferWriter writer, in NativeList<T> value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeList<T>) });
@@ -236,6 +237,7 @@ namespace Unity.Netcode.EditorTests
             }
             method.Invoke(writer, args);
         }
+#endif
 
 
         protected override unsafe void RunTypeTest<T>(T valueToTest)
@@ -304,6 +306,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private unsafe void VerifyArrayEquality<T>(NativeList<T> value, byte* unsafePtr, int offset) where T : unmanaged
         {
             int* sizeValue = (int*)(unsafePtr + offset);
@@ -316,6 +319,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
             }
         }
+#endif
 
         protected override unsafe void RunTypeArrayTest<T>(T[] valueToTest)
         {
@@ -405,6 +409,7 @@ namespace Unity.Netcode.EditorTests
         }
 
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         protected override unsafe void RunTypeNativeListTest<T>(NativeList<T> valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -447,6 +452,7 @@ namespace Unity.Netcode.EditorTests
                 VerifyCheckBytes(underlyingArray, writeSize);
             }
         }
+#endif
 
         [Test, Description("Tests")]
         public void WhenWritingUnmanagedType_ValueIsWrittenCorrectly(
@@ -490,6 +496,7 @@ namespace Unity.Netcode.EditorTests
             BaseNativeArrayTypeTest(testType, writeType);
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void WhenWritingNativeListOfUnmanagedElementType_NativeListIsWrittenCorrectly(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -503,6 +510,7 @@ namespace Unity.Netcode.EditorTests
         {
             BaseNativeListTypeTest(testType, writeType);
         }
+#endif
 
         [TestCase(false, WriteType.WriteDirect)]
         [TestCase(false, WriteType.WriteSafe)]

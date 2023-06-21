@@ -44,11 +44,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ByteNativeListClientRpc(NativeList<byte> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void SbyteClientRpc(sbyte value)
@@ -68,11 +70,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void SbyteNativeListClientRpc(NativeList<sbyte> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void ShortClientRpc(short value)
@@ -92,11 +96,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ShortNativeListClientRpc(NativeList<short> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void UshortClientRpc(ushort value)
@@ -116,11 +122,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void UshortNativeListClientRpc(NativeList<ushort> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void IntClientRpc(int value)
@@ -140,11 +148,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void IntNativeListClientRpc(NativeList<int> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void UintClientRpc(uint value)
@@ -164,11 +174,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void UintNativeListClientRpc(NativeList<uint> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void LongClientRpc(long value)
@@ -188,11 +200,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void LongNativeListClientRpc(NativeList<long> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void UlongClientRpc(ulong value)
@@ -212,11 +226,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void UlongNativeListClientRpc(NativeList<ulong> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void BoolClientRpc(bool value)
@@ -236,11 +252,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void BoolNativeListClientRpc(NativeList<bool> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void CharClientRpc(char value)
@@ -260,11 +278,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void CharNativeListClientRpc(NativeList<char> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void FloatClientRpc(float value)
@@ -284,11 +304,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void FloatNativeListClientRpc(NativeList<float> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void DoubleClientRpc(double value)
@@ -308,11 +330,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void DoubleNativeListClientRpc(NativeList<double> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void ByteEnumClientRpc(ByteEnum value)
@@ -332,11 +356,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ByteEnumNativeListClientRpc(NativeList<ByteEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void SByteEnumClientRpc(SByteEnum value)
@@ -356,11 +382,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void SByteEnumNativeListClientRpc(NativeList<SByteEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void ShortEnumClientRpc(ShortEnum value)
@@ -380,11 +408,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ShortEnumNativeListClientRpc(NativeList<ShortEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void UShortEnumClientRpc(UShortEnum value)
@@ -404,11 +434,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void UShortEnumNativeListClientRpc(NativeList<UShortEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void IntEnumClientRpc(IntEnum value)
@@ -428,11 +460,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void IntEnumNativeListClientRpc(NativeList<IntEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void UIntEnumClientRpc(UIntEnum value)
@@ -452,11 +486,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void UIntEnumNativeListClientRpc(NativeList<UIntEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void LongEnumClientRpc(LongEnum value)
@@ -476,11 +512,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void LongEnumNativeListClientRpc(NativeList<LongEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void ULongEnumClientRpc(ULongEnum value)
@@ -500,11 +538,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ULongEnumNativeListClientRpc(NativeList<ULongEnum> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Vector2ClientRpc(Vector2 value)
@@ -524,11 +564,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Vector2NativeListClientRpc(NativeList<Vector2> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Vector3ClientRpc(Vector3 value)
@@ -548,11 +590,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Vector3NativeListClientRpc(NativeList<Vector3> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Vector2IntClientRpc(Vector2Int value)
@@ -572,11 +616,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Vector2IntNativeListClientRpc(NativeList<Vector2Int> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Vector3IntClientRpc(Vector3Int value)
@@ -596,11 +642,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Vector3IntNativeListClientRpc(NativeList<Vector3Int> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Vector4ClientRpc(Vector4 value)
@@ -620,11 +668,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Vector4NativeListClientRpc(NativeList<Vector4> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void QuaternionClientRpc(Quaternion value)
@@ -644,11 +694,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void QuaternionNativeListClientRpc(NativeList<Quaternion> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void ColorClientRpc(Color value)
@@ -668,11 +720,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void ColorNativeListClientRpc(NativeList<Color> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Color32ClientRpc(Color32 value)
@@ -692,11 +746,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Color32NativeListClientRpc(NativeList<Color32> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void RayClientRpc(Ray value)
@@ -716,11 +772,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void RayNativeListClientRpc(NativeList<Ray> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void Ray2DClientRpc(Ray2D value)
@@ -740,11 +798,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void Ray2DNativeListClientRpc(NativeList<Ray2D> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void NetworkVariableTestStructClientRpc(NetworkVariableTestStruct value)
@@ -764,11 +824,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void NetworkVariableTestStructNativeListClientRpc(NativeList<NetworkVariableTestStruct> value)
             {
                 OnReceived(value);
             }
+#endif
 
             [ClientRpc]
             public void FixedString32BytesClientRpc(FixedString32Bytes value)
@@ -788,11 +850,13 @@ namespace Unity.Netcode.RuntimeTests
                 OnReceived(value);
             }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
             [ClientRpc]
             public void FixedString32BytesNativeListClientRpc(NativeList<FixedString32Bytes> value)
             {
                 OnReceived(value);
             }
+#endif
         }
 
         protected override int NumberOfClients => 1;
@@ -972,6 +1036,7 @@ namespace Unity.Netcode.RuntimeTests
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public IEnumerator TestValueTypeNativeList<T>(NativeList<T> firstTest, NativeList<T> secondTest) where T : unmanaged
         {
             var methods = typeof(RpcTestNB).GetMethods();
@@ -1031,6 +1096,7 @@ namespace Unity.Netcode.RuntimeTests
             }
             Assert.Fail($"Could not find RPC function for {typeof(T).Name}");
         }
+#endif
 
         [UnityTest]
         public IEnumerator WhenSendingAValueTypeOverAnRpc_ValuesAreSerializedCorrectly(
@@ -1675,6 +1741,7 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [UnityTest]
         public IEnumerator WhenSendingANativeListOfValueTypesOverAnRpc_ValuesAreSerializedCorrectly(
 
@@ -1915,5 +1982,6 @@ namespace Unity.Netcode.RuntimeTests
                     });
             }
         }
+#endif
     }
 }

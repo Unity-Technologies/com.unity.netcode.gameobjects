@@ -216,6 +216,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
                             equalityMethod.GenericArguments.Add(wrappedType);
                         }
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                         else if (type.Resolve().FullName == "Unity.Collections.NativeList`1")
                         {
                             var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
@@ -247,6 +248,7 @@ namespace Unity.Netcode.Editor.CodeGen
                             }
                             equalityMethod.GenericArguments.Add(wrappedType);
                         }
+#endif
                         else if (type.IsValueType)
                         {
                             if (type.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || type.Resolve().IsEnum || IsMemcpyableType(type))
@@ -367,21 +369,31 @@ namespace Unity.Netcode.Editor.CodeGen
         private TypeReference m_ClientRpcParams_TypeRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyArray_MethodRef;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyList_MethodRef;
+#endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableArray_MethodRef;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef;
+#endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringArray_MethodRef;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringList_MethodRef;
+#endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableArray_MethodRef;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableList_MethodRef;
+#endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef;
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef;
+#endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
 
         private MethodReference m_ExceptionCtorMethodReference;
@@ -836,18 +848,24 @@ namespace Unity.Netcode.Editor.CodeGen
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedByMemcpyArray):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyArray_MethodRef = method;
                         break;
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedByMemcpyList):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyList_MethodRef = method;
                         break;
+#endif
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedINetworkSerializable):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef = method;
                         break;
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedINetworkSerializableArray):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableArray_MethodRef = method;
                         break;
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_UnmanagedINetworkSerializableList):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef = method;
                         break;
+#endif
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_ManagedINetworkSerializable):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef = method;
                         break;
@@ -857,9 +875,13 @@ namespace Unity.Netcode.Editor.CodeGen
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_FixedStringArray):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringArray_MethodRef = method;
                         break;
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     case nameof(NetworkVariableSerializationTypes.InitializeSerializer_FixedStringList):
                         m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringList_MethodRef = method;
                         break;
+#endif
+
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_ManagedIEquatable):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef = method;
                         break;
@@ -869,18 +891,23 @@ namespace Unity.Netcode.Editor.CodeGen
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedIEquatableArray):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableArray_MethodRef = method;
                         break;
+
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedIEquatableList):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableList_MethodRef = method;
                         break;
+#endif
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedValueEquals):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef = method;
                         break;
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedValueEqualsArray):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef = method;
                         break;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_UnmanagedValueEqualsList):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef = method;
                         break;
+#endif
                     case nameof(NetworkVariableSerializationTypes.InitializeEqualityChecker_ManagedClassEquals):
                         m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef = method;
                         break;
@@ -1366,7 +1393,11 @@ namespace Unity.Netcode.Editor.CodeGen
                         }
                         if (method.GenericParameters[0].HasConstraints)
                         {
-                            if (paramType.IsGenericInstance && (paramType.Resolve().FullName == "Unity.Collections.NativeList`1" || paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
+                            if (paramType.IsGenericInstance && (
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                                    paramType.Resolve().FullName == "Unity.Collections.NativeList`1" ||
+#endif
+                                    paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
                             {
                                 if (method.Parameters[0].ParameterType.Resolve() != paramType.Resolve())
                                 {
@@ -1408,7 +1439,11 @@ namespace Unity.Netcode.Editor.CodeGen
                             {
                                 var instanceMethod = new GenericInstanceMethod(method);
 
-                                if (paramType.IsGenericInstance && (paramType.Resolve().FullName == "Unity.Collections.NativeList`1" || paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
+                                if (paramType.IsGenericInstance && (
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                                        paramType.Resolve().FullName == "Unity.Collections.NativeList`1" ||
+#endif
+                                        paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
                                 {
                                     var wrappedType = ((GenericInstanceType)paramType).GenericArguments[0];
                                     instanceMethod.GenericArguments.Add(wrappedType);
@@ -1559,7 +1594,11 @@ namespace Unity.Netcode.Editor.CodeGen
                         {
                             continue;
                         }
-                        if (paramType.IsGenericInstance && (paramType.Resolve().FullName == "Unity.Collections.NativeList`1" || paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
+                        if (paramType.IsGenericInstance && (
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                                paramType.Resolve().FullName == "Unity.Collections.NativeList`1" ||
+#endif
+                                paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
                         {
                             if (method.Name == "OnSendGlobalCounterClientRpc")
                             {
@@ -1616,7 +1655,11 @@ namespace Unity.Netcode.Editor.CodeGen
                             if (meetsConstraints)
                             {
                                 var instanceMethod = new GenericInstanceMethod(method);
-                                if (paramType.IsGenericInstance && (paramType.Resolve().FullName == "Unity.Collections.NativeList`1" || paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
+                                if (paramType.IsGenericInstance && (
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                                        paramType.Resolve().FullName == "Unity.Collections.NativeList`1" ||
+#endif
+                                        paramType.Resolve().FullName == "Unity.Collections.NativeArray`1"))
                                 {
                                     var wrappedType = ((GenericInstanceType)paramType).GenericArguments[0];
                                     instanceMethod.GenericArguments.Add(wrappedType);
@@ -1691,11 +1734,14 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
 
                 MethodReference typeMethod;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                 if (paramType.Resolve().FullName == "Unity.Collections.NativeList`1")
                 {
                     typeMethod = GetFastBufferReaderReadMethod(k_ReadValueInPlaceMethodName, paramType);
                 }
-                else if (paramType.Resolve().FullName == "Unity.Collections.NativeArray`1")
+                else
+#endif
+                if (paramType.Resolve().FullName == "Unity.Collections.NativeArray`1")
                 {
                     typeMethod = GetFastBufferReaderReadMethod(k_ReadValueTempMethodName, paramType);
                 }
@@ -2179,9 +2225,9 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     field = new FieldReference(fieldDefinition.Name, fieldDefinition.FieldType, genericType);
                 }
-                if (field.FieldType.IsSubclassOf(m_NetworkVariableBase_TypeRef))
+                if (!field.FieldType.IsArray && !field.FieldType.Resolve().IsArray && field.FieldType.IsSubclassOf(m_NetworkVariableBase_TypeRef))
                 {
-                    // if({variable} != null) {
+                    // if({variable} == null) {
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Ldfld, field);
                     processor.Emit(OpCodes.Ldnull);
@@ -2430,6 +2476,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     processor.Emit(OpCodes.Brfalse, jumpInstruction);
                 }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
                 if (paramType.IsGenericInstance && paramType.Resolve().FullName == "Unity.Collections.NativeList`1")
                 {
                     // var list = NetworkBehaviour.__createNativeList<T>();
@@ -2449,6 +2496,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     processor.Emit(OpCodes.Call, method);
                     processor.Emit(OpCodes.Stloc, localIndex);
                 }
+#endif
 
                 var foundMethodRef = GetReadMethodForParameter(paramType, out var methodRef);
                 if (foundMethodRef)

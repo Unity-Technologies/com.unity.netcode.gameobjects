@@ -183,6 +183,7 @@ namespace Unity.Netcode.EditorTests
             method.Invoke(writer, args);
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private void RunWriteMethod<T>(string methodName, FastBufferWriter writer, in NativeList<T> value) where T : unmanaged
         {
             MethodInfo method = typeof(FastBufferWriter).GetMethod(methodName, new[] { typeof(NativeList<T>) });
@@ -223,6 +224,7 @@ namespace Unity.Netcode.EditorTests
             }
             method.Invoke(writer, args);
         }
+#endif
 
         private void RunReadMethod<T>(string methodName, FastBufferReader reader, out T value) where T : unmanaged
         {
@@ -382,6 +384,7 @@ namespace Unity.Netcode.EditorTests
             value = (NativeArray<T>)args[0];
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private void RunReadMethod<T>(string methodName, FastBufferReader reader, ref NativeList<T> value) where T : unmanaged
         {
             MethodInfo method = null;
@@ -431,6 +434,7 @@ namespace Unity.Netcode.EditorTests
             }
             method.Invoke(reader, args);
         }
+#endif
 
         protected override unsafe void RunTypeTest<T>(T valueToTest)
         {
@@ -500,6 +504,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         private void VerifyArrayEquality<T>(NativeList<T> value, NativeList<T> compareValue, int offset) where T : unmanaged
         {
             Assert.AreEqual(value.Length, compareValue.Length);
@@ -509,6 +514,7 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(value[i], compareValue[i]);
             }
         }
+#endif
 
         protected override unsafe void RunTypeArrayTest<T>(T[] valueToTest)
         {
@@ -614,6 +620,7 @@ namespace Unity.Netcode.EditorTests
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         protected override unsafe void RunTypeNativeListTest<T>(NativeList<T> valueToTest)
         {
             var writeSize = FastBufferWriter.GetWriteSize(valueToTest);
@@ -667,6 +674,7 @@ namespace Unity.Netcode.EditorTests
                 }
             }
         }
+#endif
 
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingUnmanagedType_ValueMatchesWhatWasWritten(
@@ -710,6 +718,7 @@ namespace Unity.Netcode.EditorTests
             BaseNativeArrayTypeTest(testType, writeType);
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [Test]
         public void GivenFastBufferWriterContainingValue_WhenReadingNativeListOfUnmanagedElementType_ValueMatchesWhatWasWritten(
             [Values(typeof(byte), typeof(sbyte), typeof(short), typeof(ushort), typeof(int), typeof(uint),
@@ -723,7 +732,7 @@ namespace Unity.Netcode.EditorTests
         {
             BaseNativeListTypeTest(testType, writeType);
         }
-
+#endif
 
         public unsafe void RunFixedStringTest<T>(T fixedStringValue, int numBytesWritten, WriteType writeType) where T : unmanaged, INativeList<byte>, IUTF8Bytes
         {

@@ -6,17 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [Unreleased]
+## [1.5.1] - 2023-06-07
 
 ### Added
 
-- Added support for serializing `NativeArray<>` and `NativeList<>` in `FastBufferReader`/`FastBufferWriter`, `BufferSerializer`, `NetworkVariable`, and RPCs. (#2375)
+- Added support for serializing `NativeArray<>` and `NativeList<>` in `FastBufferReader`/`FastBufferWriter`, `BufferSerializer`, `NetworkVariable`, and RPCs. (To use `NativeList<>`, add `UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT` to your Scripting Define Symbols in `Project Settings > Player`) (#2375)
 - The location of the automatically-created default network prefab list can now be configured (#2544)
-- Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.SetMaxSingleMessageSize() and NetworkManager.SetMaxFragmentedMessageSize() for transports that don't work with the default values (#2530)
+- Added: Message size limits (max single message and max fragmented message) can now be set using NetworkManager.MaximumTransmissionUnitSize and NetworkManager.MaximumFragmentedMessageSize for transports that don't work with the default values (#2530)
 - Added `NetworkObject.SpawnWithObservers` property (default is true) that when set to false will spawn a `NetworkObject` with no observers and will not be spawned on any client until `NetworkObject.NetworkShow` is invoked. (#2568)
 
 ### Fixed
 
+- Fixed: Fixed a null reference in codegen in some projects (#2581)
 - Fixed issue where the `OnClientDisconnected` client identifier was incorrect after a pending client connection was denied. (#2569)
 - Fixed warning "Runtime Network Prefabs was not empty at initialization time." being erroneously logged when no runtime network prefabs had been added (#2565)
 - Fixed issue where some temporary debug console logging was left in a merged PR. (#2562)

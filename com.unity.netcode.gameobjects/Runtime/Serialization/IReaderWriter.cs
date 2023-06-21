@@ -105,6 +105,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read or write a NativeList of struct values implementing ISerializeByMemcpy
         /// </summary>
@@ -112,6 +113,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter used for enabling overload resolution based on generic constraints</param>
         /// <typeparam name="T">The type being serialized</typeparam>
         void SerializeValue<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+#endif
 
         /// <summary>
         /// Read or write a struct or class value implementing INetworkSerializable
@@ -148,6 +150,7 @@ namespace Unity.Netcode
         void SerializeValue<T>(ref NativeArray<T> value, Allocator allocator)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read or write a NativeList of FixedString values
         /// </summary>
@@ -156,6 +159,7 @@ namespace Unity.Netcode
         /// <typeparam name="T">The type being serialized</typeparam>
         void SerializeValue<T>(ref NativeList<T> value)
             where T : unmanaged, INativeList<byte>, IUTF8Bytes;
+#endif
 
         /// <summary>
         /// Read or write a Vector2 value
@@ -392,6 +396,7 @@ namespace Unity.Netcode
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
         void SerializeValuePreChecked<T>(ref NativeArray<T> value, Allocator allocator, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Serialize a NativeList of structs, "pre-checked", which skips buffer checks.
         /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
@@ -402,6 +407,7 @@ namespace Unity.Netcode
         /// <param name="value">The values to read/write</param>
         /// <param name="unused">An unused parameter that can be used for enabling overload resolution based on generic constraints</param>
         void SerializeValuePreChecked<T>(ref NativeList<T> value, FastBufferWriter.ForGeneric unused = default) where T : unmanaged;
+#endif
 
         /// <summary>
         /// Serialize a FixedString, "pre-checked", which skips buffer checks.

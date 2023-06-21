@@ -479,6 +479,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read a NativeList of INetworkSerializables
         /// </summary>
@@ -494,6 +495,7 @@ namespace Unity.Netcode
                 ReadNetworkSerializable(out value.ElementAt(i));
             }
         }
+#endif
 
         /// <summary>
         /// Read an INetworkSerializable in-place, without constructing a new one
@@ -809,6 +811,7 @@ namespace Unity.Netcode
             byte* bytes = (byte*)value.GetUnsafePtr();
             ReadBytesSafe(bytes, sizeInBytes);
         }
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void ReadUnmanagedInPlace<T>(ref NativeList<T> value) where T : unmanaged
         {
@@ -827,6 +830,7 @@ namespace Unity.Netcode
             byte* bytes = (byte*)value.GetUnsafePtr();
             ReadBytesSafe(bytes, sizeInBytes);
         }
+#endif
 
         /// <summary>
         /// Read a NetworkSerializable value
@@ -945,6 +949,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read a struct NativeList
         /// </summary>
@@ -965,6 +970,7 @@ namespace Unity.Netcode
                 ReadUnmanagedInPlace(ref value);
             }
         }
+#endif
 
         /// <summary>
         /// Read a struct
@@ -1039,6 +1045,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read a struct NativeList
         ///
@@ -1062,6 +1069,7 @@ namespace Unity.Netcode
                 ReadUnmanagedSafeInPlace(ref value);
             }
         }
+#endif
 
         /// <summary>
         /// Read a primitive value (int, bool, etc)
@@ -1634,6 +1642,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Read a FixedString NativeList.
         ///
@@ -1654,5 +1663,6 @@ namespace Unity.Netcode
                 ReadValueSafeInPlace(ref value.ElementAt(i));
             }
         }
+#endif
     }
 }
