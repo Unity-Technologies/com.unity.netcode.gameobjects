@@ -1192,11 +1192,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
                 }
-                // TODO: FIXME (Issue #1)
-                // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-                // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-                // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
                     var currentKnownChildren = new System.Text.StringBuilder();
@@ -1209,7 +1204,6 @@ namespace Unity.Netcode
                     }
                     NetworkLog.LogInfo(currentKnownChildren.ToString());
                 }
-#endif
                 return null;
             }
 

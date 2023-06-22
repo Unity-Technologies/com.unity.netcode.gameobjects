@@ -80,9 +80,9 @@ namespace Unity.Netcode
                     for (int k = 0; k < dirtyObj.ChildNetworkBehaviours.Count; k++)
                     {
                         var behaviour = dirtyObj.ChildNetworkBehaviours[k];
-                        for (int i = 0; i < behaviour.InternalNetworkVariableFields.Count; i++)
+                        for (int i = 0; i < behaviour.NetworkVariableFields.Count; i++)
                         {
-                            if (behaviour.InternalNetworkVariableFields[i].IsDirty() &&
+                            if (behaviour.NetworkVariableFields[i].IsDirty() &&
                                 !behaviour.NetworkVariableIndexesToResetSet.Contains(i))
                             {
                                 behaviour.NetworkVariableIndexesToResetSet.Add(i);

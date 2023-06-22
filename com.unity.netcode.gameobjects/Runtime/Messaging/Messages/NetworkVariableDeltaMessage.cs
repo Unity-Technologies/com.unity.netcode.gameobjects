@@ -33,7 +33,7 @@ namespace Unity.Netcode
             BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
             BytePacker.WriteValueBitPacked(writer, NetworkBehaviourIndex);
 
-            for (int i = 0; i < NetworkBehaviour.InternalNetworkVariableFields.Count; i++)
+            for (int i = 0; i < NetworkBehaviour.NetworkVariableFields.Count; i++)
             {
                 if (!DeliveryMappedNetworkVariableIndex.Contains(i))
                 {
@@ -51,7 +51,7 @@ namespace Unity.Netcode
                 }
 
                 var startingSize = writer.Length;
-                var networkVariable = NetworkBehaviour.InternalNetworkVariableFields[i];
+                var networkVariable = NetworkBehaviour.NetworkVariableFields[i];
                 var shouldWrite = networkVariable.IsDirty() &&
                     networkVariable.CanClientRead(TargetClientId) &&
                     (NetworkBehaviour.NetworkManager.IsServer || networkVariable.CanClientWrite(NetworkBehaviour.NetworkManager.LocalClientId));
@@ -91,7 +91,7 @@ namespace Unity.Netcode
                     if (NetworkBehaviour.NetworkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         var tempWriter = new FastBufferWriter(NetworkBehaviour.NetworkManager.MessageManager.NonFragmentedMessageMaxSize, Allocator.Temp, NetworkBehaviour.NetworkManager.MessageManager.FragmentedMessageMaxSize);
-                        NetworkBehaviour.InternalNetworkVariableFields[i].WriteDelta(tempWriter);
+                        NetworkBehaviour.NetworkVariableFields[i].WriteDelta(tempWriter);
                         BytePacker.WriteValueBitPacked(writer, tempWriter.Length);
 
                         if (!writer.TryBeginWrite(tempWriter.Length))
@@ -105,18 +105,12 @@ namespace Unity.Netcode
                     {
                         networkVariable.WriteDelta(writer);
                     }
-                    // TODO: FIXME (Issue #1)
-                    // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-                    // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-                    // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
                         NetworkBehaviour.NetworkObject,
                         networkVariable.Name,
                         NetworkBehaviour.__getTypeName(),
                         writer.Length - startingSize);
-#endif
                 }
             }
         }
@@ -148,7 +142,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    for (int i = 0; i < networkBehaviour.InternalNetworkVariableFields.Count; i++)
+                    for (int i = 0; i < networkBehaviour.NetworkVariableFields.Count; i++)
                     {
                         int varSize = 0;
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
@@ -169,7 +163,7 @@ namespace Unity.Netcode
                             }
                         }
 
-                        var networkVariable = networkBehaviour.InternalNetworkVariableFields[i];
+                        var networkVariable = networkBehaviour.NetworkVariableFields[i];
 
                         if (networkManager.IsServer && !networkVariable.CanClientWrite(context.SenderId))
                         {
@@ -204,18 +198,13 @@ namespace Unity.Netcode
                         int readStartPos = m_ReceivedNetworkVariableData.Position;
 
                         networkVariable.ReadDelta(m_ReceivedNetworkVariableData, networkManager.IsServer);
-                        // TODO: FIXME (Issue #1)
-                        // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-                        // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-                        // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
+
                         networkManager.NetworkMetrics.TrackNetworkVariableDeltaReceived(
                             context.SenderId,
                             networkObject,
                             networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
-#endif
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {

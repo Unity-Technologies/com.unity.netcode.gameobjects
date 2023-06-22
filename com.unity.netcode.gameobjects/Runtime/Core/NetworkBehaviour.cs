@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 
@@ -20,14 +18,9 @@ namespace Unity.Netcode
             Server = 1,
             Client = 2
         }
-        // TODO: FIXME (Issue #1)
-        // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-        // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-        // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
-#endif
+
         [NonSerialized]
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __RpcExecStage __rpc_exec_stage = __RpcExecStage.None;
@@ -103,11 +96,6 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-            // TODO: FIXME (Issue #1)
-            // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-            // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-            // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -118,7 +106,6 @@ namespace Unity.Netcode
                     __getTypeName(),
                     rpcWriteSize);
             }
-#endif
 #endif
         }
 
@@ -240,11 +227,6 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-            // TODO: FIXME (Issue #1)
-            // CoreCLR is sticter when it comes to method accesibility and since __getTypeName is internal it causes issues when attempting to
-            // inject this code.  Since __getTypeName is only used for NetworkMetrics and in one area for NGO development mode logging, in order
-            // to progress forward with CoreCLR testing all uses of this method are temporarily defined out.
-#if NGO_INCLUDE_GET_TYPE_NAME
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -286,7 +268,6 @@ namespace Unity.Netcode
                     }
                 }
             }
-#endif
 #endif
         }
 
@@ -572,20 +553,6 @@ namespace Unity.Netcode
 
         private readonly List<HashSet<int>> m_DeliveryMappedNetworkVariableIndices = new List<HashSet<int>>();
         private readonly List<NetworkDelivery> m_DeliveryTypesForNetworkVariableGroups = new List<NetworkDelivery>();
-
-
-        /// <summary>
-        /// TODO: REVIEW FIX (Issue #2)
-        /// Since CoreCLR is a bit more strict in permissions, the issue with NetworkVariableFields was that upon it being
-        /// changed from internal to protected access, in order for the derived class to have access to and add the
-        /// NetworkVariable fields, any internal class not derived from NetworkBehaviour would no longer be able to access
-        /// the NetworkVariableFields property.
-        /// POTENTIAL RESOLUTION FOR ISSUE #2:
-        /// Just add an addition "accessor property" that has internal permissions.
-        /// All references to InternalNetworkVariableFields are within <see cref="NetworkBehaviourUpdater"/> 
-        /// </summary>
-        // Since NetworkVariableFields converts to protected, this provides internal access to the network variable fields list
-        internal List<NetworkVariableBase> InternalNetworkVariableFields => NetworkVariableFields;
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal readonly List<NetworkVariableBase> NetworkVariableFields = new List<NetworkVariableBase>();
@@ -1064,77 +1031,6 @@ namespace Unity.Netcode
             {
                 NetworkVariableFields[i].Dispose();
             }
-        }
-
-        /// <summary>
-        /// TODO: FIXME (Issue #3)
-        /// <see cref="NetworkManager.__rpc_func_table"/>
-        /// </summary>
-        static NetworkBehaviour()
-        {
-            var allTypes = TypeHelper.GetAllDerivedTypes(typeof(NetworkBehaviour));
-            foreach (var type in allTypes)
-            {
-                Debug.Log(type.FullName);
-                var methodInfo = type.GetMethod($"InitializeRPCS_{type.Name}");
-                if (methodInfo != null)
-                {
-                    try
-                    {
-                        Debug.Log($"----> {methodInfo.Name} : Invoked!");
-                        methodInfo.Invoke(type, null);
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogException(ex);
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// TODO: FIXME (Issue #3)
-    /// Depending upon the final fix, most likely remove this code
-    /// <see cref="NetworkManager.__rpc_func_table"/>
-    /// </summary>
-    internal static class TypeHelper
-    {
-        public static IEnumerable<Type> GetAllDerivedTypes(this Type type, bool allAssemblies = true)
-        {
-            var derivedTypes = GetAllDerivedTypes(type, type.Assembly).ToList();
-
-            if (allAssemblies)
-            {
-                IEnumerable<Assembly> dependentAssemblies = GetDependentAssemblies(Assembly.GetAssembly(type)!);
-                derivedTypes.AddRange(dependentAssemblies.SelectMany(a => GetAllDerivedTypes(type, a)));
-            }
-
-            return derivedTypes;
-        }
-
-        private static IEnumerable<Assembly> GetDependentAssemblies(Assembly analyzedAssembly)
-        {
-            return AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => a.GetReferencedAssemblies()
-                    .Select(assemblyName => assemblyName.FullName)
-                    .Contains(analyzedAssembly.FullName));
-        }
-
-        private static IEnumerable<Type> GetAllDerivedTypes(this Type baseType, Assembly assembly)
-        {
-            TypeInfo baseTypeInfo = baseType.GetTypeInfo();
-
-            return assembly.DefinedTypes.Where(type =>
-            {
-                if (baseTypeInfo.IsClass)
-                {
-                    return type.IsSubclassOf(baseType);
-                }
-
-                return baseTypeInfo.IsInterface && type.ImplementedInterfaces.Contains(baseTypeInfo.AsType());
-
-            }).Select(type => type.AsType());
         }
     }
 }
