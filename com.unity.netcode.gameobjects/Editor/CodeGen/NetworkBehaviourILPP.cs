@@ -2225,6 +2225,12 @@ namespace Unity.Netcode.Editor.CodeGen
                     }
                     field = new FieldReference(fieldDefinition.Name, fieldDefinition.FieldType, genericType);
                 }
+
+                if (field.FieldType.Resolve() == null)
+                {
+                    continue;
+                }
+
                 if (!field.FieldType.IsArray && !field.FieldType.Resolve().IsArray && field.FieldType.IsSubclassOf(m_NetworkVariableBase_TypeRef))
                 {
                     // if({variable} == null) {
