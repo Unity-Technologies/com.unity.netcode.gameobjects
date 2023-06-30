@@ -469,6 +469,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Write a NativeList of INetworkSerializables
         /// </summary>
@@ -485,6 +486,7 @@ namespace Unity.Netcode
                 WriteNetworkSerializable(item);
             }
         }
+#endif
 
         /// <summary>
         /// Writes a string
@@ -586,6 +588,7 @@ namespace Unity.Netcode
             return sizeof(int) + sizeInBytes;
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Get the required size to write a NativeList
         /// </summary>
@@ -601,6 +604,7 @@ namespace Unity.Netcode
             int sizeInBytes = sizeInTs * sizeof(T);
             return sizeof(int) + sizeInBytes;
         }
+#endif
 
         /// <summary>
         /// Write a partial value. The specified number of bytes is written from the value and the rest is ignored.
@@ -885,6 +889,7 @@ namespace Unity.Netcode
             return size;
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Get the write size for an array of FixedStrings
         /// </summary>
@@ -902,6 +907,7 @@ namespace Unity.Netcode
 
             return size;
         }
+#endif
 
         /// <summary>
         /// Get the size required to write an unmanaged value of type T
@@ -974,6 +980,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal unsafe void WriteUnmanaged<T>(NativeList<T> value) where T : unmanaged
         {
@@ -994,6 +1001,7 @@ namespace Unity.Netcode
                 WriteBytesSafe(bytes, sizeof(T) * value.Length);
             }
         }
+#endif
 
         /// <summary>
         /// This empty struct exists to allow overloading WriteValue based on generic constraints.
@@ -1160,6 +1168,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Write a struct NativeList
         /// </summary>
@@ -1180,6 +1189,7 @@ namespace Unity.Netcode
                 WriteUnmanaged(value);
             }
         }
+#endif
 
         /// <summary>
         /// Write a struct
@@ -1229,6 +1239,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Write a struct NativeList
         ///
@@ -1252,6 +1263,7 @@ namespace Unity.Netcode
                 WriteUnmanagedSafe(value);
             }
         }
+#endif
 
         /// <summary>
         /// Write a primitive value (int, bool, etc)
@@ -1752,6 +1764,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Write a NativeList of FixedString values. Writes only the part of each string that's actually used.
         /// When calling TryBeginWrite, ensure you calculate the write size correctly (preferably by calling
@@ -1770,6 +1783,7 @@ namespace Unity.Netcode
                 WriteValue(str);
             }
         }
+#endif
 
 
         /// <summary>
@@ -1838,6 +1852,7 @@ namespace Unity.Netcode
             }
         }
 
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         /// <summary>
         /// Write a NativeList of FixedString values. Writes only the part of each string that's actually used.
         /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
@@ -1860,5 +1875,6 @@ namespace Unity.Netcode
                 WriteValue(str);
             }
         }
+#endif
     }
 }

@@ -586,7 +586,7 @@ namespace Unity.Netcode
         /// This should represent the transport's MTU size, minus any transport-level overhead.
         /// </summary>
         /// <param name="size"></param>
-        public int MaxTransmissionUnitSize
+        public int MaximumTransmissionUnitSize
         {
             set => MessageManager.NonFragmentedMessageMaxSize = value;
             get => MessageManager.NonFragmentedMessageMaxSize;
