@@ -4,9 +4,9 @@
 * @Unity-Technologies/multiplayer-sdk
 Profiling/ @Unity-Technologies/multiplayer-tools
 Metrics/ @Unity-Technologies/multiplayer-tools
-/com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-workflows
-/com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-workflows
+/com.unity.netcode.gameobjects/Runtime/Transports/ @Unity-Technologies/multiplayer-server
+/com.unity.netcode.gameobjects/Tests/Editor/Transports/ @Unity-Technologies/multiplayer-server
+/com.unity.netcode.gameobjects/Tests/Runtime/Transports/ @Unity-Technologies/multiplayer-server
 *.asmdef @chrispope @tylerunity
 package.json @chrispope @tylerunity
 AssemblyInfo.cs @chrispope @tylerunity
