@@ -395,7 +395,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef;
 #endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
-        
+
         private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
 
         private MethodReference m_ExceptionCtorMethodReference;
@@ -510,7 +510,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
-            
+
             m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition networkManagerTypeDef = null;
