@@ -121,9 +121,7 @@ namespace Unity.Netcode.EditorTests
 
             LogAssert.Expect(LogType.Error, "Invalid network endpoint: 127.0.0.:4242.");
             LogAssert.Expect(LogType.Error, "Network listen address (127.0.0.) is Invalid!");
-#if UTP_TRANSPORT_2_0_ABOVE
-            LogAssert.Expect(LogType.Error, "Socket creation failed (error Unity.Baselib.LowLevel.Binding+Baselib_ErrorState: Invalid argument (0x01000003) <argument name stripped>");
-#endif
+
             transport.SetConnectionData("127.0.0.1", 4242, "127.0.0.1");
             Assert.True(transport.StartServer());
 
