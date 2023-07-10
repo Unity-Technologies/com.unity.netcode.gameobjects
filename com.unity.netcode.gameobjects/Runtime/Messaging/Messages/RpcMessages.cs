@@ -72,10 +72,13 @@ namespace Unity.Netcode
             catch (Exception ex)
             {
                 Debug.LogException(new Exception("Unhandled RPC exception!", ex));
-                Debug.Log($"RPC Table Contents");
-                foreach (var entry in NetworkManager.__rpc_func_table)
+                if (networkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.Log($"{entry.Key} | {entry.Value.Method.Name}");
+                    Debug.Log($"RPC Table Contents");
+                    foreach (var entry in NetworkManager.__rpc_func_table)
+                    {
+                        Debug.Log($"{entry.Key} | {entry.Value.Method.Name}");
+                    }
                 }
             }
         }

@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEditor;
 #endif
 using UnityEngine.SceneManagement;
-
 using Debug = UnityEngine.Debug;
 
 namespace Unity.Netcode

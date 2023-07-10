@@ -395,8 +395,7 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef;
 #endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
-
-        //private MethodReference m_InitializeOnLoadAttribute_Ctor;
+        
         private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
 
         private MethodReference m_ExceptionCtorMethodReference;
@@ -511,8 +510,7 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
-
-            //m_InitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(InitializeOnLoadMethodAttribute).GetConstructor(new Type[]{}));
+            
             m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition networkManagerTypeDef = null;
@@ -1206,22 +1204,6 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (rpcHandlers.Count > 0 || rpcNames.Count > 0)
             {
-                //var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-
-                //if (staticCtorMethodDef == null)
-                //{
-                //    staticCtorMethodDef = new MethodDefinition(
-                //        ".cctor", // Static Constructor (constant-constructor)
-                //        MethodAttributes.HideBySig |
-                //        MethodAttributes.SpecialName |
-                //        MethodAttributes.RTSpecialName |
-                //        MethodAttributes.Static,
-                //        typeDefinition.Module.TypeSystem.Void);
-                //    staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                //    typeDefinition.Methods.Insert(0,staticCtorMethodDef);
-                //}
-
-
                 var staticCtorMethodDef = new MethodDefinition(
                         $"InitializeRPCS_{typeDefinition.Name}",
                         MethodAttributes.Public |
