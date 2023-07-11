@@ -113,12 +113,6 @@ namespace Unity.Netcode
                     // Remove the previous owner's entry
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
 
-                    // Server or Host alway invokes the lost ownership notification locally
-                    if (NetworkManager.IsServer)
-                    {
-                        networkObject.InvokeBehaviourOnLostOwnership();
-                    }
-
                     // If we are removing the entry (i.e. despawning or client lost ownership)
                     if (isRemoving)
                     {
@@ -143,12 +137,6 @@ namespace Unity.Netcode
             {
                 // Add the new ownership entry
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
-
-                // Server or Host always invokes the gained ownership notification locally
-                if (NetworkManager.IsServer)
-                {
-                    networkObject.InvokeBehaviourOnGainedOwnership();
-                }
             }
             else if (isRemoving)
             {
@@ -248,8 +236,22 @@ namespace Unity.Netcode
 
             networkObject.OwnerClientId = NetworkManager.ServerClientId;
 
+            // If there is no BehaviourUpdater and we are shutting down then return early
+            if (NetworkManager.BehaviourUpdater == null && NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
+            // This was not being done when ownership was removed but was being done when ownership changed
+            // Mark variables as dirty and add the NetworkObject for a delta update
+            networkObject.MarkVariablesDirty(true);
+            NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
+
             // Server removes the entry and takes over ownership before notifying
             UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
+
+            //Notify the local server that it gained ownership
+            networkObject.InvokeBehaviourOnGainedOwnership();
 
             var message = new ChangeOwnershipMessage
             {
@@ -301,13 +303,26 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
+            // Determine if the server is gong to lose ownership
+            var serverWillLoseOwnership = networkObject.OwnerClientId == NetworkManager.LocalClientId;
+
+            // Assign the new owner
             networkObject.OwnerClientId = clientId;
+
+            // Notify locally that the server lost ownership
+            if (serverWillLoseOwnership)
+            {
+                networkObject.InvokeBehaviourOnLostOwnership();
+            }
 
             networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
             // Server adds entries for all client ownership
             UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+
+            // Always notify locally on the server when a new owner is assigned
+            networkObject.InvokeBehaviourOnGainedOwnership();
 
             var message = new ChangeOwnershipMessage
             {

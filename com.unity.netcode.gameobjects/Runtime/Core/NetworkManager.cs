@@ -1029,6 +1029,8 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Make sure ShutdownInProgress returns true during this time
+            m_ShuttingDown = true;
             OnDestroy();
         }
 
