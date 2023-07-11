@@ -96,7 +96,7 @@ namespace Unity.Netcode
 
 #pragma warning disable IDE1006 // disable naming rule violation check
     // RuntimeAccessModifiersILPP will make this `public`
-    public struct __RpcParams
+    internal struct __RpcParams
 #pragma warning restore IDE1006 // restore naming rule violation check
     {
         public ServerRpcParams Server;
