@@ -66,8 +66,7 @@ namespace Unity.Netcode.RuntimeTests
 
             // Set the child object to be inactive in the hierarchy
             childObject.SetActive(false);
-
-            LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during ownership assignment!");
+            
             LogAssert.Expect(LogType.Warning, $"{childObject.name} is disabled! Netcode for GameObjects does not support spawning disabled NetworkBehaviours! The {childBehaviour.GetType().Name} component was skipped during spawn!");
 
             parentNetworkObject.Spawn();
