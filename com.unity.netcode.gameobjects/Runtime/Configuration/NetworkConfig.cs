@@ -84,9 +84,9 @@ namespace Unity.Netcode
         public int TimeResyncInterval = 30;
 
         /// <summary>
-        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwidth.
+        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where it's not allowed to. This costs some CPU and bandwidth.
         /// </summary>
-        [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
+        [Tooltip("Ensures that NetworkVariables can be read even if a client accidentally writes where it's not allowed to. This will cost some CPU time and bandwidth")]
         public bool EnsureNetworkVariableLengthSafety = false;
 
         /// <summary>
