@@ -5,7 +5,6 @@ using NUnit.Framework;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.TestTools;
-using static Unity.Netcode.RuntimeTests.NetworkObjectOwnershipTests;
 
 namespace Unity.Netcode.RuntimeTests
 {
