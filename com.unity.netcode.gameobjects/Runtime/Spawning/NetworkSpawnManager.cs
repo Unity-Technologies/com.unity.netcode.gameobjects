@@ -964,7 +964,7 @@ namespace Unity.Netcode
             foreach (var sobj in SpawnedObjectsList)
             {
                 // If the NetworkObject has no visibility check then prepare to add this client as an observer
-                if (sobj.CheckObjectVisibility == null )
+                if (sobj.CheckObjectVisibility == null)
                 {
                     // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server
                     if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
