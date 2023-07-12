@@ -14,7 +14,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Fixed
 
 - Fixed issue where invoking `NetworkManager.Shutdown` multiple times, depending upon the timing, could cause an exception. (#2622)
-- Fixed a failing UTP test that was failing when you install Unity Transport package 2.0.0 or newer. (#2616)
 
 ## Changed
 
