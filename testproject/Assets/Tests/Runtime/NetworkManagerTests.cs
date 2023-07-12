@@ -4,6 +4,7 @@ using Unity.Netcode;
 using Unity.Netcode.TestHelpers.Runtime;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace TestProject.RuntimeTests
 {
@@ -93,6 +94,26 @@ namespace TestProject.RuntimeTests
             Assert.IsTrue(m_NetworkBehaviourIsClientWasSet, $"IsClient was not true when OnClientConnectedCallback was invoked!");
             Assert.IsTrue(m_NumberOfTimesInvoked == 1, $"OnClientConnectedCallback was invoked {m_NumberOfTimesInvoked} as opposed to just once!");
             Assert.IsTrue(m_NetworkBehaviourIsServerWasSet, $"IsServer was not true when OnClientConnectedCallback was invoked!");
+        }
+
+        /// <summary>
+        /// Validate shutting down a second time does not cause an exception.
+        /// </summary>        
+        [UnityTest]
+        public IEnumerator ValidateShutdown()
+        {
+            // Register for the server stopped notification so we know we have shutdown completely
+            m_ServerNetworkManager.OnServerStopped += M_ServerNetworkManager_OnServerStopped;
+            // Shutdown
+            m_ServerNetworkManager.Shutdown();
+            yield return s_DefaultWaitForTick;
+        }
+
+        private void M_ServerNetworkManager_OnServerStopped(bool obj)
+        {
+            m_ServerNetworkManager.OnServerStopped -= M_ServerNetworkManager_OnServerStopped;
+            // Verify that we can invoke shutdown again without an exception
+            m_ServerNetworkManager.Shutdown();
         }
     }
 }
