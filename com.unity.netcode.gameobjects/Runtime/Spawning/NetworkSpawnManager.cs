@@ -303,17 +303,11 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            // Determine if the server is gong to lose ownership
-            var serverWillLoseOwnership = networkObject.OwnerClientId == NetworkManager.LocalClientId;
-
             // Assign the new owner
             networkObject.OwnerClientId = clientId;
 
-            // Notify locally that the server lost ownership
-            if (serverWillLoseOwnership)
-            {
-                networkObject.InvokeBehaviourOnLostOwnership();
-            }
+            // Always notify locally on the server when ownership is lost
+            networkObject.InvokeBehaviourOnLostOwnership();
 
             networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
