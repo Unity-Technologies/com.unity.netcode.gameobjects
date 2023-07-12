@@ -11,9 +11,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Added
 
 ### Fixed
-- Fixed a failing UTP test that was failing when you install Unity Transport package 2.0.0 or newer.
+
+- Fixed ILPP issues when using CoreCLR and for certain dedicated server builds. (#2614)
+
 
 ## Changed
+
 
 ## [1.5.1] - 2023-06-07
 
