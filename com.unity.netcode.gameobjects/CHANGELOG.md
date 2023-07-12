@@ -10,14 +10,12 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-
 ### Fixed
 
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
 - Fixed issue where removing ownership would not notify the server that it gained ownership. This also resolves the issue where an owner authoritative NetworkTransform would not properly initialize upon removing ownership from a remote client. (#2618)
 
-
 ### Changed
-
 
 ## [1.5.1] - 2023-06-07
 

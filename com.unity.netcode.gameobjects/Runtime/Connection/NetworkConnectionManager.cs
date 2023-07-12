@@ -628,6 +628,8 @@ namespace Unity.Netcode
                     };
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                     {
+                        // Update the observed spawned NetworkObjects for the newly connected player when scene management is disabled
+                        NetworkManager.SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
                         if (NetworkManager.SpawnManager.SpawnedObjectsList.Count != 0)
                         {
                             message.SpawnedObjectsList = NetworkManager.SpawnManager.SpawnedObjectsList;
@@ -651,12 +653,12 @@ namespace Unity.Netcode
                     SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, ownerClientId);
                     message.MessageVersions.Dispose();
 
-                    // If scene management is enabled, then let NetworkSceneManager handle the initial scene and NetworkObject synchronization
+                    // If scene management is disabled, then we are done and notify the local host-server the client is connected
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                     {
                         InvokeOnClientConnectedCallback(ownerClientId);
                     }
-                    else
+                    else // Otherwise, let NetworkSceneManager handle the initial scene and NetworkObject synchronization
                     {
                         NetworkManager.SceneManager.SynchronizeNetworkObjects(ownerClientId);
                     }
