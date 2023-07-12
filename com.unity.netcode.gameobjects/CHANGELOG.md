@@ -18,6 +18,15 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ### Changed
 
 
+## [Unreleased]
+
+### Added
+
+### Fixed
+- Fixed a failing UTP test that was failing when you install Unity Transport package 2.0.0 or newer.
+
+## Changed
+
 ## [1.5.1] - 2023-06-07
 
 ### Added
