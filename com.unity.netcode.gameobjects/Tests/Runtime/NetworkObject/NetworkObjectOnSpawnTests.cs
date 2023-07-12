@@ -61,8 +61,26 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        /// <summary>
+        /// Assures the <see cref="ObserverSpawnTests"/> late joining client has all
+        /// NetworkPrefabs required to connect.
+        /// </summary>
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
+                {
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                }
+            }
+            base.OnNewClientCreated(networkManager);
+        }
 
-
+        /// <summary>
+        /// This test validates <see cref="NetworkObject.SpawnWithObservers"/> property
+        /// </summary>
+        /// <param name="observerTestTypes">whether to spawn with or without observers</param>
         [UnityTest]
         public IEnumerator ObserverSpawnTests([Values] ObserverTestTypes observerTestTypes)
         {
@@ -89,6 +107,23 @@ namespace Unity.Netcode.RuntimeTests
                 }
 
                 // Validate the clients spawned the NetworkObject
+                m_ObserverTestType = ObserverTestTypes.WithObservers;
+                yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+                AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
+
+                // Validate that a late joining client does not see the NetworkObject when it spawns
+                yield return CreateAndStartNewClient();
+
+                m_ObserverTestType = ObserverTestTypes.WithoutObservers;
+                // Just give a little time to make sure nothing spawned
+                yield return s_DefaultWaitForTick;
+                yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+                AssertOnTimeout($"{(withoutObservers ? k_WithoutObserversError : k_WithObserversError)} {k_ObserverTestObjName} object!");
+
+                // Now validate that we can make the NetworkObject visible to the newly joined client
+                m_ObserverTestNetworkObject.NetworkShow(m_ClientNetworkManagers[NumberOfClients].LocalClientId);
+
+                // Validate the NetworkObject is visible to all connected clients (including the recently joined client)
                 m_ObserverTestType = ObserverTestTypes.WithObservers;
                 yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
                 AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
