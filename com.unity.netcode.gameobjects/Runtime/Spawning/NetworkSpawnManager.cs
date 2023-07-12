@@ -215,57 +215,6 @@ namespace Unity.Netcode
             return null;
         }
 
-        internal void RemoveOwnership(NetworkObject networkObject)
-        {
-            if (!NetworkManager.IsServer)
-            {
-                throw new NotServerException("Only the server can change ownership");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is not spawned");
-            }
-
-            // If we made it here then we are the server and if the server is determined to already be the owner
-            // then ignore the RemoveOwnership invocation.
-            if (networkObject.OwnerClientId == NetworkManager.ServerClientId)
-            {
-                return;
-            }
-
-            networkObject.OwnerClientId = NetworkManager.ServerClientId;
-
-            // If there is no BehaviourUpdater and we are shutting down then return early
-            if (NetworkManager.BehaviourUpdater == null && NetworkManager.ShutdownInProgress)
-            {
-                return;
-            }
-
-            // This was not being done when ownership was removed but was being done when ownership changed
-            // Mark variables as dirty and add the NetworkObject for a delta update
-            networkObject.MarkVariablesDirty(true);
-            NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
-
-            // Server removes the entry and takes over ownership before notifying
-            UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
-
-            //Notify the local server that it gained ownership
-            networkObject.InvokeBehaviourOnGainedOwnership();
-
-            var message = new ChangeOwnershipMessage
-            {
-                NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = networkObject.OwnerClientId
-            };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
-
-            foreach (var client in NetworkManager.ConnectedClients)
-            {
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-            }
-        }
-
         /// <summary>
         /// Helper function to get a network client for a clientId from the NetworkManager.
         /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
@@ -289,6 +238,11 @@ namespace Unity.Netcode
 
             networkClient = null;
             return false;
+        }
+
+        internal void RemoveOwnership(NetworkObject networkObject)
+        {
+            ChangeOwnership(networkObject, NetworkManager.ServerClientId);
         }
 
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
