@@ -10,10 +10,11 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+
 ### Fixed
 
+- Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
 - Fixed ILPP issues when using CoreCLR and for certain dedicated server builds. (#2614)
-
 
 ## Changed
 
