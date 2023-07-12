@@ -915,27 +915,35 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified client
+        /// Updates all spawned <see cref="NetworkObject.Observers"/> for the specified newly connected client 
         /// Note: if the clientId is the server then it is observable to all spawned <see cref="NetworkObject"/>'s
         /// </summary>
+        /// <remarks>
+        /// This method is to only to be used for newly connected clients in order to update the observers list for
+        /// each NetworkObject instance.
+        /// </remarks>
         internal void UpdateObservedNetworkObjects(ulong clientId)
         {
             foreach (var sobj in SpawnedObjectsList)
             {
+                // If the NetworkObject has no visibility check then prepare to add this client as an observer
                 if (sobj.CheckObjectVisibility == null)
                 {
-                    if (!sobj.Observers.Contains(clientId))
+                    // If the client is not part of the observers and spawn with observers is enabled on this instance or the clientId is the server
+                    if (!sobj.Observers.Contains(clientId) && (sobj.SpawnWithObservers || clientId == NetworkManager.ServerClientId))
                     {
                         sobj.Observers.Add(clientId);
                     }
                 }
                 else
                 {
+                    // CheckObject visibility overrides SpawnWithObservers under this condition
                     if (sobj.CheckObjectVisibility(clientId))
                     {
                         sobj.Observers.Add(clientId);
                     }
-                    else if (sobj.Observers.Contains(clientId))
+                    else // Otherwise, if the observers contains the clientId (shouldn't happen) then remove it since CheckObjectVisibility returned false
+                    if (sobj.Observers.Contains(clientId))
                     {
                         sobj.Observers.Remove(clientId);
                     }
