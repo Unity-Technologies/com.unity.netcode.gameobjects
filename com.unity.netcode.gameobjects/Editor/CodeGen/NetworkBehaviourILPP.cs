@@ -1206,7 +1206,7 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 var staticCtorMethodDef = new MethodDefinition(
                         $"InitializeRPCS_{typeDefinition.Name}",
-                        MethodAttributes.Public |
+                        MethodAttributes.Assembly |
                         MethodAttributes.Static,
                         typeDefinition.Module.TypeSystem.Void);
                 staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
