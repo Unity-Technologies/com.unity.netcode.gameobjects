@@ -942,10 +942,16 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                MessageManager.StopProcessing = discardMessageQueue;
+                if (MessageManager != null)
+                {
+                    MessageManager.StopProcessing = discardMessageQueue;
+                }
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
+            }
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
