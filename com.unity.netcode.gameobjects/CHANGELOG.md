@@ -15,6 +15,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
 - Fixed issue where invoking `NetworkManager.Shutdown` multiple times, depending upon the timing, could cause an exception. (#2622)
+- Fixed a crash when calling TrySetParent with a null Transform (#2625)
 
 ## Changed
 
