@@ -2185,7 +2185,7 @@ namespace Unity.Netcode.Components
 
             if (m_LocalAuthoritativeNetworkState.HasScaleChange)
             {
-                var currentScale = transform.localScale;
+                var currentScale = m_TargetScale;
                 if (UseHalfFloatPrecision)
                 {
                     for (int i = 0; i < 3; i++)
@@ -2198,7 +2198,6 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    currentScale = m_TargetScale;
                     if (m_LocalAuthoritativeNetworkState.HasScaleX)
                     {
                         currentScale.x = m_LocalAuthoritativeNetworkState.ScaleX;
@@ -2213,8 +2212,8 @@ namespace Unity.Netcode.Components
                     {
                         currentScale.z = m_LocalAuthoritativeNetworkState.ScaleZ;
                     }
-                    m_TargetScale = currentScale;
                 }
+                m_TargetScale = currentScale;
                 m_ScaleInterpolator.AddMeasurement(currentScale, sentTime);
             }
 
@@ -2231,6 +2230,7 @@ namespace Unity.Netcode.Components
                 {
                     currentEulerAngles = m_TargetRotation;
                     // Adjust based on which axis changed
+                    // (both half precision and full precision apply Eulers to the RotAngle properties when reading the update)
                     if (m_LocalAuthoritativeNetworkState.HasRotAngleX)
                     {
                         currentEulerAngles.x = m_LocalAuthoritativeNetworkState.RotAngleX;
