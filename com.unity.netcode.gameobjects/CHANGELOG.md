@@ -13,7 +13,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where a `NetworkTransform` using full precision state updates was losing transform state updates when interpolation was enabled.
+- Fixed issue where a `NetworkTransform` using full precision state updates was losing transform state updates when interpolation was enabled. (#2624)
 - Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
 
 ## Changed
