@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
 using Unity.Netcode.TestHelpers.Runtime;
@@ -378,7 +379,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
             //TimeTravelToNextTick();
-            var infoMessage = new System.Text.StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
+            var infoMessage = new StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
             var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
             var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
             var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
@@ -567,9 +568,9 @@ namespace Unity.Netcode.RuntimeTests
             }
         }
 
-        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime
-        // Note: this was reduced from 8 iterations to 3 due to the number of tests based on all of the various parameter combinations
+        // The number of iterations to change position, rotation, and scale for NetworkTransformMultipleChangesOverTime       
         private const int k_PositionRotationScaleIterations = 3;
+        private const int k_PositionRotationScaleIterations3Axis = 8;
 
         protected override void OnNewClientCreated(NetworkManager networkManager)
         {
@@ -594,22 +595,69 @@ namespace Unity.Netcode.RuntimeTests
 
 
         private Axis m_CurrentAxis;
+
+        private bool m_AxisExcluded;
+
+        /// <summary>
+        /// Randomly determine if an axis should be excluded.
+        /// If so, then randomly pick one of the axis to be excluded.
+        /// </summary>
+        private Vector3 RandomlyExcludeAxis(Vector3 delta)
+        {
+            if (Random.Range(0.0f, 1.0f) >= 0.5f)
+            {
+                m_AxisExcluded = true;
+                var axisToIgnore = Random.Range(0, 2);
+                switch (axisToIgnore)
+                {
+                    case 0:
+                        {
+                            delta.x = 0;
+                            break;
+                        }
+                    case 1:
+                        {
+                            delta.y = 0;
+                            break;
+                        }
+                    case 2:
+                        {
+                            delta.z = 0;
+                            break;
+                        }
+                }
+            }
+            return delta;
+        }
+
         /// <summary>
         /// This validates that multiple changes can occur within the same tick or over
         /// several ticks while still keeping non-authoritative instances synchronized.
         /// </summary>
+        /// <remarks>
+        /// When testing < 3 axis: Interpolation is disabled and only 3 delta updates are applied per unique test
+        /// When testing 3 axis: Interpolation is enabled, sometimes an axis is intentionally excluded during a
+        /// delta update, and it runs through 8 delta updates per unique test.
+        /// </remarks>
         [Test]
         public void NetworkTransformMultipleChangesOverTime([Values] TransformSpace testLocalTransform, [Values] OverrideState overideState,
             [Values] Precision precision, [Values] Rotation rotationSynch, [Values] Axis axis)
         {
-            // In the name of reducing the very long time it takes to interpolate and run all of the possible combinations,
-            // we only interpolate when the second client joins
-            m_AuthoritativeTransform.Interpolate = false;
             m_AuthoritativeTransform.InLocalSpace = testLocalTransform == TransformSpace.Local;
             bool axisX = axis == Axis.X || axis == Axis.XY || axis == Axis.XZ || axis == Axis.XYZ;
             bool axisY = axis == Axis.Y || axis == Axis.XY || axis == Axis.YZ || axis == Axis.XYZ;
             bool axisZ = axis == Axis.Z || axis == Axis.XZ || axis == Axis.YZ || axis == Axis.XYZ;
+
+            var axisCount = axisX ? 1 : 0;
+            axisCount += axisY ? 1 : 0;
+            axisCount += axisZ ? 1 : 0;
+
+            // Enable interpolation when all 3 axis are selected to make sure we are synchronizing properly
+            // when interpolation is enabled.
+            m_AuthoritativeTransform.Interpolate = axisCount == 3 ? true : false;
+
             m_CurrentAxis = axis;
+
             // Authority dictates what is synchronized and what the precision is going to be
             // so we only need to set this on the authoritative side.
             m_AuthoritativeTransform.UseHalfFloatPrecision = precision == Precision.Half;
@@ -640,29 +688,49 @@ namespace Unity.Netcode.RuntimeTests
             m_AuthoritativeTransform.SyncScaleY = axisY;
             m_AuthoritativeTransform.SyncScaleZ = axisZ;
 
-
             var positionStart = GetRandomVector3(0.25f, 1.75f);
             var rotationStart = GetRandomVector3(1f, 15f);
             var scaleStart = GetRandomVector3(0.25f, 2.0f);
             var position = positionStart;
             var rotation = rotationStart;
             var scale = scaleStart;
+            var success = false;
+
             m_AuthoritativeTransform.StatePushed = false;
             // Wait for the deltas to be pushed
             WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed);
             // Allow the precision settings to propagate first as changing precision
             // causes a teleport event to occur
             WaitForNextTick();
+            var iterations = axisCount == 3 ? k_PositionRotationScaleIterations3Axis : k_PositionRotationScaleIterations;
 
             // Move and rotate within the same tick, validate the non-authoritative instance updates
             // to each set of changes.  Repeat several times.
-            for (int i = 0; i < k_PositionRotationScaleIterations; i++)
+            for (int i = 0; i < iterations; i++)
             {
+                // Always reset this per delta update pass
+                m_AxisExcluded = false;
+                var deltaPositionDelta = GetRandomVector3(-1.5f, 1.5f);
+                var deltaRotationDelta = GetRandomVector3(-3.5f, 3.5f);
+                var deltaScaleDelta = GetRandomVector3(-0.5f, 0.5f);
+
                 m_NonAuthoritativeTransform.StateUpdated = false;
                 m_AuthoritativeTransform.StatePushed = false;
-                position = positionStart * i;
-                rotation = rotationStart * i;
-                scale = scaleStart * i;
+
+                // With two or more axis, excluding one of them while chaging another will validate that
+                // full precision updates are maintaining their target state value(s) to interpolate towards
+                if (axisCount == 3)
+                {
+                    position += RandomlyExcludeAxis(deltaPositionDelta);
+                    rotation += RandomlyExcludeAxis(deltaRotationDelta);
+                    scale += RandomlyExcludeAxis(deltaScaleDelta);
+                }
+                else
+                {
+                    position += deltaPositionDelta;
+                    rotation += deltaRotationDelta;
+                    scale += deltaScaleDelta;
+                }
 
                 // Apply delta between ticks
                 MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
@@ -670,54 +738,37 @@ namespace Unity.Netcode.RuntimeTests
                 // Wait for the deltas to be pushed
                 Assert.True(WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated), $"[Non-Interpolate {i}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
 
-                // Wait for deltas to synchronize on non-authoritative side
-                var success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
-                // Provide additional debug info about what failed (if it fails)
-                if (!success)
+                // For 3 axis, we will skip validating that the non-authority interpolates to its target point at least once.
+                // This will validate that non-authoritative updates are maintaining their target state axis values if only 2 
+                // of the axis are being updated to assure interpolation maintains the targeted axial value per axis.
+                // For 2 and 1 axis tests we always validate per delta update
+                if (m_AxisExcluded || axisCount < 3)
                 {
-                    m_EnableVerboseDebug = true;
-                    PositionRotationScaleMatches();
-                    m_EnableVerboseDebug = false;
+                    // Wait for deltas to synchronize on non-authoritative side
+                    success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+                    // Provide additional debug info about what failed (if it fails)
+                    if (!success)
+                    {
+                        m_EnableVerboseDebug = true;
+                        success = PositionRotationScaleMatches();
+                        m_EnableVerboseDebug = false;
+                    }
+                    Assert.True(success, $"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
                 }
-                Assert.True(success, $"[Non-Interpolate {i}] Timed out waiting for non-authority to match authority's position or rotation");
             }
 
-            // Only enable interpolation when all axis are set (to reduce the test times)
-            if (axis == Axis.XYZ)
+            if (axisCount == 3)
             {
-                // Now, enable interpolation
-                m_AuthoritativeTransform.Interpolate = true;
-                m_NonAuthoritativeTransform.StateUpdated = false;
-                m_AuthoritativeTransform.StatePushed = false;
-                // Wait for the delta (change in interpolation) to be pushed
-                var success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                Assert.True(success, $"[Interpolation Enable] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-                // Continue for one more update with interpolation enabled
-                // Note: We are just verifying one update with interpolation enabled due to the number of tests this integration test has to run
-                // and since the NestedNetworkTransformTests already tests interpolation under the same number of conditions (excluding Axis).
-                // This is just to verify selecting specific axis doesn't cause issues when interpolating as well.
-                m_NonAuthoritativeTransform.StateUpdated = false;
-                m_AuthoritativeTransform.StatePushed = false;
-                position = positionStart * k_PositionRotationScaleIterations;
-                rotation = rotationStart * k_PositionRotationScaleIterations;
-                scale = scaleStart * k_PositionRotationScaleIterations;
-                MoveRotateAndScaleAuthority(position, rotation, scale, overideState);
-
-                // Wait for the deltas to be pushed and updated
-                success = WaitForConditionOrTimeOutWithTimeTravel(() => m_AuthoritativeTransform.StatePushed && m_NonAuthoritativeTransform.StateUpdated);
-                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for state to be pushed ({m_AuthoritativeTransform.StatePushed}) or state to be updated ({m_NonAuthoritativeTransform.StateUpdated})!");
-
-                success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches, 120);
-
+                // As a final test, wait for deltas to synchronize on non-authoritative side to assure it interpolates to th
+                success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
                 // Provide additional debug info about what failed (if it fails)
                 if (!success)
                 {
                     m_EnableVerboseDebug = true;
-                    PositionRotationScaleMatches();
+                    success = PositionRotationScaleMatches();
                     m_EnableVerboseDebug = false;
                 }
-                Assert.True(success, $"[Interpolation {k_PositionRotationScaleIterations}] Timed out waiting for non-authority to match authority's position or rotation");
+                Assert.True(success, $"Timed out waiting for non-authority to match authority's position or rotation");
             }
         }
 
