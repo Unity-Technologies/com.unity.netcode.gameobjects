@@ -1159,8 +1159,11 @@ namespace Unity.Netcode.Components
         // Non-Authoritative's current position, scale, and rotation that is used to assure the non-authoritative side cannot make adjustments to
         // the portions of the transform being synchronized.
         private Vector3 m_CurrentPosition;
+        private Vector3 m_TargetPosition;
         private Vector3 m_CurrentScale;
+        private Vector3 m_TargetScale;
         private Quaternion m_CurrentRotation;
+        private Vector3 m_TargetRotation;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2009,6 +2012,7 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CurrentPosition = currentPosition;
+                m_TargetPosition = currentPosition;
 
                 // Apply the position
                 if (newState.InLocalSpace)
@@ -2026,7 +2030,6 @@ namespace Unity.Netcode.Components
                 if (UseHalfFloatPrecision)
                 {
                     currentScale = newState.Scale;
-                    m_CurrentScale = currentScale;
                 }
                 else
                 {
@@ -2049,6 +2052,7 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CurrentScale = currentScale;
+                m_TargetScale = currentScale;
                 m_ScaleInterpolator.ResetTo(currentScale, sentTime);
 
                 // Apply the adjusted scale
@@ -2082,6 +2086,7 @@ namespace Unity.Netcode.Components
                 }
 
                 m_CurrentRotation = currentRotation;
+                m_TargetRotation = currentRotation.eulerAngles;
                 m_RotationInterpolator.ResetTo(currentRotation, sentTime);
 
                 if (InLocalSpace)
@@ -2158,28 +2163,29 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
-                    var currentPosition = GetSpaceRelativePosition();
+                    var newTargetPosition = m_TargetPosition;
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
                     {
-                        currentPosition.x = m_LocalAuthoritativeNetworkState.PositionX;
+                        newTargetPosition.x = m_LocalAuthoritativeNetworkState.PositionX;
                     }
 
                     if (m_LocalAuthoritativeNetworkState.HasPositionY)
                     {
-                        currentPosition.y = m_LocalAuthoritativeNetworkState.PositionY;
+                        newTargetPosition.y = m_LocalAuthoritativeNetworkState.PositionY;
                     }
 
                     if (m_LocalAuthoritativeNetworkState.HasPositionZ)
                     {
-                        currentPosition.z = m_LocalAuthoritativeNetworkState.PositionZ;
+                        newTargetPosition.z = m_LocalAuthoritativeNetworkState.PositionZ;
                     }
-                    UpdatePositionInterpolator(currentPosition, sentTime);
+                    UpdatePositionInterpolator(newTargetPosition, sentTime);
+                    m_TargetPosition = newTargetPosition;
                 }
             }
 
             if (m_LocalAuthoritativeNetworkState.HasScaleChange)
             {
-                var currentScale = transform.localScale;
+                var currentScale = m_TargetScale;
                 if (UseHalfFloatPrecision)
                 {
                     for (int i = 0; i < 3; i++)
@@ -2207,6 +2213,7 @@ namespace Unity.Netcode.Components
                         currentScale.z = m_LocalAuthoritativeNetworkState.ScaleZ;
                     }
                 }
+                m_TargetScale = currentScale;
                 m_ScaleInterpolator.AddMeasurement(currentScale, sentTime);
             }
 
@@ -2221,7 +2228,9 @@ namespace Unity.Netcode.Components
                 }
                 else
                 {
+                    currentEulerAngles = m_TargetRotation;
                     // Adjust based on which axis changed
+                    // (both half precision and full precision apply Eulers to the RotAngle properties when reading the update)
                     if (m_LocalAuthoritativeNetworkState.HasRotAngleX)
                     {
                         currentEulerAngles.x = m_LocalAuthoritativeNetworkState.RotAngleX;
@@ -2236,6 +2245,7 @@ namespace Unity.Netcode.Components
                     {
                         currentEulerAngles.z = m_LocalAuthoritativeNetworkState.RotAngleZ;
                     }
+                    m_TargetRotation = currentEulerAngles;
                     currentRotation.eulerAngles = currentEulerAngles;
                 }
 
@@ -2489,8 +2499,11 @@ namespace Unity.Netcode.Components
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_CurrentPosition = currentPosition;
+                m_TargetPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
+                m_TargetScale = transform.localScale;
                 m_CurrentRotation = currentRotation;
+                m_TargetRotation = currentRotation.eulerAngles;
 
             }
 
@@ -2649,7 +2662,7 @@ namespace Unity.Netcode.Components
                 var serverTime = NetworkManager.ServerTime;
                 var cachedDeltaTime = NetworkManager.RealTimeProvider.DeltaTime;
                 var cachedServerTime = serverTime.Time;
-                // TODO: Investigate Further
+
                 // With owner authoritative mode, non-authority clients can lag behind
                 // by more than 1 tick period of time. The current "solution" for now
                 // is to make their cachedRenderTime run 2 ticks behind.
