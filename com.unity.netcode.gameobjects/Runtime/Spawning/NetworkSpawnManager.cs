@@ -113,12 +113,6 @@ namespace Unity.Netcode
                     // Remove the previous owner's entry
                     OwnershipToObjectsTable[previousOwner].Remove(networkObject.NetworkObjectId);
 
-                    // Server or Host alway invokes the lost ownership notification locally
-                    if (NetworkManager.IsServer)
-                    {
-                        networkObject.InvokeBehaviourOnLostOwnership();
-                    }
-
                     // If we are removing the entry (i.e. despawning or client lost ownership)
                     if (isRemoving)
                     {
@@ -143,12 +137,6 @@ namespace Unity.Netcode
             {
                 // Add the new ownership entry
                 OwnershipToObjectsTable[newOwner].Add(networkObject.NetworkObjectId, networkObject);
-
-                // Server or Host always invokes the gained ownership notification locally
-                if (NetworkManager.IsServer)
-                {
-                    networkObject.InvokeBehaviourOnGainedOwnership();
-                }
             }
             else if (isRemoving)
             {
@@ -227,43 +215,6 @@ namespace Unity.Netcode
             return null;
         }
 
-        internal void RemoveOwnership(NetworkObject networkObject)
-        {
-            if (!NetworkManager.IsServer)
-            {
-                throw new NotServerException("Only the server can change ownership");
-            }
-
-            if (!networkObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is not spawned");
-            }
-
-            // If we made it here then we are the server and if the server is determined to already be the owner
-            // then ignore the RemoveOwnership invocation.
-            if (networkObject.OwnerClientId == NetworkManager.ServerClientId)
-            {
-                return;
-            }
-
-            networkObject.OwnerClientId = NetworkManager.ServerClientId;
-
-            // Server removes the entry and takes over ownership before notifying
-            UpdateOwnershipTable(networkObject, NetworkManager.ServerClientId, true);
-
-            var message = new ChangeOwnershipMessage
-            {
-                NetworkObjectId = networkObject.NetworkObjectId,
-                OwnerClientId = networkObject.OwnerClientId
-            };
-            var size = NetworkManager.ConnectionManager.SendMessage(ref message, NetworkDelivery.ReliableSequenced, NetworkManager.ConnectedClientsIds);
-
-            foreach (var client in NetworkManager.ConnectedClients)
-            {
-                NetworkManager.NetworkMetrics.TrackOwnershipChangeSent(client.Key, networkObject, size);
-            }
-        }
-
         /// <summary>
         /// Helper function to get a network client for a clientId from the NetworkManager.
         /// On the server this will check the <see cref="NetworkManager.ConnectedClients"/> list.
@@ -289,6 +240,11 @@ namespace Unity.Netcode
             return false;
         }
 
+        internal void RemoveOwnership(NetworkObject networkObject)
+        {
+            ChangeOwnership(networkObject, NetworkManager.ServerClientId);
+        }
+
         internal void ChangeOwnership(NetworkObject networkObject, ulong clientId)
         {
             if (!NetworkManager.IsServer)
@@ -301,13 +257,20 @@ namespace Unity.Netcode
                 throw new SpawnStateException("Object is not spawned");
             }
 
+            // Assign the new owner
             networkObject.OwnerClientId = clientId;
+
+            // Always notify locally on the server when ownership is lost
+            networkObject.InvokeBehaviourOnLostOwnership();
 
             networkObject.MarkVariablesDirty(true);
             NetworkManager.BehaviourUpdater.AddForUpdate(networkObject);
 
             // Server adds entries for all client ownership
             UpdateOwnershipTable(networkObject, networkObject.OwnerClientId);
+
+            // Always notify locally on the server when a new owner is assigned
+            networkObject.InvokeBehaviourOnGainedOwnership();
 
             var message = new ChangeOwnershipMessage
             {
