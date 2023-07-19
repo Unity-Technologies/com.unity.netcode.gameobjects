@@ -294,5 +294,61 @@ namespace Unity.Netcode.RuntimeTests
             }
             serverComponent.ResetFlags();
         }
+
+        private const int k_NumberOfSpawnedObjects = 5;
+
+        private bool AllClientsHaveCorrectObjectCount()
+        {
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ServerHasCorrectClientOwnedObjectCount()
+        {
+            if (m_ServerNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+            {
+                return false;
+            }
+
+            foreach (var connectedClient in m_ServerNetworkManager.ConnectedClients)
+            {
+                if (connectedClient.Value.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator TestOwnedObjectCounts()
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+            }
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    SpawnObject(m_OwnershipPrefab, clientNetworkManager);
+                }
+            }
+
+            yield return WaitForConditionOrTimeOut(AllClientsHaveCorrectObjectCount);
+            AssertOnTimeout($"Not all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+
+            yield return WaitForConditionOrTimeOut(ServerHasCorrectClientOwnedObjectCount);
+            AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+        }
     }
 }
