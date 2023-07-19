@@ -2191,6 +2191,10 @@ namespace Unity.Netcode
                             ClientId = clientId
                         });
 
+                        // At this point the client is considered fully "connected"
+                        NetworkManager.ConnectedClients[clientId].IsConnected = true;
+
+                        // All scenes are synchronized, let the server know we are done synchronizing
                         OnSynchronizeComplete?.Invoke(clientId);
 
                         // At this time the client is fully synchronized with all loaded scenes and

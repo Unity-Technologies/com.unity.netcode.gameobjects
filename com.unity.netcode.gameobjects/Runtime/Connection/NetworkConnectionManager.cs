@@ -17,7 +17,6 @@ namespace Unity.Netcode
     /// - Processing <see cref="NetworkEvent"/>s.
     /// - Client Disconnection
     /// </summary>
-    // TODO 2023-Q2: Discuss what kind of public API exposure we want for this
     public sealed class NetworkConnectionManager
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -656,6 +655,7 @@ namespace Unity.Netcode
                     // If scene management is disabled, then we are done and notify the local host-server the client is connected
                     if (!NetworkManager.NetworkConfig.EnableSceneManagement)
                     {
+                        NetworkManager.ConnectedClients[ownerClientId].IsConnected = true;
                         InvokeOnClientConnectedCallback(ownerClientId);
                     }
                     else // Otherwise, let NetworkSceneManager handle the initial scene and NetworkObject synchronization
@@ -667,6 +667,7 @@ namespace Unity.Netcode
                 {
                     LocalClient = client;
                     NetworkManager.SpawnManager.UpdateObservedNetworkObjects(ownerClientId);
+                    LocalClient.IsConnected = true;
                 }
 
                 if (!response.CreatePlayerObject || (response.PlayerPrefabHash == null && NetworkManager.NetworkConfig.PlayerPrefab == null))
@@ -732,12 +733,10 @@ namespace Unity.Netcode
         internal NetworkClient AddClient(ulong clientId)
         {
             var networkClient = LocalClient;
-            if (clientId != NetworkManager.ServerClientId)
-            {
-                networkClient = new NetworkClient();
-                networkClient.SetRole(isServer: false, isClient: true, NetworkManager);
-                networkClient.ClientId = clientId;
-            }
+
+            networkClient = new NetworkClient();
+            networkClient.SetRole(clientId == NetworkManager.ServerClientId, isClient: true, NetworkManager);
+            networkClient.ClientId = clientId;
 
             ConnectedClients.Add(clientId, networkClient);
             ConnectedClientsList.Add(networkClient);
@@ -800,8 +799,7 @@ namespace Unity.Netcode
                 }
                 else
                 {
-                    // Handle changing ownership and prefab handlers
-                    // TODO-2023: Look into whether in-scene placed NetworkObjects could be destroyed if ownership changes to a client
+                    // Handle changing ownership and prefab handlers                    
                     for (int i = clientOwnedObjects.Count - 1; i >= 0; i--)
                     {
                         var ownedObject = clientOwnedObjects[i];
