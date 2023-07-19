@@ -566,7 +566,6 @@ namespace Unity.Netcode
                     }
                     NetworkManager.ConnectedClients[ownerClientId].PlayerObject = networkObject;
                 }
-                UpdateOwnershipTable(networkObject, ownerClientId);
             }
             else if (ownerClientId == NetworkManager.LocalClientId)
             {
@@ -579,7 +578,6 @@ namespace Unity.Netcode
                     }
                     NetworkManager.LocalClient.PlayerObject = networkObject;
                 }
-                UpdateOwnershipTable(networkObject, ownerClientId);
             }
 
             // If we are the server and should spawn with observers
