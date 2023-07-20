@@ -733,6 +733,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
+            // If we are removing ourself from a parent
+            if (parent == null)
+            {
+                return TrySetParent((NetworkObject)null, worldPositionStays);
+            }
+
             var networkObject = parent.GetComponent<NetworkObject>();
 
             // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
