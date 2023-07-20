@@ -24,7 +24,7 @@ For general questions, networking advice or discussions about Netcode for GameOb
 ### Compatibility
 
 Netcode for GameObjects targets the following Unity versions:
-- Unity 2020.3(LTS), 2021.3(LTS), and 2022.2
+- Unity 2021.3(LTS), 2022.3 (LTS) and 2023.2
 
 On the following runtime platforms:
 - Windows, MacOS, and Linux
