@@ -12,6 +12,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `NetworkClient.OwnedObjects` was not returning any owned objects due to the `NetworkClient.IsConnected` not being properly set. (#2631)
 - Fixed a crash when calling TrySetParent with a null Transform (#2625)
 - Fixed issue where a `NetworkTransform` using full precision state updates was losing transform state updates when interpolation was enabled. (#2624)
 - Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
