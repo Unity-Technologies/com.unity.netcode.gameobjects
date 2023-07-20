@@ -313,9 +313,13 @@ namespace Unity.Netcode.RuntimeTests
 
         private bool ServerHasCorrectClientOwnedObjectCount()
         {
-            if (m_ServerNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+            // Only check when we are the host
+            if (m_ServerNetworkManager.IsHost)
             {
-                return false;
+                if (m_ServerNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
             }
 
             foreach (var connectedClient in m_ServerNetworkManager.ConnectedClients)
@@ -331,9 +335,12 @@ namespace Unity.Netcode.RuntimeTests
         [UnityTest]
         public IEnumerator TestOwnedObjectCounts()
         {
-            for (int i = 0; i < 5; i++)
+            if (m_ServerNetworkManager.IsHost)
             {
-                SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+                for (int i = 0; i < 5; i++)
+                {
+                    SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+                }
             }
 
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
@@ -349,6 +356,7 @@ namespace Unity.Netcode.RuntimeTests
 
             yield return WaitForConditionOrTimeOut(ServerHasCorrectClientOwnedObjectCount);
             AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+
         }
     }
 }
