@@ -396,6 +396,8 @@ namespace Unity.Netcode.Editor.CodeGen
 #endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
 
+        private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
+
         private MethodReference m_ExceptionCtorMethodReference;
         private MethodReference m_List_NetworkVariableBase_Add;
 
@@ -508,6 +510,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
+
+            m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition networkManagerTypeDef = null;
             TypeDefinition networkBehaviourTypeDef = null;
@@ -1200,19 +1204,14 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (rpcHandlers.Count > 0 || rpcNames.Count > 0)
             {
-                var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-                if (staticCtorMethodDef == null)
-                {
-                    staticCtorMethodDef = new MethodDefinition(
-                        ".cctor", // Static Constructor (constant-constructor)
-                        MethodAttributes.HideBySig |
-                        MethodAttributes.SpecialName |
-                        MethodAttributes.RTSpecialName |
+                var staticCtorMethodDef = new MethodDefinition(
+                        $"InitializeRPCS_{typeDefinition.Name}",
+                        MethodAttributes.Assembly |
                         MethodAttributes.Static,
                         typeDefinition.Module.TypeSystem.Void);
-                    staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                    typeDefinition.Methods.Add(staticCtorMethodDef);
-                }
+                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+                typeDefinition.Methods.Add(staticCtorMethodDef);
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
@@ -1254,7 +1253,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     baseGetTypeNameMethod.ReturnType)
                 {
                     ImplAttributes = baseGetTypeNameMethod.ImplAttributes,
-                    SemanticsAttributes = baseGetTypeNameMethod.SemanticsAttributes
+                    SemanticsAttributes = baseGetTypeNameMethod.SemanticsAttributes,
+                    IsFamilyOrAssembly = true
                 };
 
                 var processor = newGetTypeNameMethod.Body.GetILProcessor();

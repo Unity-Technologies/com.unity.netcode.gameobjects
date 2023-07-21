@@ -105,7 +105,6 @@ namespace Unity.Netcode
                     {
                         networkVariable.WriteDelta(writer);
                     }
-
                     NetworkBehaviour.NetworkManager.NetworkMetrics.TrackNetworkVariableDeltaSent(
                         TargetClientId,
                         NetworkBehaviour.NetworkObject,
@@ -206,7 +205,6 @@ namespace Unity.Netcode
                             networkVariable.Name,
                             networkBehaviour.__getTypeName(),
                             context.MessageSize);
-
 
                         if (networkManager.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {

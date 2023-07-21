@@ -18,8 +18,6 @@ namespace Unity.Netcode
             Server = 1,
             Client = 2
         }
-
-
         // NetworkBehaviourILPP will override this in derived classes to return the name of the concrete type
         internal virtual string __getTypeName() => nameof(NetworkBehaviour);
 
@@ -98,7 +96,6 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
@@ -230,7 +227,6 @@ namespace Unity.Netcode
             }
 
             bufferWriter.Dispose();
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
             {
