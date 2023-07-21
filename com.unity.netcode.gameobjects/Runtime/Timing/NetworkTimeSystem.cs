@@ -9,9 +9,6 @@ namespace Unity.Netcode
     /// </summary>
     public class NetworkTimeSystem
     {
-        /// <summary>
-        /// TODO 2023-Q2: Not sure if this just needs to go away, but there is nothing that ever replaces this
-        /// </summary>
         /// <remarks>
         /// This was the original comment when it lived in NetworkManager:
         /// todo talk with UX/Product, find good default value for this

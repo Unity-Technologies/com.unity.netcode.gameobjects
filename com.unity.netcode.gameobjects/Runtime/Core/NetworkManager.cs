@@ -59,13 +59,12 @@ namespace Unity.Netcode
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
+                        // TODO: Determine a better way to handle this
                         NetworkObject.VerifyParentingStatus();
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
                         if (m_ShuttingDown)
                         {
                             ShutdownInternal();
@@ -834,9 +833,7 @@ namespace Unity.Netcode
             }
 
             ConnectionManager.LocalClient.SetRole(true, true, this);
-
             Initialize(true);
-
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -1035,6 +1032,8 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Make sure ShutdownInProgress returns true during this time
+            m_ShuttingDown = true;
             OnDestroy();
         }
 

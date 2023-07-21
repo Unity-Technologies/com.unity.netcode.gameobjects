@@ -118,7 +118,7 @@ namespace Unity.Netcode
             m_NetworkManager.NetworkTickSystem.Tick -= NetworkBehaviourUpdater_Tick;
         }
 
-        // TODO 2023-Q2: Order of operations requires NetworkVariable updates first then showing NetworkObjects
+        // Order of operations requires NetworkVariable updates first then showing NetworkObjects
         private void NetworkBehaviourUpdater_Tick()
         {
             // First update NetworkVariables

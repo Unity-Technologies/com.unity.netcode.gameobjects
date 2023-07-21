@@ -309,6 +309,49 @@ namespace TestProject.RuntimeTests
                 Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1]));
                 Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(m_Dude_LeftArm_NetObjs[setIndex + 1].GetComponent<NetworkObject>()));
             }
+
+            Transform nullTransform = null;
+            GameObject nullGameObject = null;
+            NetworkObject nullNetworkObject = null;
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullTransform));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+            }
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullGameObject));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+            }
+
+
+            Assert.That(m_Cube_NetObjs[0].GetComponent<NetworkObject>().TrySetParent(nullNetworkObject));
+            Assert.That(m_Cube_NetBhvs[0].ParentNetworkObject, Is.EqualTo(null));
+
+            nextFrameNumber = Time.frameCount + 2;
+            yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
+
+            for (int setIndex = 0; setIndex < k_ClientInstanceCount; setIndex++)
+            {
+                Assert.That(m_Cube_NetObjs[setIndex + 1].parent, Is.EqualTo(null));
+                Assert.That(m_Cube_NetBhvs[setIndex + 1].ParentNetworkObject, Is.EqualTo(null));
+            }
         }
     }
 }
