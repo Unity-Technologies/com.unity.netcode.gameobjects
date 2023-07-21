@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -49,6 +51,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
+
+        internal static bool TrackByStateId;
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
         /// </summary>
@@ -120,6 +124,15 @@ namespace Unity.Netcode.Components
             // Used when tracking by state ID is enabled
             internal bool TrackByStateId;
             internal int StateId;
+
+
+            internal void CleanForUpdate()
+            {
+                m_Bitset = 0;
+                IsDirty = false;
+                QuaternionCompressed = 0;
+                //HalfVectorRotation.
+            }
 
             // Used during serialization
             private FastBufferReader m_Reader;
@@ -534,6 +547,8 @@ namespace Unity.Netcode.Components
                 return NetworkTick;
             }
 
+            internal HalfVector3 HalfEulerRotation;
+
             /// <summary>
             /// Serializes this <see cref="NetworkTransformState"/>
             /// </summary>
@@ -553,22 +568,6 @@ namespace Unity.Netcode.Components
                     positionStart = m_Reader.Position;
                 }
 
-                if (TrackByStateId)
-                {
-                    var stateId = StateId;
-                    if (IsSynchronizing)
-                    {
-                        StateId = -1;
-                    }
-                    else
-                    {
-                        if (serializer.IsWriter)
-                        {
-                            StateId++;
-                        }
-                        serializer.SerializeValue(ref StateId);
-                    }
-                }
 
                 // Synchronize State Flags and Network Tick
                 {
@@ -589,6 +588,16 @@ namespace Unity.Netcode.Components
                     }
                 }
 
+                if (NetworkTransform.TrackByStateId)
+                {
+                    if (IsSynchronizing)
+                    {
+                        StateId = -1;
+                    }
+
+                    serializer.SerializeValue(ref StateId);
+                }
+
                 // Synchronize Position
                 if (HasPositionChange)
                 {
@@ -604,7 +613,11 @@ namespace Unity.Netcode.Components
                                 serializer.SerializeValue(ref DeltaPosition);
                                 if (!isWriting)
                                 {
-                                    NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                    //NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, NetworkTick, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
+                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
+                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
+                                    NetworkDeltaPosition.NetworkTick = NetworkTick;
                                     NetworkDeltaPosition.NetworkSerialize(serializer);
                                 }
                                 else
@@ -617,7 +630,11 @@ namespace Unity.Netcode.Components
                         {
                             if (!isWriting)
                             {
-                                NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                //NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, NetworkTick, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
+                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
+                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
+                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
+                                NetworkDeltaPosition.NetworkTick = NetworkTick;
                                 NetworkDeltaPosition.NetworkSerialize(serializer);
                             }
                             else
@@ -703,11 +720,18 @@ namespace Unity.Netcode.Components
                         {
                             if (HasRotAngleChange)
                             {
-                                var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, math.bool3(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
-                                serializer.SerializeValue(ref halfPrecisionRotation);
+                                //var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, math.bool3(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
+                                HalfEulerRotation.AxisToSynchronize[0] = HasRotAngleX;
+                                HalfEulerRotation.AxisToSynchronize[1] = HasRotAngleY;
+                                HalfEulerRotation.AxisToSynchronize[2] = HasRotAngleZ;
+                                if (isWriting)
+                                {
+                                    HalfEulerRotation.Set(RotAngleX, RotAngleY, RotAngleZ);
+                                }
+                                serializer.SerializeValue(ref HalfEulerRotation);
                                 if (!isWriting)
                                 {
-                                    var eulerRotation = halfPrecisionRotation.ToVector3();
+                                    var eulerRotation = HalfEulerRotation.ToVector3();
                                     if (HasRotAngleX)
                                     {
                                         RotAngleX = eulerRotation.x;
@@ -759,7 +783,15 @@ namespace Unity.Netcode.Components
                         else
                         {
                             // For scale, when half precision is enabled we can still only send the axis with deltas
-                            HalfVectorScale = new HalfVector3(Scale, math.bool3(HasScaleX, HasScaleY, HasScaleZ));
+                            //HalfVectorScale = new HalfVector3(Scale, math.bool3(HasScaleX, HasScaleY, HasScaleZ));
+                            if (isWriting)
+                            {
+                                HalfVectorScale.AxisToSynchronize[0] = HasRotAngleX;
+                                HalfVectorScale.AxisToSynchronize[1] = HasRotAngleY;
+                                HalfVectorScale.AxisToSynchronize[2] = HasRotAngleZ;
+                                HalfVectorScale.Set(ScaleX, ScaleY, ScaleZ);
+                            }
+
                             serializer.SerializeValue(ref HalfVectorScale);
                             if (!isWriting)
                             {
@@ -1030,26 +1062,6 @@ namespace Unity.Netcode.Components
         protected NetworkManager m_CachedNetworkManager; // Note: we no longer use this and are only keeping it until we decide to deprecate it
 
         /// <summary>
-        /// We have two internal NetworkVariables.
-        /// One for server authoritative and one for "client/owner" authoritative.
-        /// </summary>
-        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateServer = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-        private readonly NetworkVariable<NetworkTransformState> m_ReplicatedNetworkStateOwner = new NetworkVariable<NetworkTransformState>(new NetworkTransformState(), NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-        internal NetworkVariable<NetworkTransformState> ReplicatedNetworkState
-        {
-            get
-            {
-                if (!IsServerAuthoritative())
-                {
-                    return m_ReplicatedNetworkStateOwner;
-                }
-
-                return m_ReplicatedNetworkStateServer;
-            }
-        }
-
-        /// <summary>
         /// Helper method that returns the space relative position of the transform.
         /// </summary>
         /// <remarks>
@@ -1148,6 +1160,8 @@ namespace Unity.Netcode.Components
         // Used by both authoritative and non-authoritative instances.
         // This represents the most recent local authoritative state.
         private NetworkTransformState m_LocalAuthoritativeNetworkState;
+
+        internal NetworkTransformState LocalAuthoritativeNetworkState => m_LocalAuthoritativeNetworkState;
 
         private ClientRpcParams m_ClientRpcParams = new ClientRpcParams() { Send = new ClientRpcSendParams() };
         private List<ulong> m_ClientIds = new List<ulong>() { 0 };
@@ -1259,7 +1273,10 @@ namespace Unity.Netcode.Components
         {
             var targetClientId = m_TargetIdBeingSynchronized;
             var synchronizationState = new NetworkTransformState();
-
+            synchronizationState.HalfEulerRotation = new HalfVector3();
+            synchronizationState.HalfVectorRotation = new HalfVector4();
+            synchronizationState.HalfVectorScale = new HalfVector3();
+            synchronizationState.NetworkDeltaPosition = new NetworkDeltaPosition();
             if (serializer.IsWriter)
             {
                 synchronizationState.IsTeleportingNextFrame = true;
@@ -1286,6 +1303,7 @@ namespace Unity.Netcode.Components
 
                 m_LocalAuthoritativeNetworkState = synchronizationState;
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
+                m_LocalAuthoritativeNetworkState.IsSynchronizing = false;
             }
         }
 
@@ -1366,11 +1384,11 @@ namespace Unity.Netcode.Components
             // If the transform has deltas (returns dirty) then...
             if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
-                m_LocalAuthoritativeNetworkState.LastSerializedSize = ReplicatedNetworkState.Value.LastSerializedSize;
+                m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
                 OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
 
-                // "push"/commit the state
-                ReplicatedNetworkState.Value = m_LocalAuthoritativeNetworkState;
+                // Update the state
+                UpdateTransformState();
 
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
@@ -2142,8 +2160,9 @@ namespace Unity.Netcode.Components
             {
                 // assure our local NetworkDeltaPosition state is updated
                 m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
-                // and update our current position
-                m_LocalAuthoritativeNetworkState.CurrentPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
+                // and update our target position
+                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
+                m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
             }
 
             if (!Interpolate)
@@ -2154,14 +2173,9 @@ namespace Unity.Netcode.Components
             // Apply axial changes from the new state
             // Either apply the delta position target position or the current state's delta position
             // depending upon whether UsePositionDeltaCompression is enabled
-
             if (m_LocalAuthoritativeNetworkState.HasPositionChange)
             {
-                if (m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
-                {
-                    UpdatePositionInterpolator(m_LocalAuthoritativeNetworkState.CurrentPosition, sentTime);
-                }
-                else
+                if (!m_LocalAuthoritativeNetworkState.UseHalfFloatPrecision)
                 {
                     var newTargetPosition = m_TargetPosition;
                     if (m_LocalAuthoritativeNetworkState.HasPositionX)
@@ -2178,9 +2192,9 @@ namespace Unity.Netcode.Components
                     {
                         newTargetPosition.z = m_LocalAuthoritativeNetworkState.PositionZ;
                     }
-                    UpdatePositionInterpolator(newTargetPosition, sentTime);
                     m_TargetPosition = newTargetPosition;
                 }
+                UpdatePositionInterpolator(m_TargetPosition, sentTime);
             }
 
             if (m_LocalAuthoritativeNetworkState.HasScaleChange)
@@ -2262,6 +2276,8 @@ namespace Unity.Netcode.Components
         {
 
         }
+
+        private NetworkTransformState m_OldState = new NetworkTransformState();
 
         /// <summary>
         /// Only non-authoritative instances should invoke this method
@@ -2360,10 +2376,12 @@ namespace Unity.Netcode.Components
         internal void OnUpdateAuthoritativeState(ref Transform transformSource)
         {
             // If our replicated state is not dirty and our local authority state is dirty, clear it.
-            if (!ReplicatedNetworkState.IsDirty() && m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+            if (m_LocalAuthoritativeNetworkState.IsDirty && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
+                m_LocalAuthoritativeNetworkState.TrackByStateId = true;
+                m_LocalAuthoritativeNetworkState.StateId++;
             }
 
             AxisChangedDeltaPositionCheck();
@@ -2394,20 +2412,110 @@ namespace Unity.Netcode.Components
             }
         }
 
+        private string m_MessageName;
+        private void TransformStateUpdate(ulong senderId, FastBufferReader messagePayload)
+        {
+            // Forward owner authoritative messages before doing anything else
+            if (IsServer && !OnIsServerAuthoritative())
+            {
+                ForwardStateUpdateMessage(messagePayload);
+            }
+            // Store the previous/old state
+            m_OldState = m_LocalAuthoritativeNetworkState;
+
+            // Deserialize the message
+            messagePayload.ReadNetworkSerializableInPlace(ref m_LocalAuthoritativeNetworkState);
+
+            // Apply the message
+            OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
+        }
+
+        private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload)
+        {
+            var currentPosition = messagePayload.Position;
+            var messageSize = messagePayload.Length - currentPosition;
+            var writer = new FastBufferWriter(messageSize, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteBytesSafe(messagePayload.GetUnsafePtr(), messageSize, currentPosition);
+
+                var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                for (int i = 0; i < clientCount; i++)
+                {
+                    var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                    if (!OnIsServerAuthoritative() && (NetworkManager.ServerClientId == clientId || clientId == OwnerClientId))
+                    {
+                        continue;
+                    }
+                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer);
+                }
+            }
+            messagePayload.Seek(currentPosition);
+        }
+
+        private void UpdateTransformState()
+        {
+            bool isServerAuthoritative = OnIsServerAuthoritative();
+            if (isServerAuthoritative && !IsServer)
+            {
+                Debug.LogError($"Server authoritative {nameof(NetworkTransform)} can only be updated by the server!");
+            }
+            else if (!isServerAuthoritative && !IsServer && !IsOwner)
+            {
+                Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
+            }
+            var customMessageManager = NetworkManager.CustomMessagingManager;
+
+            var writer = new FastBufferWriter(128, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
+                // Server-host always sends updates to all clients (but itself)
+                if (IsServer)
+                {
+                    var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                    for (int i = 0; i < clientCount; i++)
+                    {
+                        var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                        if (NetworkManager.ServerClientId == clientId)
+                        {
+                            continue;
+                        }
+                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer);
+                    }
+                }
+                else
+                {
+                    // Clients (owner authoritative) send messages to the server-host
+                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer);
+                }
+            }
+        }
+
+
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
         {
+            ///////////////////////////////////////////////////////////////
             // NOTE: Legacy and no longer used (candidates for deprecation)
             m_CachedIsServer = IsServer;
             m_CachedNetworkManager = NetworkManager;
+            ///////////////////////////////////////////////////////////////
 
+            // Register a custom named message specifically for this instance
+            m_MessageName = $"NTU_{NetworkObjectId}_{NetworkBehaviourId}";
+            NetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(m_MessageName, TransformStateUpdate);
             Initialize();
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
-            ReplicatedNetworkState.OnValueChanged -= OnNetworkStateChanged;
+            if (!NetworkManager.ShutdownInProgress && NetworkManager.CustomMessagingManager != null)
+            {
+                NetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(m_MessageName);
+            }
             CanCommitToTransform = false;
             if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
             {
@@ -2424,9 +2532,6 @@ namespace Unity.Netcode.Components
             }
             CanCommitToTransform = false;
             base.OnDestroy();
-            m_ReplicatedNetworkStateServer.Dispose();
-            m_ReplicatedNetworkStateOwner.Dispose();
-
         }
 
         /// <inheritdoc/>
@@ -2453,8 +2558,8 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// Invoked when first spawned and when ownership changes.
         /// </summary>
-        /// <param name="replicatedState">the <see cref="NetworkVariable{T}"/> replicated <see cref="NetworkTransformState"/></param>
-        protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
+        /// <param name="replicatedState">the current <see cref="NetworkTransformState"/> after initializing</param>
+        protected virtual void OnInitialize(ref NetworkTransformState replicatedState)
         {
 
         }
@@ -2470,7 +2575,6 @@ namespace Unity.Netcode.Components
             }
 
             CanCommitToTransform = IsServerAuthoritative() ? IsServer : IsOwner;
-            var replicatedState = ReplicatedNetworkState;
             var currentPosition = GetSpaceRelativePosition();
             var currentRotation = GetSpaceRelativeRotation();
 
@@ -2490,14 +2594,12 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Sanity check to assure we only subscribe to OnValueChanged once
-                replicatedState.OnValueChanged -= OnNetworkStateChanged;
-                replicatedState.OnValueChanged += OnNetworkStateChanged;
 
                 // Assure we no longer subscribe to the tick event
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
+
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
@@ -2506,8 +2608,7 @@ namespace Unity.Netcode.Components
                 m_TargetRotation = currentRotation.eulerAngles;
 
             }
-
-            OnInitialize(ref replicatedState);
+            OnInitialize(ref m_LocalAuthoritativeNetworkState);
         }
 
         /// <inheritdoc/>

@@ -1054,7 +1054,7 @@ namespace Unity.Netcode.RuntimeTests
 
             m_AuthoritativeTransform.transform.rotation = Quaternion.Euler(1, 2, 3);
             var serverLastSentState = m_AuthoritativeTransform.AuthorityLastSentState;
-            var clientReplicatedState = m_NonAuthoritativeTransform.ReplicatedNetworkState.Value;
+            var clientReplicatedState = m_NonAuthoritativeTransform.LocalAuthoritativeNetworkState;
             var success = WaitForConditionOrTimeOutWithTimeTravel(() => ValidateBitSetValues(serverLastSentState, clientReplicatedState));
             Assert.True(success, $"Timed out waiting for Authoritative Bitset state to equal NonAuthoritative replicated Bitset state!");
 
