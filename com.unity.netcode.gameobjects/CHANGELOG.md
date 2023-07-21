@@ -18,6 +18,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 - Fixed issue where `NetworkObject.SpawnWithObservers` was not being honored for late joining clients. (#2623)
 - Fixed issue where invoking `NetworkManager.Shutdown` multiple times, depending upon the timing, could cause an exception. (#2622)
 - Fixed issue where removing ownership would not notify the server that it gained ownership. This also resolves the issue where an owner authoritative NetworkTransform would not properly initialize upon removing ownership from a remote client. (#2618)
+- Fixed ILPP issues when using CoreCLR and for certain dedicated server builds. (#2614)
 - Fixed an ILPP compile error when creating a generic NetworkBehaviour singleton with a static T instance. (#2603)
 
 ### Changed
