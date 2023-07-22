@@ -51,8 +51,11 @@ namespace Unity.Netcode.Components
         /// </summary>
         public OnClientRequestChangeDelegate OnClientRequestChange;
 
-
+        /// <summary>
+        /// When set each state update will contain a state identifier
+        /// </summary>
         internal static bool TrackByStateId;
+
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
         /// </summary>
@@ -75,6 +78,8 @@ namespace Unity.Netcode.Components
             private const int k_UseHalfFloats = 0x00004000; // Persists between state updates (authority dictates if this is set)
             private const int k_Synchronization = 0x00008000;
             private const int k_PositionSlerp = 0x00010000; // Persists between state updates (authority dictates if this is set)
+            private const int k_IsParented = 0x00020000; // When parented and synchronizing, we need to have both lossy and local scale due to varying spawn order
+            private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier 
 
             // Stores persistent and state relative flags
             private uint m_Bitset;
@@ -102,6 +107,7 @@ namespace Unity.Netcode.Components
             // Used for half precision scale
             internal HalfVector3 HalfVectorScale;
             internal Vector3 Scale;
+            internal Vector3 LossyScale;
 
             // Used for half precision quaternion
             internal HalfVector4 HalfVectorRotation;
@@ -122,17 +128,7 @@ namespace Unity.Netcode.Components
             internal int NetworkTick;
 
             // Used when tracking by state ID is enabled
-            internal bool TrackByStateId;
             internal int StateId;
-
-
-            internal void CleanForUpdate()
-            {
-                m_Bitset = 0;
-                IsDirty = false;
-                QuaternionCompressed = 0;
-                //HalfVectorRotation.
-            }
 
             // Used during serialization
             private FastBufferReader m_Reader;
@@ -429,6 +425,24 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool IsParented
+            {
+                get => GetFlag(k_PositionSlerp);
+                set
+                {
+                    SetFlag(value, k_PositionSlerp);
+                }
+            }
+
+            internal bool TrackByStateId
+            {
+                get => GetFlag(k_TrackStateId);
+                set
+                {
+                    SetFlag(value, k_TrackStateId);
+                }
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private bool GetFlag(int flag)
             {
@@ -568,7 +582,6 @@ namespace Unity.Netcode.Components
                     positionStart = m_Reader.Position;
                 }
 
-
                 // Synchronize State Flags and Network Tick
                 {
                     if (isWriting)
@@ -588,13 +601,9 @@ namespace Unity.Netcode.Components
                     }
                 }
 
-                if (NetworkTransform.TrackByStateId)
+                // If debugging states and track by state identifier is enabled, serialize the current state identifier
+                if (TrackByStateId)
                 {
-                    if (IsSynchronizing)
-                    {
-                        StateId = -1;
-                    }
-
                     serializer.SerializeValue(ref StateId);
                 }
 
@@ -603,6 +612,11 @@ namespace Unity.Netcode.Components
                 {
                     if (UseHalfFloatPrecision)
                     {
+                        // Apply which axis should be updated for both write/read (teleporting, synchronizing, or just updating)
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
+                        NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
+
                         if (IsTeleportingNextFrame)
                         {
                             // **Always use full precision when teleporting and UseHalfFloatPrecision is enabled**
@@ -613,10 +627,6 @@ namespace Unity.Netcode.Components
                                 serializer.SerializeValue(ref DeltaPosition);
                                 if (!isWriting)
                                 {
-                                    //NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, NetworkTick, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
-                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
-                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
-                                    NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
                                     NetworkDeltaPosition.NetworkTick = NetworkTick;
                                     NetworkDeltaPosition.NetworkSerialize(serializer);
                                 }
@@ -630,10 +640,6 @@ namespace Unity.Netcode.Components
                         {
                             if (!isWriting)
                             {
-                                //NetworkDeltaPosition = new NetworkDeltaPosition(Vector3.zero, NetworkTick, math.bool3(HasPositionX, HasPositionY, HasPositionZ));
-                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
-                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
-                                NetworkDeltaPosition.HalfVector3.AxisToSynchronize[2] = HasPositionZ;
                                 NetworkDeltaPosition.NetworkTick = NetworkTick;
                                 NetworkDeltaPosition.NetworkSerialize(serializer);
                             }
@@ -643,9 +649,8 @@ namespace Unity.Netcode.Components
                             }
                         }
                     }
-                    else // Legacy Position Synchronization
+                    else // Full precision axis specific position synchronization
                     {
-                        // Position Values
                         if (HasPositionX)
                         {
                             serializer.SerializeValue(ref PositionX);
@@ -720,15 +725,18 @@ namespace Unity.Netcode.Components
                         {
                             if (HasRotAngleChange)
                             {
-                                //var halfPrecisionRotation = new HalfVector3(RotAngleX, RotAngleY, RotAngleZ, math.bool3(HasRotAngleX, HasRotAngleY, HasRotAngleZ));
+                                // Apply which axis should be updated for both write/read
                                 HalfEulerRotation.AxisToSynchronize[0] = HasRotAngleX;
                                 HalfEulerRotation.AxisToSynchronize[1] = HasRotAngleY;
                                 HalfEulerRotation.AxisToSynchronize[2] = HasRotAngleZ;
+
                                 if (isWriting)
                                 {
                                     HalfEulerRotation.Set(RotAngleX, RotAngleY, RotAngleZ);
                                 }
+
                                 serializer.SerializeValue(ref HalfEulerRotation);
+
                                 if (!isWriting)
                                 {
                                     var eulerRotation = HalfEulerRotation.ToVector3();
@@ -773,6 +781,12 @@ namespace Unity.Netcode.Components
                 // Synchronize Scale
                 if (HasScaleChange)
                 {
+                    // If we are teleporting (which includes synchronizing) and the associated NetworkObject has a parent
+                    // then we want to serialize the LossyScale since NetworkObject spawn order is not  guaranteed 
+                    if (IsTeleportingNextFrame && IsParented)
+                    {
+                        serializer.SerializeValue(ref LossyScale);
+                    }
                     // Half precision scale synchronization
                     if (UseHalfFloatPrecision)
                     {
@@ -782,17 +796,19 @@ namespace Unity.Netcode.Components
                         }
                         else
                         {
+                            // Apply which axis should be updated for both write/read
+                            HalfVectorScale.AxisToSynchronize[0] = HasScaleX;
+                            HalfVectorScale.AxisToSynchronize[1] = HasScaleY;
+                            HalfVectorScale.AxisToSynchronize[2] = HasScaleZ;
+
                             // For scale, when half precision is enabled we can still only send the axis with deltas
-                            //HalfVectorScale = new HalfVector3(Scale, math.bool3(HasScaleX, HasScaleY, HasScaleZ));
                             if (isWriting)
                             {
-                                HalfVectorScale.AxisToSynchronize[0] = HasRotAngleX;
-                                HalfVectorScale.AxisToSynchronize[1] = HasRotAngleY;
-                                HalfVectorScale.AxisToSynchronize[2] = HasRotAngleZ;
-                                HalfVectorScale.Set(ScaleX, ScaleY, ScaleZ);
+                                HalfVectorScale.Set(Scale[0], Scale[1], Scale[2]);
                             }
 
                             serializer.SerializeValue(ref HalfVectorScale);
+
                             if (!isWriting)
                             {
                                 Scale = HalfVectorScale.ToVector3();
@@ -1178,6 +1194,9 @@ namespace Unity.Netcode.Components
         private Vector3 m_TargetScale;
         private Quaternion m_CurrentRotation;
         private Vector3 m_TargetRotation;
+
+        // Used to for each instance to uniquely identify the named message
+        private string m_MessageName;
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1669,7 +1688,43 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            // Only if we are not synchronizing...
+            // For scale, we need to check for parenting when synchronizing and/or teleporting
+            if (isSynchronization || networkState.IsTeleportingNextFrame)
+            {
+                // This all has to do with complex nested hierarchies and how it impacts scale
+                // when set for the first time and depending upon whether the NetworkObject is parented
+                // (or not parented) at the time the scale values are applied.
+                var hasParentNetworkObject = false;
+
+                // If the NetworkObject belonging to this NetworkTransform instance has a parent
+                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
+                if (NetworkObject.transform.parent != null)
+                {
+                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
+
+                    // In-scene placed NetworkObjects parented under a GameObject with no
+                    // NetworkObject preserve their lossyScale when synchronizing.
+                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
+                    {
+                        hasParentNetworkObject = true;
+                    }
+                    else
+                    {
+                        // Or if the relative NetworkObject has a parent NetworkObject
+                        hasParentNetworkObject = parentNetworkObject != null;
+                    }
+                }
+
+                networkState.IsParented = hasParentNetworkObject;
+                // If we are synchronizing and the associated NetworkObject has a parent then we want to send the
+                // LossyScale if the NetworkObject has a parent since NetworkObject spawn order is not  guaranteed 
+                if (hasParentNetworkObject)
+                {
+                    networkState.LossyScale = transform.lossyScale;
+                }
+            }
+
+            // Checking scale deltas when not synchronizing
             if (!isSynchronization)
             {
                 if (!UseHalfFloatPrecision)
@@ -1700,7 +1755,7 @@ namespace Unity.Netcode.Components
                     var previousScale = networkState.Scale;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (Mathf.Abs(Mathf.DeltaAngle(previousScale[i], scale[i])) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
+                        if (Mathf.Abs(scale[i] - previousScale[i]) >= ScaleThreshold || networkState.IsTeleportingNextFrame)
                         {
                             isScaleDirty = true;
                             networkState.Scale[i] = scale[i];
@@ -1709,46 +1764,18 @@ namespace Unity.Netcode.Components
                     }
                 }
             }
-            else // If we are synchronizing then we need to determine which scale to use
+            else // Just apply the full local scale when synchronizing
             if (SynchronizeScale)
             {
-                // This all has to do with complex nested hierarchies and how it impacts scale
-                // when set for the first time.
-                var hasParentNetworkObject = false;
-
-                // If the NetworkObject belonging to this NetworkTransform instance has a parent
-                // (i.e. this handles nested NetworkTransforms under a parent at some layer above)
-                if (NetworkObject.transform.parent != null)
-                {
-                    var parentNetworkObject = NetworkObject.transform.parent.GetComponent<NetworkObject>();
-
-                    // In-scene placed NetworkObjects parented under a GameObject with no
-                    // NetworkObject preserve their lossyScale when synchronizing.
-                    if (parentNetworkObject == null && NetworkObject.IsSceneObject != false)
-                    {
-                        hasParentNetworkObject = true;
-                    }
-                    else
-                    {
-                        // Or if the relative NetworkObject has a parent NetworkObject
-                        hasParentNetworkObject = parentNetworkObject != null;
-                    }
-                }
-
-                // If world position stays is set and the relative NetworkObject is parented under a NetworkObject
-                // then we want to use the lossy scale for the initial synchronization.
-                var useLossy = NetworkObject.WorldPositionStays() && hasParentNetworkObject;
-                var scaleToUse = useLossy ? transform.lossyScale : transform.localScale;
-
                 if (!UseHalfFloatPrecision)
                 {
-                    networkState.ScaleX = scaleToUse.x;
-                    networkState.ScaleY = scaleToUse.y;
-                    networkState.ScaleZ = scaleToUse.z;
+                    networkState.ScaleX = transform.localScale.x;
+                    networkState.ScaleY = transform.localScale.y;
+                    networkState.ScaleZ = transform.localScale.z;
                 }
                 else
                 {
-                    networkState.Scale = scaleToUse;
+                    networkState.Scale = transform.localScale;
                 }
                 networkState.HasScaleX = true;
                 networkState.HasScaleY = true;
@@ -2045,28 +2072,41 @@ namespace Unity.Netcode.Components
 
             if (newState.HasScaleChange)
             {
+                bool shouldUseLossy = false;
+                if (newState.IsParented)
+                {
+                    if (transform.parent == null)
+                    {
+                        shouldUseLossy = NetworkObject.WorldPositionStays();
+                    }
+                    else
+                    {
+                        shouldUseLossy = !NetworkObject.WorldPositionStays();
+                    }
+                }
+
+
                 if (UseHalfFloatPrecision)
                 {
-                    currentScale = newState.Scale;
+                    currentScale = shouldUseLossy ? newState.LossyScale : newState.Scale;
                 }
                 else
                 {
                     // Adjust based on which axis changed
                     if (newState.HasScaleX)
                     {
-                        currentScale.x = newState.ScaleX;
+                        currentScale.x = shouldUseLossy ? newState.LossyScale.x : newState.ScaleX;
                     }
 
                     if (newState.HasScaleY)
                     {
-                        currentScale.y = newState.ScaleY;
+                        currentScale.y = shouldUseLossy ? newState.LossyScale.y : newState.ScaleY;
                     }
 
                     if (newState.HasScaleZ)
                     {
-                        currentScale.z = newState.ScaleZ;
+                        currentScale.z = shouldUseLossy ? newState.LossyScale.z : newState.ScaleZ;
                     }
-
                 }
 
                 m_CurrentScale = currentScale;
@@ -2380,8 +2420,15 @@ namespace Unity.Netcode.Components
             {
                 // Now clear our bitset and prepare for next network tick state update
                 m_LocalAuthoritativeNetworkState.ClearBitSetForNextTick();
-                m_LocalAuthoritativeNetworkState.TrackByStateId = true;
-                m_LocalAuthoritativeNetworkState.StateId++;
+                if (TrackByStateId)
+                {
+                    m_LocalAuthoritativeNetworkState.TrackByStateId = true;
+                    m_LocalAuthoritativeNetworkState.StateId++;
+                }
+                else
+                {
+                    m_LocalAuthoritativeNetworkState.TrackByStateId = false;
+                }
             }
 
             AxisChangedDeltaPositionCheck();
@@ -2412,86 +2459,7 @@ namespace Unity.Netcode.Components
             }
         }
 
-        private string m_MessageName;
-        private void TransformStateUpdate(ulong senderId, FastBufferReader messagePayload)
-        {
-            // Forward owner authoritative messages before doing anything else
-            if (IsServer && !OnIsServerAuthoritative())
-            {
-                ForwardStateUpdateMessage(messagePayload);
-            }
-            // Store the previous/old state
-            m_OldState = m_LocalAuthoritativeNetworkState;
 
-            // Deserialize the message
-            messagePayload.ReadNetworkSerializableInPlace(ref m_LocalAuthoritativeNetworkState);
-
-            // Apply the message
-            OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
-        }
-
-        private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload)
-        {
-            var currentPosition = messagePayload.Position;
-            var messageSize = messagePayload.Length - currentPosition;
-            var writer = new FastBufferWriter(messageSize, Allocator.Temp);
-            using (writer)
-            {
-                writer.WriteBytesSafe(messagePayload.GetUnsafePtr(), messageSize, currentPosition);
-
-                var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
-                for (int i = 0; i < clientCount; i++)
-                {
-                    var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
-                    if (!OnIsServerAuthoritative() && (NetworkManager.ServerClientId == clientId || clientId == OwnerClientId))
-                    {
-                        continue;
-                    }
-                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer);
-                }
-            }
-            messagePayload.Seek(currentPosition);
-        }
-
-        private void UpdateTransformState()
-        {
-            bool isServerAuthoritative = OnIsServerAuthoritative();
-            if (isServerAuthoritative && !IsServer)
-            {
-                Debug.LogError($"Server authoritative {nameof(NetworkTransform)} can only be updated by the server!");
-            }
-            else if (!isServerAuthoritative && !IsServer && !IsOwner)
-            {
-                Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
-            }
-            var customMessageManager = NetworkManager.CustomMessagingManager;
-
-            var writer = new FastBufferWriter(128, Allocator.Temp);
-
-            using (writer)
-            {
-                writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
-                // Server-host always sends updates to all clients (but itself)
-                if (IsServer)
-                {
-                    var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
-                    for (int i = 0; i < clientCount; i++)
-                    {
-                        var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
-                        if (NetworkManager.ServerClientId == clientId)
-                        {
-                            continue;
-                        }
-                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer);
-                    }
-                }
-                else
-                {
-                    // Clients (owner authoritative) send messages to the server-host
-                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer);
-                }
-            }
-        }
 
 
         /// <inheritdoc/>
@@ -2838,6 +2806,103 @@ namespace Unity.Netcode.Components
         public bool IsServerAuthoritative()
         {
             return OnIsServerAuthoritative();
+        }
+
+        /// <summary>
+        /// Receives the <see cref="NetworkTransformState"/> named message updates
+        /// </summary>
+        /// <param name="senderId">authority of the transform</param>
+        /// <param name="messagePayload">serialzied <see cref="NetworkTransformState"/></param>
+        private void TransformStateUpdate(ulong senderId, FastBufferReader messagePayload)
+        {
+            // Forward owner authoritative messages before doing anything else
+            if (IsServer && !OnIsServerAuthoritative())
+            {
+                ForwardStateUpdateMessage(messagePayload);
+            }
+            // Store the previous/old state
+            m_OldState = m_LocalAuthoritativeNetworkState;
+
+            // Deserialize the message
+            messagePayload.ReadNetworkSerializableInPlace(ref m_LocalAuthoritativeNetworkState);
+
+            // Apply the message
+            OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
+        }
+
+        /// <summary>
+        /// Forwards owner authoritative state updates when received by the server
+        /// </summary>
+        /// <param name="messagePayload">the owner state message payload</param>
+        private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload)
+        {
+            var currentPosition = messagePayload.Position;
+            var messageSize = messagePayload.Length - currentPosition;
+            var writer = new FastBufferWriter(messageSize, Allocator.Temp);
+            using (writer)
+            {
+                writer.WriteBytesSafe(messagePayload.GetUnsafePtr(), messageSize, currentPosition);
+
+                var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                for (int i = 0; i < clientCount; i++)
+                {
+                    var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                    if (!OnIsServerAuthoritative() && (NetworkManager.ServerClientId == clientId || clientId == OwnerClientId))
+                    {
+                        continue;
+                    }
+                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer);
+                }
+            }
+            messagePayload.Seek(currentPosition);
+        }
+
+        /// <summary>
+        /// Sends <see cref="NetworkTransformState"/> named message updates by the authority of the transform
+        /// </summary>
+        private void UpdateTransformState()
+        {
+            if (NetworkManager.ShutdownInProgress)
+            {
+                return;
+            }
+
+            bool isServerAuthoritative = OnIsServerAuthoritative();
+            if (isServerAuthoritative && !IsServer)
+            {
+                Debug.LogError($"Server authoritative {nameof(NetworkTransform)} can only be updated by the server!");
+            }
+            else if (!isServerAuthoritative && !IsServer && !IsOwner)
+            {
+                Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
+            }
+            var customMessageManager = NetworkManager.CustomMessagingManager;
+
+            var writer = new FastBufferWriter(128, Allocator.Temp);
+
+            using (writer)
+            {
+                writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
+                // Server-host always sends updates to all clients (but itself)
+                if (IsServer)
+                {
+                    var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                    for (int i = 0; i < clientCount; i++)
+                    {
+                        var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                        if (NetworkManager.ServerClientId == clientId)
+                        {
+                            continue;
+                        }
+                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer);
+                    }
+                }
+                else
+                {
+                    // Clients (owner authoritative) send messages to the server-host
+                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer);
+                }
+            }
         }
     }
 

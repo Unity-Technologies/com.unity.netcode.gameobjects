@@ -500,6 +500,11 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
             Assert.True(success, "Timed out waiting for all child instances to be spawned!");
 
+
+            // This waits for all child instances to be parented
+            success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
+            Assert.True(success, "Timed out waiting for all instances to have parented a child!");
+
             // Assure the newly connected client's child object's transform values are correct
             AllChildrenLocalTransformValuesMatch();
         }

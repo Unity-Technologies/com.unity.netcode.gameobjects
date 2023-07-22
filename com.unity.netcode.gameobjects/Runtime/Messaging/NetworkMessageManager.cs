@@ -518,15 +518,18 @@ namespace Unity.Netcode
         {
             if (!m_PerClientMessageVersions.TryGetValue(clientId, out var versionMap))
             {
-                if (forReceive)
+                var networkManager = NetworkManager.Singleton;
+                if (networkManager != null && networkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    if (forReceive)
+                    {
+                        NetworkLog.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    }
+                    else
+                    {
+                        NetworkLog.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
-                }
-
                 return -1;
             }
 
