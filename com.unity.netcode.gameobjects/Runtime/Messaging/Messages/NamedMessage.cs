@@ -28,7 +28,7 @@ namespace Unity.Netcode
             if (!networkManager.ShutdownInProgress)
             {
                 ((NetworkManager)context.SystemOwner).CustomMessagingManager.InvokeNamedMessage(Hash, context.SenderId, m_ReceiveData, context.SerializedHeaderSize);
-            }            
+            }
         }
     }
 }
