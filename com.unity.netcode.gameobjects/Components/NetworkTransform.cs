@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -1291,11 +1290,14 @@ namespace Unity.Netcode.Components
         protected override void OnSynchronize<T>(ref BufferSerializer<T> serializer)
         {
             var targetClientId = m_TargetIdBeingSynchronized;
-            var synchronizationState = new NetworkTransformState();
-            synchronizationState.HalfEulerRotation = new HalfVector3();
-            synchronizationState.HalfVectorRotation = new HalfVector4();
-            synchronizationState.HalfVectorScale = new HalfVector3();
-            synchronizationState.NetworkDeltaPosition = new NetworkDeltaPosition();
+            var synchronizationState = new NetworkTransformState()
+            {
+                HalfEulerRotation = new HalfVector3(),
+                HalfVectorRotation = new HalfVector4(),
+                HalfVectorScale = new HalfVector3(),
+                NetworkDeltaPosition = new NetworkDeltaPosition(),
+            };
+
             if (serializer.IsWriter)
             {
                 synchronizationState.IsTeleportingNextFrame = true;
