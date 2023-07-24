@@ -2530,6 +2530,19 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="replicatedState">the current <see cref="NetworkTransformState"/> after initializing</param>
         protected virtual void OnInitialize(ref NetworkTransformState replicatedState)
+        {            
+        }
+
+        /// <summary>
+        /// An owner read and owner write NetworkVariable so it doesn't generate any messages
+        /// </summary>
+        private NetworkVariable<NetworkTransformState> m_InternalStatNetVar = new NetworkVariable<NetworkTransformState>(default, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Owner);
+        /// <summary>
+        /// This method is only invoked by the owner
+        /// Use: OnInitialize(ref NetworkTransformState replicatedState) to be notified on all instances
+        /// </summary>
+        /// <param name="replicatedState"></param>
+        protected virtual void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
         {
 
         }
@@ -2577,8 +2590,14 @@ namespace Unity.Netcode.Components
                 m_CurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
 
-            }
+            }            
             OnInitialize(ref m_LocalAuthoritativeNetworkState);
+            
+            if (IsOwner)
+            {
+                m_InternalStatNetVar.Value = m_LocalAuthoritativeNetworkState;
+                OnInitialize(ref m_InternalStatNetVar);
+            }            
         }
 
         /// <inheritdoc/>
