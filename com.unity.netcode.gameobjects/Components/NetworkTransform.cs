@@ -2530,7 +2530,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         /// <param name="replicatedState">the current <see cref="NetworkTransformState"/> after initializing</param>
         protected virtual void OnInitialize(ref NetworkTransformState replicatedState)
-        {            
+        {
         }
 
         /// <summary>
@@ -2590,14 +2590,14 @@ namespace Unity.Netcode.Components
                 m_CurrentRotation = currentRotation;
                 m_TargetRotation = currentRotation.eulerAngles;
 
-            }            
+            }
             OnInitialize(ref m_LocalAuthoritativeNetworkState);
-            
+
             if (IsOwner)
             {
                 m_InternalStatNetVar.Value = m_LocalAuthoritativeNetworkState;
                 OnInitialize(ref m_InternalStatNetVar);
-            }            
+            }
         }
 
         /// <inheritdoc/>
