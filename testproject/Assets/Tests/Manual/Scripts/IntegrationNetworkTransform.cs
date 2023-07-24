@@ -319,23 +319,6 @@ namespace TestProject.ManualTests
             OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
         }
 #endif       
-        /// <summary>
-        /// Authoritative State Update
-        /// </summary>
-        //private void OnStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
-        //{
-        //    if (DebugTransform)
-        //    {
-        //        if (IsOwner && !IsServerAuthoritative() && !m_StopLoggingStates)
-        //        {
-        //            if (IsServer && NetworkManager.ConnectedClientsIds.Count < 2)
-        //            {
-        //                return;
-        //            }
-        //            InternalAddLogEntry(ref newState, OwnerClientId);
-        //        }
-        //    }
-        //}
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
