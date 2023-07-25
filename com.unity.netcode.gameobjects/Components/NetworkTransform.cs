@@ -82,6 +82,11 @@ namespace Unity.Netcode.Components
 
             // Stores persistent and state relative flags
             private uint m_Bitset;
+            internal uint BitSet
+            {
+                get { return m_Bitset; }
+                set { m_Bitset = value; }
+            }
 
             // Used to store the tick calculated sent time
             internal double SentTime;
@@ -426,10 +431,10 @@ namespace Unity.Netcode.Components
 
             internal bool IsParented
             {
-                get => GetFlag(k_PositionSlerp);
+                get => GetFlag(k_IsParented);
                 set
                 {
-                    SetFlag(value, k_PositionSlerp);
+                    SetFlag(value, k_IsParented);
                 }
             }
 
