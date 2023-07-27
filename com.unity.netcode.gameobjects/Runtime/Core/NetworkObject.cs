@@ -20,19 +20,24 @@ namespace Unity.Netcode
         [SerializeField]
         internal uint GlobalObjectIdHash;
 
-        // TODO: Remove
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
-        internal NetworkObject DependentNetworkObject = null;
+        private NetworkObject m_DependentNetworkObject = null;
 
-        //[HideInInspector]
+        [HideInInspector]
         [SerializeField]
         internal List<NetworkObject> DependingNetworkObjects = new List<NetworkObject>();
 
         /// <summary>
-        /// Whether this NetworkObject is dependent on another NetworkObject
+        /// Whether this NetworkObject is dependent on another NetworkObject.
         /// </summary>
-        public bool IsDependent => DependentNetworkObject != null;
+        public bool IsDependent => m_DependentNetworkObject != null;
+
+        /// <summary>
+        /// Gets the NetworkObject that this NetworkObject is dependent on. 
+        /// When the dependent NetworkObject is despawned, this NetworkObject will be despawned as well.
+        /// </summary>
+        public NetworkObject DependentNetworkObject { get => m_DependentNetworkObject; internal set => m_DependentNetworkObject = value; }
 
 
         /// <summary>
@@ -633,9 +638,9 @@ namespace Unity.Netcode
                 throw new NotServerException($"Only server can spawn {nameof(NetworkObject)}s");
             }
 
-            if (DependentNetworkObject != null)
+            if (IsDependent)
             {
-                throw new NotServerException($"Cannot spawn {nameof(NetworkObject)}s that are dependent on other {nameof(NetworkObject)}s");
+                throw new InvalidOperationException($"Cannot spawn {nameof(NetworkObject)}s that are dependent on other {nameof(NetworkObject)}s");
             }
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
@@ -1022,8 +1027,7 @@ namespace Unity.Netcode
             // has been set, this will not be entered into again (i.e. the later code will be invoked and
             // users will get notifications when the parent changes).
             var isInScenePlaced = IsSceneObject.HasValue && IsSceneObject.Value;
-            var isIndependent = DependentNetworkObject == null;
-            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && (isInScenePlaced || !isIndependent))
+            if (transform.parent != null && !removeParent && !m_LatestParent.HasValue && (isInScenePlaced || IsDependent))
             {
                 var parentNetworkObject = transform.parent.GetComponent<NetworkObject>();
 
@@ -1039,7 +1043,7 @@ namespace Unity.Netcode
                     return true;
                 }
                 // If the parent still isn't spawned add this to the orphaned children and return false. Should only occur
-                // with in-scene placed onjects.
+                // with in-scene placed objects.
                 else if (!parentNetworkObject.IsSpawned)
                 {
                     OrphanChildren.Add(this);
@@ -1333,7 +1337,7 @@ namespace Unity.Netcode
                 set => ByteUtility.SetBit(ref m_BitField, 6, value);
             }
 
-            public struct DependingObjectData : INetworkSerializeByMemcpy
+            public struct DependingSceneObject : INetworkSerializeByMemcpy
             {
                 private byte m_BitField;
 
@@ -1359,7 +1363,7 @@ namespace Unity.Netcode
                 }
             }
 
-            public DependingObjectData[] DependingObjects;
+            public DependingSceneObject[] DependingObjects;
 
             //If(Metadata.HasParent)
             public ulong ParentObjectId;
@@ -1387,7 +1391,6 @@ namespace Unity.Netcode
 
             public void Serialize(FastBufferWriter writer)
             {
-                Debug.Log($"Serialize {OwnerObject.gameObject}");
                 writer.WriteValueSafe(m_BitField);
                 writer.WriteValueSafe(Hash);
                 BytePacker.WriteValueBitPacked(writer, NetworkObjectId);
@@ -1406,7 +1409,7 @@ namespace Unity.Netcode
                 writer.WriteValueSafe(dependingCount);
 
                 var writeSize = 0;
-                writeSize += dependingCount * FastBufferWriter.GetWriteSize<DependingObjectData>(); // Each Depending Object
+                writeSize += dependingCount * FastBufferWriter.GetWriteSize<DependingSceneObject>(); // Each Depending Object
                 writeSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0; // Transform
                 writeSize += FastBufferWriter.GetWriteSize<int>(); // NetworkSceneHandle
 
@@ -1462,7 +1465,7 @@ namespace Unity.Netcode
                 reader.ReadValueSafe(out int dependingCount);
 
                 var readSize = 0;
-                readSize += dependingCount * FastBufferWriter.GetWriteSize<DependingObjectData>(); // Each Depending Object
+                readSize += dependingCount * FastBufferWriter.GetWriteSize<DependingSceneObject>(); // Each Depending Object
                 readSize += HasTransform ? FastBufferWriter.GetWriteSize<TransformData>() : 0; // Transform
                 readSize += FastBufferWriter.GetWriteSize<int>(); // NetworkSceneHandle
 
@@ -1472,7 +1475,7 @@ namespace Unity.Netcode
                     throw new OverflowException("Could not deserialize SceneObject: Reading past the end of the buffer");
                 }
 
-                DependingObjects = new DependingObjectData[dependingCount];
+                DependingObjects = new DependingSceneObject[dependingCount];
                 for (int i = 0; i < dependingCount; i++)
                 {
                     reader.ReadValue(out DependingObjects[i]);
@@ -1650,19 +1653,19 @@ namespace Unity.Netcode
                 };
             }
 
-            SceneObject.DependingObjectData[] DependingObjects = new SceneObject.DependingObjectData[DependingNetworkObjects.Count];
+            SceneObject.DependingSceneObject[] DependingObjects = new SceneObject.DependingSceneObject[DependingNetworkObjects.Count];
             for (int i = 0; i < DependingNetworkObjects.Count; i++)
             {
                 if (DependingNetworkObjects[i] == null || !DependingNetworkObjects[i].IsSpawned)
                 {
-                    DependingObjects[i] = new SceneObject.DependingObjectData
+                    DependingObjects[i] = new SceneObject.DependingSceneObject
                     {
                         IsSpawned = false,
                     };
                 }
                 else
                 {
-                    DependingObjects[i] = new SceneObject.DependingObjectData
+                    DependingObjects[i] = new SceneObject.DependingSceneObject
                     {
                         IsSpawned = true,
                         NetworkObjectId = DependingNetworkObjects[i].NetworkObjectId,
