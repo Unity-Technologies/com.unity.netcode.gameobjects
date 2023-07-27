@@ -65,22 +65,48 @@ namespace Unity.Netcode.RuntimeTests
     }
 
     /// <summary>
+    /// Helper component for NetworkTransform parenting tests when
+    /// a child is a parent of another child (i.e. "sub child")
+    /// </summary>
+    public class SubChildObjectComponent : ChildObjectComponent
+    {
+        protected override bool IsSubChild()
+        {
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Helper component for NetworkTransform parenting tests
     /// </summary>
     public class ChildObjectComponent : NetworkTransform
     {
         public static readonly List<ChildObjectComponent> Instances = new List<ChildObjectComponent>();
+        public static readonly List<ChildObjectComponent> SubInstances = new List<ChildObjectComponent>();
         public static ChildObjectComponent AuthorityInstance { get; internal set; }
+        public static ChildObjectComponent AuthoritySubInstance { get; internal set; }
         public static readonly Dictionary<ulong, NetworkObject> ClientInstances = new Dictionary<ulong, NetworkObject>();
+        public static readonly Dictionary<ulong, NetworkObject> ClientSubChildInstances = new Dictionary<ulong, NetworkObject>();
+
+        public static bool HasSubChild;
 
         public static void Reset()
         {
             AuthorityInstance = null;
+            AuthoritySubInstance = null;
+            HasSubChild = false;
             ClientInstances.Clear();
+            ClientSubChildInstances.Clear();
             Instances.Clear();
+            SubInstances.Clear();
         }
 
         public bool ServerAuthority;
+
+        protected virtual bool IsSubChild()
+        {
+            return false;
+        }
 
         protected override bool OnIsServerAuthoritative()
         {
@@ -92,13 +118,34 @@ namespace Unity.Netcode.RuntimeTests
             base.OnNetworkSpawn();
             if (CanCommitToTransform)
             {
-                AuthorityInstance = this;
+                if (!IsSubChild())
+                {
+                    AuthorityInstance = this;
+                }
+                else
+                {
+                    AuthoritySubInstance = this;
+                }
             }
             else
             {
-                Instances.Add(this);
+                if (!IsSubChild())
+                {
+                    Instances.Add(this);
+                }
+                else
+                {
+                    SubInstances.Add(this);
+                }
             }
-            ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+            if (HasSubChild && IsSubChild())
+            {
+                ClientSubChildInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+            }
+            else
+            {
+                ClientInstances.Add(NetworkManager.LocalClientId, NetworkObject);
+            }
         }
     }
 
@@ -117,6 +164,7 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_AuthoritativePlayer;
         private NetworkObject m_NonAuthoritativePlayer;
         private NetworkObject m_ChildObject;
+        private NetworkObject m_SubChildObject;
         private NetworkObject m_ParentObject;
 
         private NetworkTransformTestComponent m_AuthoritativeTransform;
@@ -232,6 +280,11 @@ namespace Unity.Netcode.RuntimeTests
 
         protected override void OnServerAndClientsCreated()
         {
+            var subChildObject = CreateNetworkObjectPrefab("SubChildObject");
+            var subChildNetworkTransform = subChildObject.AddComponent<SubChildObjectComponent>();
+            subChildNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
+            m_SubChildObject = subChildObject.GetComponent<NetworkObject>();
+
             var childObject = CreateNetworkObjectPrefab("ChildObject");
             var childNetworkTransform = childObject.AddComponent<ChildObjectComponent>();
             childNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
@@ -242,13 +295,19 @@ namespace Unity.Netcode.RuntimeTests
             parentNetworkTransform.ServerAuthority = m_Authority == Authority.ServerAuthority;
             m_ParentObject = parentObject.GetComponent<NetworkObject>();
 
-
             // Now apply local transform values
             m_ChildObject.transform.position = m_ChildObjectLocalPosition;
             var childRotation = m_ChildObject.transform.rotation;
             childRotation.eulerAngles = m_ChildObjectLocalRotation;
             m_ChildObject.transform.rotation = childRotation;
             m_ChildObject.transform.localScale = m_ChildObjectLocalScale;
+
+            m_SubChildObject.transform.position = m_SubChildObjectLocalPosition;
+            var subChildRotation = m_SubChildObject.transform.rotation;
+            subChildRotation.eulerAngles = m_SubChildObjectLocalRotation;
+            m_SubChildObject.transform.rotation = childRotation;
+            m_SubChildObject.transform.localScale = m_SubChildObjectLocalScale;
+
             if (m_EnableVerboseDebug)
             {
                 m_ServerNetworkManager.LogLevel = LogLevel.Developer;
@@ -302,6 +361,11 @@ namespace Unity.Netcode.RuntimeTests
                 return false;
             }
 
+            if (ChildObjectComponent.HasSubChild && ChildObjectComponent.AuthoritySubInstance == null)
+            {
+                return false;
+            }
+
             foreach (var clientNetworkManager in m_ClientNetworkManagers)
             {
                 if (!ChildObjectComponent.ClientInstances.ContainsKey(clientNetworkManager.LocalClientId))
@@ -321,6 +385,16 @@ namespace Unity.Netcode.RuntimeTests
                     return false;
                 }
             }
+            if (ChildObjectComponent.HasSubChild)
+            {
+                foreach (var instance in ChildObjectComponent.ClientSubChildInstances.Values)
+                {
+                    if (instance.transform.parent == null)
+                    {
+                        return false;
+                    }
+                }
+            }
             return true;
         }
 
@@ -328,6 +402,10 @@ namespace Unity.Netcode.RuntimeTests
         private Vector3 m_ChildObjectLocalPosition = new Vector3(5.0f, 0.0f, -5.0f);
         private Vector3 m_ChildObjectLocalRotation = new Vector3(-35.0f, 90.0f, 270.0f);
         private Vector3 m_ChildObjectLocalScale = new Vector3(0.1f, 0.5f, 0.4f);
+        private Vector3 m_SubChildObjectLocalPosition = new Vector3(2.0f, 1.0f, -1.0f);
+        private Vector3 m_SubChildObjectLocalRotation = new Vector3(5.0f, 15.0f, 124.0f);
+        private Vector3 m_SubChildObjectLocalScale = new Vector3(1.0f, 0.15f, 0.75f);
+
 
         /// <summary>
         /// A wait condition specific method that assures the local space coordinates
@@ -375,17 +453,17 @@ namespace Unity.Netcode.RuntimeTests
         /// If not, it generates a message containing the axial values that did not match
         /// the target/start local space values.
         /// </summary>
-        private void AllChildrenLocalTransformValuesMatch()
+        private void AllChildrenLocalTransformValuesMatch(bool useSubChild)
         {
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllInstancesKeptLocalTransformValues);
-            //TimeTravelToNextTick();
             var infoMessage = new StringBuilder($"Timed out waiting for all children to have the correct local space values:\n");
-            var authorityObjectLocalPosition = m_AuthorityChildObject.transform.localPosition;
-            var authorityObjectLocalRotation = m_AuthorityChildObject.transform.localRotation.eulerAngles;
-            var authorityObjectLocalScale = m_AuthorityChildObject.transform.localScale;
+            var authorityObjectLocalPosition = useSubChild ? m_AuthoritySubChildObject.transform.localPosition : m_AuthorityChildObject.transform.localPosition;
+            var authorityObjectLocalRotation = useSubChild ? m_AuthoritySubChildObject.transform.localRotation.eulerAngles : m_AuthorityChildObject.transform.localRotation.eulerAngles;
+            var authorityObjectLocalScale = useSubChild ? m_AuthoritySubChildObject.transform.localScale : m_AuthorityChildObject.transform.localScale;
 
             if (s_GlobalTimeoutHelper.TimedOut || !success)
             {
+                var instances = useSubChild ? ChildObjectComponent.SubInstances : ChildObjectComponent.Instances;
                 foreach (var childInstance in ChildObjectComponent.Instances)
                 {
                     var childLocalPosition = childInstance.transform.localPosition;
@@ -428,7 +506,10 @@ namespace Unity.Netcode.RuntimeTests
         private NetworkObject m_AuthorityParentObject;
         private NetworkTransformTestComponent m_AuthorityParentNetworkTransform;
         private NetworkObject m_AuthorityChildObject;
+        private NetworkObject m_AuthoritySubChildObject;
         private ChildObjectComponent m_AuthorityChildNetworkTransform;
+
+        private ChildObjectComponent m_AuthoritySubChildNetworkTransform;
 
         /// <summary>
         /// Validates that transform values remain the same when a NetworkTransform is
@@ -451,9 +532,11 @@ namespace Unity.Netcode.RuntimeTests
                 authorityNetworkManager = m_ClientNetworkManagers[0];
             }
 
-            // Spawn a parent and child object
+            // Spawn a parent and children
+            ChildObjectComponent.HasSubChild = true;
             var serverSideParent = SpawnObject(m_ParentObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
             var serverSideChild = SpawnObject(m_ChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
+            var serverSideSubChild = SpawnObject(m_SubChildObject.gameObject, authorityNetworkManager).GetComponent<NetworkObject>();
 
             // Assure all of the child object instances are spawned before proceeding to parenting
             var success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
@@ -462,6 +545,7 @@ namespace Unity.Netcode.RuntimeTests
             // Get the authority parent and child instances
             m_AuthorityParentObject = NetworkTransformTestComponent.AuthorityInstance.NetworkObject;
             m_AuthorityChildObject = ChildObjectComponent.AuthorityInstance.NetworkObject;
+            m_AuthoritySubChildObject = ChildObjectComponent.AuthoritySubInstance.NetworkObject;
 
             // The child NetworkTransform will use world space when world position stays and
             // local space when world position does not stay when parenting.
@@ -470,15 +554,26 @@ namespace Unity.Netcode.RuntimeTests
             ChildObjectComponent.AuthorityInstance.UseQuaternionSynchronization = rotation == Rotation.Quaternion;
             ChildObjectComponent.AuthorityInstance.UseQuaternionCompression = rotationCompression == RotationCompression.QuaternionCompress;
 
+            ChildObjectComponent.AuthoritySubInstance.InLocalSpace = !worldPositionStays;
+            ChildObjectComponent.AuthoritySubInstance.UseHalfFloatPrecision = precision == Precision.Half;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionSynchronization = rotation == Rotation.Quaternion;
+            ChildObjectComponent.AuthoritySubInstance.UseQuaternionCompression = rotationCompression == RotationCompression.QuaternionCompress;
+
             // Set whether we are interpolating or not
             m_AuthorityParentNetworkTransform = m_AuthorityParentObject.GetComponent<NetworkTransformTestComponent>();
             m_AuthorityParentNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
             m_AuthorityChildNetworkTransform = m_AuthorityChildObject.GetComponent<ChildObjectComponent>();
             m_AuthorityChildNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+            m_AuthoritySubChildNetworkTransform = m_AuthoritySubChildObject.GetComponent<ChildObjectComponent>();
+            m_AuthoritySubChildNetworkTransform.Interpolate = interpolation == Interpolation.EnableInterpolate;
+
 
             // Apply a scale to the parent object to make sure the scale on the child is properly updated on
             // non-authority instances.
-            m_AuthorityParentObject.transform.localScale = new Vector3(scale, scale, scale);
+            var halfScale = scale * 0.5f;
+            m_AuthorityParentObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthorityChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
+            m_AuthoritySubChildObject.transform.localScale = GetRandomVector3(scale - halfScale, scale + halfScale);
 
             // Allow one tick for authority to update these changes
             TimeTravelToNextTick();
@@ -486,12 +581,18 @@ namespace Unity.Netcode.RuntimeTests
             // Parent the child under the parent with the current world position stays setting
             Assert.True(serverSideChild.TrySetParent(serverSideParent.transform, worldPositionStays), "[Server-Side Child] Failed to set child's parent!");
 
+            // Parent the sub-child under the child with the current world position stays setting
+            Assert.True(serverSideSubChild.TrySetParent(serverSideChild.transform, worldPositionStays), "[Server-Side SubChild] Failed to set sub-child's parent!");
+
             // This waits for all child instances to be parented
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
             // This validates each child instance has preserved their local space values
-            AllChildrenLocalTransformValuesMatch();
+            AllChildrenLocalTransformValuesMatch(false);
+
+            // This validates each sub-child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(true);
 
             // Verify that a late joining client will synchronize to the parented NetworkObjects properly
             CreateAndStartNewClientWithTimeTravel();
@@ -500,13 +601,15 @@ namespace Unity.Netcode.RuntimeTests
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesAreSpawned);
             Assert.True(success, "Timed out waiting for all child instances to be spawned!");
 
-
             // This waits for all child instances to be parented
             success = WaitForConditionOrTimeOutWithTimeTravel(AllChildObjectInstancesHaveChild);
             Assert.True(success, "Timed out waiting for all instances to have parented a child!");
 
-            // Assure the newly connected client's child object's transform values are correct
-            AllChildrenLocalTransformValuesMatch();
+            // This validates each child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(false);
+
+            // This validates each sub-child instance has preserved their local space values
+            AllChildrenLocalTransformValuesMatch(true);
         }
 
         /// <summary>
