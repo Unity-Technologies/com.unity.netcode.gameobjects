@@ -2177,7 +2177,7 @@ namespace Unity.Netcode.Components
         /// <remarks>
         /// Only non-authoritative instances should invoke this
         /// </remarks>
-        private void UpdateState(NetworkTransformState oldState, NetworkTransformState newState)
+        private void ApplyUpdatedState(NetworkTransformState newState)
         {
             // Set the transforms's synchronization modes
             InLocalSpace = newState.InLocalSpace;
@@ -2339,8 +2339,8 @@ namespace Unity.Netcode.Components
             // Get the time when this new state was sent
             newState.SentTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
 
-            // Update the state
-            UpdateState(oldState, newState);
+            // Apply the new state
+            ApplyUpdatedState(newState);
 
             // Provide notifications when the state has been updated
             OnNetworkTransformStateUpdated(ref oldState, ref newState);
@@ -2785,12 +2785,6 @@ namespace Unity.Netcode.Components
                 }
             }
 
-            // If we have not received any additional state updates since the very
-            // initial synchronization, then exit early.
-            if (m_LocalAuthoritativeNetworkState.IsSynchronizing)
-            {
-                return;
-            }
             // Apply the current authoritative state
             ApplyAuthoritativeState();
         }
