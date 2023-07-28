@@ -1432,15 +1432,12 @@ namespace Unity.Netcode
                 // scene handle that the NetworkObject resides in.
                 writer.WriteValue(OwnerObject.GetSceneOriginHandle());
 
-                { // Synchronize NetworkVariables and NetworkBehaviours
-                    var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
-                    OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
-                }
+                // Synchronize NetworkVariables and NetworkBehaviours
+                var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
+                OwnerObject.SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
 
-                // Synchronize NetworkVariables and NetworkBehaviours of depending objects
                 for (int i = 0; i < dependingCount; i++)
                 {
-                    var bufferSerializer = new BufferSerializer<BufferSerializerWriter>(new BufferSerializerWriter(writer));
                     OwnerObject.DependingNetworkObjects[i].SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
                 }
             }
@@ -1736,18 +1733,18 @@ namespace Unity.Netcode
                 return null;
             }
 
-            {
-                // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
-                // in order to be able to determine which NetworkVariables the client will be allowed to read.
-                networkObject.OwnerClientId = sceneObject.OwnerClientId;
 
-                // Synchronize NetworkBehaviours
-                var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
-                networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+            // This will get set again when the NetworkObject is spawned locally, but we set it here ahead of spawning
+            // in order to be able to determine which NetworkVariables the client will be allowed to read.
+            networkObject.OwnerClientId = sceneObject.OwnerClientId;
 
-                // Spawn the NetworkObject
-                networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
-            }
+            // Synchronize NetworkBehaviours
+            var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
+            networkObject.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+
+            // Spawn the NetworkObject
+            networkManager.SpawnManager.SpawnNetworkObjectLocally(networkObject, sceneObject, sceneObject.DestroyWithScene);
+
 
             // Repeat Steps for depending NetworkObjects
             for (int i = 0; i < networkObject.DependingNetworkObjects.Count; i++)
@@ -1757,7 +1754,6 @@ namespace Unity.Netcode
 
                 dependingObj.OwnerClientId = sceneObject.OwnerClientId;
 
-                var bufferSerializer = new BufferSerializer<BufferSerializerReader>(new BufferSerializerReader(reader));
                 dependingObj.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
                 networkManager.SpawnManager.SpawnNetworkObjectLocally(dependingObj, dependingObjData.NetworkObjectId, sceneObject.IsSceneObject, false, dependingObjData.OwnerClientId, sceneObject.DestroyWithScene);
