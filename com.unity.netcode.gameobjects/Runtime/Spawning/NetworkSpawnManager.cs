@@ -475,10 +475,11 @@ namespace Unity.Netcode
                 }
 
                 // Hook up NetworkObjects that depend on this NetworkObject. Usually used for nested NetworkObjects in prefabs,
+                var DependingNetworkObjects = networkObject.DependingNetworkObjects;
                 for (int i = 0; i < sceneObject.DependingObjects.Length; i++)
                 {
                     var childData = sceneObject.DependingObjects[i];
-                    var childNetworkObject = networkObject.DependingNetworkObjects[i];
+                    var childNetworkObject = DependingNetworkObjects[i];
 
                     if (childData.IsSpawned)
                     {

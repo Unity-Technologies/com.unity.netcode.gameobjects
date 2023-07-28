@@ -26,7 +26,7 @@ namespace Unity.Netcode
 
         [HideInInspector]
         [SerializeField]
-        internal List<NetworkObject> DependingNetworkObjects = new List<NetworkObject>();
+        private List<NetworkObject> m_DependingNetworkObjects = new List<NetworkObject>();
 
         /// <summary>
         /// Whether this NetworkObject is dependent on another NetworkObject.
@@ -39,6 +39,12 @@ namespace Unity.Netcode
         /// </summary>
         public NetworkObject DependentNetworkObject { get => m_DependentNetworkObject; internal set => m_DependentNetworkObject = value; }
 
+        /// <summary>
+        /// Gets the NetworkObjects that depend on this NetworkObject. 
+        /// When the this NetworkObject is despawned, all the depending NetworkObjects will be despawned as well.
+        /// Child NetworkObjects in a prefab are dependent on the root NetworkObject.
+        /// </summary>
+        public List<NetworkObject> DependingNetworkObjects { get => new List<NetworkObject>(m_DependingNetworkObjects); internal set => m_DependingNetworkObjects = value; }
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
@@ -99,23 +105,23 @@ namespace Unity.Netcode
                 if (parent == null)
                 {
                     // Find nested/dependent NetworkObjects
-                    DependentNetworkObject = null;
-                    GetComponentsInChildren<NetworkObject>(DependingNetworkObjects);
-                    DependingNetworkObjects.Remove(this);
+                    m_DependentNetworkObject = null;
+                    GetComponentsInChildren<NetworkObject>(m_DependingNetworkObjects);
+                    m_DependingNetworkObjects.Remove(this);
 
                     // Have the parent register its children as dependent
-                    foreach (var obj in DependingNetworkObjects)
+                    foreach (var obj in m_DependingNetworkObjects)
                     {
-                        obj.DependentNetworkObject = this;
-                        obj.DependingNetworkObjects.Clear();
+                        obj.m_DependentNetworkObject = this;
+                        obj.m_DependingNetworkObjects.Clear();
                     }
                 }
             }
             else
             {
                 // In-scene placed NetworkObjects cannot be dependent
-                DependentNetworkObject = null;
-                DependingNetworkObjects.Clear();
+                m_DependentNetworkObject = null;
+                m_DependingNetworkObjects.Clear();
             }
         }
 #endif // UNITY_EDITOR
@@ -645,9 +651,9 @@ namespace Unity.Netcode
 
             NetworkManager.SpawnManager.SpawnNetworkObjectLocally(this, NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, playerObject, ownerClientId, destroyWithScene);
 
-            for (int i = 0; i < DependingNetworkObjects.Count; i++)
+            for (int i = 0; i < m_DependingNetworkObjects.Count; i++)
             {
-                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(DependingNetworkObjects[i], NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, false, ownerClientId, destroyWithScene);
+                NetworkManager.SpawnManager.SpawnNetworkObjectLocally(m_DependingNetworkObjects[i], NetworkManager.SpawnManager.GetNetworkObjectId(), IsSceneObject.HasValue && IsSceneObject.Value, false, ownerClientId, destroyWithScene);
             }
 
             for (int i = 0; i < NetworkManager.ConnectedClientsList.Count; i++)
@@ -1438,7 +1444,7 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < dependingCount; i++)
                 {
-                    OwnerObject.DependingNetworkObjects[i].SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
+                    OwnerObject.m_DependingNetworkObjects[i].SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
                 }
             }
 
@@ -1650,10 +1656,10 @@ namespace Unity.Netcode
                 };
             }
 
-            SceneObject.DependingSceneObject[] DependingObjects = new SceneObject.DependingSceneObject[DependingNetworkObjects.Count];
-            for (int i = 0; i < DependingNetworkObjects.Count; i++)
+            SceneObject.DependingSceneObject[] DependingObjects = new SceneObject.DependingSceneObject[m_DependingNetworkObjects.Count];
+            for (int i = 0; i < m_DependingNetworkObjects.Count; i++)
             {
-                if (DependingNetworkObjects[i] == null || !DependingNetworkObjects[i].IsSpawned)
+                if (m_DependingNetworkObjects[i] == null || !m_DependingNetworkObjects[i].IsSpawned)
                 {
                     DependingObjects[i] = new SceneObject.DependingSceneObject
                     {
@@ -1665,23 +1671,23 @@ namespace Unity.Netcode
                     DependingObjects[i] = new SceneObject.DependingSceneObject
                     {
                         IsSpawned = true,
-                        NetworkObjectId = DependingNetworkObjects[i].NetworkObjectId,
-                        OwnerClientId = DependingNetworkObjects[i].OwnerClientId,
+                        NetworkObjectId = m_DependingNetworkObjects[i].NetworkObjectId,
+                        OwnerClientId = m_DependingNetworkObjects[i].OwnerClientId,
                     };
 
                     { // Set parentage info
                         NetworkObject parentNetworkObject = null;
 
-                        if (!AlwaysReplicateAsRoot && DependingNetworkObjects[i].transform.parent != null)
+                        if (!AlwaysReplicateAsRoot && m_DependingNetworkObjects[i].transform.parent != null)
                         {
-                            parentNetworkObject = DependingNetworkObjects[i].transform.parent.GetComponent<NetworkObject>();
+                            parentNetworkObject = m_DependingNetworkObjects[i].transform.parent.GetComponent<NetworkObject>();
                         }
 
                         if (parentNetworkObject != null)
                         {
                             DependingObjects[i].HasParent = true;
                             DependingObjects[i].ParentObjectId = parentNetworkObject.NetworkObjectId;
-                            var latestParent = DependingNetworkObjects[i].GetNetworkParenting();
+                            var latestParent = m_DependingNetworkObjects[i].GetNetworkParenting();
                             var isLatestParentSet = latestParent != null && latestParent.HasValue;
                             DependingObjects[i].IsLatestParentSet = isLatestParentSet;
                             if (isLatestParentSet)
@@ -1747,9 +1753,9 @@ namespace Unity.Netcode
 
 
             // Repeat Steps for depending NetworkObjects
-            for (int i = 0; i < networkObject.DependingNetworkObjects.Count; i++)
+            for (int i = 0; i < networkObject.m_DependingNetworkObjects.Count; i++)
             {
-                var dependingObj = networkObject.DependingNetworkObjects[i];
+                var dependingObj = networkObject.m_DependingNetworkObjects[i];
                 var dependingObjData = sceneObject.DependingObjects[i];
 
                 dependingObj.OwnerClientId = sceneObject.OwnerClientId;
