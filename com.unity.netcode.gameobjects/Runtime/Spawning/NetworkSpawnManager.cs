@@ -488,6 +488,12 @@ namespace Unity.Netcode
                             childNetworkObject.DestroyWithScene = sceneObject.DestroyWithScene;
                             childNetworkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
 
+                            // If a dependent NetworkObject does not have the HasParent flag set, it needs to be unparented
+                            if (!sceneObject.HasParent && childNetworkObject.transform.parent != null)
+                            {
+                                childNetworkObject.ApplyNetworkParenting(true, true);
+                            }
+
                             if (childData.HasParent)
                             {
                                 // Go ahead and set network parenting properties, if the latest parent is not set then pass in null

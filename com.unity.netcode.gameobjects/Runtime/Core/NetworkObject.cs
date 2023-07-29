@@ -1678,9 +1678,16 @@ namespace Unity.Netcode
                     { // Set parentage info
                         NetworkObject parentNetworkObject = null;
 
-                        if (!AlwaysReplicateAsRoot && m_DependingNetworkObjects[i].transform.parent != null)
+                        if (!m_DependingNetworkObjects[i].AlwaysReplicateAsRoot && m_DependingNetworkObjects[i].transform.parent != null)
                         {
                             parentNetworkObject = m_DependingNetworkObjects[i].transform.parent.GetComponent<NetworkObject>();
+
+                            // If a dependent NetworkObject has a parent but not a network parent, the
+                            // HasParent flag needs to be set.
+                            if (parentNetworkObject == null)
+                            {
+                                DependingObjects[i].HasParent = true;
+                            }
                         }
 
                         if (parentNetworkObject != null)
