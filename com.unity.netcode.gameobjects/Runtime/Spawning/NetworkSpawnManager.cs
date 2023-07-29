@@ -475,33 +475,36 @@ namespace Unity.Netcode
                 }
 
                 // Hook up NetworkObjects that depend on this NetworkObject. Usually used for nested NetworkObjects in prefabs,
-                var DependingNetworkObjects = networkObject.DependingNetworkObjects;
-                for (int i = 0; i < sceneObject.DependingObjects.Length; i++)
+                if (sceneObject.DependingObjects != null)
                 {
-                    var childData = sceneObject.DependingObjects[i];
-                    var childNetworkObject = DependingNetworkObjects[i];
-
-                    if (childData.IsSpawned)
+                    var DependingNetworkObjects = networkObject.DependingNetworkObjects;
+                    for (int i = 0; i < sceneObject.DependingObjects.Length; i++)
                     {
-                        childNetworkObject.DestroyWithScene = sceneObject.DestroyWithScene;
-                        childNetworkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
+                        var childData = sceneObject.DependingObjects[i];
+                        var childNetworkObject = DependingNetworkObjects[i];
 
-                        if (childData.HasParent)
+                        if (childData.IsSpawned)
                         {
-                            // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
-                            // (we always want to set worldPositionStays)
-                            ulong? parentId = null;
-                            if (childData.IsLatestParentSet)
+                            childNetworkObject.DestroyWithScene = sceneObject.DestroyWithScene;
+                            childNetworkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
+
+                            if (childData.HasParent)
                             {
-                                parentId = childData.HasParent ? childData.ParentObjectId : default;
+                                // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
+                                // (we always want to set worldPositionStays)
+                                ulong? parentId = null;
+                                if (childData.IsLatestParentSet)
+                                {
+                                    parentId = childData.HasParent ? childData.ParentObjectId : default;
+                                }
+                                childNetworkObject.SetNetworkParenting(parentId, true);
                             }
-                            childNetworkObject.SetNetworkParenting(parentId, true);
                         }
-                    }
-                    else
-                    {
-                        // Remove unspawned child NetworkObjects
-                        GameObject.Destroy(networkObject.DependingNetworkObjects[i].gameObject);
+                        else
+                        {
+                            // Remove unspawned child NetworkObjects
+                            GameObject.Destroy(networkObject.DependingNetworkObjects[i].gameObject);
+                        }
                     }
                 }
             }
