@@ -1444,7 +1444,10 @@ namespace Unity.Netcode
 
                 for (int i = 0; i < dependingCount; i++)
                 {
-                    OwnerObject.m_DependingNetworkObjects[i].SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
+                    if (DependingObjects[i].IsSpawned)
+                    {
+                        OwnerObject.m_DependingNetworkObjects[i].SynchronizeNetworkBehaviours(ref bufferSerializer, TargetClientId);
+                    }
                 }
             }
 
@@ -1765,11 +1768,14 @@ namespace Unity.Netcode
                 var dependingObj = networkObject.m_DependingNetworkObjects[i];
                 var dependingObjData = sceneObject.DependingObjects[i];
 
-                dependingObj.OwnerClientId = sceneObject.OwnerClientId;
+                if (dependingObjData.IsSpawned)
+                {
+                    dependingObj.OwnerClientId = sceneObject.OwnerClientId;
 
-                dependingObj.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
+                    dependingObj.SynchronizeNetworkBehaviours(ref bufferSerializer, networkManager.LocalClientId);
 
-                networkManager.SpawnManager.SpawnNetworkObjectLocally(dependingObj, dependingObjData.NetworkObjectId, sceneObject.IsSceneObject, false, dependingObjData.OwnerClientId, sceneObject.DestroyWithScene);
+                    networkManager.SpawnManager.SpawnNetworkObjectLocally(dependingObj, dependingObjData.NetworkObjectId, sceneObject.IsSceneObject, false, dependingObjData.OwnerClientId, sceneObject.DestroyWithScene);
+                }
             }
 
             return networkObject;
