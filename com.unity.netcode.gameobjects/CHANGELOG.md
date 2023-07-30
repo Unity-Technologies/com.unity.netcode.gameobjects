@@ -10,6 +10,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added the ability to spawn prefabs with nested NetworkObjects
+
 ### Fixed
 
 - Fixed issue where `NetworkClient.OwnedObjects` was not returning any owned objects due to the `NetworkClient.IsConnected` not being properly set. (#2631)
