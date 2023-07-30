@@ -614,6 +614,11 @@ namespace Unity.Netcode
                         ownerClientId,
                         destroyWithScene: false);
 
+                    foreach (var dependingNetworkObject in networkObject.DependingNetworkObjects)
+                    {
+                        NetworkManager.SpawnManager.SpawnNetworkObjectLocally(dependingNetworkObject, NetworkManager.SpawnManager.GetNetworkObjectId(), false, false, ownerClientId, false);
+                    }
+
                     client.AssignPlayerObject(ref networkObject);
                 }
 
