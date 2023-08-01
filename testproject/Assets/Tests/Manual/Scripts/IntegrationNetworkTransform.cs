@@ -318,48 +318,7 @@ namespace TestProject.ManualTests
 
             OnNetworkTransformStateUpdate(ref m_NetworkTransformStateUpdate);
         }
-#endif
-
-        private NetworkVariable<NetworkTransformState> m_CurrentReplicatedState = new NetworkVariable<NetworkTransformState>();
-
-        protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
-        {
-            if (CanCommitToTransform && DebugTransform)
-            {
-                m_CurrentReplicatedState = replicatedState;
-                // Sanity check to assure we only subscribe to OnValueChanged once
-                replicatedState.OnValueChanged -= OnStateUpdate;
-                replicatedState.OnValueChanged += OnStateUpdate;
-            }
-        }
-
-        public override void OnNetworkDespawn()
-        {
-            if (DebugTransform)
-            {
-                m_CurrentReplicatedState.OnValueChanged -= OnStateUpdate;
-            }
-
-            base.OnNetworkDespawn();
-        }
-
-        /// <summary>
-        /// Authoritative State Update
-        /// </summary>
-        private void OnStateUpdate(NetworkTransformState oldState, NetworkTransformState newState)
-        {
-            if (DebugTransform)
-            {
-                if (IsOwner && !IsServerAuthoritative() && !m_StopLoggingStates)
-                {
-                    if (IsServer && NetworkManager.ConnectedClientsIds.Count < 2)
-                    {
-                        return;
-                    }
-                    InternalAddLogEntry(ref newState, OwnerClientId);
-                }
-            }
-        }
+#endif       
 
 #if DEBUG_NETWORKTRANSFORM || UNITY_INCLUDE_TESTS
         /// <summary>
