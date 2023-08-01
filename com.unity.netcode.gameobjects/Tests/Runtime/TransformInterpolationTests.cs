@@ -37,7 +37,7 @@ namespace Unity.Netcode.RuntimeTests
             return TestComplete;
         }
 
-        protected override void OnInitialize(ref NetworkVariable<NetworkTransformState> replicatedState)
+        protected override void OnInitialize(ref NetworkTransformState replicatedState)
         {
             m_LocalSpaceToggles = 0;
             m_FrameRateFractional = 1.0f / Application.targetFrameRate;
