@@ -12,6 +12,19 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
+- Fixed issue with scale not synchronizing properly depending upon the spawn order of NetworkObjects. (#2636)
+- Fixed issue position was not properly transitioning between ownership changes with an owner authoritative NetworkTransform. (#2636)
+- Fixed issue where a late joining non-owner client could update an owner authoritative NetworkTransform if ownership changed without any updates to position prior to the non-owner client joining. (#2636)
+
+### Changed
+
+## [1.5.2] - 2023-07-24
+
+### Added
+
+### Fixed
+
 - Fixed issue where `NetworkClient.OwnedObjects` was not returning any owned objects due to the `NetworkClient.IsConnected` not being properly set. (#2631)
 - Fixed a crash when calling TrySetParent with a null Transform (#2625)
 - Fixed issue where a `NetworkTransform` using full precision state updates was losing transform state updates when interpolation was enabled. (#2624)
