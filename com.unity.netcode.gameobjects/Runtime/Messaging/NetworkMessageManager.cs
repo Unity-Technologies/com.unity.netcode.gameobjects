@@ -261,13 +261,13 @@ namespace Unity.Netcode
                         return;
                     }
 
-                    var hash = XXHash.Hash64(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
+                    //var hash = XXHash.Hash64(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
 
-                    if (hash != batchHeader.BatchHash)
-                    {
-                        NetworkLog.LogError($"Received a packet with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
-                        return;
-                    }
+                    //if (hash != batchHeader.BatchHash)
+                    //{
+                    //    NetworkLog.LogError($"Received a packet with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                    //    return;
+                    //}
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
@@ -829,7 +829,8 @@ namespace Unity.Netcode
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
-                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
+
+                    //queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
 
                     queueItem.BatchHeader.BatchSize = queueItem.Writer.Length;
 
