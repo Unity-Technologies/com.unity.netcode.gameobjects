@@ -33,6 +33,8 @@ namespace Unity.Netcode
 
     internal class NetworkMessageManager : IDisposable
     {
+
+        private const double k_WordAlignBatchCalc = 1.0 / 8.0;
         public bool StopProcessing = false;
 
         private struct ReceiveQueueItem
@@ -261,13 +263,13 @@ namespace Unity.Netcode
                         return;
                     }
 
-                    //var hash = XXHash.Hash64(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
+                    var hash = XXHash.Hash32(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
 
-                    //if (hash != batchHeader.BatchHash)
-                    //{
-                    //    NetworkLog.LogError($"Received a packet with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
-                    //    return;
-                    //}
+                    if (hash != batchHeader.BatchHash)
+                    {
+                        NetworkLog.LogError($"Received a packet with an invalid Hash Value. Please report this to the Netcode for GameObjects team at https://github.com/Unity-Technologies/com.unity.netcode.gameobjects/issues and include the following data: Received Hash: {batchHeader.BatchHash}, Calculated Hash: {hash}, Offset: {data.Offset}, Size: {data.Count}, Full receive array: {ByteArrayToString(data.Array, 0, data.Array.Length)}");
+                        return;
+                    }
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                     {
@@ -704,6 +706,8 @@ namespace Unity.Netcode
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
                 writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
+                // Keep word aligned for 32 bit systems (i.e. avoids issues on ARMv7)
+                writeQueueItem.Writer.Seek((int)Math.Ceiling(writeQueueItem.Writer.Position * k_WordAlignBatchCalc) * 8);
                 writeQueueItem.BatchHeader.BatchCount++;
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
@@ -830,7 +834,7 @@ namespace Unity.Netcode
                     queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
 
-                    //queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
+                    queueItem.BatchHeader.BatchHash = XXHash.Hash32(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
 
                     queueItem.BatchHeader.BatchSize = queueItem.Writer.Length;
 
