@@ -59,8 +59,20 @@ namespace Unity.Netcode
                 return;
             }
 
-            var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
+            var globalObjectId = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this);
+            if (globalObjectId.assetGUID.Empty() && globalObjectId.identifierType == 0 &&
+                globalObjectId.targetObjectId == 0 && globalObjectId.targetPrefabId == 0)
+            {
+                return;
+            }
+
+            var lastIdHash = GlobalObjectIdHash;
+            var globalObjectIdString = globalObjectId.ToString();
             GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
+            if (lastIdHash != GlobalObjectIdHash)
+            {
+                UnityEditor.EditorUtility.SetDirty(this.gameObject);
+            }
         }
 #endif // UNITY_EDITOR
 
