@@ -310,6 +310,13 @@ namespace Unity.Netcode
                             MessageHeaderSerializedSize = receivedHeaderSize,
                         });
                         batchReader.Seek(batchReader.Position + (int)messageHeader.MessageSize);
+                        var nextWordAlignedPosition = (int)Math.Ceiling(batchReader.Position * k_WordAlignBatchCalc) * 8;
+                        if (!batchReader.TryBeginRead(nextWordAlignedPosition - batchReader.Position))
+                        {
+                            NetworkLog.LogError("Received a message with an invalid total size!");
+                            return;
+                        }
+                        batchReader.Seek(nextWordAlignedPosition);
                     }
 
                     for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
@@ -694,7 +701,8 @@ namespace Unity.Netcode
                 else
                 {
                     ref var lastQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
-                    if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length + headerSerializer.Length)
+                    var alignedTotalSize = (int)Math.Ceiling((tmpSerializer.Length + headerSerializer.Length) * k_WordAlignBatchCalc) * 8;
+                    if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < alignedTotalSize)
                     {
                         sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
                         sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(NetworkBatchHeader));
@@ -706,8 +714,12 @@ namespace Unity.Netcode
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
                 writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
-                // Keep word aligned for 32 bit systems (i.e. avoids issues on ARMv7)
-                writeQueueItem.Writer.Seek((int)Math.Ceiling(writeQueueItem.Writer.Position * k_WordAlignBatchCalc) * 8);
+
+                var nextWordAlignedPosition = (int)Math.Ceiling(writeQueueItem.Writer.Position * k_WordAlignBatchCalc) * 8;
+                // TryBeginWrite just in case the writer needs to resize
+                writeQueueItem.Writer.TryBeginWrite(nextWordAlignedPosition - writeQueueItem.Writer.Position);
+                writeQueueItem.Writer.Seek(nextWordAlignedPosition);
+
                 writeQueueItem.BatchHeader.BatchCount++;
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
