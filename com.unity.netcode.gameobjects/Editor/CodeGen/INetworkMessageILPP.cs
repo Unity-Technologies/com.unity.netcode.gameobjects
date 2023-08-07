@@ -7,6 +7,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using UnityEngine;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
@@ -101,6 +102,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private ModuleDefinition m_NetcodeModule;
         private PostProcessorAssemblyResolver m_AssemblyResolver;
 
+        private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
+
         private MethodReference m_MessageManager_ReceiveMessage_MethodRef;
         private MethodReference m_MessageManager_CreateMessageAndGetVersion_MethodRef;
         private TypeReference m_MessageManager_MessageWithHandler_TypeRef;
@@ -125,6 +128,7 @@ namespace Unity.Netcode.Editor.CodeGen
             // (i.e., there's no #if UNITY_EDITOR in them that could create invalid IL code)
             TypeDefinition typeTypeDef = moduleDefinition.ImportReference(typeof(Type)).Resolve();
             TypeDefinition listTypeDef = moduleDefinition.ImportReference(typeof(List<>)).Resolve();
+            m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition messageHandlerTypeDef = null;
             TypeDefinition versionGetterTypeDef = null;
@@ -232,25 +236,6 @@ namespace Unity.Netcode.Editor.CodeGen
             return true;
         }
 
-        private MethodDefinition GetOrCreateStaticConstructor(TypeDefinition typeDefinition)
-        {
-            var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-            if (staticCtorMethodDef == null)
-            {
-                staticCtorMethodDef = new MethodDefinition(
-                    ".cctor", // Static Constructor (constant-constructor)
-                    MethodAttributes.HideBySig |
-                    MethodAttributes.SpecialName |
-                    MethodAttributes.RTSpecialName |
-                    MethodAttributes.Static,
-                    typeDefinition.Module.TypeSystem.Void);
-                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                typeDefinition.Methods.Add(staticCtorMethodDef);
-            }
-
-            return staticCtorMethodDef;
-        }
-
         private void CreateInstructionsToRegisterType(ILProcessor processor, List<Instruction> instructions, TypeReference type, MethodReference receiveMethod, MethodReference versionMethod)
         {
             // NetworkMessageManager.__network_message_types.Add(new NetworkMessageManager.MessageWithHandler{MessageType=typeof(type), Handler=type.Receive});
@@ -295,29 +280,32 @@ namespace Unity.Netcode.Editor.CodeGen
         // https://web.archive.org/web/20100212140402/http://blogs.msdn.com/junfeng/archive/2005/11/19/494914.aspx
         private void CreateModuleInitializer(AssemblyDefinition assembly, List<TypeDefinition> networkMessageTypes)
         {
-            foreach (var typeDefinition in assembly.MainModule.Types)
+            var typeDefinition = new TypeDefinition("__GEN", "INetworkMessageHelper", TypeAttributes.NotPublic | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, assembly.MainModule.TypeSystem.Object);
+
+            var staticCtorMethodDef = new MethodDefinition(
+                $"InitializeMessages",
+                MethodAttributes.Assembly |
+                MethodAttributes.Static,
+                assembly.MainModule.TypeSystem.Void);
+            staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+            staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+            typeDefinition.Methods.Add(staticCtorMethodDef);
+
+            var instructions = new List<Instruction>();
+            var processor = staticCtorMethodDef.Body.GetILProcessor();
+
+            foreach (var type in networkMessageTypes)
             {
-                if (typeDefinition.FullName == "<Module>")
-                {
-                    var staticCtorMethodDef = GetOrCreateStaticConstructor(typeDefinition);
-
-                    var processor = staticCtorMethodDef.Body.GetILProcessor();
-
-                    var instructions = new List<Instruction>();
-
-                    foreach (var type in networkMessageTypes)
-                    {
-                        var receiveMethod = new GenericInstanceMethod(m_MessageManager_ReceiveMessage_MethodRef);
-                        receiveMethod.GenericArguments.Add(type);
-                        var versionMethod = new GenericInstanceMethod(m_MessageManager_CreateMessageAndGetVersion_MethodRef);
-                        versionMethod.GenericArguments.Add(type);
-                        CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod, versionMethod);
-                    }
-
-                    instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
-                    break;
-                }
+                var receiveMethod = new GenericInstanceMethod(m_MessageManager_ReceiveMessage_MethodRef);
+                receiveMethod.GenericArguments.Add(type);
+                var versionMethod = new GenericInstanceMethod(m_MessageManager_CreateMessageAndGetVersion_MethodRef);
+                versionMethod.GenericArguments.Add(type);
+                CreateInstructionsToRegisterType(processor, instructions, type, receiveMethod, versionMethod);
             }
+
+            instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
+
+            assembly.MainModule.Types.Add(typeDefinition);
         }
     }
 }
