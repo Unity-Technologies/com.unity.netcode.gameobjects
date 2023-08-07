@@ -180,7 +180,7 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
-                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f / 8.0f) * 8;
                 // TryBeginWrite just in case the writer needs to resize
                 writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
                 writer.Seek(nextWordAlignedPosition);
@@ -231,7 +231,7 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
-                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f / 8.0f) * 8;
                 // TryBeginWrite just in case the writer needs to resize
                 writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
                 writer.Seek(nextWordAlignedPosition);
@@ -239,7 +239,7 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message2);
-                nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f / 8.0f) * 8;
                 // TryBeginWrite just in case the writer needs to resize
                 writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
                 writer.Seek(nextWordAlignedPosition);
