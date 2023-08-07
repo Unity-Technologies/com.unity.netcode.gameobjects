@@ -157,7 +157,8 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < (m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size; ++i)
+            var wordAlignedSize = (int)Math.Ceiling(size * 1.0f/8.0f) * 8;
+            for (var i = 0; i < (m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / wordAlignedSize; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -172,7 +173,8 @@ namespace Unity.Netcode.EditorTests
             var message = GetMessage();
             m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            var wordAlignedSize = (int)Math.Ceiling(size * 1.0f/8.0f) * 8;
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / wordAlignedSize) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, m_Clients);
             }
@@ -187,7 +189,8 @@ namespace Unity.Netcode.EditorTests
             var message = GetMessage();
             m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize;
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
-            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++i)
+            var wordAlignedSize = (int)Math.Ceiling(size * 1.0f/8.0f) * 8;
+            for (var i = 0; i < ((m_MessageManager.NonFragmentedMessageMaxSize - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / wordAlignedSize) + 1; ++i)
             {
                 m_MessageManager.SendMessage(ref message, NetworkDelivery.ReliableFragmentedSequenced, m_Clients);
             }
@@ -244,6 +247,10 @@ namespace Unity.Netcode.EditorTests
                 Assert.AreEqual(UnsafeUtility.SizeOf<TestMessage>(), messageHeader.MessageSize);
                 reader.ReadValueSafe(out TestMessage receivedMessage);
                 Assert.AreEqual(message, receivedMessage);
+
+
+                var nextWordAlignedPosition = (int)Math.Ceiling(reader.Position * 1.0f/8.0f) * 8;
+                reader.Seek(nextWordAlignedPosition);
 
                 ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageType);
                 ByteUnpacker.ReadValueBitPacked(reader, out messageHeader.MessageSize);

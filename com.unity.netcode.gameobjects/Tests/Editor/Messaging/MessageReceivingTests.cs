@@ -143,7 +143,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -180,6 +180,10 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
+                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                // TryBeginWrite just in case the writer needs to resize
+                writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
+                writer.Seek(nextWordAlignedPosition);
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
@@ -187,7 +191,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -227,9 +231,18 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
+                var nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                // TryBeginWrite just in case the writer needs to resize
+                writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
+                writer.Seek(nextWordAlignedPosition);
+
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message2);
+                nextWordAlignedPosition = (int)Math.Ceiling(writer.Position * 1.0f/8.0f) * 8;
+                // TryBeginWrite just in case the writer needs to resize
+                writer.TryBeginWrite(nextWordAlignedPosition - writer.Position);
+                writer.Seek(nextWordAlignedPosition);
 
                 // Fill out the rest of the batch header
                 writer.Seek(0);
@@ -237,7 +250,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 2
                 };
                 writer.WriteValue(batchHeader);
