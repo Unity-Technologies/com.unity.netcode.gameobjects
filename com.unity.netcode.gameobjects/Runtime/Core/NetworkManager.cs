@@ -586,7 +586,7 @@ namespace Unity.Netcode
         /// <param name="size"></param>
         public int MaximumTransmissionUnitSize
         {
-            set => MessageManager.NonFragmentedMessageMaxSize = value;
+            set => MessageManager.NonFragmentedMessageMaxSize = value & ~7; // Round down to nearest word aligned size
             get => MessageManager.NonFragmentedMessageMaxSize;
         }
 

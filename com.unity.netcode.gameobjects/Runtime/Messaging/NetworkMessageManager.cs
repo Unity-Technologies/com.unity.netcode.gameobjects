@@ -6,6 +6,7 @@ using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Unity.Netcode
 {
@@ -95,7 +96,7 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public const int DefaultNonFragmentedMessageMaxSize = 1300;
+        public const int DefaultNonFragmentedMessageMaxSize = 1300 & ~7; // Round down to nearest word aligned size (1296)
         public int NonFragmentedMessageMaxSize = DefaultNonFragmentedMessageMaxSize;
         public int FragmentedMessageMaxSize = int.MaxValue;
 
