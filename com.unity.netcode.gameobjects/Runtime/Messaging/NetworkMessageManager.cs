@@ -33,7 +33,6 @@ namespace Unity.Netcode
 
     internal class NetworkMessageManager : IDisposable
     {
-
         private const double k_WordAlignBatchCalc = 1.0 / 8.0;
         public bool StopProcessing = false;
 
@@ -706,7 +705,6 @@ namespace Unity.Netcode
 
                 writeQueueItem.Writer.WriteBytes(headerSerializer.GetUnsafePtr(), headerSerializer.Length);
                 writeQueueItem.Writer.WriteBytes(tmpSerializer.GetUnsafePtr(), tmpSerializer.Length);
-
                 writeQueueItem.BatchHeader.BatchCount++;
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
