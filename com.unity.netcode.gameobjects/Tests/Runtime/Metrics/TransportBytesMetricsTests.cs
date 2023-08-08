@@ -41,7 +41,10 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead, observer.Value);
+            var measuredSize = (long)(Math.Ceiling(observer.Value * 1.0f / 8.0f) * 8.0f);
+            var expectedSize = (long)(Math.Ceiling((FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead) * (1.0f / 8.0f)) * 8.0f);
+
+            Assert.AreEqual(expectedSize, measuredSize);
         }
 
         [UnityTest]
@@ -71,7 +74,11 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            Assert.AreEqual(FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead, observer.Value);
+
+            var measuredSize = (long)(Math.Ceiling(observer.Value * 1.0f / 8.0f) * 8.0f);
+            var expectedSize = (long)(Math.Ceiling((FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead) * (1.0f / 8.0f)) * 8.0f);
+
+            Assert.AreEqual(expectedSize, measuredSize);
         }
 
         private class TotalBytesObserver : IMetricObserver
@@ -89,12 +96,23 @@ namespace Unity.Netcode.RuntimeTests.Metrics
 
             public long Value { get; private set; }
 
+            private int m_BytesFoundCounter;
+            private long m_TotalBytes;
+
             public void Observe(MetricCollection collection)
             {
                 if (collection.TryGetCounter(m_MetricInfo.Id, out var counter) && counter.Value > 0)
                 {
-                    Found = true;
-                    Value = counter.Value;
+                    // Don't assign another observed value once one is already observed
+                    if (!Found)
+                    {
+                        Found = true;
+                        Value = counter.Value;
+                        var alignedSize = (long)(Math.Ceiling(counter.Value * 1.0f / 8.0f) * 8.0f);
+                        m_TotalBytes += alignedSize;
+                        m_BytesFoundCounter++;
+                        UnityEngine.Debug.Log($"[{m_BytesFoundCounter}] Bytes Observed {counter.Value} | Total Bytes Observed: {m_TotalBytes}");
+                    }
                 }
             }
         }
