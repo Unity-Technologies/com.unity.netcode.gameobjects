@@ -143,7 +143,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -187,7 +187,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 1
                 };
                 writer.WriteValue(batchHeader);
@@ -238,7 +238,7 @@ namespace Unity.Netcode.EditorTests
                 {
                     Magic = NetworkBatchHeader.MagicValue,
                     BatchSize = writer.Length,
-                    BatchHash = XXHash.Hash32(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
+                    BatchHash = XXHash.Hash64(writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), writer.Length - sizeof(NetworkBatchHeader)),
                     BatchCount = 2
                 };
                 writer.WriteValue(batchHeader);
