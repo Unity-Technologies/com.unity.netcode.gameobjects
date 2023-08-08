@@ -200,12 +200,13 @@ namespace Unity.Netcode
         public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
             var hash32 = XXHash.Hash32(name);
-            m_NamedMessageHandlers32[hash32] = callback;
-            m_MessageHandlerNameLookup32[hash32] = name;
-
             var hash64 = XXHash.Hash64(name);
-            m_MessageHandlerNameLookup64[hash64] = name;
+
+            m_NamedMessageHandlers32[hash32] = callback;
             m_NamedMessageHandlers64[hash64] = callback;
+
+            m_MessageHandlerNameLookup32[hash32] = name;
+            m_MessageHandlerNameLookup64[hash64] = name;
         }
 
         /// <summary>
@@ -215,11 +216,12 @@ namespace Unity.Netcode
         public void UnregisterNamedMessageHandler(string name)
         {
             var hash32 = XXHash.Hash32(name);
-            m_NamedMessageHandlers32.Remove(hash32);
-            m_MessageHandlerNameLookup32.Remove(hash32);
-
             var hash64 = XXHash.Hash64(name);
+
+            m_NamedMessageHandlers32.Remove(hash32);
             m_NamedMessageHandlers64.Remove(hash64);
+
+            m_MessageHandlerNameLookup32.Remove(hash32);
             m_MessageHandlerNameLookup64.Remove(hash64);
         }
 
