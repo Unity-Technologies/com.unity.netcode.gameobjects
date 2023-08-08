@@ -33,7 +33,6 @@ namespace Unity.Netcode
 
     internal class NetworkMessageManager : IDisposable
     {
-        private const double k_WordAlignBatchCalc = 1.0 / 8.0;
         public bool StopProcessing = false;
 
         private struct ReceiveQueueItem
@@ -832,7 +831,7 @@ namespace Unity.Netcode
 #endif
 
 
-                    var alignedLength = (int)(Math.Ceiling(queueItem.Writer.Length * k_WordAlignBatchCalc) * 8);
+                    var alignedLength = (queueItem.Writer.Length + 7) & ~7;
                     queueItem.Writer.TryBeginWrite(alignedLength);
 
                     queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), alignedLength - sizeof(NetworkBatchHeader));
