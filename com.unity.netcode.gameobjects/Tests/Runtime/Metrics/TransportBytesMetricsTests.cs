@@ -41,10 +41,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-            var measuredSize = (long)(Math.Ceiling(observer.Value * 1.0f / 8.0f) * 8.0f);
             var expectedSize = (long)(Math.Ceiling((FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead) * (1.0f / 8.0f)) * 8.0f);
-
-            Assert.AreEqual(expectedSize, measuredSize);
+            Assert.AreEqual(expectedSize, observer.Value);
         }
 
         [UnityTest]
@@ -64,8 +62,6 @@ namespace Unity.Netcode.RuntimeTests.Metrics
                 writer.Dispose();
             }
 
-
-
             var nbFrames = 0;
             while (!observer.Found || nbFrames < 10)
             {
@@ -74,11 +70,8 @@ namespace Unity.Netcode.RuntimeTests.Metrics
             }
 
             Assert.True(observer.Found);
-
-            var measuredSize = (long)(Math.Ceiling(observer.Value * 1.0f / 8.0f) * 8.0f);
             var expectedSize = (long)(Math.Ceiling((FastBufferWriter.GetWriteSize(messageName) + k_MessageOverhead) * (1.0f / 8.0f)) * 8.0f);
-
-            Assert.AreEqual(expectedSize, measuredSize);
+            Assert.AreEqual(expectedSize, observer.Value);
         }
 
         private class TotalBytesObserver : IMetricObserver
