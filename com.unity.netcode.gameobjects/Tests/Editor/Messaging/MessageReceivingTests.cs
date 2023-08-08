@@ -227,7 +227,6 @@ namespace Unity.Netcode.EditorTests
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message);
-
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageType);
                 BytePacker.WriteValueBitPacked(writer, messageHeader.MessageSize);
                 writer.WriteValueSafe(message2);
