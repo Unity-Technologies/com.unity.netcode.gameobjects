@@ -263,7 +263,7 @@ namespace Unity.Netcode
                         return;
                     }
 
-                    var hash = XXHash.Hash32(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
+                    var hash = XXHash.Hash64(batchReader.GetUnsafePtrAtCurrentPosition(), batchReader.Length - batchReader.Position);
 
                     if (hash != batchHeader.BatchHash)
                     {
@@ -837,7 +837,7 @@ namespace Unity.Netcode
                     var alignedLength = (int)(Math.Ceiling(queueItem.Writer.Length * k_WordAlignBatchCalc) * 8);
                     queueItem.Writer.TryBeginWrite(alignedLength);
 
-                    queueItem.BatchHeader.BatchHash = XXHash.Hash32(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), alignedLength - sizeof(NetworkBatchHeader));
+                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), alignedLength - sizeof(NetworkBatchHeader));
 
                     queueItem.BatchHeader.BatchSize = alignedLength;
 
