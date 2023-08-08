@@ -199,18 +199,13 @@ namespace Unity.Netcode
         /// <param name="callback">The callback to run when a named message is received.</param>
         public void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            if (m_NetworkManager.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
-            {
-                var hash32 = XXHash.Hash32(name);
-                m_NamedMessageHandlers32[hash32] = callback;
-                m_MessageHandlerNameLookup32[hash32] = name;
-            }
-            else
-            {
-                var hash64 = XXHash.Hash64(name);
-                m_MessageHandlerNameLookup64[hash64] = name;
-                m_NamedMessageHandlers64[hash64] = callback;
-            }
+            var hash32 = XXHash.Hash32(name);
+            m_NamedMessageHandlers32[hash32] = callback;
+            m_MessageHandlerNameLookup32[hash32] = name;
+
+            var hash64 = XXHash.Hash64(name);
+            m_MessageHandlerNameLookup64[hash64] = name;
+            m_NamedMessageHandlers64[hash64] = callback;
         }
 
         /// <summary>
@@ -219,18 +214,13 @@ namespace Unity.Netcode
         /// <param name="name">The name of the message.</param>
         public void UnregisterNamedMessageHandler(string name)
         {
-            if (m_NetworkManager.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
-            {
-                var hash32 = XXHash.Hash32(name);
-                m_NamedMessageHandlers32.Remove(hash32);
-                m_MessageHandlerNameLookup32.Remove(hash32);
-            }
-            else
-            {
-                var hash64 = XXHash.Hash64(name);
-                m_NamedMessageHandlers64.Remove(hash64);
-                m_MessageHandlerNameLookup64.Remove(hash64);
-            }
+            var hash32 = XXHash.Hash32(name);
+            m_NamedMessageHandlers32.Remove(hash32);
+            m_MessageHandlerNameLookup32.Remove(hash32);
+
+            var hash64 = XXHash.Hash64(name);
+            m_NamedMessageHandlers64.Remove(hash64);
+            m_MessageHandlerNameLookup64.Remove(hash64);
         }
 
         /// <summary>
