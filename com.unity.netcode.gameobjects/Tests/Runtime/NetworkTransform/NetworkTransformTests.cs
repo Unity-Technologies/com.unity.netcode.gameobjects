@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using NUnit.Framework;
 using Unity.Netcode.Components;
@@ -448,6 +449,12 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private string Vector3String(Vector3 vector3)
+        {
+            return $"{vector3.x,0:0.00000}, {vector3.y,0:0.00000}, {vector3.z,0:0.00000}";
+        }
+
         /// <summary>
         /// Handles validating the local space values match the original local space values.
         /// If not, it generates a message containing the axial values that did not match
@@ -476,12 +483,12 @@ namespace Unity.Netcode.RuntimeTests
                     }
                     if (!Approximately(childLocalPosition, authorityObjectLocalPosition))
                     {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Position ({childLocalPosition}) | Authority Local Position ({authorityObjectLocalPosition})");
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Position ({Vector3String(childLocalPosition)}) | Authority Local Position ({Vector3String(authorityObjectLocalPosition)})");
                         success = false;
                     }
                     if (!Approximately(childLocalScale, authorityObjectLocalScale))
                     {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Scale ({childLocalScale}) | Authority Local Scale ({authorityObjectLocalScale})");
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Scale ({Vector3String(childLocalPosition)}) | Authority Local Scale ({Vector3String(authorityObjectLocalScale)})");
                         success = false;
                     }
 
@@ -492,7 +499,7 @@ namespace Unity.Netcode.RuntimeTests
                     }
                     if (!ApproximatelyEuler(childLocalRotation, authorityObjectLocalRotation))
                     {
-                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Rotation ({childLocalRotation}) | Authority Local Rotation ({authorityObjectLocalRotation})");
+                        infoMessage.AppendLine($"[{childInstance.name}] Child's Local Rotation ({Vector3String(childLocalRotation)}) | Authority Local Rotation ({Vector3String(authorityObjectLocalRotation)})");
                         success = false;
                     }
                 }
