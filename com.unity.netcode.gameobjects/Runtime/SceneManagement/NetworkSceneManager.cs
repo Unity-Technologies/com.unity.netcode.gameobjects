@@ -1985,7 +1985,7 @@ namespace Unity.Netcode
                         }
                     }
                 }
-                catch( Exception ex )
+                catch (Exception ex)
                 {
                     if (NetworkManager.LogLevel <= LogLevel.Error)
                     {
