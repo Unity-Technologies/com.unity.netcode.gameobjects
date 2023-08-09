@@ -8,6 +8,12 @@
     "includePlatforms": [
         "Editor"
     ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
     "versionDefines": [
         {
             "name": "com.unity.multiplayer.tools",
@@ -33,6 +39,12 @@
             "name": "com.unity.modules.physics2d",
             "expression": "",
             "define": "COM_UNITY_MODULES_PHYSICS2D"
+        },
+        {
+            "name": "com.unity.services.relay",
+            "expression": "1.0",
+            "define": "RELAY_SDK_INSTALLED"
         }
-    ]
+    ],
+    "noEngineReferences": false
 }

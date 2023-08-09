@@ -233,8 +233,23 @@ namespace Unity.Netcode.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
+        private const string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay";
+        private string m_JoinCode = "";
+        private string m_StartConnectionError = null;
+
         private void ShowStartConnectionButtons()
         {
+            EditorGUILayout.LabelField("Start Connection", EditorStyles.boldLabel);
+
+            #if RELAY_SDK_INSTALLED
+            // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
+            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
+            useRelay = GUILayout.Toggle(useRelay, "Use Relay");
+            EditorPrefs.SetBool(k_UseEasyRelayIntegrationKey, useRelay);
+            #else
+            var useRelay = false;
+            #endif
+
             string buttonDisabledReasonSuffix = "";
 
             if (!EditorApplication.isPlaying)
@@ -243,6 +258,58 @@ namespace Unity.Netcode.Editor
                 GUI.enabled = false;
             }
 
+            if(useRelay)
+            {
+                ShowStartConnectionButtons_Relay(buttonDisabledReasonSuffix);
+            }
+            else
+            {
+                ShowStartConnectionButtons_Standard(buttonDisabledReasonSuffix);
+            }
+
+            if (!EditorApplication.isPlaying)
+            {
+                GUI.enabled = true;
+            }
+        }
+
+        private async void ShowStartConnectionButtons_Relay(string buttonDisabledReasonSuffix)
+        {
+            #if RELAY_SDK_INSTALLED
+
+            if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance with relay" + buttonDisabledReasonSuffix)))
+            {
+                m_StartConnectionError = null;
+                try { m_JoinCode = await m_NetworkManager.StartHostWithRelay();}
+                catch (Exception e)
+                {
+                    m_StartConnectionError = e.Message;
+                    throw;
+                }
+            }
+
+            GUILayout.BeginHorizontal();
+            m_JoinCode = GUILayout.TextField(m_JoinCode);
+            if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
+            {
+                m_StartConnectionError = null;
+                try {await m_NetworkManager.StartClientWithRelay(m_JoinCode);}
+                catch (Exception e)
+                {
+                    m_StartConnectionError = e.Message;
+                    throw;
+                }
+            }
+            GUILayout.EndHorizontal();
+            if(Application.isPlaying && !string.IsNullOrEmpty(m_StartConnectionError))
+            {
+                EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
+            }
+            #endif
+        }
+
+        private void ShowStartConnectionButtons_Standard(string buttonDisabledReasonSuffix)
+        {
             if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
             {
                 m_NetworkManager.StartHost();
@@ -256,11 +323,6 @@ namespace Unity.Netcode.Editor
             if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
             {
                 m_NetworkManager.StartClient();
-            }
-
-            if (!EditorApplication.isPlaying)
-            {
-                GUI.enabled = true;
             }
         }
 
@@ -281,9 +343,16 @@ namespace Unity.Netcode.Editor
                 instanceType = "Client";
             }
 
-            EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
+            EditorGUILayout.HelpBox($"You cannot edit the NetworkConfig when a {instanceType} is running.", MessageType.Info);
 
-            if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
+            #if RELAY_SDK_INSTALLED
+            if(!string.IsNullOrEmpty(m_JoinCode))
+            {
+                EditorGUILayout.HelpBox($"Connected via relay. Join code: {m_JoinCode}", MessageType.Info);
+            }
+            #endif
+
+            if (GUILayout.Button(new GUIContent($"Stop {instanceType}", $"Stops the {instanceType} instance.")))
             {
                 m_NetworkManager.Shutdown();
             }
