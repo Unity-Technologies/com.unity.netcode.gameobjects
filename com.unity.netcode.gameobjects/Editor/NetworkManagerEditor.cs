@@ -48,6 +48,27 @@ namespace Unity.Netcode.Editor
         private readonly List<Type> m_TransportTypes = new List<Type>();
         private string[] m_TransportNames = { "Select transport..." };
 
+        /// <inheritdoc/>
+        public override void OnInspectorGUI()
+        {
+            Initialize();
+            CheckNullProperties();
+
+#if !MULTIPLAYER_TOOLS
+            DrawInstallMultiplayerToolsTip();
+#endif
+
+            if (m_NetworkManager.IsServer || m_NetworkManager.IsClient)
+            {
+                DrawDisconnectButton();
+            }
+            else
+            {
+                DrawAllPropertyFields();
+                ShowStartConnectionButtons();
+            }
+        }
+
         private void ReloadTransports()
         {
             m_TransportTypes.Clear();
@@ -138,199 +159,133 @@ namespace Unity.Netcode.Editor
                 .FindPropertyRelative(nameof(NetworkPrefabs.NetworkPrefabsLists));
         }
 
-        /// <inheritdoc/>
-        public override void OnInspectorGUI()
+        private void DrawAllPropertyFields()
         {
-            Initialize();
-            CheckNullProperties();
+            serializedObject.Update();
+            EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
+            EditorGUILayout.PropertyField(m_LogLevelProperty);
+            EditorGUILayout.Space();
 
-#if !MULTIPLAYER_TOOLS
-            DrawInstallMultiplayerToolsTip();
-#endif
+            EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
+            EditorGUILayout.Space();
 
-            if (!m_NetworkManager.IsServer && !m_NetworkManager.IsClient)
+            DrawPrefabListField();
+
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
+
+            EditorGUILayout.PropertyField(m_NetworkTransportProperty);
+
+            if (m_NetworkTransportProperty.objectReferenceValue == null)
             {
-                serializedObject.Update();
-                EditorGUILayout.PropertyField(m_RunInBackgroundProperty);
-                EditorGUILayout.PropertyField(m_LogLevelProperty);
-                EditorGUILayout.Space();
+                EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
 
-                EditorGUILayout.PropertyField(m_PlayerPrefabProperty);
-                EditorGUILayout.Space();
+                int selection = EditorGUILayout.Popup(0, m_TransportNames);
 
-                if (m_NetworkManager.NetworkConfig.HasOldPrefabList())
+                if (selection > 0)
                 {
-                    EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
-                    if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
-                    {
-                        // Default directory
-                        var directory = "Assets/";
-                        var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
-                        if (assetPath == "")
-                        {
-                            assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
-                        }
+                    ReloadTransports();
 
-                        if (assetPath != "")
-                        {
-                            directory = Path.GetDirectoryName(assetPath);
-                        }
-                        else
-                        {
-#if UNITY_2021_1_OR_NEWER
-                            var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
-#else
-                            var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
-#endif
-                            if (prefabStage != null)
-                            {
-                                var prefabPath = prefabStage.assetPath;
-                                if (!string.IsNullOrEmpty(prefabPath))
-                                {
-                                    directory = Path.GetDirectoryName(prefabPath);
-                                }
-                            }
-                            if (m_NetworkManager.gameObject.scene != null)
-                            {
-                                var scenePath = m_NetworkManager.gameObject.scene.path;
-                                if (!string.IsNullOrEmpty(scenePath))
-                                {
-                                    directory = Path.GetDirectoryName(scenePath);
-                                }
-                            }
-                        }
-                        var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
-                        string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
-                        Debug.Log("Saving migrated Network Prefabs List to " + path);
-                        AssetDatabase.CreateAsset(networkPrefabs, path);
-                        EditorUtility.SetDirty(m_NetworkManager);
-                    }
-                }
-                else
-                {
-                    if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
-                    {
-                        EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
-                    }
-                    EditorGUILayout.PropertyField(m_PrefabsList);
-                }
-                EditorGUILayout.Space();
+                    var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
+                    m_NetworkTransportProperty.objectReferenceValue = transportComponent;
 
-                EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
-
-                EditorGUILayout.PropertyField(m_NetworkTransportProperty);
-
-                if (m_NetworkTransportProperty.objectReferenceValue == null)
-                {
-                    EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
-
-                    int selection = EditorGUILayout.Popup(0, m_TransportNames);
-
-                    if (selection > 0)
-                    {
-                        ReloadTransports();
-
-                        var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
-                        m_NetworkTransportProperty.objectReferenceValue = transportComponent;
-
-                        Repaint();
-                    }
-                }
-
-                EditorGUILayout.PropertyField(m_TickRateProperty);
-
-                EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
-
-                EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
-
-                EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.ConnectionApproval))
-                {
-                    EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
-                }
-
-                EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
-
-
-                EditorGUILayout.PropertyField(m_RecycleNetworkIdsProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
-                {
-                    EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
-                }
-
-                EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_RpcHashSizeProperty);
-
-                EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
-                EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
-
-                using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
-                {
-                    EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
-                }
-
-                serializedObject.ApplyModifiedProperties();
-
-
-                // Start buttons below
-                {
-                    string buttonDisabledReasonSuffix = "";
-
-                    if (!EditorApplication.isPlaying)
-                    {
-                        buttonDisabledReasonSuffix = ". This can only be done in play mode";
-                        GUI.enabled = false;
-                    }
-
-                    if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
-                    {
-                        m_NetworkManager.StartHost();
-                    }
-
-                    if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
-                    {
-                        m_NetworkManager.StartServer();
-                    }
-
-                    if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
-                    {
-                        m_NetworkManager.StartClient();
-                    }
-
-                    if (!EditorApplication.isPlaying)
-                    {
-                        GUI.enabled = true;
-                    }
+                    Repaint();
                 }
             }
-            else
+
+            EditorGUILayout.PropertyField(m_TickRateProperty);
+
+            EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
+
+            EditorGUILayout.PropertyField(m_EnsureNetworkVariableLengthSafetyProperty);
+
+            EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_ConnectionApprovalProperty);
+
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.ConnectionApproval))
             {
-                string instanceType = string.Empty;
+                EditorGUILayout.PropertyField(m_ClientConnectionBufferTimeoutProperty);
+            }
 
-                if (m_NetworkManager.IsHost)
-                {
-                    instanceType = "Host";
-                }
-                else if (m_NetworkManager.IsServer)
-                {
-                    instanceType = "Server";
-                }
-                else if (m_NetworkManager.IsClient)
-                {
-                    instanceType = "Client";
-                }
+            EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_ForceSamePrefabsProperty);
 
-                EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
+            EditorGUILayout.PropertyField(m_RecycleNetworkIdsProperty);
 
-                if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
-                {
-                    m_NetworkManager.Shutdown();
-                }
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.RecycleNetworkIds))
+            {
+                EditorGUILayout.PropertyField(m_NetworkIdRecycleDelayProperty);
+            }
+
+            EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_RpcHashSizeProperty);
+
+            EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(m_EnableSceneManagementProperty);
+
+            using (new EditorGUI.DisabledScope(!m_NetworkManager.NetworkConfig.EnableSceneManagement))
+            {
+                EditorGUILayout.PropertyField(m_LoadSceneTimeOutProperty);
+            }
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void ShowStartConnectionButtons()
+        {
+            string buttonDisabledReasonSuffix = "";
+
+            if (!EditorApplication.isPlaying)
+            {
+                buttonDisabledReasonSuffix = ". This can only be done in play mode";
+                GUI.enabled = false;
+            }
+
+            if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
+            {
+                m_NetworkManager.StartHost();
+            }
+
+            if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
+            {
+                m_NetworkManager.StartServer();
+            }
+
+            if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
+            {
+                m_NetworkManager.StartClient();
+            }
+
+            if (!EditorApplication.isPlaying)
+            {
+                GUI.enabled = true;
+            }
+        }
+
+        private void DrawDisconnectButton()
+        {
+            string instanceType = string.Empty;
+
+            if (m_NetworkManager.IsHost)
+            {
+                instanceType = "Host";
+            }
+            else if (m_NetworkManager.IsServer)
+            {
+                instanceType = "Server";
+            }
+            else if (m_NetworkManager.IsClient)
+            {
+                instanceType = "Client";
+            }
+
+            EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
+
+            if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
+            {
+                m_NetworkManager.Shutdown();
             }
         }
 
@@ -403,6 +358,69 @@ namespace Unity.Netcode.Editor
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
+        }
+
+        private void DrawPrefabListField()
+        {
+            if (!m_NetworkManager.NetworkConfig.HasOldPrefabList())
+            {
+                if (m_NetworkManager.NetworkConfig.Prefabs.NetworkPrefabsLists.Count == 0)
+                {
+                    EditorGUILayout.HelpBox("You have no prefab list selected. You will have to add your prefabs manually at runtime for netcode to work.", MessageType.Warning);
+                }
+
+                EditorGUILayout.PropertyField(m_PrefabsList);
+                return;
+            }
+
+            // Old format of prefab list
+            EditorGUILayout.HelpBox("Network Prefabs serialized in old format. Migrate to new format to edit the list.", MessageType.Info);
+            if (GUILayout.Button(new GUIContent("Migrate Prefab List", "Converts the old format Network Prefab list to a new Scriptable Object")))
+            {
+                // Default directory
+                var directory = "Assets/";
+                var assetPath = AssetDatabase.GetAssetPath(m_NetworkManager);
+                if (assetPath == "")
+                {
+                    assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(m_NetworkManager);
+                }
+
+                if (assetPath != "")
+                {
+                    directory = Path.GetDirectoryName(assetPath);
+                }
+                else
+                {
+#if UNITY_2021_1_OR_NEWER
+                    var prefabStage = UnityEditor.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+#else
+                        var prefabStage = UnityEditor.Experimental.SceneManagement.PrefabStageUtility.GetPrefabStage(m_NetworkManager.gameObject);
+#endif
+                    if (prefabStage != null)
+                    {
+                        var prefabPath = prefabStage.assetPath;
+                        if (!string.IsNullOrEmpty(prefabPath))
+                        {
+                            directory = Path.GetDirectoryName(prefabPath);
+                        }
+                    }
+
+                    if (m_NetworkManager.gameObject.scene != null)
+                    {
+                        var scenePath = m_NetworkManager.gameObject.scene.path;
+                        if (!string.IsNullOrEmpty(scenePath))
+                        {
+                            directory = Path.GetDirectoryName(scenePath);
+                        }
+                    }
+                }
+
+                var networkPrefabs = m_NetworkManager.NetworkConfig.MigrateOldNetworkPrefabsToNetworkPrefabsList();
+                string path = Path.Combine(directory, $"NetworkPrefabs-{m_NetworkManager.GetInstanceID()}.asset");
+                Debug.Log("Saving migrated Network Prefabs List to " + path);
+                AssetDatabase.CreateAsset(networkPrefabs, path);
+                EditorUtility.SetDirty(m_NetworkManager);
+            }
         }
     }
 }
