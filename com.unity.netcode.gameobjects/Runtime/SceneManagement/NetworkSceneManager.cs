@@ -1953,34 +1953,44 @@ namespace Unity.Netcode
         {
             foreach (var networkObject in NetworkManager.SpawnManager.SpawnedObjectsList)
             {
-                // This is only done for dynamically spawned NetworkObjects
-                // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
-                // then skip it (it will reside in the currently active scene in this scenario on the client-side)
-                if (networkObject.IsSceneObject.Value == false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
+                // Edge case: If any exceptions occur, log them but continue processing so we don't break the client synchronization process.
+                try
                 {
-                    networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
-
-
-
-                    // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
-                    // and move it to that scene.
-                    if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
+                    // This is only done for dynamically spawned NetworkObjects
+                    // Theoretically, a server could have NetworkObjects in a server-side only scene, if the client doesn't have that scene loaded
+                    // then skip it (it will reside in the currently active scene in this scenario on the client-side)
+                    if (networkObject.IsSceneObject.Value == false && ServerSceneHandleToClientSceneHandle.ContainsKey(networkObject.NetworkSceneHandle))
                     {
-                        if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
-                        {
-                            var scene = ScenesLoaded[networkObject.SceneOriginHandle];
-                            if (scene == DontDestroyOnLoadScene)
-                            {
-                                Debug.Log($"{networkObject.gameObject.name} migrating into DDOL!");
-                            }
+                        networkObject.SceneOriginHandle = ServerSceneHandleToClientSceneHandle[networkObject.NetworkSceneHandle];
 
-                            SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
-                        }
-                        else if (NetworkManager.LogLevel <= LogLevel.Normal)
+                        // If the NetworkObject does not have a parent and is not in the same scene as it is on the server side, then find the right scene
+                        // and move it to that scene.
+                        if (networkObject.gameObject.scene.handle != networkObject.SceneOriginHandle && networkObject.transform.parent == null)
                         {
-                            NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{networkObject.gameObject.name}] Server - " +
-                                $"client scene mismatch detected! Client-side has no scene loaded with handle ({networkObject.SceneOriginHandle})!");
+                            if (ScenesLoaded.ContainsKey(networkObject.SceneOriginHandle))
+                            {
+                                var scene = ScenesLoaded[networkObject.SceneOriginHandle];
+                                if (scene == DontDestroyOnLoadScene)
+                                {
+                                    Debug.Log($"{networkObject.gameObject.name} migrating into DDOL!");
+                                }
+
+                                SceneManager.MoveGameObjectToScene(networkObject.gameObject, scene);
+                            }
+                            else if (NetworkManager.LogLevel <= LogLevel.Normal)
+                            {
+                                NetworkLog.LogWarningServer($"[Client-{NetworkManager.LocalClientId}][{networkObject.gameObject.name}] Server - " +
+                                    $"client scene mismatch detected! Client-side has no scene loaded with handle ({networkObject.SceneOriginHandle})!");
+                            }
                         }
+                    }
+                }
+                catch( Exception ex )
+                {
+                    if (NetworkManager.LogLevel <= LogLevel.Error)
+                    {
+                        var networkObjectName = networkObject.gameObject != null ? networkObject.name : "Invalid GameObject";
+                        NetworkLog.LogErrorServer($"[Client-{NetworkManager.LocalClientId}][{networkObjectName}][Spawned: {networkObject.IsSpawned}] {ex.Message}\n {ex.StackTrace}");
                     }
                 }
             }
