@@ -348,7 +348,18 @@ namespace Unity.Netcode.Editor
             #if RELAY_SDK_INSTALLED
             if(!string.IsNullOrEmpty(m_JoinCode))
             {
-                EditorGUILayout.HelpBox($"Connected via relay. Join code: {m_JoinCode}", MessageType.Info);
+                var style = new GUIStyle(EditorStyles.helpBox);
+                style.fontSize = 10;
+                style.alignment = TextAnchor.MiddleCenter;
+                GUILayout.BeginHorizontal(style, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false));
+                GUILayout.Label($"Connected via relay. Join code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
+
+                if (GUILayout.Button("Copy code", GUILayout.ExpandHeight(true)))
+                {
+                    GUIUtility.systemCopyBuffer = m_JoinCode;
+                }
+                GUILayout.EndHorizontal();
             }
             #endif
 
@@ -358,13 +369,14 @@ namespace Unity.Netcode.Editor
             }
         }
 
+        private const string k_InfoIconName = "console.infoicon";
         private static void DrawInstallMultiplayerToolsTip()
         {
             const string getToolsText = "Access additional tools for multiplayer development by installing the Multiplayer Tools package in the Package Manager.";
             const string openDocsButtonText = "Open Docs";
             const string dismissButtonText = "Dismiss";
             const string targetUrl = "https://docs-multiplayer.unity3d.com/tools/current/install-tools";
-            const string infoIconName = "console.infoicon";
+
 
             if (NetcodeForGameObjectsEditorSettings.GetNetcodeInstallMultiplayerToolTips() != 0)
             {
@@ -395,7 +407,7 @@ namespace Unity.Netcode.Editor
             GUILayout.FlexibleSpace();
             GUILayout.BeginHorizontal(s_HelpBoxStyle, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
             {
-                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(infoIconName)), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true));
+                GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false), GUILayout.ExpandHeight(true));
                 GUILayout.Space(4);
                 GUILayout.Label(getToolsText, s_CenteredWordWrappedLabelStyle, GUILayout.ExpandHeight(true));
 

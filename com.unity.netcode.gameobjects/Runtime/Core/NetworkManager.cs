@@ -943,6 +943,11 @@ namespace Unity.Netcode
         /// Easy relay integration (client): it will initialize the unity services, sign in anonymously, join the relay with the given join code and start the client.
         /// </summary>
         /// <param name="joinCode"></param>
+        /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
+        /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
+        /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
+        /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
+        /// <exception cref="ArgumentException">Thrown if the joinCode has the wrong format.</exception>
         /// <returns>True if starting the client was successful</returns>
         public async Task<bool> StartClientWithRelay(string joinCode)
         {
