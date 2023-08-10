@@ -246,6 +246,14 @@ namespace Unity.Netcode.Editor
             var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
             useRelay = GUILayout.Toggle(useRelay, "Use Relay");
             EditorPrefs.SetBool(k_UseEasyRelayIntegrationKey, useRelay);
+            if(useRelay && !Application.isPlaying && !CloudProjectSettings.projectBound)
+            {
+                EditorGUILayout.HelpBox("To use relay, you need to setup your project in the Project Settings in the Services section.", MessageType.Warning);
+                if (GUILayout.Button("Open Project settings"))
+                {
+                    SettingsService.OpenProjectSettings("Project/Services");
+                }
+            }
             #else
             var useRelay = false;
             #endif
