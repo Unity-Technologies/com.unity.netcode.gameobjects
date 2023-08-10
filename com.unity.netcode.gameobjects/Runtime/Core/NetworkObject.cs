@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
 
 namespace Unity.Netcode
 {
@@ -40,6 +45,8 @@ namespace Unity.Netcode
         private bool m_IsPrefab;
 
 #if UNITY_EDITOR
+        private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
+
         private void OnValidate()
         {
             GenerateGlobalObjectIdHash();
@@ -48,19 +55,70 @@ namespace Unity.Netcode
         internal void GenerateGlobalObjectIdHash()
         {
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
-            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
+            if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
 
             // do NOT regenerate GlobalObjectIdHash if Editor is transitioning into or out of PlayMode
-            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            if (!EditorApplication.isPlaying && EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
 
-            var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
-            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
+            // Get a global object identifier for this network prefab
+            var globalId = GetGlobalId();
+
+            // if the identifier type is 0, then don't update the GlobalObjectIdHash
+            if (globalId.identifierType == 0)
+            {
+                return;
+            }
+
+            var oldValue = GlobalObjectIdHash;
+            GlobalObjectIdHash = globalId.ToString().Hash32();
+
+            // If the GlobalObjectIdHash value changed, then mark the asset dirty
+            if (GlobalObjectIdHash != oldValue)
+            {
+                EditorUtility.SetDirty(this);
+            }
+        }
+
+        private GlobalObjectId GetGlobalId()
+        {
+            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+
+            // Check if we are directly editing the prefab
+            var stage = PrefabStageUtility.GetPrefabStage(gameObject);
+
+            // if we are not editing the prefab directly (or a sub-prefab), then return the object identifier
+            if (stage == null || stage.assetPath == null)
+            {
+                return instanceGlobalId;
+            }
+
+            // If the asset doesn't exist at the given path, then return the object identifier
+            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(stage.assetPath);
+            if (theAsset == null)
+            {
+                return instanceGlobalId;
+            }
+
+            // If we can't get the asset GUID and/or the file identifier, then return the object identifier
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localId))
+            {
+                return instanceGlobalId;
+            }
+
+            // TODO: This modification needs further investigation as to implications
+            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, 1, guid, localId, 0);
+            if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
+            {
+                return instanceGlobalId;
+            }
+            // TODO: see above
+            return prefabGlobalId;
         }
 #endif // UNITY_EDITOR
 
