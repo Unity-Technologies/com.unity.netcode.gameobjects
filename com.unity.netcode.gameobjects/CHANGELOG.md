@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
-## [1.5.2] - 2023-07-24
+## [1.6.0] - 2023-08-09
 
 ### Added
 
+- Added a protected virtual method `NetworkTransform.OnInitialize(ref NetworkTransformState replicatedState)` that just returns the replicated state reference.
+  
 ### Fixed
 
 - Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
