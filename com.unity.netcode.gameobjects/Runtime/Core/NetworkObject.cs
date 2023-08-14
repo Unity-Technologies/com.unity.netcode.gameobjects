@@ -106,18 +106,26 @@ namespace Unity.Netcode
             }
 
             // If we can't get the asset GUID and/or the file identifier, then return the object identifier
-            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localId))
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localFileId))
             {
                 return instanceGlobalId;
             }
 
-            // TODO: This modification needs further investigation as to implications
-            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, 1, guid, localId, 0);
+            // If we reached this point, then we are most likely opening a prefab to edit.            
+            // The instanceGlobalId will be constructed as if it is a scene object, however when it
+            // is serialized its value will be treated as a file asset (the "why" to the below code).
+
+            // Construct an imported asset identifier with the type being a source asset (type 3).
+            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, 3, guid, localFileId, 0);
+
+            // If we can't parse the result log an error and return the instanceGlobalId
             if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
             {
+                Debug.Log($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default({instanceGlobalId})");
                 return instanceGlobalId;
             }
-            // TODO: see above
+
+            // Otherwise, return the constructed identifier.
             return prefabGlobalId;
         }
 #endif // UNITY_EDITOR
