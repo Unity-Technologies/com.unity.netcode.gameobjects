@@ -109,25 +109,6 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private MethodDefinition GetOrCreateStaticConstructor(TypeDefinition typeDefinition)
-        {
-            var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-            if (staticCtorMethodDef == null)
-            {
-                staticCtorMethodDef = new MethodDefinition(
-                    ".cctor", // Static Constructor (constant-constructor)
-                    MethodAttributes.HideBySig |
-                    MethodAttributes.SpecialName |
-                    MethodAttributes.RTSpecialName |
-                    MethodAttributes.Static,
-                    typeDefinition.Module.TypeSystem.Void);
-                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                typeDefinition.Methods.Add(staticCtorMethodDef);
-            }
-
-            return staticCtorMethodDef;
-        }
-
         private bool IsMemcpyableType(TypeReference type)
         {
             foreach (var supportedType in BaseSupportedTypes)
@@ -156,178 +137,182 @@ namespace Unity.Netcode.Editor.CodeGen
 
         private void CreateNetworkVariableTypeInitializers(AssemblyDefinition assembly)
         {
-            foreach (var typeDefinition in assembly.MainModule.Types)
+            var typeDefinition = new TypeDefinition("__GEN", "NetworkVariableSerializationHelper", TypeAttributes.NotPublic | TypeAttributes.AnsiClass | TypeAttributes.BeforeFieldInit, assembly.MainModule.TypeSystem.Object);
+
+            var staticCtorMethodDef = new MethodDefinition(
+                $"InitializeSerialization",
+                MethodAttributes.Assembly |
+                MethodAttributes.Static,
+                assembly.MainModule.TypeSystem.Void);
+            staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+            staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+            typeDefinition.Methods.Add(staticCtorMethodDef);
+
+
+            var instructions = new List<Instruction>();
+            var processor = staticCtorMethodDef.Body.GetILProcessor();
+
+            foreach (var type in m_WrappedNetworkVariableTypes)
             {
-                if (typeDefinition.FullName == "<Module>")
+                if (type.Resolve() == null)
                 {
-                    var staticCtorMethodDef = GetOrCreateStaticConstructor(typeDefinition);
+                    continue;
+                }
 
-                    var processor = staticCtorMethodDef.Body.GetILProcessor();
+                if (IsSpecialCaseType(type))
+                {
+                    continue;
+                }
 
-                    var instructions = new List<Instruction>();
+                // If a serializable type isn't found, FallbackSerializer will be used automatically, which will
+                // call into UserNetworkVariableSerialization, giving the user a chance to define their own serializaiton
+                // for types that aren't in our official supported types list.
+                GenericInstanceMethod serializeMethod = null;
+                GenericInstanceMethod equalityMethod;
 
-                    foreach (var type in m_WrappedNetworkVariableTypes)
+
+                if (type.Resolve().FullName == "Unity.Collections.NativeArray`1")
+                {
+                    var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
+                    if (IsSpecialCaseType(wrappedType) || wrappedType.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || wrappedType.Resolve().IsEnum || IsMemcpyableType(wrappedType))
                     {
-                        if (type.Resolve() == null)
-                        {
-                            continue;
-                        }
-
-                        if (IsSpecialCaseType(type))
-                        {
-                            continue;
-                        }
-
-                        // If a serializable type isn't found, FallbackSerializer will be used automatically, which will
-                        // call into UserNetworkVariableSerialization, giving the user a chance to define their own serializaiton
-                        // for types that aren't in our official supported types list.
-                        GenericInstanceMethod serializeMethod = null;
-                        GenericInstanceMethod equalityMethod;
-
-
-                        if (type.Resolve().FullName == "Unity.Collections.NativeArray`1")
-                        {
-                            var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
-                            if (IsSpecialCaseType(wrappedType) || wrappedType.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || wrappedType.Resolve().IsEnum || IsMemcpyableType(wrappedType))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyArray_MethodRef);
-                            }
-                            else if (wrappedType.HasInterface(typeof(INetworkSerializable).FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableArray_MethodRef);
-                            }
-                            else if (wrappedType.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && wrappedType.HasInterface(k_INativeListBool_FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringArray_MethodRef);
-                            }
-
-                            if (wrappedType.HasInterface(typeof(IEquatable<>).FullName + "<" + wrappedType.FullName + ">"))
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableArray_MethodRef);
-                            }
-                            else
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef);
-                            }
-
-                            if (serializeMethod != null)
-                            {
-                                serializeMethod.GenericArguments.Add(wrappedType);
-                            }
-                            equalityMethod.GenericArguments.Add(wrappedType);
-                        }
-#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
-                        else if (type.Resolve().FullName == "Unity.Collections.NativeList`1")
-                        {
-                            var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
-                            if (IsSpecialCaseType(wrappedType) || wrappedType.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || wrappedType.Resolve().IsEnum || IsMemcpyableType(wrappedType))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyList_MethodRef);
-                            }
-                            else if (wrappedType.HasInterface(typeof(INetworkSerializable).FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef);
-                            }
-                            else if (wrappedType.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && wrappedType.HasInterface(k_INativeListBool_FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringList_MethodRef);
-                            }
-
-                            if (wrappedType.HasInterface(typeof(IEquatable<>).FullName + "<" + wrappedType.FullName + ">"))
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableList_MethodRef);
-                            }
-                            else
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef);
-                            }
-
-                            if (serializeMethod != null)
-                            {
-                                serializeMethod.GenericArguments.Add(wrappedType);
-                            }
-                            equalityMethod.GenericArguments.Add(wrappedType);
-                        }
-#endif
-                        else if (type.IsValueType)
-                        {
-                            if (type.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || type.Resolve().IsEnum || IsMemcpyableType(type))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef);
-                            }
-                            else if (type.HasInterface(typeof(INetworkSerializable).FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef);
-                            }
-                            else if (type.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && type.HasInterface(k_INativeListBool_FullName))
-                            {
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef);
-                            }
-
-                            if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef);
-                            }
-                            else
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
-                            }
-
-                            if (serializeMethod != null)
-                            {
-                                serializeMethod.GenericArguments.Add(type);
-                            }
-                            equalityMethod.GenericArguments.Add(type);
-                        }
-                        else
-                        {
-                            if (type.HasInterface(typeof(INetworkSerializable).FullName))
-                            {
-                                var constructors = type.Resolve().GetConstructors();
-                                var hasEmptyConstructor = false;
-                                foreach (var constructor in constructors)
-                                {
-                                    if (constructor.Parameters.Count == 0)
-                                    {
-                                        hasEmptyConstructor = true;
-                                    }
-                                }
-
-                                if (!hasEmptyConstructor)
-                                {
-                                    m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
-                                    continue;
-                                }
-                                serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
-                            }
-
-                            if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef);
-                            }
-                            else
-                            {
-                                equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
-                            }
-
-                            if (serializeMethod != null)
-                            {
-                                serializeMethod.GenericArguments.Add(type);
-                            }
-                            equalityMethod.GenericArguments.Add(type);
-                        }
-
-                        if (serializeMethod != null)
-                        {
-                            instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(serializeMethod)));
-                        }
-                        instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(equalityMethod)));
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyArray_MethodRef);
+                    }
+                    else if (wrappedType.HasInterface(typeof(INetworkSerializable).FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableArray_MethodRef);
+                    }
+                    else if (wrappedType.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && wrappedType.HasInterface(k_INativeListBool_FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringArray_MethodRef);
                     }
 
-                    instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
-                    break;
+                    if (wrappedType.HasInterface(typeof(IEquatable<>).FullName + "<" + wrappedType.FullName + ">"))
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableArray_MethodRef);
+                    }
+                    else
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef);
+                    }
+
+                    if (serializeMethod != null)
+                    {
+                        serializeMethod.GenericArguments.Add(wrappedType);
+                    }
+                    equalityMethod.GenericArguments.Add(wrappedType);
                 }
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+                else if (type.Resolve().FullName == "Unity.Collections.NativeList`1")
+                {
+                    var wrappedType = ((GenericInstanceType)type).GenericArguments[0];
+                    if (IsSpecialCaseType(wrappedType) || wrappedType.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || wrappedType.Resolve().IsEnum || IsMemcpyableType(wrappedType))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpyList_MethodRef);
+                    }
+                    else if (wrappedType.HasInterface(typeof(INetworkSerializable).FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializableList_MethodRef);
+                    }
+                    else if (wrappedType.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && wrappedType.HasInterface(k_INativeListBool_FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedStringList_MethodRef);
+                    }
+
+                    if (wrappedType.HasInterface(typeof(IEquatable<>).FullName + "<" + wrappedType.FullName + ">"))
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatableList_MethodRef);
+                    }
+                    else
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef);
+                    }
+
+                    if (serializeMethod != null)
+                    {
+                        serializeMethod.GenericArguments.Add(wrappedType);
+                    }
+                    equalityMethod.GenericArguments.Add(wrappedType);
+                }
+#endif
+                else if (type.IsValueType)
+                {
+                    if (type.HasInterface(typeof(INetworkSerializeByMemcpy).FullName) || type.Resolve().IsEnum || IsMemcpyableType(type))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedByMemcpy_MethodRef);
+                    }
+                    else if (type.HasInterface(typeof(INetworkSerializable).FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_UnmanagedINetworkSerializable_MethodRef);
+                    }
+                    else if (type.HasInterface(CodeGenHelpers.IUTF8Bytes_FullName) && type.HasInterface(k_INativeListBool_FullName))
+                    {
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_FixedString_MethodRef);
+                    }
+
+                    if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedIEquatable_MethodRef);
+                    }
+                    else
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
+                    }
+
+                    if (serializeMethod != null)
+                    {
+                        serializeMethod.GenericArguments.Add(type);
+                    }
+                    equalityMethod.GenericArguments.Add(type);
+                }
+                else
+                {
+                    if (type.HasInterface(typeof(INetworkSerializable).FullName))
+                    {
+                        var constructors = type.Resolve().GetConstructors();
+                        var hasEmptyConstructor = false;
+                        foreach (var constructor in constructors)
+                        {
+                            if (constructor.Parameters.Count == 0)
+                            {
+                                hasEmptyConstructor = true;
+                            }
+                        }
+
+                        if (!hasEmptyConstructor)
+                        {
+                            m_Diagnostics.AddError($"{type} cannot be used in a network variable - Managed {nameof(INetworkSerializable)} instances must meet the `new()` (default empty constructor) constraint.");
+                            continue;
+                        }
+                        serializeMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeSerializer_ManagedINetworkSerializable_MethodRef);
+                    }
+
+                    if (type.HasInterface(typeof(IEquatable<>).FullName + "<" + type.FullName + ">"))
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedIEquatable_MethodRef);
+                    }
+                    else
+                    {
+                        equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
+                    }
+
+                    if (serializeMethod != null)
+                    {
+                        serializeMethod.GenericArguments.Add(type);
+                    }
+                    equalityMethod.GenericArguments.Add(type);
+                }
+
+                if (serializeMethod != null)
+                {
+                    instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(serializeMethod)));
+                }
+                instructions.Add(processor.Create(OpCodes.Call, m_MainModule.ImportReference(equalityMethod)));
             }
+
+            instructions.ForEach(instruction => processor.Body.Instructions.Insert(processor.Body.Instructions.Count - 1, instruction));
+
+            assembly.MainModule.Types.Add(typeDefinition);
         }
 
         private ModuleDefinition m_MainModule;
@@ -395,6 +380,8 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsList_MethodRef;
 #endif
         private MethodReference m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef;
+
+        private MethodReference m_RuntimeInitializeOnLoadAttribute_Ctor;
 
         private MethodReference m_ExceptionCtorMethodReference;
         private MethodReference m_List_NetworkVariableBase_Add;
@@ -508,6 +495,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     continue;
                 }
             }
+
+            m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition networkManagerTypeDef = null;
             TypeDefinition networkBehaviourTypeDef = null;
@@ -1200,19 +1189,14 @@ namespace Unity.Netcode.Editor.CodeGen
 
             if (rpcHandlers.Count > 0 || rpcNames.Count > 0)
             {
-                var staticCtorMethodDef = typeDefinition.GetStaticConstructor();
-                if (staticCtorMethodDef == null)
-                {
-                    staticCtorMethodDef = new MethodDefinition(
-                        ".cctor", // Static Constructor (constant-constructor)
-                        MethodAttributes.HideBySig |
-                        MethodAttributes.SpecialName |
-                        MethodAttributes.RTSpecialName |
+                var staticCtorMethodDef = new MethodDefinition(
+                        $"InitializeRPCS_{typeDefinition.Name}",
+                        MethodAttributes.Assembly |
                         MethodAttributes.Static,
                         typeDefinition.Module.TypeSystem.Void);
-                    staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
-                    typeDefinition.Methods.Add(staticCtorMethodDef);
-                }
+                staticCtorMethodDef.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+                staticCtorMethodDef.CustomAttributes.Add(new CustomAttribute(m_RuntimeInitializeOnLoadAttribute_Ctor));
+                typeDefinition.Methods.Add(staticCtorMethodDef);
 
                 var instructions = new List<Instruction>();
                 var processor = staticCtorMethodDef.Body.GetILProcessor();
@@ -1254,7 +1238,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     baseGetTypeNameMethod.ReturnType)
                 {
                     ImplAttributes = baseGetTypeNameMethod.ImplAttributes,
-                    SemanticsAttributes = baseGetTypeNameMethod.SemanticsAttributes
+                    SemanticsAttributes = baseGetTypeNameMethod.SemanticsAttributes,
+                    IsFamilyOrAssembly = true
                 };
 
                 var processor = newGetTypeNameMethod.Body.GetILProcessor();

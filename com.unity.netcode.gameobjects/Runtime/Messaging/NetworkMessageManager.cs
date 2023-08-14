@@ -95,7 +95,7 @@ namespace Unity.Netcode
             return m_MessageTypes[t];
         }
 
-        public const int DefaultNonFragmentedMessageMaxSize = 1300;
+        public const int DefaultNonFragmentedMessageMaxSize = 1300 & ~7; // Round down to nearest word aligned size (1296)
         public int NonFragmentedMessageMaxSize = DefaultNonFragmentedMessageMaxSize;
         public int FragmentedMessageMaxSize = int.MaxValue;
 
@@ -518,15 +518,18 @@ namespace Unity.Netcode
         {
             if (!m_PerClientMessageVersions.TryGetValue(clientId, out var versionMap))
             {
-                if (forReceive)
+                var networkManager = NetworkManager.Singleton;
+                if (networkManager != null && networkManager.LogLevel == LogLevel.Developer)
                 {
-                    Debug.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    if (forReceive)
+                    {
+                        NetworkLog.LogWarning($"Trying to receive {type.Name} from client {clientId} which is not in a connected state.");
+                    }
+                    else
+                    {
+                        NetworkLog.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
+                    }
                 }
-                else
-                {
-                    Debug.LogWarning($"Trying to send {type.Name} to client {clientId} which is not in a connected state.");
-                }
-
                 return -1;
             }
 
@@ -826,11 +829,17 @@ namespace Unity.Netcode
                     // Skipping the Verify and sneaking the write mark in because we know it's fine.
                     queueItem.Writer.Handle->AllowedWriteMark = sizeof(NetworkBatchHeader);
 #endif
-                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), queueItem.Writer.Length - sizeof(NetworkBatchHeader));
 
-                    queueItem.BatchHeader.BatchSize = queueItem.Writer.Length;
+
+                    var alignedLength = (queueItem.Writer.Length + 7) & ~7;
+                    queueItem.Writer.TryBeginWrite(alignedLength);
+
+                    queueItem.BatchHeader.BatchHash = XXHash.Hash64(queueItem.Writer.GetUnsafePtr() + sizeof(NetworkBatchHeader), alignedLength - sizeof(NetworkBatchHeader));
+
+                    queueItem.BatchHeader.BatchSize = alignedLength;
 
                     queueItem.Writer.WriteValue(queueItem.BatchHeader);
+                    queueItem.Writer.Seek(alignedLength);
 
 
                     try

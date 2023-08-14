@@ -1198,7 +1198,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
                 }
-
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
                     var currentKnownChildren = new System.Text.StringBuilder();
@@ -1211,7 +1210,6 @@ namespace Unity.Netcode
                     }
                     NetworkLog.LogInfo(currentKnownChildren.ToString());
                 }
-
                 return null;
             }
 

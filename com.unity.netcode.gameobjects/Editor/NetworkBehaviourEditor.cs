@@ -345,8 +345,9 @@ namespace Unity.Netcode.Editor
         /// <param name="networkObjectRemoved">used internally</param>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
-            // If there are no NetworkBehaviours or no gameObject, then exit early
-            if (gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
+            // If there are no NetworkBehaviours or gameObjects then exit early
+            // If we are in play mode and a user is inspecting something then exit early (we don't add NetworkObjects to something when in play mode)
+            if (EditorApplication.isPlaying || gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
             {
                 return;
             }
