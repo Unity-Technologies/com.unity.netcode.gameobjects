@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 #if UNITY_EDITOR
+using UnityEditor;
 using UnityEditor.SceneManagement;
 #endif
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -41,8 +41,6 @@ namespace Unity.Netcode
                 return 0;
             }
         }
-
-        private bool m_IsPrefab;
 
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
@@ -108,6 +106,7 @@ namespace Unity.Netcode
             // If we can't get the asset GUID and/or the file identifier, then return the object identifier
             if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localFileId))
             {
+                Debug.Log($"[GlobalObjectId Gen][{theAsset.gameObject.name}] Failed to get GUID or the local file identifier. Returning default ({instanceGlobalId}).");
                 return instanceGlobalId;
             }
 
@@ -121,7 +120,7 @@ namespace Unity.Netcode
             // If we can't parse the result log an error and return the instanceGlobalId
             if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
             {
-                Debug.Log($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default({instanceGlobalId})");
+                Debug.LogError($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default ({instanceGlobalId})");
                 return instanceGlobalId;
             }
 
