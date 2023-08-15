@@ -15,11 +15,19 @@ public class Spawner : MonoBehaviour
     private IEnumerator SpawnRoutine()
     {
         while (true)
-        {
-            yield return new WaitForSeconds(Frequency);
+        {            
             var go = Instantiate(Prefab, transform.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.Spawn();
+            // If frequency == 0 then it is a single spawner
+            if (Frequency > 0)
+            {
+                yield return new WaitForSeconds(Frequency);
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
