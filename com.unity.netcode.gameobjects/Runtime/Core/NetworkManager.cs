@@ -931,7 +931,10 @@ namespace Unity.Netcode
         public async Task<string> StartHostWithRelay(int maxConnections=5)
         {
             await UnityServices.InitializeAsync();
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
             var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             GetComponent<UnityTransport>().SetHostRelayData(allocation.RelayServer.IpV4, (ushort) allocation.RelayServer.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
@@ -952,7 +955,10 @@ namespace Unity.Netcode
         public async Task<bool> StartClientWithRelay(string joinCode)
         {
             await UnityServices.InitializeAsync();
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
             GetComponent<UnityTransport>().SetClientRelayData(joinAllocation.RelayServer.IpV4, (ushort)joinAllocation.RelayServer.Port, joinAllocation.AllocationIdBytes, joinAllocation.Key, joinAllocation.ConnectionData, joinAllocation.HostConnectionData);
             return StartClient();
