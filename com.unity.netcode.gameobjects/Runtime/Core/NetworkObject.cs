@@ -41,8 +41,20 @@ namespace Unity.Netcode
                         return GlobalObjectIdHash;
                     }
                 }
-
+#if UNITY_EDITOR
+                // When in the editor, return 0 only if in play mode
+                if (Application.isPlaying)
+                {
+                    return 0;
+                }
+                else
+                {
+                    // Otherwise return the currently known GlobalObjectIdHash value
+                    return GlobalObjectIdHash;
+                }
+#else
                 return 0;
+#endif
             }
         }
 
