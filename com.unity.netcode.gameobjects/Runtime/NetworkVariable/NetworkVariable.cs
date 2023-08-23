@@ -146,8 +146,11 @@ namespace Unity.Netcode
             // Therefore, we set the m_PreviousValue field to a duplicate of the current
             // field, so that our next dirty check is made against the current "not dirty"
             // value.
-            m_HasPreviousValue = true;
-            NetworkVariableSerialization<T>.Serializer.Duplicate(m_InternalValue, ref m_PreviousValue);
+            if (!m_HasPreviousValue || !NetworkVariableSerialization<T>.AreEqual(ref m_InternalValue, ref m_PreviousValue))
+            {
+                m_HasPreviousValue = true;
+                NetworkVariableSerialization<T>.Serializer.Duplicate(m_InternalValue, ref m_PreviousValue);
+            }
         }
 
         /// <summary>

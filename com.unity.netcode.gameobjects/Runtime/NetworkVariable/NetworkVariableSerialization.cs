@@ -514,7 +514,7 @@ namespace Unity.Netcode
 
         public void Duplicate(in T value, ref T duplicatedValue)
         {
-            using var writer = new FastBufferWriter(256, Allocator.Temp);
+            using var writer = new FastBufferWriter(256, Allocator.Temp, int.MaxValue);
             var refValue = value;
             Write(writer, ref refValue);
 
