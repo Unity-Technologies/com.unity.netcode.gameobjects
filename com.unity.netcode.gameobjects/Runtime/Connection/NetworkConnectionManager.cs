@@ -544,13 +544,16 @@ namespace Unity.Netcode
                     try
                     {
                         HandleConnectionApproval(senderId, response);
-
-                        senders ??= new List<ulong>();
-                        senders.Add(senderId);
                     }
                     catch (Exception e)
                     {
                         Debug.LogException(e);
+                        OnClientDisconnectFromServer(senderId);
+                    }
+                    finally
+                    {
+                        senders ??= new List<ulong>();
+                        senders.Add(senderId);
                     }
                 }
             }
