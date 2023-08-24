@@ -101,7 +101,7 @@ namespace Unity.Netcode
         public int NonFragmentedMessageMaxSize = DefaultNonFragmentedMessageMaxSize;
         public int FragmentedMessageMaxSize = int.MaxValue;
 
-        public Dictionary<ulong, int> ClientMTUSizes = new Dictionary<ulong, int>();
+        public Dictionary<ulong, int> PeerMTUSizes = new Dictionary<ulong, int>();
 
         internal struct MessageWithHandler
         {
@@ -501,7 +501,7 @@ namespace Unity.Netcode
             m_SendQueues.Remove(clientId);
 
             m_PerClientMessageVersions.Remove(clientId);
-            ClientMTUSizes.Remove(clientId);
+            PeerMTUSizes.Remove(clientId);
         }
 
         internal void CleanupDisconnectedClients()
@@ -686,7 +686,7 @@ namespace Unity.Netcode
                 var startSize = NonFragmentedMessageMaxSize;
                 if (delivery != NetworkDelivery.ReliableFragmentedSequenced)
                 {
-                    maxSize = ClientMTUSizes.GetValueOrDefault(clientId, maxSize);
+                    maxSize = PeerMTUSizes.GetValueOrDefault(clientId, maxSize);
                     startSize = maxSize;
                     if (tmpSerializer.Position >= maxSize)
                     {

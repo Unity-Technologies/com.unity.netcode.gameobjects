@@ -596,15 +596,15 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Set the maximum transmission unit for a specific client.
+        /// Set the maximum transmission unit for a specific peer.
         /// This determines the maximum size of a message batch that can be sent to that client.
         /// If not set for any given client, <see cref="MaximumTransmissionUnitSize"/> will be used instead.
         /// </summary>
         /// <param name="clientId"></param>
         /// <param name="size"></param>
-        public void SetClientMTU(ulong clientId, int size)
+        public void SetPeerMTU(ulong clientId, int size)
         {
-            MessageManager.ClientMTUSizes[clientId] = size;
+            MessageManager.PeerMTUSizes[clientId] = size;
         }
 
         /// <summary>
@@ -613,9 +613,9 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="clientId"></param>
         /// <returns></returns>
-        public int GetClientMTU(ulong clientId)
+        public int GetPeerMTU(ulong clientId)
         {
-            return MessageManager.ClientMTUSizes.GetValueOrDefault(clientId, MessageManager.NonFragmentedMessageMaxSize);
+            return MessageManager.PeerMTUSizes.GetValueOrDefault(clientId, MessageManager.NonFragmentedMessageMaxSize);
         }
 
         /// <summary>

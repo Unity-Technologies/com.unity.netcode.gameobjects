@@ -194,13 +194,13 @@ namespace Unity.Netcode.EditorTests
 
             for (var i = 0; i < clients.Length; ++i)
             {
-                m_MessageManager.ClientMTUSizes[clients[i]] = maxMessageSize * (i + 1);
+                m_MessageManager.PeerMTUSizes[clients[i]] = maxMessageSize * (i + 1);
             }
 
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < clients.Length; ++i)
             {
-                for (var j = 0; j < ((m_MessageManager.ClientMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
+                for (var j = 0; j < ((m_MessageManager.PeerMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
                 {
                     m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clients[i]);
                 }
@@ -223,13 +223,13 @@ namespace Unity.Netcode.EditorTests
 
             for (var i = 0; i < clients.Length; ++i)
             {
-                m_MessageManager.ClientMTUSizes[clients[i]] = maxMessageSize * (i + 1);
+                m_MessageManager.PeerMTUSizes[clients[i]] = maxMessageSize * (i + 1);
             }
 
             var size = UnsafeUtility.SizeOf<TestMessage>() + 2; // MessageHeader packed with this message will be 2 bytes
             for (var i = 0; i < clients.Length; ++i)
             {
-                for (var j = 0; j < ((m_MessageManager.ClientMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
+                for (var j = 0; j < ((m_MessageManager.PeerMTUSizes[clients[i]] - UnsafeUtility.SizeOf<NetworkBatchHeader>()) / size) + 1; ++j)
                 {
                     m_MessageManager.SendMessage(ref message, NetworkDelivery.Reliable, clients[i]);
                 }
