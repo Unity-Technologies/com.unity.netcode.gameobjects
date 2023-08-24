@@ -5,7 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Unity.Netcode
 {
@@ -98,6 +100,8 @@ namespace Unity.Netcode
         public const int DefaultNonFragmentedMessageMaxSize = 1300 & ~7; // Round down to nearest word aligned size (1296)
         public int NonFragmentedMessageMaxSize = DefaultNonFragmentedMessageMaxSize;
         public int FragmentedMessageMaxSize = int.MaxValue;
+
+        public Dictionary<ulong, int> ClientMTUSizes = new Dictionary<ulong, int>();
 
         internal struct MessageWithHandler
         {
@@ -497,6 +501,7 @@ namespace Unity.Netcode
             m_SendQueues.Remove(clientId);
 
             m_PerClientMessageVersions.Remove(clientId);
+            ClientMTUSizes.Remove(clientId);
         }
 
         internal void CleanupDisconnectedClients()
@@ -678,6 +683,18 @@ namespace Unity.Netcode
                     continue;
                 }
 
+                var startSize = NonFragmentedMessageMaxSize;
+                if (delivery != NetworkDelivery.ReliableFragmentedSequenced)
+                {
+                    maxSize = ClientMTUSizes.GetValueOrDefault(clientId, maxSize);
+                    startSize = maxSize;
+                    if (tmpSerializer.Position >= maxSize)
+                    {
+                        Debug.LogError($"MTU size for {clientId} is too small to contain a message of type {typeof(TMessageType).FullName}");
+                        continue;
+                    }
+                }
+
                 for (var hookIdx = 0; hookIdx < m_Hooks.Count; ++hookIdx)
                 {
                     m_Hooks[hookIdx].OnBeforeSendMessage(clientId, ref message, delivery);
@@ -686,7 +703,7 @@ namespace Unity.Netcode
                 var sendQueueItem = m_SendQueues[clientId];
                 if (sendQueueItem.Length == 0)
                 {
-                    sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
+                    sendQueueItem.Add(new SendQueueItem(delivery, startSize, Allocator.TempJob, maxSize));
                     sendQueueItem.ElementAt(0).Writer.Seek(sizeof(NetworkBatchHeader));
                 }
                 else
@@ -694,7 +711,7 @@ namespace Unity.Netcode
                     ref var lastQueueItem = ref sendQueueItem.ElementAt(sendQueueItem.Length - 1);
                     if (lastQueueItem.NetworkDelivery != delivery || lastQueueItem.Writer.MaxCapacity - lastQueueItem.Writer.Position < tmpSerializer.Length + headerSerializer.Length)
                     {
-                        sendQueueItem.Add(new SendQueueItem(delivery, NonFragmentedMessageMaxSize, Allocator.TempJob, maxSize));
+                        sendQueueItem.Add(new SendQueueItem(delivery, startSize, Allocator.TempJob, maxSize));
                         sendQueueItem.ElementAt(sendQueueItem.Length - 1).Writer.Seek(sizeof(NetworkBatchHeader));
                     }
                 }
