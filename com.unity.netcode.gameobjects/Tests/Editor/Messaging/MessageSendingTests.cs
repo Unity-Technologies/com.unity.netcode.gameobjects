@@ -186,7 +186,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             m_MessageManager.NonFragmentedMessageMaxSize = maxMessageSize * 5;
-            var clients = new ulong[]{ 0, 1, 2 };
+            var clients = new ulong[] { 0, 1, 2 };
             m_MessageManager.ClientConnected(1);
             m_MessageManager.ClientConnected(2);
             m_MessageManager.SetVersion(1, XXHash.Hash32(typeof(TestMessage).FullName), 0);
@@ -215,7 +215,7 @@ namespace Unity.Netcode.EditorTests
         {
             var message = GetMessage();
             m_MessageManager.NonFragmentedMessageMaxSize = 128;
-            var clients = new ulong[]{ 0, 1, 2 };
+            var clients = new ulong[] { 0, 1, 2 };
             m_MessageManager.ClientConnected(1);
             m_MessageManager.ClientConnected(2);
             m_MessageManager.SetVersion(1, XXHash.Hash32(typeof(TestMessage).FullName), 0);

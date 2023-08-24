@@ -5,9 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEditor.PackageManager;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Unity.Netcode
 {
@@ -686,7 +684,10 @@ namespace Unity.Netcode
                 var startSize = NonFragmentedMessageMaxSize;
                 if (delivery != NetworkDelivery.ReliableFragmentedSequenced)
                 {
-                    maxSize = PeerMTUSizes.GetValueOrDefault(clientId, maxSize);
+                    if (PeerMTUSizes.TryGetValue(clientId, out var clientMaxSize))
+                    {
+                        maxSize = clientMaxSize;
+                    }
                     startSize = maxSize;
                     if (tmpSerializer.Position >= maxSize)
                     {
