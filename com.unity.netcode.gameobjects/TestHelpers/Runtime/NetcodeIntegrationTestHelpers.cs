@@ -919,6 +919,11 @@ namespace Unity.Netcode.TestHelpers.Runtime
             var res = check.Result;
             result.Result = res;
         }
+
+        public static uint GetGlobalObjectIdHash(NetworkObject networkObject)
+        {
+            return networkObject.GlobalObjectIdHash;
+        }
     }
 
     // Empty MonoBehaviour that is a holder of coroutine
