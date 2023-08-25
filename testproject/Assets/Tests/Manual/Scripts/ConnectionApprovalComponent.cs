@@ -141,7 +141,7 @@ namespace TestProject.ManualTests
             {
                 m_ConnectionModeButtons.Reset();
                 NetworkManager.Shutdown();
-                
+
                 if (m_ClientDisconnectButton)
                 {
                     m_ClientDisconnectButton.gameObject.SetActive(false);

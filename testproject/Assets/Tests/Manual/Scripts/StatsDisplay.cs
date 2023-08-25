@@ -57,7 +57,7 @@ namespace TestProject.ManualTests
                 if (m_ClientServerToggle != null)
                 {
                     m_ClientServerToggle.SetActive(true);
-                }                
+                }
                 UpdateButton();
             }
 

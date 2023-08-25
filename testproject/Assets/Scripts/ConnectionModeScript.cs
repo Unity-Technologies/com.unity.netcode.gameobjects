@@ -65,7 +65,7 @@ public class ConnectionModeScript : MonoBehaviour
                     if (m_ConnectionModeButtons != null)
                     {
                         m_ConnectionModeButtons.SetActive(false);
-                    }                    
+                    }
                     m_CommandLineProcessor.ProcessCommandLine();
                     break;
                 }
@@ -136,7 +136,7 @@ public class ConnectionModeScript : MonoBehaviour
             if (m_AuthenticationButtons != null)
             {
                 m_AuthenticationButtons.SetActive(NetworkManager.Singleton && !NetworkManager.Singleton.IsListening && !AuthenticationService.Instance.IsSignedIn);
-            }            
+            }
         }
     }
 
@@ -167,7 +167,7 @@ public class ConnectionModeScript : MonoBehaviour
         {
             m_ConnectionModeButtons.SetActive(false);
             NetworkManager.Singleton.OnServerStopped += OnServerStopped;
-        }        
+        }
     }
 
     private void OnServerStopped(bool obj)
@@ -189,7 +189,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons != null)
         {
             m_ConnectionModeButtons.SetActive(false);
-        }        
+        }
 
         var serverRelayUtilityTask = RelayUtility.AllocateRelayServerAndGetJoinCode(m_MaxConnections);
         while (!serverRelayUtilityTask.IsCompleted)
@@ -273,11 +273,11 @@ public class ConnectionModeScript : MonoBehaviour
             m_ConnectionModeButtons.SetActive(false);
             NetworkManager.Singleton.OnClientStopped += OnClientStopped;
         }
-        
+
         if (m_DisconnectClientButton != null)
         {
             m_DisconnectClientButton.SetActive(true);
-        }        
+        }
     }
 
     private void OnClientStopped(bool obj)

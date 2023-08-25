@@ -18,7 +18,7 @@ public class Spawner : MonoBehaviour
     {
         var instanceCount = 0;
         while (true)
-        {            
+        {
             var go = Instantiate(Prefab, transform.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.Spawn();
