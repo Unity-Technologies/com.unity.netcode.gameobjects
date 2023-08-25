@@ -6,6 +6,8 @@ public class Spawner : MonoBehaviour
 {
     public GameObject Prefab;
     public float Frequency;
+    [Range(1, 100)]
+    public int MaxInstances = 40;
 
     private void OnServerStarted()
     {
@@ -14,15 +16,21 @@ public class Spawner : MonoBehaviour
 
     private IEnumerator SpawnRoutine()
     {
+        var instanceCount = 0;
         while (true)
         {            
             var go = Instantiate(Prefab, transform.position, Quaternion.identity);
             var networkObject = go.GetComponent<NetworkObject>();
             networkObject.Spawn();
+            instanceCount++;
             // If frequency == 0 then it is a single spawner
             if (Frequency > 0)
             {
                 yield return new WaitForSeconds(Frequency);
+                if (instanceCount >= MaxInstances)
+                {
+                    break;
+                }
             }
             else
             {

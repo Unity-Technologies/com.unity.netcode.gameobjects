@@ -166,7 +166,17 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons != null)
         {
             m_ConnectionModeButtons.SetActive(false);
+            NetworkManager.Singleton.OnServerStopped += OnServerStopped;
         }        
+    }
+
+    private void OnServerStopped(bool obj)
+    {
+        if (m_ConnectionModeButtons != null)
+        {
+            NetworkManager.Singleton.OnServerStopped -= OnServerStopped;
+            m_ConnectionModeButtons.SetActive(true);
+        }
     }
 
 
@@ -232,6 +242,7 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons != null)
         {
             m_ConnectionModeButtons.SetActive(false);
+            NetworkManager.Singleton.OnServerStopped += OnServerStopped;
         }
     }
 
@@ -260,12 +271,22 @@ public class ConnectionModeScript : MonoBehaviour
         if (m_ConnectionModeButtons != null)
         {
             m_ConnectionModeButtons.SetActive(false);
+            NetworkManager.Singleton.OnClientStopped += OnClientStopped;
         }
         
         if (m_DisconnectClientButton != null)
         {
             m_DisconnectClientButton.SetActive(true);
         }        
+    }
+
+    private void OnClientStopped(bool obj)
+    {
+        if (m_ConnectionModeButtons != null)
+        {
+            NetworkManager.Singleton.OnClientStopped -= OnClientStopped;
+            m_ConnectionModeButtons.SetActive(true);
+        }
     }
 
     public void DisconnectClient()
