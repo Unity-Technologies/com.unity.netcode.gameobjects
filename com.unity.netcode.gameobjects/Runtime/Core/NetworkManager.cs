@@ -943,16 +943,27 @@ namespace Unity.Netcode
         /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
         public async Task<string> StartHostWithRelay(int maxConnections=5)
         {
-            await UnityServices.InitializeAsync();
-            if (!AuthenticationService.Instance.IsSignedIn)
-            {
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            }
-            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
-            var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            GetUnityTransport().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
-            bool started = StartHost();
-            return started? joinCode : null;
+            var joinCode = await InitializeAndCreateAllocAsync(maxConnections);
+            return StartHost()? joinCode : null;
+        }
+
+        /// <summary>
+        /// Easy relay integration (server): it will initialize the unity services, sign in anonymously and start the server with a new relay allocation.
+        /// Note that this will force the use of Unity Transport.
+        /// </summary>
+        /// <param name="maxConnections">Maximum number of connections to the created relay.</param>
+        /// <returns>The join code that a potential client can use</returns>
+        /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
+        /// <exception cref="UnityProjectNotLinkedException"> Exception when the project is not linked to a cloud project id </exception>
+        /// <exception cref="CircularDependencyException"> Exception when two registered <see cref="IInitializablePackage"/> depend on the other </exception>
+        /// <exception cref="AuthenticationException"> The task fails with the exception when the task cannot complete successfully due to Authentication specific errors. </exception>
+        /// <exception cref="RequestFailedException"> See <see cref="Unity.Services.Authentication.IAuthenticationService.SignInAnonymouslyAsync"/></exception>
+        /// <exception cref="ArgumentException">Thrown when the maxConnections argument fails validation in Relay Service SDK.</exception>
+        /// <exception cref="RelayServiceException">Thrown when the request successfully reach the Relay Allocation Service but results in an error.</exception>
+        public async Task<string> StartServerWithRelay(int maxConnections=5)
+        {
+           var joinCode = await InitializeAndCreateAllocAsync(maxConnections);
+           return StartServer()? joinCode : null;
         }
 
         /// <summary>
@@ -976,6 +987,18 @@ namespace Unity.Netcode
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
             GetUnityTransport().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
             return StartClient();
+        }
+
+        private async Task<string> InitializeAndCreateAllocAsync(int maxConnections)
+        {
+            await UnityServices.InitializeAsync();
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
+            GetUnityTransport().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
+            return await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
         }
 
         private UnityTransport GetUnityTransport()

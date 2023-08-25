@@ -311,16 +311,23 @@ namespace Unity.Netcode.Editor
         {
             #if RELAY_INTEGRATION_AVAILABLE
 
-            if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance with relay" + buttonDisabledReasonSuffix)))
+            async void AddStartServerOrHostButton(bool isServer)
             {
-                m_StartConnectionError = null;
-                try { m_JoinCode = await m_NetworkManager.StartHostWithRelay();}
-                catch (Exception e)
+                var type = isServer?"Server":"Host";
+                if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with relay{buttonDisabledReasonSuffix}")))
                 {
-                    m_StartConnectionError = e.Message;
-                    throw;
+                    m_StartConnectionError = null;
+                    try { m_JoinCode = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay(); }
+                    catch (Exception e)
+                    {
+                        m_StartConnectionError = e.Message;
+                        throw;
+                    }
                 }
             }
+
+            AddStartServerOrHostButton(isServer:true);
+            AddStartServerOrHostButton(isServer:false);
 
             GUILayout.BeginHorizontal();
             m_JoinCode = GUILayout.TextField(m_JoinCode);
