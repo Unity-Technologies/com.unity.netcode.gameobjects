@@ -926,6 +926,8 @@ namespace Unity.Netcode
         private const string k_ConnectionType = "dtls";
         #endif
 
+        private readonly bool k_UseWebSockets = k_ConnectionType.StartsWith("ws");
+
         /// <summary>
         /// Easy relay integration (host): it will initialize the unity services, sign in anonymously and start the host with a new relay allocation.
         /// Note that this will force the use of Unity Transport.
@@ -979,6 +981,7 @@ namespace Unity.Netcode
         private UnityTransport GetUnityTransport()
         {
             if(!TryGetComponent<UnityTransport>(out var transport))  {transport = gameObject.AddComponent<UnityTransport>();}
+            transport.UseWebSockets = k_UseWebSockets; //TODO: probably should be part of SetRelayServerData
             NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
         }
