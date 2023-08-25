@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 Additional documentation and release notes are available at [Multiplayer Documentation](https://docs-multiplayer.unity3d.com).
 
+## [Unreleased]
+### Added
+
+### Fixed
+
+- Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
+- Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
+
+### Changed
+
 ## [1.5.2] - 2023-07-24
 
 ### Added
