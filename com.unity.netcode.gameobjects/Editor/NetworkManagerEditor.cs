@@ -180,24 +180,7 @@ namespace Unity.Netcode.Editor
             EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(m_ProtocolVersionProperty);
 
-            EditorGUILayout.PropertyField(m_NetworkTransportProperty);
-
-            if (m_NetworkTransportProperty.objectReferenceValue == null)
-            {
-                EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
-
-                int selection = EditorGUILayout.Popup(0, m_TransportNames);
-
-                if (selection > 0)
-                {
-                    ReloadTransports();
-
-                    var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
-                    m_NetworkTransportProperty.objectReferenceValue = transportComponent;
-
-                    Repaint();
-                }
-            }
+            DrawTransportField();
 
             EditorGUILayout.PropertyField(m_TickRateProperty);
 
@@ -237,12 +220,49 @@ namespace Unity.Netcode.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
+        private void DrawTransportField()
+        {
+            #if RELAY_INTEGRATION_AVAILABLE
+            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
+            #else
+            var useRelay = false;
+            #endif
+
+            if (useRelay)
+            {
+                EditorGUILayout.HelpBox("Test connection with relay is enabled, so the default Unity Transport will be used", MessageType.Info);
+                GUI.enabled = false;
+                EditorGUILayout.PropertyField(m_NetworkTransportProperty);
+                GUI.enabled = true;
+                return;
+            }
+
+            EditorGUILayout.PropertyField(m_NetworkTransportProperty);
+
+            if (m_NetworkTransportProperty.objectReferenceValue == null)
+            {
+                EditorGUILayout.HelpBox("You have no transport selected. A transport is required for netcode to work. Which one do you want?", MessageType.Warning);
+
+                int selection = EditorGUILayout.Popup(0, m_TransportNames);
+
+                if (selection > 0)
+                {
+                    ReloadTransports();
+
+                    var transportComponent = m_NetworkManager.gameObject.GetComponent(m_TransportTypes[selection - 1]) ?? m_NetworkManager.gameObject.AddComponent(m_TransportTypes[selection - 1]);
+                    m_NetworkTransportProperty.objectReferenceValue = transportComponent;
+
+                    Repaint();
+                }
+            }
+        }
+
         #if RELAY_INTEGRATION_AVAILABLE
         private const string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay";
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
         #endif
-        
+
         private void ShowStartConnectionButtons()
         {
             EditorGUILayout.LabelField("Start Connection", EditorStyles.boldLabel);

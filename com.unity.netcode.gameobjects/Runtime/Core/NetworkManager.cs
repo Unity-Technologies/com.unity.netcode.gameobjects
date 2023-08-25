@@ -928,6 +928,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Easy relay integration (host): it will initialize the unity services, sign in anonymously and start the host with a new relay allocation.
+        /// Note that this will force the use of Unity Transport.
         /// </summary>
         /// <param name="maxConnections">Maximum number of connections to the created relay.</param>
         /// <returns>The join code that a potential client can use</returns>
@@ -947,13 +948,14 @@ namespace Unity.Netcode
             }
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
             var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
+            GetUnityTransport().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
             bool started = StartHost();
             return started? joinCode : null;
         }
 
         /// <summary>
         /// Easy relay integration (client): it will initialize the unity services, sign in anonymously, join the relay with the given join code and start the client.
+        /// Note that this will force the use of Unity Transport.
         /// </summary>
         /// <param name="joinCode"></param>
         /// <exception cref="ServicesInitializationException"> Exception when there's an error during services initialization </exception>
@@ -970,8 +972,15 @@ namespace Unity.Netcode
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
             }
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
-            GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
+            GetUnityTransport().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
             return StartClient();
+        }
+
+        private UnityTransport GetUnityTransport()
+        {
+            if(!TryGetComponent<UnityTransport>(out var transport))  {transport = gameObject.AddComponent<UnityTransport>();}
+            NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
+            return transport;
         }
 
         #endif
