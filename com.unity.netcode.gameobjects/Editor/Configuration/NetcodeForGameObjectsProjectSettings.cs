@@ -20,7 +20,7 @@ namespace Unity.Netcode.Editor.Configuration
         }
 
         [SerializeField]
-        public bool GenerateDefaultNetworkPrefabs;
+        public bool GenerateDefaultNetworkPrefabs = true;
 
         internal void SaveSettings()
         {
