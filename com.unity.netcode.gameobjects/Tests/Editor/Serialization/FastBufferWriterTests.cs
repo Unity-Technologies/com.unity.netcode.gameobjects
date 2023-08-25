@@ -39,7 +39,7 @@ namespace Unity.Netcode.EditorTests
         private unsafe void VerifyTypedEquality<T>(T value, byte* unsafePtr) where T : unmanaged
         {
             var checkValue = (T*)unsafePtr;
-            Assert.AreEqual(value, *checkValue);
+            EqualityHelper.AreEqual(value, *checkValue);
         }
 
         private void VerifyPositionAndLength(FastBufferWriter writer, int position, string failMessage = "")
@@ -288,7 +288,7 @@ namespace Unity.Netcode.EditorTests
                 var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
                 for (var i = 0; i < value.Length; ++i)
                 {
-                    Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
+                    EqualityHelper.AreEqual(asTPointer[i], underlyingTArray[i]);
                 }
             }
         }
@@ -302,7 +302,7 @@ namespace Unity.Netcode.EditorTests
             var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
             for (var i = 0; i < value.Length; ++i)
             {
-                Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
+                EqualityHelper.AreEqual(asTPointer[i], underlyingTArray[i]);
             }
         }
 
@@ -316,7 +316,7 @@ namespace Unity.Netcode.EditorTests
             var underlyingTArray = (T*)(unsafePtr + sizeof(int) + offset);
             for (var i = 0; i < value.Length; ++i)
             {
-                Assert.AreEqual(asTPointer[i], underlyingTArray[i]);
+                EqualityHelper.AreEqual(asTPointer[i], underlyingTArray[i]);
             }
         }
 #endif
@@ -460,7 +460,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -474,7 +474,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -488,7 +488,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)
@@ -503,7 +503,7 @@ namespace Unity.Netcode.EditorTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(TestStruct))]
             Type testType,
             [Values] WriteType writeType)

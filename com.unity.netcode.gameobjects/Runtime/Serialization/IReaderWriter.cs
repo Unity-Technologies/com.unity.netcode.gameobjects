@@ -234,6 +234,18 @@ namespace Unity.Netcode
         void SerializeValue(ref Quaternion[] value);
 
         /// <summary>
+        /// Read or write a Pose value
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        void SerializeValue(ref Pose value);
+
+        /// <summary>
+        /// Read or write an array of Pose values
+        /// </summary>
+        /// <param name="value">The values to read/write</param>
+        void SerializeValue(ref Pose[] value);
+
+        /// <summary>
         /// Read or write a Color value
         /// </summary>
         /// <param name="value">The value to read/write</param>
@@ -528,6 +540,24 @@ namespace Unity.Netcode
         /// </summary>
         /// <param name="value">The value to read/write</param>
         void SerializeValuePreChecked(ref Quaternion[] value);
+
+        /// <summary>
+        /// Serialize a Pose, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        void SerializeValuePreChecked(ref Pose value);
+
+        /// <summary>
+        /// Serialize a Pose array, "pre-checked", which skips buffer checks.
+        /// In debug and editor builds, a check is made to ensure you've called "PreCheck" before
+        /// calling this. In release builds, calling this without calling "PreCheck" may read or write
+        /// past the end of the buffer, which will cause memory corruption and undefined behavior.
+        /// </summary>
+        /// <param name="value">The value to read/write</param>
+        void SerializeValuePreChecked(ref Pose[] value);
 
         /// <summary>
         /// Serialize a Color, "pre-checked", which skips buffer checks.

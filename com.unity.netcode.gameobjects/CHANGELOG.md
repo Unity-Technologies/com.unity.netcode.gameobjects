@@ -9,6 +9,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
 ## [Unreleased]
 ### Added
 
+- Added serializer for `Pose` (#2675)
+
 ### Fixed
 
 - Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)

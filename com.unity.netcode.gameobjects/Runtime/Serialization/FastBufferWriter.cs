@@ -1442,6 +1442,20 @@ namespace Unity.Netcode
         public void WriteValue(Quaternion[] value) => WriteUnmanaged(value);
 
         /// <summary>
+        /// Write a Pose
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(in Pose value) => WriteUnmanaged(value);
+
+        /// <summary>
+        /// Write a Pose array
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValue(Pose[] value) => WriteUnmanaged(value);
+
+        /// <summary>
         /// Write a Color
         /// </summary>
         /// <param name="value">the value to write</param>
@@ -1616,6 +1630,26 @@ namespace Unity.Netcode
         /// <param name="value">the values to write</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteValueSafe(Quaternion[] value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Pose
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the value to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(in Pose value) => WriteUnmanagedSafe(value);
+
+        /// <summary>
+        /// Write a Pose array
+        ///
+        /// "Safe" version - automatically performs bounds checking. Less efficient than bounds checking
+        /// for multiple writes at once by calling TryBeginWrite.
+        /// </summary>
+        /// <param name="value">the values to write</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void WriteValueSafe(Pose[] value) => WriteUnmanagedSafe(value);
 
         /// <summary>
         /// Write a Color

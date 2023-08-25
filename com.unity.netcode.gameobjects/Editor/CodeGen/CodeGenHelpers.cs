@@ -41,6 +41,7 @@ namespace Unity.Netcode.Editor.CodeGen
         public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
         public static readonly string UnityVector4_FullName = typeof(Vector4).FullName;
         public static readonly string UnityQuaternion_FullName = typeof(Quaternion).FullName;
+        public static readonly string UnityPose_FullName = typeof(Pose).FullName;
         public static readonly string UnityRay_FullName = typeof(Ray).FullName;
         public static readonly string UnityRay2D_FullName = typeof(Ray2D).FullName;
 
@@ -301,6 +302,11 @@ namespace Unity.Netcode.Editor.CodeGen
             }
 
             if (typeReference.FullName == UnityQuaternion_FullName)
+            {
+                return true;
+            }
+
+            if (typeReference.FullName == UnityPose_FullName)
             {
                 return true;
             }

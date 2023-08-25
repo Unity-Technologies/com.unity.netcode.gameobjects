@@ -276,6 +276,12 @@ namespace Unity.Netcode.RuntimeTests
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
         public NetworkVariable<NativeList<Quaternion>> QuaternionListVar;
 #endif
+        public NetworkVariable<Pose> PoseVar;
+        public NetworkVariable<NativeArray<Pose>> PoseArrayVar;
+#if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
+        public NetworkVariable<NativeList<Pose>> PoseListVar;
+#endif
+
         public NetworkVariable<Color> ColorVar;
         public NetworkVariable<NativeArray<Color>> ColorArrayVar;
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -1625,7 +1631,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -1745,6 +1751,12 @@ namespace Unity.Netcode.RuntimeTests
                     new Quaternion(5, 10, 15, 20),
                     new Quaternion(25, 30, 35, 40));
             }
+            else if (testType == typeof(Pose))
+            {
+                TestValueType(
+                    new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)),
+                    new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)));
+            }
             else if (testType == typeof(Color))
             {
                 TestValueType(
@@ -1786,7 +1798,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -1946,6 +1958,12 @@ namespace Unity.Netcode.RuntimeTests
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) }, Allocator.Temp),
                     new NativeArray<Quaternion>(new Quaternion[] { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) }, Allocator.Temp));
             }
+            else if (testType == typeof(Pose))
+            {
+                TestValueTypeNativeArray(
+                    new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) }, Allocator.Temp),
+                    new NativeArray<Pose>(new Pose[] { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) }, Allocator.Temp));
+            }
             else if (testType == typeof(Color))
             {
                 TestValueTypeNativeArray(
@@ -2028,7 +2046,7 @@ namespace Unity.Netcode.RuntimeTests
                 typeof(long), typeof(ulong), typeof(bool), typeof(char), typeof(float), typeof(double),
                 typeof(ByteEnum), typeof(SByteEnum), typeof(ShortEnum), typeof(UShortEnum), typeof(IntEnum),
                 typeof(UIntEnum), typeof(LongEnum), typeof(ULongEnum), typeof(Vector2), typeof(Vector3),
-                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Color),
+                typeof(Vector2Int), typeof(Vector3Int), typeof(Vector4), typeof(Quaternion), typeof(Pose), typeof(Color),
                 typeof(Color32), typeof(Ray), typeof(Ray2D), typeof(NetworkVariableTestStruct), typeof(FixedString32Bytes))]
             Type testType)
         {
@@ -2187,6 +2205,12 @@ namespace Unity.Netcode.RuntimeTests
                 TestValueTypeNativeList(
                     new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(5, 10, 15, 20), new Quaternion(25, 30, 35, 40) },
                     new NativeList<Quaternion>(Allocator.Temp) { new Quaternion(45, 50, 55, 60), new Quaternion(65, 70, 75, 80), new Quaternion(85, 90, 95, 100) });
+            }
+            else if (testType == typeof(Pose))
+            {
+                TestValueTypeNativeList(
+                    new NativeList<Pose>(Allocator.Temp) { new Pose(new Vector3(5, 10, 15), new Quaternion(20, 25, 30, 35)), new Pose(new Vector3(40, 45, 50), new Quaternion(55, 60, 65, 70)) },
+                    new NativeList<Pose>(Allocator.Temp) { new Pose(new Vector3(75, 80, 85), new Quaternion(90, 95, 100, 105)), new Pose(new Vector3(110, 115, 120), new Quaternion(125, 130, 135, 140)), new Pose(new Vector3(145, 150, 155), new Quaternion(160, 165, 170, 175)) });
             }
             else if (testType == typeof(Color))
             {
