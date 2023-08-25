@@ -44,6 +44,11 @@
             "name": "com.unity.services.relay",
             "expression": "1.0",
             "define": "RELAY_SDK_INSTALLED"
+        },
+        {
+            "name": "com.unity.transport",
+            "expression": "2.0",
+            "define": "UTP_TRANSPORT_2_0_ABOVE"
         }
     ],
     "noEngineReferences": false

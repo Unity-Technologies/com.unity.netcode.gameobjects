@@ -1,6 +1,10 @@
+#if (RELAY_SDK_INSTALLED && !UNITY_WEBGL ) || (RELAY_SDK_INSTALLED && UNITY_WEBGL && UTP_TRANSPORT_2_0_ABOVE)
+#define RELAY_INTEGRATION_AVAILABLE
+#endif
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Unity.Netcode.Editor.Configuration;
 using UnityEditor;
 using UnityEngine;
@@ -233,15 +237,17 @@ namespace Unity.Netcode.Editor
             serializedObject.ApplyModifiedProperties();
         }
 
+        #if RELAY_INTEGRATION_AVAILABLE
         private const string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay";
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
-
+        #endif
+        
         private void ShowStartConnectionButtons()
         {
             EditorGUILayout.LabelField("Start Connection", EditorStyles.boldLabel);
 
-            #if RELAY_SDK_INSTALLED
+            #if RELAY_INTEGRATION_AVAILABLE
             // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
             var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
             useRelay = GUILayout.Toggle(useRelay, "Use Relay");
@@ -283,7 +289,7 @@ namespace Unity.Netcode.Editor
 
         private async void ShowStartConnectionButtons_Relay(string buttonDisabledReasonSuffix)
         {
-            #if RELAY_SDK_INSTALLED
+            #if RELAY_INTEGRATION_AVAILABLE
 
             if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance with relay" + buttonDisabledReasonSuffix)))
             {
@@ -313,6 +319,8 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
             }
+            #else
+            await Task.CompletedTask;
             #endif
         }
 
@@ -353,7 +361,7 @@ namespace Unity.Netcode.Editor
 
             EditorGUILayout.HelpBox($"You cannot edit the NetworkConfig when a {instanceType} is running.", MessageType.Info);
 
-            #if RELAY_SDK_INSTALLED
+            #if RELAY_INTEGRATION_AVAILABLE
             if(!string.IsNullOrEmpty(m_JoinCode))
             {
                 var style = new GUIStyle(EditorStyles.helpBox);

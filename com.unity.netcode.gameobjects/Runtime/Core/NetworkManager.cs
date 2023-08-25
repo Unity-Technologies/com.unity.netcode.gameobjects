@@ -1,8 +1,12 @@
+#if (RELAY_SDK_INSTALLED && !UNITY_WEBGL ) || (RELAY_SDK_INSTALLED && UNITY_WEBGL && UTP_TRANSPORT_2_0_ABOVE)
+#define RELAY_INTEGRATION_AVAILABLE
+#endif
 using System;
 using System.Collections.Generic;
-#if RELAY_SDK_INSTALLED
+#if RELAY_INTEGRATION_AVAILABLE
 using System.Threading.Tasks;
 using Unity.Netcode.Transports.UTP;
+using Unity.Networking.Transport.Relay;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Relay;
@@ -914,7 +918,13 @@ namespace Unity.Netcode
             return IsListening;
         }
 
-        #if RELAY_SDK_INSTALLED
+        #if RELAY_INTEGRATION_AVAILABLE
+
+        #if UNITY_WEBGL
+        private const string k_ConnectionType = "wss";
+        #else
+        private const string k_ConnectionType = "dtls";
+        #endif
 
         /// <summary>
         /// Easy relay integration (host): it will initialize the unity services, sign in anonymously and start the host with a new relay allocation.
@@ -937,7 +947,7 @@ namespace Unity.Netcode
             }
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(maxConnections);
             var joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            GetComponent<UnityTransport>().SetHostRelayData(allocation.RelayServer.IpV4, (ushort) allocation.RelayServer.Port, allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
+            GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(allocation, k_ConnectionType));
             bool started = StartHost();
             return started? joinCode : null;
         }
@@ -960,7 +970,7 @@ namespace Unity.Netcode
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
             }
             var joinAllocation = await RelayService.Instance.JoinAllocationAsync(joinCode: joinCode);
-            GetComponent<UnityTransport>().SetClientRelayData(joinAllocation.RelayServer.IpV4, (ushort)joinAllocation.RelayServer.Port, joinAllocation.AllocationIdBytes, joinAllocation.Key, joinAllocation.ConnectionData, joinAllocation.HostConnectionData);
+            GetComponent<UnityTransport>().SetRelayServerData(new RelayServerData(joinAllocation, k_ConnectionType));
             return StartClient();
         }
 
