@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Unity.Netcode.Editor.Configuration;
+#if RELAY_INTEGRATION_AVAILABLE
+using Unity.Services.Relay;
+#endif
 using UnityEditor;
 using UnityEngine;
 
@@ -261,6 +264,7 @@ namespace Unity.Netcode.Editor
         private const string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay";
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
+        private string m_Region = "";
         #endif
 
         private void ShowStartConnectionButtons()
@@ -317,7 +321,12 @@ namespace Unity.Netcode.Editor
                 if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with relay{buttonDisabledReasonSuffix}")))
                 {
                     m_StartConnectionError = null;
-                    try { m_JoinCode = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay(); }
+                    try
+                    {
+                        var (joinCode,  allocation) = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
+                        m_JoinCode = joinCode;
+                        m_Region = allocation.Region;
+                    }
                     catch (Exception e)
                     {
                         m_StartConnectionError = e.Message;
@@ -334,7 +343,11 @@ namespace Unity.Netcode.Editor
             if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
             {
                 m_StartConnectionError = null;
-                try {await m_NetworkManager.StartClientWithRelay(m_JoinCode);}
+                try
+                {
+                    var allocation = await m_NetworkManager.StartClientWithRelay(m_JoinCode);
+                    m_Region = allocation.Region;
+                }
                 catch (Exception e)
                 {
                     m_StartConnectionError = e.Message;
@@ -396,7 +409,7 @@ namespace Unity.Netcode.Editor
                 style.alignment = TextAnchor.MiddleCenter;
                 GUILayout.BeginHorizontal(style, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(false), GUILayout.MaxWidth(800));
                 GUILayout.Label(new GUIContent(EditorGUIUtility.IconContent(k_InfoIconName)), GUILayout.ExpandWidth(false));
-                GUILayout.Label($"Connected via relay. Join code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
+                GUILayout.Label($"Connected via relay ({m_Region}). Join code: {m_JoinCode}", EditorStyles.miniLabel, GUILayout.ExpandHeight(true));
 
                 if (GUILayout.Button("Copy code", GUILayout.ExpandHeight(true)))
                 {
