@@ -59,6 +59,7 @@ namespace Unity.Netcode.RuntimeTests
             IsMoving = false;
         }
 
+        private const int k_MaxThresholdFailures = 4;
         private int m_ExceededThresholdCount;
 
         protected override void Update()
@@ -76,10 +77,10 @@ namespace Unity.Netcode.RuntimeTests
                 if (transform.position.y < -MinThreshold || transform.position.y > Application.targetFrameRate + MinThreshold)
                 {
                     // Temporary work around for this test.
-                    // Really, this test needs to be completely re-written.                   
+                    // Really, this test needs to be completely re-written.
                     m_ExceededThresholdCount++;
-                    // If we haven't corrected ourselves in half a network tick, then throw an error
-                    if (m_ExceededThresholdCount > NetworkManager.NetworkConfig.TickRate * 0.5f)
+                    // If we haven't corrected ourselves within the maximum number of updates then throw an error.
+                    if (m_ExceededThresholdCount > k_MaxThresholdFailures)
                     {
                         Debug.LogError($"Interpolation failure. transform.position.y is {transform.position.y}. Should be between 0.0 and 100.0. Current threshold is [+/- {MinThreshold}].");
                     }
