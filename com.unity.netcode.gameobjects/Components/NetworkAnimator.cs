@@ -1137,6 +1137,7 @@ namespace Unity.Netcode.Components
                 if (m_LayerWeights[animationState.Layer] != animationState.Weight)
                 {
                     m_Animator.SetLayerWeight(animationState.Layer, animationState.Weight);
+                    m_LayerWeights[animationState.Layer] = animationState.Weight;
                 }
             }
 
