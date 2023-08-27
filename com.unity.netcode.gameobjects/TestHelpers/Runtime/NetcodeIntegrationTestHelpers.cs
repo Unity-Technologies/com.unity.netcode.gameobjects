@@ -485,6 +485,20 @@ namespace Unity.Netcode.TestHelpers.Runtime
         }
 
 
+        private static void TryAddObjectNameIdentifier(NetworkObject networkObject)
+        {
+            // To avoid issues with integration tests that forget to clean up,
+            // this feature only works with NetcodeIntegrationTest derived classes
+            if (IsNetcodeIntegrationTestRunning)
+            {
+                if (networkObject.GetComponent<ObjectNameIdentifier>() == null && networkObject.GetComponentInChildren<ObjectNameIdentifier>() == null)
+                {
+                    // Add the object identifier component
+                    networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
+                }
+            }
+        }
+
         /// <summary>
         /// Normally we would only allow player prefabs to be set to a prefab. Not runtime created objects.
         /// In order to prevent having a Resource folder full of a TON of prefabs that we have to maintain,
@@ -511,16 +525,7 @@ namespace Unity.Netcode.TestHelpers.Runtime
             // Prevent object from being snapped up as a scene object
             networkObject.IsSceneObject = false;
 
-            // To avoid issues with integration tests that forget to clean up,
-            // this feature only works with NetcodeIntegrationTest derived classes
-            if (IsNetcodeIntegrationTestRunning)
-            {
-                if (networkObject.GetComponent<ObjectNameIdentifier>() == null && networkObject.GetComponentInChildren<ObjectNameIdentifier>() == null)
-                {
-                    // Add the object identifier component
-                    networkObject.gameObject.AddComponent<ObjectNameIdentifier>();
-                }
-            }
+            TryAddObjectNameIdentifier(networkObject);
         }
 
         public static GameObject CreateNetworkObjectPrefab(string baseName, NetworkManager server, params NetworkManager[] clients)
@@ -550,6 +555,27 @@ namespace Unity.Netcode.TestHelpers.Runtime
             {
                 AddNetworkPrefab(clientNetworkManager.NetworkConfig, networkPrefab);
             }
+            return gameObject;
+        }
+
+        public static GameObject AddNetworkObjectChildToPrefab(NetworkObject prefab, string baseName)
+        {
+            var gameObject = new GameObject
+            {
+                name = baseName
+            };
+            gameObject.transform.parent = prefab.transform;
+            var networkObject = gameObject.AddComponent<NetworkObject>();
+
+
+            var currentDependingNetworkObject = prefab.DependingNetworkObjects;
+            currentDependingNetworkObject.Add(networkObject);
+            prefab.DependingNetworkObjects = currentDependingNetworkObject;
+
+            networkObject.DependentNetworkObject = prefab;
+            networkObject.IsSceneObject = false;
+
+            TryAddObjectNameIdentifier(networkObject);
             return gameObject;
         }
 

@@ -473,6 +473,46 @@ namespace Unity.Netcode
                 {
                     UnityEngine.Object.DontDestroyOnLoad(networkObject.gameObject);
                 }
+
+                // Hook up NetworkObjects that depend on this NetworkObject. Usually used for nested NetworkObjects in prefabs,
+                if (sceneObject.DependingObjects != null)
+                {
+                    var DependingNetworkObjects = networkObject.DependingNetworkObjects;
+                    for (int i = 0; i < sceneObject.DependingObjects.Length; i++)
+                    {
+                        var childData = sceneObject.DependingObjects[i];
+                        var childNetworkObject = DependingNetworkObjects[i];
+
+                        if (childData.IsSpawned)
+                        {
+                            childNetworkObject.DestroyWithScene = sceneObject.DestroyWithScene;
+                            childNetworkObject.NetworkSceneHandle = sceneObject.NetworkSceneHandle;
+
+                            // If a dependent NetworkObject does not have the HasParent flag set, it needs to be unparented
+                            if (!sceneObject.HasParent && childNetworkObject.transform.parent != null)
+                            {
+                                childNetworkObject.ApplyNetworkParenting(true, true);
+                            }
+
+                            if (childData.HasParent)
+                            {
+                                // Go ahead and set network parenting properties, if the latest parent is not set then pass in null
+                                // (we always want to set worldPositionStays)
+                                ulong? parentId = null;
+                                if (childData.IsLatestParentSet)
+                                {
+                                    parentId = childData.HasParent ? childData.ParentObjectId : default;
+                                }
+                                childNetworkObject.SetNetworkParenting(parentId, true);
+                            }
+                        }
+                        else
+                        {
+                            // Remove unspawned child NetworkObjects
+                            GameObject.Destroy(networkObject.DependingNetworkObjects[i].gameObject);
+                        }
+                    }
+                }
             }
             return networkObject;
         }
@@ -488,15 +528,6 @@ namespace Unity.Netcode
             if (networkObject.IsSpawned)
             {
                 throw new SpawnStateException("Object is already spawned");
-            }
-
-            if (!sceneObject)
-            {
-                var networkObjectChildren = networkObject.GetComponentsInChildren<NetworkObject>();
-                if (networkObjectChildren.Length > 1)
-                {
-                    Debug.LogError("Spawning NetworkObjects with nested NetworkObjects is only supported for scene objects. Child NetworkObjects will not be spawned over the network!");
-                }
             }
 
             SpawnNetworkObjectLocallyCommon(networkObject, networkId, sceneObject, playerObject, ownerClientId, destroyWithScene);
@@ -820,6 +851,12 @@ namespace Unity.Netcode
             // and only attempt to remove the child's parent on the server-side
             if (!NetworkManager.ShutdownInProgress && NetworkManager.IsServer)
             {
+                // Destroy GameObjects that depend on the despawned GameObject
+                foreach (var dependingNetworkObject in networkObject.DependingNetworkObjects)
+                {
+                    dependingNetworkObject.Despawn();
+                }
+
                 // Move child NetworkObjects to the root when parent NetworkObject is destroyed
                 foreach (var spawnedNetObj in SpawnedObjectsList)
                 {

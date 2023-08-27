@@ -250,7 +250,7 @@ namespace Unity.Netcode
             m_NetworkObjectsSync.Clear();
             foreach (var sobj in m_NetworkManager.SpawnManager.SpawnedObjectsList)
             {
-                if (sobj.Observers.Contains(TargetClientId))
+                if (sobj.Observers.Contains(TargetClientId) && !sobj.IsDependent)
                 {
                     m_NetworkObjectsSync.Add(sobj);
                 }
