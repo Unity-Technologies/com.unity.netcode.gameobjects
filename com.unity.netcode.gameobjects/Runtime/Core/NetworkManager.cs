@@ -615,7 +615,12 @@ namespace Unity.Netcode
         /// <returns></returns>
         public int GetPeerMTU(ulong clientId)
         {
-            return MessageManager.PeerMTUSizes.GetValueOrDefault(clientId, MessageManager.NonFragmentedMessageMaxSize);
+            if (MessageManager.PeerMTUSizes.TryGetValue(clientId, out var ret))
+            {
+                return ret;
+            }
+
+            return MessageManager.NonFragmentedMessageMaxSize;
         }
 
         /// <summary>
