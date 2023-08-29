@@ -28,7 +28,8 @@ Additional documentation and release notes are available at [Multiplayer Documen
   
 ### Fixed
 
-- Fixed  issue where invoking `NetworkManager.Shutdown` within `NetworkManager.OnClientStopped` or `NetworkManager.OnServerStopped` would force `NetworkManager.ShutdownInProgress` to remain true after completing the shutdown process. (#2661)
+- Fixed issue where invoking `NetworkManager.Shutdown` within `NetworkManager.OnClientStopped` or `NetworkManager.OnServerStopped` would force `NetworkManager.ShutdownInProgress` to remain true after completing the shutdown process. (#2661)
+- Fixed issue where ARMv7 Android builds would crash when trying to validate the batch header. (#2654)
 - Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
 - Fixed issue with scale not synchronizing properly depending upon the spawn order of NetworkObjects. (#2636)
 - Fixed issue position was not properly transitioning between ownership changes with an owner authoritative NetworkTransform. (#2636)
