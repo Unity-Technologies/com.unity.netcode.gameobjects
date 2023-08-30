@@ -3,7 +3,7 @@ using UnityEngine;
 [RequireComponent(typeof(LineRenderer))]
 public class DrawRay : MonoBehaviour
 {
-    private const float k_RayLength = 10;
+    public float RayLength = 40;
 
     private Transform m_Transform;
     private LineRenderer m_LineRenderer;
@@ -13,16 +13,27 @@ public class DrawRay : MonoBehaviour
         TryGetComponent(out m_Transform);
         TryGetComponent(out m_LineRenderer);
         m_LineRenderer.SetPosition(0, transform.position);
+        m_LineRenderer.SetPosition(1, transform.position + transform.forward * RayLength);
     }
 
     private void FixedUpdate()
     {
-        var ray = new Ray(m_Transform.position, m_Transform.forward * k_RayLength);
+        var ray = new Ray(m_Transform.position, m_Transform.forward * RayLength);
 
-        var point = Physics.Raycast(ray, out var hit, k_RayLength, Physics.DefaultRaycastLayers)
+        var point = Physics.Raycast(ray, out var hit, RayLength, Physics.DefaultRaycastLayers)
             ? hit.point
-            : m_Transform.position + m_Transform.forward * k_RayLength;
-
+            : m_Transform.position + m_Transform.forward * RayLength;
+        if (hit.collider != null && hit.collider.tag != "Floor" && hit.collider.tag != "Boundary")
+        {
+            m_LineRenderer.startColor = Color.red;
+            m_LineRenderer.endColor = Color.red;
+        }
+        else
+        {
+            m_LineRenderer.startColor = Color.white;
+            m_LineRenderer.endColor = Color.white;
+        }
+        m_LineRenderer.SetPosition(0, transform.position);
         m_LineRenderer.SetPosition(1, point);
     }
 }

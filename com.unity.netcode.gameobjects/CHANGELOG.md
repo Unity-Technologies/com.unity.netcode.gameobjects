@@ -16,15 +16,23 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 - Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
 - Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
+- Fixed issue where generation of the `DefaultNetworkPrefabs` asset was not enabled by default. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value could be updated but the asset not marked as dirty. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value of a (network) prefab asset could be assigned an incorrect value when editing the prefab in a temporary scene. (#2662)
+- Fixed issue where the `GlobalObjectIdHash` value generated after creating a (network) prefab from an object constructed within the scene would not be the correct final value in a stand alone build. (#2662)
 
 ### Changed
 
-## [1.5.2] - 2023-07-24
+## [1.6.0] - 2023-08-09
 
 ### Added
 
+- Added a protected virtual method `NetworkTransform.OnInitialize(ref NetworkTransformState replicatedState)` that just returns the replicated state reference.
+  
 ### Fixed
 
+- Fixed issue where invoking `NetworkManager.Shutdown` within `NetworkManager.OnClientStopped` or `NetworkManager.OnServerStopped` would force `NetworkManager.ShutdownInProgress` to remain true after completing the shutdown process. (#2661)
+- Fixed issue where ARMv7 Android builds would crash when trying to validate the batch header. (#2654)
 - Fixed issue with client synchronization of position when using half precision and the delta position reaches the maximum value and is collapsed on the host prior to being forwarded to the non-owner clients. (#2636)
 - Fixed issue with scale not synchronizing properly depending upon the spawn order of NetworkObjects. (#2636)
 - Fixed issue position was not properly transitioning between ownership changes with an owner authoritative NetworkTransform. (#2636)
