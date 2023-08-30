@@ -419,10 +419,10 @@ namespace Unity.Netcode.Editor
                 }
             }
 
-            if(networkObject != null)
+            if (networkObject != null)
             {
                 OrderNetworkObject(networkObject);
-            }            
+            }
         }
 
         // Assures the NetworkObject precedes any NetworkBehaviour on the same GameObject as the NetworkObject
