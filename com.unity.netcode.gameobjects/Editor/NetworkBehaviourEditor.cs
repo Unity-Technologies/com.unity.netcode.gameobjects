@@ -417,6 +417,48 @@ namespace Unity.Netcode.Editor
                     }
                 }
             }
+
+            if (networkObject != null)
+            {
+                OrderNetworkObject(networkObject);
+            }
+        }
+
+        // Assures the NetworkObject precedes any NetworkBehaviour on the same GameObject as the NetworkObject
+        private static void OrderNetworkObject(NetworkObject networkObject)
+        {
+            var monoBehaviours = networkObject.gameObject.GetComponents<MonoBehaviour>();
+            var networkObjectIndex = 0;
+            var firstNetworkBehaviourIndex = -1;
+            for (int i = 0; i < monoBehaviours.Length; i++)
+            {
+                if (monoBehaviours[i] == networkObject)
+                {
+                    networkObjectIndex = i;
+                    break;
+                }
+
+                var networkBehaviour = monoBehaviours[i] as NetworkBehaviour;
+                if (networkBehaviour != null)
+                {
+                    // Get the index of the first NetworkBehaviour Component
+                    if (firstNetworkBehaviourIndex == -1)
+                    {
+                        firstNetworkBehaviourIndex = i;
+                    }
+                }
+            }
+
+            if (firstNetworkBehaviourIndex != -1 && networkObjectIndex > firstNetworkBehaviourIndex)
+            {
+                var positionsToMove = networkObjectIndex - firstNetworkBehaviourIndex;
+                for (int i = 0; i < positionsToMove; i++)
+                {
+                    UnityEditorInternal.ComponentUtility.MoveComponentUp(networkObject);
+                }
+
+                EditorUtility.SetDirty(networkObject.gameObject);
+            }
         }
     }
 }
