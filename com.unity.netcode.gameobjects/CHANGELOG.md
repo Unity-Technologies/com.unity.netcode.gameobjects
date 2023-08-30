@@ -11,7 +11,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
-- Fixed issue where a `NetworkBehaviour` component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the `NetworkBehaviour` component was positioned/ordered before the `NetworkObject` component.
+- Fixed issue where a `NetworkBehaviour` component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the `NetworkBehaviour` component was positioned/ordered before the `NetworkObject` component. (#2685)
 - Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
 - Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
 - Fixed issue where generation of the `DefaultNetworkPrefabs` asset was not enabled by default. (#2662)
