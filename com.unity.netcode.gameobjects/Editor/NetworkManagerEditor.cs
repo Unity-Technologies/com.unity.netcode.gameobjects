@@ -226,7 +226,7 @@ namespace Unity.Netcode.Editor
         private void DrawTransportField()
         {
             #if RELAY_INTEGRATION_AVAILABLE
-            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
+            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
             #else
             var useRelay = false;
             #endif
@@ -261,7 +261,7 @@ namespace Unity.Netcode.Editor
         }
 
         #if RELAY_INTEGRATION_AVAILABLE
-        private const string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay";
+        private readonly string k_UseEasyRelayIntegrationKey = "NetworkManagerUI_UseRelay_" + Application.dataPath.GetHashCode();
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
         private string m_Region = "";
@@ -273,7 +273,7 @@ namespace Unity.Netcode.Editor
 
             #if RELAY_INTEGRATION_AVAILABLE
             // use editor prefs to persist the setting when entering / leaving play mode / exiting Unity
-            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, true);
+            var useRelay = EditorPrefs.GetBool(k_UseEasyRelayIntegrationKey, false);
             GUILayout.BeginHorizontal();
             useRelay = GUILayout.Toggle(useRelay, "Try Relay in the editor");
             
