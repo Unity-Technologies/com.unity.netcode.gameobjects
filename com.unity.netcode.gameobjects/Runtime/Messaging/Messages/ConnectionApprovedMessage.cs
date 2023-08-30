@@ -37,6 +37,9 @@ namespace Unity.Netcode
             BytePacker.WriteValueBitPacked(writer, NetworkTick);
 
             uint sceneObjectCount = 0;
+
+            // When SpawnedObjectsList is not null then scene management is disabled. Provide a list of
+            // all observed and spawned NetworkObjects that the approved client needs to synchronize.
             if (SpawnedObjectsList != null)
             {
                 var pos = writer.Position;
@@ -45,7 +48,7 @@ namespace Unity.Netcode
                 // Serialize NetworkVariable data
                 foreach (var sobj in SpawnedObjectsList)
                 {
-                    if (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId))
+                    if (sobj.SpawnWithObservers && (sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(OwnerClientId)))
                     {
                         sobj.Observers.Add(OwnerClientId);
                         var sceneObject = sobj.GetMessageSceneObject(OwnerClientId);
