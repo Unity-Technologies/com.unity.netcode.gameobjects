@@ -1005,7 +1005,9 @@ namespace Unity.Netcode
         private UnityTransport GetUnityTransport()
         {
             if(!TryGetComponent<UnityTransport>(out var transport))  {transport = gameObject.AddComponent<UnityTransport>();}
+            #if UTP_TRANSPORT_2_0_ABOVE
             transport.UseWebSockets = k_UseWebSockets; //TODO: probably should be part of SetRelayServerData
+            #endif
             NetworkConfig.NetworkTransport = transport; // Force using UnityTransport
             return transport;
         }
