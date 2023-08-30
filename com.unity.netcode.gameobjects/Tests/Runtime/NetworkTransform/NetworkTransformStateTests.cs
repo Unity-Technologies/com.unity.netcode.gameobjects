@@ -2,6 +2,7 @@ using NUnit.Framework;
 using Unity.Netcode.Components;
 using UnityEngine;
 
+
 namespace Unity.Netcode.RuntimeTests
 {
 
@@ -87,6 +88,125 @@ namespace Unity.Netcode.RuntimeTests
             return networkTransform.SyncScaleX || networkTransform.SyncScaleY || networkTransform.SyncScaleZ ||
                 networkTransform.SyncRotAngleX || networkTransform.SyncRotAngleY || networkTransform.SyncRotAngleZ ||
                 networkTransform.SyncPositionX || networkTransform.SyncPositionY || networkTransform.SyncPositionZ;
+        }
+
+        [Test]
+        public void NetworkTransformStateFlags()
+        {
+            var indexValues = new System.Collections.Generic.List<uint>();
+            var currentFlag = (uint)0x00000001;
+            for (int j = 0; j < 18; j++)
+            {
+                indexValues.Add(currentFlag);
+                currentFlag = currentFlag << 1;
+            }
+
+            // TrackByStateId is unique
+            indexValues.Add(0x10000000);
+
+            var boolSet = new System.Collections.Generic.List<bool>();
+            var transformState = new NetworkTransform.NetworkTransformState();
+            // Test setting one at a time.
+            for (int j = 0; j < 19; j++)
+            {
+                boolSet = new System.Collections.Generic.List<bool>();
+                for (int i = 0; i < 19; i++)
+                {
+                    if (i == j)
+                    {
+                        boolSet.Add(true);
+                    }
+                    else
+                    {
+                        boolSet.Add(false);
+                    }
+                }
+                transformState = new NetworkTransform.NetworkTransformState()
+                {
+                    InLocalSpace = boolSet[0],
+                    HasPositionX = boolSet[1],
+                    HasPositionY = boolSet[2],
+                    HasPositionZ = boolSet[3],
+                    HasRotAngleX = boolSet[4],
+                    HasRotAngleY = boolSet[5],
+                    HasRotAngleZ = boolSet[6],
+                    HasScaleX = boolSet[7],
+                    HasScaleY = boolSet[8],
+                    HasScaleZ = boolSet[9],
+                    IsTeleportingNextFrame = boolSet[10],
+                    UseInterpolation = boolSet[11],
+                    QuaternionSync = boolSet[12],
+                    QuaternionCompression = boolSet[13],
+                    UseHalfFloatPrecision = boolSet[14],
+                    IsSynchronizing = boolSet[15],
+                    UsePositionSlerp = boolSet[16],
+                    IsParented = boolSet[17],
+                    TrackByStateId = boolSet[18],
+                };
+                Assert.True((transformState.BitSet & indexValues[j]) == indexValues[j], $"[FlagTest][Individual] Set flag value {indexValues[j]} at index {j}, but BitSet value did not match!");
+            }
+
+            // Test setting all flag values
+            boolSet = new System.Collections.Generic.List<bool>();
+            for (int i = 0; i < 19; i++)
+            {
+                boolSet.Add(true);
+            }
+
+            transformState = new NetworkTransform.NetworkTransformState()
+            {
+                InLocalSpace = boolSet[0],
+                HasPositionX = boolSet[1],
+                HasPositionY = boolSet[2],
+                HasPositionZ = boolSet[3],
+                HasRotAngleX = boolSet[4],
+                HasRotAngleY = boolSet[5],
+                HasRotAngleZ = boolSet[6],
+                HasScaleX = boolSet[7],
+                HasScaleY = boolSet[8],
+                HasScaleZ = boolSet[9],
+                IsTeleportingNextFrame = boolSet[10],
+                UseInterpolation = boolSet[11],
+                QuaternionSync = boolSet[12],
+                QuaternionCompression = boolSet[13],
+                UseHalfFloatPrecision = boolSet[14],
+                IsSynchronizing = boolSet[15],
+                UsePositionSlerp = boolSet[16],
+                IsParented = boolSet[17],
+                TrackByStateId = boolSet[18],
+            };
+
+            for (int j = 0; j < 19; j++)
+            {
+                Assert.True((transformState.BitSet & indexValues[j]) == indexValues[j], $"[FlagTest][All] All flag values are set but failed to detect flag value {indexValues[j]}!");
+            }
+
+            // Test getting all flag values
+            transformState = new NetworkTransform.NetworkTransformState();
+            for (int i = 0; i < 19; i++)
+            {
+                transformState.BitSet |= indexValues[i];
+            }
+
+            Assert.True(transformState.InLocalSpace, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.InLocalSpace)}!");
+            Assert.True(transformState.HasPositionX, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasPositionX)}!");
+            Assert.True(transformState.HasPositionY, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasPositionY)}!");
+            Assert.True(transformState.HasPositionZ, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasPositionZ)}!");
+            Assert.True(transformState.HasRotAngleX, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasRotAngleX)}!");
+            Assert.True(transformState.HasRotAngleY, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasRotAngleY)}!");
+            Assert.True(transformState.HasRotAngleZ, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasRotAngleZ)}!");
+            Assert.True(transformState.HasScaleX, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasScaleX)}!");
+            Assert.True(transformState.HasScaleY, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasScaleY)}!");
+            Assert.True(transformState.HasScaleZ, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.HasScaleZ)}!");
+            Assert.True(transformState.IsTeleportingNextFrame, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.IsTeleportingNextFrame)}!");
+            Assert.True(transformState.UseInterpolation, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.UseInterpolation)}!");
+            Assert.True(transformState.QuaternionSync, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.QuaternionSync)}!");
+            Assert.True(transformState.QuaternionCompression, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.QuaternionCompression)}!");
+            Assert.True(transformState.UseHalfFloatPrecision, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.UseHalfFloatPrecision)}!");
+            Assert.True(transformState.IsSynchronizing, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.IsSynchronizing)}!");
+            Assert.True(transformState.UsePositionSlerp, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.UsePositionSlerp)}!");
+            Assert.True(transformState.IsParented, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.IsParented)}!");
+            Assert.True(transformState.TrackByStateId, $"[FlagTest][Get] Failed to detect {nameof(NetworkTransform.NetworkTransformState.TrackByStateId)}!");
         }
 
         [Test]

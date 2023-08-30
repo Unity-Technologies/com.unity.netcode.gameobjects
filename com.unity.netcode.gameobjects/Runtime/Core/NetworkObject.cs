@@ -1,8 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+#if UNITY_EDITOR
+using UnityEditor;
+#if UNITY_2021_2_OR_NEWER
+using UnityEditor.SceneManagement;
+#else
+using UnityEditor.Experimental.SceneManagement;
+#endif
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
+
 
 namespace Unity.Netcode
 {
@@ -37,9 +46,9 @@ namespace Unity.Netcode
             }
         }
 
-        private bool m_IsPrefab;
-
 #if UNITY_EDITOR
+        private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
+
         private void OnValidate()
         {
             GenerateGlobalObjectIdHash();
@@ -48,19 +57,79 @@ namespace Unity.Netcode
         internal void GenerateGlobalObjectIdHash()
         {
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
-            if (UnityEditor.EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
+            if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
                 return;
             }
 
             // do NOT regenerate GlobalObjectIdHash if Editor is transitioning into or out of PlayMode
-            if (!UnityEditor.EditorApplication.isPlaying && UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode)
+            if (!EditorApplication.isPlaying && EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 return;
             }
 
-            var globalObjectIdString = UnityEditor.GlobalObjectId.GetGlobalObjectIdSlow(this).ToString();
-            GlobalObjectIdHash = XXHash.Hash32(globalObjectIdString);
+            // Get a global object identifier for this network prefab
+            var globalId = GetGlobalId();
+
+            // if the identifier type is 0, then don't update the GlobalObjectIdHash
+            if (globalId.identifierType == 0)
+            {
+                return;
+            }
+
+            var oldValue = GlobalObjectIdHash;
+            GlobalObjectIdHash = globalId.ToString().Hash32();
+
+            // If the GlobalObjectIdHash value changed, then mark the asset dirty
+            if (GlobalObjectIdHash != oldValue)
+            {
+                EditorUtility.SetDirty(this);
+            }
+        }
+
+        private GlobalObjectId GetGlobalId()
+        {
+            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+
+            // Check if we are directly editing the prefab
+            var stage = PrefabStageUtility.GetPrefabStage(gameObject);
+
+            // if we are not editing the prefab directly (or a sub-prefab), then return the object identifier
+            if (stage == null || stage.assetPath == null)
+            {
+                return instanceGlobalId;
+            }
+
+            // If the asset doesn't exist at the given path, then return the object identifier
+            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(stage.assetPath);
+            if (theAsset == null)
+            {
+                return instanceGlobalId;
+            }
+
+            // If we can't get the asset GUID and/or the file identifier, then return the object identifier
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localFileId))
+            {
+                Debug.Log($"[GlobalObjectId Gen][{theAsset.gameObject.name}] Failed to get GUID or the local file identifier. Returning default ({instanceGlobalId}).");
+                return instanceGlobalId;
+            }
+
+            // If we reached this point, then we are most likely opening a prefab to edit.            
+            // The instanceGlobalId will be constructed as if it is a scene object, however when it
+            // is serialized its value will be treated as a file asset (the "why" to the below code).
+
+            // Construct an imported asset identifier with the type being a source asset (type 3).
+            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, 3, guid, localFileId, 0);
+
+            // If we can't parse the result log an error and return the instanceGlobalId
+            if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
+            {
+                Debug.LogError($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default ({instanceGlobalId})");
+                return instanceGlobalId;
+            }
+
+            // Otherwise, return the constructed identifier.
+            return prefabGlobalId;
         }
 #endif // UNITY_EDITOR
 
@@ -733,6 +802,12 @@ namespace Unity.Netcode
         /// <returns>Whether or not reparenting was successful.</returns>
         public bool TrySetParent(Transform parent, bool worldPositionStays = true)
         {
+            // If we are removing ourself from a parent
+            if (parent == null)
+            {
+                return TrySetParent((NetworkObject)null, worldPositionStays);
+            }
+
             var networkObject = parent.GetComponent<NetworkObject>();
 
             // If the parent doesn't have a NetworkObjet then return false, otherwise continue trying to parent
@@ -1192,7 +1267,6 @@ namespace Unity.Netcode
                 {
                     NetworkLog.LogError($"{nameof(NetworkBehaviour)} index {index} was out of bounds for {name}. NetworkBehaviours must be the same, and in the same order, between server and client.");
                 }
-
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer)
                 {
                     var currentKnownChildren = new System.Text.StringBuilder();
@@ -1205,7 +1279,6 @@ namespace Unity.Netcode
                     }
                     NetworkLog.LogInfo(currentKnownChildren.ToString());
                 }
-
                 return null;
             }
 

@@ -27,7 +27,7 @@ namespace Unity.Netcode.Components
         /// <summary>
         /// The half float precision value of the z-axis as a <see cref="half"/>.
         /// </summary>
-        public half Z => Axis.x;
+        public half Z => Axis.z;
 
         /// <summary>
         /// Used to store the half float precision values as a <see cref="half3"/>
@@ -38,6 +38,17 @@ namespace Unity.Netcode.Components
         /// Determine which axis will be synchronized during serialization
         /// </summary>
         public bool3 AxisToSynchronize;
+
+        /// <summary>
+        /// Directly sets each axial value to the passed in full precision values
+        /// that are converted to half precision
+        /// </summary>
+        internal void Set(float x, float y, float z)
+        {
+            Axis.x = math.half(x);
+            Axis.y = math.half(y);
+            Axis.z = math.half(z);
+        }
 
         private void SerializeWrite(FastBufferWriter writer)
         {

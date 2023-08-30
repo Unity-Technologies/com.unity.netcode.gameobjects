@@ -61,11 +61,68 @@ namespace Unity.Netcode.RuntimeTests
             return true;
         }
 
-
-
-        [UnityTest]
-        public IEnumerator ObserverSpawnTests([Values] ObserverTestTypes observerTestTypes)
+        /// <summary>
+        /// Assures the <see cref="ObserverSpawnTests"/> late joining client has all
+        /// NetworkPrefabs required to connect.
+        /// </summary>
+        protected override void OnNewClientCreated(NetworkManager networkManager)
         {
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                if (!networkManager.NetworkConfig.Prefabs.Contains(networkPrefab.Prefab))
+                {
+                    networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+                }
+            }
+            networkManager.NetworkConfig.EnableSceneManagement = m_ServerNetworkManager.NetworkConfig.EnableSceneManagement;
+            base.OnNewClientCreated(networkManager);
+        }
+
+        /// <summary>
+        /// This test validates <see cref="NetworkObject.SpawnWithObservers"/> property
+        /// </summary>
+        /// <param name="observerTestTypes">whether to spawn with or without observers</param>
+        [UnityTest]
+        public IEnumerator ObserverSpawnTests([Values] ObserverTestTypes observerTestTypes, [Values] bool sceneManagement)
+        {
+            if (!sceneManagement)
+            {
+                // Disable prefabs to prevent them from being destroyed
+                foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    networkPrefab.Prefab.SetActive(false);
+                }
+
+                // Shutdown and clean up the current client NetworkManager instances
+                foreach (var networkManager in m_ClientNetworkManagers)
+                {
+                    m_PlayerNetworkObjects[networkManager.LocalClientId].Clear();
+                    m_PlayerNetworkObjects.Remove(networkManager.LocalClientId);
+                    yield return StopOneClient(networkManager, true);
+                }
+
+                // Shutdown and clean up the server NetworkManager instance
+                m_PlayerNetworkObjects[m_ServerNetworkManager.LocalClientId].Clear();
+                yield return StopOneClient(m_ServerNetworkManager);
+
+                // Set the prefabs to active again
+                foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+                {
+                    networkPrefab.Prefab.SetActive(true);
+                }
+
+                // Disable scene management and start the host
+                m_ServerNetworkManager.NetworkConfig.EnableSceneManagement = false;
+                m_ServerNetworkManager.StartHost();
+                yield return s_DefaultWaitForTick;
+
+                // Create 2 new clients and connect them
+                for (int i = 0; i < NumberOfClients; i++)
+                {
+                    yield return CreateAndStartNewClient();
+                }
+            }
+
             m_ObserverTestType = observerTestTypes;
             var prefabNetworkObject = m_ObserverPrefab.GetComponent<NetworkObject>();
             prefabNetworkObject.SpawnWithObservers = observerTestTypes == ObserverTestTypes.WithObservers;
@@ -92,8 +149,26 @@ namespace Unity.Netcode.RuntimeTests
                 m_ObserverTestType = ObserverTestTypes.WithObservers;
                 yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
                 AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
+
+                // Validate that a late joining client does not see the NetworkObject when it spawns
+                yield return CreateAndStartNewClient();
+
+                m_ObserverTestType = ObserverTestTypes.WithoutObservers;
+                // Just give a little time to make sure nothing spawned
+                yield return s_DefaultWaitForTick;
+                yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+                AssertOnTimeout($"{(withoutObservers ? k_WithoutObserversError : k_WithObserversError)} {k_ObserverTestObjName} object!");
+
+                // Now validate that we can make the NetworkObject visible to the newly joined client
+                m_ObserverTestNetworkObject.NetworkShow(m_ClientNetworkManagers[NumberOfClients].LocalClientId);
+
+                // Validate the NetworkObject is visible to all connected clients (including the recently joined client)
+                m_ObserverTestType = ObserverTestTypes.WithObservers;
+                yield return WaitForConditionOrTimeOut(CheckClientsSideObserverTestObj);
+                AssertOnTimeout($"{k_WithObserversError} {k_ObserverTestObjName} object!");
             }
         }
+
         /// <summary>
         /// Tests that instantiating a <see cref="NetworkObject"/> and destroying without spawning it
         /// does not run <see cref="NetworkBehaviour.OnNetworkSpawn"/> or <see cref="NetworkBehaviour.OnNetworkSpawn"/>.

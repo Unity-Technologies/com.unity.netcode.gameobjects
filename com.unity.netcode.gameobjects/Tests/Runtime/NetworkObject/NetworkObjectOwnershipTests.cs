@@ -42,6 +42,12 @@ namespace Unity.Netcode.RuntimeTests
 
         public NetworkObjectOwnershipTests(HostOrServer hostOrServer) : base(hostOrServer) { }
 
+        public enum OwnershipChecks
+        {
+            Change,
+            Remove
+        }
+
         protected override void OnServerAndClientsCreated()
         {
             m_OwnershipPrefab = CreateNetworkObjectPrefab("OnwershipPrefab");
@@ -62,7 +68,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         [UnityTest]
-        public IEnumerator TestOwnershipCallbacks()
+        public IEnumerator TestOwnershipCallbacks([Values] OwnershipChecks ownershipChecks)
         {
             m_OwnershipObject = SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
             m_OwnershipNetworkObject = m_OwnershipObject.GetComponent<NetworkObject>();
@@ -109,7 +115,17 @@ namespace Unity.Netcode.RuntimeTests
             serverComponent.ResetFlags();
             clientComponent.ResetFlags();
 
-            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            if (ownershipChecks == OwnershipChecks.Change)
+            {
+                // Validates that when ownership is changed back to the server it will get an OnGainedOwnership notification
+                serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            }
+            else
+            {
+                // Validates that when ownership is removed the server gets an OnGainedOwnership notification
+                serverObject.RemoveOwnership();
+            }
+
             yield return s_DefaultWaitForTick;
 
             Assert.That(serverComponent.OnGainedOwnershipFired);
@@ -125,7 +141,7 @@ namespace Unity.Netcode.RuntimeTests
         /// Verifies that switching ownership between several clients works properly
         /// </summary>
         [UnityTest]
-        public IEnumerator TestOwnershipCallbacksSeveralClients()
+        public IEnumerator TestOwnershipCallbacksSeveralClients([Values] OwnershipChecks ownershipChecks)
         {
             // Build our message hook entries tables so we can determine if all clients received spawn or ownership messages
             var messageHookEntriesForSpawn = new List<MessageHookEntry>();
@@ -247,8 +263,17 @@ namespace Unity.Netcode.RuntimeTests
                 previousClientComponent = currentClientComponent;
             }
 
-            // Now change ownership back to the server
-            serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            if (ownershipChecks == OwnershipChecks.Change)
+            {
+                // Validates that when ownership is changed back to the server it will get an OnGainedOwnership notification
+                serverObject.ChangeOwnership(NetworkManager.ServerClientId);
+            }
+            else
+            {
+                // Validates that when ownership is removed the server gets an OnGainedOwnership notification
+                serverObject.RemoveOwnership();
+            }
+
             yield return WaitForConditionOrTimeOut(ownershipMessageHooks);
             Assert.False(s_GlobalTimeoutHelper.TimedOut, $"Timed out waiting for all clients to receive the {nameof(ChangeOwnershipMessage)} message (back to server).");
 
@@ -268,6 +293,70 @@ namespace Unity.Netcode.RuntimeTests
                 clientComponent.ResetFlags();
             }
             serverComponent.ResetFlags();
+        }
+
+        private const int k_NumberOfSpawnedObjects = 5;
+
+        private bool AllClientsHaveCorrectObjectCount()
+        {
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                if (clientNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private bool ServerHasCorrectClientOwnedObjectCount()
+        {
+            // Only check when we are the host
+            if (m_ServerNetworkManager.IsHost)
+            {
+                if (m_ServerNetworkManager.LocalClient.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
+            }
+
+            foreach (var connectedClient in m_ServerNetworkManager.ConnectedClients)
+            {
+                if (connectedClient.Value.OwnedObjects.Count < k_NumberOfSpawnedObjects)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        [UnityTest]
+        public IEnumerator TestOwnedObjectCounts()
+        {
+            if (m_ServerNetworkManager.IsHost)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    SpawnObject(m_OwnershipPrefab, m_ServerNetworkManager);
+                }
+            }
+
+            foreach (var clientNetworkManager in m_ClientNetworkManagers)
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    SpawnObject(m_OwnershipPrefab, clientNetworkManager);
+                }
+            }
+
+            yield return WaitForConditionOrTimeOut(AllClientsHaveCorrectObjectCount);
+            AssertOnTimeout($"Not all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+
+            yield return WaitForConditionOrTimeOut(ServerHasCorrectClientOwnedObjectCount);
+            AssertOnTimeout($"Server does not have the correct count for all clients spawned {k_NumberOfSpawnedObjects} {nameof(NetworkObject)}s!");
+
         }
     }
 }

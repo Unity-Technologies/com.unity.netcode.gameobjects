@@ -59,13 +59,12 @@ namespace Unity.Netcode
                         // Metrics update needs to be driven by NetworkConnectionManager's update to assure metrics are dispatched after the send queue is processed.
                         MetricsManager.UpdateMetrics();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
+                        // TODO: Determine a better way to handle this
                         NetworkObject.VerifyParentingStatus();
 
                         // This is "ok" to invoke when not processing messages since it is just cleaning up messages that never got handled within their timeout period.
                         DeferredMessageManager.CleanupStaleTriggers();
 
-                        // TODO 2023-Q2: Determine a better way to handle this
                         if (m_ShuttingDown)
                         {
                             ShutdownInternal();
@@ -582,13 +581,46 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Sets the maximum size of a single non-fragmented message (or message batch) passed through the transport.
-        /// This should represent the transport's MTU size, minus any transport-level overhead.
+        /// This should represent the transport's default MTU size, minus any transport-level overhead.
+        /// This value will be used for any remote endpoints that haven't had per-endpoint MTUs set.
+        /// This value is also used as the size of the temporary buffer used when serializing
+        /// a single message (to avoid serializing multiple times when sending to multiple endpoints),
+        /// and thus should be large enough to ensure it can hold each message type.
+        /// This value defaults to 1296.
         /// </summary>
         /// <param name="size"></param>
         public int MaximumTransmissionUnitSize
         {
-            set => MessageManager.NonFragmentedMessageMaxSize = value;
+            set => MessageManager.NonFragmentedMessageMaxSize = value & ~7; // Round down to nearest word aligned size
             get => MessageManager.NonFragmentedMessageMaxSize;
+        }
+
+        /// <summary>
+        /// Set the maximum transmission unit for a specific peer.
+        /// This determines the maximum size of a message batch that can be sent to that client.
+        /// If not set for any given client, <see cref="MaximumTransmissionUnitSize"/> will be used instead.
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="size"></param>
+        public void SetPeerMTU(ulong clientId, int size)
+        {
+            MessageManager.PeerMTUSizes[clientId] = size;
+        }
+
+        /// <summary>
+        /// Queries the current MTU size for a client.
+        /// If no MTU has been set for that client, will return <see cref="MaximumTransmissionUnitSize"/>
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <returns></returns>
+        public int GetPeerMTU(ulong clientId)
+        {
+            if (MessageManager.PeerMTUSizes.TryGetValue(clientId, out var ret))
+            {
+                return ret;
+            }
+
+            return MessageManager.NonFragmentedMessageMaxSize;
         }
 
         /// <summary>
@@ -834,9 +866,7 @@ namespace Unity.Netcode
             }
 
             ConnectionManager.LocalClient.SetRole(true, true, this);
-
             Initialize(true);
-
             try
             {
                 IsListening = NetworkConfig.NetworkTransport.StartServer();
@@ -942,10 +972,16 @@ namespace Unity.Netcode
             if (IsServer || IsClient)
             {
                 m_ShuttingDown = true;
-                MessageManager.StopProcessing = discardMessageQueue;
+                if (MessageManager != null)
+                {
+                    MessageManager.StopProcessing = discardMessageQueue;
+                }
             }
 
-            NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
+            {
+                NetworkConfig.NetworkTransport.OnTransportEvent -= ConnectionManager.HandleNetworkEvent;
+            }
         }
 
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when unloading a scene with a NetworkManager
@@ -1010,6 +1046,9 @@ namespace Unity.Netcode
                 OnServerStopped?.Invoke(ConnectionManager.LocalClient.IsClient);
             }
 
+            // In the event shutdown is invoked within OnClientStopped or OnServerStopped, set it to false again
+            m_ShuttingDown = false;
+
             // Reset the client's roles
             ConnectionManager.LocalClient.SetRole(false, false);
 
@@ -1029,6 +1068,8 @@ namespace Unity.Netcode
         // Ensures that the NetworkManager is cleaned up before OnDestroy is run on NetworkObjects and NetworkBehaviours when quitting the application.
         private void OnApplicationQuit()
         {
+            // Make sure ShutdownInProgress returns true during this time
+            m_ShuttingDown = true;
             OnDestroy();
         }
 

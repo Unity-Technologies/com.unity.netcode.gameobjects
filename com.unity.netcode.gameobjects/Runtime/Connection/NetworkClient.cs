@@ -36,15 +36,11 @@ namespace Unity.Netcode
         /// <summary>
         /// The ClientId of the NetworkClient
         /// </summary>
-        // TODO-2023-Q2: Determine if we want to make this property a public get and internal/private set
-        // There is no reason for a user to want to set this, but this will fail the package-validation-suite
         public ulong ClientId;
 
         /// <summary>
         /// The PlayerObject of the Client
         /// </summary>
-        // TODO-2023-Q2: Determine if we want to make this property a public get and internal/private set
-        // There is no reason for a user to want to set this, but this will fail the package-validation-suite
         public NetworkObject PlayerObject;
 
         /// <summary>

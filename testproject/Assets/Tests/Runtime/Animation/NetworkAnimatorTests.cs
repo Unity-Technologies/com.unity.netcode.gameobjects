@@ -495,17 +495,32 @@ namespace TestProject.RuntimeTests
                 animatorTestHelper = AnimatorTestHelper.ServerSideInstance;
             }
 
+            var originalWeight = animatorTestHelper.GetLayerWeight(1);
+
             animatorTestHelper.SetLayerWeight(1, 0.75f);
             // Wait for all instances to update their weight value for layer 1
             success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
             Assert.True(success, $"Timed out waiting for all instances to match weight 0.75 on layer 1!");
 
+            animatorTestHelper.SetLayerWeight(1, originalWeight);
+            // Wait for all instances to update their weight value for layer 1
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, originalWeight));
+            Assert.True(success, $"Timed out waiting for all instances to match weight {originalWeight} on layer 1!");
+
+            // Now set the layer weight to 0
+            animatorTestHelper.SetLayerWeight(1, 0.0f);
+
             // Now late join a client
             CreateAndStartNewClientWithTimeTravel();
 
             // Verify the late joined client is synchronized to the changed weight
-            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.75f));
-            Assert.True(success, $"[Late-Join] Timed out waiting for all instances to match weight 0.75 on layer 1!");
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, 0.0f));
+            Assert.True(success, $"[Late-Join] Timed out waiting for all instances to match weight 0 on layer 1!");
+
+            animatorTestHelper.SetLayerWeight(1, originalWeight);
+            // Wait for all instances to update their weight value for layer 1
+            success = WaitForConditionOrTimeOutWithTimeTravel(() => AllInstancesSameLayerWeight(ownerShipMode, 1, originalWeight));
+            Assert.True(success, $"Timed out waiting for all instances to match weight {originalWeight} on layer 1!");
 
             AnimatorTestHelper.IsTriggerTest = false;
             VerboseDebug($" ------------------ Weight Test [{ownerShipMode}] Stopping ------------------ ");

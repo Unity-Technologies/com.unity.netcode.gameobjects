@@ -46,6 +46,93 @@ namespace Unity.Netcode.RuntimeTests
             base.OnServerAndClientsCreated();
         }
 
+        /// <summary>
+        /// Clients created during a test need to have their prefabs list updated to
+        /// match the server's prefab list.
+        /// </summary>
+        protected override void OnNewClientCreated(NetworkManager networkManager)
+        {
+            foreach (var networkPrefab in m_ServerNetworkManager.NetworkConfig.Prefabs.Prefabs)
+            {
+                networkManager.NetworkConfig.Prefabs.Add(networkPrefab);
+            }
+
+            base.OnNewClientCreated(networkManager);
+        }
+
+        private bool ClientIsOwner()
+        {
+            var clientId = m_ClientNetworkManagers[0].LocalClientId;
+            if (!VerifyObjectIsSpawnedOnClient.GetClientsThatSpawnedThisPrefab().Contains(clientId))
+            {
+                return false;
+            }
+            if (VerifyObjectIsSpawnedOnClient.GetClientInstance(clientId).OwnerClientId != clientId)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// This test verifies a late joining client cannot change the transform when:
+        /// - A NetworkObject is spawned with a host and one or more connected clients
+        /// - The NetworkTransform is owner authoritative and spawned with the host as the owner
+        /// - The host does not change the transform values
+        /// - One of the already connected clients gains ownership of the spawned NetworkObject
+        /// - The new client owner does not change the transform values
+        /// - A new late joining client connects and is synchronized
+        /// - The newly connected late joining client tries to change the transform of the NetworkObject
+        /// it does not own
+        /// </summary>
+        [UnityTest]
+        public IEnumerator LateJoinedNonOwnerClientCannotChangeTransform()
+        {
+            // Spawn the m_ClientNetworkTransformPrefab with the host starting as the owner
+            var hostInstance = SpawnObject(m_ClientNetworkTransformPrefab, m_ServerNetworkManager);
+
+            // Wait for the client to spawn it
+            yield return WaitForConditionOrTimeOut(() => VerifyObjectIsSpawnedOnClient.GetClientsThatSpawnedThisPrefab().Contains(m_ClientNetworkManagers[0].LocalClientId));
+
+            // Change the ownership to the connectd client
+            hostInstance.GetComponent<NetworkObject>().ChangeOwnership(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Wait until the client gains ownership
+            yield return WaitForConditionOrTimeOut(ClientIsOwner);
+
+            // Spawn a new client
+            yield return CreateAndStartNewClient();
+
+            // Get the instance of the object relative to the newly joined client
+            var newClientObjectInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(m_ClientNetworkManagers[1].LocalClientId);
+
+            // Attempt to change the transform values
+            var currentPosition = newClientObjectInstance.transform.position;
+            newClientObjectInstance.transform.position = GetRandomVector3(0.5f, 10.0f);
+            var rotation = newClientObjectInstance.transform.rotation;
+            var currentRotation = rotation.eulerAngles;
+            rotation.eulerAngles = GetRandomVector3(1.0f, 180.0f);
+            var currentScale = newClientObjectInstance.transform.localScale;
+            newClientObjectInstance.transform.localScale = GetRandomVector3(0.25f, 4.0f);
+
+            // Wait one frame so the NetworkTransform can apply the owner's last state received on the late joining client side
+            // (i.e. prevent the non-owner from changing the transform)
+            yield return null;
+
+            // Get the owner instance
+            var ownerInstance = VerifyObjectIsSpawnedOnClient.GetClientInstance(m_ClientNetworkManagers[0].LocalClientId);
+
+            // Verify that the non-owner instance transform values are the same before they were changed last frame
+            Assert.True(Approximately(currentPosition, newClientObjectInstance.transform.position), $"Non-owner instance was able to change the position!");
+            Assert.True(Approximately(currentRotation, newClientObjectInstance.transform.rotation.eulerAngles), $"Non-owner instance was able to change the rotation!");
+            Assert.True(Approximately(currentScale, newClientObjectInstance.transform.localScale), $"Non-owner instance was able to change the scale!");
+
+            // Verify that the non-owner instance transform is still the same as the owner instance transform
+            Assert.True(Approximately(ownerInstance.transform.position, newClientObjectInstance.transform.position), "Non-owner and owner instance position values are not the same!");
+            Assert.True(Approximately(ownerInstance.transform.rotation.eulerAngles, newClientObjectInstance.transform.rotation.eulerAngles), "Non-owner and owner instance rotation values are not the same!");
+            Assert.True(Approximately(ownerInstance.transform.localScale, newClientObjectInstance.transform.localScale), "Non-owner and owner instance scale values are not the same!");
+        }
+
         public enum StartingOwnership
         {
             HostStartsAsOwner,

@@ -345,8 +345,9 @@ namespace Unity.Netcode.Editor
         /// <param name="networkObjectRemoved">used internally</param>
         public static void CheckForNetworkObject(GameObject gameObject, bool networkObjectRemoved = false)
         {
-            // If there are no NetworkBehaviours or no gameObject, then exit early
-            if (gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
+            // If there are no NetworkBehaviours or gameObjects then exit early
+            // If we are in play mode and a user is inspecting something then exit early (we don't add NetworkObjects to something when in play mode)
+            if (EditorApplication.isPlaying || gameObject == null || (gameObject.GetComponent<NetworkBehaviour>() == null && gameObject.GetComponentInChildren<NetworkBehaviour>() == null))
             {
                 return;
             }
@@ -415,6 +416,48 @@ namespace Unity.Netcode.Editor
                         UnityEditor.SceneManagement.EditorSceneManager.SaveScene(activeScene);
                     }
                 }
+            }
+
+            if (networkObject != null)
+            {
+                OrderNetworkObject(networkObject);
+            }
+        }
+
+        // Assures the NetworkObject precedes any NetworkBehaviour on the same GameObject as the NetworkObject
+        private static void OrderNetworkObject(NetworkObject networkObject)
+        {
+            var monoBehaviours = networkObject.gameObject.GetComponents<MonoBehaviour>();
+            var networkObjectIndex = 0;
+            var firstNetworkBehaviourIndex = -1;
+            for (int i = 0; i < monoBehaviours.Length; i++)
+            {
+                if (monoBehaviours[i] == networkObject)
+                {
+                    networkObjectIndex = i;
+                    break;
+                }
+
+                var networkBehaviour = monoBehaviours[i] as NetworkBehaviour;
+                if (networkBehaviour != null)
+                {
+                    // Get the index of the first NetworkBehaviour Component
+                    if (firstNetworkBehaviourIndex == -1)
+                    {
+                        firstNetworkBehaviourIndex = i;
+                    }
+                }
+            }
+
+            if (firstNetworkBehaviourIndex != -1 && networkObjectIndex > firstNetworkBehaviourIndex)
+            {
+                var positionsToMove = networkObjectIndex - firstNetworkBehaviourIndex;
+                for (int i = 0; i < positionsToMove; i++)
+                {
+                    UnityEditorInternal.ComponentUtility.MoveComponentUp(networkObject);
+                }
+
+                EditorUtility.SetDirty(networkObject.gameObject);
             }
         }
     }

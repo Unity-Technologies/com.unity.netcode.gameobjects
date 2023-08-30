@@ -173,37 +173,50 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
 
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            networkManager.AddNetworkPrefab(object2.gameObject);
-            networkManager2.AddNetworkPrefab(object3.gameObject);
+                networkManager.AddNetworkPrefab(object2.gameObject);
+                networkManager2.AddNetworkPrefab(object3.gameObject);
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsFalse(sharedList.Contains(object2.gameObject));
-            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsFalse(sharedList.Contains(object2.gameObject));
+                Assert.IsFalse(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
 
         [Test]
@@ -224,36 +237,49 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
-            networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
+                networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
+                networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsFalse(sharedList.Contains(object2.gameObject));
-            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsFalse(sharedList.Contains(object2.gameObject));
+                Assert.IsFalse(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
 
         [Test]
@@ -274,36 +300,49 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object2.gameObject });
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object3.gameObject });
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object2.gameObject });
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists[0].Add(new NetworkPrefab { Prefab = object3.gameObject });
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsTrue(sharedList.Contains(object2.gameObject));
-            Assert.IsTrue(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsTrue(sharedList.Contains(object2.gameObject));
+                Assert.IsTrue(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
 
         [Test]
@@ -324,36 +363,49 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
-            networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
+                networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
+                networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsFalse(sharedList.Contains(object2.gameObject));
-            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsFalse(sharedList.Contains(object2.gameObject));
+                Assert.IsFalse(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
 
         [Test]
@@ -374,42 +426,60 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
-            networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
+                networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
+                networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
 
-            networkManager.ShutdownInternal();
-            networkManager2.ShutdownInternal();
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsFalse(sharedList.Contains(object2.gameObject));
-            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsFalse(sharedList.Contains(object2.gameObject));
+                Assert.IsFalse(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
 
         [Test]
@@ -430,39 +500,52 @@ namespace Unity.Netcode.EditorTests
                 NetworkTransport = networkManager.gameObject.AddComponent<UnityTransport>()
             };
 
-            var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
-            var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
-            var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
+            try
+            {
+                var object1 = new GameObject("Object 1").AddComponent<NetworkObject>();
+                var object2 = new GameObject("Object 2").AddComponent<NetworkObject>();
+                var object3 = new GameObject("Object 3").AddComponent<NetworkObject>();
 
-            object1.GlobalObjectIdHash = 1;
-            object2.GlobalObjectIdHash = 2;
-            object3.GlobalObjectIdHash = 3;
+                object1.GlobalObjectIdHash = 1;
+                object2.GlobalObjectIdHash = 2;
+                object3.GlobalObjectIdHash = 3;
 
-            var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
-            sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
+                var sharedList = ScriptableObject.CreateInstance<NetworkPrefabsList>();
+                sharedList.List.Add(new NetworkPrefab { Prefab = object1.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
-            networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
+                networkManager2.NetworkConfig.Prefabs.NetworkPrefabsLists = new List<NetworkPrefabsList> { sharedList };
 
-            networkManager.Initialize(true);
-            networkManager2.Initialize(false);
+                networkManager.Initialize(true);
+                networkManager2.Initialize(false);
 
-            networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
-            networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
+                networkManager.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object2.gameObject });
+                networkManager2.NetworkConfig.Prefabs.Add(new NetworkPrefab { Prefab = object3.gameObject });
 
-            networkManager.NetworkConfig.Prefabs.Initialize();
-            networkManager2.NetworkConfig.Prefabs.Initialize();
+                networkManager.NetworkConfig.Prefabs.Initialize();
+                networkManager2.NetworkConfig.Prefabs.Initialize();
 
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
-            Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
-            Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
-            Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object1.gameObject));
+                Assert.IsTrue(networkManager.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsFalse(networkManager2.NetworkConfig.Prefabs.Contains(object2.gameObject));
+                Assert.IsTrue(networkManager2.NetworkConfig.Prefabs.Contains(object3.gameObject));
+                Assert.IsFalse(networkManager.NetworkConfig.Prefabs.Contains(object3.gameObject));
 
-            Assert.IsTrue(sharedList.Contains(object1.gameObject));
-            Assert.IsFalse(sharedList.Contains(object2.gameObject));
-            Assert.IsFalse(sharedList.Contains(object3.gameObject));
+                Assert.IsTrue(sharedList.Contains(object1.gameObject));
+                Assert.IsFalse(sharedList.Contains(object2.gameObject));
+                Assert.IsFalse(sharedList.Contains(object3.gameObject));
+            }
+            finally
+            {
+                networkManager.ShutdownInternal();
+                networkManager2.ShutdownInternal();
+                // Shutdown doesn't get called correctly because we called Initialize()
+                // instead of calling StartHost/StartClient/StartServer. See MTT-860 for
+                // why.
+                networkManager.NetworkConfig?.NetworkTransport.Shutdown();
+                networkManager2.NetworkConfig?.NetworkTransport.Shutdown();
+            }
         }
     }
 }
