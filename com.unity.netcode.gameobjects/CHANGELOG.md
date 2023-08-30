@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `SpawnWithObservers` was not being honored when `NetworkConfig.EnableSceneManagement` was disabled. (#2682)
 - Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
 - Fixed "writing past the end of the buffer" error when calling ResetDirty() on managed network variables that are larger than 256 bytes when serialized. (#2670)
 - Fixed issue where generation of the `DefaultNetworkPrefabs` asset was not enabled by default. (#2662)
