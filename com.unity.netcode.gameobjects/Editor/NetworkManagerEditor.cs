@@ -431,6 +431,9 @@ namespace Unity.Netcode.Editor
 
             if (GUILayout.Button(new GUIContent($"Stop {instanceType}", $"Stops the {instanceType} instance.")))
             {
+                #if RELAY_INTEGRATION_AVAILABLE
+                m_JoinCode = "";
+                #endif
                 m_NetworkManager.Shutdown();
             }
         }
