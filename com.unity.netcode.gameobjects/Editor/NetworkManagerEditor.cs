@@ -4,11 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
 using Unity.Netcode.Editor.Configuration;
-#if RELAY_INTEGRATION_AVAILABLE
-using Unity.Services.Relay;
-#endif
 using UnityEditor;
 using UnityEngine;
 
@@ -265,6 +261,9 @@ namespace Unity.Netcode.Editor
         private string m_JoinCode = "";
         private string m_StartConnectionError = null;
         private string m_Region = "";
+
+        // wait for next frame so that ImGui finishes the current frame
+        private static void RunNextFrame(Action action) => EditorApplication.delayCall += () => action();
         #endif
 
         private void ShowStartConnectionButtons()
@@ -321,11 +320,11 @@ namespace Unity.Netcode.Editor
             }
         }
 
-        private async void ShowStartConnectionButtons_Relay(string buttonDisabledReasonSuffix)
+        private void ShowStartConnectionButtons_Relay(string buttonDisabledReasonSuffix)
         {
             #if RELAY_INTEGRATION_AVAILABLE
 
-            async void AddStartServerOrHostButton(bool isServer)
+            void AddStartServerOrHostButton(bool isServer)
             {
                 var type = isServer?"Server":"Host";
                 if (GUILayout.Button(new GUIContent($"Start {type}", $"Starts a {type} instance with relay{buttonDisabledReasonSuffix}")))
@@ -333,9 +332,13 @@ namespace Unity.Netcode.Editor
                     m_StartConnectionError = null;
                     try
                     {
-                        var (joinCode,  allocation) = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
-                        m_JoinCode = joinCode;
-                        m_Region = allocation.Region;
+                        RunNextFrame(async () =>
+                        {
+                            var (joinCode, allocation) = isServer? await m_NetworkManager.StartServerWithRelay() : await m_NetworkManager.StartHostWithRelay();
+                            m_JoinCode = joinCode;
+                            m_Region = allocation.Region;
+                            Repaint();
+                        });
                     }
                     catch (Exception e)
                     {
@@ -349,14 +352,18 @@ namespace Unity.Netcode.Editor
             AddStartServerOrHostButton(isServer:false);
 
             GUILayout.BeginHorizontal();
-            m_JoinCode = GUILayout.TextField(m_JoinCode);
+            m_JoinCode = EditorGUILayout.TextField(m_JoinCode);
             if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
             {
                 m_StartConnectionError = null;
                 try
                 {
-                    var allocation = await m_NetworkManager.StartClientWithRelay(m_JoinCode);
-                    m_Region = allocation.Region;
+                    RunNextFrame(async () =>
+                    {
+                        var allocation = await m_NetworkManager.StartClientWithRelay(m_JoinCode);
+                        m_Region = allocation.Region;
+                        Repaint();
+                    });
                 }
                 catch (Exception e)
                 {
@@ -369,8 +376,6 @@ namespace Unity.Netcode.Editor
             {
                 EditorGUILayout.HelpBox(m_StartConnectionError, MessageType.Error);
             }
-            #else
-            await Task.CompletedTask;
             #endif
         }
 
