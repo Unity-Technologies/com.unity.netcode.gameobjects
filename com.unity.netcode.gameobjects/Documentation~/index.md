@@ -9,7 +9,7 @@ See guides below to install Unity Netcode for GameObjects, set up your project, 
 - [Documentation](https://docs-multiplayer.unity3d.com/netcode/current/about)
 - [Installation](https://docs-multiplayer.unity3d.com/netcode/current/installation)
 - [First Steps](https://docs-multiplayer.unity3d.com/netcode/current/tutorials/get-started-ngo)
-- [API Reference](https://docs-multiplayer.unity3d.com/netcode/current/api/introduction)
+- [API Reference](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@1.4/api/index.html))
 
 # Technical details
 
