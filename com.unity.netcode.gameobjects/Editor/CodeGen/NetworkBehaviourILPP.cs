@@ -422,8 +422,6 @@ namespace Unity.Netcode.Editor.CodeGen
         private MethodReference m_ByteUnpacker_ReadValueBitPacked_Long_MethodRef;
         private MethodReference m_ByteUnpacker_ReadValueBitPacked_ULong_MethodRef;
 
-        private MethodReference m_SerializesGenericParameterAttribute_Constructor_MethodRef;
-
         private MethodReference m_NetworkBehaviour_createNativeList_MethodRef;
 
         private TypeReference m_FastBufferWriter_TypeRef;
@@ -606,12 +604,6 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     byteUnpackerTypeDef = netcodeTypeDef;
                     continue;
-                }
-
-                if (netcodeTypeDef.Name == nameof(GenerateSerializationForGenericParameterAttribute))
-                {
-                    var constructors = netcodeTypeDef.GetConstructors();
-                    m_SerializesGenericParameterAttribute_Constructor_MethodRef = moduleDefinition.ImportReference(constructors.First());
                 }
             }
 
@@ -1214,7 +1206,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         {
                             foreach (var attribute in baseType.Resolve().CustomAttributes)
                             {
-                                if (attribute.Constructor.Resolve() == m_SerializesGenericParameterAttribute_Constructor_MethodRef.Resolve())
+                                if (attribute.AttributeType.Name == nameof(GenerateSerializationForGenericParameterAttribute))
                                 {
                                     var idx = (int)attribute.ConstructorArguments[0].Value;
                                     var genericInstanceType = (GenericInstanceType)baseType;
