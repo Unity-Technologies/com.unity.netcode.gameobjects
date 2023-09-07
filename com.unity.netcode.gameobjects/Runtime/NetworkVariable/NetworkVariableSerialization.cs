@@ -584,7 +584,7 @@ namespace Unity.Netcode
         {
             if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Serialization has not been generated for type {typeof(T).FullName}. This can be addressed by adding a [{nameof(GenerateSerializationForGenericParameterAttribute)}] to your generic class that serializes this value (if you are using one), adding [{nameof(GenerateSerializationForTypeAttribute)}(typeof({typeof(T).FullName})] to the class or method that is attempting to serialize it, or creating a field on a {nameof(NetworkBehaviour)} of type {nameof(NetworkVariable<T>)}. If this error continues to appear after doing one of those things and this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list to enable automatic serialization generation. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
             UserNetworkVariableSerialization<T>.WriteValue(writer, value);
         }
@@ -592,7 +592,7 @@ namespace Unity.Netcode
         {
             if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Serialization has not been generated for type {typeof(T).FullName}. This can be addressed by adding a [{nameof(GenerateSerializationForGenericParameterAttribute)}] to your generic class that serializes this value (if you are using one), adding [{nameof(GenerateSerializationForTypeAttribute)}(typeof({typeof(T).FullName})] to the class or method that is attempting to serialize it, or creating a field on a {nameof(NetworkBehaviour)} of type {nameof(NetworkVariable<T>)}. If this error continues to appear after doing one of those things and this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list to enable automatic serialization generation. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
             UserNetworkVariableSerialization<T>.ReadValue(reader, out value);
         }
@@ -606,7 +606,7 @@ namespace Unity.Netcode
         {
             if (UserNetworkVariableSerialization<T>.ReadValue == null || UserNetworkVariableSerialization<T>.WriteValue == null || UserNetworkVariableSerialization<T>.DuplicateValue == null)
             {
-                throw new ArgumentException($"Type {typeof(T).FullName} is not supported by {typeof(NetworkVariable<>).Name}. If this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
+                throw new ArgumentException($"Serialization has not been generated for type {typeof(T).FullName}. This can be addressed by adding a [{nameof(GenerateSerializationForGenericParameterAttribute)}] to your generic class that serializes this value (if you are using one), adding [{nameof(GenerateSerializationForTypeAttribute)}(typeof({typeof(T).FullName})] to the class or method that is attempting to serialize it, or creating a field on a {nameof(NetworkBehaviour)} of type {nameof(NetworkVariable<T>)}. If this error continues to appear after doing one of those things and this is a type you can change, then either implement {nameof(INetworkSerializable)} or mark it as serializable by memcpy by adding {nameof(INetworkSerializeByMemcpy)} to its interface list to enable automatic serialization generation. If not, assign serialization code to {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.WriteValue)}, {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.ReadValue)}, and {nameof(UserNetworkVariableSerialization<T>)}.{nameof(UserNetworkVariableSerialization<T>.DuplicateValue)}, or if it's serializable by memcpy (contains no pointers), wrap it in {typeof(ForceNetworkSerializeByMemcpy<>).Name}.");
             }
             UserNetworkVariableSerialization<T>.DuplicateValue(value, ref duplicatedValue);
         }
@@ -841,8 +841,95 @@ namespace Unity.Netcode
     {
         internal static INetworkVariableSerializer<T> Serializer = new FallbackSerializer<T>();
 
-        internal delegate bool EqualsDelegate(ref T a, ref T b);
-        internal static EqualsDelegate AreEqual;
+        /// <summary>
+        /// A callback to check if two values are equal.
+        /// </summary>
+        public delegate bool EqualsDelegate(ref T a, ref T b);
+
+        /// <summary>
+        /// Uses the most efficient mechanism for a given type to determine if two values are equal.
+        /// For types that implement <see cref="IEquatable{T}"/>, it will call the Equals() method.
+        /// For unmanaged types, it will do a bytewise memory comparison.
+        /// For other types, it will call the == operator.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to check their equality yourself.
+        /// </summary>
+        public static EqualsDelegate AreEqual { get; internal set; }
+
+        /// <summary>
+        /// Serialize a value using the best-known serialization method for a generic value.
+        /// Will reliably serialize any value that is passed to it correctly with no boxing.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to use FastBufferWriter directly.
+        /// <br/>
+        /// <br/>
+        /// If the codegen is unable to determine a serializer for a type,
+        /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.WriteValue"/> is called, which, by default,
+        /// will throw an exception, unless you have assigned a user serialization callback to it at runtime.
+        /// </summary>
+        /// <param name="writer"></param>
+        /// <param name="value"></param>
+        public static void Write(FastBufferWriter writer, ref T value)
+        {
+            Serializer.Write(writer, ref value);
+        }
+
+        /// <summary>
+        /// Deserialize a value using the best-known serialization method for a generic value.
+        /// Will reliably deserialize any value that is passed to it correctly with no boxing.
+        /// For types whose deserialization can be determined by codegen (which is most types),
+        /// GC will only be incurred if the type is a managed type and the ref value passed in is `null`,
+        /// in which case a new value is created; otherwise, it will be deserialized in-place.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to use FastBufferReader directly.
+        /// <br/>
+        /// <br/>
+        /// If the codegen is unable to determine a serializer for a type,
+        /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.ReadValue"/> is called, which, by default,
+        /// will throw an exception, unless you have assigned a user deserialization callback to it at runtime.
+        /// </summary>
+        /// <param name="reader"></param>
+        /// <param name="value"></param>
+        public static void Read(FastBufferReader reader, ref T value)
+        {
+            Serializer.Read(reader, ref value);
+        }
+
+        /// <summary>
+        /// Duplicates a value using the most efficient means of creating a complete copy.
+        /// For most types this is a simple assignment or memcpy.
+        /// For managed types, this is will serialize and then deserialize the value to ensure
+        /// a correct copy.
+        /// <br/>
+        /// <br/>
+        /// Note: If you are using this in a custom generic class, please make sure your class is
+        /// decorated with <see cref="GenerateSerializationForGenericParameterAttribute"/> so that codegen can
+        /// initialize the serialization mechanisms correctly. If your class is NOT
+        /// generic, it is better to duplicate it directly.
+        /// <br/>
+        /// <br/>
+        /// If the codegen is unable to determine a serializer for a type,
+        /// <see cref="UserNetworkVariableSerialization{T}"/>.<see cref="UserNetworkVariableSerialization{T}.DuplicateValue"/> is called, which, by default,
+        /// will throw an exception, unless you have assigned a user duplication callback to it at runtime.
+        /// </summary>
+        /// <param name="value"></param>
+        /// <param name="duplicatedValue"></param>
+        public static void Duplicate(in T value, ref T duplicatedValue)
+        {
+            Serializer.Duplicate(value, ref duplicatedValue);
+        }
 
         // Compares two values of the same unmanaged type by underlying memory
         // Ignoring any overridden value checks
@@ -1000,16 +1087,6 @@ namespace Unity.Netcode
         internal static bool ClassEquals<TValueType>(ref TValueType a, ref TValueType b) where TValueType : class
         {
             return a == b;
-        }
-
-        internal static void Write(FastBufferWriter writer, ref T value)
-        {
-            Serializer.Write(writer, ref value);
-        }
-
-        internal static void Read(FastBufferReader reader, ref T value)
-        {
-            Serializer.Read(reader, ref value);
         }
     }
 }
