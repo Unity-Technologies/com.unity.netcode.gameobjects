@@ -1424,9 +1424,9 @@ namespace Unity.Netcode.RuntimeTests
             Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization4>.AreEqual);
             Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization5>.AreEqual);
             Assert.IsNotNull(NetworkVariableSerialization<TypeReferencedOnlyInCustomSerialization6>.AreEqual);
-            
+
             // Verify no issues with generic values...
-            
+
             Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization1>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization1>>.Serializer.GetType());
             Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization2>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization2>>.Serializer.GetType());
             Assert.AreEqual(typeof(UnmanagedArraySerializer<TypeReferencedOnlyInCustomSerialization3>), NetworkVariableSerialization<NativeArray<TypeReferencedOnlyInCustomSerialization3>>.Serializer.GetType());
