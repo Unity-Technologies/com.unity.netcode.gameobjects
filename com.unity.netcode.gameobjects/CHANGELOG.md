@@ -14,6 +14,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Fixed
 
+- Fixed issue where `UnityTransport` would attempt to establish WebSocket connections even if using UDP/DTLS Relay allocations when the build target was WebGL. This only applied to working in the editor since UDP/DTLS can't work in the browser. (#2695)
 - Fixed issue where a `NetworkBehaviour` component's `OnNetworkDespawn` was not being invoked on the host-server side for an in-scene placed `NetworkObject` when a scene was unloaded (during a scene transition) and the `NetworkBehaviour` component was positioned/ordered before the `NetworkObject` component. (#2685)
 - Fixed issue where `SpawnWithObservers` was not being honored when `NetworkConfig.EnableSceneManagement` was disabled. (#2682)
 - Fixed issue where `NetworkAnimator` was not internally tracking changes to layer weights which prevented proper layer weight synchronization back to the original layer weight value. (#2674)
