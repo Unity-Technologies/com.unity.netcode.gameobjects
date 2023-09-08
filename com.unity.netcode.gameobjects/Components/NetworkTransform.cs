@@ -499,6 +499,10 @@ namespace Unity.Netcode.Components
             /// <remarks>
             /// When there is no change in an updated state's position then there are no values to return.
             /// Checking for <see cref="HasPositionChange"/> is one way to detect this.
+            /// When used with half precision it returns the half precision delta position state update 
+            /// which will not be the full position.
+            /// To get a NettworkTransform's full position, use <see cref="GetSpaceRelativePosition(bool)"/> and
+            /// pass true as the parameter.
             /// </remarks>
             /// <returns><see cref="Vector3"/></returns>
             public Vector3 GetPosition()
@@ -1110,7 +1114,16 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                return m_CurrentPosition;
+                // When half float precision is enabled, get the NetworkDeltaPosition's full position
+                if (UseHalfFloatPrecision)
+                {
+                    return m_HalfPositionState.GetFullPosition();
+                }
+                else
+                {
+                    // Otherwise, just get the current position
+                    return m_CurrentPosition;
+                }
             }
         }
 
@@ -1393,6 +1406,8 @@ namespace Unity.Netcode.Components
         {
         }
 
+        // Tracks the last tick a state update was sent (see further below)
+        private int m_LastTick;
         /// <summary>
         /// Authoritative side only
         /// If there are any transform delta states, this method will synchronize the
@@ -1411,11 +1426,27 @@ namespace Unity.Netcode.Components
             if (ApplyTransformToNetworkStateWithInfo(ref m_LocalAuthoritativeNetworkState, ref transformToCommit, synchronize))
             {
                 m_LocalAuthoritativeNetworkState.LastSerializedSize = m_OldState.LastSerializedSize;
-                OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
 
+                // Make sure our network tick is incremented
+                if (m_LastTick == m_LocalAuthoritativeNetworkState.NetworkTick && !m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame)
+                {
+                    // When running in authority and a remote client is the owner, the client can hit a perfect window of time where
+                    // it is still on the previous network tick (as a count) but still have had the tick event triggered.
+                    // (This is cheaper than calculating the exact tick each time and only can occur on clients)
+                    if (!IsServer)
+                    {
+                        m_LocalAuthoritativeNetworkState.NetworkTick = m_LocalAuthoritativeNetworkState.NetworkTick + 1;
+                    }
+                    else
+                    {
+                        NetworkLog.LogError($"[NT TICK DUPLICATE] Server already sent an update on tick {m_LastTick} and is attempting to send again on the same network tick!");
+                    }
+                }
+                m_LastTick = m_LocalAuthoritativeNetworkState.NetworkTick;
                 // Update the state
                 UpdateTransformState();
 
+                OnAuthorityPushTransformState(ref m_LocalAuthoritativeNetworkState);
                 m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame = false;
             }
         }
@@ -2209,6 +2240,7 @@ namespace Unity.Netcode.Components
                 m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
                 // and update our target position
                 m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
+                m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.CurrentBasePosition = m_HalfPositionState.CurrentBasePosition;
                 m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
             }
 
@@ -2455,6 +2487,9 @@ namespace Unity.Netcode.Components
                 // Update any changes to the transform
                 var transformSource = transform;
                 OnUpdateAuthoritativeState(ref transformSource);
+
+                m_CurrentPosition = GetSpaceRelativePosition();
+                m_TargetPosition = GetSpaceRelativePosition();
             }
             else
             {
@@ -2465,9 +2500,6 @@ namespace Unity.Netcode.Components
                 }
             }
         }
-
-
-
 
         /// <inheritdoc/>
         public override void OnNetworkSpawn()
@@ -2509,25 +2541,14 @@ namespace Unity.Netcode.Components
             base.OnDestroy();
         }
 
-        /// <inheritdoc/>
-        public override void OnGainedOwnership()
+        protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
-            // Only initialize if we gained ownership
-            if (OwnerClientId == NetworkManager.LocalClientId)
+            // If we were the previous owner or the newly assigned owner then reinitialize
+            if (current == NetworkManager.LocalClientId || previous == NetworkManager.LocalClientId)
             {
                 Initialize();
             }
-        }
-
-        /// <inheritdoc/>
-        public override void OnLostOwnership()
-        {
-            // Only initialize if we are not authority and lost
-            // ownership
-            if (OwnerClientId != NetworkManager.LocalClientId)
-            {
-                Initialize();
-            }
+            base.OnOwnershipChanged(previous, current);
         }
 
         /// <summary>
@@ -2552,6 +2573,7 @@ namespace Unity.Netcode.Components
 
         }
 
+
         /// <summary>
         /// Initializes NetworkTransform when spawned and ownership changes.
         /// </summary>
@@ -2572,7 +2594,8 @@ namespace Unity.Netcode.Components
                 {
                     m_HalfPositionState = new NetworkDeltaPosition(currentPosition, NetworkManager.NetworkTickSystem.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                 }
-
+                m_CurrentPosition = currentPosition;
+                m_TargetPosition = currentPosition;
                 // Authority only updates once per network tick
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
@@ -2835,6 +2858,13 @@ namespace Unity.Netcode.Components
         /// <param name="messagePayload">serialzied <see cref="NetworkTransformState"/></param>
         private void TransformStateUpdate(ulong senderId, FastBufferReader messagePayload)
         {
+            if (!OnIsServerAuthoritative() && IsServer && OwnerClientId == NetworkManager.ServerClientId)
+            {
+                // Ownership must have changed, ignore any additional pending messages that might have
+                // come from a previous owner client.
+                return;
+            }
+
             // Forward owner authoritative messages before doing anything else
             if (IsServer && !OnIsServerAuthoritative())
             {
@@ -2856,6 +2886,7 @@ namespace Unity.Netcode.Components
         /// <param name="messagePayload">the owner state message payload</param>
         private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload)
         {
+            var serverAuthoritative = OnIsServerAuthoritative();
             var currentPosition = messagePayload.Position;
             var messageSize = messagePayload.Length - currentPosition;
             var writer = new FastBufferWriter(messageSize, Allocator.Temp);
@@ -2867,7 +2898,7 @@ namespace Unity.Netcode.Components
                 for (int i = 0; i < clientCount; i++)
                 {
                     var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
-                    if (!OnIsServerAuthoritative() && (NetworkManager.ServerClientId == clientId || clientId == OwnerClientId))
+                    if (NetworkManager.ServerClientId == clientId || (!serverAuthoritative && clientId == OwnerClientId))
                     {
                         continue;
                     }
