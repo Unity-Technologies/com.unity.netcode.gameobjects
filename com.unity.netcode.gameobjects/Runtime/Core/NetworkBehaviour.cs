@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Unity.Collections;
 using UnityEngine;
 
+
 namespace Unity.Netcode
 {
     /// <summary>
@@ -11,6 +12,18 @@ namespace Unity.Netcode
     public abstract class NetworkBehaviour : MonoBehaviour
     {
 #pragma warning disable IDE1006 // disable naming rule violation check
+
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal delegate void RpcReceiveHandler(NetworkBehaviour behaviour, FastBufferReader reader, __RpcParams parameters);
+
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<Type, Dictionary<uint, RpcReceiveHandler>> __rpc_func_table = new Dictionary<Type, Dictionary<uint, RpcReceiveHandler>>();
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<Type, Dictionary<uint, string>> __rpc_name_table = new Dictionary<Type, Dictionary<uint, string>>();
+#endif
+
         // RuntimeAccessModifiersILPP will make this `protected`
         internal enum __RpcExecStage
         {
@@ -97,7 +110,7 @@ namespace Unity.Netcode
 
             bufferWriter.Dispose();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+            if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 NetworkManager.NetworkMetrics.TrackRpcSent(
                     NetworkManager.ServerClientId,
@@ -228,7 +241,7 @@ namespace Unity.Netcode
 
             bufferWriter.Dispose();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (NetworkManager.__rpc_name_table.TryGetValue(rpcMethodId, out var rpcMethodName))
+            if (__rpc_name_table[GetType()].TryGetValue(rpcMethodId, out var rpcMethodName))
             {
                 if (clientRpcParams.Send.TargetClientIds != null)
                 {
@@ -567,6 +580,25 @@ namespace Unity.Netcode
 
 #pragma warning disable IDE1006 // disable naming rule violation check
         // RuntimeAccessModifiersILPP will make this `protected`
+        internal virtual void __initializeRpcs()
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            // ILPP generates code for all NetworkBehaviour subtypes to initialize each type's RPCs.
+        }
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void __registerRpc(uint hash, RpcReceiveHandler handler, string rpcMethodName)
+#pragma warning restore IDE1006 // restore naming rule violation check
+        {
+            __rpc_func_table[GetType()][hash] = handler;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            __rpc_name_table[GetType()][hash] = rpcMethodName;
+#endif
+        }
+
+#pragma warning disable IDE1006 // disable naming rule violation check
+        // RuntimeAccessModifiersILPP will make this `protected`
         // Using this method here because ILPP doesn't seem to let us do visibility modification on properties.
         internal void __nameNetworkVariable(NetworkVariableBase variable, string varName)
 #pragma warning restore IDE1006 // restore naming rule violation check
@@ -583,6 +615,14 @@ namespace Unity.Netcode
 
             m_VarInit = true;
 
+            if (!__rpc_func_table.ContainsKey(GetType()))
+            {
+                __rpc_func_table[GetType()] = new Dictionary<uint, RpcReceiveHandler>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                __rpc_name_table[GetType()] = new Dictionary<uint, string>();
+#endif
+                __initializeRpcs();
+            }
             __initializeVariables();
 
             {

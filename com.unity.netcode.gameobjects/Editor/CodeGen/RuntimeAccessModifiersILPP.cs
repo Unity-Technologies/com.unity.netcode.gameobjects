@@ -46,13 +46,11 @@ namespace Unity.Netcode.Editor.CodeGen
 
                     switch (typeDefinition.Name)
                     {
-                        case nameof(NetworkManager):
-                            ProcessNetworkManager(typeDefinition, compiledAssembly.Defines);
-                            break;
                         case nameof(NetworkBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
                         case nameof(__RpcParams):
+                        case nameof(RpcFallbackSerialization):
                             typeDefinition.IsPublic = true;
                             break;
                     }
@@ -79,35 +77,6 @@ namespace Unity.Netcode.Editor.CodeGen
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
-        private void ProcessNetworkManager(TypeDefinition typeDefinition, string[] assemblyDefines)
-        {
-            foreach (var fieldDefinition in typeDefinition.Fields)
-            {
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_func_table))
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-
-                if (fieldDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-
-                if (fieldDefinition.Name == nameof(NetworkManager.__rpc_name_table))
-                {
-                    fieldDefinition.IsPublic = true;
-                }
-            }
-
-            foreach (var nestedTypeDefinition in typeDefinition.NestedTypes)
-            {
-                if (nestedTypeDefinition.Name == nameof(NetworkManager.RpcReceiveHandler))
-                {
-                    nestedTypeDefinition.IsNestedPublic = true;
-                }
-            }
-        }
-
         private void ProcessNetworkBehaviour(TypeDefinition typeDefinition)
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
@@ -116,11 +85,29 @@ namespace Unity.Netcode.Editor.CodeGen
                 {
                     nestedType.IsNestedFamily = true;
                 }
+                if (nestedType.Name == nameof(NetworkBehaviour.RpcReceiveHandler))
+                {
+                    nestedType.IsNestedPublic = true;
+                }
             }
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
                 if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_exec_stage) || fieldDefinition.Name == nameof(NetworkBehaviour.NetworkVariableFields))
+                {
+                    fieldDefinition.IsFamilyOrAssembly = true;
+                }
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_func_table))
+                {
+                    fieldDefinition.IsFamilyOrAssembly = true;
+                }
+
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.RpcReceiveHandler))
+                {
+                    fieldDefinition.IsFamilyOrAssembly = true;
+                }
+
+                if (fieldDefinition.Name == nameof(NetworkBehaviour.__rpc_name_table))
                 {
                     fieldDefinition.IsFamilyOrAssembly = true;
                 }
@@ -133,6 +120,8 @@ namespace Unity.Netcode.Editor.CodeGen
                     methodDefinition.Name == nameof(NetworkBehaviour.__beginSendClientRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__endSendClientRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__initializeVariables) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__initializeRpcs) ||
+                    methodDefinition.Name == nameof(NetworkBehaviour.__registerRpc) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__nameNetworkVariable) ||
                     methodDefinition.Name == nameof(NetworkBehaviour.__createNativeList))
                 {
