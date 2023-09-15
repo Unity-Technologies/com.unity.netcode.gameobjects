@@ -78,6 +78,8 @@ namespace Unity.Netcode.Components
             private const int k_Synchronization = 0x00008000;
             private const int k_PositionSlerp = 0x00010000; // Persists between state updates (authority dictates if this is set)
             private const int k_IsParented = 0x00020000; // When parented and synchronizing, we need to have both lossy and local scale due to varying spawn order
+            private const int k_SynchBaseHalfFloat = 0x00040000;
+            private const int k_ReliableFragmentedSequenced = 0x00080000;
             private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier 
 
             // Stores persistent and state relative flags
@@ -438,6 +440,24 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool SynchronizeBaseHalfFloat
+            {
+                get => GetFlag(k_SynchBaseHalfFloat);
+                set
+                {
+                    SetFlag(value, k_SynchBaseHalfFloat);
+                }
+            }
+
+            internal bool ReliableFragmentedSequenced
+            {
+                get => GetFlag(k_ReliableFragmentedSequenced);
+                set
+                {
+                    SetFlag(value, k_ReliableFragmentedSequenced);
+                }
+            }
+
             internal bool TrackByStateId
             {
                 get => GetFlag(k_TrackStateId);
@@ -594,6 +614,15 @@ namespace Unity.Netcode.Components
                 {
                     if (isWriting)
                     {
+                        if (IsTeleportingNextFrame || IsSynchronizing)
+                        {
+                            ReliableFragmentedSequenced = true;
+                        }
+                        else
+                        {
+                            ReliableFragmentedSequenced = false;
+                        }
+
                         BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
                         // We use network ticks as opposed to absolute time as the authoritative
                         // side updates on every new tick.
@@ -620,6 +649,8 @@ namespace Unity.Netcode.Components
                 {
                     if (UseHalfFloatPrecision)
                     {
+                        NetworkDeltaPosition.SynchronizeBase = SynchronizeBaseHalfFloat;
+
                         // Apply which axis should be updated for both write/read (teleporting, synchronizing, or just updating)
                         NetworkDeltaPosition.HalfVector3.AxisToSynchronize[0] = HasPositionX;
                         NetworkDeltaPosition.HalfVector3.AxisToSynchronize[1] = HasPositionY;
@@ -1583,11 +1614,34 @@ namespace Unity.Netcode.Components
                     networkState.HasPositionZ = true;
                     isPositionDirty = true;
                 }
+
+                if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
+                {
+                    if (SyncPositionX && !networkState.HasPositionX)
+                    {
+                        networkState.HasPositionX = true;
+                        networkState.PositionX = position.x;
+                    }
+                    if (SyncPositionY && !networkState.HasPositionY)
+                    {
+                        networkState.HasPositionY = true;
+                        networkState.PositionY = position.y;
+                    }
+                    if (SyncPositionZ && !networkState.HasPositionZ)
+                    {
+                        networkState.HasPositionZ = true;
+                        networkState.PositionZ = position.z;
+                    }
+                }
             }
             else if (SynchronizePosition)
             {
                 // If we are teleporting then we can skip the delta threshold check
                 isPositionDirty = networkState.IsTeleportingNextFrame;
+                if (m_HalfFloatTargetTickOwnership > NetworkManager.ServerTime.Tick)
+                {
+                    isPositionDirty = true;
+                }
 
                 // For NetworkDeltaPosition, if any axial value is dirty then we always send a full update
                 if (!isPositionDirty)
@@ -1626,8 +1680,17 @@ namespace Unity.Netcode.Components
                             m_HalfPositionState.HalfVector3.AxisToSynchronize = math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ);
                             m_HalfPositionState.UpdateFrom(ref position, networkState.NetworkTick);
                         }
-
-                        networkState.NetworkDeltaPosition = m_HalfPositionState;
+                        if (m_HalfFloatTargetTickOwnership > NetworkManager.ServerTime.Tick && !networkState.IsTeleportingNextFrame)
+                        {
+                            networkState.NetworkDeltaPosition = m_HalfPositionState;
+                            networkState.SynchronizeBaseHalfFloat = true;
+                        }
+                        else
+                        {
+                            networkState.NetworkDeltaPosition = m_HalfPositionState;
+                            networkState.SynchronizeBaseHalfFloat = false;
+                        }
+                        
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
@@ -2236,12 +2299,20 @@ namespace Unity.Netcode.Components
             // Only if using half float precision and our position had changed last update then
             if (UseHalfFloatPrecision && m_LocalAuthoritativeNetworkState.HasPositionChange)
             {
-                // assure our local NetworkDeltaPosition state is updated
-                m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
+                if (m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat)
+                {
+                    m_HalfPositionState = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition;
+                }
+                else
+                {
+                    // assure our local NetworkDeltaPosition state is updated
+                    m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
+                    m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.CurrentBasePosition = m_HalfPositionState.CurrentBasePosition;
+                    m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
+                }
                 // and update our target position
                 m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
-                m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.CurrentBasePosition = m_HalfPositionState.CurrentBasePosition;
-                m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
+
             }
 
             if (!Interpolate)
@@ -2558,7 +2629,8 @@ namespace Unity.Netcode.Components
             // If we were the previous owner or the newly assigned owner then reinitialize
             if (current == NetworkManager.LocalClientId || previous == NetworkManager.LocalClientId)
             {
-                Initialize();
+                Initialize(true);
+
             }
             base.OnOwnershipChanged(previous, current);
         }
@@ -2585,11 +2657,12 @@ namespace Unity.Netcode.Components
 
         }
 
+        private int m_HalfFloatTargetTickOwnership;
 
         /// <summary>
         /// Initializes NetworkTransform when spawned and ownership changes.
         /// </summary>
-        protected void Initialize()
+        protected void Initialize(bool isOwnershipChange = false)
         {
             if (!IsSpawned)
             {
@@ -2612,8 +2685,16 @@ namespace Unity.Netcode.Components
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
                 NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
 
-                // Teleport to current position
-                SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
+                m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
+                if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
+                {
+                    m_HalfFloatTargetTickOwnership = NetworkManager.ServerTime.Tick + 3;
+                }
+                else
+                {
+                    // Teleport to current position
+                    SetStateInternal(currentPosition, currentRotation, transform.localScale, true);
+                }
             }
             else
             {
@@ -2622,7 +2703,7 @@ namespace Unity.Netcode.Components
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
-
+                m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
                 m_CurrentScale = transform.localScale;
@@ -2773,19 +2854,9 @@ namespace Unity.Netcode.Components
             SetStateInternal(pos, rot, scale, shouldTeleport);
         }
 
-        /// <inheritdoc/>
-        /// <remarks>
-        /// If you override this method, be sure that:
-        /// - Non-authority always invokes this base class method.
-        /// </remarks>
-        protected virtual void Update()
-        {
-            // If not spawned or this instance has authority, exit early
-            if (!IsSpawned || CanCommitToTransform)
-            {
-                return;
-            }
 
+        private void UpdateInterpolation(bool isBlend = false )
+        {
             // Non-Authority
             if (Interpolate)
             {
@@ -2819,6 +2890,23 @@ namespace Unity.Netcode.Components
                     m_ScaleInterpolator.Update(cachedDeltaTime, cachedRenderTime, cachedServerTime);
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        /// <remarks>
+        /// If you override this method, be sure that:
+        /// - Non-authority always invokes this base class method.
+        /// </remarks>
+        protected virtual void Update()
+        {
+            // If not spawned or this instance has authority, exit early
+            if (!IsSpawned || CanCommitToTransform)
+            {
+                return;
+            }
+
+            // Non-Authority
+            UpdateInterpolation();
 
             // Apply the current authoritative state
             ApplyAuthoritativeState();
@@ -2877,26 +2965,31 @@ namespace Unity.Netcode.Components
                 return;
             }
 
-            // Forward owner authoritative messages before doing anything else
-            if (IsServer && !OnIsServerAuthoritative())
-            {
-                ForwardStateUpdateMessage(messagePayload);
-            }
             // Store the previous/old state
             m_OldState = m_LocalAuthoritativeNetworkState;
 
+            var currentPosition = messagePayload.Position;
             // Deserialize the message
             messagePayload.ReadNetworkSerializableInPlace(ref m_LocalAuthoritativeNetworkState);
 
+            messagePayload.Seek(currentPosition);
+            var sendMode = m_LocalAuthoritativeNetworkState.ReliableFragmentedSequenced ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+            // Forward owner authoritative messages before doing anything else
+            if (IsServer && !OnIsServerAuthoritative())
+            {
+                ForwardStateUpdateMessage(messagePayload, sendMode);
+            }
+
             // Apply the message
             OnNetworkStateChanged(m_OldState, m_LocalAuthoritativeNetworkState);
+
         }
 
         /// <summary>
         /// Forwards owner authoritative state updates when received by the server
         /// </summary>
         /// <param name="messagePayload">the owner state message payload</param>
-        private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload)
+        private unsafe void ForwardStateUpdateMessage(FastBufferReader messagePayload, NetworkDelivery networkDelivery)
         {
             var serverAuthoritative = OnIsServerAuthoritative();
             var currentPosition = messagePayload.Position;
@@ -2914,7 +3007,7 @@ namespace Unity.Netcode.Components
                     {
                         continue;
                     }
-                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer);
+                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer, networkDelivery);
                 }
             }
             messagePayload.Seek(currentPosition);
@@ -2943,6 +3036,8 @@ namespace Unity.Netcode.Components
 
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
+            var sendMode = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced; 
+
             using (writer)
             {
                 writer.WriteNetworkSerializable(m_LocalAuthoritativeNetworkState);
@@ -2957,13 +3052,13 @@ namespace Unity.Netcode.Components
                         {
                             continue;
                         }
-                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer);
+                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer, sendMode);
                     }
                 }
                 else
                 {
                     // Clients (owner authoritative) send messages to the server-host
-                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer);
+                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer, sendMode);
                 }
             }
         }
