@@ -1690,7 +1690,7 @@ namespace Unity.Netcode.Components
                             networkState.NetworkDeltaPosition = m_HalfPositionState;
                             networkState.SynchronizeBaseHalfFloat = false;
                         }
-                        
+
                     }
                     else // If synchronizing is set, then use the current full position value on the server side
                     {
@@ -2855,7 +2855,7 @@ namespace Unity.Netcode.Components
         }
 
 
-        private void UpdateInterpolation(bool isBlend = false )
+        private void UpdateInterpolation(bool isBlend = false)
         {
             // Non-Authority
             if (Interpolate)
@@ -3036,7 +3036,7 @@ namespace Unity.Netcode.Components
 
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
-            var sendMode = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced; 
+            var sendMode = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
 
             using (writer)
             {
