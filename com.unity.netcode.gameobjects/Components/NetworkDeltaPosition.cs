@@ -23,12 +23,18 @@ namespace Unity.Netcode.Components
         internal Vector3 DeltaPosition;
         internal int NetworkTick;
 
+        internal bool SynchronizeBase;
+
         /// <summary>
         /// The serialization implementation of <see cref="INetworkSerializable"/>
         /// </summary>
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             HalfVector3.NetworkSerialize(serializer);
+            if (SynchronizeBase)
+            {
+                serializer.SerializeValue(ref CurrentBasePosition);
+            }
         }
 
         /// <summary>
@@ -164,6 +170,7 @@ namespace Unity.Netcode.Components
             DeltaPosition = Vector3.zero;
             HalfDeltaConvertedBack = Vector3.zero;
             HalfVector3 = new HalfVector3(vector3, axisToSynchronize);
+            SynchronizeBase = false;
             UpdateFrom(ref vector3, networkTick);
         }
 
