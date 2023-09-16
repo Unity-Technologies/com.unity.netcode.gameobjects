@@ -230,6 +230,11 @@ namespace Unity.Netcode.RuntimeTests
             var gameObject = new GameObject($"Test-{nameof(NetworkTransformStateTests)}.{nameof(TestSyncAxes)}");
             var networkObject = gameObject.AddComponent<NetworkObject>();
             var networkTransform = gameObject.AddComponent<NetworkTransform>();
+
+            var manager = new GameObject($"Test-{nameof(NetworkManager)}.{nameof(TestSyncAxes)}");
+            var networkManager = manager.AddComponent<NetworkManager>();
+            networkObject.NetworkManagerOwner = networkManager;
+
             networkTransform.enabled = false; // do not tick `FixedUpdate()` or `Update()`
 
             var initialPosition = Vector3.zero;
@@ -269,6 +274,7 @@ namespace Unity.Netcode.RuntimeTests
 
                 if (syncPosX || syncPosY || syncPosZ || syncRotX || syncRotY || syncRotZ || syncScaX || syncScaY || syncScaZ)
                 {
+                    Assert.IsTrue(networkTransform.NetworkManager != null, "NetworkManager is NULL!");
                     Assert.IsTrue(networkTransform.ApplyTransformToNetworkState(ref networkTransformState, 0, networkTransform.transform));
                 }
             }
@@ -714,6 +720,7 @@ namespace Unity.Netcode.RuntimeTests
             }
 
             Object.DestroyImmediate(gameObject);
+            Object.DestroyImmediate(manager);
         }
 
 
