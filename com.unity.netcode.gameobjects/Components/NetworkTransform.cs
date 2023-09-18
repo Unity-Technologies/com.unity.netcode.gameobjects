@@ -2632,8 +2632,7 @@ namespace Unity.Netcode.Components
             // If we were the previous owner or the newly assigned owner then reinitialize
             if (current == NetworkManager.LocalClientId || previous == NetworkManager.LocalClientId)
             {
-                Initialize(true);
-
+                InternalInitialization(true);
             }
             base.OnOwnershipChanged(previous, current);
         }
@@ -2663,9 +2662,10 @@ namespace Unity.Netcode.Components
         private int m_HalfFloatTargetTickOwnership;
 
         /// <summary>
-        /// Initializes NetworkTransform when spawned and ownership changes.
+        /// The internal initialzation method to allow for internal API adjustments
         /// </summary>
-        protected void Initialize(bool isOwnershipChange = false)
+        /// <param name="isOwnershipChange"></param>
+        private void InternalInitialization(bool isOwnershipChange = false)
         {
             if (!IsSpawned)
             {
@@ -2701,7 +2701,6 @@ namespace Unity.Netcode.Components
             }
             else
             {
-
                 // Assure we no longer subscribe to the tick event
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
 
@@ -2722,6 +2721,14 @@ namespace Unity.Netcode.Components
                 m_InternalStatNetVar.Value = m_LocalAuthoritativeNetworkState;
                 OnInitialize(ref m_InternalStatNetVar);
             }
+        }
+
+        /// <summary>
+        /// Initializes NetworkTransform when spawned and ownership changes.
+        /// </summary>
+        protected void Initialize()
+        {
+            InternalInitialization();
         }
 
         /// <inheritdoc/>
