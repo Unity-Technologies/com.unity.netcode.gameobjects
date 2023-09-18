@@ -1985,7 +1985,7 @@ namespace Unity.Netcode.Components
                 {
                     if (networkState.HasPositionChange && SynchronizePosition)
                     {
-                        adjustedPosition = networkState.CurrentPosition;
+                        adjustedPosition = m_TargetPosition;
                     }
 
                     if (networkState.HasScaleChange && SynchronizeScale)
@@ -2308,11 +2308,12 @@ namespace Unity.Netcode.Components
                     // assure our local NetworkDeltaPosition state is updated
                     m_HalfPositionState.HalfVector3.Axis = m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.HalfVector3.Axis;
                     m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.CurrentBasePosition = m_HalfPositionState.CurrentBasePosition;
-                    m_LocalAuthoritativeNetworkState.CurrentPosition = m_TargetPosition;
-                }
-                // and update our target position
-                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
 
+                    // This is to assure when you get the position of the state it is the correct position
+                    m_LocalAuthoritativeNetworkState.NetworkDeltaPosition.ToVector3(0);
+                }
+                // Update our target position
+                m_TargetPosition = m_HalfPositionState.ToVector3(newState.NetworkTick);
             }
 
             if (!Interpolate)
@@ -2446,7 +2447,9 @@ namespace Unity.Netcode.Components
             ApplyUpdatedState(newState);
 
             // Provide notifications when the state has been updated
-            OnNetworkTransformStateUpdated(ref oldState, ref newState);
+            // We use the m_LocalAuthoritativeNetworkState because newState has been applied and adjustments could have
+            // been made (i.e. half float precision position values will have been updated)
+            OnNetworkTransformStateUpdated(ref oldState, ref m_LocalAuthoritativeNetworkState);
         }
 
         /// <summary>
@@ -2958,7 +2961,8 @@ namespace Unity.Netcode.Components
         /// <param name="messagePayload">serialzied <see cref="NetworkTransformState"/></param>
         private void TransformStateUpdate(ulong senderId, FastBufferReader messagePayload)
         {
-            if (!OnIsServerAuthoritative() && IsServer && OwnerClientId == NetworkManager.ServerClientId)
+            var ownerAuthoritativeServerSide = !OnIsServerAuthoritative() && IsServer;
+            if (ownerAuthoritativeServerSide && OwnerClientId == NetworkManager.ServerClientId)
             {
                 // Ownership must have changed, ignore any additional pending messages that might have
                 // come from a previous owner client.
@@ -2968,16 +2972,22 @@ namespace Unity.Netcode.Components
             // Store the previous/old state
             m_OldState = m_LocalAuthoritativeNetworkState;
 
+            // Save the current payload stream position
             var currentPosition = messagePayload.Position;
-            // Deserialize the message
+
+            // Deserialize the message (and determine network delivery)
             messagePayload.ReadNetworkSerializableInPlace(ref m_LocalAuthoritativeNetworkState);
 
+            // Rewind back prior to serialization
             messagePayload.Seek(currentPosition);
-            var sendMode = m_LocalAuthoritativeNetworkState.ReliableFragmentedSequenced ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+
+            // Get the network delivery method used to send this state update
+            var networkDelivery = m_LocalAuthoritativeNetworkState.ReliableFragmentedSequenced ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+
             // Forward owner authoritative messages before doing anything else
-            if (IsServer && !OnIsServerAuthoritative())
+            if (ownerAuthoritativeServerSide)
             {
-                ForwardStateUpdateMessage(messagePayload, sendMode);
+                ForwardStateUpdateMessage(messagePayload, networkDelivery);
             }
 
             // Apply the message
@@ -3036,7 +3046,8 @@ namespace Unity.Netcode.Components
 
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
-            var sendMode = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
+            // Determine what network delivery method to use
+            var networkDelivery = m_LocalAuthoritativeNetworkState.IsTeleportingNextFrame | m_LocalAuthoritativeNetworkState.IsSynchronizing ? NetworkDelivery.ReliableFragmentedSequenced : NetworkDelivery.UnreliableSequenced;
 
             using (writer)
             {
@@ -3052,13 +3063,13 @@ namespace Unity.Netcode.Components
                         {
                             continue;
                         }
-                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer, sendMode);
+                        customMessageManager.SendNamedMessage(m_MessageName, clientId, writer, networkDelivery);
                     }
                 }
                 else
                 {
                     // Clients (owner authoritative) send messages to the server-host
-                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer, sendMode);
+                    customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer, networkDelivery);
                 }
             }
         }
