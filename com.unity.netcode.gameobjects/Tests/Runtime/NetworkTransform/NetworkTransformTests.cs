@@ -470,7 +470,7 @@ namespace Unity.Netcode.RuntimeTests
                     var childLocalRotation = childInstance.transform.localRotation.eulerAngles;
                     var childLocalScale = childInstance.transform.localScale;
                     // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
+                    if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
                     {
                         m_CurrentHalfPrecision = k_HalfPrecisionPosScale;
                     }
@@ -486,7 +486,7 @@ namespace Unity.Netcode.RuntimeTests
                     }
 
                     // Adjust approximation based on precision
-                    if (m_Precision == Precision.Half)
+                    if (m_Precision == Precision.Half || m_RotationCompression == RotationCompression.QuaternionCompress)
                     {
                         m_CurrentHalfPrecision = k_HalfPrecisionRot;
                     }
@@ -523,6 +523,7 @@ namespace Unity.Netcode.RuntimeTests
         {
             // Set the precision being used for threshold adjustments
             m_Precision = precision;
+            m_RotationCompression = rotationCompression;
 
             // Get the NetworkManager that will have authority in order to spawn with the correct authority
             var isServerAuthority = m_Authority == Authority.ServerAuthority;
@@ -577,6 +578,9 @@ namespace Unity.Netcode.RuntimeTests
 
             // Allow one tick for authority to update these changes
             TimeTravelToNextTick();
+            success = WaitForConditionOrTimeOutWithTimeTravel(PositionRotationScaleMatches);
+
+            Assert.True(success, "All transform values did not match prior to parenting!");
 
             // Parent the child under the parent with the current world position stays setting
             Assert.True(serverSideChild.TrySetParent(serverSideParent.transform, worldPositionStays), "[Server-Side Child] Failed to set child's parent!");
@@ -689,6 +693,7 @@ namespace Unity.Netcode.RuntimeTests
         }
 
         private Precision m_Precision = Precision.Full;
+        private RotationCompression m_RotationCompression = RotationCompression.None;
         private float m_CurrentHalfPrecision = 0.0f;
         private const float k_HalfPrecisionPosScale = 0.041f;
         private const float k_HalfPrecisionRot = 0.725f;
