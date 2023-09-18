@@ -1134,7 +1134,7 @@ namespace Unity.Netcode.Components
         /// Internally used by <see cref="NetworkTransform"/> to keep track of the <see cref="NetworkManager"/> instance assigned to this
         /// this <see cref="NetworkBehaviour"/> derived class instance.
         /// </summary>
-        protected NetworkManager m_CachedNetworkManager; // Note: we no longer use this and are only keeping it until we decide to deprecate it
+        protected NetworkManager m_CachedNetworkManager;
 
         /// <summary>
         /// Helper method that returns the space relative position of the transform.
@@ -1541,6 +1541,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal bool ApplyTransformToNetworkState(ref NetworkTransformState networkState, double dirtyTime, Transform transformToUse)
         {
+            m_CachedNetworkManager = NetworkManager;
             // Apply the interpolate and PostionDeltaCompression flags, otherwise we get false positives whether something changed or not.
             networkState.UseInterpolation = Interpolate;
             networkState.QuaternionSync = UseQuaternionSynchronization;
@@ -1670,7 +1671,7 @@ namespace Unity.Netcode.Components
             {
                 // If we are teleporting then we can skip the delta threshold check
                 isPositionDirty = networkState.IsTeleportingNextFrame;
-                if (m_HalfFloatTargetTickOwnership > NetworkManager.ServerTime.Tick)
+                if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick)
                 {
                     isPositionDirty = true;
                 }
@@ -1712,7 +1713,7 @@ namespace Unity.Netcode.Components
                             m_HalfPositionState.HalfVector3.AxisToSynchronize = math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ);
                             m_HalfPositionState.UpdateFrom(ref position, networkState.NetworkTick);
                         }
-                        if (m_HalfFloatTargetTickOwnership > NetworkManager.ServerTime.Tick && !networkState.IsTeleportingNextFrame)
+                        if (m_HalfFloatTargetTickOwnership > m_CachedNetworkManager.ServerTime.Tick && !networkState.IsTeleportingNextFrame)
                         {
                             networkState.NetworkDeltaPosition = m_HalfPositionState;
                             networkState.SynchronizeBaseHalfFloat = true;
@@ -1964,7 +1965,7 @@ namespace Unity.Netcode.Components
                 // NetworkManager
                 if (enabled)
                 {
-                    networkState.NetworkTick = NetworkManager.ServerTime.Tick;
+                    networkState.NetworkTick = m_CachedNetworkManager.ServerTime.Tick;
                 }
             }
 
@@ -2203,6 +2204,7 @@ namespace Unity.Netcode.Components
                     // offset or not. This is specific to owner authoritative mode on the owner side only
                     if (isSynchronization)
                     {
+                        // Need to use NetworkManager vs m_CachedNetworkManager here since we are yet to be spawned
                         if (ShouldSynchronizeHalfFloat(NetworkManager.LocalClientId))
                         {
                             m_HalfPositionState.HalfVector3.Axis = newState.NetworkDeltaPosition.HalfVector3.Axis;
@@ -2514,7 +2516,7 @@ namespace Unity.Netcode.Components
             }
 
             // Get the time when this new state was sent
-            newState.SentTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
+            newState.SentTime = new NetworkTime(m_CachedNetworkManager.NetworkConfig.TickRate, newState.NetworkTick).Time;
 
             // Apply the new state
             ApplyUpdatedState(newState);
@@ -2638,14 +2640,6 @@ namespace Unity.Netcode.Components
                 m_CurrentPosition = GetSpaceRelativePosition();
                 m_TargetPosition = GetSpaceRelativePosition();
             }
-            else
-            {
-                // If we are no longer authority, unsubscribe to the tick event
-                if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
-                {
-                    NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
-                }
-            }
         }
 
         /// <inheritdoc/>
@@ -2654,22 +2648,28 @@ namespace Unity.Netcode.Components
             ///////////////////////////////////////////////////////////////
             // NOTE: Legacy and no longer used (candidates for deprecation)
             m_CachedIsServer = IsServer;
-            m_CachedNetworkManager = NetworkManager;
             ///////////////////////////////////////////////////////////////
+
+            // Started using this again to avoid the getter processing cost of NetworkBehaviour.NetworkManager
+            m_CachedNetworkManager = NetworkManager;
 
             // Register a custom named message specifically for this instance
             m_MessageName = $"NTU_{NetworkObjectId}_{NetworkBehaviourId}";
-            NetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(m_MessageName, TransformStateUpdate);
+            m_CachedNetworkManager.CustomMessagingManager.RegisterNamedMessageHandler(m_MessageName, TransformStateUpdate);
             Initialize();
         }
 
         /// <inheritdoc/>
         public override void OnNetworkDespawn()
         {
+            // During destroy, use NetworkBehaviour.NetworkManager as opposed to m_CachedNetworkManager
             if (!NetworkManager.ShutdownInProgress && NetworkManager.CustomMessagingManager != null)
             {
                 NetworkManager.CustomMessagingManager.UnregisterNamedMessageHandler(m_MessageName);
             }
+
+            DeregisterForTickUpdate(this);
+
             CanCommitToTransform = false;
             if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
             {
@@ -2680,6 +2680,7 @@ namespace Unity.Netcode.Components
         /// <inheritdoc/>
         public override void OnDestroy()
         {
+            // During destroy, use NetworkBehaviour.NetworkManager as opposed to m_CachedNetworkManager
             if (NetworkManager != null && NetworkManager.NetworkTickSystem != null)
             {
                 NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
@@ -2703,7 +2704,7 @@ namespace Unity.Netcode.Components
         protected override void OnOwnershipChanged(ulong previous, ulong current)
         {
             // If we were the previous owner or the newly assigned owner then reinitialize
-            if (current == NetworkManager.LocalClientId || previous == NetworkManager.LocalClientId)
+            if (current == m_CachedNetworkManager.LocalClientId || previous == m_CachedNetworkManager.LocalClientId)
             {
                 InternalInitialization(true);
             }
@@ -2753,18 +2754,17 @@ namespace Unity.Netcode.Components
             {
                 if (UseHalfFloatPrecision)
                 {
-                    m_HalfPositionState = new NetworkDeltaPosition(currentPosition, NetworkManager.NetworkTickSystem.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
+                    m_HalfPositionState = new NetworkDeltaPosition(currentPosition, m_CachedNetworkManager.NetworkTickSystem.ServerTime.Tick, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
                 }
                 m_CurrentPosition = currentPosition;
                 m_TargetPosition = currentPosition;
-                // Authority only updates once per network tick
-                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
-                NetworkManager.NetworkTickSystem.Tick += NetworkTickSystem_Tick;
+
+                RegisterForTickUpdate(this);
 
                 m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
                 if (UseHalfFloatPrecision && isOwnershipChange && !IsServerAuthoritative() && Interpolate)
                 {
-                    m_HalfFloatTargetTickOwnership = NetworkManager.ServerTime.Tick + 3;
+                    m_HalfFloatTargetTickOwnership = m_CachedNetworkManager.ServerTime.Tick + 3;
                 }
                 else
                 {
@@ -2774,8 +2774,8 @@ namespace Unity.Netcode.Components
             }
             else
             {
-                // Assure we no longer subscribe to the tick event
-                NetworkManager.NetworkTickSystem.Tick -= NetworkTickSystem_Tick;
+                // Remove this instance from the tick update
+                DeregisterForTickUpdate(this);
 
                 ResetInterpolatedStateToCurrentAuthoritativeState();
                 m_LocalAuthoritativeNetworkState.SynchronizeBaseHalfFloat = false;
@@ -2823,6 +2823,7 @@ namespace Unity.Netcode.Components
                 m_ScaleInterpolator.Clear();
                 m_PositionInterpolator.Clear();
                 m_RotationInterpolator.Clear();
+                // Always use NetworkManager here as this can be invoked prior to spawning
                 var tempTime = new NetworkTime(NetworkManager.NetworkConfig.TickRate, NetworkManager.ServerTime.Tick).Time;
                 UpdatePositionInterpolator(m_CurrentPosition, tempTime, true);
                 m_ScaleInterpolator.ResetTo(m_CurrentScale, tempTime);
@@ -2943,8 +2944,8 @@ namespace Unity.Netcode.Components
             // Non-Authority
             if (Interpolate)
             {
-                var serverTime = NetworkManager.ServerTime;
-                var cachedDeltaTime = NetworkManager.RealTimeProvider.DeltaTime;
+                var serverTime = m_CachedNetworkManager.ServerTime;
+                var cachedDeltaTime = m_CachedNetworkManager.RealTimeProvider.DeltaTime;
                 var cachedServerTime = serverTime.Time;
 
                 // With owner authoritative mode, non-authority clients can lag behind
@@ -3089,15 +3090,15 @@ namespace Unity.Netcode.Components
             {
                 writer.WriteBytesSafe(messagePayload.GetUnsafePtr(), messageSize, currentPosition);
 
-                var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                var clientCount = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList.Count;
                 for (int i = 0; i < clientCount; i++)
                 {
-                    var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                    var clientId = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
                     if (NetworkManager.ServerClientId == clientId || (!serverAuthoritative && clientId == OwnerClientId))
                     {
                         continue;
                     }
-                    NetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer, networkDelivery);
+                    m_CachedNetworkManager.CustomMessagingManager.SendNamedMessage(m_MessageName, clientId, writer, networkDelivery);
                 }
             }
             messagePayload.Seek(currentPosition);
@@ -3108,7 +3109,7 @@ namespace Unity.Netcode.Components
         /// </summary>
         private void UpdateTransformState()
         {
-            if (NetworkManager.ShutdownInProgress)
+            if (m_CachedNetworkManager.ShutdownInProgress)
             {
                 return;
             }
@@ -3122,7 +3123,7 @@ namespace Unity.Netcode.Components
             {
                 Debug.LogError($"Owner authoritative {nameof(NetworkTransform)} can only be updated by the owner!");
             }
-            var customMessageManager = NetworkManager.CustomMessagingManager;
+            var customMessageManager = m_CachedNetworkManager.CustomMessagingManager;
 
             var writer = new FastBufferWriter(128, Allocator.Temp);
 
@@ -3135,10 +3136,10 @@ namespace Unity.Netcode.Components
                 // Server-host always sends updates to all clients (but itself)
                 if (IsServer)
                 {
-                    var clientCount = NetworkManager.ConnectionManager.ConnectedClientsList.Count;
+                    var clientCount = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList.Count;
                     for (int i = 0; i < clientCount; i++)
                     {
-                        var clientId = NetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
+                        var clientId = m_CachedNetworkManager.ConnectionManager.ConnectedClientsList[i].ClientId;
                         if (NetworkManager.ServerClientId == clientId)
                         {
                             continue;
@@ -3151,6 +3152,88 @@ namespace Unity.Netcode.Components
                     // Clients (owner authoritative) send messages to the server-host
                     customMessageManager.SendNamedMessage(m_MessageName, NetworkManager.ServerClientId, writer, networkDelivery);
                 }
+            }
+        }
+
+
+        private static Dictionary<NetworkManager, NetworkTransformTickRegistration> s_NetworkTickRegistration = new Dictionary<NetworkManager, NetworkTransformTickRegistration>();
+
+        private static void RemoveTickUpdate(NetworkManager networkManager)
+        {
+            s_NetworkTickRegistration.Remove(networkManager);
+        }
+
+        /// <summary>
+        /// Having the tick update once and cycling through registered instances to update is evidently less processor
+        /// intensive than having each instance subscribe and update individually.
+        /// </summary>
+        private class NetworkTransformTickRegistration
+        {
+            private Action m_NetworkTickUpdate;
+            private NetworkManager m_NetworkManager;
+            public HashSet<NetworkTransform> NetworkTransforms = new HashSet<NetworkTransform>();
+            private void OnNetworkManagerStopped(bool value)
+            {
+                m_NetworkManager.NetworkTickSystem.Tick -= m_NetworkTickUpdate;
+                m_NetworkTickUpdate = null;
+                NetworkTransforms.Clear();
+                RemoveTickUpdate(m_NetworkManager);
+            }
+
+            /// <summary>
+            /// Invoked once per network tick, this will update any registered
+            /// authority instances.
+            /// </summary>
+            private void TickUpdate()
+            {
+                foreach (var networkTransform in NetworkTransforms)
+                {
+                    networkTransform.NetworkTickSystem_Tick();
+                }
+            }
+
+            public NetworkTransformTickRegistration(NetworkManager networkManager)
+            {
+                m_NetworkManager = networkManager;
+                m_NetworkTickUpdate = new Action(TickUpdate);
+                networkManager.NetworkTickSystem.Tick += m_NetworkTickUpdate;
+                if (networkManager.IsServer)
+                {
+                    networkManager.OnServerStopped += OnNetworkManagerStopped;
+                }
+                else
+                {
+                    networkManager.OnClientStopped += OnNetworkManagerStopped;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Will register the NetworkTransform instance for the single tick update entry point.
+        /// If a NetworkTransformTickRegistration has not yet been registered for the NetworkManager
+        /// instance, then create an entry.
+        /// </summary>
+        /// <param name="networkTransform"></param>
+        private static void RegisterForTickUpdate(NetworkTransform networkTransform)
+        {
+            if (!s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            {
+                s_NetworkTickRegistration.Add(networkTransform.NetworkManager, new NetworkTransformTickRegistration(networkTransform.NetworkManager));
+            }
+            s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Add(networkTransform);
+        }
+
+
+        /// <summary>
+        /// If a NetworkTransformTickRegistration exists for the NetworkManager instanc, then this will
+        /// remove the NetworkTransform instance from the single tick update entry point. 
+        /// </summary>
+        /// <param name="networkTransform"></param>
+        private static void DeregisterForTickUpdate(NetworkTransform networkTransform)
+        {
+            if (s_NetworkTickRegistration.ContainsKey(networkTransform.NetworkManager))
+            {
+                s_NetworkTickRegistration[networkTransform.NetworkManager].NetworkTransforms.Remove(networkTransform);
             }
         }
     }
