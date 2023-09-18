@@ -55,6 +55,8 @@ namespace Unity.Netcode.Components
         /// </summary>
         internal static bool TrackByStateId;
 
+        internal bool UseUnreliableDeltas = true;
+
         /// <summary>
         /// Data structure used to synchronize the <see cref="NetworkTransform"/>
         /// </summary>
@@ -80,6 +82,7 @@ namespace Unity.Netcode.Components
             private const int k_IsParented = 0x00020000; // When parented and synchronizing, we need to have both lossy and local scale due to varying spawn order
             private const int k_SynchBaseHalfFloat = 0x00040000;
             private const int k_ReliableFragmentedSequenced = 0x00080000;
+            private const int k_UseUnreliableDeltas = 0x00100000;
             private const int k_TrackStateId = 0x10000000; // (Internal Debugging) When set each state update will contain a state identifier 
 
             // Stores persistent and state relative flags
@@ -458,6 +461,15 @@ namespace Unity.Netcode.Components
                 }
             }
 
+            internal bool UseUnreliableDeltas
+            {
+                get => GetFlag(k_UseUnreliableDeltas);
+                set
+                {
+                    SetFlag(value, k_UseUnreliableDeltas);
+                }
+            }
+
             internal bool TrackByStateId
             {
                 get => GetFlag(k_TrackStateId);
@@ -483,7 +495,7 @@ namespace Unity.Netcode.Components
             internal void ClearBitSetForNextTick()
             {
                 // Clear everything but flags that should persist between state updates until changed by authority
-                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp;
+                m_Bitset &= k_InLocalSpaceBit | k_Interpolate | k_UseHalfFloats | k_QuaternionSync | k_QuaternionCompress | k_PositionSlerp | k_UseUnreliableDeltas;
                 IsDirty = false;
             }
 
@@ -614,13 +626,21 @@ namespace Unity.Netcode.Components
                 {
                     if (isWriting)
                     {
-                        if (IsTeleportingNextFrame || IsSynchronizing)
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        // !!!!!! TODO: Revisit this flag, we might not need it
+                        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                        if (UseUnreliableDeltas)
                         {
-                            ReliableFragmentedSequenced = true;
-                        }
-                        else
-                        {
-                            ReliableFragmentedSequenced = false;
+                            // If teleporting, synchronizing, or using half float precision and we collapsed a delta into the base position
+                            if (IsTeleportingNextFrame || IsSynchronizing || (UseHalfFloatPrecision && NetworkDeltaPosition.CollapsedDeltaIntoBase))
+                            {
+                                // Send the message reliably
+                                ReliableFragmentedSequenced = true;
+                            }
+                            else
+                            {
+                                ReliableFragmentedSequenced = false;
+                            }
                         }
 
                         BytePacker.WriteValueBitPacked(m_Writer, m_Bitset);
@@ -1526,6 +1546,7 @@ namespace Unity.Netcode.Components
             networkState.QuaternionSync = UseQuaternionSynchronization;
             networkState.UseHalfFloatPrecision = UseHalfFloatPrecision;
             networkState.QuaternionCompression = UseQuaternionCompression;
+            networkState.UseUnreliableDeltas = UseUnreliableDeltas;
             m_HalfPositionState = new NetworkDeltaPosition(Vector3.zero, 0, math.bool3(SyncPositionX, SyncPositionY, SyncPositionZ));
 
             return ApplyTransformToNetworkStateWithInfo(ref networkState, ref transformToUse);
@@ -1592,6 +1613,16 @@ namespace Unity.Netcode.Components
                 networkState.IsTeleportingNextFrame = true;
             }
 
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            // !!!!!! TODO: Revisit this flag, we might not need it
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            if (UseUnreliableDeltas != networkState.UseUnreliableDeltas)
+            {
+                networkState.UseUnreliableDeltas = UseUnreliableDeltas;
+                isDirty = true;
+                networkState.IsTeleportingNextFrame = true;
+            }
+
             if (!UseHalfFloatPrecision)
             {
                 if (SyncPositionX && (Mathf.Abs(networkState.PositionX - position.x) >= PositionThreshold || networkState.IsTeleportingNextFrame))
@@ -1615,7 +1646,8 @@ namespace Unity.Netcode.Components
                     isPositionDirty = true;
                 }
 
-                if (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ)
+                // When sending deltas unreliably, we send all axis marked for synchronization if one axis changes
+                if (UseUnreliableDeltas && (networkState.HasPositionX || networkState.HasPositionY || networkState.HasPositionZ))
                 {
                     if (SyncPositionX && !networkState.HasPositionX)
                     {
@@ -1688,7 +1720,8 @@ namespace Unity.Netcode.Components
                         else
                         {
                             networkState.NetworkDeltaPosition = m_HalfPositionState;
-                            networkState.SynchronizeBaseHalfFloat = false;
+
+                            networkState.SynchronizeBaseHalfFloat = UseUnreliableDeltas ? m_HalfPositionState.CollapsedDeltaIntoBase : false;
                         }
 
                     }
@@ -1761,6 +1794,26 @@ namespace Unity.Netcode.Components
                     networkState.RotAngleZ = rotAngles.z;
                     networkState.HasRotAngleZ = true;
                     isRotationDirty = true;
+                }
+
+                // When sending deltas unreliably, we send all axis marked for synchronization if one axis changes
+                if (UseUnreliableDeltas && (networkState.HasRotAngleX || networkState.HasRotAngleY || networkState.HasRotAngleZ))
+                {
+                    if (SyncRotAngleX && !networkState.HasRotAngleX)
+                    {
+                        networkState.HasRotAngleX = true;
+                        networkState.RotAngleX = rotAngles.x;
+                    }
+                    if (SyncRotAngleY && !networkState.HasRotAngleY)
+                    {
+                        networkState.HasRotAngleY = true;
+                        networkState.RotAngleY = rotAngles.y;
+                    }
+                    if (SyncRotAngleZ && !networkState.HasRotAngleZ)
+                    {
+                        networkState.HasRotAngleZ = true;
+                        networkState.RotAngleZ = rotAngles.z;
+                    }
                 }
             }
             else if (SynchronizeRotation)
@@ -1849,6 +1902,26 @@ namespace Unity.Netcode.Components
                         networkState.ScaleZ = scale.z;
                         networkState.HasScaleZ = true;
                         isScaleDirty = true;
+                    }
+
+                    // When sending deltas unreliably, we send all axis marked for synchronization if one axis changes
+                    if (UseUnreliableDeltas && (networkState.HasScaleX || networkState.HasScaleY || networkState.HasScaleZ))
+                    {
+                        if (SyncScaleX && !networkState.HasScaleX)
+                        {
+                            networkState.HasScaleX = true;
+                            networkState.ScaleX = scale.x;
+                        }
+                        if (SyncScaleY && !networkState.HasScaleY)
+                        {
+                            networkState.HasScaleY = true;
+                            networkState.ScaleY = scale.y;
+                        }
+                        if (SyncScaleZ && !networkState.HasScaleZ)
+                        {
+                            networkState.HasScaleZ = true;
+                            networkState.ScaleZ = scale.z;
+                        }
                     }
                 }
                 else if (SynchronizeScale)
