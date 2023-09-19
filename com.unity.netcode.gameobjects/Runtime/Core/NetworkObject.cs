@@ -16,6 +16,10 @@ using UnityEngine.SceneManagement;
 namespace Unity.Netcode
 {
 #if UNITY_EDITOR
+    /// <summary>
+    /// This would only need to be here if we have automatic updating of in-scene placed network prefab
+    /// instances upon loading a scene in the editor.
+    /// </summary>
     internal class NetworkObjectManagement
     {
         [InitializeOnLoadMethod]
