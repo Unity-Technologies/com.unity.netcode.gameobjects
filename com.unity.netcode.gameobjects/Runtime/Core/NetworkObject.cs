@@ -6,6 +6,7 @@ using UnityEditor;
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
 #else
+using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
 #endif
 #endif
@@ -15,6 +16,7 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
+
 #if UNITY_EDITOR
     /// <summary>
     /// This would only need to be here if we have automatic updating of in-scene placed network prefab
