@@ -15,16 +15,98 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
+#if UNITY_EDITOR
+    internal class NetworkObjectManagement
+    {
+        [InitializeOnLoadMethod]
+        internal static void OnLoad()
+        {
+            EditorApplication.update += OnEditorUpdate;
+        }
+
+        internal enum SceneDirtyStates
+        {
+            None,
+            Mark,
+            Marked,
+            Save,
+            Saving,
+            Saved
+        }
+
+        internal static SceneDirtyStates SceneDirtyState;
+
+        private static float s_MarkedDelay;
+
+        internal static Scene TargetScene;
+
+        internal static void OnEditorUpdate()
+        {
+            if (SceneDirtyState == SceneDirtyStates.None)
+            {
+                return;
+            }
+            switch (SceneDirtyState)
+            {
+                case SceneDirtyStates.Mark:
+                    {
+                        if (EditorSceneManager.MarkSceneDirty(TargetScene))
+                        {
+                            s_MarkedDelay = Time.realtimeSinceStartup + 0.1f;
+                            Debug.Log($"[{TargetScene.name}] marked as dirty!");
+                            SceneDirtyState = SceneDirtyStates.Marked;
+                        }
+                        break;
+                    }
+                case SceneDirtyStates.Marked:
+                    {
+                        if (s_MarkedDelay < Time.realtimeSinceStartup)
+                        {
+                            Debug.Log($"[{TargetScene.name}] Saving scene...");
+                            SceneDirtyState = SceneDirtyStates.Save;
+                        }
+                        break;
+                    }
+                case SceneDirtyStates.Save:
+                    {
+                        s_MarkedDelay = 0.0f;
+                        EditorSceneManager.sceneSaved += SceneSaved;
+                        SceneDirtyState = SceneDirtyStates.Saving;
+                        if (!EditorSceneManager.SaveScene(TargetScene))
+                        {
+                            Debug.LogError($"[{TargetScene.name}] Failed to save scene!");
+                        }
+                        break;
+                    }
+                case SceneDirtyStates.Saved:
+                    {
+                        Debug.Log($"[{TargetScene.name}] Scene saved!");
+                        SceneDirtyState = SceneDirtyStates.None;
+                        break;
+                    }
+            }
+        }
+
+        private static void SceneSaved(Scene scene)
+        {
+            EditorSceneManager.sceneSaved -= SceneSaved;
+            SceneDirtyState = SceneDirtyStates.Saved;
+        }
+
+    }
+#endif
+
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
     [AddComponentMenu("Netcode/Network Object", -99)]
+
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
         [HideInInspector]
         [SerializeField]
-        internal uint GlobalObjectIdHash;
+        public uint GlobalObjectIdHash;
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
@@ -47,6 +129,13 @@ namespace Unity.Netcode
         }
 
 #if UNITY_EDITOR
+
+        [ContextMenu("Update All In-Scene Placed Instances")]
+        private void UpdateAllPrefabInstances()
+        {
+            Debug.Log("TODO: Store the currently active scene, open all scenes within the scenes in build list, update all GlobalObjectIdHash values.");
+        }
+
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
 
         private void OnValidate()
@@ -68,6 +157,11 @@ namespace Unity.Netcode
                 return;
             }
 
+            if (gameObject.scene.name != null)
+            {
+                Debug.Log($"[{gameObject.name}] Scene: {gameObject.scene.name}");
+            }
+
             // Get a global object identifier for this network prefab
             var globalId = GetGlobalId();
 
@@ -83,25 +177,66 @@ namespace Unity.Netcode
             // If the GlobalObjectIdHash value changed, then mark the asset dirty
             if (GlobalObjectIdHash != oldValue)
             {
-                EditorUtility.SetDirty(this);
+                // Check if this is an in-scnee placed NetworkObject
+                if (!IsEditingPrefab() && gameObject.scene.name != null && gameObject.scene.name != gameObject.name)
+                {
+                    if (gameObject.name.Contains("TestGlobalObjectIdHash"))
+                    {
+                        Debug.Log($"[{gameObject.name}] Did not save its GlobalObjectIdHash value!");
+                    }
+                    if (globalId.identifierType != 2)
+                    {
+                        Debug.LogWarning($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}!");
+                    }
+
+                    if (PrefabUtility.IsPartOfAnyPrefab(this))
+                    {
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(this);
+                    }
+
+                    NetworkObjectManagement.SceneDirtyState = NetworkObjectManagement.SceneDirtyStates.Mark;
+                    NetworkObjectManagement.TargetScene = gameObject.scene;
+                    Debug.Log($"[{gameObject.name}][Pre-Save] GlobalObjectIdHash {GlobalObjectIdHash}!");
+                }
+                else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
+                {
+                    EditorUtility.SetDirty(this);
+                }
+            }
+            else
+            {
+                if (gameObject.name.Contains("TestGlobalObjectIdHash"))
+                {
+                    Debug.Log($"[{gameObject.name}] GlobalObjectIdHash {GlobalObjectIdHash}!");
+                }
             }
         }
 
-        private GlobalObjectId GetGlobalId()
-        {
-            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
 
+        private bool IsEditingPrefab()
+        {
             // Check if we are directly editing the prefab
             var stage = PrefabStageUtility.GetPrefabStage(gameObject);
 
             // if we are not editing the prefab directly (or a sub-prefab), then return the object identifier
             if (stage == null || stage.assetPath == null)
             {
+                return false;
+            }
+            return true;
+        }
+
+        private GlobalObjectId GetGlobalId()
+        {
+            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+
+            if (!IsEditingPrefab())
+            {
                 return instanceGlobalId;
             }
 
             // If the asset doesn't exist at the given path, then return the object identifier
-            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(stage.assetPath);
+            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(PrefabStageUtility.GetPrefabStage(gameObject).assetPath);
             if (theAsset == null)
             {
                 return instanceGlobalId;
@@ -118,8 +253,14 @@ namespace Unity.Netcode
             // The instanceGlobalId will be constructed as if it is a scene object, however when it
             // is serialized its value will be treated as a file asset (the "why" to the below code).
 
-            // Construct an imported asset identifier with the type being a source asset (type 3).
-            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, 3, guid, localFileId, 0);
+            // Object Types
+            // 0 = Null (we exit early on this type)
+            // 1 = Imported Asset
+            // 2 = Scene Object
+            // 3 = Source Asset.
+            var objetType = 3;
+            // Construct an imported asset identifier with the type being a source asset
+            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, objetType, guid, (ulong)localFileId, 0);
 
             // If we can't parse the result log an error and return the instanceGlobalId
             if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
