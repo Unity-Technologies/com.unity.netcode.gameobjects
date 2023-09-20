@@ -1199,6 +1199,11 @@ namespace Unity.Netcode.Transports.UTP
 
             NetworkManager = networkManager;
 
+            if ( NetworkManager && NetworkManager.PortOverride.Overidden )
+            {
+                ConnectionData.Port = NetworkManager.PortOverride.Value;
+            }
+
             m_RealTimeProvider = NetworkManager ? NetworkManager.RealTimeProvider : new RealTimeProvider();
 
             m_NetworkSettings = new NetworkSettings(Allocator.Persistent);

@@ -199,7 +199,7 @@ namespace Unity.Netcode.Transports.UNET
         public override bool StartClient()
         {
             m_ServerHostId = UnityEngine.Networking.NetworkTransport.AddHost(new HostTopology(GetConfig(), 1), 0, null);
-            m_ServerConnectionId = UnityEngine.Networking.NetworkTransport.Connect(m_ServerHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            m_ServerConnectionId = UnityEngine.Networking.NetworkTransport.Connect(m_ServerHostId, ConnectAddress, GetConnectPort(), 0, out byte error);
             return (NetworkError)error == NetworkError.Ok;
         }
 
@@ -207,7 +207,7 @@ namespace Unity.Netcode.Transports.UNET
         {
             var topology = new HostTopology(GetConfig(), MaxConnections);
             // Undocumented, but AddHost returns -1 in case of any type of failure. See UNET::NetLibraryManager::AddHost
-            return -1 != UnityEngine.Networking.NetworkTransport.AddHost(topology, ServerListenPort, null);
+            return -1 != UnityEngine.Networking.NetworkTransport.AddHost(topology, GetServerListenPort(), null);
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
@@ -280,6 +280,26 @@ namespace Unity.Netcode.Transports.UNET
             connectionConfig.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
 
             return connectionConfig;
+        }
+
+        public int GetConnectPort()
+        {
+            if ( NetworkManager && NetworkManager.PortOverride.Overidden )
+            {
+                return NetworkManager.PortOverride.Value;
+            }
+
+            return ConnectPort;
+        }
+
+        public int GetServerListenPort()
+        {
+            if (NetworkManager && NetworkManager.PortOverride.Overidden)
+            {
+                return NetworkManager.PortOverride.Value;
+            }
+
+            return ServerListenPort;
         }
     }
 }
