@@ -121,7 +121,6 @@ namespace Unity.Netcode
     /// A component used to identify that a GameObject in the network
     /// </summary>
     [AddComponentMenu("Netcode/Network Object", -99)]
-
     [DisallowMultipleComponent]
     public sealed class NetworkObject : MonoBehaviour
     {
