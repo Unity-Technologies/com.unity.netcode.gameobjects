@@ -22,11 +22,19 @@ namespace Unity.Netcode
     /// This would only need to be here if we have automatic updating of in-scene placed network prefab
     /// instances upon loading a scene in the editor.
     /// </summary>
+    /// <remarks>
+    /// This is not in editor assembly since NetworkObject needs access to this class.
+    /// TODO: Migrate class into its own file
+    /// </remarks>
     internal class NetworkObjectManagement
     {
+
         [InitializeOnLoadMethod]
         internal static void OnLoad()
         {
+            // Assure no double subscriptions
+            EditorApplication.update -= OnEditorUpdate;
+            // Subscribe to editor updates
             EditorApplication.update += OnEditorUpdate;
         }
 
@@ -46,6 +54,8 @@ namespace Unity.Netcode
 
         internal static Scene TargetScene;
 
+        // TODO: If auto-save scenes with GlobalObjectIdHash updates is disabled then 
+        // EditorApplication.update would not be subscribed to
         internal static void OnEditorUpdate()
         {
             if (SceneDirtyState == SceneDirtyStates.None)
@@ -58,9 +68,12 @@ namespace Unity.Netcode
                     {
                         if (EditorSceneManager.MarkSceneDirty(TargetScene))
                         {
+                            // Just provide a small delay to allow the scene to become recognized as dirty
                             s_MarkedDelay = Time.realtimeSinceStartup + 0.1f;
-                            Debug.Log($"[{TargetScene.name}] marked as dirty!");
                             SceneDirtyState = SceneDirtyStates.Marked;
+
+                            // TODO: Remove logging before making full PR
+                            Debug.Log($"[{TargetScene.name}] marked as dirty!");
                         }
                         break;
                     }
@@ -68,8 +81,9 @@ namespace Unity.Netcode
                     {
                         if (s_MarkedDelay < Time.realtimeSinceStartup)
                         {
-                            Debug.Log($"[{TargetScene.name}] Saving scene...");
                             SceneDirtyState = SceneDirtyStates.Save;
+                            // TODO: Remove logging before making full PR
+                            Debug.Log($"[{TargetScene.name}] Saving scene...");
                         }
                         break;
                     }
@@ -80,12 +94,14 @@ namespace Unity.Netcode
                         SceneDirtyState = SceneDirtyStates.Saving;
                         if (!EditorSceneManager.SaveScene(TargetScene))
                         {
+                            // TODO: Show dialog to user regarding the failure to save the scene
                             Debug.LogError($"[{TargetScene.name}] Failed to save scene!");
                         }
                         break;
                     }
                 case SceneDirtyStates.Saved:
                     {
+                        // TODO: Remove logging before making full PR
                         Debug.Log($"[{TargetScene.name}] Scene saved!");
                         SceneDirtyState = SceneDirtyStates.None;
                         break;
@@ -98,7 +114,6 @@ namespace Unity.Netcode
             EditorSceneManager.sceneSaved -= SceneSaved;
             SceneDirtyState = SceneDirtyStates.Saved;
         }
-
     }
 #endif
 
@@ -112,7 +127,7 @@ namespace Unity.Netcode
     {
         [HideInInspector]
         [SerializeField]
-        public uint GlobalObjectIdHash;
+        internal uint GlobalObjectIdHash;
 
         /// <summary>
         /// Gets the Prefab Hash Id of this object if the object is registerd as a prefab otherwise it returns 0
@@ -163,14 +178,14 @@ namespace Unity.Netcode
                 return;
             }
 
-            if (gameObject.scene.name != null)
-            {
-                Debug.Log($"[{gameObject.name}] Scene: {gameObject.scene.name}");
-            }
-
             // Get a global object identifier for this network prefab
             var globalId = GetGlobalId();
 
+            // Object Types
+            // 0 = Null (when considered a null object type we can ignore)
+            // 1 = Imported Asset
+            // 2 = Scene Object
+            // 3 = Source Asset.
             // if the identifier type is 0, then don't update the GlobalObjectIdHash
             if (globalId.identifierType == 0)
             {
@@ -183,26 +198,33 @@ namespace Unity.Netcode
             // If the GlobalObjectIdHash value changed, then mark the asset dirty
             if (GlobalObjectIdHash != oldValue)
             {
-                // Check if this is an in-scnee placed NetworkObject
+                // Check if this is an in-scnee placed NetworkObject (Special Case for In-Scene Placed)
                 if (!IsEditingPrefab() && gameObject.scene.name != null && gameObject.scene.name != gameObject.name)
                 {
+                    // TODO: Remove before making full PR
                     if (gameObject.name.Contains("TestGlobalObjectIdHash"))
                     {
                         Debug.Log($"[{gameObject.name}] Did not save its GlobalObjectIdHash value!");
                     }
+
+                    // Sanity check to make sure this is a scene placed object
                     if (globalId.identifierType != 2)
                     {
-                        Debug.LogWarning($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}!");
+                        // This should never happen, but in the event it does throw and error
+                        Debug.LogError($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}! **Report this error**");
                     }
 
+                    // If this is a prefab instance
                     if (PrefabUtility.IsPartOfAnyPrefab(this))
                     {
+                        // We must invoke this in order for the modifications to get saved with the scene (does not mark scene as dirty)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(this);
                     }
 
+                    // TODO: This will be dependent upon an NGO project setting and/or a context menu initiated action
+                    // This is just a temporary way to validate the POC of the approach
                     NetworkObjectManagement.SceneDirtyState = NetworkObjectManagement.SceneDirtyStates.Mark;
                     NetworkObjectManagement.TargetScene = gameObject.scene;
-                    Debug.Log($"[{gameObject.name}][Pre-Save] GlobalObjectIdHash {GlobalObjectIdHash}!");
                 }
                 else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
                 {
@@ -211,6 +233,7 @@ namespace Unity.Netcode
             }
             else
             {
+                // TODO: Remove before making full PR
                 if (gameObject.name.Contains("TestGlobalObjectIdHash"))
                 {
                     Debug.Log($"[{gameObject.name}] GlobalObjectIdHash {GlobalObjectIdHash}!");
@@ -236,13 +259,22 @@ namespace Unity.Netcode
         {
             var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
 
+            // If not editing a prefab, then just use the generated id
             if (!IsEditingPrefab())
             {
                 return instanceGlobalId;
             }
 
             // If the asset doesn't exist at the given path, then return the object identifier
-            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(PrefabStageUtility.GetPrefabStage(gameObject).assetPath);
+            var prefabStageAssetPath = PrefabStageUtility.GetPrefabStage(gameObject).assetPath;
+            // If (for some reason) the asset path is null return the generated id
+            if (prefabStageAssetPath == null)
+            {
+                return instanceGlobalId;
+            }
+
+            var theAsset = AssetDatabase.LoadAssetAtPath<NetworkObject>(prefabStageAssetPath);
+            // If there is no asset at that path (for some odd/edge case reason), return the generated id
             if (theAsset == null)
             {
                 return instanceGlobalId;
@@ -251,7 +283,6 @@ namespace Unity.Netcode
             // If we can't get the asset GUID and/or the file identifier, then return the object identifier
             if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(theAsset, out var guid, out long localFileId))
             {
-                Debug.Log($"[GlobalObjectId Gen][{theAsset.gameObject.name}] Failed to get GUID or the local file identifier. Returning default ({instanceGlobalId}).");
                 return instanceGlobalId;
             }
 
@@ -271,11 +302,11 @@ namespace Unity.Netcode
             // If we can't parse the result log an error and return the instanceGlobalId
             if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
             {
-                Debug.LogError($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default ({instanceGlobalId})");
+                Debug.LogError($"[GlobalObjectId Gen] Failed to parse ({prefabGlobalIdText}) returning default ({instanceGlobalId})! ** Please Report This Error **");
                 return instanceGlobalId;
             }
 
-            // Otherwise, return the constructed identifier.
+            // Otherwise, return the constructed identifier for the source prefab asset
             return prefabGlobalId;
         }
 #endif // UNITY_EDITOR
