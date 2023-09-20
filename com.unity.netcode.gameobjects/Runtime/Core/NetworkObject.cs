@@ -6,7 +6,6 @@ using UnityEditor;
 #if UNITY_2021_2_OR_NEWER
 using UnityEditor.SceneManagement;
 #else
-using UnityEditor.SceneManagement;
 using UnityEditor.Experimental.SceneManagement;
 #endif
 #endif
@@ -16,107 +15,6 @@ using UnityEngine.SceneManagement;
 
 namespace Unity.Netcode
 {
-
-#if UNITY_EDITOR
-    /// <summary>
-    /// This would only need to be here if we have automatic updating of in-scene placed network prefab
-    /// instances upon loading a scene in the editor.
-    /// </summary>
-    /// <remarks>
-    /// This is not in editor assembly since NetworkObject needs access to this class.
-    /// TODO: Migrate class into its own file
-    /// </remarks>
-    internal class NetworkObjectManagement
-    {
-
-        [InitializeOnLoadMethod]
-        internal static void OnLoad()
-        {
-            // Assure no double subscriptions
-            EditorApplication.update -= OnEditorUpdate;
-            // Subscribe to editor updates
-            EditorApplication.update += OnEditorUpdate;
-        }
-
-        internal enum SceneDirtyStates
-        {
-            None,
-            Mark,
-            Marked,
-            Save,
-            Saving,
-            Saved
-        }
-
-        internal static SceneDirtyStates SceneDirtyState;
-
-        private static float s_MarkedDelay;
-
-        internal static Scene TargetScene;
-
-        // TODO: If auto-save scenes with GlobalObjectIdHash updates is disabled then 
-        // EditorApplication.update would not be subscribed to
-        internal static void OnEditorUpdate()
-        {
-            if (SceneDirtyState == SceneDirtyStates.None)
-            {
-                return;
-            }
-            switch (SceneDirtyState)
-            {
-                case SceneDirtyStates.Mark:
-                    {
-                        if (EditorSceneManager.MarkSceneDirty(TargetScene))
-                        {
-                            // Just provide a small delay to allow the scene to become recognized as dirty
-                            s_MarkedDelay = Time.realtimeSinceStartup + 0.1f;
-                            SceneDirtyState = SceneDirtyStates.Marked;
-
-                            // TODO: Remove logging before making full PR
-                            Debug.Log($"[{TargetScene.name}] marked as dirty!");
-                        }
-                        break;
-                    }
-                case SceneDirtyStates.Marked:
-                    {
-                        if (s_MarkedDelay < Time.realtimeSinceStartup)
-                        {
-                            SceneDirtyState = SceneDirtyStates.Save;
-                            // TODO: Remove logging before making full PR
-                            Debug.Log($"[{TargetScene.name}] Saving scene...");
-                        }
-                        break;
-                    }
-                case SceneDirtyStates.Save:
-                    {
-                        s_MarkedDelay = 0.0f;
-                        EditorSceneManager.sceneSaved += SceneSaved;
-                        SceneDirtyState = SceneDirtyStates.Saving;
-                        if (!EditorSceneManager.SaveScene(TargetScene))
-                        {
-                            // TODO: Show dialog to user regarding the failure to save the scene
-                            Debug.LogError($"[{TargetScene.name}] Failed to save scene!");
-                        }
-                        break;
-                    }
-                case SceneDirtyStates.Saved:
-                    {
-                        // TODO: Remove logging before making full PR
-                        Debug.Log($"[{TargetScene.name}] Scene saved!");
-                        SceneDirtyState = SceneDirtyStates.None;
-                        break;
-                    }
-            }
-        }
-
-        private static void SceneSaved(Scene scene)
-        {
-            EditorSceneManager.sceneSaved -= SceneSaved;
-            SceneDirtyState = SceneDirtyStates.Saved;
-        }
-    }
-#endif
-
     /// <summary>
     /// A component used to identify that a GameObject in the network
     /// </summary>
@@ -149,14 +47,35 @@ namespace Unity.Netcode
         }
 
 #if UNITY_EDITOR
-
-        [ContextMenu("Update All In-Scene Placed Instances")]
-        private void UpdateAllPrefabInstances()
-        {
-            Debug.Log("TODO: Store the currently active scene, open all scenes within the scenes in build list, update all GlobalObjectIdHash values.");
-        }
-
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
+
+        [ContextMenu("Refresh In-Scene Prefab Instances")]
+        private void RefreshAllPrefabInstances()
+        {
+            // Handle updating the currently active scene
+            var networkObjects = FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var networkObject in networkObjects)
+            {
+                networkObject.OnValidate();
+            }
+            NetworkObjectRefreshTool.ProcessActiveScene();
+
+            // Refresh all build settings scenes
+            var activeScene = SceneManager.GetActiveScene();
+            foreach (var editorScene in EditorBuildSettings.scenes)
+            {
+                // skip disabled scenes and the currently active scene
+                if (!editorScene.enabled || activeScene.path == editorScene.path)
+                {
+                    continue;
+                }
+                // Add the scene to be processed
+                NetworkObjectRefreshTool.ProcessScene(editorScene.path, false);
+            }
+
+            // Process all added scenes
+            NetworkObjectRefreshTool.ProcessScenes();
+        }
 
         private void OnValidate()
         {
@@ -200,12 +119,6 @@ namespace Unity.Netcode
                 // Check if this is an in-scnee placed NetworkObject (Special Case for In-Scene Placed)
                 if (!IsEditingPrefab() && gameObject.scene.name != null && gameObject.scene.name != gameObject.name)
                 {
-                    // TODO: Remove before making full PR
-                    if (gameObject.name.Contains("TestGlobalObjectIdHash"))
-                    {
-                        Debug.Log($"[{gameObject.name}] Did not save its GlobalObjectIdHash value!");
-                    }
-
                     // Sanity check to make sure this is a scene placed object
                     if (globalId.identifierType != 2)
                     {
@@ -220,26 +133,14 @@ namespace Unity.Netcode
                         PrefabUtility.RecordPrefabInstancePropertyModifications(this);
                     }
 
-                    // TODO: This will be dependent upon an NGO project setting and/or a context menu initiated action
-                    // This is just a temporary way to validate the POC of the approach
-                    NetworkObjectManagement.SceneDirtyState = NetworkObjectManagement.SceneDirtyStates.Mark;
-                    NetworkObjectManagement.TargetScene = gameObject.scene;
+                    NetworkObjectRefreshTool.ProcessScene(gameObject.scene.path);
                 }
                 else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
                 {
                     EditorUtility.SetDirty(this);
                 }
             }
-            else
-            {
-                // TODO: Remove before making full PR
-                if (gameObject.name.Contains("TestGlobalObjectIdHash"))
-                {
-                    Debug.Log($"[{gameObject.name}] GlobalObjectIdHash {GlobalObjectIdHash}!");
-                }
-            }
         }
-
 
         private bool IsEditingPrefab()
         {
