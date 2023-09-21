@@ -52,6 +52,13 @@ namespace Unity.Netcode
         [ContextMenu("Refresh In-Scene Prefab Instances")]
         private void RefreshAllPrefabInstances()
         {
+            var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+            if (!PrefabUtility.IsPartOfAnyPrefab(this) || instanceGlobalId.identifierType != 1)
+            {
+                EditorUtility.DisplayDialog("Network Prefab Assets Only", "This action can only be performed on a network prefab asset.", "Ok");
+                return;
+            }
+
             // Handle updating the currently active scene
             var networkObjects = FindObjectsByType<NetworkObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             foreach (var networkObject in networkObjects)
