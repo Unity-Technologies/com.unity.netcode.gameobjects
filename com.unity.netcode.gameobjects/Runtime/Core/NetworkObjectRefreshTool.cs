@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.SceneManagement;
@@ -17,6 +18,8 @@ namespace Unity.Netcode
         private static List<string> s_ScenesToUpdate = new List<string>();
         private static bool s_ProcessScenes;
         private static bool s_CloseScenes;
+
+        internal static Action AllScenesProcessed;
 
         internal static void ProcessScene(string scenePath, bool processScenes = true)
         {
@@ -54,6 +57,7 @@ namespace Unity.Netcode
                 s_CloseScenes = false;
                 EditorSceneManager.sceneSaved -= EditorSceneManager_sceneSaved;
                 EditorSceneManager.sceneOpened -= EditorSceneManager_sceneOpened;
+                AllScenesProcessed?.Invoke();
             }
         }
 

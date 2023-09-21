@@ -50,7 +50,7 @@ namespace Unity.Netcode
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
 
         [ContextMenu("Refresh In-Scene Prefab Instances")]
-        private void RefreshAllPrefabInstances()
+        internal void RefreshAllPrefabInstances()
         {
             var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
             if (!PrefabUtility.IsPartOfAnyPrefab(this) || instanceGlobalId.identifierType != 1)
