@@ -296,28 +296,12 @@ namespace Unity.Netcode
                 return true;
             }
 
-            // Make sure we don't have several overrides targeting the same prefab. Apparently we don't support that... shame.
-            if (OverrideToNetworkPrefab.ContainsKey(target))
-            {
-                var networkObject = networkPrefab.Prefab.GetComponent<NetworkObject>();
-
-                // This can happen if a user tries to make several GlobalObjectIdHash values point to the same target
-                Debug.LogError($"{nameof(NetworkPrefab)} (\"{networkObject.name}\") has a duplicate {nameof(NetworkObject.GlobalObjectIdHash)} target entry value of: {target}!");
-                return false;
-            }
-
             switch (networkPrefab.Override)
             {
                 case NetworkPrefabOverride.Prefab:
-                    {
-                        NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
-                    }
-                    break;
                 case NetworkPrefabOverride.Hash:
                     {
                         NetworkPrefabOverrideLinks.Add(source, networkPrefab);
-                        OverrideToNetworkPrefab.Add(target, source);
                     }
                     break;
             }

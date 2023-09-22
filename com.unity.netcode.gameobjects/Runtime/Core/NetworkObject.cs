@@ -1773,16 +1773,12 @@ namespace Unity.Netcode
         /// <returns></returns>
         internal uint HostCheckForGlobalObjectIdHashOverride()
         {
-            if (NetworkManager.IsHost)
+            if (NetworkManager.IsServer)
             {
                 if (NetworkManager.PrefabHandler.ContainsHandler(this))
                 {
                     var globalObjectIdHash = NetworkManager.PrefabHandler.GetSourceGlobalObjectIdHash(GlobalObjectIdHash);
                     return globalObjectIdHash == 0 ? GlobalObjectIdHash : globalObjectIdHash;
-                }
-                if (NetworkManager.NetworkConfig.Prefabs.OverrideToNetworkPrefab.TryGetValue(GlobalObjectIdHash, out uint hash))
-                {
-                    return hash;
                 }
             }
 
