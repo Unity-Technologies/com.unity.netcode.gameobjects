@@ -186,7 +186,7 @@ namespace Unity.Netcode
 
             m_Prefabs.Remove(prefab);
             m_RuntimeAddedPrefabs.Remove(prefab);
-            OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
+            //OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
         }
 

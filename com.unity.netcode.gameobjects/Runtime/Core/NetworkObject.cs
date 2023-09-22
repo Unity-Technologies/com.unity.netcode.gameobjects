@@ -34,15 +34,15 @@ namespace Unity.Netcode
         {
             get
             {
-                foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
-                {
-                    if (prefab.Prefab == gameObject)
-                    {
-                        return GlobalObjectIdHash;
-                    }
-                }
-
-                return 0;
+                return GlobalObjectIdHash;
+                //foreach (var prefab in NetworkManager.NetworkConfig.Prefabs.Prefabs)
+                //{
+                //    if (prefab.Prefab == gameObject)
+                //    {
+                //        return GlobalObjectIdHash;
+                //    }
+                //}
+                //return 0;
             }
         }
 
