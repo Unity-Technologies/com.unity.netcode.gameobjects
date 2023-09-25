@@ -30,6 +30,12 @@ namespace Unity.Netcode
         [NonSerialized]
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
+        /// <summary>
+        /// No longer used (TODO: Deprecate)
+        /// </summary>
+        [NonSerialized]
+        public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
+
         public IReadOnlyList<NetworkPrefab> Prefabs => m_Prefabs;
 
         [NonSerialized]
