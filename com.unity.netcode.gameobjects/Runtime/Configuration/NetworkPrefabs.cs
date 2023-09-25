@@ -30,9 +30,6 @@ namespace Unity.Netcode
         [NonSerialized]
         public Dictionary<uint, NetworkPrefab> NetworkPrefabOverrideLinks = new Dictionary<uint, NetworkPrefab>();
 
-        [NonSerialized]
-        public Dictionary<uint, uint> OverrideToNetworkPrefab = new Dictionary<uint, uint>();
-
         public IReadOnlyList<NetworkPrefab> Prefabs => m_Prefabs;
 
         [NonSerialized]
@@ -88,7 +85,6 @@ namespace Unity.Netcode
             }
 
             NetworkPrefabOverrideLinks.Clear();
-            OverrideToNetworkPrefab.Clear();
 
             var prefabs = new List<NetworkPrefab>();
 
@@ -186,7 +182,6 @@ namespace Unity.Netcode
 
             m_Prefabs.Remove(prefab);
             m_RuntimeAddedPrefabs.Remove(prefab);
-            //OverrideToNetworkPrefab.Remove(prefab.TargetPrefabGlobalObjectIdHash);
             NetworkPrefabOverrideLinks.Remove(prefab.SourcePrefabGlobalObjectIdHash);
         }
 
@@ -262,7 +257,7 @@ namespace Unity.Netcode
         }
 
         /// <summary>
-        /// Configures <see cref="NetworkPrefabOverrideLinks"/> and <see cref="OverrideToNetworkPrefab"/> for the given <see cref="NetworkPrefab"/>
+        /// Configures <see cref="NetworkPrefabOverrideLinks"/> for the given <see cref="NetworkPrefab"/>
         /// </summary>
         private bool AddPrefabRegistration(NetworkPrefab networkPrefab)
         {
