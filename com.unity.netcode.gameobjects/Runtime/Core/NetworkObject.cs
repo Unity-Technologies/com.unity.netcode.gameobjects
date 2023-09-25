@@ -49,11 +49,23 @@ namespace Unity.Netcode
 #if UNITY_EDITOR
         private const string k_GlobalIdTemplate = "GlobalObjectId_V1-{0}-{1}-{2}-{3}";
 
+        /// <summary>
+        /// Object Types <see href="https://docs.unity3d.com/ScriptReference/GlobalObjectId.html"/>
+        /// </summary>
+        // 0 = Null (when considered a null object type we can ignore)
+        // 1 = Imported Asset
+        // 2 = Scene Object
+        // 3 = Source Asset.
+        private const int k_NullObjectType = 0;
+        private const int k_ImportedAssetObjectType = 1;
+        private const int k_SceneObjectType = 2;
+        private const int k_SourceAssetObjectType = 3;
+
         [ContextMenu("Refresh In-Scene Prefab Instances")]
         internal void RefreshAllPrefabInstances()
         {
             var instanceGlobalId = GlobalObjectId.GetGlobalObjectIdSlow(this);
-            if (!PrefabUtility.IsPartOfAnyPrefab(this) || instanceGlobalId.identifierType != 1)
+            if (!PrefabUtility.IsPartOfAnyPrefab(this) || instanceGlobalId.identifierType != k_ImportedAssetObjectType)
             {
                 EditorUtility.DisplayDialog("Network Prefab Assets Only", "This action can only be performed on a network prefab asset.", "Ok");
                 return;
@@ -106,13 +118,9 @@ namespace Unity.Netcode
             // Get a global object identifier for this network prefab
             var globalId = GetGlobalId();
 
-            // Object Types
-            // 0 = Null (when considered a null object type we can ignore)
-            // 1 = Imported Asset
-            // 2 = Scene Object
-            // 3 = Source Asset.
+
             // if the identifier type is 0, then don't update the GlobalObjectIdHash
-            if (globalId.identifierType == 0)
+            if (globalId.identifierType == k_NullObjectType)
             {
                 return;
             }
@@ -127,7 +135,7 @@ namespace Unity.Netcode
                 if (!IsEditingPrefab() && gameObject.scene.name != null && gameObject.scene.name != gameObject.name)
                 {
                     // Sanity check to make sure this is a scene placed object
-                    if (globalId.identifierType != 2)
+                    if (globalId.identifierType != k_SceneObjectType)
                     {
                         // This should never happen, but in the event it does throw and error
                         Debug.LogError($"[{gameObject.name}] is detected as an in-scene placed object but its identifier is of type {globalId.identifierType}! **Report this error**");
@@ -193,18 +201,12 @@ namespace Unity.Netcode
                 return instanceGlobalId;
             }
 
-            // If we reached this point, then we are most likely opening a prefab to edit.            
+            // Note: If we reached this point, then we are most likely opening a prefab to edit.
             // The instanceGlobalId will be constructed as if it is a scene object, however when it
             // is serialized its value will be treated as a file asset (the "why" to the below code).
 
-            // Object Types
-            // 0 = Null (we exit early on this type)
-            // 1 = Imported Asset
-            // 2 = Scene Object
-            // 3 = Source Asset.
-            var objetType = 3;
-            // Construct an imported asset identifier with the type being a source asset
-            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, objetType, guid, (ulong)localFileId, 0);
+            // Construct an imported asset identifier with the type being a source asset object type
+            var prefabGlobalIdText = string.Format(k_GlobalIdTemplate, k_SourceAssetObjectType, guid, (ulong)localFileId, 0);
 
             // If we can't parse the result log an error and return the instanceGlobalId
             if (!GlobalObjectId.TryParse(prefabGlobalIdText, out var prefabGlobalId))
