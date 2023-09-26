@@ -231,6 +231,26 @@ namespace Unity.Netcode.Transports.UTP
             set => m_MaxSendQueueSize = value;
         }
 
+#if UTP_TRANSPORT_2_1_ABOVE || !UTP_TRANSPORT_2_0_ABOVE // MTU available in UTP 1.4 and 2.1, but not 2.0.
+        private int m_MTU = NetworkParameterConstants.MTU;
+
+        /// <summary>Maximum datagram size that can be sent by the transport.</summary>
+        /// <remarks>
+        /// While <see cref="MaxPayloadSize"/> is used for pre-fragmentation payloads, this value is
+        /// meant to be used for payloads after fragmentation (if fragmented at all). This value thus
+        /// reflects the maximum datagram size that can be sent on the wire.
+        ///
+        /// In 99% of cases, this value doesn't need to be modified. It may be necessary to change it
+        /// only in rare cases where your application is deployed in environments that are particularly
+        /// restrictive in terms of MTU.
+        /// </remarks>
+        public int MTU
+        {
+            get => m_MTU;
+            set => m_MTU = value;
+        }
+#endif
+
         [Tooltip("Timeout in milliseconds after which a heartbeat is sent if there is no activity.")]
         [SerializeField]
         private int m_HeartbeatTimeoutMS = NetworkParameterConstants.HeartbeatTimeoutMS;
@@ -1500,6 +1520,9 @@ namespace Unity.Netcode.Transports.UTP
 #endif
 
             m_NetworkSettings.WithNetworkConfigParameters(
+#if UTP_TRANSPORT_2_1_ABOVE || !UTP_TRANSPORT_2_0_ABOVE // MTU available in UTP 1.4 and 2.1, but not 2.0.
+                maxMessageSize: m_MTU,
+#endif
                 maxConnectAttempts: transport.m_MaxConnectAttempts,
                 connectTimeoutMS: transport.m_ConnectTimeoutMS,
                 disconnectTimeoutMS: transport.m_DisconnectTimeoutMS,
