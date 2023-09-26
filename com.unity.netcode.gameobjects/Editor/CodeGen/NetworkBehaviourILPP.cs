@@ -69,7 +69,7 @@ namespace Unity.Netcode.Editor.CodeGen
             {
                 m_MainModule = mainModule;
 
-                if (ImportReferences(mainModule))
+                if (ImportReferences(mainModule, compiledAssembly.Defines))
                 {
                     // process `NetworkBehaviour` types
                     try
@@ -207,10 +207,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(wrappedType);
-                    }
+                    serializeMethod?.GenericArguments.Add(wrappedType);
                     equalityMethod.GenericArguments.Add(wrappedType);
                 }
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -270,10 +267,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
                 else
@@ -307,10 +301,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
 
@@ -496,7 +487,7 @@ namespace Unity.Netcode.Editor.CodeGen
         // CodeGen cannot reference the collections assembly to do a typeof() on it due to a bug that causes that to crash.
         private const string k_INativeListBool_FullName = "Unity.Collections.INativeList`1<System.Byte>";
 
-        private bool ImportReferences(ModuleDefinition moduleDefinition)
+        private bool ImportReferences(ModuleDefinition moduleDefinition, string[] assemblyDefines)
         {
             TypeDefinition debugTypeDef = null;
             foreach (var unityTypeDef in m_UnityModule.GetAllTypes())
@@ -508,9 +499,13 @@ namespace Unity.Netcode.Editor.CodeGen
                 }
             }
 
-#if UNITY_EDITOR
-            m_InitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(InitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
-#endif
+
+            bool isEditor = assemblyDefines.Contains("UNITY_EDITOR");
+            if (isEditor)
+            {
+                m_InitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(InitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
+            }
+
             m_RuntimeInitializeOnLoadAttribute_Ctor = moduleDefinition.ImportReference(typeof(RuntimeInitializeOnLoadMethodAttribute).GetConstructor(new Type[] { }));
 
             TypeDefinition networkManagerTypeDef = null;
