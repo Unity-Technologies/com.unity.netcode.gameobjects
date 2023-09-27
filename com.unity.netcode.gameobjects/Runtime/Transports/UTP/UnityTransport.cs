@@ -751,7 +751,7 @@ namespace Unity.Netcode.Transports.UTP
                     // reassembled properly at the other end. This allows us to lift the limit of ~44KB
                     // on reliable payloads (because of the reliable window size).
                     var maxBytes = MTU + Driver.MaxHeaderSize(pipeline);
-                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer, mtu) : Queue.FillWriterWithMessages(ref writer);
+                    var written = pipeline == ReliablePipeline ? Queue.FillWriterWithBytes(ref writer, maxBytes) : Queue.FillWriterWithMessages(ref writer);
 
                     result = Driver.EndSend(writer);
                     if (result == written)
