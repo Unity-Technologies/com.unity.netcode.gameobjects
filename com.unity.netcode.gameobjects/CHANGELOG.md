@@ -10,7 +10,6 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
-- Added `MTU` property to `UnityTransport`, which controls the low-level maximum datagram size that the transport will send. Unlike the MTU-related methods described below, this low-level MTU also applies to the individual chunks of a fragmented message. Typically there should be no need to change it unless you know your application is operating in an environment with an abnormally low MTU. (#2716)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
 
 ### Fixed

@@ -252,15 +252,17 @@ namespace Unity.Netcode.Transports.UTP
         /// this could lead to reading messages from a corrupted queue.
         /// </remarks>
         /// <param name="writer">The <see cref="DataStreamWriter"/> to write to.</param>
+        /// <param name="maxBytes">Max number of bytes to copy (0 means writer capacity).</param>
         /// <returns>How many bytes were written to the writer.</returns>
-        public int FillWriterWithBytes(ref DataStreamWriter writer)
+        public int FillWriterWithBytes(ref DataStreamWriter writer, int maxBytes = 0)
         {
             if (!IsCreated || Length == 0)
             {
                 return 0;
             }
 
-            var copyLength = Math.Min(writer.Capacity, Length);
+            var maxLength = maxBytes == 0 ? writer.Capacity : maxBytes;
+            var copyLength = Math.Min(maxLength, Length);
 
             unsafe
             {
