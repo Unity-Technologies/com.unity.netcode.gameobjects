@@ -491,6 +491,15 @@ namespace Unity.Netcode
                 }
             }
         }
+
+        void ModeChanged(PlayModeStateChange change)
+        {
+            if(IsListening && change == PlayModeStateChange.ExitingPlayMode)
+            {
+                // Make sure we are not holding onto anything in case domain reload is disabled
+                ShutdownInternal();
+            }
+        }
 #endif
 
         /// <summary>
@@ -539,6 +548,9 @@ namespace Unity.Netcode
             NetworkConfig?.InitializePrefabs();
 
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += OnSceneUnloaded;
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged += ModeChanged;
+#endif
         }
 
         private void OnEnable()
