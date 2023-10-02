@@ -10,6 +10,7 @@ Additional documentation and release notes are available at [Multiplayer Documen
 
 ### Added
 
+- Added context menu tool that provides users with the ability to quickly update the GlobalObjectIdHash value for all in-scene placed prefab instances that were created prior to adding a NetworkObject component to it. (#2707)
 - Added methods NetworkManager.SetPeerMTU and NetworkManager.GetPeerMTU to be able to set MTU sizes per-peer (#2676)
 
 ### Fixed
