@@ -99,11 +99,6 @@ namespace Unity.Netcode
 
         private void OnValidate()
         {
-            GenerateGlobalObjectIdHash();
-        }
-
-        internal void GenerateGlobalObjectIdHash()
-        {
             // do NOT regenerate GlobalObjectIdHash for NetworkPrefabs while Editor is in PlayMode
             if (EditorApplication.isPlaying && !string.IsNullOrEmpty(gameObject.scene.name))
             {
