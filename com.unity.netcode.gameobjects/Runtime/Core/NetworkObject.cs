@@ -51,6 +51,7 @@ namespace Unity.Netcode
 
         /// <summary>
         /// Object Types <see href="https://docs.unity3d.com/ScriptReference/GlobalObjectId.html"/>
+        /// Parameter 0 of <see cref="k_GlobalIdTemplate"/>
         /// </summary>
         // 0 = Null (when considered a null object type we can ignore)
         // 1 = Imported Asset
@@ -147,8 +148,6 @@ namespace Unity.Netcode
                         // We must invoke this in order for the modifications to get saved with the scene (does not mark scene as dirty)
                         PrefabUtility.RecordPrefabInstancePropertyModifications(this);
                     }
-
-                    NetworkObjectRefreshTool.ProcessScene(gameObject.scene.path);
                 }
                 else // Otherwise, this is a standard network prefab asset so we just mark it dirty for the AssetDatabase to update it
                 {
