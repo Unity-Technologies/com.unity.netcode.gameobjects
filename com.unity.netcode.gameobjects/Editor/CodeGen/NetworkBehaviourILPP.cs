@@ -196,10 +196,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEqualsArray_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(wrappedType);
-                    }
+                    serializeMethod?.GenericArguments.Add(wrappedType);
                     equalityMethod.GenericArguments.Add(wrappedType);
                 }
 #if UNITY_NETCODE_NATIVE_COLLECTION_SUPPORT
@@ -259,10 +256,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_UnmanagedValueEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
                 else
@@ -296,10 +290,7 @@ namespace Unity.Netcode.Editor.CodeGen
                         equalityMethod = new GenericInstanceMethod(m_NetworkVariableSerializationTypes_InitializeEqualityChecker_ManagedClassEquals_MethodRef);
                     }
 
-                    if (serializeMethod != null)
-                    {
-                        serializeMethod.GenericArguments.Add(type);
-                    }
+                    serializeMethod?.GenericArguments.Add(type);
                     equalityMethod.GenericArguments.Add(type);
                 }
 

@@ -477,9 +477,9 @@ namespace Unity.Netcode
             }
         }
 
-        void ModeChanged(PlayModeStateChange change)
+        private void ModeChanged(PlayModeStateChange change)
         {
-            if(IsListening && change == PlayModeStateChange.ExitingPlayMode)
+            if (IsListening && change == PlayModeStateChange.ExitingPlayMode)
             {
                 // Make sure we are not holding onto anything in case domain reload is disabled
                 ShutdownInternal();
