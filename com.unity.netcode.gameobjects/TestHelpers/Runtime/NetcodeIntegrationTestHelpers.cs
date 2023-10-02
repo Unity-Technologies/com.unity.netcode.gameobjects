@@ -924,6 +924,19 @@ namespace Unity.Netcode.TestHelpers.Runtime
         {
             return networkObject.GlobalObjectIdHash;
         }
+
+#if UNITY_EDITOR
+        public static void SetRefreshAllPrefabsCallback(Action scenesProcessed)
+        {
+            NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
+        }
+
+        public static void RefreshAllPrefabInstances(NetworkObject networkObject, Action scenesProcessed)
+        {
+            NetworkObjectRefreshTool.AllScenesProcessed = scenesProcessed;
+            networkObject.RefreshAllPrefabInstances();
+        }
+#endif
     }
 
     // Empty MonoBehaviour that is a holder of coroutine
