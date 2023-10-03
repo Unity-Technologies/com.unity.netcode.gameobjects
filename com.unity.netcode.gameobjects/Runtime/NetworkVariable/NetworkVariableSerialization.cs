@@ -1094,4 +1094,20 @@ namespace Unity.Netcode
             return a == b;
         }
     }
+
+    // RuntimeAccessModifiersILPP will make this `public`
+    // This is just pass-through to NetworkVariableSerialization<T> but is here becaues I could not get ILPP
+    // to generate code that would successfully call Type<T>.Method(T), but it has no problem calling Type.Method<T>(T)
+    internal class RpcFallbackSerialization
+    {
+        public static void Write<T>(FastBufferWriter writer, ref T value)
+        {
+            NetworkVariableSerialization<T>.Write(writer, ref value);
+        }
+
+        public static void Read<T>(FastBufferReader reader, ref T value)
+        {
+            NetworkVariableSerialization<T>.Read(reader, ref value);
+        }
+    }
 }
