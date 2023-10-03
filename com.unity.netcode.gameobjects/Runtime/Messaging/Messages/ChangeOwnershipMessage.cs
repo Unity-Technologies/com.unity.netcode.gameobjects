@@ -60,6 +60,8 @@ namespace Unity.Netcode
                 }
             }
 
+            networkObject.InvokeOwnershipChanged(originalOwner, OwnerClientId);
+
             networkManager.NetworkMetrics.TrackOwnershipChangeReceived(context.SenderId, networkObject, context.MessageSize);
         }
     }
