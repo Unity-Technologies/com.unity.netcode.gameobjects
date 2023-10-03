@@ -533,6 +533,23 @@ namespace Unity.Netcode
         }
 
         /// <summary>
+        /// Invoked on all clients, override this method to be notified of any
+        /// ownership changes (even if the instance was niether the previous or
+        /// newly assigned current owner). 
+        /// </summary>
+        /// <param name="previous">the previous owner</param>
+        /// <param name="current">the current owner</param>
+        protected virtual void OnOwnershipChanged(ulong previous, ulong current)
+        {
+
+        }
+
+        internal void InternalOnOwnershipChanged(ulong previous, ulong current)
+        {
+            OnOwnershipChanged(previous, current);
+        }
+
+        /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
         public virtual void OnLostOwnership() { }
