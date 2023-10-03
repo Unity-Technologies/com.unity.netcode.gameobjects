@@ -840,6 +840,21 @@ namespace Unity.Netcode
             }
         }
 
+        internal void InvokeOwnershipChanged(ulong previous, ulong next)
+        {
+            for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
+            {
+                if (ChildNetworkBehaviours[i].gameObject.activeInHierarchy)
+                {
+                    ChildNetworkBehaviours[i].InternalOnOwnershipChanged(previous, next);
+                }
+                else
+                {
+                    Debug.LogWarning($"{ChildNetworkBehaviours[i].gameObject.name} is disabled! Netcode for GameObjects does not support disabled NetworkBehaviours! The {ChildNetworkBehaviours[i].GetType().Name} component was skipped during ownership assignment!");
+                }
+            }
+        }
+
         internal void InvokeBehaviourOnNetworkObjectParentChanged(NetworkObject parentNetworkObject)
         {
             for (int i = 0; i < ChildNetworkBehaviours.Count; i++)
